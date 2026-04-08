@@ -8,8 +8,10 @@ import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmP
 import { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTask";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmPlatformEmployeeAtSummaryTransformer } from "./HrmPlatformEmployeeAtSummaryTransformer";
 import { HrmPlatformProjectAtSummaryTransformer } from "./HrmPlatformProjectAtSummaryTransformer";
@@ -33,24 +35,11 @@ export namespace HrmPlatformTaskTransformer {
         updated_at: true,
         deleted_at: true,
         project: HrmPlatformProjectAtSummaryTransformer.select(),
-        assignee: HrmPlatformEmployeeAtSummaryTransformer.select(),
+        assignedEmployee: HrmPlatformEmployeeAtSummaryTransformer.select(),
         parentTask: HrmPlatformTaskAtSummaryTransformer.select(),
-        subtasks: HrmPlatformTaskAtSummaryTransformer.select(),
-        histories: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.hrm_platform_task_historiesFindManyArgs,
-        timelogs: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.hrm_platform_timelogsFindManyArgs,
-        timers: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.hrm_platform_timersFindManyArgs,
+        subtasks: {
+          select: HrmPlatformTaskAtSummaryTransformer.select().select,
+        } satisfies Prisma.hrm_platform_tasksFindManyArgs,
       },
     } satisfies Prisma.hrm_platform_tasksFindManyArgs;
   }
@@ -58,32 +47,30 @@ export namespace HrmPlatformTaskTransformer {
     return {
       id: input.id,
       title: input.title,
-      description: input.description ?? null,
+      description: input.description ?? undefined,
       status: input.status,
       priority: input.priority,
-      estimated_hours: input.estimated_hours ?? null,
-      due_date: input.due_date?.toISOString() ?? null,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      estimated_hours: input.estimated_hours ?? undefined,
+      due_date: input.due_date ? toISOStringSafe(input.due_date) : undefined,
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
       project: await HrmPlatformProjectAtSummaryTransformer.transform(
         input.project,
       ),
-      assignee: input.assignee
+      assignedEmployee: input.assignedEmployee
         ? await HrmPlatformEmployeeAtSummaryTransformer.transform(
-            input.assignee,
+            input.assignedEmployee,
           )
-        : null,
+        : undefined,
       parentTask: input.parentTask
         ? await HrmPlatformTaskAtSummaryTransformer.transform(input.parentTask)
-        : null,
+        : undefined,
       subtasks: await ArrayUtil.asyncMap(
         input.subtasks,
-        HrmPlatformTaskAtSummaryTransformer.transform,
+        async (subtask) =>
+          await HrmPlatformTaskAtSummaryTransformer.transform(subtask),
       ),
-      histories_count: input.histories.length,
-      timelogs_count: input.timelogs.length,
-      timers_count: input.timers.length,
-    };
+    } satisfies IHrmPlatformTask;
   }
 }

@@ -19,65 +19,51 @@ export async function postEcommerceMallAuthSuperAdminRefresh(props: {
   let decoded: {
     id: string;
     session_id: string;
-    type: "superAdmin";
+    type: "superadmin";
   };
   try {
     decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
-    }) as {
-      id: string;
-      session_id: string;
-      type: "superAdmin";
-    };
+    }) as typeof decoded;
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  if (decoded.type !== "superAdmin") {
+  // 2. Validate type
+  if (decoded.type !== "superadmin") {
     throw new HttpException("Invalid token type", 403);
   }
-  // 2. Validate session exists and not expired
-  const nowISO = new Date().toISOString();
+  // 3. Validate session exists and is not expired
   const session =
     await MyGlobal.prisma.ecommerce_mall_super_admin_sessions.findFirst({
       where: {
         id: decoded.session_id,
         super_admin_id: decoded.id,
-        expired_at: { gt: new Date() },
+        expired_at: {
+          gt: new Date(),
+        },
       },
-      select: { id: true, super_admin_id: true },
     });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 3. Validate super admin exists and not deleted
+  // 4. Validate super admin account
   const superAdmin =
     await MyGlobal.prisma.ecommerce_mall_super_admins.findUniqueOrThrow({
       where: { id: decoded.id },
-      select: {
-        id: true,
-        email: true,
-        grade: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-      },
     });
   if (superAdmin.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  // 4. Calculate expiration timestamps
-  const accessExpires = new Date();
-  accessExpires.setHours(accessExpires.getHours() + 1);
-  const refreshExpires = new Date();
-  refreshExpires.setDate(refreshExpires.getDate() + 7);
-  const accessExpiresISO = toISOStringSafe(accessExpires);
-  const refreshExpiresISO = toISOStringSafe(refreshExpires);
+  // 5. Generate new tokens (SAME session_id)
+  const now = Date.now();
+  const accessExpires = new Date(now + 60 * 60 * 1000);
+  const refreshExpires = new Date(now + 7 * 24 * 60 * 60 * 1000);
   const accessToken = jwt.sign(
     {
       type: decoded.type,
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: nowISO,
+      created_at: new Date(now).toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
@@ -88,29 +74,33 @@ export async function postEcommerceMallAuthSuperAdminRefresh(props: {
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: nowISO,
+      created_at: new Date(now).toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 5. Update session expiration
+  // 6. Update session expiration
   await MyGlobal.prisma.ecommerce_mall_super_admin_sessions.update({
     where: { id: decoded.session_id },
     data: { expired_at: refreshExpires },
   });
-  // 6. Return authorized response
+  // 7. Return authorized response
   return {
     id: superAdmin.id as string & tags.Format<"uuid">,
     email: superAdmin.email as string & tags.Format<"email">,
     grade: superAdmin.grade,
-    createdAt: toISOStringSafe(superAdmin.created_at),
-    updatedAt: toISOStringSafe(superAdmin.updated_at),
+    createdAt: toISOStringSafe(superAdmin.created_at) as string &
+      tags.Format<"date-time">,
+    updatedAt: toISOStringSafe(superAdmin.updated_at) as string &
+      tags.Format<"date-time">,
     deletedAt: null,
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: accessExpiresISO,
-      refreshable_until: refreshExpiresISO,
+      expired_at: toISOStringSafe(accessExpires) as string &
+        tags.Format<"date-time">,
+      refreshable_until: toISOStringSafe(refreshExpires) as string &
+        tags.Format<"date-time">,
     } satisfies IAuthorizationToken,
   } satisfies IEcommerceMallSuperAdmin.IAuthorized;
 }

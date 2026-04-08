@@ -3,13 +3,10 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IMallPlatformProduct } from "../../../../api/structures/IMallPlatformProduct";
-import { IMallPlatformProductImageSnapshot } from "../../../../api/structures/IMallPlatformProductImageSnapshot";
 import { IPageIMallPlatformProduct } from "../../../../api/structures/IPageIMallPlatformProduct";
 import { SellerAuth } from "../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../decorators/payload/SellerPayload";
 import { deleteMallPlatformSellerProductsProductId } from "../../../../providers/deleteMallPlatformSellerProductsProductId";
-import { getMallPlatformSellerProductsProductId } from "../../../../providers/getMallPlatformSellerProductsProductId";
-import { getMallPlatformSellerProductsProductIdImageSnapshots } from "../../../../providers/getMallPlatformSellerProductsProductIdImageSnapshots";
 import { patchMallPlatformSellerProducts } from "../../../../providers/patchMallPlatformSellerProducts";
 import { postMallPlatformSellerProducts } from "../../../../providers/postMallPlatformSellerProducts";
 import { putMallPlatformSellerProductsProductId } from "../../../../providers/putMallPlatformSellerProductsProductId";
@@ -17,23 +14,24 @@ import { putMallPlatformSellerProductsProductId } from "../../../../providers/pu
 @Controller("/mallPlatform/seller/products")
 export class MallplatformSellerProductsController {
   /**
-   * Create a new sellable product for the authenticated seller.
+   * Create a new marketplace product for the authenticated seller.
    *
-   * A product is the marketplace’s core listing unit and is used in search results, category browsing, and product detail pages. Each product belongs to the seller who creates it and must be assigned to an existing category, including a subcategory when applicable. The product is created with its base commercial identity so it can later be extended with variants, images, and inventory.
+   * This operation lets an approved seller create a sellable product record with the required business identity fields. The new product is owned by the authenticated seller, assigned to the selected category, and then becomes available for later browsing, variant management, image management, and snapshot-based history tracking.
    *
-   * The request must include the product name, description, category, and base price. The server must validate that the caller is an approved seller and that the category exists. If the seller is not allowed to sell, the request must be rejected. If validation fails or the category is invalid, the product must not be created.
+   * The product must include a name, description, category, and base price. The selected category may be a subcategory. The server must reject invalid category references and any request from a seller account that is not allowed to create products. If creation fails, no partial product data should be persisted.
    *
-   * On success, the newly created product is returned for immediate use in seller management screens. This operation does not create snapshots by itself; snapshots are created when the product is later edited.
+   * Because products are the canonical browse and search entity, the created record becomes the source for product images, product variants, inventory records, order-item snapshots, and review presentation.
    *
    * @param connection
-   * @param body Product creation data for the authenticated seller.
+   * @param body Product creation data including the required product name, description, category, and base price.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Insert a new row into mall_platform_products for the authenticated seller.
-   *
-   * Resolve the seller identity from the authenticated session and reject the request if the account is unavailable for selling, not approved, suspended, banned, or otherwise not permitted to create products. Validate that the referenced category exists and is an allowed category/subcategory target for product assignment. Persist the product with the required business fields only; do not invent or infer any missing fields beyond the actual schema.
-   *
-   * Use a transaction if any downstream checks or related writes are needed. If the create fails, return a validation or business error and ensure no partial product record remains. The created product should be immediately retrievable through detail and listing endpoints. Snapshot creation is not part of this operation; it is handled by product update workflows.
+   * @x-autobe-specification Validate the authenticated actor as an approved seller with permission to create products.
+   * Insert a new row into mall_platform_products using only fields defined by the product create DTO and the seller identity derived from authentication context.
+   * Verify that the referenced category exists and can be assigned to a product, including subcategories.
+   * Persist the product atomically; if any validation or persistence step fails, rollback the transaction and return an error without creating a partial record.
+   * Do not create snapshots here; product snapshots are created only on later edits.
+   * Return the full created product entity after insert so the client can navigate to the new product detail page. Ensure the response reflects the canonical product record and does not invent fields outside the schema.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -55,24 +53,19 @@ export class MallplatformSellerProductsController {
   }
 
   /**
-   * Retrieve a paginated list of marketplace products for browsing and search.
+   * Returns a paginated list of marketplace products for browsing and search.
    *
-   * This endpoint is used by customers to discover products across all sellers with support for keyword search, category filtering, price-range filtering, and stock-aware browsing. Results should reflect the current active catalog and exclude products that are no longer available for listing.
+   * This operation supports the customer-facing catalog experience, including search results and category browsing. It returns product summaries only, with filtering and sorting applied before pagination so that the result set reflects the selected browsing criteria.
    *
-   * Each returned summary should be optimized for catalog cards and listing pages, including the product's primary image, display name, base price or price range when variant pricing differs, seller shop name, and rating summary derived from review data. When filters are applied, the result set must follow the platform browsing rules and remain stable under pagination and sorting.
-   *
-   * Validation errors should be returned when the request contains an invalid category reference, inconsistent price bounds, or unsupported sorting criteria. Empty result sets are valid and should return an empty page rather than an error.
+   * The response excludes products that are not eligible for catalog visibility, such as deleted products or products from unavailable seller states. Products with no variants may still be returned as unavailable rather than purchasable. If no products match the query, the response contains an empty page instead of an error.
    *
    * @param connection
-   * @param body Search, filter, sort, and pagination criteria for product browsing.
+   * @param body Search, filter, sort, and pagination criteria for browsing marketplace products.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query mall_platform_products for customer-facing catalog browsing.
-   * Filter out products that are deleted or otherwise unavailable for listing. Join seller profile data for shop name and logo, left join active images to determine the main thumbnail, and aggregate variants and reviews to compute list-level display data such as price range, stock availability, average rating, and review count.
+   * @x-autobe-specification Query mall_platform_products as the primary catalog source and build a paginated summary result for browsing. Apply search text, category filter, minimum price, maximum price, in-stock-only filtering, and sort order in the database query or service query pipeline.
    *
-   * Implement pagination, keyword search, category filter, min/max price filter, in-stock-only filter, and sorting by newest, price ascending, or price descending. Keyword matching should use the product name and description search indexes. Category filtering must accept only existing categories; invalid category references should fail validation. Price filtering should be applied against product base price and/or variant effective price depending on the browsing rule used by the service.
-   *
-   * Return a page of product summaries suitable for browse cards. Do not expose internal snapshot tables. Do not require authentication context in the DTO unless the service layer needs it for visibility rules. Keep the query read-only and avoid modifying cart, wishlist, inventory, or review records.
+   * Validate any requested category filter against mall_platform_categories before executing the product query. Exclude products that are not visible for browsing due to deleted state or seller availability restrictions. Derive summary fields from the product record and related data such as the main image, seller shop name, price display, and average rating. Preserve stable ordering for pagination and return an empty page when nothing matches.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -94,58 +87,22 @@ export class MallplatformSellerProductsController {
   }
 
   /**
-   * Retrieve a single product with its full marketplace detail.
+   * Update an existing product owned by a seller.
    *
-   * This endpoint returns the live product record used across search, category browsing, and the product detail page. A product is the marketplace's core sellable item and belongs to one seller and one optional category. The response is intended to support customer viewing of the product name, description, base price, images, available variants, and review-related context.
+   * This operation lets the owning seller modify the product's core catalog fields, including its name, description, category, and base price. The selected category may be a subcategory, and the product remains owned by the same seller account after the update.
    *
-   * The product may be associated with a category, including a subcategory, and may include multiple ordered images and purchasable variants. If the product has no variants, it remains visible for browsing but is not purchasable. If the product or its owning seller is no longer available for browsing according to platform rules, the request should fail with a not-found or unavailable-style response consistent with the service's standard error handling.
-   *
-   * This operation is read-only and does not modify product state. Administrators may also use it as part of product oversight workflows, while sellers can use it to inspect their own listings.
+   * When the update succeeds, the service must preserve the previous product state in a snapshot so the catalog history can be reviewed later for audit and dispute resolution. If the product does not exist, belongs to another seller, or is otherwise unavailable due to policy or account state restrictions, the request must fail with an appropriate business error.
    *
    * @param connection
-   * @param productId The product identifier in UUID format.
+   * @param productId The unique identifier of the product to update.
+   * @param body The product fields to update, including the editable catalog attributes for the seller-owned product.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load the product by UUID primary key from mall_platform_products, joining the owning seller account, optional category, ordered images, and variants needed for the detail view. Include the complete live product row and its direct relations; do not return snapshot tables here because this endpoint is for the current product state, not historical reconstruction.
+   * @x-autobe-specification Load the product by product_id and verify it exists. Enforce that the caller is the owning seller unless the caller has administrator privileges for product oversight. Reject the operation if the product belongs to a seller account that is unavailable for business operations, or if the selected category does not exist.
    *
-   * Use the product id from the path to fetch exactly one record. If the product does not exist or is unavailable under business rules, return a not-found response. The implementation should respect platform visibility rules for deleted products and unavailable seller states when determining whether the caller may see the item. Do not require a request body. Ensure related collections are returned in deterministic order, especially product images by sort_order and variants by creation or stable display order.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":productId")
-  public async at(
-    @SellerAuth()
-    seller: SellerPayload,
-    @TypedParam("productId")
-    productId: string & tags.Format<"uuid">,
-  ): Promise<IMallPlatformProduct> {
-    try {
-      return await getMallPlatformSellerProductsProductId({
-        seller,
-        productId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update a seller-owned product.
+   * Apply updates only to editable product fields: name, description, category_id, and base_price. Do not modify seller ownership, variants, inventory, orders, or snapshots directly in this operation. Persist the previous product state as a product snapshot before committing the update. The snapshot should capture the product data relevant to historical reconstruction, and the updated product must remain visible in browse/search flows according to its seller and category state.
    *
-   * This operation lets the owning seller revise the product's live marketplace data, including its name, description, category, and base price. The product is the root catalog record for a sellable item, while images, variants, and historical snapshots are managed in related tables. A successful update must preserve the marketplace history by creating a product snapshot that captures the prior state before the edit is applied.
-   *
-   * The updated product remains tied to the same seller account and category structure. If the referenced category is removed or the product is otherwise unavailable, the request must be rejected according to the platform's business rules. If the seller does not own the product, the operation must fail with an authorization error. Any snapshot created by this operation must include the preserved product data and related presentation state needed for later audit or dispute review.
-   *
-   * @param connection
-   * @param productId Identifier of the product to update.
-   * @param body Fields to update on the product.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load the product by id and verify it exists and is not deleted for the purpose of editing. Confirm the current authenticated seller owns the product; administrators may be allowed only if the broader authorization layer grants product oversight rights. Validate the incoming product fields against the actual product schema: name, description, category_id, and base_price are the editable live fields exposed by the table. Do not accept or persist seller_account_id changes through this endpoint.
-   *
-   * Before applying the update, create a product snapshot row capturing the product's previous state, including the current name, description, category label if available, base price, main image URI, and the current counts of images and variants. Because product snapshots have related image and variant snapshot tables, the service should also persist the snapshot composition needed by downstream snapshot readers. The live update should then modify only the product row itself in a transaction.
-   *
-   * If category_id is provided, ensure it references an existing category and that the category is allowed by business rules, including subcategory selection if applicable. Reject invalid categories, missing products, or ownership violations. If the product has been deleted or is otherwise unavailable for editing, return a not-found or conflict-style business error consistent with the project conventions. On any failure after snapshot preparation, roll back all database changes so the product and its snapshot history remain consistent.
+   * Return the updated full product entity after persistence. If validation fails or the product cannot be updated, leave the product unchanged and do not create a snapshot. Use transactional handling so the snapshot write and product update succeed or fail together.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":productId")
@@ -170,23 +127,27 @@ export class MallplatformSellerProductsController {
   }
 
   /**
-   * Permanently removes a product from the active marketplace catalog.
+   * Deletes a product from active marketplace listings.
    *
-   * This operation deletes the targeted product when the caller is authorized and the product satisfies all deletion restrictions. A product may only be removed when none of its variants have pending paid or shipped order items, and when none of its variants have pending cancellation requests or refund requests. When deletion is allowed, the product is removed from active browsing, its variants are removed from active use, and the related inventory records are removed from active use as well.
+   * This operation removes the specified product from customer browsing and search results when deletion is permitted by business rules. It is used by the product owner seller or by an administrator acting under policy enforcement. The deleted product itself is not physically erased from historical context; related snapshot records remain available for authorized review, and dependent catalog browsing behavior must continue to work for unaffected products.
    *
-   * Historical records remain available for dispute review and audit purposes through the platform's snapshot data. Deleted products must no longer appear in search results or category listings, and administrators may invoke this operation for policy enforcement across the platform. The service must reject deletion attempts that violate pending order, cancellation, or refund constraints.
+   * Before deletion, the service must verify that the product has no pending order items in paid or shipped status for any of its variants, and no pending cancellation or refund requests for any variant. If the product is deletable, all of its variants and their inventory records must also be removed from active use, and any wishlist references should stop pointing to the deleted product as part of the deletion flow.
+   *
+   * If the product cannot be deleted because of active commercial dependencies, the API must reject the request with a conflict-style business error. If the product does not exist or is not accessible to the caller, the API must return a not-found or authorization-related error according to the platform's standard error handling rules.
    *
    * @param connection
-   * @param productId Identifier of the product to permanently remove from the active catalog.
+   * @param productId The unique identifier of the product to delete (UUID scope).
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load the product by productId and verify it exists. Enforce authorization so that only the owning seller or an administrator can perform the deletion.
+   * @x-autobe-specification Load the target product by productId and verify that it exists.
    *
-   * Before deleting, check all product variants for blocking conditions: any order items in paid or shipped status, any pending cancellation requests, and any pending refund requests. If any blocking record exists, return a validation error and do not modify the database.
+   * Authorize the caller according to platform rules: the owning seller may delete their own product, and an administrator may delete any product for policy enforcement. Reject unauthorized callers.
    *
-   * When deletion is allowed, delete the product and cascade deletion of its variants and their active inventory records within a single transaction. Remove the product from active catalog visibility so it no longer appears in search or category browsing. Do not delete historical snapshot records; preserve them for seller or administrator review. If wishlist or other references depend on the product being active, ensure the active catalog state marks it unavailable rather than exposing broken references.
+   * Check all variants of the product for blocking dependencies before any deletion occurs. The product may only be deleted when none of its variants have pending order items with paid or shipped status, and none of its variants have pending cancellation or refund requests. If any blocking dependency exists, abort the operation with a conflict error and do not modify the database.
    *
-   * Use transactional safeguards to prevent partial deletion. If any step fails, roll back the entire operation. Return a not-found error when the product does not exist, a forbidden error when the caller lacks permission, and a conflict or validation error when deletion restrictions are not satisfied.
+   * When deletion is allowed, execute the removal in a transaction. Delete all product variants, remove their inventory records from active use, and delete the product record itself. Ensure any ancillary active references that depend on the product being present are cleaned up as part of the service flow, while historical snapshot records remain untouched. The product must no longer appear in search or category browsing after completion.
+   *
+   * Return the deleted product entity if the implementation supports echoing the removed record; otherwise return no content. All error responses must be consistent with the platform's standard not-found, forbidden, and conflict semantics.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":productId")
@@ -198,42 +159,6 @@ export class MallplatformSellerProductsController {
   ): Promise<void> {
     try {
       return await deleteMallPlatformSellerProductsProductId({
-        seller,
-        productId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve the image snapshot history for a product.
-   *
-   * This operation returns the preserved history of a product's presentation images so sellers and administrators can review how the product gallery changed over time. Each snapshot captures the image URL, display order, main-thumbnail flag, and the exact time the image state was recorded, which supports audit review and dispute resolution for visual product changes.
-   *
-   * The history is scoped to a single product and follows that product through image maintenance actions such as uploads, reordering, and deletions. Only callers with permission to inspect the product may access the snapshot history, and the product must exist; otherwise the request is rejected. The response is ordered chronologically so consumers can reconstruct the image timeline consistently.
-   *
-   * @param connection
-   * @param productId The product identifier whose image snapshot history should be retrieved.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load all product image snapshot rows for the requested product id using the product-image snapshot table filtered by mall_platform_product_id. Order results by created_at ascending so the consumer can reconstruct the timeline, or descending only if the platform-wide list convention requires newest-first; keep the ordering consistent with the rest of the product snapshot APIs.
-   *
-   * Validate that the product exists and that the caller has permission to view the product or its snapshots. For administrators, allow access to any product; for sellers, allow only the seller who owns the product. If the product does not exist, return a not-found business error. If the product exists but the caller is unauthorized, return an access-denied error.
-   *
-   * Return immutable snapshot rows only; do not join live product image rows because deleted or reordered images must still be visible from history. Preserve image_url, image_order, is_main, and changed_at exactly as stored. If the product has no image snapshots, return an empty list rather than an error.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":productId/imageSnapshots")
-  public async imageSnapshots(
-    @SellerAuth()
-    seller: SellerPayload,
-    @TypedParam("productId")
-    productId: string & tags.Format<"uuid">,
-  ): Promise<IMallPlatformProductImageSnapshot> {
-    try {
-      return await getMallPlatformSellerProductsProductIdImageSnapshots({
         seller,
         productId,
       });

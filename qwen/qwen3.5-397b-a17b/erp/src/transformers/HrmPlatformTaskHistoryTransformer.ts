@@ -1,12 +1,19 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
+import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
 import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
+import { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTask";
 import { IHrmPlatformTaskHistory } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTaskHistory";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmPlatformMemberAtSummaryTransformer } from "./HrmPlatformMemberAtSummaryTransformer";
+import { HrmPlatformTaskAtSummaryTransformer } from "./HrmPlatformTaskAtSummaryTransformer";
 
 export namespace HrmPlatformTaskHistoryTransformer {
   export type Payload = Prisma.hrm_platform_task_historiesGetPayload<
@@ -19,7 +26,7 @@ export namespace HrmPlatformTaskHistoryTransformer {
         old_status: true,
         new_status: true,
         created_at: true,
-        task: true,
+        task: HrmPlatformTaskAtSummaryTransformer.select(),
         member: HrmPlatformMemberAtSummaryTransformer.select(),
       },
     } satisfies Prisma.hrm_platform_task_historiesFindManyArgs;
@@ -32,9 +39,10 @@ export namespace HrmPlatformTaskHistoryTransformer {
       oldStatus: input.old_status,
       newStatus: input.new_status,
       createdAt: input.created_at.toISOString(),
+      task: await HrmPlatformTaskAtSummaryTransformer.transform(input.task),
       member: await HrmPlatformMemberAtSummaryTransformer.transform(
         input.member,
       ),
-    };
+    } satisfies IHrmPlatformTaskHistory;
   }
 }

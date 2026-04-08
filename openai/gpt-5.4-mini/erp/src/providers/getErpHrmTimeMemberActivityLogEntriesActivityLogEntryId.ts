@@ -1,7 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeActivityLogEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeActivityLogEntry";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -19,29 +19,14 @@ export async function getErpHrmTimeMemberActivityLogEntriesActivityLogEntryId(pr
   member: MemberPayload;
   activityLogEntryId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeActivityLogEntry> {
-  const membership =
-    await MyGlobal.prisma.erp_hrm_time_organization_memberships.findFirst({
-      where: {
-        erp_hrm_time_member_id: props.member.id,
-        is_selected_context: true,
-        status: "active",
-      },
-      select: {
-        erp_hrm_time_organization_id: true,
-        erp_hrm_time_member_id: true,
-        is_selected_context: true,
-      },
-    });
-  if (membership === null) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const entry =
-    await MyGlobal.prisma.erp_hrm_time_activity_log_entries.findFirstOrThrow({
+  const activityLogEntry =
+    await MyGlobal.prisma.erp_hrm_time_activity_log_entries.findUniqueOrThrow({
       where: {
         id: props.activityLogEntryId,
-        organization_id: membership.erp_hrm_time_organization_id,
       },
       ...ErpHrmTimeActivityLogEntryTransformer.select(),
     });
-  return await ErpHrmTimeActivityLogEntryTransformer.transform(entry);
+  return await ErpHrmTimeActivityLogEntryTransformer.transform(
+    activityLogEntry,
+  );
 }

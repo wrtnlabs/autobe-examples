@@ -1,59 +1,38 @@
 import { IConnection, PlainFetcher } from "@nestia/fetcher";
 import typia from "typia";
 
-import { IEcommerceMallSeller } from "../../../../structures/IEcommerceMallSeller";
 import { IEcommerceMallSellerDashboard } from "../../../../structures/IEcommerceMallSellerDashboard";
 
 /**
- * Retrieves the seller's dashboard with summary statistics showing shop performance metrics.
+ * Retrieve the seller's dashboard summary with shop performance metrics
  *
- * This endpoint provides an overview of the seller's shop activity including the total number of products in their catalog, the total count of order items for their products, the number of pending cancellation requests requiring response, and the number of pending refund requests requiring response.
+ * This endpoint provides sellers with a comprehensive overview of their shop activity. The dashboard displays key statistics including:
  *
- * The dashboard is accessible only to authenticated sellers who have been approved by administrators. Sellers with pending or rejected status cannot access the dashboard or perform selling activities.
+ * - Total number of products in the seller's catalog.
+ * - Total number of order items purchased from the seller's products.
+ * - Number of pending cancellation requests that require the seller's response.
+ * - Number of pending refund requests that require the seller's response.
  *
- * The system calculates counts in real-time based on the current state of the seller's products, orders, and pending requests. The response is optimized for display on the seller dashboard page and excludes customer personal information beyond what is necessary for order fulfillment.
- *
- * Related operations include the order item listing endpoint which provides detailed information about individual order items, and the request response endpoints for handling cancellation and refund requests.
+ * Sellers can use this dashboard to quickly identify items requiring attention and monitor their shop's overall performance. The data is scoped to the authenticated seller and excludes information belonging to other sellers.
  *
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implement seller dashboard summary aggregation:
+ * @x-autobe-specification Query and aggregate data for the authenticated seller's dashboard:
  *
- * **Authorization Requirements:**
- * - Require valid seller JWT authentication
- * - Verify seller.approval_status = 'approved' (pending or rejected sellers are forbidden)
+ * 1. Product Count: Count products where product.sellerId equals the authenticated seller's ID.
+ * 2. Order Item Count: Count order items where orderItem.sellerId equals the authenticated seller's ID.
+ * 3. Pending Cancellation Requests: Count cancellation requests where:
+ *    - The orderItem.sellerId matches the authenticated seller
+ *    - The cancellation request status is 'pending'
+ * 4. Pending Refund Requests: Count refund requests where:
+ *    - The orderItem.sellerId matches the authenticated seller
+ *    - The refund request status is 'pending'
  *
- * **Data Aggregation Logic:**
- * 1. **Product Count**: Query ecommerce_mall_products table where seller_id equals the authenticated seller's id
- *    - Count total products owned by this seller
- *    - Include both active and hidden products (not deleted)
+ * The seller is identified from the authentication context (session/JWT token). No input parameters are required as the dashboard is always for the currently authenticated seller.
  *
- * 2. **Order Item Count**: Query ecommerce_mall_order_items table
- *    - Join with ecommerce_mall_products to filter by seller
- *    - Count all order items where product.seller_id matches authenticated seller
- *    - Include items of all statuses (paid, shipped, delivered, cancelled, refunded)
- *
- * 3. **Pending Cancellation Requests**: Query ecommerce_mall_cancellation_requests table
- *    - Join with ecommerce_mall_order_items to get product relationships
- *    - Filter where request.status = 'pending'
- *    - Filter where order_item's product belongs to this seller
- *    - Count distinct cancellation requests
- *
- * 4. **Pending Refund Requests**: Query ecommerce_mall_refund_requests table
- *    - Join with ecommerce_mall_order_items to get product relationships
- *    - Filter where request.status = 'pending'
- *    - Filter where order_item's product belongs to this seller
- *    - Count distinct refund requests
- *
- * **Response Construction:**
- * - Return composite object with all four counts
- * - Use integer types for all count fields
- * - Ensure counts are non-negative
- *
- * **Error Handling:**
- * - Return 403 Forbidden if user is not an authenticated seller
- * - Return 403 Forbidden if seller status is not 'approved'
+ * Error handling:
+ * - 401: If the caller is not authenticated or not a seller
  * @path /ecommerceMall/seller/dashboard
  * @accessor api.functional.ecommerceMall.seller.dashboard.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -92,89 +71,6 @@ export namespace at {
   export const path = () => "/ecommerceMall/seller/dashboard";
   export const random = (): IEcommerceMallSellerDashboard =>
     typia.random<IEcommerceMallSellerDashboard>();
-  export const simulate = (_connection: IConnection): Response => {
-    return random();
-  };
-}
-
-/**
- * Retrieve seller dashboard summary statistics.
- *
- * Returns aggregated metrics for the authenticated seller's shop performance. The summary provides an overview of shop activity including product catalog size, total order volume, and pending customer service requests.
- *
- * The dashboard summary includes four key metrics:
- * - Total products: The number of products currently listed by this seller
- * - Total order items: The cumulative count of all order items across all orders for this seller's products
- * - Pending cancellation requests: The number of cancellation requests awaiting seller response
- * - Pending refund requests: The number of refund requests awaiting seller response
- *
- * These metrics help sellers identify items requiring attention and understand overall shop activity. The dashboard does not include customer personal information beyond what is necessary for order fulfillment.
- *
- * Authorization: Requires authenticated seller access. The system filters all data to only include information belonging to the requesting seller.
- *
- * Related operations:
- * - PATCH /dashboard/orderItems - For viewing detailed order items list
- * - PATCH /sellers/{sellerId}/cancellationRequests - For managing cancellation requests
- * - PATCH /sellers/{sellerId}/refundRequests - For managing refund requests
- *
- * @param props.connection
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implementation: Query aggregated statistics for the authenticated seller.
- *
- * 1. Extract seller ID from authentication token (JWT)
- * 2. Calculate totalProducts by counting records in ecommerce_mall_products where seller_id matches
- * 3. Calculate totalOrderItems by counting records in ecommerce_mall_order_items where seller_id matches
- * 4. Calculate pendingCancellationRequests by counting records in ecommerce_mall_cancellation_requests joined with order_items and filtered by seller_id where status = 'pending'
- * 5. Calculate pendingRefundRequests by counting records in ecommerce_mall_refund_requests joined with order_items and filtered by seller_id where status = 'pending'
- * 6. Return all four metrics in a single response object
- *
- * Edge cases:
- * - If seller has no products, totalProducts = 0
- * - If seller has no orders, totalOrderItems = 0
- * - If no pending requests, respective counts = 0
- *
- * Authorization: Verify authentication token is valid and belongs to an approved seller account. Reject requests from customers, guests, or unapproved sellers.
- * @path /ecommerceMall/seller/dashboard/summary
- * @accessor api.functional.ecommerceMall.seller.dashboard.summary
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function summary(
-  connection: IConnection,
-): Promise<summary.Response> {
-  return true === connection.simulate
-    ? summary.simulate(connection)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...summary.METADATA,
-          path: summary.path(),
-          status: null,
-        },
-      );
-}
-export namespace summary {
-  export type Response = IEcommerceMallSeller.IDashboardSummary;
-
-  export const METADATA = {
-    method: "GET",
-    path: "/ecommerceMall/seller/dashboard/summary",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = () => "/ecommerceMall/seller/dashboard/summary";
-  export const random = (): IEcommerceMallSeller.IDashboardSummary =>
-    typia.random<IEcommerceMallSeller.IDashboardSummary>();
   export const simulate = (_connection: IConnection): Response => {
     return random();
   };

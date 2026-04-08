@@ -22,12 +22,17 @@ export async function getEcommerceMallAdminSellersSellerIdProfileSnapshotsSnapsh
   const snapshot =
     await MyGlobal.prisma.ecommerce_mall_seller_profile_snapshots.findUniqueOrThrow(
       {
-        where: {
-          id: props.snapshotId,
-          seller_id: props.sellerId,
-        },
+        where: { id: props.snapshotId },
         ...EcommerceMallSellerProfileSnapshotTransformer.select(),
       },
     );
-  return EcommerceMallSellerProfileSnapshotTransformer.transform(snapshot);
+  if (snapshot.seller.id !== props.sellerId) {
+    throw new HttpException(
+      "Snapshot does not belong to the specified seller",
+      404,
+    );
+  }
+  return await EcommerceMallSellerProfileSnapshotTransformer.transform(
+    snapshot,
+  );
 }

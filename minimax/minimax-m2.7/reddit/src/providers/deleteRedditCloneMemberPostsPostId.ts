@@ -15,62 +15,69 @@ export async function deleteRedditCloneMemberPostsPostId(props: {
   member: MemberPayload;
   postId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // 1. Find the post
-  const post = await MyGlobal.prisma.reddit_clone_posts.findUnique({
+  // Find the post - throws 404 if not found
+  const post = await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
     where: { id: props.postId },
     select: {
       id: true,
       reddit_clone_member_id: true,
       vote_score: true,
-      deleted_at: true,
     },
   });
-  if (post === null || post.deleted_at !== null) {
-    throw new HttpException("Not found", 404);
-  }
-  // 2. Ownership verification
+  // Verify ownership - 403 if not author
   if (post.reddit_clone_member_id !== props.member.id) {
-    throw new HttpException("Forbidden", 403);
+    throw new HttpException(
+      "You do not have permission to delete this post",
+      403,
+    );
   }
-  // 3. Get votes for karma adjustment
-  const votes = await MyGlobal.prisma.reddit_clone_post_votes.findMany({
-    where: { reddit_clone_post_id: props.postId },
-    select: { direction: true },
+  // Soft delete the post
+  await MyGlobal.prisma.reddit_clone_posts.update({
+    where: { id: props.postId },
+    data: {
+      deleted_at: new Date(),
+    },
   });
-  const karmaDelta = votes.reduce(
-    (sum, vote) => sum + (vote.direction === "upvote" ? 1 : -1),
-    0,
-  );
-  // 4. Cascade deletion in transaction
-  await MyGlobal.prisma.$transaction([
-    MyGlobal.prisma.reddit_clone_posts.update({
-      where: { id: props.postId },
-      data: {
-        deleted_at: new Date(),
-        vote_score: 0,
-        updated_at: new Date(),
+  // Update author karma: subtract the post's vote_score
+  await MyGlobal.prisma.reddit_clone_user_karmas.update({
+    where: { reddit_clone_member_id: post.reddit_clone_member_id },
+    data: {
+      karma_score: {
+        decrement: post.vote_score,
       },
-    }),
-    MyGlobal.prisma.reddit_clone_comments.updateMany({
-      where: { reddit_clone_post_id: props.postId },
-      data: {
-        deleted_at: new Date(),
-        vote_score: 0,
-        updated_at: new Date(),
-      },
-    }),
-    MyGlobal.prisma.reddit_clone_post_votes.deleteMany({
-      where: { reddit_clone_post_id: props.postId },
-    }),
-  ]);
-  // 5. Adjust karma if needed
-  if (karmaDelta !== 0) {
-    await MyGlobal.prisma.reddit_clone_user_karmas.update({
-      where: { reddit_clone_member_id: post.reddit_clone_member_id },
-      data: {
-        karma_score: { decrement: karmaDelta },
-        updated_at: new Date(),
-      },
-    });
-  }
+      updated_at: new Date(),
+    },
+  });
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function deleteRedditCloneMemberPostsPostId(props: {
+//   member: MemberPayload;
+//   postId: string & tags.Format<"uuid">;
+// }): Promise<void> {
+//   await MyGlobal.prisma.....delete({
+//     where: { ... },
+//   });
+// }
+// ```
+//--------------------------------------------------------------

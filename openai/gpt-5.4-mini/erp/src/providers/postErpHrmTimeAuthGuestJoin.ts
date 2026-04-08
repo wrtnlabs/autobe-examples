@@ -1,6 +1,6 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IErpHrmTimeGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeGuest";
+import { IErpHrmTimeGuestSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeGuestSession";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -14,8 +14,8 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postErpHrmTimeAuthGuestJoin(props: {
   ip: string;
-  body: IErpHrmTimeGuest.IJoin;
-}): Promise<IErpHrmTimeGuest.IAuthorized> {
+  body: IErpHrmTimeGuestSession.IJoin;
+}): Promise<IErpHrmTimeGuestSession.IAuthorized> {
   const guest = await MyGlobal.prisma.erp_hrm_time_guests.create({
     data: {
       id: v4(),
@@ -23,13 +23,13 @@ export async function postErpHrmTimeAuthGuestJoin(props: {
       updated_at: new Date(),
       deleted_at: null,
     },
+    select: {
+      id: true,
+    },
   });
-  const sessionId = v4();
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  await MyGlobal.prisma.erp_hrm_time_guest_sessions.create({
+  const session = await MyGlobal.prisma.erp_hrm_time_guest_sessions.create({
     data: {
-      id: sessionId,
+      id: v4(),
       erp_hrm_time_guest_id: guest.id,
       session_token: v4(),
       ip: props.body.ip ?? props.ip,
@@ -39,34 +39,51 @@ export async function postErpHrmTimeAuthGuestJoin(props: {
       updated_at: new Date(),
       deleted_at: null,
     },
-  });
-  const createdAt = new Date().toISOString();
-  return {
-    id: guest.id,
-    token: {
-      access: jwt.sign(
-        {
-          type: "guest",
-          id: guest.id,
-          session_id: sessionId,
-          created_at: createdAt,
-        },
-        MyGlobal.env.JWT_SECRET_KEY,
-        { expiresIn: "1h", issuer: "autobe" },
-      ),
-      refresh: jwt.sign(
-        {
-          type: "guest",
-          id: guest.id,
-          session_id: sessionId,
-          created_at: createdAt,
-          tokenType: "refresh",
-        },
-        MyGlobal.env.JWT_SECRET_KEY,
-        { expiresIn: "7d", issuer: "autobe" },
-      ),
-      expired_at: accessExpires.toISOString(),
-      refreshable_until: refreshExpires.toISOString(),
+    select: {
+      id: true,
+      created_at: true,
     },
+  });
+  const issuedAt = new Date();
+  const expiredAt = new Date(issuedAt.getTime() + 60 * 60 * 1000);
+  const refreshableUntil = new Date(
+    issuedAt.getTime() + 7 * 24 * 60 * 60 * 1000,
+  );
+  const token: IAuthorizationToken = {
+    access: jwt.sign(
+      {
+        type: "guest",
+        id: guest.id,
+        session_id: session.id,
+        created_at: toISOStringSafe(issuedAt),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "guest",
+        id: guest.id,
+        session_id: session.id,
+        created_at: toISOStringSafe(issuedAt),
+        tokenType: "refresh",
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
+    ),
+    expired_at: toISOStringSafe(expiredAt),
+    refreshable_until: toISOStringSafe(refreshableUntil),
+  };
+  return {
+    access: token.access,
+    refresh: token.refresh,
+    expiredAt: token.expired_at,
+    token,
   };
 }

@@ -1,13 +1,14 @@
-import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallOrderItemProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItemProductSnapshot";
+import { IEcommerceMallProductSnapshotImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshotImage";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallCategoryAtSummaryTransformer } from "./EcommerceMallCategoryAtSummaryTransformer";
+import { EcommerceMallProductSnapshotImageTransformer } from "./EcommerceMallProductSnapshotImageTransformer";
 
 export namespace EcommerceMallOrderItemProductSnapshotTransformer {
   export type Payload =
@@ -18,12 +19,14 @@ export namespace EcommerceMallOrderItemProductSnapshotTransformer {
     return {
       select: {
         id: true,
+        order_item_id: true,
+        category_id: true,
         name: true,
         description: true,
         category_name: true,
         base_price: true,
         created_at: true,
-        category: EcommerceMallCategoryAtSummaryTransformer.select(),
+        images: EcommerceMallProductSnapshotImageTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_order_item_product_snapshotsFindManyArgs;
   }
@@ -32,16 +35,17 @@ export namespace EcommerceMallOrderItemProductSnapshotTransformer {
   ): Promise<IEcommerceMallOrderItemProductSnapshot> {
     return {
       id: input.id,
+      orderItemId: input.order_item_id,
+      categoryId: input.category_id,
       name: input.name,
       description: input.description,
-      category_name: input.category_name,
-      base_price: input.base_price,
-      category: input.category
-        ? await EcommerceMallCategoryAtSummaryTransformer.transform(
-            input.category,
-          )
-        : null,
-      created_at: input.created_at.toISOString(),
+      categoryName: input.category_name,
+      basePrice: input.base_price,
+      createdAt: toISOStringSafe(input.created_at),
+      images: await ArrayUtil.asyncMap(
+        input.images,
+        EcommerceMallProductSnapshotImageTransformer.transform,
+      ),
     };
   }
 }

@@ -12,20 +12,20 @@ export async function guestAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const guest = await MyGlobal.prisma.shopping_mall_guests.findFirst({
+  const session = await MyGlobal.prisma.shopping_mall_guest_sessions.findFirst({
     where: {
-      id: payload.id,
-      deleted_at: null,
-      sessions: {
-        some: {
-          id: payload.session_id,
-          expired_at: { gt: new Date() },
-        },
+      id: payload.session_id,
+      expired_at: { gt: new Date() },
+      guest: {
+        deleted_at: null,
       },
+    },
+    include: {
+      guest: true,
     },
   });
 
-  if (guest === null) {
+  if (session === null) {
     throw new ForbiddenException("You're not enrolled");
   }
 

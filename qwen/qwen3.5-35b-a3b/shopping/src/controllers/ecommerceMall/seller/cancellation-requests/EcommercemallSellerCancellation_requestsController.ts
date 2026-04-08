@@ -1,55 +1,58 @@
-import { TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IEcommerceMallCancellationRequest } from "../../../../api/structures/IEcommerceMallCancellationRequest";
 import { SellerAuth } from "../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../decorators/payload/SellerPayload";
-import { postEcommerceMallSellerCancellationRequestsCancellationRequestIdApprove } from "../../../../providers/postEcommerceMallSellerCancellationRequestsCancellationRequestIdApprove";
-import { postEcommerceMallSellerCancellationRequestsCancellationRequestIdReject } from "../../../../providers/postEcommerceMallSellerCancellationRequestsCancellationRequestIdReject";
+import { getEcommerceMallSellerCancellationRequestsId } from "../../../../providers/getEcommerceMallSellerCancellationRequestsId";
+import { putEcommerceMallSellerCancellationRequestsId } from "../../../../providers/putEcommerceMallSellerCancellationRequestsId";
 
-@Controller(
-  "/ecommerceMall/seller/cancellation-requests/:cancellationRequestId",
-)
+@Controller("/ecommerceMall/seller/cancellation-requests/:id")
 export class EcommercemallSellerCancellation_requestsController {
   /**
-   * Approve a pending cancellation request for an order item.
+   * Retrieve a single cancellation request by its unique identifier.
    *
-   * This operation allows sellers to approve customer cancellation requests for their order items. When a seller approves a cancellation request, the system immediately changes the request status to 'approved', creates an immutable snapshot of the approval action for audit trail purposes, marks the order item as cancelled, and restores the item's stock quantity to available inventory.
+   * Returns the complete cancellation request details including the request status, customer reason, associated order information, and seller assignment. The operation validates that the requesting user has permission to access this cancellation request - customers can only view their own requests, sellers can view requests for their products' order items, and administrators can view any request.
    *
-   * The seller approval is final and cannot be reversed. Once approved, the cancellation request moves from 'pending' to 'approved' state, and the customer will receive a refund for the cancelled item. The seller can optionally provide a response message, though the approval action itself does not require additional input parameters.
-   *
-   * This operation is restricted to the seller who owns the order item's products. Customers cannot approve their own cancellation requests - only the seller can make this decision. The system validates that the requesting seller is the correct seller for the order item before processing the approval.
+   * Cancellation requests are created when customers request to cancel an order item with status 'paid'. The request remains pending until the seller responds with approval or rejection. Once resolved, the request state is immutable and preserved in snapshots.
    *
    * @param connection
-   * @param cancellationRequestId UUID identifier of the cancellation request to approve
+   * @param id Unique identifier of the cancellation request
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Validate cancellation request exists and is not deleted (check deleted_at is NULL)
-   * 2. Validate cancellation request status is 'pending' - only pending requests can be approved
-   * 3. Verify the requesting seller_id matches the cancellation_request's seller_id
-   * 4. Create a snapshot record in ecommerce_mall_cancellation_request_snapshots before any state changes
-   * 5. Update cancellation request status from 'pending' to 'approved'
-   * 6. Update the associated order_item status to 'cancelled'
-   * 7. Create an inventory record to restore stock quantity for the cancelled item
-   * 8. Log the approval action in activity_logs table for audit trail
-   * 9. Return the updated cancellation request with 'approved' status
+   * @x-autobe-specification Retrieve a single cancellation request from ecommerce_mall_cancellation_requests table by UUID.
+   *
+   * 1. Query the cancellation request by id parameter
+   * 2. Validate the record exists and is not soft-deleted (deleted_at IS NULL)
+   * 3. Perform authorization check:
+   *    - If authenticated as customer: verify ecommerce_mall_order_item's order belongs to this customer
+   *    - If authenticated as seller: verify ecommerce_mall_seller_id matches the authenticated seller
+   *    - If authenticated as administrator: no restriction, allow access
+   * 4. Join with ecommerce_mall_order_items to include order item details if needed
+   * 5. Join with ecommerce_mall_orders to include order number and status
+   * 6. Join with ecommerce_mall_sellers to include seller shop name if needed
+   * 7. Return the full cancellation request entity
+   *
+   * Business rules:
+   * - Only return requests where status is 'pending', 'approved', or 'rejected'
+   * - Do not return soft-deleted records
+   * - The order item must have status 'paid' to have a valid cancellation request
+   * - If the order item was already shipped/delivered, cancellation request would not exist
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post("approve")
-  public async approve(
+  @TypedRoute.Get()
+  public async at(
     @SellerAuth()
     seller: SellerPayload,
-    @TypedParam("cancellationRequestId")
-    cancellationRequestId: string & tags.Format<"uuid">,
+    @TypedParam("id")
+    id: string & tags.Format<"uuid">,
   ): Promise<IEcommerceMallCancellationRequest> {
     try {
-      return await postEcommerceMallSellerCancellationRequestsCancellationRequestIdApprove(
-        {
-          seller,
-          cancellationRequestId,
-        },
-      );
+      return await getEcommerceMallSellerCancellationRequestsId({
+        seller,
+        id,
+      });
     } catch (error) {
       console.log(error);
       throw error;
@@ -57,49 +60,75 @@ export class EcommercemallSellerCancellation_requestsController {
   }
 
   /**
-   * Reject a cancellation request submitted by a customer for one of the seller's order items.
+   * Updates an existing cancellation request by approving or rejecting it.
    *
-   * This operation allows sellers to deny a customer's cancellation request for an order item they sold. When a seller rejects a request, the cancellation request status changes to "rejected" and the item continues processing normally with its original paid status.
+   * This operation allows sellers to respond to customer cancellation requests. When approving, the request status changes to "approved" and a snapshot is created for audit purposes. When rejecting, the request status changes to "rejected" and the seller must provide a rejection reason, which is also captured in a snapshot.
    *
-   * The seller must be authenticated and must be the owner of the order item referenced by the cancellation request. The system validates that the seller has permission to respond to this specific request before processing the rejection.
+   * Approved requests trigger automatic processing: the associated order item status changes to "cancelled", stock is restored, and refund is initiated. Rejected requests leave the order item in its current state.
    *
-   * Upon successful rejection, the cancellation request is updated with a rejected status. A snapshot record is automatically created in the audit trail table to preserve the state before rejection, the seller's rejection action, and the timestamp for dispute resolution and historical reference.
+   * Only the seller associated with the cancellation request can perform this operation. The operation creates an immutable snapshot preserving the request state at the time of the decision.
    *
    * @param connection
-   * @param cancellationRequestId ID of the cancellation request to reject
+   * @param id The unique identifier of the cancellation request.
+   * @param body Update payload containing the new status and optional rejection reason.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Retrieve the cancellation request by cancellationRequestId from the database.
+   * @x-autobe-specification Update the ecommerce_mall_cancellation_requests record identified by id.
    *
-   * Validate authentication: Ensure the requesting actor is an authenticated seller.
+   * Business Logic:
+   * 1. Verify the cancellation request exists and is not already approved or rejected.
+   * 2. Verify the requesting seller is the owner of this cancellation request (match ecommerce_mall_seller_id).
+   * 3. Validate status parameter: must be either "approved" or "rejected".
+   * 4. If status is "rejected", validate that seller_rejection_reason is provided and non-empty.
+   * 5. If status is "approved", ensure seller_rejection_reason is null or omitted.
+   * 6. Update the record with new status and seller_rejection_reason (if rejected).
+   * 7. Create an ecommerce_mall_cancellation_request_snapshots record preserving the current state with:
+   *    - approved_at set if status is "approved"
+   *    - rejected_at set if status is "rejected"
+   *    - seller_rejection_reason copied to snapshot
+   * 8. If status is "approved":
+   *    - Update the associated ecommerce_mall_order_item status to "cancelled"
+   *    - Restore stock quantity in the corresponding inventory record
+   *    - Initiate refund processing
+   * 9. Return the updated cancellation request with all fields.
    *
-   * Validate ownership: Fetch the order_item_id from the cancellation request, then verify that the seller_id of the order item matches the authenticated seller's ID. Return 403 Forbidden if not authorized.
+   * Error Handling:
+   * - 404 Not Found: Cancellation request does not exist.
+   * - 403 Forbidden: Seller does not own this cancellation request.
+   * - 400 Bad Request: Invalid status value or missing required rejection reason.
+   * - 409 Conflict: Cancellation request is already approved or rejected.
    *
-   * Validate state: Check that the cancellation request status is "pending". Only pending requests can be rejected. Return 400 Bad Request if status is already "approved" or "rejected".
+   * Edge Cases:
+   * - Multiple simultaneous update attempts on the same request should be handled with optimistic concurrency control.
+   * - Snapshot creation must succeed; if it fails, rollback the status update.
+   * - Stock restoration must be atomic with status update to prevent race conditions.
    *
-   * Update the cancellation request: Set status to "rejected", create an optional seller_response note (NULL if not provided).
+   * Notes:
+   * - This operation does NOT perform soft deletion; soft deletion would use a separate endpoint.
+   * - The snapshot preserves the exact state at decision time for audit purposes.
+   * - Only active (pending) cancellation requests can be updated.
    *
-   * Create snapshot: Insert a new record into ecommerce_mall_cancellation_request_snapshots with actor_type="seller", status_before="pending", status_after="rejected", action="rejected", and current timestamp.
-   *
-   * Return the updated cancellation request object.
-   *
-   * Error handling: Return 404 Not Found if the cancellation request does not exist. Return 403 Forbidden if the seller is not authorized. Return 400 Bad Request if the request is not in pending status.
+   * Implementation Notes:
+   * - Use database transaction to ensure consistency between status update, snapshot creation, and order item update.
+   * - Apply pessimistic or optimistic locking to prevent concurrent updates.
+   * - Emit events for downstream services (refund processing, notification, analytics).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post("reject")
-  public async reject(
+  @TypedRoute.Put()
+  public async update(
     @SellerAuth()
     seller: SellerPayload,
-    @TypedParam("cancellationRequestId")
-    cancellationRequestId: string & tags.Format<"uuid">,
+    @TypedParam("id")
+    id: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IEcommerceMallCancellationRequest.IUpdate,
   ): Promise<IEcommerceMallCancellationRequest> {
     try {
-      return await postEcommerceMallSellerCancellationRequestsCancellationRequestIdReject(
-        {
-          seller,
-          cancellationRequestId,
-        },
-      );
+      return await putEcommerceMallSellerCancellationRequestsId({
+        seller,
+        id,
+        body,
+      });
     } catch (error) {
       console.log(error);
       throw error;

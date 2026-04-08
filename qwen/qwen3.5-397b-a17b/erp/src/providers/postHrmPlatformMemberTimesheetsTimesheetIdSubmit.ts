@@ -25,52 +25,105 @@ export async function postHrmPlatformMemberTimesheetsTimesheetIdSubmit(props: {
   member: MemberPayload;
   timesheetId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformTimesheet> {
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
+  // Step 1: Find the timesheet and verify it exists
+  const timesheet = await MyGlobal.prisma.hrm_platform_timesheets.findUnique({
+    where: {
+      id: props.timesheetId,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      employee_id: true,
+      status: true,
+      week_start_date: true,
+      week_end_date: true,
+      employee: {
+        select: {
+          id: true,
+          member_id: true,
+          status: true,
+        },
+      },
+    },
+  });
+  if (!timesheet) {
+    throw new HttpException("Timesheet not found", 404);
+  }
+  // Step 2: Verify ownership - get member's employee record
+  const memberEmployee = await MyGlobal.prisma.hrm_platform_employees.findFirst(
+    {
       where: {
-        user_id: props.member.id,
+        member_id: props.member.id,
         deleted_at: null,
       },
       select: {
         id: true,
       },
-    });
-  const timesheet =
-    await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
-      where: {
-        id: props.timesheetId,
-      },
-      ...HrmPlatformTimesheetTransformer.select(),
-    });
-  if (timesheet.employee.id !== employee.id) {
-    throw new HttpException("Forbidden", 403);
+    },
+  );
+  if (!memberEmployee) {
+    throw new HttpException("Employee record not found", 404);
   }
+  // Step 3: Check ownership
+  if (timesheet.employee_id !== memberEmployee.id) {
+    throw new HttpException("Forbidden: You do not own this timesheet", 403);
+  }
+  // Step 4: Validate status is draft
   if (timesheet.status !== "draft") {
     throw new HttpException("Timesheet must be in draft status to submit", 400);
   }
+  // Step 5: Check that at least one timelog exists for this timesheet
   const timelogCount = await MyGlobal.prisma.hrm_platform_timelogs.count({
     where: {
-      timesheet_id: props.timesheetId,
+      hrm_platform_timesheet_id: timesheet.id,
       deleted_at: null,
     },
   });
   if (timelogCount === 0) {
-    throw new HttpException("Cannot submit timesheet without timelogs", 400);
+    throw new HttpException(
+      "Timesheet must contain at least one timelog entry",
+      400,
+    );
   }
+  // Step 6: Check for duplicate timesheet in same week (submitted or approved)
+  const duplicateTimesheet =
+    await MyGlobal.prisma.hrm_platform_timesheets.findFirst({
+      where: {
+        employee_id: timesheet.employee_id,
+        week_start_date: timesheet.week_start_date,
+        status: {
+          in: ["submitted", "approved"],
+        },
+        deleted_at: null,
+        id: {
+          not: timesheet.id,
+        },
+      },
+    });
+  if (duplicateTimesheet) {
+    throw new HttpException(
+      "A timesheet for this week is already submitted or approved",
+      409,
+    );
+  }
+  // Step 7: Update timesheet status to submitted
+  const now = toISOStringSafe(new Date());
   await MyGlobal.prisma.hrm_platform_timesheets.update({
     where: {
       id: props.timesheetId,
     },
     data: {
       status: "submitted",
-      submitted_at: new Date(),
-      updated_at: new Date(),
+      submitted_at: now,
+      updated_at: now,
     },
   });
+  // Step 8: Fetch updated timesheet with full relations for response
   const updated =
     await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
       where: {
         id: props.timesheetId,
+        deleted_at: null,
       },
       ...HrmPlatformTimesheetTransformer.select(),
     });

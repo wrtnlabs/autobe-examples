@@ -26,87 +26,123 @@ export async function putHrmPlatformMemberTimelogsTimelogId(props: {
   timelogId: string & tags.Format<"uuid">;
   body: IHrmPlatformTimelog.IUpdate;
 }): Promise<IHrmPlatformTimelog> {
+  // Fetch the timelog with employee relation to verify ownership
   const timelog = await MyGlobal.prisma.hrm_platform_timelogs.findUniqueOrThrow(
     {
       where: { id: props.timelogId, deleted_at: null },
       select: {
         id: true,
-        employee_id: true,
-        timesheet_id: true,
-        timesheet: { select: { status: true } },
+        hrm_platform_employee_id: true,
+        hrm_platform_project_id: true,
+        hrm_platform_timesheet_id: true,
+        employee: {
+          select: {
+            id: true,
+            member_id: true,
+            role_id: true,
+          },
+        },
       },
     },
   );
-  if (
-    timelog.timesheet_id !== null &&
-    timelog.timesheet?.status === "approved"
-  ) {
-    throw new HttpException("Cannot update timelog in approved timesheet", 422);
-  }
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-      where: { user_id: props.member.id, deleted_at: null },
-      select: { id: true, role_id: true, organization_id: true },
-    });
-  const isOwner = timelog.employee_id === employee.id;
-  if (!isOwner) {
-    const hasTimeManagePermission =
-      await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
-        where: {
-          hrm_platform_role_id: employee.role_id,
-          permission: "time:manage",
+  // Fetch employee's role permissions to check for time:manage
+  const rolePermissions =
+    await MyGlobal.prisma.hrm_platform_role_permissions.findMany({
+      where: {
+        hrm_platform_role_id: timelog.employee.role_id,
+        permission: {
+          code: "time:manage",
           deleted_at: null,
         },
+      },
+    });
+  const hasTimeManagePermission = rolePermissions.length > 0;
+  const isOwner = timelog.employee.member_id === props.member.id;
+  // Authorization check: must be owner OR have time:manage permission
+  if (!isOwner && !hasTimeManagePermission) {
+    throw new HttpException(
+      "Forbidden: You can only edit your own timelogs",
+      403,
+    );
+  }
+  // For non-admin users (owner without time:manage), check timesheet lock
+  if (!hasTimeManagePermission && timelog.hrm_platform_timesheet_id !== null) {
+    const timesheet =
+      await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
+        where: { id: timelog.hrm_platform_timesheet_id, deleted_at: null },
+        select: { status: true },
       });
-    if (!hasTimeManagePermission) {
-      throw new HttpException("Forbidden", 403);
+    // Per section 181: approved timesheets lock all timelogs
+    if (timesheet.status === "approved") {
+      throw new HttpException(
+        "Forbidden: Cannot edit timelog in approved timesheet",
+        403,
+      );
     }
   }
-  if (props.body.project_id !== undefined) {
+  // Validate project membership if projectId is being changed
+  if (props.body.projectId !== undefined) {
     const projectMembership =
       await MyGlobal.prisma.hrm_platform_project_members.findFirst({
         where: {
-          hrm_platform_employee_id: employee.id,
-          hrm_platform_project_id: props.body.project_id,
-          deleted_at: null,
+          hrm_platform_employee_id: timelog.employee.id,
+          hrm_platform_project_id: props.body.projectId,
         },
       });
     if (!projectMembership) {
-      throw new HttpException("Employee is not assigned to this project", 400);
-    }
-    if (props.body.task_id !== undefined && props.body.task_id !== null) {
-      const task = await MyGlobal.prisma.hrm_platform_tasks.findUnique({
-        where: { id: props.body.task_id },
-        select: { hrm_platform_project_id: true },
-      });
-      if (!task || task.hrm_platform_project_id !== props.body.project_id) {
-        throw new HttpException(
-          "Task does not belong to the specified project",
-          400,
-        );
-      }
+      throw new HttpException(
+        "Bad Request: Employee is not a member of the specified project",
+        400,
+      );
     }
   }
-  const updated = await MyGlobal.prisma.hrm_platform_timelogs.update({
+  // Validate task belongs to project if taskId is provided
+  if (props.body.taskId !== undefined && props.body.taskId !== null) {
+    const task = await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
+      where: { id: props.body.taskId, deleted_at: null },
+      select: { hrm_platform_project_id: true },
+    });
+    const targetProjectId =
+      props.body.projectId ?? timelog.hrm_platform_project_id;
+    if (task.hrm_platform_project_id !== targetProjectId) {
+      throw new HttpException(
+        "Bad Request: Task must belong to the selected project",
+        400,
+      );
+    }
+  }
+  // Build update data with only provided fields
+  const updateData: Prisma.hrm_platform_timelogsUpdateInput = {
+    ...(props.body.date !== undefined && { date: new Date(props.body.date) }),
+    ...(props.body.durationMinutes !== undefined && {
+      duration_minutes: props.body.durationMinutes,
+    }),
+    ...(props.body.projectId !== undefined && {
+      project: { connect: { id: props.body.projectId } },
+    }),
+    ...(props.body.taskId !== undefined && {
+      task:
+        props.body.taskId === null
+          ? { disconnect: true }
+          : { connect: { id: props.body.taskId } },
+    }),
+    ...(props.body.description !== undefined && {
+      description: props.body.description,
+    }),
+    ...(props.body.billable !== undefined && { billable: props.body.billable }),
+    updated_at: new Date(),
+  };
+  // Perform the update
+  await MyGlobal.prisma.hrm_platform_timelogs.update({
     where: { id: props.timelogId },
-    data: {
-      ...(props.body.date !== undefined && { date: new Date(props.body.date) }),
-      ...(props.body.duration_minutes !== undefined && {
-        duration_minutes: props.body.duration_minutes,
-      }),
-      ...(props.body.project_id !== undefined && {
-        project_id: props.body.project_id,
-      }),
-      ...(props.body.task_id !== undefined && { task_id: props.body.task_id }),
-      ...(props.body.description !== undefined && {
-        description: props.body.description,
-      }),
-      ...(props.body.billable !== undefined && {
-        billable: props.body.billable,
-      }),
-      updated_at: new Date(),
-    },
-    ...HrmPlatformTimelogTransformer.select(),
+    data: updateData,
   });
+  // Fetch and return the updated timelog
+  const updated = await MyGlobal.prisma.hrm_platform_timelogs.findUniqueOrThrow(
+    {
+      where: { id: props.timelogId },
+      ...HrmPlatformTimelogTransformer.select(),
+    },
+  );
   return await HrmPlatformTimelogTransformer.transform(updated);
 }

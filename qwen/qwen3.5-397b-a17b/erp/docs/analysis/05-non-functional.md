@@ -10,128 +10,58 @@ Data ownership, privacy, retention, and recovery policies from a business perspe
 
 Define who owns what data, who can access it, and privacy boundaries between users.
 
-### Data Isolation
+### Organization Data Isolation
 
-All data is strictly isolated per organization. Each organization operates independently with its own employees, projects, departments, contracts, timelogs, timesheets, tasks, and activity logs.
-
-Employees in one organization cannot see data from another organization, even if the same user account belongs to multiple organizations.
-
-Users who belong to multiple organizations only see data for their currently selected organization. When a user switches organizations, the system displays only the data associated with the newly selected organization.
-
-All user actions are scoped to the selected organization context. Creating, editing, or viewing any entity affects only the currently selected organization's data.
-
-When an organization is deleted, all data associated with that organization is permanently deleted, including employees, projects, tasks, timelogs, timesheets, departments, contracts, and activity logs. The user accounts themselves remain but are no longer associated with the deleted organization.
+All data is strictly isolated per organization. Users can only access data belonging to their currently selected organization context. Employees in one organization cannot view, edit, or access any data from another organization. Users who belong to multiple organizations must select an organization context upon login, and all subsequent actions are scoped to that selected organization. Users can switch between organizations without logging out, but data from different organizations remains completely separated. When an organization is deleted, all data associated with that organization including employees, projects, tasks, timelogs, and timesheets is permanently deleted. The organization owner's user account remains but is no longer associated with the deleted organization.
 
 ### Data Ownership
 
-The organization owns all organizational data, including departments, projects, tasks, custom roles, and activity logs. This data exists only within the context of the organization and is deleted when the organization is deleted.
+Each organization owns all data created within its context, including employee records, projects, tasks, timelogs, timesheets, and activity logs. Organization owners have full ownership rights and can delete their organization subject to resolution of all pending timesheets and termination of active employee contracts. Each user owns their personal account credentials and global profile information including display name, avatar image, and phone number. User profiles are shared across all organizations the user belongs to. Each employee record is owned by the organization and references a user account. Timelogs are owned by the employee who created them and are included in timesheets owned by that employee. When a user deletes their account, if they are the sole owner of an organization, they must transfer ownership or delete the organization first. Upon account deletion, the user's employee records in other organizations are marked as deactivated but the historical data remains owned by those organizations.
 
-Each user owns their global profile, which includes display name, avatar image, and phone number. The profile is shared across all organizations the user belongs to and persists independently of any single organization.
+### Access Control
 
-Employees own their personal work data, including their own timelogs, timesheets, and timer entries. This data is scoped to the organization where it was created.
-
-Employee records are owned by the organization. Each employee record links a user account to an organization with a specific role, department, position, and employment type.
-
-Contracts are owned by the organization and associated with specific employee records. Historical contracts remain part of the organization's records even after an employee is deactivated.
-
-When a user deletes their account, their employee records in other organizations are marked as deactivated but the historical data they created (timelogs, timesheets, task history) remains associated with the organization.
+Access to data within an organization is controlled by role-based permissions as defined in the actors and authentication specification. Each employee is assigned exactly one role which determines their access level. The three built-in roles are Owner, Manager, and Employee, with Owner having full access to all features and data within the organization. Custom roles can be created by organization owners with specific permission sets from the available permissions list. Access control is enforced on every action within the organization context. Users can only perform actions permitted by their assigned role. Role assignment can be changed by users with the employee management permission. When an employee is deactivated, they lose access to log time or submit timesheets but their historical data remains accessible to users with appropriate permissions.
 
 ### Privacy Boundaries
 
-User global profiles (display name, avatar image, phone number) are visible across all organizations the user belongs to. Users can edit their own profile, and changes reflect in all organizations.
-
-Within an organization, employee information visibility is determined by organizational roles. Employees with management or administrative roles can view colleague names, roles, departments, positions, and employment types. Regular employees without these roles cannot view detailed colleague information.
-
-Timelogs and timesheets are private to the employee by default. Managers and administrators can view all employees' time tracking data, while regular employees can only view their own timelogs and timesheets.
-
-Task assignments are visible to project members. Non-members cannot see task details unless granted broader project access.
-
-Activity logs record user actions but are only visible to organization administrators. Regular employees cannot view the activity log.
-
-Contract details including pay rate, pay period, and working hours are visible to the employee and users with administrative access. Users without this access cannot view contract information.
-
-Organization reports and dashboards showing aggregated data across all employees are accessible to users with reporting access.
-
-When an employee is deactivated, their historical data including timelogs, timesheets, and contracts is preserved but they cannot access the system to view it. Users with appropriate access levels can still view the deactivated employee's historical records.
+Employees can view their own contracts, timelogs, timesheets, and assigned tasks. Employees cannot view other employees' data unless they have been granted explicit permissions through their role. Users with the employee view permission can view the employee list and employee details including department, position, and employment type. Users with the time view all permission can view all employees' timelogs and timesheets. Users with the report view permission can view aggregated organization reports but individual employee data is only shown according to the report type and filters applied. Deactivated employees' historical data including timelogs and timesheets is preserved and accessible to users with appropriate permissions. Task history entries record who made status changes and are visible to users with access to the task. Activity log entries are visible only to users with the organization management permission. Personal user profile information including display name, avatar image, and phone number is visible across organizations where the user is a member.
 
 ## Data Retention and Recovery
 
 Define what happens to deleted data, how long it is retained, and how users can recover it.
 
-### Deactivated Employee Data Retention
+### Soft-Delete Behavior
 
-When an employee is deactivated, all historical timelogs and timesheets associated with that employee are preserved.
-Deactivated employee records remain in the system and can be reactivated.
-Reactivated employees regain access to their historical timelogs and timesheets.
-Deactivated employees cannot create new timelogs or submit new timesheets.
-The employee's department and position information is retained upon deactivation.
-Contract history for deactivated employees remains accessible to users with employee:view permission.
+When an employee is deactivated, their employee record is marked as deactivated rather than removed from the system. Deactivated employees cannot log time or submit timesheets, but their historical data including timelogs and timesheets is preserved.
 
-### Immutable Contract Records
+Deactivated employees can be reactivated, restoring their ability to log time and submit timesheets while preserving all historical data.
 
-Past contracts cannot be edited once a new contract becomes active.
-Contract history serves as an immutable record of employment terms.
-Each contract's start date, end date, pay rate, pay period, and working hours are preserved.
-Users with employee:view permission can view all historical contracts for any employee.
-Employees can view their own contract history.
-When a new contract is created, the previous active contract's end date is automatically set to the day before the new contract starts.
+When a user deletes their account, their employee records in other organizations are marked as deactivated rather than removed. If the user is the sole owner of an organization, they must transfer ownership or delete the organization before deleting their account.
 
-### Organization Deletion and Permanent Data Removal
+Department deletion sets employees' department reference to null rather than removing the department record from historical data.
 
-When an organization is deleted, all employees, projects, tasks, timelogs, and timesheets associated with that organization are permanently deleted.
-Organization deletion is irreversible; deleted data cannot be recovered.
-Before an organization can be deleted, all pending timesheets must be resolved (approved or rejected).
-Before an organization can be deleted, there must be no active employee contracts.
-The organization owner's user account remains but is no longer associated with any organization.
-Custom roles, departments, and activity logs for the organization are permanently deleted.
+### Data Retention
 
-### User Account Deletion and Data Handling
+Historical data for deactivated employees is preserved, including all timelogs, timesheets, and contract records. Past contracts are retained as immutable historical records even when new contracts are created.
 
-When a user deletes their account, their employee records in other organizations are marked as deactivated.
-If the user is the sole owner of an organization, they must transfer ownership or delete the organization before deleting their account.
-User profile information (display name, avatar, phone number) is permanently deleted upon account deletion.
-Historical timelogs and timesheets created by the user remain associated with their deactivated employee records.
-Activity log entries recording actions performed by the user are preserved for audit purposes.
-Pending invitations sent to the user's email are cancelled upon account deletion.
+Task history entries recording status changes are retained. Activity log entries recording significant actions such as employee invitations, deactivations, contract changes, project changes, task status changes, timesheet actions, and role changes are retained.
 
-# Storage Capacity
+When an organization is deleted, all associated data including employees, projects, tasks, timelogs, and timesheets are permanently deleted with no retention.
 
-Storage capacity planning and CDN requirements.
+### Data Recovery
 
-## Storage Capacity Requirements
+Deactivated employees can be reactivated. Reactivation restores the employee's ability to log time and submit timesheets while preserving all historical data.
 
-Define storage requirements and capacity planning for file storage.
+Rejected timesheets return to draft status, allowing employees to modify and resubmit them. This provides recovery from rejection without data loss.
 
-### Organization and User Images
+No other data recovery mechanisms are provided. Once an organization is deleted, all associated data is permanently lost and cannot be recovered.
 
-Organizations have a logo image attribute that can be uploaded during organization setup or when editing organization settings.
+### Permanent Deletion
 
-Users have an avatar image attribute for their global profile.
+Organization deletion permanently deletes all associated data including all employees, projects, tasks, timelogs, and timesheets. The organization owner's user account remains but is no longer associated with any organization.
 
-Each organization stores one logo image. Each user account stores one avatar image.
+Organization owners can only delete their organization if all pending timesheets are resolved (approved or rejected) and there are no active employee contracts.
 
-Images are scoped to the organization context. Users can only access logo images for organizations they belong to. User avatar images are shared across all organizations a user belongs to.
+Projects can be permanently deleted only if they have no timelogs associated with them. Archived or completed projects preserve existing timelogs and cannot receive new timelogs.
 
-# Real-time Communication
-
-WebSocket/SSE connection policies and performance requirements.
-
-## WebSocket Security and Performance
-
-Define connection limits, heartbeat intervals, reconnection policies, and security requirements for real-time communication.
-
-### Secure Communication
-
-All data transmitted between the user's device and the platform must be protected to maintain organization data isolation. Communication channels must ensure that organization-scoped data cannot be accessed by unauthorized users. The platform must enforce organization context on all requests to prevent cross-organization data leakage. Secure communication must be maintained for all user actions including time tracking, timesheet submission, and data access.
-
-### Session Management
-
-When users switch between organizations, their session must maintain proper organization scoping without requiring re-authentication. All actions performed after switching organizations must be scoped to the newly selected organization. User sessions must be invalidated when users log out or delete their accounts. Session data must not expose information from organizations the user does not belong to.
-
-### Connection Integrity
-
-The platform must maintain data integrity during all user interactions. If a connection is interrupted during a time tracking session, the system must preserve any recorded timer data. Incomplete operations due to connection issues must not corrupt existing data. Users must be notified if their action cannot be completed due to connection problems.
-
-### Timer Session Handling
-
-Employees using the live timer feature must have their timer state preserved during their session. If an employee's connection is interrupted while a timer is running, the timer continues to track time locally until explicitly stopped. When the employee reconnects and stops the timer, the system must calculate the duration correctly based on the original start time. Timer data must be synchronized with the server when the connection is restored.
+Timelogs can be permanently deleted by employees only if the timelog is not part of any submitted or approved timesheet.

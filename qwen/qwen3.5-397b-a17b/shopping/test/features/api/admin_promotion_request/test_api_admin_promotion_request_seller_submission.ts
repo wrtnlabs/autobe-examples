@@ -2,9 +2,8 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IShoppingMallAdminPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdminPromotionRequest";
-import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
-import type { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
 import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import type { IShoppingMallSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSuperAdmin";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -18,23 +17,23 @@ import { generate_random_shopping_mall_seller_admin_promotion_requests_create } 
 import { prepare_random_shopping_mall_admin_promotion_request } from "../../../prepare/prepare_random_shopping_mall_admin_promotion_request";
 
 /**
- * Test seller administrator promotion request submission.
+ * Test seller administrator promotion request submission workflow.
  *
- * This test verifies that an authenticated seller can successfully submit
- * an administrator promotion request with a valid reason. The request should
- * be created with 'pending' status and proper seller information.
+ * Validates the complete promotion request submission flow for sellers seeking administrator privileges. The test ensures that authenticated sellers can successfully submit promotion requests with valid reason text, and that the system correctly processes the request with appropriate status and metadata.
  *
- * Test Steps:
- * 1. Register a new seller account using authorize_seller_join utility
- * 2. Create seller-specific connection with authentication token
- * 3. Submit administrator promotion request using generate_random_shopping_mall_seller_admin_promotion_requests_create utility
- * 4. Validate response contains correct actor_type, status, reason, and submitter information
+ * The test verifies that the promotion request is created with 'pending' status, correct actor_type determined from the authenticated seller account, and that all required fields are properly populated including timestamps and UUID identifier.
+ *
+ * 1. Seller registers and authenticates via join operation.
+ * 2. Seller submits administrator promotion request with reason text.
+ * 3. Validates promotion request entity contains correct status, actor_type, reason, and null fields for unreviewed request.
+ * 4. Validates deleted_at is null indicating active record.
  */
 export async function test_api_admin_promotion_request_seller_submission(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Register seller account and get authentication
-  const sellerAuth = await authorize_seller_join(connection, {
+  // 1. Seller registration and authentication
+  const sellerConnection: api.IConnection = { host: connection.host };
+  const sellerAuth = await authorize_seller_join(sellerConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
@@ -44,46 +43,35 @@ export async function test_api_admin_promotion_request_seller_submission(
     } satisfies IShoppingMallSeller.IJoin,
   });
   typia.assert(sellerAuth);
-  // 2. Create seller-specific connection with authentication token
-  const sellerConnection: api.IConnection = {
-    host: connection.host,
-    headers: {
-      Authorization: `Bearer ${sellerAuth.token.access}`,
-    },
-  };
-  // 3. Submit administrator promotion request with custom reason
-  const reason = RandomGenerator.paragraph({ sentences: 3 });
+  // 2. Submit administrator promotion request
+  const reasonText = RandomGenerator.paragraph({ sentences: 3 });
   const promotionRequest =
     await generate_random_shopping_mall_seller_admin_promotion_requests_create(
       sellerConnection,
       {
         body: {
-          reason: reason,
+          reason: reasonText,
         } satisfies IShoppingMallAdminPromotionRequest.ICreate,
       },
     );
   typia.assert(promotionRequest);
-  // 4. Validate promotion request response - business logic only (typia.assert validates types)
+  // 3. Validate promotion request entity
+  TestValidator.equals("status is pending", promotionRequest.status, "pending");
   TestValidator.equals(
     "actor_type is seller",
     promotionRequest.actor_type,
     "seller",
   );
-  TestValidator.equals("status is pending", promotionRequest.status, "pending");
-  TestValidator.equals("reason matches input", promotionRequest.reason, reason);
-  // 5. Validate submitter information is seller type with approval_status
   TestValidator.equals(
-    "submitter id matches seller",
-    promotionRequest.submitter.id,
-    sellerAuth.id,
+    "reason matches input",
+    promotionRequest.reason,
+    reasonText,
   );
   TestValidator.equals(
-    "submitter email matches seller",
-    promotionRequest.submitter.email,
-    sellerAuth.token.refresh.split("@")[0] || "",
+    "rejection_note is null",
+    promotionRequest.rejection_note,
+    null,
   );
-  TestValidator.predicate(
-    "submitter has approval_status field",
-    "approval_status" in promotionRequest.submitter,
-  );
+  TestValidator.equals("reviewer is null", promotionRequest.reviewer, null);
+  TestValidator.equals("deleted_at is null", promotionRequest.deleted_at, null);
 }

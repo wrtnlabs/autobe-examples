@@ -16,55 +16,54 @@ export async function postEcommerceMallAuthCustomerJoin(props: {
   ip: string;
   body: IEcommerceMallCustomer.IJoin;
 }): Promise<IEcommerceMallCustomer.IAuthorized> {
-  // Check email uniqueness - accounts that are NOT soft-deleted
-  const existing = await MyGlobal.prisma.ecommerce_mall_customers.count({
-    where: {
-      email: props.body.email,
-      deleted_at: null,
-    },
+  // Check email uniqueness
+  const existing = await MyGlobal.prisma.ecommerce_mall_customers.findFirst({
+    where: { email: props.body.email },
   });
-  if (existing > 0) {
+  if (existing) {
     throw new HttpException("Email already registered", 409);
   }
-  const customerId = v4() as string & tags.Format<"uuid">;
-  const sessionId = v4() as string & tags.Format<"uuid">;
-  const nowDate = new Date();
-  const nowIso = nowDate.toISOString() as string & tags.Format<"date-time">;
   // Hash password
   const passwordHash = await PasswordUtil.hash(props.body.password);
-  // Create customer record
-  await MyGlobal.prisma.ecommerce_mall_customers.create({
+  // Create customer
+  const customer = await MyGlobal.prisma.ecommerce_mall_customers.create({
     data: {
-      id: customerId,
+      id: v4(),
       email: props.body.email,
       password_hash: passwordHash,
-      created_at: nowDate,
-      updated_at: nowDate,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
     },
   });
+  // Calculate token and session expiration
+  const currentTime = Date.now();
+  const accessExpiresMs = 60 * 60 * 1000; // 1 hour
+  const refreshExpiresMs = 7 * 24 * 60 * 60 * 1000; // 7 days
+  const accessExpires = new Date(currentTime + accessExpiresMs);
+  const refreshExpires = new Date(currentTime + refreshExpiresMs);
   // Create session
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  await MyGlobal.prisma.ecommerce_mall_customer_sessions.create({
-    data: {
-      id: sessionId,
-      ecommerce_mall_customer_id: customerId,
-      ip: props.ip,
-      href: "",
-      referrer: "",
-      created_at: nowDate,
-      expired_at: accessExpires,
+  const session = await MyGlobal.prisma.ecommerce_mall_customer_sessions.create(
+    {
+      data: {
+        id: v4(),
+        ecommerce_mall_customer_id: customer.id,
+        ip: props.body.ip ?? props.ip,
+        href: props.body.href satisfies string as string,
+        referrer: props.body.referrer satisfies string as string,
+        created_at: new Date(),
+        expired_at: accessExpires,
+      },
     },
-  });
+  );
   // Generate JWT tokens
   const token: IAuthorizationToken = {
     access: jwt.sign(
       {
         type: "customer",
-        id: customerId,
-        session_id: sessionId,
-        created_at: nowIso,
+        id: customer.id,
+        session_id: session.id,
+        created_at: toISOStringSafe(new Date()),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
@@ -72,37 +71,35 @@ export async function postEcommerceMallAuthCustomerJoin(props: {
     refresh: jwt.sign(
       {
         type: "customer",
-        id: customerId,
-        session_id: sessionId,
+        id: customer.id,
+        session_id: session.id,
         tokenType: "refresh",
-        created_at: nowIso,
+        created_at: toISOStringSafe(new Date()),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpires.toISOString() as string &
-      tags.Format<"date-time">,
-    refreshable_until: refreshExpires.toISOString() as string &
-      tags.Format<"date-time">,
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
   };
-  // Construct IAuthorized response
+  // Build summary for customer field
+  const customerSummary: IEcommerceMallCustomer.ISummary = {};
+  // Default empty values for optional profile/address fields
   return {
-    id: customerId,
-    email: props.body.email,
-    createdAt: nowIso,
-    updatedAt: nowIso,
-    deletedAt: null,
-    customerId: customerId,
-    displayName: null,
-    phoneNumber: null,
-    profile: {
-      id: customerId,
-      customerId: customerId,
-      displayName: null,
-      phoneNumber: null,
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    } satisfies IEcommerceMallCustomer,
+    id: customer.id satisfies string as string & tags.Format<"uuid">,
+    recipientName: "",
+    phoneNumber: "",
+    streetAddress: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "",
+    isDefault: false,
+    createdAt: toISOStringSafe(customer.created_at),
+    updatedAt: toISOStringSafe(customer.updated_at),
+    email: customer.email,
+    displayName: "",
+    customer: customerSummary,
     token,
   } satisfies IEcommerceMallCustomer.IAuthorized;
 }

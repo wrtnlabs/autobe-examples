@@ -5,42 +5,43 @@ import typia, { tags } from "typia";
 import { IMallPlatformCancellationRequest } from "../../../../../api/structures/IMallPlatformCancellationRequest";
 import { AdministratorAuth } from "../../../../../decorators/AdministratorAuth";
 import { AdministratorPayload } from "../../../../../decorators/payload/AdministratorPayload";
-import { deleteMallPlatformAdministratorOrderItemsOrderItemIdCancellationRequestsCancellationRequestId } from "../../../../../providers/deleteMallPlatformAdministratorOrderItemsOrderItemIdCancellationRequestsCancellationRequestId";
 import { getMallPlatformAdministratorOrderItemsOrderItemIdCancellationRequestsCancellationRequestId } from "../../../../../providers/getMallPlatformAdministratorOrderItemsOrderItemIdCancellationRequestsCancellationRequestId";
 import { patchMallPlatformAdministratorOrderItemsOrderItemIdCancellationRequests } from "../../../../../providers/patchMallPlatformAdministratorOrderItemsOrderItemIdCancellationRequests";
-import { putMallPlatformAdministratorOrderItemsOrderItemIdCancellationRequestsCancellationRequestId } from "../../../../../providers/putMallPlatformAdministratorOrderItemsOrderItemIdCancellationRequestsCancellationRequestId";
+import { postMallPlatformAdministratorOrderItemsOrderItemIdCancellationRequestsCancellationRequestIdReject } from "../../../../../providers/postMallPlatformAdministratorOrderItemsOrderItemIdCancellationRequestsCancellationRequestIdReject";
 
 @Controller(
   "/mallPlatform/administrator/orderItems/:orderItemId/cancellationRequests",
 )
 export class MallplatformAdministratorOrderitemsCancellationrequestsController {
   /**
-   * Submit or update the cancellation request for one purchased order item.
+   * Submits a cancellation request for one paid order item that has not been shipped.
    *
-   * This operation lets the customer explain why a single paid, unshipped order item should be cancelled. Cancellation is item-level, so the request applies only to the specified order item and does not affect other items in the same order. The seller responsible for that item reviews the request and decides whether to approve or reject it.
+   * This operation applies to exactly one order item identified by the path parameter. The customer submits a cancellation reason, and the system creates a cancellation request record that the seller of that item can later approve or reject. The request is item-scoped, so other items in the same order are not affected.
    *
-   * The request is only valid while the order item is still in paid status and has not yet been shipped. If the item is no longer eligible, the service must reject the request without changing the item, the order, or unrelated cancellation requests. When the request is accepted, the stored cancellation state should be available for later seller review and dispute handling.
+   * The server must verify that the authenticated customer owns the order containing the target item, that the item is in paid status, and that the item has not been shipped. If any of those conditions fail, the request must be rejected without changing the order item, inventory, shipment data, or other related records. The cancellation itself is not applied here; only the request is created.
+   *
+   * When the request is reviewed later, the system must preserve the request state change in a snapshot for dispute review and history reconstruction. All failures must be atomic so the existing purchase history remains unchanged.
    *
    * @param connection
-   * @param orderItemId Identifier of the order item whose cancellation request is being submitted, scoped to the authenticated customer’s own purchase.
-   * @param body Cancellation request details provided by the customer for the specified order item.
+   * @param orderItemId The order item identifier that scopes the cancellation request to a single purchased item.
+   * @param body The customer-provided reason for cancelling the specified order item.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Load the target order item by orderItemId and verify that it belongs to the authenticated customer, is in paid status, and has not been shipped. Reject the operation if the item does not exist, is not owned by the caller, or is no longer eligible for cancellation.
+   * @x-autobe-specification Look up the target order item by orderItemId and confirm that it belongs to the authenticated customer. Enforce the item-level cancellation rule: the item must be paid and must not have been shipped. Reject requests for cancelled, refunded, delivered, or otherwise ineligible items.
    *
-   * If a cancellation request already exists for the order item, update its reason and keep it tied to the same item. If no request exists yet, create the request record for that item. Persist the request using the cancellation request table and ensure the item-scoped relationship is preserved exactly one-to-one at the business level.
+   * Create a cancellation request row linked to that order item, storing the submitted reason and the initial review state defined by the domain model. Do not modify the order item status at submission time. Do not create inventory movement records, do not touch shipment records, and do not alter order totals until an approval decision is made.
    *
-   * Do not change the order item status here; this endpoint only submits the customer’s cancellation request. The seller’s approval or rejection flow is handled elsewhere. If validation fails, return a business error and leave the existing order item and cancellation request state unchanged.
+   * Use a transaction to guarantee that validation and insertion succeed or fail together. If a duplicate or conflicting cancellation request already exists for the item, return a business error and leave all data unchanged. Return the created request entity so the client can display the pending review state immediately.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
-  public async patchByOrderitemid(
+  public async create(
     @AdministratorAuth()
     administrator: AdministratorPayload,
     @TypedParam("orderItemId")
     orderItemId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IMallPlatformCancellationRequest.IUpdate,
+    body: IMallPlatformCancellationRequest.ICreate,
   ): Promise<IMallPlatformCancellationRequest> {
     try {
       return await patchMallPlatformAdministratorOrderItemsOrderItemIdCancellationRequests(
@@ -57,23 +58,20 @@ export class MallplatformAdministratorOrderitemsCancellationrequestsController {
   }
 
   /**
-   * Retrieve a cancellation request for a specific order item.
+   * Retrieve the cancellation request that belongs to the specified order item.
    *
-   * This operation returns the current cancellation request record that belongs to the specified order item. It is used to inspect the request reason, review state, and decision details for an item-level cancellation workflow where a paid but unshipped order item may be approved or rejected by the seller.
+   * This operation returns the full cancellation request record for viewing and dispute review. The request is scoped to a single purchased order item, and the caller can inspect the request reason, current review state, and any recorded reviewer outcome for that specific item.
    *
-   * Because cancellation requests are scoped to a single order item, the request must be resolved within the parent order item context. The caller must be allowed to view both the order item and its cancellation request. If the order item or cancellation request does not exist, or if the caller is not authorized to view it, the service must return a business error without exposing other order data.
+   * The endpoint must only return a request that belongs to the provided order item. If the order item does not exist, the cancellation request does not exist, or the request is attached to a different item, the service must reject the call with a normal not-found or business mismatch error. Access should be restricted according to platform permissions so that the owning customer, the item’s seller, or an administrator can read the record.
    *
    * @param connection
-   * @param orderItemId The identifier of the order item that owns the cancellation request.
+   * @param orderItemId The identifier of the order item that scopes the cancellation request.
    * @param cancellationRequestId The identifier of the cancellation request within the specified order item scope.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Load the cancellation request by matching both the parent order item ID and the cancellation request ID.
-   * Verify that the cancellation request belongs to the specified order item before returning it; do not allow cross-item access.
+   * @x-autobe-specification Load the cancellation request by cancellationRequestId and verify that its orderItemId matches the provided orderItemId. Return the matching cancellation request as the full entity.
    *
-   * Enforce authorization using the platform’s role and ownership rules: the customer who owns the order item, the seller responsible for the item, and administrators may view the request when permitted by business rules. If the parent order item is inaccessible, deleted, or does not match the request, return a not-found or forbidden business error as appropriate.
-   *
-   * Return the full cancellation request entity including its current status and reviewer outcome metadata. Do not mutate data. This endpoint is read-only and must not create snapshots or change request state.
+   * If either record is missing, return not found. If the request belongs to another order item, return a relationship mismatch error. Enforce authorization so only the owning customer, the item’s seller, or an administrator can access the record. This is a read-only operation: do not modify status, do not create snapshots, and do not touch inventory or order state. Use the cancellation request table as the source of current state.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":cancellationRequestId")
@@ -100,29 +98,29 @@ export class MallplatformAdministratorOrderitemsCancellationrequestsController {
   }
 
   /**
-   * Update a cancellation request for a specific order item.
+   * Reject a cancellation request for a specific order item.
    *
-   * This operation is used when the seller of the order item, or an authorized administrator, reviews an existing cancellation request and records the decision and outcome details. Cancellation is handled at the order-item level, so the request remains scoped to one purchased item and does not affect the rest of the order unless the business rules later cause the entire order to become fully cancelled.
+   * This operation is used by the seller who owns the order item, and by an administrator when platform permissions allow intervention, to record a rejection decision on a pending cancellation request. The request is always scoped to one order item, so the system must verify that the cancellation request belongs to the specified order item before applying any change.
    *
-   * The request can only be updated while the underlying order item is still eligible for cancellation review. If the item is no longer in the correct paid and unshipped state, the request must be rejected with a business validation error. When the request is successfully updated, the system must preserve the prior state in a snapshot so the review history remains available for dispute resolution and auditing.
+   * When the rejection is accepted, the system updates the cancellation request status, stores the reviewer decision as part of the request history, and creates an immutable snapshot of the request state for dispute review. If the request is already closed or otherwise finalized, the system must preserve the existing state and reject the attempt to overwrite it.
+   *
+   * Typical failures include a missing or mismatched order item relationship, unauthorized access, an invalid request state, or a request that no longer belongs to the specified item.
    *
    * @param connection
-   * @param orderItemId The order item identifier that scopes the cancellation request.
-   * @param cancellationRequestId The cancellation request identifier within the specified order item scope.
-   * @param body The cancellation request review update payload used to record the seller's decision and any related review details.
+   * @param orderItemId The identifier of the order item that owns the cancellation request.
+   * @param cancellationRequestId The identifier of the cancellation request to reject within the specified order item.
+   * @param body Rejection details for the cancellation request, including the reason or reviewer note used to explain the decision.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Load the cancellation request by both orderItemId and cancellationRequestId to ensure it belongs to the specified order item.
+   * @x-autobe-specification Load the order item and cancellation request with a scoped query that confirms the request belongs to the specified item. Enforce ownership so only the seller of the item or an authorized administrator can perform the rejection.
    *
-   * Validate that the authenticated actor is the seller of the order item or an administrator with permission to review cancellation requests. Confirm that the target order item exists and that the cancellation request exists, is linked to that order item, and is in an updatable state.
+   * Reject the operation if the cancellation request is not in a pending review state or if it has already reached a final outcome. On success, update the request status to rejected, persist the reviewer decision details, and insert a cancellation-request snapshot capturing the prior state and the newly rejected state. Do not change the order item status, payment state, or inventory on rejection.
    *
-   * Apply the update using a transaction. If the review approves the request, transition the cancellation request to approved and cancel the order item, then create the necessary inventory restoration record and any payment/refund side effects required by the business flow. If the review rejects the request, mark the request as rejected and leave the order item unchanged. In both cases, create an immutable cancellation-request snapshot capturing the previous and new request state, reviewer outcome, reason, and timestamps relevant to the decision.
-   *
-   * Reject the operation when the order item is not paid or has already been shipped, when the request does not belong to the specified order item, when the request is already closed, or when the caller lacks permission. Ensure no partial state changes occur if any validation fails. Return the updated cancellation request after the transaction commits.
+   * Execute the status update and snapshot insert in a single transaction. If the relationship check fails, return a not found or conflict-style error rather than partially updating the record. Return the updated cancellation request entity after commit.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":cancellationRequestId")
-  public async putByOrderitemidAndCancellationrequestid(
+  @TypedRoute.Post(":cancellationRequestId/reject")
+  public async reject(
     @AdministratorAuth()
     administrator: AdministratorPayload,
     @TypedParam("orderItemId")
@@ -130,57 +128,15 @@ export class MallplatformAdministratorOrderitemsCancellationrequestsController {
     @TypedParam("cancellationRequestId")
     cancellationRequestId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IMallPlatformCancellationRequest.IUpdate,
+    body: IMallPlatformCancellationRequest.IReject,
   ): Promise<IMallPlatformCancellationRequest> {
     try {
-      return await putMallPlatformAdministratorOrderItemsOrderItemIdCancellationRequestsCancellationRequestId(
+      return await postMallPlatformAdministratorOrderItemsOrderItemIdCancellationRequestsCancellationRequestIdReject(
         {
           administrator,
           orderItemId,
           cancellationRequestId,
           body,
-        },
-      );
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Permanently removes a cancellation request that belongs to a specific order item.
-   *
-   * Cancellation requests are item-scoped records used in the paid-but-not-yet-shipped cancellation flow. This operation applies only to the request identified under the given order item, so the parent order item context is required to ensure the request is resolved within the correct purchase line.
-   *
-   * The deleted request must no longer participate in the cancellation review workflow. If the request has already been processed or no longer belongs to the specified order item, the service must reject the operation with an appropriate not-found or conflict-style error. Related audit or snapshot records, if they exist, must remain preserved for dispute review and historical reconstruction.
-   *
-   * @param connection
-   * @param orderItemId Identifier of the order item that owns the cancellation request.
-   * @param cancellationRequestId Identifier of the cancellation request within the scope of the specified order item.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Load the cancellation request by both orderItemId and cancellationRequestId, ensuring the request is scoped to the specified order item.
-   * Verify that the current caller is authorized to delete the request according to the platform's ownership and role rules.
-   * If the request does not exist under that order item, return not found.
-   * If the request is already processed, locked by a review workflow, or otherwise not deletable by business rules, return a conflict or validation error consistent with the service conventions.
-   * Delete only the cancellation request record; do not modify the order item itself and do not alter preserved snapshot history. Any related snapshots or historical records must remain intact.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Delete(":cancellationRequestId")
-  public async erase(
-    @AdministratorAuth()
-    administrator: AdministratorPayload,
-    @TypedParam("orderItemId")
-    orderItemId: string & tags.Format<"uuid">,
-    @TypedParam("cancellationRequestId")
-    cancellationRequestId: string & tags.Format<"uuid">,
-  ): Promise<void> {
-    try {
-      return await deleteMallPlatformAdministratorOrderItemsOrderItemIdCancellationRequestsCancellationRequestId(
-        {
-          administrator,
-          orderItemId,
-          cancellationRequestId,
         },
       );
     } catch (error) {

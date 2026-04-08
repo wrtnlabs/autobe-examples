@@ -2,36 +2,45 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
+import { IErpHrmTimePermission } from "../../../../../api/structures/IErpHrmTimePermission";
 import { IErpHrmTimeRole } from "../../../../../api/structures/IErpHrmTimeRole";
 import { IErpHrmTimeRolePermission } from "../../../../../api/structures/IErpHrmTimeRolePermission";
 import { MemberAuth } from "../../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
 import { deleteErpHrmTimeMemberRolesRoleIdPermissionsRolePermissionId } from "../../../../../providers/deleteErpHrmTimeMemberRolesRoleIdPermissionsRolePermissionId";
+import { getErpHrmTimeMemberRolesPermissionsCatalog } from "../../../../../providers/getErpHrmTimeMemberRolesPermissionsCatalog";
+import { getErpHrmTimeMemberRolesRoleIdPermissionsRolePermissionId } from "../../../../../providers/getErpHrmTimeMemberRolesRoleIdPermissionsRolePermissionId";
 import { patchErpHrmTimeMemberRolesRoleIdPermissions } from "../../../../../providers/patchErpHrmTimeMemberRolesRoleIdPermissions";
 import { postErpHrmTimeMemberRolesRoleIdPermissions } from "../../../../../providers/postErpHrmTimeMemberRolesRoleIdPermissions";
 
-@Controller("/erpHrmTime/member/roles/:roleId/permissions")
+@Controller("/erpHrmTime/member/roles")
 export class ErphrmtimeMemberRolesPermissionsController {
   /**
-   * Assign an approved permission to a role within the selected organization.
+   * Assign one or more approved permissions to an organization role.
    *
-   * This operation adds one permission to the specified role and is intended for organization role administration. Roles are organization-scoped, and the permission being attached must come from the platform's approved permission catalog. Built-in roles and custom roles share the same assignment model, but the caller must still respect organization ownership and access-control rules.
+   * This operation adds permission entries to the selected role so the role can represent the correct access responsibility within the organization. It is intended for custom role administration and uses the role's organization scope to ensure permission changes stay within the same tenant.
    *
-   * The created association is stored through the role-permission relation, which links a role record to an approved permission record. Duplicate assignments are rejected, and permissions outside the approved list are not allowed. If the role does not belong to the current organization, or if the caller lacks permission to manage roles, the request must fail with an authorization or validation error.
+   * The role must belong to the currently selected organization, and the permission set must come from the approved permission catalog. Built-in roles are protected by business rules and must not be modified through this endpoint. If a requested permission is already assigned, the operation should ignore the duplicate or reject it according to service policy, but it must not create duplicate role-permission rows.
+   *
+   * Permission assignment errors should be reported clearly when the role does not exist, belongs to another organization, is not editable, or when any requested permission key is outside the approved list.
    *
    * @param connection
-   * @param roleId Role identifier within the current organization.
-   * @param body Permission assignment payload containing one approved permission to attach to the role.
+   * @param roleId The role identifier within the current organization context.
+   * @param body Permission keys to assign to the selected role. Each key must exist in the approved permission catalog.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Resolve the role by roleId and verify it belongs to the current organization context. Require permission-management authorization according to the selected organization's access rules, typically owner-level role administration.
+   * @x-autobe-specification Load the target role by id and verify it belongs to the active organization context. Reject the request if the role is missing, deleted, or not organization-scoped to the current tenant.
    *
-   * Validate that the requested permission exists in the approved permission catalog and is not deleted. Reject the request if the permission key is not one of the approved organization permissions. Resolve the permission by key or identifier as defined by the create DTO, then insert a row into erp_hrm_time_role_permissions with the role id and permission id.
+   * Validate that the role is editable: built-in roles must not be modified. If the role is protected, return a forbidden or conflict-level domain error according to the service convention.
    *
-   * Prevent duplicates by checking the unique pair (erp_hrm_time_role_id, erp_hrm_time_permission_id). If the pair already exists, return a conflict-style validation failure. Use a transaction so concurrent requests cannot create duplicate role-permission rows. Return the newly created relation with its linked role and permission references if the API contract expects a full object.
+   * Resolve each requested permission key against erp_hrm_time_permissions.key. Only approved catalog entries are allowed. Reject unknown keys before inserting any join rows.
+   *
+   * Insert rows into erp_hrm_time_role_permissions for each requested permission that is not already linked to the role. Use a transaction so the permission set is applied atomically. If duplicates are provided in the request, de-duplicate them in memory before insertion.
+   *
+   * Return the updated role representation including its assigned permissions. Preserve existing role metadata. Do not modify the role record itself; only create missing role-permission associations.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post()
+  @TypedRoute.Post(":roleId/permissions")
   public async create(
     @MemberAuth()
     member: MemberPayload,
@@ -39,7 +48,7 @@ export class ErphrmtimeMemberRolesPermissionsController {
     roleId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IErpHrmTimeRolePermission.ICreate,
-  ): Promise<IErpHrmTimeRolePermission> {
+  ): Promise<IErpHrmTimeRole> {
     try {
       return await postErpHrmTimeMemberRolesRoleIdPermissions({
         member,
@@ -53,36 +62,34 @@ export class ErphrmtimeMemberRolesPermissionsController {
   }
 
   /**
-   * Update the permission set assigned to a role within the currently selected organization.
+   * Update the permission set assigned to an organization role.
    *
-   * This operation lets an organization owner or another authorized member with role-management capability change what a role can do. It applies to organization-scoped roles and enforces the approved permission catalog so that only valid business permissions can be attached to a role.
+   * This operation allows organization owners and other authorized members to change which approved permissions are attached to a role within the currently selected organization. The role is evaluated in the context of its parent organization, and the change applies only within that tenant boundary.
    *
-   * Built-in roles remain governed by the organization’s access model, while custom roles can be adjusted to match the organization’s current structure. The system validates the requested permissions, rejects any value outside the approved list, and preserves the role’s organization scope. If the role is currently assigned to employees, the update affects their access immediately within the selected organization.
+   * Only permissions from the organization’s approved catalog may be assigned. Built-in roles such as Owner, Manager, and Employee keep their predefined business meaning and must be protected from invalid permission changes according to the organization rules and permission model. If the requested permission list contains unsupported values, the request must be rejected with a validation error.
    *
-   * If the role cannot be found in the active organization, the request fails with a not-found error. If the caller lacks authorization, the request fails with an access error. If the permission set contains invalid or unsupported entries, the request fails with a validation error.
+   * The updated role is returned after persistence so consumers can immediately refresh authorization-dependent screens and caches. If the role does not exist in the current organization, or the caller lacks organization management access, the request must fail with an appropriate authorization or not-found response.
    *
    * @param connection
-   * @param roleId Identifier of the role within the current organization.
-   * @param body The new permission set to assign to the role.
+   * @param roleId Identifier of the role to update within the current organization context.
+   * @param body The new approved permission set to assign to the role.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the target role by roleId and ensure it belongs to the current organization context. Verify the caller is authorized to manage roles and permission assignments according to organization access rules.
+   * @x-autobe-specification Load the role by roleId within the current organization context. Verify the caller has organization management permission or equivalent owner access. Reject the request if the role does not belong to the active organization.
    *
-   * Accept a request body containing the full desired permission set for the role. Validate each permission against the approved permission catalog; reject any permission outside the allowed list. Preserve the role identity, name, organization, and built-in/custom classification; only modify the permission assignment data.
+   * Validate the submitted permission list against the approved organization permission catalog. Ensure every permission is unique and belongs to the allowed set. If the role is a built-in role, enforce the business rules that prevent unauthorized customization of its fixed permission model; if the platform allows any limited update for built-ins, apply those constraints here, otherwise reject the update.
    *
-   * If the role is built-in, enforce any schema or business constraints that prevent unsupported permission changes. If the role is custom, update the stored permission set atomically so that concurrent edits cannot partially apply. Return the updated role permissions after persistence.
-   *
-   * Handle errors explicitly: return not found when the role does not exist in the current organization, forbidden when the caller cannot manage roles, and bad request when the permission set is missing, empty when not allowed, duplicated, or contains unsupported values. Record any required audit/activity entry if the service layer uses activity logging for role changes.
+   * Persist the updated permission assignment in the role-permission relation table in a transaction. Remove previous permission mappings for that role and insert the new approved mappings atomically so the role never ends up in a partially updated state. Return the refreshed role representation after update. On validation failure, return a clear error indicating whether the issue is an invalid permission or an unauthorized role mutation. On not found, return a role-scoped 404. On forbidden access, return 403.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
-  public async update(
+  @TypedRoute.Patch(":roleId/permissions")
+  public async updatePermissions(
     @MemberAuth()
     member: MemberPayload,
     @TypedParam("roleId")
     roleId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IErpHrmTimeRole.IUpdate,
+    body: IErpHrmTimeRole.IUpdatePermission,
   ): Promise<IErpHrmTimeRole> {
     try {
       return await patchErpHrmTimeMemberRolesRoleIdPermissions({
@@ -97,25 +104,67 @@ export class ErphrmtimeMemberRolesPermissionsController {
   }
 
   /**
-   * Remove a permission assignment from a role.
+   * Retrieve a permission assignment for a specific role within the selected organization.
    *
-   * This operation permanently removes a single permission link from an organization role. It is used when an organization owner edits a custom role's access set and no longer wants that permission attached to the role.
+   * This endpoint returns one role-permission link record, including the permission granted to the role and the timestamps for the association. It is intended for role management screens where an organization owner or other authorized member needs to inspect the exact permission set attached to a role.
    *
-   * The role context is required because permissions belong to a specific role within the organization. The target permission assignment must exist under the given role, and the server should reject the request if the association does not belong to that role or if the role cannot be modified by the current member.
+   * The role is organization-scoped, so the role identifier and the role-permission identifier must belong to the same organization context. The system should verify that the permission assignment exists for the requested role before returning it. If the role or permission assignment does not exist, or if the permission assignment is not attached to the specified role, the request must fail with a not-found error.
    *
-   * Built-in roles are protected by role business rules, so the service must prevent modifications that would violate the organization access model. If the role-permission assignment cannot be found, return a not-found error. If the caller lacks role management authority, return a forbidden error.
+   * Access to this endpoint follows organization role permissions. Built-in roles and custom roles are both viewable when the caller has access to role management or role inspection functionality within the selected organization.
    *
    * @param connection
-   * @param roleId Identifier of the role within the current organization scope.
-   * @param rolePermissionId Identifier of the role-permission association to remove from the specified role.
+   * @param roleId Role identifier in UUID format within the selected organization.
+   * @param rolePermissionId Role-permission assignment identifier in UUID format.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the role by roleId within the current organization context and verify the caller has permission to manage roles. Then load the role-permission association by rolePermissionId constrained to the same role. Reject the request if the association does not belong to the specified role or if the role is built-in and protected by business rules that forbid modifying its permission set in this way.
+   * @x-autobe-specification Load the role-permission row by its UUID primary key and verify that erp_hrm_time_role_id matches the supplied roleId path parameter. Join the related erp_hrm_time_permissions row so the response can include the assigned permission details.
    *
-   * Delete the role-permission row in a transaction. No cascading delete should be needed beyond removing the association record itself. If the schema uses organization-scoped role ownership, ensure the role also belongs to the active organization before deleting. Return not found when either the role or the association does not exist in scope, and return forbidden when the caller lacks access. Do not expose any response payload.
+   * Enforce organization context by resolving the role through the current selected organization and rejecting cross-organization access. If the role-permission record does not exist, is soft-deleted, or does not belong to the requested role, return not found.
+   *
+   * Because this is a read-only detail endpoint, do not mutate any data. Include the related permission object in the response and keep the shape stable for UI inspection of role permission sets.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Delete(":rolePermissionId")
+  @TypedRoute.Get(":roleId/permissions/:rolePermissionId")
+  public async at(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("roleId")
+    roleId: string & tags.Format<"uuid">,
+    @TypedParam("rolePermissionId")
+    rolePermissionId: string & tags.Format<"uuid">,
+  ): Promise<IErpHrmTimeRolePermission> {
+    try {
+      return await getErpHrmTimeMemberRolesRoleIdPermissionsRolePermissionId({
+        member,
+        roleId,
+        rolePermissionId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove a permission from an organization role.
+   *
+   * This operation deletes a single role-permission assignment from the role's approved permission set. It is used to adjust a custom role's access scope within the selected organization and to keep the role's permission list aligned with the organization's approved permission catalog.
+   *
+   * The role must belong to the current organization context, and the permission assignment must belong to that role. Built-in roles remain protected by application rules, so attempts to remove permissions from a protected built-in role should be rejected when the broader business rules require it. If the specified assignment does not exist, the request must fail with a not-found error.
+   *
+   * @param connection
+   * @param roleId The role identifier within the current organization context.
+   * @param rolePermissionId The role-permission assignment identifier scoped to the specified role.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Load the target role by roleId within the current organization context, then load the role-permission assignment by rolePermissionId constrained to that role.
+   * Verify that the assignment exists and belongs to the role; otherwise return a not-found error.
+   * Apply business-rule validation before deletion: do not allow deletion when the role is protected by system rules that forbid modification, and preserve organization scoping so one organization cannot affect another organization's role data.
+   * Delete the role-permission row from erp_hrm_time_role_permissions using the junction row id. Because the schema includes a deleted_at column, follow the service's established deletion behavior for this entity: if the application uses physical deletion for this endpoint, remove the row; if it uses repository-level deletion semantics, ensure the row is no longer returned in active permission queries.
+   * Do not return a body. If the role or assignment is missing, or the role is outside the selected organization context, respond with the appropriate not-found or forbidden error.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":roleId/permissions/:rolePermissionId")
   public async erase(
     @MemberAuth()
     member: MemberPayload,
@@ -132,6 +181,39 @@ export class ErphrmtimeMemberRolesPermissionsController {
           rolePermissionId,
         },
       );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve the approved permission catalog used when defining organization roles.
+   *
+   * This endpoint returns the platform’s canonical permission keys and their human-readable descriptions so organization owners can compose or edit custom role permission sets consistently. The catalog is shared across the system and is not scoped to a single organization, but it is used within an organization’s role management workflow.
+   *
+   * The returned permissions correspond to the approved authorization vocabulary stored in the permission catalog table. Clients should use this endpoint to populate role configuration screens and validate permission selections before submitting custom role changes. Invalid or unsupported permission keys should not be accepted by role management endpoints.
+   *
+   * @param connection
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Read the approved permission catalog from erp_hrm_time_permissions.
+   * Query non-deleted permission rows only, ordered by a stable field such as key or created_at if deterministic ordering is required.
+   * Do not apply organization scoping because this is a global reference catalog, not tenant-owned data.
+   * Return all approved permission definitions needed by role creation and editing flows.
+   * If the catalog is empty, return an empty collection rather than an error.
+   * This endpoint is read-only and must not mutate any permission records.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get("permissions/catalog")
+  public async catalog(
+    @MemberAuth()
+    member: MemberPayload,
+  ): Promise<IErpHrmTimePermission> {
+    try {
+      return await getErpHrmTimeMemberRolesPermissionsCatalog({
+        member,
+      });
     } catch (error) {
       console.log(error);
       throw error;

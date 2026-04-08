@@ -1,126 +1,88 @@
 import { Module } from "@nestjs/common";
 
-import { HrmsAuthGuestController } from "./controllers/hrms/auth/guest/HrmsAuthGuestController";
-import { HrmsAuthMemberController } from "./controllers/hrms/auth/member/HrmsAuthMemberController";
-import { HrmsGuestGuest_sessionsController } from "./controllers/hrms/guest/guest-sessions/HrmsGuestGuest_sessionsController";
-import { HrmsGuestProfileController } from "./controllers/hrms/guest/profile/HrmsGuestProfileController";
-import { HrmsGuestsController } from "./controllers/hrms/guests/HrmsGuestsController";
-import { HrmsMemberActivity_logsController } from "./controllers/hrms/member/activity-logs/HrmsMemberActivity_logsController";
-import { HrmsMemberAvatarController } from "./controllers/hrms/member/avatar/HrmsMemberAvatarController";
-import { HrmsMemberContractsController } from "./controllers/hrms/member/contracts/analytics/HrmsMemberContractsController";
-import { HrmsMemberDashboardController } from "./controllers/hrms/member/dashboard/HrmsMemberDashboardController";
-import { HrmsMemberDashboardOrganizationController } from "./controllers/hrms/member/dashboard/organization/HrmsMemberDashboardOrganizationController";
-import { HrmsMemberDepartmentsController } from "./controllers/hrms/member/departments/HrmsMemberDepartmentsController";
-import { HrmsMemberDepartmentsEmployeesController } from "./controllers/hrms/member/departments/employees/metrics/HrmsMemberDepartmentsEmployeesController";
-import { HrmsMemberEmail_verificationsController } from "./controllers/hrms/member/email-verifications/HrmsMemberEmail_verificationsController";
-import { HrmsMemberEmployeesController } from "./controllers/hrms/member/employees/HrmsMemberEmployeesController";
-import { HrmsMemberEmployeesAnalyticsController } from "./controllers/hrms/member/employees/analytics/HrmsMemberEmployeesAnalyticsController";
-import { HrmsMemberEmployeesContractsController } from "./controllers/hrms/member/employees/contracts/HrmsMemberEmployeesContractsController";
-import { HrmsMemberFilesController } from "./controllers/hrms/member/files/HrmsMemberFilesController";
-import { HrmsMemberFilesPermanently_deleteController } from "./controllers/hrms/member/files/permanently-delete/HrmsMemberFilesPermanently_deleteController";
-import { HrmsMemberController } from "./controllers/hrms/member/metrics/HrmsMemberController";
-import { HrmsMemberOrganization_dashboardController } from "./controllers/hrms/member/organization-dashboard/HrmsMemberOrganization_dashboardController";
-import { HrmsMemberOrganization_membersController } from "./controllers/hrms/member/organization-members/HrmsMemberOrganization_membersController";
-import { HrmsMemberOrganizationDashboardController } from "./controllers/hrms/member/organization/dashboard/HrmsMemberOrganizationDashboardController";
-import { HrmsMemberOrganizationsController } from "./controllers/hrms/member/organizations/HrmsMemberOrganizationsController";
-import { HrmsMemberOrganizationsDepartmentsController } from "./controllers/hrms/member/organizations/departments/HrmsMemberOrganizationsDepartmentsController";
-import { HrmsMemberOrganizationsEmployeesController } from "./controllers/hrms/member/organizations/employees/HrmsMemberOrganizationsEmployeesController";
-import { HrmsMemberOrganizationsEmployeesTimelogsController } from "./controllers/hrms/member/organizations/employees/timelogs/HrmsMemberOrganizationsEmployeesTimelogsController";
-import { HrmsMemberOrganizationsFilesController } from "./controllers/hrms/member/organizations/files/HrmsMemberOrganizationsFilesController";
-import { HrmsMemberOrganizationsLogoController } from "./controllers/hrms/member/organizations/logo/HrmsMemberOrganizationsLogoController";
-import { HrmsMemberOrganizationsProjectsController } from "./controllers/hrms/member/organizations/projects/HrmsMemberOrganizationsProjectsController";
-import { HrmsMemberOrganizationsProjectsMembersController } from "./controllers/hrms/member/organizations/projects/members/HrmsMemberOrganizationsProjectsMembersController";
-import { HrmsMemberOrganizationsRolesController } from "./controllers/hrms/member/organizations/roles/HrmsMemberOrganizationsRolesController";
-import { HrmsMemberOrganizations_switchController } from "./controllers/hrms/member/organizations/switch/HrmsMemberOrganizations_switchController";
-import { HrmsMemberOrganizationsTasksController } from "./controllers/hrms/member/organizations/tasks/HrmsMemberOrganizationsTasksController";
-import { HrmsMemberOrganizationsTimerController } from "./controllers/hrms/member/organizations/timer/HrmsMemberOrganizationsTimerController";
-import { HrmsMemberPassword_resetsController } from "./controllers/hrms/member/password-resets/HrmsMemberPassword_resetsController";
-import { HrmsMemberProjectsController } from "./controllers/hrms/member/projects/HrmsMemberProjectsController";
-import { HrmsMemberProjectsAnalyticsController } from "./controllers/hrms/member/projects/analytics/HrmsMemberProjectsAnalyticsController";
-import { HrmsMemberProjectsMembersController } from "./controllers/hrms/member/projects/members/HrmsMemberProjectsMembersController";
-import { HrmsMemberProjectsStatus_analyticsController } from "./controllers/hrms/member/projects/status-analytics/HrmsMemberProjectsStatus_analyticsController";
-import { HrmsMemberProjectsTasksController } from "./controllers/hrms/member/projects/tasks/HrmsMemberProjectsTasksController";
-import { HrmsMemberProjectsTasksStatus_historyController } from "./controllers/hrms/member/projects/tasks/status-history/HrmsMemberProjectsTasksStatus_historyController";
-import { HrmsMemberProjectsTop_employeesController } from "./controllers/hrms/member/projects/top-employees/HrmsMemberProjectsTop_employeesController";
-import { HrmsMemberReportsController } from "./controllers/hrms/member/reports/budget/HrmsMemberReportsController";
-import { HrmsMemberReportsTimeController } from "./controllers/hrms/member/reports/time/HrmsMemberReportsTimeController";
-import { HrmsMemberReportsTop_employeesController } from "./controllers/hrms/member/reports/top-employees/HrmsMemberReportsTop_employeesController";
-import { HrmsMemberReportsWeeklyController } from "./controllers/hrms/member/reports/weekly/HrmsMemberReportsWeeklyController";
-import { HrmsMemberRolesController } from "./controllers/hrms/member/roles/HrmsMemberRolesController";
-import { HrmsMemberSessionsController } from "./controllers/hrms/member/sessions/HrmsMemberSessionsController";
-import { HrmsMemberTasksController } from "./controllers/hrms/member/tasks/HrmsMemberTasksController";
-import { HrmsMemberTimelogsController } from "./controllers/hrms/member/timelogs/HrmsMemberTimelogsController";
-import { HrmsMemberTimerController } from "./controllers/hrms/member/timer/HrmsMemberTimerController";
-import { HrmsMemberTimerActiveController } from "./controllers/hrms/member/timer/active/HrmsMemberTimerActiveController";
-import { HrmsMemberTimerStartController } from "./controllers/hrms/member/timer/start/HrmsMemberTimerStartController";
-import { HrmsMemberTimersController } from "./controllers/hrms/member/timers/HrmsMemberTimersController";
-import { HrmsMemberTimesheetsController } from "./controllers/hrms/member/timesheets/HrmsMemberTimesheetsController";
-import { HrmsMemberUpload_requestsController } from "./controllers/hrms/member/upload-requests/HrmsMemberUpload_requestsController";
-import { HrmsMemberUpload_requestsAssign_ownershipController } from "./controllers/hrms/member/upload-requests/assign-ownership/HrmsMemberUpload_requestsAssign_ownershipController";
-import { HrmsMemberUpload_requestsValidation_statusController } from "./controllers/hrms/member/upload-requests/validation-status/HrmsMemberUpload_requestsValidation_statusController";
-import { HrmsMembersController } from "./controllers/hrms/members/HrmsMembersController";
+import { HrmplatformAuthGuestController } from "./controllers/hrmPlatform/auth/guest/HrmplatformAuthGuestController";
+import { HrmplatformAuthMemberController } from "./controllers/hrmPlatform/auth/member/HrmplatformAuthMemberController";
+import { HrmplatformGuestSessionsController } from "./controllers/hrmPlatform/guest/sessions/HrmplatformGuestSessionsController";
+import { HrmplatformGuestsController } from "./controllers/hrmPlatform/guests/HrmplatformGuestsController";
+import { HrmplatformMemberActivity_logsController } from "./controllers/hrmPlatform/member/activity-logs/HrmplatformMemberActivity_logsController";
+import { HrmplatformMemberContractsController } from "./controllers/hrmPlatform/member/contracts/HrmplatformMemberContractsController";
+import { HrmplatformMemberContractsSnapshotsController } from "./controllers/hrmPlatform/member/contracts/snapshots/HrmplatformMemberContractsSnapshotsController";
+import { HrmplatformMemberContractsSummaryController } from "./controllers/hrmPlatform/member/contracts/summary/HrmplatformMemberContractsSummaryController";
+import { HrmplatformMemberDashboardController } from "./controllers/hrmPlatform/member/dashboard/HrmplatformMemberDashboardController";
+import { HrmplatformMemberDepartmentsController } from "./controllers/hrmPlatform/member/departments/analytics/HrmplatformMemberDepartmentsController";
+import { HrmplatformMemberEmail_verificationsController } from "./controllers/hrmPlatform/member/email-verifications/HrmplatformMemberEmail_verificationsController";
+import { HrmplatformMemberEmployeesController } from "./controllers/hrmPlatform/member/employees/HrmplatformMemberEmployeesController";
+import { HrmplatformMemberEmployeesSnapshotsController } from "./controllers/hrmPlatform/member/employees/snapshots/HrmplatformMemberEmployeesSnapshotsController";
+import { HrmplatformMemberOrganizationsController } from "./controllers/hrmPlatform/member/organizations/HrmplatformMemberOrganizationsController";
+import { HrmplatformMemberOrganizationsDepartmentsController } from "./controllers/hrmPlatform/member/organizations/departments/HrmplatformMemberOrganizationsDepartmentsController";
+import { HrmplatformMemberOrganizationsDepartmentsSnapshotsController } from "./controllers/hrmPlatform/member/organizations/departments/snapshots/HrmplatformMemberOrganizationsDepartmentsSnapshotsController";
+import { HrmplatformMemberOrganizationsFilesController } from "./controllers/hrmPlatform/member/organizations/files/HrmplatformMemberOrganizationsFilesController";
+import { HrmplatformMemberOrganizationsSnapshotsController } from "./controllers/hrmPlatform/member/organizations/snapshots/HrmplatformMemberOrganizationsSnapshotsController";
+import { HrmplatformMemberPassword_resetsController } from "./controllers/hrmPlatform/member/password-resets/HrmplatformMemberPassword_resetsController";
+import { HrmplatformMemberProfileController } from "./controllers/hrmPlatform/member/profile/HrmplatformMemberProfileController";
+import { HrmplatformMemberProjectsController } from "./controllers/hrmPlatform/member/projects/HrmplatformMemberProjectsController";
+import { HrmplatformMemberProjectsAnalyticsController } from "./controllers/hrmPlatform/member/projects/analytics/HrmplatformMemberProjectsAnalyticsController";
+import { HrmplatformMemberProjectsMembershipsController } from "./controllers/hrmPlatform/member/projects/memberships/HrmplatformMemberProjectsMembershipsController";
+import { HrmplatformMemberRolesController } from "./controllers/hrmPlatform/member/roles/HrmplatformMemberRolesController";
+import { HrmplatformMemberRolesPermissionsController } from "./controllers/hrmPlatform/member/roles/permissions/HrmplatformMemberRolesPermissionsController";
+import { HrmplatformMemberTask_historiesController } from "./controllers/hrmPlatform/member/task-histories/HrmplatformMemberTask_historiesController";
+import { HrmplatformMemberTasksController } from "./controllers/hrmPlatform/member/tasks/HrmplatformMemberTasksController";
+import { HrmplatformMemberTasksHistoriesController } from "./controllers/hrmPlatform/member/tasks/histories/HrmplatformMemberTasksHistoriesController";
+import { HrmplatformMemberTime_tracking_timezonesController } from "./controllers/hrmPlatform/member/time-tracking-timezones/HrmplatformMemberTime_tracking_timezonesController";
+import { HrmplatformMemberTimelogsController } from "./controllers/hrmPlatform/member/timelogs/HrmplatformMemberTimelogsController";
+import { HrmplatformMemberTimersController } from "./controllers/hrmPlatform/member/timers/HrmplatformMemberTimersController";
+import { HrmplatformMemberTimesheet_weekly_statsController } from "./controllers/hrmPlatform/member/timesheet-weekly-stats/HrmplatformMemberTimesheet_weekly_statsController";
+import { HrmplatformMemberTimesheetsController } from "./controllers/hrmPlatform/member/timesheets/HrmplatformMemberTimesheetsController";
+import { HrmplatformMemberTimesheetsActionsController } from "./controllers/hrmPlatform/member/timesheets/actions/HrmplatformMemberTimesheetsActionsController";
+import { HrmplatformMemberTimesheetsTimelogsController } from "./controllers/hrmPlatform/member/timesheets/timelogs/HrmplatformMemberTimesheetsTimelogsController";
+import { HrmplatformMemberTimetrackingDaily_hoursController } from "./controllers/hrmPlatform/member/timetracking/daily-hours/HrmplatformMemberTimetrackingDaily_hoursController";
+import { HrmplatformMemberTimetrackingOrganization_weekly_hoursController } from "./controllers/hrmPlatform/member/timetracking/organization-weekly-hours/HrmplatformMemberTimetrackingOrganization_weekly_hoursController";
+import { HrmplatformMemberTimetrackingRecent_timelogsController } from "./controllers/hrmPlatform/member/timetracking/recent-timelogs/HrmplatformMemberTimetrackingRecent_timelogsController";
+import { HrmplatformMemberTimetrackingWeekly_hoursController } from "./controllers/hrmPlatform/member/timetracking/weekly-hours/HrmplatformMemberTimetrackingWeekly_hoursController";
+import { HrmplatformMembersController } from "./controllers/hrmPlatform/members/HrmplatformMembersController";
 
 @Module({
   controllers: [
-    HrmsAuthGuestController,
-    HrmsAuthMemberController,
-    HrmsGuestGuest_sessionsController,
-    HrmsMemberPassword_resetsController,
-    HrmsMemberEmail_verificationsController,
-    HrmsMembersController,
-    HrmsMemberSessionsController,
-    HrmsGuestProfileController,
-    HrmsGuestsController,
-    HrmsMemberOrganization_membersController,
-    HrmsMemberOrganizationsEmployeesController,
-    HrmsMemberOrganizationsController,
-    HrmsMemberOrganizationsRolesController,
-    HrmsMemberRolesController,
-    HrmsMemberEmployeesController,
-    HrmsMemberEmployeesContractsController,
-    HrmsMemberOrganizationsDepartmentsController,
-    HrmsMemberDepartmentsController,
-    HrmsMemberProjectsController,
-    HrmsMemberOrganizationsProjectsController,
-    HrmsMemberProjectsMembersController,
-    HrmsMemberOrganizationsProjectsMembersController,
-    HrmsMemberProjectsTasksController,
-    HrmsMemberProjectsTasksStatus_historyController,
-    HrmsMemberTimelogsController,
-    HrmsMemberOrganizationsEmployeesTimelogsController,
-    HrmsMemberTimesheetsController,
-    HrmsMemberTimerActiveController,
-    HrmsMemberTimerStartController,
-    HrmsMemberOrganizationsTimerController,
-    HrmsMemberTimerController,
-    HrmsMemberFilesController,
-    HrmsMemberUpload_requestsController,
-    HrmsMemberActivity_logsController,
-    HrmsMemberReportsTimeController,
-    HrmsMemberReportsController,
-    HrmsMemberReportsWeeklyController,
-    HrmsMemberTimersController,
-    HrmsMemberTasksController,
-    HrmsMemberOrganizationsTasksController,
-    HrmsMemberDashboardController,
-    HrmsMemberDashboardOrganizationController,
-    HrmsMemberOrganizations_switchController,
-    HrmsMemberOrganizationDashboardController,
-    HrmsMemberController,
-    HrmsMemberContractsController,
-    HrmsMemberDepartmentsEmployeesController,
-    HrmsMemberEmployeesAnalyticsController,
-    HrmsMemberProjectsAnalyticsController,
-    HrmsMemberProjectsTop_employeesController,
-    HrmsMemberProjectsStatus_analyticsController,
-    HrmsMemberAvatarController,
-    HrmsMemberOrganizationsLogoController,
-    HrmsMemberOrganizationsFilesController,
-    HrmsMemberFilesPermanently_deleteController,
-    HrmsMemberUpload_requestsValidation_statusController,
-    HrmsMemberUpload_requestsAssign_ownershipController,
-    HrmsMemberOrganization_dashboardController,
-    HrmsMemberReportsTop_employeesController,
+    HrmplatformAuthGuestController,
+    HrmplatformAuthMemberController,
+    HrmplatformGuestsController,
+    HrmplatformGuestSessionsController,
+    HrmplatformMembersController,
+    HrmplatformMemberProfileController,
+    HrmplatformMemberPassword_resetsController,
+    HrmplatformMemberEmail_verificationsController,
+    HrmplatformMemberOrganizationsController,
+    HrmplatformMemberOrganizationsSnapshotsController,
+    HrmplatformMemberOrganizationsFilesController,
+    HrmplatformMemberOrganizationsDepartmentsController,
+    HrmplatformMemberOrganizationsDepartmentsSnapshotsController,
+    HrmplatformMemberEmployeesController,
+    HrmplatformMemberEmployeesSnapshotsController,
+    HrmplatformMemberContractsController,
+    HrmplatformMemberContractsSnapshotsController,
+    HrmplatformMemberRolesController,
+    HrmplatformMemberRolesPermissionsController,
+    HrmplatformMemberProjectsController,
+    HrmplatformMemberProjectsMembershipsController,
+    HrmplatformMemberTasksController,
+    HrmplatformMemberTask_historiesController,
+    HrmplatformMemberTimersController,
+    HrmplatformMemberTimelogsController,
+    HrmplatformMemberTimesheetsController,
+    HrmplatformMemberTimesheetsTimelogsController,
+    HrmplatformMemberTimesheetsActionsController,
+    HrmplatformMemberTime_tracking_timezonesController,
+    HrmplatformMemberTimesheet_weekly_statsController,
+    HrmplatformMemberActivity_logsController,
+    HrmplatformMemberDashboardController,
+    HrmplatformMemberDepartmentsController,
+    HrmplatformMemberContractsSummaryController,
+    HrmplatformMemberProjectsAnalyticsController,
+    HrmplatformMemberTasksHistoriesController,
+    HrmplatformMemberTimetrackingDaily_hoursController,
+    HrmplatformMemberTimetrackingWeekly_hoursController,
+    HrmplatformMemberTimetrackingRecent_timelogsController,
+    HrmplatformMemberTimetrackingOrganization_weekly_hoursController,
   ],
 })
 export class MyModule {}

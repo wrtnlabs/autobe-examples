@@ -1,4 +1,4 @@
-import { ForbiddenException } from "@nestjs/common";
+import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { GuestPayload } from "../../decorators/payload/GuestPayload";
@@ -12,7 +12,6 @@ export async function guestAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  // Query using id since Guest is a standalone actor
   const guest = await MyGlobal.prisma.erp_hrm_guests.findFirst({
     where: {
       id: payload.id,
@@ -21,20 +20,21 @@ export async function guestAuthorize(request: {
   });
 
   if (guest === null) {
-    throw new ForbiddenException("Guest not found or deleted");
+    throw new ForbiddenException("Guest account not found or deleted");
   }
 
-  // Check session expiration
   const session = await MyGlobal.prisma.erp_hrm_guest_sessions.findFirst({
     where: {
       id: payload.session_id,
       erp_hrm_guest_id: payload.id,
-      expired_at: { gt: new Date() },
+      expired_at: {
+        gt: new Date(),
+      },
     },
   });
 
   if (session === null) {
-    throw new ForbiddenException("Session expired or invalid");
+    throw new UnauthorizedException("Session expired or invalid");
   }
 
   return payload;

@@ -16,6 +16,18 @@ import typia, { tags } from "typia";
 
 import { prepare_random_hrm_platform_timer } from "../prepare/prepare_random_hrm_platform_timer";
 
+/**
+ * Generate a random HRM platform timer session via the API for E2E testing.
+ *
+ * Prepares random timer creation data using the prepare function, then calls the timer creation endpoint to start a new timer session. The timer tracks work duration in real-time and must be associated with a project. Optional task and description fields can be included for granular tracking.
+ *
+ * The generated timer includes all fields returned by the API: unique identifier, employee reference, project reference, optional task reference, started_at timestamp, stopped_at (null for active timers), description, and audit timestamps. The employee context is derived from the authenticated member session.
+ *
+ * @param connection - API connection information for the test server
+ * @param props - Optional configuration with partial timer creation data for customization
+ * @param props.body - Optional partial IHrmPlatformTimer.ICreate to override specific fields
+ * @returns The created IHrmPlatformTimer with all populated fields including auto-generated timestamps
+ */
 export async function generate_random_hrm_platform_member_timers_create(
   connection: api.IConnection,
   props: {

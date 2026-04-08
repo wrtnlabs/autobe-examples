@@ -1,5 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeWeeklySummaryReportRow } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeWeeklySummaryReportRow";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -8,36 +9,22 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer } from "./ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer";
 
 export namespace ErpHrmTimeWeeklySummaryReportRowAtSummaryTransformer {
   export type Payload =
     Prisma.erp_hrm_time_weekly_summary_report_rowsGetPayload<
       ReturnType<typeof select>
     >;
-  export function select() {
-    return {
-      select: {
-        id: true,
-        week_start_date: true,
-        week_end_date: true,
-        total_hours: true,
-        timelog_count: true,
-        active_employee_count: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        organization: {
-          select: {},
-        },
-      },
-    } satisfies Prisma.erp_hrm_time_weekly_summary_report_rowsFindManyArgs;
-  }
   export async function transform(
     input: Payload,
   ): Promise<IErpHrmTimeWeeklySummaryReportRow.ISummary> {
     return {
       id: input.id,
-      organization: {} satisfies IErpHrmTimeOrganization.ISummary,
+      organization:
+        await ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer.transform(
+          input.organization,
+        ),
       weekStartDate: input.week_start_date.toISOString(),
       weekEndDate: input.week_end_date.toISOString(),
       totalHours: input.total_hours,
@@ -47,5 +34,22 @@ export namespace ErpHrmTimeWeeklySummaryReportRowAtSummaryTransformer {
       updatedAt: input.updated_at.toISOString(),
       deletedAt: input.deleted_at?.toISOString() ?? null,
     };
+  }
+  export function select() {
+    return {
+      select: {
+        id: true,
+        organization:
+          ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer.select(),
+        week_start_date: true,
+        week_end_date: true,
+        total_hours: true,
+        timelog_count: true,
+        active_employee_count: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
+    } satisfies Prisma.erp_hrm_time_weekly_summary_report_rowsFindManyArgs;
   }
 }

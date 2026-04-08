@@ -1,0 +1,498 @@
+/// Temporary guest account entity providing anonymous access to public
+/// content for unauthenticated visitors based on device fingerprint
+/// identity.
+///
+/// ## Identity Management
+/// Each guest account is identified by a unique device fingerprint hash
+/// rather than credentials, enabling anonymous content access without
+/// registration requirements.
+///
+/// ## Session Management
+/// Guest accounts can have active sessions tracked via the related {@link
+/// reddit_platform_guest_sessions} table. Sessions are accessed through the
+/// reverse relation for access control and audit trail for guest activity.
+///
+/// ## Lifecycle
+/// Guest accounts use soft delete (deleted_at) to preserve audit data while
+/// allowing account cleanup. Accounts may also be automatically expired
+/// based on session inactivity.
+///
+/// @namespace auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique device fingerprint hash identifying the guest visitor.
+  ///
+  /// ## Identity Basis
+  /// The fingerprint is a cryptographic hash of device characteristics (user
+  /// agent, IP, browser features) used as anonymous identity. It enables
+  /// consistent session recognition without requiring registration.
+  ///
+  /// ## Uniqueness
+  /// Fingerprint must be unique across all guest accounts to prevent duplicate
+  /// anonymous identities.
+  fingerprint String
+  
+  /// Timestamp when the guest account was created.
+  ///
+  /// ## Lifecycle Tracking
+  /// Used to determine account age and for session cleanup policies.
+  created_at DateTime
+  
+  /// Timestamp when the guest account was last updated.
+  ///
+  /// ## State Management
+  /// Updated on session changes or activity that modifies guest state.
+  updated_at DateTime
+  
+  /// Timestamp when the guest account was soft-deleted.
+  ///
+  /// ## Soft Delete Pattern
+  /// Nullable field for soft delete support. When null, account is active.
+  /// When set, account is marked for cleanup but preserved for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  guestSessions reddit_platform_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([fingerprint])
+  @@index([created_at])
+}
+
+/// Temporary session tokens providing limited public content access for
+/// guest visitors.
+///
+/// Tracks active guest sessions with authentication metadata including IP
+/// address, referrer URL, current page, and expiration timestamps. Sessions
+/// are short-lived to maintain security for anonymous users.
+///
+/// {@link reddit_platform_guests} Sessions belong to exactly one guest and
+/// are automatically expired after a fixed duration.
+///
+/// @namespace auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the guest account that owns this session.
+  ///
+  /// Each session belongs to exactly one guest. Sessions are automatically
+  /// expired when the guest account is deleted.
+  reddit_platform_guest_id String
+  
+  /// IP address of the client that created this session.
+  ///
+  /// Used for session tracking and security monitoring. Captured at session
+  /// creation time.
+  ip String
+  
+  /// Current page URL when the session was created.
+  ///
+  /// Tracks the page the guest was viewing at session start.
+  href String
+  
+  /// Referrer URL that led the guest to the platform.
+  ///
+  /// Captured at session creation for analytics and security purposes.
+  referrer String?
+  
+  /// Session creation timestamp.
+  ///
+  /// Marks when the guest session was initialized.
+  created_at DateTime
+  
+  /// Last update timestamp for the session record.
+  ///
+  /// Used for tracking session modifications.
+  updated_at DateTime
+  
+  /// Session expiration timestamp.
+  ///
+  /// Sessions automatically become invalid after this time. Must be set at
+  /// creation for security.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest reddit_platform_guests @relation(fields: [reddit_platform_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_guest_id, created_at], map: "reddit_platform_guest_sessions_reddit_platform_guest_i_32bcd30c")
+}
+
+/// Registered member accounts with email/password authentication credentials
+/// and profile data.
+///
+/// Stores user identity information including unique email addresses, hashed
+/// passwords, and unique usernames. Each member can be associated with one
+/// profile, maintain a karma score based on community votes, and participate
+/// in communities through subscriptions and memberships.
+///
+/// ### Authentication
+/// Members authenticate via email and password. Passwords are stored as
+/// hashes and should never be readable in plaintext. Email addresses must be
+/// unique across all members.
+///
+/// ### Profile
+/// Each member has exactly one profile containing display name, bio, avatar,
+/// and other public information. Profile is a separate entity referenced by
+/// the member_id foreign key.
+///
+/// ### Karma
+/// Members accumulate karma from upvotes received on their posts and
+/// comments. Karma can be negative if downvotes exceed upvotes. Karma is
+/// automatically updated based on voting activity.
+///
+/// ### Lifecycle
+/// Members can be soft-deleted for account removal requests. Soft deletion
+/// preserves data for audit and recovery purposes while preventing further
+/// authentication.
+///
+/// @namespace auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique email address used for authentication and account recovery. Email
+  /// verification is required for new members.
+  email String
+  
+  /// Password hash stored securely for authentication. Original password is
+  /// never stored.
+  password_hash String
+  
+  /// Unique username displayed throughout the platform. Cannot be changed
+  /// after account creation.
+  username String
+  
+  /// Karma score accumulated from upvotes minus downvotes received on posts
+  /// and comments. Can be negative.
+  karma Int
+  
+  /// Timestamp when the member account was created.
+  created_at DateTime
+  
+  /// Timestamp when the member record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the member account was soft-deleted (nullable = not
+  /// deleted).
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions reddit_platform_member_sessions[]
+  passwordResets reddit_platform_member_password_resets[]
+  emailVerifications reddit_platform_member_email_verifications[]
+  ownedCommunities reddit_platform_communities[]
+  communityMemberships reddit_platform_community_members[]
+  bannedUserRecords reddit_platform_banned_users[] @relation("reddit_platform_banned_users_of_user_id")
+  issuedBannedUserRecords reddit_platform_banned_users[] @relation("reddit_platform_banned_users_of_banned_by")
+  subscriptions reddit_platform_subscriptions[]
+  posts reddit_platform_posts[]
+  comments reddit_platform_comments[]
+  postVotes reddit_platform_post_votes[]
+  commentVotes reddit_platform_comment_votes[]
+  banRecords reddit_platform_ban_records[] @relation("reddit_platform_ban_records_of_user_id")
+  issuedBanRecords reddit_platform_ban_records[] @relation("reddit_platform_ban_records_of_banned_by")
+  banRecordSnapshots reddit_platform_ban_records_snapshots[] @relation("reddit_platform_ban_records_snapshots_of_reddit_platfo_894ca136")
+  banRecordSnapshotsIssueds reddit_platform_ban_records_snapshots[] @relation("reddit_platform_ban_records_snapshots_of_reddit_platfo_ab7e8b3c")
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@unique([username])
+}
+
+/// JWT session tokens with access and refresh support for member
+/// authentication.
+///
+/// This table manages active and expired login sessions for members,
+/// tracking authentication state, session endpoints, and security-related
+/// metadata including IP addresses, referrer URLs, and token lifecycles.
+///
+/// Session Management
+/// Each session is uniquely identified by its token and linked to a member
+/// actor. Sessions have explicit expiration times (expired_at) and can be
+/// manually revoked (revoked_at). The table maintains soft deletes via
+/// deleted_at for audit purposes while supporting automatic cleanup of
+/// expired sessions.
+///
+/// Security Tracking
+/// IP addresses, referrer URLs, and target href endpoints are recorded at
+/// session creation to support security audits and anomaly detection. Token
+/// uniqueness is enforced at the database level to prevent duplicate active
+/// sessions.
+///
+/// @namespace auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for session records, uniquely identifying each authentication
+  /// session.
+  id String @id
+  
+  /// Foreign key reference to the member who owns this session.
+  ///
+  /// Establishes a 1:N relationship where each session belongs to exactly one
+  /// member. The member_sessions collection in the member model contains all
+  /// sessions for that member. Cascade delete ensures orphaned sessions are
+  /// removed when a member account is deleted.
+  reddit_platform_member_id String
+  
+  /// IP address of the client that created the session, used for security
+  /// tracking and anomaly detection.
+  ip String
+  
+  /// Target URL (href) where the session was initiated, used for security
+  /// auditing and session origin tracking.
+  href String
+  
+  /// Referrer URL from the request that created the session, useful for
+  /// understanding session sources and detecting suspicious activity.
+  referrer String?
+  
+  /// Timestamp when the session was created and the member successfully
+  /// authenticated.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this session record, used for tracking
+  /// session modifications.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for session cleanup and audit trail. NULL means the
+  /// session is active.
+  deleted_at DateTime?
+  
+  /// Expiration timestamp when the session becomes invalid. NOT NULL by
+  /// security requirement. Used for automatic session cleanup.
+  expired_at DateTime
+  
+  /// Timestamp when the session was manually revoked (logged out or token
+  /// invalidated). NULL if session is still active.
+  revoked_at DateTime?
+  
+  /// JWT access token for the session. Must be unique across all active
+  /// sessions to prevent duplicate authentication.
+  token String
+  
+  /// JWT refresh token for renewing access tokens. Must be unique across all
+  /// active sessions.
+  refresh_token String
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_platform_members @relation(fields: [reddit_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  reportsSubmitteds reddit_platform_reports[] @relation("reddit_platform_reports_of_reported_by")
+  reportsRevieweds reddit_platform_reports[] @relation("reddit_platform_reports_of_reviewed_by")
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  @@unique([refresh_token])
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_member_id, created_at], map: "reddit_platform_member_sessions_reddit_platform_member_e4775346")
+}
+
+/// Password reset tokens for secure member account recovery.
+///
+/// Stores temporary one-time-use tokens that allow members to reset their
+/// password after requesting account recovery. Each token is
+/// cryptographically generated, linked to a specific member account, and
+/// becomes invalid after first use or expiration. Provides audit trail of
+/// password reset attempts while maintaining security through short token
+/// lifetime and single-use constraints.
+///
+/// @namespace auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the member account requesting password reset.
+  ///
+  /// Ensures token is always linked to a valid member. Token cannot be used
+  /// without this relationship. Enforces that password resets are scoped to
+  /// specific authenticated accounts.
+  member_id String
+  
+  /// Cryptographically generated reset token string.
+  ///
+  /// Used for password reset verification. Must be unique across all active
+  /// tokens. Token is hashed before storage for security. Single-use
+  /// constraint ensures token becomes invalid after first successful password
+  /// reset.
+  token String
+  
+  /// Timestamp when this password reset token expires.
+  ///
+  /// Tokens beyond this timestamp cannot be used for password reset. Enforces
+  /// short token lifetime for security. Must be in the future when token is
+  /// created.
+  expires_at DateTime
+  
+  /// Timestamp when this token was successfully used for password reset.
+  ///
+  /// Nullable - only set when token is consumed. After setting, token becomes
+  /// invalid for future use. Provides audit trail of successful password
+  /// resets.
+  used_at DateTime?
+  
+  /// Timestamp when this password reset token was created.
+  ///
+  /// Used for tracking token age and debugging. Always set when token is
+  /// generated.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this password reset token.
+  ///
+  /// Always set when token is created and when used_at is set.
+  updated_at DateTime
+  
+  /// Timestamp when this password reset token was soft deleted.
+  ///
+  /// Nullable - indicates token is no longer active. Used for audit trail
+  /// while allowing query filtering of active vs expired tokens.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  @@index([member_id, created_at])
+}
+
+/// Stores email verification tokens for new member registration validation,
+/// ensuring users control the email addresses they register with.
+///
+/// **Authentication Lifecycle**
+///
+/// This table tracks temporary verification tokens sent to users' email
+/// addresses during registration. Each token is associated with a member
+/// account and expires after a defined period, after which it can be cleaned
+/// up to maintain security.
+///
+/// **Token Management**
+///
+/// Tokens are cryptographically secure, single-use identifiers that allow
+/// the system to verify email ownership without storing sensitive data. Once
+/// verified, tokens can be soft-deleted while maintaining an audit trail via
+/// deleted_at.
+///
+/// @namespace auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_member_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Links to the member account requesting email verification.
+  ///
+  /// This foreign key establishes a 1:N relationship where one member can have
+  /// multiple email verification attempts (e.g., re-requesting verification).
+  /// The member must exist in {@link reddit_platform_members} and this
+  /// relationship is required for all verification tokens.
+  reddit_platform_member_id String
+  
+  /// Email address to verify during registration.
+  ///
+  /// This is the email the user claims to own and for which they will receive
+  /// a verification token. The email must be unique and properly formatted.
+  /// Once verified, the user can update their member profile with this email
+  /// address.
+  email String
+  
+  /// Cryptographically secure verification token sent to user's email.
+  ///
+  /// This high-entropy string is generated when the verification is created
+  /// and sent to the user. Users click the verification link containing this
+  /// token to prove email ownership. Tokens are single-use and expire after
+  /// {@link reddit_platform_member_email_verifications.expires_at}.
+  token String
+  
+  /// Timestamp when this verification token expires and becomes invalid.
+  ///
+  /// Tokens are time-limited for security reasons. After this timestamp, the
+  /// token cannot be used for verification and should be cleaned up via
+  /// periodic maintenance tasks.
+  expires_at DateTime
+  
+  /// Timestamp when this verification token was created.
+  ///
+  /// Used for audit trails, debugging, and tracking how long tokens have been
+  /// pending verification.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this record.
+  ///
+  /// Maintained automatically by the database trigger for audit purposes.
+  updated_at DateTime
+  
+  /// Timestamp when this record was soft-deleted.
+  ///
+  /// Verifications are never hard-deleted to maintain audit trail. When a
+  /// token is used or expired, it is soft-deleted by setting this field. Null
+  /// indicates active status.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_platform_members @relation(fields: [reddit_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_platform_member_id, token], map: "reddit_platform_member_email_verifications_reddit_plat_e28ec582")
+  @@index([expires_at])
+}

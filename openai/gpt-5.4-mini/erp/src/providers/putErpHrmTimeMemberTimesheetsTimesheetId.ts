@@ -1,11 +1,11 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
+import { IErpHrmTimeEmployeeDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployeeDashboardSummary";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
 import { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
-import { IErpHrmTimeTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTask";
+import { IErpHrmTimeTaskHistoryEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTaskHistoryEntry";
 import { IErpHrmTimeTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimelog";
 import { IErpHrmTimeTimesheet } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimesheet";
 import { IErpHrmTimeTimesheetTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimesheetTimelog";
@@ -27,165 +27,141 @@ export async function putErpHrmTimeMemberTimesheetsTimesheetId(props: {
   timesheetId: string & tags.Format<"uuid">;
   body: IErpHrmTimeTimesheet.IUpdate;
 }): Promise<IErpHrmTimeTimesheet> {
-  const timesheet =
-    await MyGlobal.prisma.erp_hrm_time_timesheets.findUniqueOrThrow({
-      where: {
-        id: props.timesheetId,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        erp_hrm_time_employee_id: true,
-        reviewed_by_member_id: true,
-        week_start_date: true,
-        week_end_date: true,
-        status: true,
-        submitted_at: true,
-        reviewed_at: true,
-        rejection_reason: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        employee: {
-          select: {
-            id: true,
-            erp_hrm_time_organization_id: true,
-            erp_hrm_time_member_id: true,
-          },
-        },
-      },
-    });
-  const isOwner = timesheet.employee.erp_hrm_time_member_id === props.member.id;
-  const canSelfEdit =
-    isOwner &&
-    (timesheet.status === "draft" || timesheet.status === "rejected");
-  const canReview = timesheet.status === "submitted";
-  const wantsTimelogEdit = props.body.timelogs !== undefined;
-  const wantsApproval = props.body.approvalStatus !== undefined;
-  if (wantsTimelogEdit && wantsApproval) {
-    throw new HttpException(
-      "Cannot mix timelog edits with approval review",
-      400,
-    );
-  }
-  if (wantsTimelogEdit) {
-    if (!canSelfEdit) {
-      throw new HttpException("Forbidden", 403);
-    }
-    const desired = props.body.timelogs?.[0]?.timelogIds ?? [];
-    const included = await MyGlobal.prisma.erp_hrm_time_timelogs.findMany({
-      where: {
-        id: { in: desired },
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        work_date: true,
-        duration_minutes: true,
-        erp_hrm_time_member_id: true,
-        erp_hrm_time_project_id: true,
-        erp_hrm_time_task_id: true,
-        billable: true,
-        description: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-      },
-    });
-    if (included.length !== desired.length) {
-      throw new HttpException("Some timelogs do not exist", 400);
-    }
-    for (const timelog of included) {
-      if (timelog.erp_hrm_time_member_id !== props.member.id) {
-        throw new HttpException("Forbidden", 403);
-      }
-      if (
-        timelog.work_date < timesheet.week_start_date ||
-        timelog.work_date > timesheet.week_end_date
-      ) {
-        throw new HttpException("Timelog is outside the timesheet week", 400);
-      }
-    }
-    const current =
-      await MyGlobal.prisma.erp_hrm_time_timesheet_timelogs.findMany({
-        where: {
-          erp_hrm_time_timesheet_id: props.timesheetId,
-          deleted_at: null,
-        },
+  const current = await MyGlobal.prisma.erp_hrm_time_timesheets.findUnique({
+    where: { id: props.timesheetId },
+    select: {
+      id: true,
+      erp_hrm_time_employee_id: true,
+      week_start_date: true,
+      week_end_date: true,
+      status: true,
+      submitted_at: true,
+      reviewed_at: true,
+      reviewed_by_member_id: true,
+      rejection_reason: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+      employee: {
         select: {
-          erp_hrm_time_timelog_id: true,
+          id: true,
+          erp_hrm_time_member_id: true,
+          erp_hrm_time_organization_id: true,
         },
-      });
-    const currentIds = current.map((item) => item.erp_hrm_time_timelog_id);
-    const removeIds = currentIds.filter((id) => !desired.includes(id));
-    const addIds = desired.filter((id) => !currentIds.includes(id));
-    for (const timelogId of removeIds) {
-      await MyGlobal.prisma.erp_hrm_time_timesheet_timelogs.deleteMany({
-        where: {
-          erp_hrm_time_timesheet_id: props.timesheetId,
-          erp_hrm_time_timelog_id: timelogId,
-        },
-      });
-    }
-    for (const timelogId of addIds) {
-      await MyGlobal.prisma.erp_hrm_time_timesheet_timelogs.create({
-        data: {
-          id: v4(),
-          erp_hrm_time_timesheet_id: props.timesheetId,
-          erp_hrm_time_timelog_id: timelogId,
-          created_at: new globalThis.Date(),
-          updated_at: new globalThis.Date(),
-          deleted_at: null,
-        },
-      });
-    }
-    await MyGlobal.prisma.erp_hrm_time_timesheets.update({
-      where: { id: props.timesheetId },
-      data: {
-        updated_at: new globalThis.Date(),
       },
-    });
-  } else if (wantsApproval) {
-    if (!canReview) {
-      throw new HttpException("Timesheet is not submitted", 400);
-    }
-    if (props.body.approvalStatus === "approved") {
-      await MyGlobal.prisma.erp_hrm_time_timesheets.update({
-        where: { id: props.timesheetId },
-        data: {
-          status: "approved",
-          reviewed_by_member_id: props.member.id,
-          reviewed_at: new globalThis.Date(),
-          rejection_reason: null,
-          updated_at: new globalThis.Date(),
-        },
-      });
-    } else {
-      const rejection = props.body.rejection;
-      const rejectionReason =
-        rejection === undefined || rejection === null
-          ? null
-          : rejection.rejectionReason;
-      if (typeof rejectionReason !== "string") {
-        throw new HttpException("Rejection reason is required", 400);
-      }
-      if (rejectionReason === "") {
-        throw new HttpException("Rejection reason is required", 400);
-      }
-      await MyGlobal.prisma.erp_hrm_time_timesheets.update({
-        where: { id: props.timesheetId },
-        data: {
-          status: "rejected",
-          reviewed_by_member_id: props.member.id,
-          reviewed_at: new globalThis.Date(),
-          rejection_reason: rejectionReason,
-          updated_at: new globalThis.Date(),
-        },
-      });
-    }
-  } else {
-    throw new HttpException("Nothing to update", 400);
+    },
+  });
+  if (current === null) throw new HttpException("Not Found", 404);
+  if (current.employee.erp_hrm_time_member_id !== props.member.id)
+    throw new HttpException("Forbidden", 403);
+  const nextWeekStartDate: string | undefined = props.body.weekStartDate;
+  const nextWeekEndDate: string | undefined = props.body.weekEndDate;
+  const nextStatus: string | undefined = props.body.status;
+  const nextSubmittedAt:
+    | (string & tags.Format<"date-time">)
+    | null
+    | undefined = props.body.submittedAt;
+  const nextReviewedAt: (string & tags.Format<"date-time">) | null | undefined =
+    props.body.reviewedAt;
+  const nextReviewedByMemberId:
+    | (string & tags.Format<"uuid">)
+    | null
+    | undefined = props.body.reviewedByMemberId;
+  const nextRejectionReason: string | null | undefined =
+    props.body.rejectionReason;
+  if (
+    nextWeekStartDate !== undefined &&
+    new Date(nextWeekStartDate).getUTCDay() !== 1
+  )
+    throw new HttpException("Conflict", 409);
+  if (
+    nextWeekEndDate !== undefined &&
+    new Date(nextWeekEndDate).getUTCDay() !== 0
+  )
+    throw new HttpException("Conflict", 409);
+  const resolvedWeekStartDate: string =
+    nextWeekStartDate ?? current.week_start_date.toISOString();
+  const resolvedWeekEndDate: string =
+    nextWeekEndDate ?? current.week_end_date.toISOString();
+  if (resolvedWeekStartDate > resolvedWeekEndDate)
+    throw new HttpException("Conflict", 409);
+  const ownerEditable: boolean =
+    current.status === "draft" || current.status === "rejected";
+  const reviewFieldsProvided: boolean =
+    nextStatus !== undefined ||
+    nextSubmittedAt !== undefined ||
+    nextReviewedAt !== undefined ||
+    nextReviewedByMemberId !== undefined ||
+    nextRejectionReason !== undefined;
+  if (!ownerEditable && !reviewFieldsProvided)
+    throw new HttpException("Forbidden", 403);
+  if (
+    nextStatus === "rejected" &&
+    (nextRejectionReason === undefined || nextRejectionReason === null)
+  ) {
+    throw new HttpException("Conflict", 409);
   }
+  if (nextStatus === "approved" || nextStatus === "rejected") {
+    if (
+      nextReviewedAt === undefined ||
+      nextReviewedAt === null ||
+      nextReviewedByMemberId === undefined ||
+      nextReviewedByMemberId === null
+    ) {
+      throw new HttpException("Conflict", 409);
+    }
+  }
+  if (
+    nextStatus !== undefined &&
+    nextStatus !== "draft" &&
+    nextStatus !== "submitted" &&
+    nextStatus !== "approved" &&
+    nextStatus !== "rejected"
+  ) {
+    throw new HttpException("Conflict", 409);
+  }
+  const duplicate = await MyGlobal.prisma.erp_hrm_time_timesheets.findFirst({
+    where: {
+      id: { not: props.timesheetId },
+      erp_hrm_time_employee_id: current.erp_hrm_time_employee_id,
+      week_start_date: current.week_start_date,
+      deleted_at: null,
+    },
+    select: { id: true },
+  });
+  if (duplicate !== null && nextWeekStartDate !== undefined)
+    throw new HttpException("Conflict", 409);
+  await MyGlobal.prisma.erp_hrm_time_timesheets.update({
+    where: { id: props.timesheetId },
+    data: {
+      ...(nextWeekStartDate !== undefined
+        ? { week_start_date: new Date(nextWeekStartDate) }
+        : {}),
+      ...(nextWeekEndDate !== undefined
+        ? { week_end_date: new Date(nextWeekEndDate) }
+        : {}),
+      ...(nextStatus !== undefined ? { status: nextStatus } : {}),
+      ...(nextSubmittedAt !== undefined
+        ? {
+            submitted_at:
+              nextSubmittedAt === null ? null : new Date(nextSubmittedAt),
+          }
+        : {}),
+      ...(nextReviewedAt !== undefined
+        ? {
+            reviewed_at:
+              nextReviewedAt === null ? null : new Date(nextReviewedAt),
+          }
+        : {}),
+      ...(nextReviewedByMemberId !== undefined
+        ? { reviewed_by_member_id: nextReviewedByMemberId }
+        : {}),
+      ...(nextRejectionReason !== undefined
+        ? { rejection_reason: nextRejectionReason }
+        : {}),
+      updated_at: new Date(),
+    },
+  });
   const updated =
     await MyGlobal.prisma.erp_hrm_time_timesheets.findUniqueOrThrow({
       where: { id: props.timesheetId },

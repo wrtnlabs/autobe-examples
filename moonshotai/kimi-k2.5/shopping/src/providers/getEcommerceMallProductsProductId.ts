@@ -5,7 +5,6 @@ import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/stru
 import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -19,7 +18,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getEcommerceMallProductsProductId(props: {
-  productId: string;
+  productId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallProduct> {
   const product =
     await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({

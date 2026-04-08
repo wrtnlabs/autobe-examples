@@ -26,12 +26,13 @@ export async function customerAuthorize(request: {
   const session = await MyGlobal.prisma.ecommerce_mall_customer_sessions.findFirst({
     where: {
       id: payload.session_id,
+      ecommerce_mall_customer_id: payload.id,
       expired_at: { gt: new Date() },
     },
   });
 
   if (session === null) {
-    throw new ForbiddenException("Session expired");
+    throw new ForbiddenException("Session expired or invalid");
   }
 
   return payload;

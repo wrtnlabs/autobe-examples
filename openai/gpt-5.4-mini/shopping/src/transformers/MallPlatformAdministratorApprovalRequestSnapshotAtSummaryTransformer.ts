@@ -16,19 +16,6 @@ export namespace MallPlatformAdministratorApprovalRequestSnapshotAtSummaryTransf
     Prisma.mall_platform_administrator_approval_request_snapshotsGetPayload<
       ReturnType<typeof select>
     >;
-  export async function transform(
-    input: Payload,
-  ): Promise<IMallPlatformAdministratorApprovalRequestSnapshot.ISummary> {
-    return {
-      id: input.id,
-      administratorApprovalRequest:
-        await MallPlatformAdministratorApprovalRequestAtSummaryTransformer.transform(
-          input.administratorApprovalRequest,
-        ),
-      snapshotReason: input.snapshot_reason,
-      createdAt: input.created_at.toISOString(),
-    };
-  }
   export function select() {
     return {
       select: {
@@ -40,4 +27,47 @@ export namespace MallPlatformAdministratorApprovalRequestSnapshotAtSummaryTransf
       },
     } satisfies Prisma.mall_platform_administrator_approval_request_snapshotsFindManyArgs;
   }
+  export async function transform(
+    input: Payload,
+  ): Promise<IMallPlatformAdministratorApprovalRequestSnapshot.ISummary> {
+    return {
+      id: input.id,
+      administratorApprovalRequest:
+        await MallPlatformAdministratorApprovalRequestAtSummaryTransformer.transform(
+          input.administratorApprovalRequest,
+        ),
+      snapshotReason: input.snapshot_reason,
+      createdAt: input.created_at.toISOString(),
+    } satisfies IMallPlatformAdministratorApprovalRequestSnapshot.ISummary;
+  }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace MallPlatformAdministratorApprovalRequestSnapshotAtSummaryTransformer {
+//       export type Payload = Prisma.mall_platform_administrator_approval_request_snapshotsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             snapshot_reason: true,
+//             created_at: true,
+//             administratorApprovalRequest: MallPlatformAdministratorApprovalRequestAtSummaryTransformer.select(),
+//           },
+//         } satisfies Prisma.mall_platform_administrator_approval_request_snapshotsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IMallPlatformAdministratorApprovalRequestSnapshot.ISummary> {
+//         return {
+//   id: {string},
+//   administratorApprovalRequest: await MallPlatformAdministratorApprovalRequestAtSummaryTransformer.transform(input.administratorApprovalRequest),
+//   snapshotReason: {string},
+//   createdAt: {string},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

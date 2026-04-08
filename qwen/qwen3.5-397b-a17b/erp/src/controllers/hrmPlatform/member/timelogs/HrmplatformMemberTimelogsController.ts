@@ -15,50 +15,40 @@ import { putHrmPlatformMemberTimelogsTimelogId } from "../../../../providers/put
 @Controller("/hrmPlatform/member/timelogs")
 export class HrmplatformMemberTimelogsController {
   /**
-   * Create a new time entry record (timelog) for the authenticated employee.
+   * Create a new timelog entry recording work performed by the authenticated employee.
    *
-   * This operation allows employees to log work time against a specific project with an optional task assignment. Each timelog captures the date work was performed, duration in minutes, optional description of work done, and whether the time is billable to a client.
+   * This endpoint allows employees to log time entries for work performed on specific projects. Each timelog captures the date, duration, project reference, and optional task assignment. Timelogs serve as the foundational data for timesheet compilation and organizational reporting.
    *
-   * Employees can only create timelogs for themselves and only for projects they are assigned to as project members. If a task is specified, it must belong to the selected project. The billable flag defaults to true if not provided.
+   * **Access Control**
    *
-   * Timelogs cannot be created for dates that fall within a week where the employee already has a submitted or approved timesheet, as those periods are locked for modifications. New timelogs are created without timesheet assignment and can be included in a draft timesheet later.
+   * Only authenticated employees can create timelogs for themselves. The employee must be active and assigned to the specified project. Users with time:manage permission can create timelogs on behalf of other employees.
    *
-   * This operation supports soft delete - deleted timelogs are marked with a deleted_at timestamp rather than being permanently removed from the database. Deleted timelogs are excluded from normal queries unless explicitly requested.
+   * **Validation Rules**
    *
-   * Upon successful creation, the system broadcasts a real-time event to users with time:view_all permission for live list updates.
+   * The project must be one the employee is assigned to as a project member. If a task is specified, it must belong to the selected project. Duration must be greater than zero minutes. The date cannot be in the future.
+   *
+   * **Timesheet Integration**
+   *
+   * New timelogs are created without timesheet assignment (hrm_platform_timesheet_id is null). They will be automatically included when the employee creates a draft timesheet for the corresponding week period.
    *
    * @param connection
-   * @param body Timelog creation data including work date, duration, project assignment, and optional task and description
+   * @param body Timelog creation data including date, duration, project reference, optional task, description, and billable flag.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new timelog entry for the authenticated employee.
+   * @x-autobe-specification Create a new timelog record in hrm_platform_timelogs table.
    *
-   * 1. Extract employee ID from authenticated session context
-   * 2. Validate request body:
-   *    - date: required, valid date format
-   *    - durationMinutes: required, positive integer (> 0)
-   *    - projectId: required, valid UUID
-   *    - taskId: optional, valid UUID if provided
-   *    - description: optional, string if provided
-   *    - billable: optional, boolean, defaults to true
-   * 3. Verify employee is assigned to the specified project (check hrm_platform_project_members)
-   * 4. If taskId provided, verify task belongs to the specified project
-   * 5. Check if date falls within a submitted or approved timesheet week for this employee - if so, reject (timelog would be locked)
-   * 6. Insert new record into hrm_platform_timelogs:
-   *    - id: generate UUID
-   *    - employee_id: from session
-   *    - project_id: from request
-   *    - task_id: from request or null
-   *    - timesheet_id: null (not yet in timesheet)
-   *    - date: from request
-   *    - duration_minutes: from request
-   *    - description: from request or null
-   *    - billable: from request or true
-   *    - created_at: current timestamp
-   *    - updated_at: current timestamp
-   *    - deleted_at: null
-   * 7. Generate timelog.created real-time event with payload including date, duration, project, task, description, billable
-   * 8. Return created timelog entity
+   * 1. Validate authenticated user has an active employee record in the current organization context.
+   * 2. Verify the employee is assigned to the specified project (check hrm_platform_project_members).
+   * 3. If task_id is provided, verify the task belongs to the specified project.
+   * 4. Validate duration_minutes > 0 and date is not in the future.
+   * 5. Check if employee has time:manage permission to create timelogs for other employees (if employee_id differs from authenticated user).
+   * 6. Insert new record with: id (UUID), hrm_platform_employee_id (authenticated employee), hrm_platform_project_id, hrm_platform_task_id (nullable), hrm_platform_timesheet_id (null), date, duration_minutes, description (nullable), billable (default true), created_at, updated_at.
+   * 7. Return the created timelog entity with all fields populated.
+   *
+   * Edge cases:
+   * - Reject if project is archived or completed.
+   * - Reject if employee is deactivated (unless user has time:manage permission).
+   * - Set billable to true if not provided in request.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -80,31 +70,55 @@ export class HrmplatformMemberTimelogsController {
   }
 
   /**
-   * Retrieve a filtered and paginated list of timelog entries.
+   * Retrieve a paginated list of timelogs with optional filtering and search criteria.
    *
-   * This operation provides employees with access to their own timelogs, while users with time:view_all permission can view all employees' timelogs across the organization. Supports comprehensive filtering by date range, project, task, billable status, and employee.
+   * This endpoint allows employees to view their own timelogs and users with time:view_all permission to view all timelogs within their organization. Results can be filtered by date range, project, task, and billable status to help users find specific time entries.
    *
-   * Timelogs included in approved timesheets are locked and cannot be modified, but remain visible in the list. Results are paginated with configurable page sizes and sorting options by date, duration, or creation timestamp.
+   * Timelogs are individual time entries recording work performed by employees on specific projects and optional tasks. Each timelog includes the date, duration in minutes, optional description, and billable flag. Timelogs may be associated with a timesheet if they have been submitted for approval.
+   *
+   * **Access Control**
+   *
+   * Employees can only access their own timelogs unless they have the time:view_all permission, which grants visibility into all organization timelogs. All results are scoped to the user's currently selected organization context.
+   *
+   * **Filtering Options**
+   *
+   * - Date range: Filter timelogs by work date (from/to dates)
+   * - Project: Filter by specific project ID
+   * - Task: Filter by specific task ID
+   * - Billable: Filter by billable status (true/false)
+   * - Timesheet: Filter by timesheet ID or null for unassigned timelogs
+   *
+   * **Pagination**
+   *
+   * Results are returned with cursor-based pagination including next cursor for loading additional pages. Each page includes timelog summary records optimized for list display.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for timelog filtering
+   * @param body Search criteria including date range, project, task, billable status filters, and pagination parameters.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
    * @x-autobe-specification Query hrm_platform_timelogs table with pagination and filtering.
    *
-   * Apply organization context filter: join with hrm_platform_employees to scope results to current organization.
+   * 1. Apply organization scope filter: join with hrm_platform_employees to filter by organization_id from authenticated user's context
+   * 2. Apply actor-based access control:
+   *    - If user has time:view_all permission: include all timelogs in organization
+   *    - Otherwise: filter by hrm_platform_employee_id matching user's employee record
+   * 3. Apply search filters from request body:
+   *    - dateFrom/dateTo: filter date field range (inclusive)
+   *    - hrmPlatformProjectId: filter by project foreign key
+   *    - hrmPlatformTaskId: filter by task foreign key (null matches unassigned)
+   *    - billable: filter by billable boolean
+   *    - hrmPlatformTimesheetId: filter by timesheet foreign key (null matches draft/unassigned)
+   * 4. Apply pagination using cursor-based approach with limit parameter
+   * 5. Order results by date descending (most recent first), then by created_at descending
+   * 6. Join with hrm_platform_projects for project name in summary
+   * 7. Optionally join with hrm_platform_tasks for task title in summary
+   * 8. Return IPageIHrmPlatformTimelog.ISummary with pagination metadata
    *
-   * Apply permission-based employee filter: if user lacks time:view_all, filter by employee_id = current user's employee id.
-   *
-   * Apply optional filters from request body: date range (date >= fromDate AND date <= toDate), project_id, task_id, billable boolean, employee_id (for managers).
-   *
-   * Join with hrm_platform_projects for project name, hrm_platform_tasks for task title, hrm_platform_employees for employee name.
-   *
-   * Include timesheet status indicator: join with hrm_platform_timesheets to determine if timelog is in approved status (locked).
-   *
-   * Support cursor-based pagination with take/skip parameters. Sort by date DESC by default, allow sorting by duration_minutes, created_at.
-   *
-   * Return IHrmPlatformTimelog.ISummary for each item with embedded project and task summaries.
+   * Edge cases:
+   * - Empty result set: return empty array with null next cursor
+   * - Invalid date range (from > to): return validation error
+   * - Invalid UUID format in filters: return validation error
+   * - Task ID not belonging to specified project: return empty results (no validation error)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -126,19 +140,37 @@ export class HrmplatformMemberTimelogsController {
   }
 
   /**
-   * Retrieve a specific time entry record by its unique identifier.
+   * Retrieves a single timelog entry by its unique identifier.
    *
-   * This operation returns the complete timelog entity including the employee who logged the time, the project and optional task the work was performed against, the work date, duration in minutes, optional description, and billable status. Also includes metadata such as creation and update timestamps.
+   * This endpoint returns the complete timelog record including all attributes: date, duration, project reference, optional task reference, description, billable flag, and timestamps. The timelog must belong to the authenticated employee's organization, and access is restricted based on ownership or permissions.
    *
-   * Timelogs are the fundamental unit of time measurement in the system, capturing granular work session data. This endpoint provides access to individual time entry details for viewing, auditing, or integration purposes.
+   * **Access Control**
    *
-   * Access control: Employees can view their own timelogs. Users with the time:view_all permission can view any employee's timelogs within the organization. Timelogs included in approved timesheets are locked and immutable.
+   * Employees can retrieve their own timelogs. Users with the time:view_all permission can retrieve any timelog within their organization. Requests for timelogs outside the user's organization context are rejected.
+   *
+   * **Related Resources**
+   *
+   * The response includes references to the associated project and optional task. If the timelog is included in a timesheet, the timesheet reference is also included. Clients can use these references to fetch related entity details through their respective endpoints.
    *
    * @param connection
-   * @param timelogId UUID identifier of the timelog to retrieve
+   * @param timelogId Unique identifier of the timelog entry (UUID format).
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_timelogs table by UUID primary key. Return the complete timelog record including all fields: id, employee_id, project_id, task_id, timesheet_id, date, duration_minutes, description, billable, created_at, updated_at, deleted_at. Verify the timelog exists and is not soft-deleted (deleted_at is null). Join with hrm_platform_employees, hrm_platform_projects, and hrm_platform_tasks if needed for authorization checks. Ensure the requesting user has permission to view this timelog (either owns it or has time:view_all permission). Return 404 if timelog not found or access denied.
+   * @x-autobe-specification Query hrm_platform_timelogs table by primary key id (UUID).
+   *
+   * Include related entities via joins:
+   * - Join hrm_platform_employees on hrm_platform_employee_id
+   * - Join hrm_platform_projects on hrm_platform_project_id
+   * - Left join hrm_platform_tasks on hrm_platform_task_id
+   * - Left join hrm_platform_timesheets on hrm_platform_timesheet_id
+   *
+   * Validate that the timelog belongs to the authenticated user's organization through the employee's organization membership.
+   *
+   * Check authorization: allow if timelog's employee_id matches authenticated employee OR user has time:view_all permission.
+   *
+   * Return 404 if timelog not found or user lacks permission.
+   *
+   * Exclude soft-deleted timelogs (deleted_at IS NULL) unless explicitly querying deleted records.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":timelogId")
@@ -160,32 +192,32 @@ export class HrmplatformMemberTimelogsController {
   }
 
   /**
-   * Update an existing timelog entry with modified work details.
+   * Updates an existing timelog entry with new values for date, duration, project, task, description, and billable status.
    *
-   * This operation allows employees to edit their own timelogs or users with time:manage permission to edit any timelog in the organization. The timelog can be updated only if it is not part of an approved timesheet - timelogs in approved timesheets are locked and immutable.
+   * Employees can edit their own timelogs only when the timelog is not part of an approved timesheet. Once a timesheet is approved, all included timelogs become immutable and cannot be modified.
    *
-   * When updating, the project must be one the employee is assigned to. If a task is specified, it must belong to the selected project. The billable flag indicates whether the time is chargeable to a client. Changes to the timelog update the updated_at timestamp and trigger a timelog updated event for real-time synchronization.
+   * Users with the time:manage permission can edit any employee's timelog, bypassing timesheet status restrictions. This administrative override allows correction of erroneous entries even in submitted or approved timesheets.
    *
-   * Attempting to modify a timelog in an approved timesheet results in a validation error. Similarly, assigning a project the employee is not a member of, or a task that doesn't belong to the project, will be rejected.
+   * The project must be one that the employee is assigned to as a project member. If a task is specified, it must belong to the selected project. Duration must be greater than zero minutes.
    *
    * @param connection
-   * @param timelogId UUID identifier of the timelog to update (global scope).
-   * @param body Update payload containing modifiable timelog fields. All fields are optional - only provided fields will be updated.
+   * @param timelogId UUID of the timelog entry to update.
+   * @param body Update payload containing modifiable timelog fields. All fields are optional - only provided fields will be updated. Project and task must respect employee membership constraints.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Retrieve the timelog by timelogId from hrm_platform_timelogs table.
-   * 2. Verify the timelog exists and is not soft-deleted (deleted_at is null).
-   * 3. Check timesheet lock status: if timesheet_id is not null, join with hrm_platform_timesheets and verify status is not 'approved'. If approved, reject with 422 error.
-   * 4. Authorization check: verify requester is either the employee who owns the timelog (employee_id matches) OR has time:manage permission in the organization.
-   * 5. Validate request body:
-   *    - project_id: verify employee is assigned to this project (exists in hrm_platform_project_members)
-   *    - task_id: if provided, verify it belongs to the project (task.project_id === request.project_id)
-   *    - date: must be a valid date
-   *    - duration_minutes: must be positive integer
-   *    - billable: boolean value
-   * 6. Update the timelog record with provided fields, set updated_at to current timestamp.
-   * 7. Return the updated timelog entity with all fields.
-   * 8. Emit timelog updated event for real-time subscribers.
+   * @x-autobe-specification Query hrm_platform_timelogs by timelogId UUID. Verify the timelog exists and is not soft-deleted.
+   *
+   * Check authorization: allow if requester is the timelog owner OR has time:manage permission.
+   *
+   * For non-admin users (timelog owner without time:manage): verify the timelog's timesheet is not in 'approved' status. If timesheet_id is null or timesheet status is draft/rejected, allow update. If timesheet status is approved, reject with 403 Forbidden.
+   *
+   * For admin users (time:manage permission): bypass timesheet status checks, allow update regardless of timesheet state.
+   *
+   * Validate update payload: date must be valid, duration_minutes must be > 0, if project_id changed verify employee is member of new project, if task_id provided verify it belongs to the project.
+   *
+   * Update allowed fields: date, duration_minutes, hrm_platform_project_id, hrm_platform_task_id, description, billable. Do NOT allow updates to hrm_platform_employee_id or hrm_platform_timesheet_id through this endpoint.
+   *
+   * Update updated_at timestamp. Return updated timelog record with joined project and task details.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":timelogId")
@@ -210,34 +242,35 @@ export class HrmplatformMemberTimelogsController {
   }
 
   /**
-   * Permanently delete a timelog entry by removing it from the system.
+   * Delete a specific timelog entry.
    *
-   * This operation allows employees to delete their own timelog entries, or users with time:manage permission to delete any employee's timelogs. Deletion is subject to timesheet status restrictions: employees cannot delete timelogs that are part of submitted or approved timesheets, while users with time:manage permission can delete any timelog regardless of timesheet status.
+   * This operation permanently removes a timelog from the system. Employees can delete their own timelogs only if the timelog is not part of any submitted or approved timesheet. Users with the time:manage permission can delete any employee's timelogs, bypassing timesheet status restrictions.
    *
-   * The timelog is soft-deleted by setting the deleted_at timestamp. Upon successful deletion, a timelog deletion event is generated to update real-time views. The deleted timelog is removed from all active timelog lists and timesheet calculations.
+   * Once deleted, the timelog is removed from the database and cannot be recovered. This operation should be used carefully as it affects timesheet totals and reporting data.
    *
    * @param connection
-   * @param timelogId UUID identifier of the timelog to delete
+   * @param timelogId UUID of the timelog to delete.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Delete a timelog by ID with authorization and timesheet status validation.
+   * @x-autobe-specification Delete the timelog identified by timelogId.
    *
-   * 1. Retrieve timelog from hrm_platform_timelogs table by timelogId
-   * 2. Verify requester authorization:
-   *    - If requester is the timelog's employee: check timesheet status
-   *    - If requester has time:manage permission: allow regardless of timesheet status
-   * 3. For non-managers, query hrm_platform_timesheets to check timesheet status:
-   *    - If timesheet_id is NULL or timesheet status is 'draft': allow deletion
-   *    - If timesheet status is 'submitted' or 'approved': reject with 403 error
-   * 4. Perform soft delete by setting deleted_at to current timestamp
-   * 5. Generate timelog deletion event for real-time list updates
-   * 6. Return 204 No Content on success
+   * 1. Verify the timelog exists in hrm_platform_timelogs table.
+   * 2. Check authorization:
+   *    - If requester has time:manage permission: allow deletion regardless of timesheet status
+   *    - Otherwise: verify requester owns the timelog (hrm_platform_employee_id matches requester's employee record)
+   * 3. Check timesheet constraints (for non-time:manage users):
+   *    - If timelog is part of a timesheet (hrm_platform_timesheet_id is not null):
+   *      - Load the timesheet and check its status
+   *      - If status is 'submitted' or 'approved': reject deletion with error
+   *      - If status is 'draft' or 'rejected': allow deletion
+   *    - If timelog is not part of any timesheet: allow deletion
+   * 4. Perform soft delete by setting deleted_at to current timestamp.
+   * 5. Return 204 No Content on success.
    *
-   * Edge cases:
-   * - Timelog not found: return 404
-   * - Timelog already deleted: return 404
-   * - Unauthorized (not owner and no time:manage permission): return 403
-   * - In submitted/approved timesheet without time:manage: return 403
+   * Error cases:
+   * - 404: Timelog not found
+   * - 403: Not authorized (not owner and no time:manage permission)
+   * - 409: Conflict (timelog locked in approved/submitted timesheet)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":timelogId")

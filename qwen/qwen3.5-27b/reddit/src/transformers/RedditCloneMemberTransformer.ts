@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace RedditCloneMemberTransformer {
@@ -16,13 +18,17 @@ export namespace RedditCloneMemberTransformer {
         id: true,
         email: true,
         username: true,
-        display_name: true,
-        bio: true,
-        avatar_uri: true,
-        karma: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        profile: {
+          select: {
+            display_name: true,
+            bio: true,
+            avatar: true,
+            karma: true,
+          },
+        } satisfies Prisma.reddit_clone_user_profilesFindManyArgs,
       },
     } satisfies Prisma.reddit_clone_membersFindManyArgs;
   }
@@ -31,13 +37,13 @@ export namespace RedditCloneMemberTransformer {
       id: input.id,
       email: input.email,
       username: input.username,
-      display_name: input.display_name,
-      bio: input.bio ?? null,
-      avatar_uri: input.avatar_uri ?? null,
-      karma: input.karma,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      display_name: input.profile?.display_name ?? "",
+      bio: input.profile?.bio ?? null,
+      avatar: input.profile?.avatar ?? null,
+      karma: input.profile?.karma ?? 0,
     };
   }
 }

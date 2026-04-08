@@ -4,7 +4,7 @@ import typia from "typia";
 
 import { IEcommerceMallProductVariant } from "../../../../api/structures/IEcommerceMallProductVariant";
 import { IPageIEcommerceMallProductVariant } from "../../../../api/structures/IPageIEcommerceMallProductVariant";
-import { getEcommerceMallProductsProductIdVariantsVariantId } from "../../../../providers/getEcommerceMallProductsProductIdVariantsVariantId";
+import { getEcommerceMallProductsProductIdVariantsProductVariantId } from "../../../../providers/getEcommerceMallProductsProductIdVariantsProductVariantId";
 import { patchEcommerceMallProductsProductIdVariants } from "../../../../providers/patchEcommerceMallProductsProductIdVariants";
 
 @Controller("/ecommerceMall/products/:productId/variants")
@@ -12,49 +12,33 @@ export class EcommercemallProductsVariantsController {
   /**
    * Retrieve a paginated list of product variants for a specific product.
    *
-   * This operation allows browsing all purchasable configurations (variants) of a given product. Each variant represents a distinct combination of options such as color, size, or material, with its own SKU code, optional price override, and stock quantity.
+   * Product variants represent specific purchasable configurations of a product, each identified by a unique SKU code within the product. Variants capture different option combinations such as color and size, allowing customers to select the exact configuration they want to purchase.
    *
-   * For sellers, this endpoint displays all variants of their own products including out-of-stock items. For customers, only variants of visible (non-deleted) products are accessible, and out-of-stock variants are clearly marked as unavailable for purchase.
+   * This operation supports filtering by stock availability status and searching by SKU code or option values. The response includes variant summaries optimized for list displays, showing SKU code, price (or base price if no variant override), and option values.
    *
-   * The response includes variant summaries with essential details: SKU code, option values (e.g., "Red", "Large"), pricing information, and current stock availability. Variant options are normalized and returned as key-value pairs for each variant.
-   *
-   * Results are paginated with configurable page size and support cursor-based navigation for efficient browsing of large variant catalogs.
+   * When retrieving variants for a product, only active (non-soft-deleted) variants are returned. Sellers can view all variants for their own products, while customers see only variants belonging to published products.
    *
    * @param connection
-   * @param productId Target product's ID (UUID) to list variants for
-   * @param body Search criteria including pagination, sorting, and filters for variant options and availability
+   * @param productId Parent product UUID. The product whose variants are being listed. Must exist in ecommerce_mall_products table.
+   * @param body Search criteria and pagination parameters for filtering product variants
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_product_variants table filtering by the provided productId path parameter.
+   * @x-autobe-specification Query ecommerce_mall_product_variants table filtered by product_id from the path parameter.
    *
-   * Join with ecommerce_mall_product_variant_options to retrieve option key-value pairs (option_name, option_value) for each variant.
-   * Join with ecommerce_mall_inventory_records to calculate current stock quantity by summing all inventory changes.
-   * Left join with ecommerce_mall_products to verify product visibility (check deleted_at is null for customer access).
+   * Select fields: id, sku_code, price, created_at, updated_at, and related variant options.
    *
-   * Authorization rules:
-   * 1. For sellers: Verify the authenticated seller owns the product (match seller_id). Return all variants regardless of soft delete status on the variant.
-   * 2. For customers: Verify the product is not deleted (deleted_at is null). Only return variants where deleted_at is null.
+   * Join with ecommerce_mall_product_variant_options to include option_name/option_value pairs for each variant.
    *
-   * Filtering capabilities:
-   * - Filter by option values (e.g., color=Red AND size=Large)
-   * - Filter by stock availability (in-stock only)
-   * - Filter by price range
+   * Support search filters in request body:
+   * - Search by sku_code (partial match using GIN index)
+   * - Search by option_name/option_value combinations
+   * - Filter by in-stock status (requires joining with inventory records to calculate current stock)
    *
-   * Sorting options:
-   * - By created_at (newest/oldest)
-   * - By SKU code (alphabetical)
-   * - By price (low to high / high to low)
+   * Exclude soft-deleted variants (deleted_at IS NULL).
    *
-   * Pagination: Use cursor-based pagination with limit/after parameters.
+   * Return paginated results with cursor-based navigation. Calculate total count for pagination metadata.
    *
-   * Response calculation:
-   * - For each variant, calculate current_stock = sum of inventory_record.quantity values
-   * - Determine is_available = (current_stock > 0 AND variant.deleted_at IS NULL)
-   * - Variant price display: use variant.price if not null, else product.base_price
-   *
-   * Error handling:
-   * - 404 if product not found or not visible (for customers)
-   * - 403 if seller attempts to view variants of another seller's product
+   * Authorization check: Verify the requesting user (seller) owns the product, or (customer) the product is not deleted and belongs to an active seller.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -76,49 +60,41 @@ export class EcommercemallProductsVariantsController {
   }
 
   /**
-   * Retrieve the full details of a specific product variant.
+   * Retrieve a single product variant by its unique identifier.
    *
-   * This operation returns comprehensive information about a product variant, which represents a unique purchasable configuration of a product defined by specific option combinations (such as color, size, or other attributes). The variant includes its unique SKU code, option values, pricing information, and current stock status.
+   * This operation returns complete information about a specific product variant, including its SKU code, pricing, option values (such as color and size), and current stock quantity. The variant is identified by productVariantId and must belong to the specified product.
    *
-   * Customers use this endpoint when viewing product details to understand available configurations and their respective prices and availability. Sellers use this endpoint when managing variants in their product catalog.
+   * The response includes normalized option values stored in the variant_options child table, enabling clients to display variant selectors. Current stock is calculated by summing all inventory records for the variant.
    *
-   * The response includes the complete variant data including all option key-value pairs, the variant-specific price (which may override the product's base price), and the current calculated stock quantity based on all inventory records for this variant.
-   *
-   * This endpoint requires the parent product ID in the path for proper resource scoping, and returns a 404 response if either the product or variant does not exist or is not accessible.
+   * Soft-deleted variants are not returned. If the variant does not exist or belongs to a different product, a 404 error is returned.
    *
    * @param connection
-   * @param productId ID of the parent product containing the variant
-   * @param variantId Unique identifier of the product variant to retrieve
+   * @param productId Parent product UUID (context validation)
+   * @param productVariantId Product variant UUID to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_product_variants table by the variantId primary key. Join with ecommerce_mall_product_variant_options to retrieve all option key-value pairs associated with this variant. Calculate the current stock quantity by aggregating all related records from ecommerce_mall_inventory_records for this variant (sum of quantity changes).
-   *
-   * The variant must belong to the specified product (productId). Return 404 NOT FOUND if the variant does not exist or does not belong to the specified product.
-   *
-   * Authorization:
-   * - Customers: Can view variants of published products
-   * - Sellers: Can view variants of their own products only
-   * - Administrators: Can view variants of any product
-   *
-   * The response includes:
-   * - Basic variant info (id, skuCode, price, stockQuantity)
-   * - Array of option values (e.g., [{key: "color", value: "Red"}, {key: "size", value: "Large"}])
-   * - Reference to parent product via productId
-   *
-   * Stock quantity is calculated dynamically from all inventory records: currentStock = SUM(inventory_records.quantity) where positive values represent restocking and negative values represent order deductions or adjustments.
+   * @x-autobe-specification Query ecommerce_mall_product_variants table by id matching productVariantId path parameter.
+   * Verify the variant's product_id matches the productId path parameter - return 404 if mismatch.
+   * Exclude variants where deleted_at is not null (soft-deleted).
+   * Join with ecommerce_mall_product_variant_options to retrieve all option key-value pairs (option_name, option_value).
+   * Join with ecommerce_mall_inventory_records and sum quantity_change to calculate current stock level.
+   * Return 404 if variant not found or if variant belongs to a different product.
+   * Include all variant fields: id, sku_code, price, created_at, updated_at.
+   * Include nested array of variantOptions with option_name and option_value.
+   * Include calculated inventory_quantity as sum of all inventory records.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":variantId")
+  @TypedRoute.Get(":productVariantId")
   public async at(
     @TypedParam("productId")
     productId: string,
-    @TypedParam("variantId")
-    variantId: string,
+    @TypedParam("productVariantId")
+    productVariantId: string,
   ): Promise<IEcommerceMallProductVariant> {
     try {
-      return await getEcommerceMallProductsProductIdVariantsVariantId({
+      return await getEcommerceMallProductsProductIdVariantsProductVariantId({
         productId,
-        variantId,
+        productVariantId,
       });
     } catch (error) {
       console.log(error);

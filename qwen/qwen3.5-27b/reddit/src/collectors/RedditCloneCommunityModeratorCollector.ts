@@ -14,12 +14,12 @@ export namespace RedditCloneCommunityModeratorCollector {
   }) {
     return {
       id: v4(),
-      role: props.body.role ?? "mod",
+      role: props.body.role,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
       community: { connect: { id: props.redditCloneCommunities.id } },
-      member: { connect: { id: props.body.memberId } },
+      userProfile: { connect: { id: props.body.userProfileId } },
     } satisfies Prisma.reddit_clone_community_moderatorsCreateInput;
   }
 }

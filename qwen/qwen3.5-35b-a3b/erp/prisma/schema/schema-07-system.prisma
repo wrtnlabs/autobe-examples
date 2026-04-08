@@ -1,0 +1,123 @@
+/// Central audit trail recording all system-wide activities and actions
+/// across all business domains for compliance, debugging, and historical
+/// tracking.
+///
+/// ## Core Purpose
+///
+/// This table stores immutable audit records for every significant system
+/// operation, enabling complete visibility into who did what, when, and on
+/// which entity. It serves as the single source of truth for system activity
+/// across all business domains (organization, employee, project, task,
+/// timetracking, etc.).
+///
+/// ## Data Model Design
+///
+/// Each activity log entry contains polymorphic references to the affected
+/// entity through entity_type and entity_id fields, allowing a single table
+/// to audit events from all domain tables without requiring multiple foreign
+/// keys. The organization_id field enforces data isolation boundaries,
+/// ensuring users only see activity within their organizations.
+///
+/// ## Query Patterns
+///
+/// Common queries include: filtering by entity type (e.g., "show all project
+/// changes"), filtering by action type (e.g., "show all approvals"),
+/// time-range queries within an organization, and searching metadata via the
+/// extra_data JSON field.
+///
+/// @namespace system
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_activity_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who performed the action.
+  ///
+  /// Used for audit trail attribution. When the action is performed by a
+  /// system operation (background job, automated process), this field may be
+  /// null. Member context is established through the active session at the
+  /// time of the action.
+  member_id String?
+  
+  /// Reference to the organization that owns this activity record.
+  ///
+  /// Enforces multi-tenant data isolation. Activity logs are scoped to
+  /// organizations, ensuring users can only view activity within their
+  /// authorized organizations. Cross-organization activity (if any) is
+  /// explicitly tagged with the relevant organization_id.
+  organization_id String
+  
+  /// Type of business entity that was affected by this action.
+  ///
+  /// Examples: 'organization', 'user', 'employee', 'contract', 'department',
+  /// 'project', 'task', 'timelog', 'timesheet', 'timer', 'role', 'permission'.
+  /// Used for filtering and aggregating activity by entity type.
+  entity_type String
+  
+  /// UUID of the specific business entity that was affected.
+  ///
+  /// Polymorphic reference: when combined with entity_type, uniquely
+  /// identifies the affected record across all domain tables. Enables
+  /// efficient queries without requiring entity-specific foreign keys.
+  entity_id String
+  
+  /// Category of action performed on the entity.
+  ///
+  /// Examples: 'create', 'update', 'delete', 'restore', 'approve', 'reject',
+  /// 'transfer'. Provides high-level categorization for filtering and
+  /// reporting.
+  action_type String
+  
+  /// Specific action name providing detailed context.
+  ///
+  /// Examples: 'create_project', 'update_employee_status',
+  /// 'approve_timesheet', 'delete_task'. Enables precise filtering and audit
+  /// trail reconstruction.
+  action_name String
+  
+  /// Optional JSON field for additional context and metadata.
+  ///
+  /// Stores structured data beyond the core fields: before/after state
+  /// snapshots, changed fields list, IP address, user agent, reference IDs for
+  /// related actions, or any other contextual information needed for audit
+  /// purposes.
+  extra_data String?
+  
+  /// Timestamp when the activity was recorded.
+  ///
+  /// Immutable creation time, set once when the audit log entry is created.
+  /// Used for time-range queries and audit trail reconstruction.
+  created_at DateTime
+  
+  /// Timestamp when the activity record was last modified.
+  ///
+  /// Updated on any change to the record. Enables tracking of audit log
+  /// modifications themselves.
+  updated_at DateTime
+  
+  /// Timestamp when the activity record was soft-deleted.
+  ///
+  /// Null when active. When set, indicates the record is marked for deletion
+  /// but retained for audit compliance. Enables gradual purge of old audit
+  /// data.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member hrm_platform_members? @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([member_id])
+  @@unique([entity_type, entity_id])
+  @@index([entity_type])
+  @@index([action_type])
+  @@index([organization_id, created_at])
+}

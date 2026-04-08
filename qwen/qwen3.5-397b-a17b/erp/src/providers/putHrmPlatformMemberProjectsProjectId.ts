@@ -21,60 +21,99 @@ export async function putHrmPlatformMemberProjectsProjectId(props: {
 }): Promise<IHrmPlatformProject> {
   const project = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
     {
-      where: { id: props.projectId, deleted_at: null },
-      select: { id: true, organization_id: true },
+      where: {
+        id: props.projectId,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        organization_id: true,
+        status: true,
+      },
     },
   );
   const employee =
     await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
       where: {
-        user_id: props.member.id,
+        member: {
+          id: props.member.id,
+        },
         organization_id: project.organization_id,
         deleted_at: null,
       },
-      select: { id: true, role_id: true },
-    });
-  const hasPermission =
-    await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
-      where: {
-        hrm_platform_role_id: employee.role_id,
-        permission: "project:manage",
-        deleted_at: null,
+      include: {
+        role: {
+          include: {
+            rolePermissions: {
+              include: {
+                permission: true,
+              },
+            },
+          },
+        },
       },
     });
-  if (!hasPermission) {
+  const hasManagePermission = employee.role.rolePermissions.some(
+    (rp: {
+      permission: {
+        code: string;
+      };
+    }) => rp.permission.code === "project:manage",
+  );
+  if (!hasManagePermission) {
     throw new HttpException("Forbidden", 403);
   }
+  if (props.body.status !== undefined) {
+    const newStatus = props.body.status;
+    const oldStatus = project.status;
+    if (
+      newStatus === "active" &&
+      (oldStatus === "archived" || oldStatus === "completed")
+    ) {
+      const hasTimelogs = await MyGlobal.prisma.hrm_platform_timelogs.findFirst(
+        {
+          where: {
+            hrm_platform_project_id: props.projectId,
+          },
+        },
+      );
+      if (hasTimelogs !== null) {
+        throw new HttpException(
+          "Cannot reactivate project with existing timelogs",
+          400,
+        );
+      }
+    }
+  }
   await MyGlobal.prisma.hrm_platform_projects.update({
-    where: { id: props.projectId },
+    where: {
+      id: props.projectId,
+    },
     data: {
       ...(props.body.name !== undefined && { name: props.body.name }),
       ...(props.body.description !== undefined && {
         description: props.body.description,
       }),
-      ...(props.body.color_code !== undefined && {
-        color_code: props.body.color_code,
-      }),
+      ...(props.body.color !== undefined && { color: props.body.color }),
       ...(props.body.status !== undefined && { status: props.body.status }),
       ...(props.body.budget_hours !== undefined && {
         budget_hours: props.body.budget_hours,
       }),
       ...(props.body.start_date !== undefined && {
         start_date:
-          props.body.start_date === null
-            ? null
-            : new Date(props.body.start_date),
+          props.body.start_date !== null ? props.body.start_date : null,
       }),
       ...(props.body.end_date !== undefined && {
-        end_date:
-          props.body.end_date === null ? null : new Date(props.body.end_date),
+        end_date: props.body.end_date !== null ? props.body.end_date : null,
       }),
       updated_at: new Date(),
     },
   });
   const updated = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
     {
-      where: { id: props.projectId },
+      where: {
+        id: props.projectId,
+      },
       ...HrmPlatformProjectTransformer.select(),
     },
   );

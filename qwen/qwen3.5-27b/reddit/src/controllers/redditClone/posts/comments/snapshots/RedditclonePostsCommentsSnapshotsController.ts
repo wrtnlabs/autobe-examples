@@ -6,47 +6,96 @@ import { IPageIRedditCloneCommentSnapshot } from "../../../../../api/structures/
 import { IRedditCloneCommentSnapshot } from "../../../../../api/structures/IRedditCloneCommentSnapshot";
 import { getRedditClonePostsPostIdCommentsCommentIdSnapshotsSnapshotId } from "../../../../../providers/getRedditClonePostsPostIdCommentsCommentIdSnapshotsSnapshotId";
 import { patchRedditClonePostsPostIdCommentsCommentIdSnapshots } from "../../../../../providers/patchRedditClonePostsPostIdCommentsCommentIdSnapshots";
+import { postRedditClonePostsPostIdCommentsCommentIdSnapshots } from "../../../../../providers/postRedditClonePostsPostIdCommentsCommentIdSnapshots";
 
 @Controller("/redditClone/posts/:postId/comments/:commentId/snapshots")
 export class RedditclonePostsCommentsSnapshotsController {
   /**
-   * Retrieve a filtered and paginated list of historical snapshots for a specific comment's modifications.
+   * Creates an immutable point-in-time snapshot of a comment's current state for audit trail and edit history purposes.
    *
-   * This operation provides access to the audit trail of a comment, showing all states the comment has been through over time. Each snapshot captures the complete state of the comment at a specific point in time, including content, vote score, and lifecycle timestamps. Snapshots are created when a comment is edited, deleted, or modified by a moderator.
+   * This operation captures the complete state of a comment at the exact moment of invocation, preserving all field values including content, author, post reference, and timestamps. Snapshots are used to maintain an audit trail of comment modifications, support content moderation reviews, and enable data recovery scenarios.
    *
-   * The endpoint supports advanced filtering capabilities including date range queries on snapshot creation time, content search, vote score filtering, and deletion state filtering. Results are returned with pagination support for efficient browsing of comment history.
-   *
-   * This operation is primarily used for moderation purposes, compliance auditing, and content recovery scenarios. It enables moderators and administrators to track comment changes, recover deleted content, and maintain accountability for content modifications.
-   *
-   * Access to comment snapshots may be restricted based on user roles - typically available to comment authors, community moderators, and platform administrators. Regular users may have limited or no access to snapshot history depending on privacy policies.
+   * The snapshot is created from the current state of the comment and cannot be modified after creation. This ensures historical accuracy for compliance and audit requirements. The operation validates that both the post and comment exist and are accessible before creating the snapshot.
    *
    * @param connection
-   * @param postId The unique identifier of the post containing the target comment (global scope)
-   * @param commentId The unique identifier of the comment whose snapshots are being retrieved (global scope)
-   * @param body Search criteria and pagination parameters for comment snapshots
+   * @param postId UUID of the post that contains the target comment.
+   * @param commentId UUID of the comment to snapshot.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query reddit_clone_comment_snapshots table filtering by reddit_clone_comment_id matching the commentId path parameter.
+   * @x-autobe-specification Create a new comment snapshot by querying the reddit_clone_comments table for the specified commentId.
    *
-   * Apply search filters from request body:
-   * - Date range filtering on snapshot_created_at
-   * - Content search using trigram matching on content field
-   * - Vote score range filtering
-   * - Deleted state filtering (comment_deleted_at is null or not null)
+   * 1. Validate that the comment with commentId exists and is not deleted (deleted_at is null)
+   * 2. Validate that the postId in the path matches the comment's reddit_clone_post_id
+   * 3. Query the comment record to capture all current field values:
+   *    - reddit_clone_user_profile_id (author)
+   *    - reddit_clone_post_id (parent post)
+   *    - parent_comment_id (reply parent, nullable)
+   *    - content (comment text)
+   *    - created_at (original creation time)
+   *    - updated_at (last update time)
+   * 4. Insert a new record into reddit_clone_comment_snapshots with:
+   *    - Generate new UUID for snapshot id
+   *    - Copy all comment fields to snapshot fields
+   *    - Set snapshot_created_at to current timestamp
+   * 5. Return the created snapshot with all fields
    *
-   * Support pagination with cursor-based or offset-based approach.
-   * Sorting options: snapshot_created_at (ascending/descending), vote_score, content.
+   * Edge cases:
+   * - Return 404 if comment not found
+   * - Return 404 if post not found
+   * - Return 400 if postId doesn't match comment's post
+   * - Return 403 if comment is already deleted
    *
-   * Validate that the commentId exists in reddit_clone_comments table and belongs to the postId.
+   * This operation is typically called internally by the comment update service, not directly by users.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @TypedParam("postId")
+    postId: string & tags.Format<"uuid">,
+    @TypedParam("commentId")
+    commentId: string & tags.Format<"uuid">,
+  ): Promise<IRedditCloneCommentSnapshot> {
+    try {
+      return await postRedditClonePostsPostIdCommentsCommentIdSnapshots({
+        postId,
+        commentId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve paginated list of edit history snapshots for a specific comment.
    *
-   * Return snapshot records with denormalized data including:
-   * - Snapshot ID and creation timestamp
-   * - Comment content at snapshot time
-   * - Vote score at snapshot time
-   * - Comment lifecycle timestamps (created, updated, deleted)
-   * - Author reference (reddit_clone_member_id)
+   * This endpoint returns all snapshots created when a comment was edited, showing the complete edit history. Each snapshot captures the comment's state at a specific point in time, including content, author, and timestamps. Snapshots are read-only and automatically created when comments are modified.
    *
-   * No write operations allowed - snapshots are immutable historical records.
+   * Snapshots support content moderation reviews, user accountability, and data recovery scenarios. They preserve historical data even if the original comment is later deleted or modified.
+   *
+   * Access requires authentication. Users can view snapshots for any comment in the platform. Moderators may have additional access to snapshots for deleted comments during moderation reviews.
+   *
+   * @param connection
+   * @param postId Unique identifier of the post containing the comment (global scope)
+   * @param commentId Unique identifier of the comment whose snapshots to retrieve (global scope)
+   * @param body Search criteria for filtering comment snapshots, including date ranges, content search terms, and pagination parameters.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor null
+   * @x-autobe-specification Query reddit_clone_comment_snapshots table for snapshots of the specified comment.
+   *
+   * 1. Validate postId and commentId exist in reddit_clone_posts and reddit_clone_comments tables
+   * 2. Filter snapshots by reddit_clone_comment_id = commentId
+   * 3. Apply search filters from request body (date range, content search)
+   * 4. Apply sorting (default: snapshot_created_at DESC for most recent first)
+   * 5. Apply pagination (cursor-based or offset-based)
+   * 6. Join with reddit_clone_user_profiles for author information if needed
+   * 7. Return paginated results with snapshot metadata
+   *
+   * Edge cases:
+   * - If comment doesn't exist, return 404 Not Found
+   * - If comment has no snapshots (never edited), return empty list with total count 0
+   * - If post doesn't exist, return 404 Not Found
+   * - Ensure snapshots are returned in chronological order based on snapshot_created_at
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -71,31 +120,19 @@ export class RedditclonePostsCommentsSnapshotsController {
   }
 
   /**
-   * Retrieve a specific comment snapshot by its unique identifier.
+   * Retrieves a specific comment snapshot by its unique identifier, showing the point-in-time state of a comment at the moment the snapshot was taken.
    *
-   * This operation returns a point-in-time snapshot of a comment's state at the moment it was modified or deleted. Comment snapshots are immutable historical records that preserve the exact state of a comment including its content, vote score, author reference, post reference, and timestamps as they existed when the snapshot was taken.
+   * Comment snapshots preserve the complete state of a comment including content, author, post reference, and timestamps at a specific moment in time. These snapshots are created when comments are edited, providing an immutable audit trail of all changes. They support content moderation reviews, user accountability, and historical analysis.
    *
-   * Snapshots are created when a comment is edited by its author, deleted (soft or hard delete), or modified by a moderator. Each snapshot stores denormalized data to ensure historical accuracy even if the original comment is later modified or deleted. This enables audit trails for moderation and compliance, recovery of deleted or edited content, and historical analysis of comment changes.
-   *
-   * The endpoint requires three path parameters: the post ID containing the comment, the comment ID being snapshot, and the specific snapshot ID to retrieve. This nested structure ensures referential integrity and provides context for the snapshot's origin.
-   *
-   * This operation is read-only and does not require authentication, allowing public access to the audit trail for transparency and accountability in content modifications.
+   * The snapshot includes denormalized data from the original comment to ensure data integrity even if the original comment, post, or user profile is later modified or deleted. This endpoint requires the post ID and comment ID in the path for hierarchical navigation and validation purposes.
    *
    * @param connection
-   * @param postId The unique identifier of the post containing the comment (global scope)
-   * @param commentId The unique identifier of the comment being snapshot (global scope)
-   * @param snapshotId The unique identifier of the comment snapshot to retrieve (global scope)
+   * @param postId UUID of the post that the commented-on post belongs to (global scope)
+   * @param commentId UUID of the comment that was snapshotted (global scope)
+   * @param snapshotId UUID of the specific comment snapshot to retrieve (global scope)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_clone_comment_snapshots table for a single snapshot record matching the provided snapshotId.
-   *
-   * 1. Validate that all three path parameters (postId, commentId, snapshotId) are valid UUIDs.
-   * 2. Perform a SELECT query on reddit_clone_comment_snapshots where id = snapshotId.
-   * 3. Verify referential integrity: ensure the snapshot's reddit_clone_post_id matches postId and reddit_clone_comment_id matches commentId.
-   * 4. Return the snapshot record with all denormalized fields including content, vote_score, timestamps, and author references.
-   * 5. If no snapshot found or referential integrity fails, return 404 Not Found.
-   * 6. No authentication required for reading snapshots (public audit trail access).
-   * 7. Include snapshot_created_at to show when the modification was recorded.
+   * @x-autobe-specification Query the reddit_clone_comment_snapshots table using the snapshotId as the primary key. Validate that the postId parameter matches the snapshot's reddit_clone_post_id field and that the commentId parameter matches the snapshot's reddit_clone_comment_id field for consistency. If the snapshot does not exist, return 404 Not Found. If the postId or commentId does not match the snapshot's foreign keys, return 400 Bad Request. Return the complete snapshot record including all denormalized fields: id, reddit_clone_comment_id, user_profile_id, reddit_clone_post_id, parent_comment_id, content, created_at, updated_at, and snapshot_created_at. No joins are needed as all data is denormalized in the snapshot table.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":snapshotId")

@@ -2,119 +2,62 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IRedditClonePostImage } from "../../../../api/structures/IRedditClonePostImage";
-import { getRedditClonePostsPostIdVotesVoteId } from "../../../../providers/getRedditClonePostsPostIdVotesVoteId";
+import { IRedditClonePostVote } from "../../../../api/structures/IRedditClonePostVote";
 import { patchRedditClonePostsPostIdVotes } from "../../../../providers/patchRedditClonePostsPostIdVotes";
 
 @Controller("/redditClone/posts/:postId/votes")
 export class RedditclonePostsVotesController {
   /**
-   * Change the direction of an existing vote on a post.
+   * Cast or change a vote on a post.
    *
-   * This operation allows an authenticated member to change their existing vote on a post from upvote to downvote or vice versa. The system enforces a single-vote-per-content rule: each user can only have one vote record per post.
+   * This operation allows authenticated members to upvote or downvote a post. If the user has already voted on the post, this operation changes their existing vote direction or removes the vote if the same direction is submitted again.
    *
-   * When changing vote direction, the system performs a two-point adjustment to the post's vote_score (one to remove the old vote effect, one to add the new vote effect) and adjusts the author's karma accordingly. For example, changing from upvote to downvote decreases the vote_score by 2 and decreases author karma by 2.
+   * When a vote is cast, the system adjusts the post's vote score accordingly and updates the karma score of the post author. Upvotes increase karma by 1, downvotes decrease karma by 1. When a vote direction is changed (from upvote to downvote or vice versa), the system applies a net change of 2 points to both the vote score and author karma.
    *
-   * This endpoint requires authentication. The authenticated member must have a pre-existing vote on the specified post. Attempting to change a vote that does not exist will result in an error. To create a new vote, use the upvote or downvote endpoints instead.
-   *
-   * Votes on posts and comments are tracked separately. Changing a vote on a post does not affect existing votes on comments.
+   * The user must be authenticated as a member to perform this operation. Users who are banned from the community can still vote on posts within that community.
    *
    * @param connection
-   * @param postId Unique identifier of the post whose vote is being changed
-   * @param body New vote direction
+   * @param postId Unique identifier of the post being voted on (UUID format)
+   * @param body Vote direction: 'upvote' to cast or change to upvote, 'downvote' to cast or change to downvote. Submitting the same direction as existing vote removes the vote.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification 1. Authentication: Verify the request includes valid member authentication via session/JWT. Reject if unauthenticated with 401 status.
+   * @x-autobe-specification Handle post voting with the following logic:
    *
-   * 2. Parameter validation: Validate postId is a valid UUID format.
+   * 1. Authentication: Verify the request includes valid member session token. Extract member ID from session.
    *
-   * 3. Existence check: Query reddit_clone_posts table to verify the post exists and has not been soft-deleted (deleted_at IS NULL). Return 404 if post not found.
+   * 2. Validate postId: Query reddit_clone_posts table to verify the post exists and is not soft-deleted (deleted_at is null).
    *
-   * 4. Vote lookup: Query reddit_clone_post_votes table to find existing vote where reddit_clone_member_id matches authenticated user and reddit_clone_post_id matches postId. If no vote exists, return 400 error with message indicating user has no vote to change.
+   * 3. Process vote operation:
+   *    a. Check if a vote record exists in reddit_clone_post_votes for the member and post combination (using unique index on reddit_clone_member_id and reddit_clone_post_id).
+   *    b. If NO existing vote:
+   *       - Create new vote record with direction from request body.
+   *       - If direction is 'upvote': increment post's vote_score by 1, increment author's karma_score by 1.
+   *       - If direction is 'downvote': decrement post's vote_score by 1, decrement author's karma_score by 1.
+   *    c. If existing vote:
+   *       - If direction matches existing vote: delete the vote record (remove vote). Adjust post score and author karma in reverse direction.
+   *       - If direction differs: update vote record direction. Adjust post score and author karma by 2 points in the new direction.
    *
-   * 5. Direction validation: Validate request body direction is either 'upvote' or 'downvote'. Validate new direction differs from current vote direction. If same direction, return 400 error.
+   * 4. All vote score and karma updates must occur within a database transaction to maintain data consistency.
    *
-   * 6. Vote update (within transaction):
-   *    - Update reddit_clone_post_votes.direction to new value
-   *    - Update reddit_clone_post_votes.updated_at to current timestamp
+   * 5. Return the created, updated, or deleted vote record as appropriate.
    *
-   * 7. Vote score adjustment:
-   *    - Calculate score delta: if changing from upvote (+1) to downvote (-1), delta = -2; if changing from downvote (-1) to upvote (+1), delta = +2
-   *    - Update reddit_clone_posts.vote_score by delta amount
-   *
-   * 8. Karma adjustment:
-   *    - Get the post's author reddit_clone_member_id from reddit_clone_posts
-   *    - Calculate karma delta same as vote score delta
-   *    - Update reddit_clone_user_karmas.karma for the author
-   *
-   * 9. Response: Return the updated vote record including id, direction, created_at, updated_at.
+   * Edge cases:
+   * - If post does not exist or is deleted: return 404 error.
+   * - If direction value is invalid (not 'upvote' or 'downvote'): return 400 validation error.
+   * - If user is not authenticated: return 401 error.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
-  public async change(
+  public async update(
     @TypedParam("postId")
     postId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IRedditClonePostImage.IChangeDirection,
-  ): Promise<IRedditClonePostImage> {
+    body: IRedditClonePostVote.IUpdate,
+  ): Promise<IRedditClonePostVote> {
     try {
       return await patchRedditClonePostsPostIdVotes({
         postId,
         body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve a specific vote record on a post.
-   *
-   * This endpoint retrieves detailed information about a specific vote cast by the authenticated user on a post. The vote record contains the direction (upvote or downvote), creation timestamp, and last update timestamp.
-   *
-   * Only the authenticated member who cast the vote can retrieve their own vote details. The system enforces that each user can only have one vote per post, as defined by the unique constraint on (reddit_clone_member_id, reddit_clone_post_id) in the reddit_clone_post_votes table.
-   *
-   * The vote record includes the direction field which stores either 'upvote' (+1) or 'downvote' (-1), along with creation and update timestamps. This endpoint is useful for users to check their voting history or for the UI to display the user's current vote state on a post.
-   *
-   * Anonymous/guest users cannot access this endpoint as voting requires authentication.
-   *
-   * @param connection
-   * @param postId The unique identifier of the post being voted on
-   * @param voteId The unique identifier of the vote record to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Retrieve a specific vote from reddit_clone_post_votes table by matching the vote's id field with voteId parameter.
-   *
-   * 1. Authentication Check: Extract authenticated member ID from session. Reject if not authenticated.
-   *
-   * 2. Parameter Validation:
-   *    - Validate postId is a valid UUID format
-   *    - Validate voteId is a valid UUID format
-   *
-   * 3. Query: SELECT * FROM reddit_clone_post_votes WHERE id = voteId AND reddit_clone_post_id = postId
-   *
-   * 4. Authorization Check: Ensure the vote belongs to the authenticated member (reddit_clone_member_id matches session member).
-   *
-   * 5. Response: Return the vote record including id, direction, created_at, updated_at.
-   *
-   * 6. Error Handling:
-   *    - 401 if not authenticated
-   *    - 404 if vote not found or doesn't belong to the post
-   *    - 403 if vote belongs to another member
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":voteId")
-  public async at(
-    @TypedParam("postId")
-    postId: string & tags.Format<"uuid">,
-    @TypedParam("voteId")
-    voteId: string & tags.Format<"uuid">,
-  ): Promise<IRedditClonePostImage> {
-    try {
-      return await getRedditClonePostsPostIdVotesVoteId({
-        postId,
-        voteId,
       });
     } catch (error) {
       console.log(error);

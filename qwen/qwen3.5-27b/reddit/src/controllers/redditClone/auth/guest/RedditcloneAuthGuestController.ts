@@ -9,39 +9,34 @@ import { postRedditCloneAuthGuestRefresh } from "../../../../providers/postReddi
 @Controller("/redditClone/auth/guest")
 export class RedditcloneAuthGuestController {
   /**
-   * Register a new guest account for anonymous browsing access without requiring traditional credentials. This operation creates a temporary guest account identified by device fingerprint rather than username and password.
+   * Register a new guest account or activate an existing guest session using device fingerprint identification. This operation creates temporary access for unauthenticated visitors to browse public content.
    *
-   * The guest account is created in the reddit_clone_guests table with unique device_fingerprint for identification, along with ip_address and user_agent for tracking and abuse prevention. The device fingerprint is generated from browser and device characteristics, enabling the system to maintain session state for anonymous users while respecting privacy.
+   * The guest account is identified by a unique device fingerprint extracted from the client request. If a guest with this fingerprint already exists, the operation updates their last activity timestamp and issues new session tokens. If this is a new guest, a fresh account is created in the reddit_clone_guests table.
    *
-   * Upon successful registration, a new guest session is created in the reddit_clone_guest_sessions table. This session includes authentication tokens (access and refresh tokens) that allow the guest to browse public content including popular feeds, community feeds, and search results. The session tracks connection metadata including IP address, referrer URL, and user agent string.
+   * Upon successful registration, the operation generates JWT access and refresh tokens stored in reddit_clone_guest_sessions. The access token provides short-term authentication for API requests, while the refresh token enables token renewal without re-authentication.
    *
-   * Guest accounts have read-only access to public platform content. Guests cannot create posts, comments, or vote on content - these actions require authenticated member accounts. The guest registration flow enables seamless anonymous browsing while maintaining the ability to track session activity for security and analytics purposes.
-   *
-   * This operation is idempotent - if a guest with the same device fingerprint already exists, the existing guest record is returned rather than creating a duplicate. This ensures consistent guest identification across multiple registration attempts from the same device.
+   * Guests can access public content including the popular feed, community feeds, and user profiles. They cannot create content, vote, or perform any write operations. This operation is public and requires no prior authentication.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Guest registration information including device fingerprint and connection metadata
+   * @param body Guest registration request containing device identification information.
    * @x-autobe-authorization-type join
    * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Service layer implementation for guest registration:
-   * 1. Extract device fingerprint, IP address, and user agent from request body
-   * 2. Check if device_fingerprint already exists in reddit_clone_guests table
-   * 3. If exists, return existing guest record; otherwise create new guest record
-   * 4. Generate new guest session with access and refresh tokens
-   * 5. Store session in reddit_clone_guest_sessions table with ip, href, referrer, user_agent, created_at, expired_at
-   * 6. Return IRedditCloneGuest.IAuthorized response with tokens
+   * @x-autobe-specification Create a new guest account identified by device fingerprint and generate initial session tokens.
    *
-   * Validation:
-   * - device_fingerprint: required string, unique constraint enforced by database
-   * - ip_address: required string, captured from request
-   * - user_agent: required string, captured from request
+   * 1. Extract device fingerprint from request headers or body
+   * 2. Check if guest with this fingerprint already exists in reddit_clone_guests
+   * 3. If exists, update last_activity_at timestamp; if not, insert new guest record
+   * 4. Generate JWT access token (short-lived, e.g., 15 minutes) and refresh token (longer-lived, e.g., 7 days)
+   * 5. Store tokens in reddit_clone_guest_sessions with expiration timestamps
+   * 6. Return tokens in IAuthorized response
    *
    * Error handling:
-   * - Return 409 Conflict if device fingerprint already exists (return existing guest)
-   * - Return 500 Internal Server Error for database failures
-   * - Return 400 Bad Request for invalid input format
+   * - Validate device fingerprint format if provided
+   * - Handle database errors for guest creation/update
+   * - Handle token generation failures
+   * - Return appropriate HTTP status codes (201 for new guest, 200 for existing)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
@@ -63,43 +58,35 @@ export class RedditcloneAuthGuestController {
   }
 
   /**
-   * Refresh authentication tokens for an existing guest session. This operation allows guests to extend their browsing session without requiring re-registration.
+   * Renew guest session tokens using a valid refresh token. This operation extends the guest's authentication session without requiring re-registration.
    *
-   * The refresh operation validates the provided refresh token against the reddit_clone_guest_sessions table to ensure the session is still valid and not expired. The expired_at timestamp in the session record determines whether the refresh is permitted.
+   * The operation validates the provided refresh token against the reddit_clone_guest_sessions table and verifies the associated guest account exists in reddit_clone_guests. If valid, it generates new access and refresh tokens with updated expiration timestamps.
    *
-   * Upon successful validation, new access and refresh tokens are generated with updated expiration times. A new session record is created in the reddit_clone_guest_sessions table following the append-only pattern, preserving the original session for audit trail purposes. This approach maintains a complete history of guest session activity while enabling seamless token renewal.
+   * Token rotation is recommended for security - the old refresh token should be invalidated when issuing a new one. This prevents token replay attacks and limits the window of opportunity if a token is compromised.
    *
-   * Guest sessions enable anonymous users to maintain browsing state across multiple requests without requiring account creation. The refresh mechanism ensures guests can continue browsing public content including popular feeds, community feeds, and search results without interruption, while the system maintains session tracking for security and analytics.
-   *
-   * If the refresh token is invalid, expired, or the session cannot be found, the operation returns an unauthorized error. Guests must then re-register using the join operation to obtain new authentication tokens and resume browsing.
+   * Guests should call this operation periodically to maintain their session while browsing public content. The access token provides short-term authentication, while the refresh token enables seamless session renewal. This operation is public and requires no prior authentication beyond the refresh token itself.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Refresh token for renewing guest session authentication
+   * @param body Token refresh request containing the refresh token.
    * @x-autobe-authorization-type refresh
    * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Service layer implementation for guest token refresh:
-   * 1. Extract refresh_token from request body
-   * 2. Validate refresh_token exists in reddit_clone_guest_sessions table and is not expired
-   * 3. Verify the session's expired_at timestamp is in the future
-   * 4. Generate new access and refresh tokens with updated expiration times
-   * 5. Create a new session record in reddit_clone_guest_sessions with the new tokens
-   * 6. Return IRedditCloneGuest.IAuthorized response with new tokens
+   * @x-autobe-specification Refresh guest session tokens using a valid refresh token.
    *
-   * Validation:
-   * - refresh_token: required string, must match existing valid session
-   * - Session must not be expired (expired_at > current time)
+   * 1. Validate the refresh token from the request body
+   * 2. Look up the corresponding session in reddit_clone_guest_sessions
+   * 3. Verify session exists, is not expired, and belongs to a valid guest in reddit_clone_guests
+   * 4. Generate new JWT access token and refresh token
+   * 5. Update the session record with new tokens and expiration timestamps
+   * 6. Optionally invalidate the old refresh token (rotate tokens)
+   * 7. Return new tokens in IAuthorized response
    *
    * Error handling:
-   * - Return 401 Unauthorized if refresh token is invalid or expired
-   * - Return 404 Not Found if session not found
-   * - Return 500 Internal Server Error for database or token generation failures
-   *
-   * Security:
-   * - Each refresh creates a new session record (append-only pattern)
-   * - Old sessions remain in database for audit trail
-   * - Refresh tokens are rotated on each refresh operation
+   * - Return 401 if refresh token is invalid or expired
+   * - Return 401 if guest account no longer exists
+   * - Handle token generation failures
+   * - Log suspicious refresh attempts for security monitoring
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")

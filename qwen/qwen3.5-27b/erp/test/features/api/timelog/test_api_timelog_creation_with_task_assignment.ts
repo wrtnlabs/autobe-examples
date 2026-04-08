@@ -1,16 +1,15 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
-import type { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
-import type { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
-import type { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
-import type { IHrmPlatformOrganizationLogo } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganizationLogo";
-import type { IHrmPlatformOrganizationSetting } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganizationSetting";
-import type { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProject";
-import type { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
-import type { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTask";
-import type { IHrmPlatformTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTimelog";
+import type { IHrmTimeTrackDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackDepartment";
+import type { IHrmTimeTrackEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackEmployee";
+import type { IHrmTimeTrackMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackMember";
+import type { IHrmTimeTrackOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackOrganization";
+import type { IHrmTimeTrackProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackProject";
+import type { IHrmTimeTrackProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackProjectMember";
+import type { IHrmTimeTrackRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackRole";
+import type { IHrmTimeTrackTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackTask";
+import type { IHrmTimeTrackTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackTimelog";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -20,153 +19,132 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_hrm_platform_member_projects_create } from "../../../generate/generate_random_hrm_platform_member_projects_create";
-import { generate_random_hrm_platform_member_projects_tasks_create } from "../../../generate/generate_random_hrm_platform_member_projects_tasks_create";
-import { generate_random_hrm_platform_member_timelogs_create } from "../../../generate/generate_random_hrm_platform_member_timelogs_create";
-import { prepare_random_hrm_platform_project } from "../../../prepare/prepare_random_hrm_platform_project";
-import { prepare_random_hrm_platform_task } from "../../../prepare/prepare_random_hrm_platform_task";
-import { prepare_random_hrm_platform_timelog } from "../../../prepare/prepare_random_hrm_platform_timelog";
+import { generate_random_hrm_time_track_member_employees_create } from "../../../generate/generate_random_hrm_time_track_member_employees_create";
+import { generate_random_hrm_time_track_member_organizations_create } from "../../../generate/generate_random_hrm_time_track_member_organizations_create";
+import { generate_random_hrm_time_track_member_projects_create } from "../../../generate/generate_random_hrm_time_track_member_projects_create";
+import { generate_random_hrm_time_track_member_projects_members_create } from "../../../generate/generate_random_hrm_time_track_member_projects_members_create";
+import { generate_random_hrm_time_track_member_tasks_create } from "../../../generate/generate_random_hrm_time_track_member_tasks_create";
+import { generate_random_hrm_time_track_member_timelogs_create } from "../../../generate/generate_random_hrm_time_track_member_timelogs_create";
+import { prepare_random_hrm_time_track_employee } from "../../../prepare/prepare_random_hrm_time_track_employee";
+import { prepare_random_hrm_time_track_organization } from "../../../prepare/prepare_random_hrm_time_track_organization";
+import { prepare_random_hrm_time_track_project } from "../../../prepare/prepare_random_hrm_time_track_project";
+import { prepare_random_hrm_time_track_project_member } from "../../../prepare/prepare_random_hrm_time_track_project_member";
+import { prepare_random_hrm_time_track_task } from "../../../prepare/prepare_random_hrm_time_track_task";
+import { prepare_random_hrm_time_track_timelog } from "../../../prepare/prepare_random_hrm_time_track_timelog";
 
 /**
- * Test timelog creation with task assignment validation.
+ * Test timelog creation with task assignment for granular time tracking.
  *
- * 1. Authenticate member to establish session context
- * 2. Create two projects to test cross-project task validation
- * 3. Create a task in the first project
- * 4. Create a timelog with valid task assignment (same project)
- * 5. Verify timelog includes nested task information
- * 6. Create a timelog without task assignment (task_id null)
- * 7. Verify task_id is optional and timelog is created successfully
+ * Validates the complete timelog creation flow including member authentication, organization setup, employee creation, project assignment, task creation, and timelog logging against a specific task. Ensures that the timelog correctly references the task and that all timelog fields are properly recorded.
+ *
+ * Special attention is given to verifying that the task_id reference is correctly maintained in the timelog response, the task summary object is populated with all expected fields (id, title, priority, status, project reference), and that billable status and duration are accurately stored.
+ *
+ * 1. Member authenticates via join endpoint to establish session context.
+ * 2. Organization is created for the authenticated member.
+ * 3. Employee record is created linking member to organization.
+ * 4. Project is created within the organization.
+ * 5. Employee is assigned to the project with appropriate role.
+ * 6. Task is created within the project for granular time tracking.
+ * 7. Timelog is created with task assignment, duration, billable status, and notes.
+ * 8. Validates timelog details match input and task data is properly referenced.
  */
 export async function test_api_timelog_creation_with_task_assignment(
   connection: api.IConnection,
 ): Promise<void> {
   // 1. Authenticate member
   const memberConnection: api.IConnection = { host: connection.host };
-  await authorize_member_join(memberConnection, {});
-  // 2. Create first project
-  const project1 = await generate_random_hrm_platform_member_projects_create(
-    memberConnection,
-    {
-      body: { name: "Project Alpha", status: "active", color_code: "#FF5733" },
-    },
-  );
-  typia.assert(project1);
-  // 3. Create second project for cross-project validation
-  const project2 = await generate_random_hrm_platform_member_projects_create(
-    memberConnection,
-    { body: { name: "Project Beta", status: "active", color_code: "#33FF57" } },
-  );
-  typia.assert(project2);
-  // 4. Create a task in the first project
-  const task1 = await generate_random_hrm_platform_member_projects_tasks_create(
-    memberConnection,
-    {
-      params: { projectId: project1.id },
-      body: {
-        title: "Task in Project Alpha",
-        status: "open",
-        priority: "high",
-      },
-    },
-  );
-  typia.assert(task1);
-  // 5. Create a task in the second project (for cross-project validation)
-  const task2 = await generate_random_hrm_platform_member_projects_tasks_create(
-    memberConnection,
-    {
-      params: { projectId: project2.id },
-      body: {
-        title: "Task in Project Beta",
-        status: "open",
-        priority: "medium",
-      },
-    },
-  );
-  typia.assert(task2);
-  // 6. Create timelog with valid task assignment (task belongs to same project)
-  const timelogWithTask =
-    await generate_random_hrm_platform_member_timelogs_create(
+  const memberAuth = await authorize_member_join(memberConnection);
+  typia.assert(memberAuth);
+  // 2. Create organization
+  const organization =
+    await generate_random_hrm_time_track_member_organizations_create(
       memberConnection,
-      {
-        body: {
-          project_id: project1.id,
-          task_id: task1.id,
-          date: new Date().toISOString(),
-          duration: 480,
-          billable: true,
-          description: "Worked on Project Alpha task",
-        },
-      },
+      {},
     );
-  typia.assert(timelogWithTask);
-  // 7. Verify timelog includes nested task information
-  TestValidator.equals(
-    "timelog project matches",
-    timelogWithTask.project.id,
-    project1.id,
+  typia.assert(organization);
+  // 3. Create employee
+  const employee = await generate_random_hrm_time_track_member_employees_create(
+    memberConnection,
+    {
+      body: {
+        hrm_time_track_member_id: memberAuth.id,
+      },
+    },
   );
-  TestValidator.equals(
-    "timelog task matches",
-    timelogWithTask.task?.id,
-    task1.id,
+  typia.assert(employee);
+  // 4. Create project
+  const project = await generate_random_hrm_time_track_member_projects_create(
+    memberConnection,
+    {},
   );
-  TestValidator.equals(
-    "timelog task title matches",
-    timelogWithTask.task?.title,
-    task1.title,
+  typia.assert(project);
+  // 5. Assign employee to project
+  await generate_random_hrm_time_track_member_projects_members_create(
+    memberConnection,
+    {
+      params: { projectId: project.id },
+      body: {
+        employee_id: employee.id,
+        role: "member",
+      },
+    },
+  );
+  // 6. Create task within the project
+  const task = await generate_random_hrm_time_track_member_tasks_create(
+    memberConnection,
+    {
+      body: {
+        hrm_time_track_project_id: project.id,
+        hrm_time_track_employee_id: employee.id,
+      },
+    },
+  );
+  typia.assert(task);
+  // 7. Create timelog with task assignment
+  const timelog = await generate_random_hrm_time_track_member_timelogs_create(
+    memberConnection,
+    {
+      body: {
+        hrm_time_track_task_id: task.id,
+        billable: true,
+        notes: "Working on task implementation",
+      },
+    },
+  );
+  typia.assert(timelog);
+  // 8. Validate timelog contains task summary
+  typia.assertGuard(timelog.task!);
+  // 9. Validate task summary fields
+  TestValidator.equals("task id matches", timelog.task.id, task.id);
+  TestValidator.predicate(
+    "task title has content",
+    timelog.task.title.length > 0,
   );
   TestValidator.predicate(
-    "timelog has valid duration",
-    timelogWithTask.duration > 0,
+    "task has priority",
+    timelog.task.priority.length > 0,
   );
-  TestValidator.equals("timelog is billable", timelogWithTask.billable, true);
-  // 8. Create timelog without task assignment (task_id is null)
-  const timelogWithoutTask =
-    await generate_random_hrm_platform_member_timelogs_create(
-      memberConnection,
-      {
-        body: {
-          project_id: project1.id,
-          task_id: null,
-          date: new Date().toISOString(),
-          duration: 240,
-          billable: false,
-          description: "General work on Project Alpha",
-        },
-      },
-    );
-  typia.assert(timelogWithoutTask);
-  // 9. Verify timelog without task is created successfully
+  TestValidator.predicate("task has status", timelog.task.status.length > 0);
   TestValidator.equals(
-    "timelog project matches",
-    timelogWithoutTask.project.id,
-    project1.id,
+    "task project id matches",
+    timelog.task.project.id,
+    project.id,
   );
-  TestValidator.equals("timelog task is null", timelogWithoutTask.task, null);
+  // 10. Validate billable status
+  TestValidator.equals("billable status matches input", timelog.billable, true);
+  // 11. Validate duration is positive
   TestValidator.predicate(
-    "timelog has valid duration",
-    timelogWithoutTask.duration > 0,
+    "duration_seconds is positive",
+    timelog.duration_seconds > 0,
   );
+  // 12. Validate notes are recorded
   TestValidator.equals(
-    "timelog is not billable",
-    timelogWithoutTask.billable,
-    false,
+    "notes match input",
+    timelog.notes,
+    "Working on task implementation",
   );
-  // 10. Test cross-project task validation (should fail)
-  await TestValidator.error("cross-project task rejected", async () => {
-    await generate_random_hrm_platform_member_timelogs_create(
-      memberConnection,
-      {
-        body: {
-          project_id: project1.id,
-          task_id: task2.id, // task2 belongs to project2, not project1
-          date: new Date().toISOString(),
-          duration: 120,
-          billable: true,
-          description: "Invalid cross-project assignment",
-        },
-      },
-    );
-  });
+  // 13. Validate employee reference
+  TestValidator.equals("employee id matches", timelog.employee.id, employee.id);
+  // 14. Validate project reference
+  TestValidator.equals("project id matches", timelog.project.id, project.id);
 }

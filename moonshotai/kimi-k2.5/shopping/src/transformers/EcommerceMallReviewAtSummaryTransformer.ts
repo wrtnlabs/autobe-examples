@@ -1,12 +1,17 @@
+import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReview";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
+import { EcommerceMallProductAtSummaryTransformer } from "./EcommerceMallProductAtSummaryTransformer";
 
 export namespace EcommerceMallReviewAtSummaryTransformer {
   export type Payload = Prisma.ecommerce_mall_reviewsGetPayload<
@@ -16,13 +21,13 @@ export namespace EcommerceMallReviewAtSummaryTransformer {
     return {
       select: {
         id: true,
-        customer: EcommerceMallCustomerAtSummaryTransformer.select(),
-        product_id: true,
-        order_id: true,
         rating: true,
         content: true,
         created_at: true,
-        deleted_at: true,
+        customer: {
+          select: {},
+        } satisfies Prisma.ecommerce_mall_customersFindManyArgs,
+        product: EcommerceMallProductAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_reviewsFindManyArgs;
   }
@@ -31,15 +36,13 @@ export namespace EcommerceMallReviewAtSummaryTransformer {
   ): Promise<IEcommerceMallReview.ISummary> {
     return {
       id: input.id,
-      customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
-        input.customer,
-      ),
-      productId: input.product_id,
-      orderId: input.order_id,
       rating: input.rating,
-      content: input.content ?? null,
+      content: input.content,
+      customer: input.customer ? {} : null,
+      product: await EcommerceMallProductAtSummaryTransformer.transform(
+        input.product,
+      ),
       createdAt: input.created_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

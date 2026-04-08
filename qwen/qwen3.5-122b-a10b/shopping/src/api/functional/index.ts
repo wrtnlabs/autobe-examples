@@ -1,1 +1,1 @@
-export * as ecommerceMall from "./ecommerceMall/index";
+export * as ecommerce from "./ecommerce/index";

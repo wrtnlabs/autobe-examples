@@ -1,10 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
-import type { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
 import type { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import type { IRedditCommunityModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityModerator";
-import type { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -13,12 +10,19 @@ import typia, { tags } from "typia";
 
 import { prepare_random_reddit_community_moderator } from "../prepare/prepare_random_reddit_community_moderator";
 
+/**
+ * Generate a random Reddit community moderator assignment via the API for E2E testing.
+ *
+ * Prepares random moderator data using the prepare function, then calls the creation endpoint to add a moderator to a community. The communityId path parameter identifies the target community, while the request body specifies the member to add and their role (owner or moderator).
+ *
+ * This function is designed for end-to-end testing scenarios where a moderator needs to be added to an existing community. The prepare function generates randomized memberId (UUID format) and role (either 'owner' or 'moderator'), both of which can be customized through the optional body parameter.
+ */
 export async function generate_random_reddit_community_member_communities_moderators_create(
   connection: api.IConnection,
   props: {
     body?: DeepPartial<IRedditCommunityModerator.ICreate>;
-    params: {
-      communityName: string;
+    params?: {
+      communityId: string;
     };
   },
 ): Promise<IRedditCommunityModerator> {
@@ -28,8 +32,8 @@ export async function generate_random_reddit_community_member_communities_modera
     await api.functional.redditCommunity.member.communities.moderators.create(
       connection,
       {
-        communityName: props.params.communityName,
         body: prepared,
+        communityId: props.params!.communityId,
       },
     );
   return result;

@@ -20,49 +20,55 @@ import { prepare_random_erp_hrm_department } from "../../../prepare/prepare_rand
 export async function test_api_department_update_name_and_description(
   connection: api.IConnection,
 ): Promise<void> {
-  // Step 1: Authenticate as admin
+  // 1. Authenticate as admin
   const adminConnection: api.IConnection = { host: connection.host };
   await authorize_admin_join(adminConnection, {});
-  // Step 2: Create an initial department
+  // 2. Create initial department with name 'Engineering' and description 'Software engineering team'
   const initialDepartment =
-    await generate_random_erp_hrm_admin_departments_create(adminConnection, {});
+    await generate_random_erp_hrm_admin_departments_create(adminConnection, {
+      body: {
+        name: "Engineering",
+        description: "Software engineering team",
+      } satisfies IErpHrmDepartment.ICreate,
+    });
   typia.assert(initialDepartment);
-  // Step 3: Verify the department was created successfully
-  const createdAt = initialDepartment.created_at;
-  TestValidator.equals(
-    "department created",
-    initialDepartment.name.length > 0,
-    true,
-  );
-  // Step 4 & 5: Update the department name and description
+  // Store original timestamp for comparison
+  const originalCreatedAt = initialDepartment.created_at;
+  const originalUpdatedAt = initialDepartment.updated_at;
+  // 3. Update the department with new name and description
   const updatedDepartment =
     await api.functional.erpHrm.admin.departments.update(adminConnection, {
       departmentId: initialDepartment.id,
       body: {
-        name: "Engineering",
-        description: "Handles all technical development",
+        name: "Software Engineering",
+        description: "All software development teams",
       } satisfies IErpHrmDepartment.IUpdate,
     });
   typia.assert(updatedDepartment);
-  // Validate updated department
-  TestValidator.equals("name updated", updatedDepartment.name, "Engineering");
+  // 4. Validate the updated department
   TestValidator.equals(
-    "description updated",
-    updatedDepartment.description,
-    "Handles all technical development",
+    "department ID unchanged",
+    updatedDepartment.id,
+    initialDepartment.id,
   );
   TestValidator.equals(
-    "created_at preserved",
+    "updated name",
+    updatedDepartment.name,
+    "Software Engineering",
+  );
+  TestValidator.equals(
+    "updated description",
+    updatedDepartment.description,
+    "All software development teams",
+  );
+  TestValidator.equals("parent remains null", updatedDepartment.parent, null);
+  TestValidator.equals(
+    "created_at unchanged",
     updatedDepartment.created_at,
-    createdAt,
+    originalCreatedAt,
   );
   TestValidator.predicate(
-    "updated_at is after created_at",
-    new Date(updatedDepartment.updated_at) >= new Date(createdAt),
-  );
-  TestValidator.equals(
-    "organization preserved",
-    updatedDepartment.organization.id,
-    initialDepartment.organization.id,
+    "updated_at is newer or equal",
+    updatedDepartment.updated_at >= originalUpdatedAt,
   );
 }

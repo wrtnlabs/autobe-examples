@@ -17,28 +17,9 @@ export async function getEcommerceMallAdminAdminsAdminId(props: {
   admin: AdminPayload;
   adminId: string;
 }): Promise<IEcommerceMallAdmin> {
-  // Check if trying to view own record
-  const isViewingSelf = props.admin.id === props.adminId;
-  if (!isViewingSelf) {
-    // Need to check if the authenticated admin is a super_admin
-    // Query current admin record to check grade
-    const currentAdmin =
-      await MyGlobal.prisma.ecommerce_mall_admins.findUniqueOrThrow({
-        where: { id: props.admin.id },
-        select: { grade: true },
-      });
-    if (currentAdmin.grade !== "super_admin") {
-      throw new HttpException(
-        "Only super administrators can view other administrator records",
-        403,
-      );
-    }
-  }
-  // Query the target admin with proper selection
-  const targetAdmin =
-    await MyGlobal.prisma.ecommerce_mall_admins.findUniqueOrThrow({
-      where: { id: props.adminId },
-      ...EcommerceMallAdminTransformer.select(),
-    });
-  return await EcommerceMallAdminTransformer.transform(targetAdmin);
+  const admin = await MyGlobal.prisma.ecommerce_mall_admins.findUniqueOrThrow({
+    where: { id: props.adminId },
+    ...EcommerceMallAdminTransformer.select(),
+  });
+  return await EcommerceMallAdminTransformer.transform(admin);
 }

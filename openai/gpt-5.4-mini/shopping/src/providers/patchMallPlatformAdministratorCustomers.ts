@@ -23,61 +23,88 @@ export async function patchMallPlatformAdministratorCustomers(props: {
   const limit: number = props.body.limit ?? 100;
   const skip: number = (page - 1) * limit;
   const where: Prisma.mall_platform_customersWhereInput = {
-    deleted_at: null,
-    ...(props.body.search !== undefined && props.body.search.length > 0
-      ? {
-          email: {
-            contains: props.body.search,
-            mode: "insensitive",
-          },
-        }
+    ...(props.body.search !== undefined
+      ? { email: { contains: props.body.search, mode: "insensitive" } }
       : {}),
     ...(props.body.status !== undefined ? { status: props.body.status } : {}),
-    ...(props.body.createdAtFrom !== undefined ||
-    props.body.createdAtTo !== undefined
-      ? {
-          created_at: {
-            ...(props.body.createdAtFrom !== undefined
-              ? { gte: props.body.createdAtFrom }
-              : {}),
-            ...(props.body.createdAtTo !== undefined
-              ? { lte: props.body.createdAtTo }
-              : {}),
-          },
-        }
-      : {}),
   };
-  const sortDirection: "asc" | "desc" = props.body.order ?? "desc";
-  const firstOrderBy: Prisma.mall_platform_customersOrderByWithRelationInput =
+  const orderBy: Prisma.mall_platform_customersOrderByWithRelationInput[] =
     props.body.sort === "email"
-      ? { email: sortDirection }
+      ? [{ email: props.body.order === "desc" ? "desc" : "asc" }, { id: "asc" }]
       : props.body.sort === "status"
-        ? { status: sortDirection }
-        : props.body.sort === "createdAt"
-          ? { created_at: sortDirection }
-          : props.body.sort === "updatedAt"
-            ? { updated_at: sortDirection }
-            : { created_at: "desc" };
-  const data = await MyGlobal.prisma.mall_platform_customers.findMany({
+        ? [
+            { status: props.body.order === "desc" ? "desc" : "asc" },
+            { id: "asc" },
+          ]
+        : [
+            { created_at: props.body.order === "asc" ? "asc" : "desc" },
+            { id: "asc" },
+          ];
+  const records = await MyGlobal.prisma.mall_platform_customers.findMany({
     where,
+    orderBy,
     skip,
     take: limit,
-    orderBy: [firstOrderBy, { id: "desc" }],
     ...MallPlatformCustomerAtSummaryTransformer.select(),
   });
-  const records = await MyGlobal.prisma.mall_platform_customers.count({
+  const total = await MyGlobal.prisma.mall_platform_customers.count({
     where,
   });
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      MallPlatformCustomerAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    },
+    data: await ArrayUtil.asyncMap(
       records,
-      pages: Math.ceil(records / limit),
-    } satisfies IPage.IPagination,
+      MallPlatformCustomerAtSummaryTransformer.transform,
+    ),
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+// import { IPageIMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformCustomer";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchMallPlatformAdministratorCustomers(props: {
+//   administrator: AdministratorPayload;
+//   body: IMallPlatformCustomer.IRequest;
+// }): Promise<IPageIMallPlatformCustomer.ISummary> {
+//   const records = await MyGlobal.prisma.mall_platform_customers.findMany({
+//     ...MallPlatformCustomerAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, MallPlatformCustomerAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

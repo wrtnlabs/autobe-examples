@@ -14,11 +14,11 @@ export namespace ErpHrmContractCollector {
   }) {
     return {
       id: v4(),
-      start_date: new Date(props.body.start_date),
-      end_date: props.body.end_date ? new Date(props.body.end_date) : null,
-      pay_rate: props.body.pay_rate,
-      pay_period: props.body.pay_period,
-      working_hours_per_week: props.body.working_hours_per_week,
+      start_date: new Date(props.body.startDate),
+      end_date: props.body.endDate ? new Date(props.body.endDate) : null,
+      pay_rate: props.body.payRate,
+      pay_period: props.body.payPeriod,
+      working_hours_per_week: props.body.workingHoursPerWeek,
       notes: props.body.notes ?? null,
       created_at: new Date(),
       updated_at: new Date(),
@@ -26,3 +26,30 @@ export namespace ErpHrmContractCollector {
     } satisfies Prisma.erp_hrm_contractsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace ErpHrmContractCollector {
+//         export async function collect(props: {
+//           body: IErpHrmContract.ICreate;
+//           erpHrmEmployees: IEntity; // from path parameter employeeId
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       start_date: ...,
+//       end_date: ...,
+//       pay_rate: ...,
+//       pay_period: ...,
+//       working_hours_per_week: ...,
+//       notes: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       employee: ...,
+//           } satisfies Prisma.erp_hrm_contractsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

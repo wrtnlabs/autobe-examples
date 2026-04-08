@@ -1,3 +1,4 @@
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallSellerProfileSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfileSnapshot";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
@@ -17,53 +18,62 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchEcommerceMallAdminSellersSellerIdProfileSnapshots(props: {
   admin: AdminPayload;
-  sellerId: string & tags.Format<"uuid">;
+  sellerId: string;
   body: IEcommerceMallSellerProfileSnapshot.IRequest;
 }): Promise<IPageIEcommerceMallSellerProfileSnapshot.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
+  // Verify seller exists - will throw 404 if not found
+  await MyGlobal.prisma.ecommerce_mall_sellers.findUniqueOrThrow({
+    where: { id: props.sellerId },
+  });
+  // Build date range filter
   const createdAtFilter: Prisma.DateTimeFilter | undefined =
-    props.body.created_at_min !== null || props.body.created_at_max !== null
+    props.body.createdAfter !== null || props.body.createdBefore !== null
       ? {
-          ...(props.body.created_at_min !== null && {
-            gte: new Date(props.body.created_at_min),
+          ...(props.body.createdAfter !== null && {
+            gte: new Date(props.body.createdAfter),
           }),
-          ...(props.body.created_at_max !== null && {
-            lte: new Date(props.body.created_at_max),
+          ...(props.body.createdBefore !== null && {
+            lte: new Date(props.body.createdBefore),
           }),
         }
       : undefined;
-  const where: Prisma.ecommerce_mall_seller_profile_snapshotsWhereInput = {
+  // Build where clause
+  const whereInput = {
     seller_id: props.sellerId,
     ...(createdAtFilter !== undefined && { created_at: createdAtFilter }),
-  };
-  const orderBy: Prisma.ecommerce_mall_seller_profile_snapshotsOrderByWithRelationInput =
-    props.body.sort === "created_at_asc"
-      ? { created_at: "asc" }
-      : { created_at: "desc" };
-  const data =
+  } satisfies Prisma.ecommerce_mall_seller_profile_snapshotsWhereInput;
+  // Pagination parameters with defaults
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const skip = (page - 1) * limit;
+  // Query snapshots with pagination, ordered by newest first
+  const snapshots =
     await MyGlobal.prisma.ecommerce_mall_seller_profile_snapshots.findMany({
-      where,
+      where: whereInput,
+      orderBy: { created_at: "desc" },
       skip,
       take: limit,
-      orderBy,
       ...EcommerceMallSellerProfileSnapshotAtSummaryTransformer.select(),
     });
+  // Get total count for pagination metadata
   const total =
     await MyGlobal.prisma.ecommerce_mall_seller_profile_snapshots.count({
-      where,
+      where: whereInput,
     });
+  // Transform database records to DTO format
+  const data = await ArrayUtil.asyncMap(
+    snapshots,
+    EcommerceMallSellerProfileSnapshotAtSummaryTransformer.transform,
+  );
+  // Calculate total pages
+  const pages = Math.ceil(total / limit);
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceMallSellerProfileSnapshotAtSummaryTransformer.transform,
-    ),
+    data,
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: pages,
     } satisfies IPage.IPagination,
   };
 }

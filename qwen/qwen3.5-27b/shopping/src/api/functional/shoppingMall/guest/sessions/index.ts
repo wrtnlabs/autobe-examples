@@ -10,41 +10,36 @@ import { IPageIShoppingMallGuestSession } from "../../../../structures/IPageISho
 import { IShoppingMallGuestSession } from "../../../../structures/IShoppingMallGuestSession";
 
 /**
- * Retrieve a filtered and paginated list of authentication sessions from the shopping mall platform.
+ * Search and list user sessions across all actor types with filtering and pagination.
  *
- * This operation provides comprehensive session listing capabilities with advanced filtering options. Users can view their own active and historical sessions, which is essential for account security management as specified in the Multi-Device Session Policy. The endpoint supports filtering by session status (active, expired, revoked), date range, and customizable sorting.
+ * This endpoint allows administrators to view and filter active and expired sessions for customers, sellers, administrators, and guests. Sessions can be filtered by actor type, status (active/expired), IP address, and date ranges. Each session record includes the actor's identification information, IP address, login page URL, creation time, and expiration time.
  *
- * For regular users (customers, sellers, guests), this operation returns only their own sessions, enabling them to monitor their authentication activity and manage account security. Administrators have expanded access to view all sessions across the platform, which is critical for security monitoring, detecting suspicious activity, and managing user sessions during account bans or suspensions.
+ * Session status is determined by comparing the expired_at timestamp with the current time. Sessions with expired_at in the future are considered active, while those with expired_at in the past are considered expired.
  *
- * The response includes session metadata such as IP address, connection details (href and referrer), creation timestamp, expiration timestamp, and current status. This information helps users identify legitimate sessions and detect unauthorized access attempts. Administrators can use this data to investigate security incidents and enforce session management policies.
- *
- * This operation is commonly used together with account security management features, where users can view their current active session and force logout from other devices. It also supports the session lifecycle management requirements where sessions are automatically expired after 30 minutes of inactivity or invalidated on password change, account suspension, or ban.
+ * This endpoint requires administrator authentication and appropriate permissions for session oversight.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for session listing
+ * @param props.body Search criteria for filtering sessions including actor type, status, IP address, date ranges, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query session tables based on authenticated user's role and permissions.
+ * @x-autobe-specification Query all session tables (shopping_mall_customer_sessions, shopping_mall_seller_sessions, shopping_mall_administrator_sessions, shopping_mall_guest_sessions) based on search criteria.
  *
- * For non-admin users:
- * - Query only the session table corresponding to their user type (customer_sessions, seller_sessions, admin_sessions, or guest_sessions)
- * - Filter by their user ID to show only their sessions
- * - Apply pagination, status filter, date range, and sorting from request body
+ * Apply filters from request body:
+ * - actorType: filter by 'customer', 'seller', 'administrator', or 'guest'
+ * - status: filter by 'active' or 'expired' (compare expired_at with current time)
+ * - ip: filter by IP address (exact or partial match)
+ * - createdAtFrom/createdAtTo: filter by session creation date range
+ * - expiredAtFrom/expiredAtTo: filter by session expiration date range
  *
- * For admin users:
- * - Query all session tables (customer, seller, admin, guest sessions)
- * - Apply union query to combine results from all tables
- * - Apply pagination, status filter, date range, and sorting from request body
- * - Include user_type field to distinguish session types in response
+ * Join with respective actor tables to include actor information (email, display name, status).
  *
- * Status determination:
- * - 'active': current time < expired_at AND revoked_at IS NULL
- * - 'expired': current time >= expired_at
- * - 'revoked': revoked_at IS NOT NULL
+ * Apply pagination: limit (default 20, max 100), offset (default 0).
  *
- * Return paginated results with session summary information including id, user_type, user_id, ip, href, referrer, created_at, expired_at, status, and last_activity_at (if available).
+ * Sort by created_at descending by default, or by specified sort field.
  *
- * Apply cursor-based pagination for large result sets as specified in Section 201 (Performance SLOs).
+ * Return paginated session summaries with actor type, actor ID, actor email, IP address, href, created_at, expired_at, and status.
+ *
+ * Only administrators with appropriate permissions can access this endpoint.
  * @path /shoppingMall/guest/sessions
  * @accessor api.functional.shoppingMall.guest.sessions.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -74,7 +69,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for session listing
+     * Search criteria for filtering sessions including actor type, status, IP address, date ranges, and pagination parameters.
      */
     body: IShoppingMallGuestSession.IRequest;
   };
@@ -123,71 +118,29 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific authentication session by its unique identifier.
+ * Retrieve detailed information about a specific user session by its unique identifier.
  *
- * This operation provides visibility into session metadata for security monitoring and audit purposes. Users can view their own active sessions to monitor for unauthorized access, while administrators can inspect any session across the platform for security investigations and compliance auditing.
+ * This endpoint allows administrators to inspect session details for security monitoring and audit purposes. The response includes the session's authentication metadata, client information, and associated user account details.
  *
- * The session information includes connection metadata (IP address, entry URL, referrer), temporal data (creation time, expiration time, last activity), and session status (active, expired, revoked). Sensitive authentication tokens are never exposed in the response for security reasons.
+ * Session information includes the user type (customer, seller, administrator, or guest), IP address at login, referral source, creation time, and expiration status. This data helps administrators track user activity, detect suspicious login patterns, and investigate security incidents.
  *
- * **Authorization Requirements**:
- *
- * - Regular users (customer, seller, admin, guest) can only retrieve their own session information
- * - Super administrators can retrieve any session information across all user types
- * - Unauthorized access attempts return a 403 Forbidden error
- *
- * **Security Considerations**:
- *
- * - Session tokens are never returned in plaintext
- * - Only metadata necessary for security monitoring is included
- * - Access to this endpoint is logged for audit trail purposes
- * - Rate limiting applies to prevent enumeration attacks
- *
- * **Related Operations**:
- *
- * - `POST /auth/logout` - Terminate the current session
- * - `GET /customers/me` or `GET /sellers/me` - View profile with session context
- * - `PUT /customers/me/password` - Change password and invalidate all sessions
+ * Only authenticated administrators with appropriate permissions can access this endpoint. The session identifier must be a valid UUID that exists in the system.
  *
  * @param props.connection
- * @param props.sessionId Unique identifier of the session to retrieve
+ * @param props.sessionId Unique identifier of the session to retrieve. Must be a valid UUID format.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor guest
- * @x-autobe-specification Query the appropriate session table based on session ownership or search across all session tables for admin access.
+ * @x-autobe-specification Query the appropriate session table based on the session record's user type. The session ID is a UUID that uniquely identifies a session across all session tables (shopping_mall_customer_sessions, shopping_mall_seller_sessions, shopping_mall_administrator_sessions, shopping_mall_guest_sessions).
  *
- * **Implementation Steps**:
+ * Implementation steps:
+ * 1. Validate the sessionId parameter is a valid UUID format
+ * 2. Query all session tables to find the matching session record
+ * 3. Join with the associated user table (customers, sellers, administrators, or guests) to include user details
+ * 4. Return session data including: session ID, user type, user ID, user email/name, IP address, href, referrer, created_at, expired_at, and current status (active/expired)
+ * 5. Handle case where session ID not found - return 404 Not Found
+ * 6. Ensure proper authorization - only administrators can access this endpoint
  *
- * 1. Extract sessionId from path parameter and validate UUID format
- * 2. Verify authentication - reject unauthenticated requests
- * 3. Determine authorization:
- *    - For regular users: query only their own session table (shopping_mall_customer_sessions, shopping_mall_seller_sessions, or shopping_mall_admin_sessions)
- *    - For super admins: search across all session tables
- * 4. Query the session record by ID
- * 5. If not found, return 404 Not Found
- * 6. If found but user lacks authorization, return 403 Forbidden
- * 7. Transform session data to response format, excluding sensitive fields (access_token_hash, refresh_token_hash)
- * 8. Return session information with metadata
- *
- * **Database Queries**:
- *
- * - Customer sessions: SELECT * FROM shopping_mall_customer_sessions WHERE id = $1 AND shopping_mall_customer_id = $2
- * - Seller sessions: SELECT * FROM shopping_mall_seller_sessions WHERE id = $1 AND shopping_mall_seller_id = $2
- * - Admin sessions: SELECT * FROM shopping_mall_admin_sessions WHERE id = $1 AND shopping_mall_admin_id = $2
- * - Guest sessions: SELECT * FROM shopping_mall_guest_sessions WHERE id = $1
- * - Admin override: UNION ALL across all tables
- *
- * **Validation Rules**:
- *
- * - sessionId must be valid UUID format
- * - User must be authenticated
- * - Session must exist in database
- * - User must own session or have admin privileges
- *
- * **Error Handling**:
- *
- * - 401: Not authenticated
- * - 403: User attempted to access another user's session
- * - 404: Session not found
- * - 500: Database error
+ * The response should include a discriminator field indicating the session type (customer, seller, administrator, guest) to help clients handle different session structures appropriately.
  * @path /shoppingMall/guest/sessions/:sessionId
  * @accessor api.functional.shoppingMall.guest.sessions.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -216,7 +169,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the session to retrieve
+     * Unique identifier of the session to retrieve. Must be a valid UUID format.
      */
     sessionId: string & tags.Format<"uuid">;
   };

@@ -16,60 +16,33 @@ export async function deleteErpHrmTimeMemberTimesheetsTimesheetIdTimelogsTimeshe
   timesheetId: string & tags.Format<"uuid">;
   timesheetTimelogId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const timesheet =
-    await MyGlobal.prisma.erp_hrm_time_timesheets.findUniqueOrThrow({
+  const association =
+    await MyGlobal.prisma.erp_hrm_time_timesheet_timelogs.findFirstOrThrow({
       where: {
-        id: props.timesheetId,
-      },
-      select: {
-        id: true,
-        status: true,
-        erp_hrm_time_employee_id: true,
-        deleted_at: true,
-      },
-    });
-  if (timesheet.deleted_at !== null) {
-    throw new HttpException("Timesheet not found", 404);
-  }
-  if (timesheet.status !== "draft" && timesheet.status !== "rejected") {
-    throw new HttpException("Timesheet is not editable", 409);
-  }
-  const membership =
-    await MyGlobal.prisma.erp_hrm_time_members.findFirstOrThrow({
-      where: {
-        id: props.member.id,
+        id: props.timesheetTimelogId,
+        erp_hrm_time_timesheet_id: props.timesheetId,
         deleted_at: null,
+        timesheet: {
+          deleted_at: null,
+        },
       },
       select: {
         id: true,
+        timesheet: {
+          select: {
+            status: true,
+          },
+        },
       },
     });
-  void membership;
-  const employee =
-    await MyGlobal.prisma.erp_hrm_time_employees.findFirstOrThrow({
+  if (association.timesheet.status === "approved") {
+    throw new HttpException("Approved timesheets cannot be modified", 403);
+  }
+  await MyGlobal.prisma.$transaction(async (prisma) => {
+    await prisma.erp_hrm_time_timesheet_timelogs.delete({
       where: {
-        id: timesheet.erp_hrm_time_employee_id,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        erp_hrm_time_organization_id: true,
+        id: association.id,
       },
     });
-  void employee;
-  await MyGlobal.prisma.erp_hrm_time_timesheet_timelogs.findFirstOrThrow({
-    where: {
-      id: props.timesheetTimelogId,
-      erp_hrm_time_timesheet_id: props.timesheetId,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-    },
-  });
-  await MyGlobal.prisma.erp_hrm_time_timesheet_timelogs.delete({
-    where: {
-      id: props.timesheetTimelogId,
-    },
   });
 }

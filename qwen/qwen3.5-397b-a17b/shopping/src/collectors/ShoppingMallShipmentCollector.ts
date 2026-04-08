@@ -10,32 +10,27 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallShipmentCollector {
   export async function collect(props: {
     body: IShoppingMallShipment.ICreate;
-    seller: IEntity;
+    shoppingMallOrders: IEntity;
+    shoppingMallSellers: IEntity;
   }) {
     const id: string = v4();
-    const shipmentItems = await ArrayUtil.asyncMap(
-      props.body.order_item_ids,
-      async (orderItemId) => ({
-        id: v4(),
-        orderItem: { connect: { id: orderItemId } },
-        created_at: new Date(),
-        updated_at: new Date(),
-      }),
-    );
     return {
+      // Scalar fields
       id,
-      tracking_carrier: props.body.tracking_carrier,
+      carrier_name: props.body.carrier_name,
       tracking_number: props.body.tracking_number,
       shipped_at: new Date(),
-      confirmed_at: null,
+      delivered_at: null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      seller: { connect: { id: props.seller.id } },
-      logs: undefined,
-      shipmentItems: {
-        create: shipmentItems,
-      },
+      // BelongsTo relations
+      order: { connect: { id: props.shoppingMallOrders.id } },
+      seller: { connect: { id: props.shoppingMallSellers.id } },
+      // HasMany relations
+      // orderItems is a reverse relation - order items reference shipments
+      // via their own shopping_mall_shipment_id FK, so we cannot create
+      // from the shipment side. Backend handles order item linkage separately.
     } satisfies Prisma.shopping_mall_shipmentsCreateInput;
   }
 }

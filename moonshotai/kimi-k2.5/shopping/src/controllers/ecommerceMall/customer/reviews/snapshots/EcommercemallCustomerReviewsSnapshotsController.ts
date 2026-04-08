@@ -1,66 +1,102 @@
-import { TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia from "typia";
+import typia, { tags } from "typia";
 
-import { IPageIEcommerceMallReviewSnapshot } from "../../../../../api/structures/IPageIEcommerceMallReviewSnapshot";
+import { IEcommerceMallReview } from "../../../../../api/structures/IEcommerceMallReview";
+import { IEcommerceMallReviewSnapshot } from "../../../../../api/structures/IEcommerceMallReviewSnapshot";
+import { IPageIEcommerceMallReview } from "../../../../../api/structures/IPageIEcommerceMallReview";
 import { CustomerAuth } from "../../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../../decorators/payload/CustomerPayload";
-import { getEcommerceMallCustomerReviewsReviewIdSnapshots } from "../../../../../providers/getEcommerceMallCustomerReviewsReviewIdSnapshots";
+import { getEcommerceMallCustomerReviewsReviewIdSnapshotsSnapshotId } from "../../../../../providers/getEcommerceMallCustomerReviewsReviewIdSnapshotsSnapshotId";
+import { patchEcommerceMallCustomerReviewsReviewIdSnapshots } from "../../../../../providers/patchEcommerceMallCustomerReviewsReviewIdSnapshots";
 
 @Controller("/ecommerceMall/customer/reviews/:reviewId/snapshots")
 export class EcommercemallCustomerReviewsSnapshotsController {
   /**
-   * Retrieves all snapshots for a specific review, providing a complete audit trail of all edits made to that review.
+   * Retrieve a paginated list of snapshots for a specific review, showing the complete edit history.
    *
-   * Each snapshot captures the state of the review at the time of an edit, preserving the rating (1-5 stars) and text content that existed before the modification. This creates an immutable historical record that cannot be altered or deleted, ensuring transparency and accountability in customer feedback management.
+   * This operation returns all snapshots created for a review, ordered by creation time. Each snapshot captures the rating and text content of the review at the moment it was edited, creating an immutable audit trail.
    *
-   * Snapshots are automatically created whenever a customer edits their review. The previous version is preserved in the snapshot along with a timestamp indicating when the edit occurred. Even if the original review is deleted, all snapshots remain preserved for record-keeping purposes.
+   * Snapshots are automatically created whenever a customer modifies their review. The snapshot preserves the previous state before the changes were applied, including the rating value and text content. This historical record is valuable for dispute resolution and maintaining transparency in customer feedback.
    *
-   * This operation returns a paginated list of snapshots sorted by creation time in descending order (newest first), allowing reviewers and administrators to see the complete evolution of the review over time. This is valuable for dispute resolution and maintaining feedback integrity.
-   *
-   * **Authorization:** Only the original review author or administrators can access the snapshot history of a review.
+   * Only the original review author and administrators can access the review's snapshot history. The response includes pagination controls for navigating through potentially many edits.
    *
    * @param connection
-   * @param reviewId Target review's unique identifier (UUID)
+   * @param reviewId The unique identifier of the review whose snapshots are being retrieved
+   * @param body Search criteria and pagination parameters for filtering and sorting review snapshots
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the ecommerce_mall_review_snapshots table filtering by ecommerce_mall_review_id = reviewId parameter.
-   *
-   * Execute a SELECT query joined with ecommerce_mall_reviews to verify the review exists and apply authorization:
-   * - Return 404 if the review does not exist
-   * - Check that the requesting user is either the review author (customerId matches) or has admin/superAdmin role
-   * - Return 403 if authorization fails
-   *
-   * Order results by created_at DESC (newest snapshots first).
-   *
-   * Include all fields from the snapshot: id, rating, content, created_at.
-   *
-   * **Database Query Example:**
-   * ```sql
-   * SELECT rs.id, rs.rating, rs.content, rs.created_at
-   * FROM ecommerce_mall_review_snapshots rs
-   * JOIN ecommerce_mall_reviews r ON rs.ecommerce_mall_review_id = r.id
-   * WHERE rs.ecommerce_mall_review_id = $reviewId
-   * ORDER BY rs.created_at DESC
-   * ```
-   *
-   * **Authorization Logic:**
-   * - Extract customerId from authentication token
-   * - Verify: customerId == review.customer_id OR role in ['admin', 'superAdmin']
-   * - Snapshot data shows the review state before each edit operation
+   * @x-autobe-specification Query ecommerce_mall_review_snapshots table filtering by the reviewId path parameter.
+   * Join with ecommerce_mall_reviews to verify the review exists and check access permissions.
+   * Sort results by created_at in descending order (newest snapshots first).
+   * Apply standard cursor-based pagination using the search criteria in the request body.
+   * Return snapshot fields: id, rating, content, created_at.
+   * Verify that the requesting customer is the review author before returning snapshots.
+   * Administrators can view snapshots of any review.
+   * Snapshots are immutable - only read operations are permitted.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get()
+  @TypedRoute.Patch()
+  public async index(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedParam("reviewId")
+    reviewId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IEcommerceMallReview.ISnapshotRequest,
+  ): Promise<IPageIEcommerceMallReview.ISnapshot> {
+    try {
+      return await patchEcommerceMallCustomerReviewsReviewIdSnapshots({
+        customer,
+        reviewId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a specific snapshot of a product review.
+   *
+   * Review snapshots are immutable records created automatically whenever a customer edits their review. Each snapshot preserves the rating and content of the review at a specific point in time, establishing an audit trail showing how the review has evolved.
+   *
+   * These snapshots are valuable for dispute resolution, maintaining feedback integrity, and verifying what was originally written. The snapshot includes the rating value (1-5 stars), text content, and the timestamp when this version of the review existed.
+   *
+   * Access to review snapshots is available to the original review author and administrators. This supports transparency in customer feedback management while allowing oversight and auditing of review history.
+   *
+   * @param connection
+   * @param reviewId UUID of the parent review this snapshot belongs to
+   * @param snapshotId UUID of the specific review snapshot to retrieve
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification Query the ecommerce_mall_review_snapshots table by snapshotId. Verify that the snapshot's review_id matches the provided reviewId path parameter to ensure the snapshot belongs to the correct review.
+   *
+   * Return the full snapshot entity including: id, reviewId, rating, content, and createdAt.
+   *
+   * Authorization: Only the review author (customer) and administrators can access review snapshots.
+   *
+   * Error handling:
+   * - Return 404 if snapshot does not exist
+   * - Return 404 if snapshot exists but does not belong to the specified review
+   * - Return 403 if caller is not the review author and not an administrator
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":snapshotId")
   public async at(
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedParam("reviewId")
     reviewId: string,
-  ): Promise<IPageIEcommerceMallReviewSnapshot> {
+    @TypedParam("snapshotId")
+    snapshotId: string,
+  ): Promise<IEcommerceMallReviewSnapshot> {
     try {
-      return await getEcommerceMallCustomerReviewsReviewIdSnapshots({
+      return await getEcommerceMallCustomerReviewsReviewIdSnapshotsSnapshotId({
         customer,
         reviewId,
+        snapshotId,
       });
     } catch (error) {
       console.log(error);

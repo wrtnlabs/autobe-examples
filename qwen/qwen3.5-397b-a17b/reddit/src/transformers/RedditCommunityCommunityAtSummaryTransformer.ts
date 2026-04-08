@@ -1,13 +1,13 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
-import { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
 import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { RedditCommunityCommunityIconAtSummaryTransformer } from "./RedditCommunityCommunityIconAtSummaryTransformer";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
 
 export namespace RedditCommunityCommunityAtSummaryTransformer {
@@ -20,6 +20,7 @@ export namespace RedditCommunityCommunityAtSummaryTransformer {
         id: true,
         name: true,
         description: true,
+        icon: true,
         created_at: true,
         owner: RedditCommunityMemberAtSummaryTransformer.select(),
         _count: {
@@ -27,8 +28,6 @@ export namespace RedditCommunityCommunityAtSummaryTransformer {
             subscriptions: true,
           },
         },
-        communityIcons:
-          RedditCommunityCommunityIconAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_community_communitiesFindManyArgs;
   }
@@ -39,16 +38,12 @@ export namespace RedditCommunityCommunityAtSummaryTransformer {
       id: input.id,
       name: input.name,
       description: input.description,
+      icon: input.icon,
       owner: await RedditCommunityMemberAtSummaryTransformer.transform(
         input.owner,
       ),
-      subscriber_count: input._count.subscriptions,
+      subscribers_count: input._count.subscriptions,
       created_at: input.created_at.toISOString(),
-      icon: input.communityIcons
-        ? await RedditCommunityCommunityIconAtSummaryTransformer.transform(
-            input.communityIcons,
-          )
-        : null,
-    };
+    } satisfies IRedditCommunityCommunity.ISummary;
   }
 }

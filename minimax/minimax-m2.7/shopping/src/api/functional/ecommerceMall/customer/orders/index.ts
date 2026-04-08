@@ -4,57 +4,44 @@ import {
   NestiaSimulator,
   PlainFetcher,
 } from "@nestia/fetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IEcommerceMallOrder } from "../../../../structures/IEcommerceMallOrder";
 import { IPageIEcommerceMallOrder } from "../../../../structures/IPageIEcommerceMallOrder";
 
 export * as items from "./items/index";
-export * as shipments from "./shipments/index";
 
 /**
- * Retrieve a filtered and paginated list of orders for the authenticated customer.
+ * Retrieve a filtered and paginated list of the authenticated customer's orders.
  *
- * This endpoint provides order search capabilities for customers to browse and locate their own orders. The operation supports filtering by order status, creation date range, and order number (partial match).
+ * This endpoint allows customers to view their complete order history with support for filtering by order status, date ranges, and order number searches. Results are automatically sorted by creation date with the most recent orders appearing first.
  *
- * Orders represent completed purchase transactions captured in the ecommerce_mall_orders table. Each order contains the unique order_number for reference, computed totals from subtotal and shipping_cost, and derived status from order items. Orders reference shipping addresses locked at checkout time.
+ * The response includes order summaries containing the order number, total amount, status, and creation timestamp. Each order summary is paginated to ensure optimal performance and manageable response sizes. Customers can only access their own orders; the system automatically filters results based on the authenticated session.
  *
- * The response returns a paginated list of order summaries optimized for list displays, including order number, creation date, total amount, and current status. Pagination supports configurable page sizes with cursor-based navigation for large result sets.
- *
- * Security: Only the authenticated customer can access this endpoint to view their own orders. Customers cannot access other customers' orders. The operation enforces data isolation ensuring each customer only sees their own order history.
- *
- * Related operations: GET /orders/{orderId} for single order details including all order items and shipment information.
+ * Supported filters include searching by exact or partial order number, filtering by order status (paid, shipped, delivered, cancelled, refunded, partially_completed), and date range filtering for orders placed within specific periods.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for order listing
+ * @param props.body Search criteria including status filter, date range, order number search, and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query ecommerce_mall_orders table with pagination and filtering.
+ * @x-autobe-specification Implement order listing with the following requirements:
  *
- * 1. Build query conditions from request body filters:
- *    - status: Filter by order status (paid, shipped, delivered, cancelled, refunded, partially_completed)
- *    - createdAtFrom/createdAtTo: Date range filter on created_at
- *    - orderNumber: Partial match search on order_number field
- *    - customerId: Filter by specific customer
- *
- * 2. Apply soft delete filter: Only return orders where deleted_at IS NULL
- *
- * 3. Join with ecommerce_mall_customers to include customer email in results (for admin reference only)
- *
- * 4. Order results by created_at DESC (newest first) by default
- *
- * 5. Apply pagination: offset-based with page and limit parameters
- *    - Default limit: 20
- *    - Maximum limit: 100
- *
- * 6. Return paginated response with IPageIEcommerceMallOrder.ISummary containing:
- *    - order_number: Unique order identifier
- *    - customer_id: Reference to ordering customer
- *    - total_amount: Final order total
- *    - status: Current order status
- *    - created_at: Order creation timestamp
- *
- * 7. Handle empty results gracefully with empty array and pagination metadata
+ * 1. Authentication: Extract customer ID from authenticated session (JWT token in Authorization header)
+ * 2. Query ecommerce_mall_orders table filtered by ecommerce_mall_customer_id matching the authenticated customer
+ * 3. Apply search filters from request body:
+ *    - orderNumber: exact or partial match (LIKE %pattern%)
+ *    - status: exact match (paid, shipped, delivered, cancelled, refunded, partially_completed)
+ *    - createdAtFrom: >= filter on created_at
+ *    - createdAtTo: <= filter on created_at
+ * 4. Always sort by created_at DESC (newest first)
+ * 5. Apply pagination: page and limit from request body
+ * 6. Return only non-deleted orders (deleted_at IS NULL)
+ * 7. Join with ecommerce_mall_shipping_addresses to include shipping address summary if requested
+ * 8. Calculate total_count for pagination metadata
+ * 9. Handle edge cases:
+ *    - Empty result: return empty array with pagination metadata
+ *    - Invalid status: return 400 validation error
+ *    - Invalid date range (from > to): return 400 validation error
  * @path /ecommerceMall/customer/orders
  * @accessor api.functional.ecommerceMall.customer.orders.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -84,7 +71,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for order listing
+     * Search criteria including status filter, date range, order number search, and pagination parameters
      */
     body: IEcommerceMallOrder.IRequest;
   };
@@ -119,306 +106,6 @@ export namespace index {
     });
     try {
       assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Retrieve detailed information about a specific order by its unique identifier.
- *
- * This endpoint returns comprehensive order data including all order items with their current status, product snapshots captured at purchase time, seller profile snapshots, shipping address information, and shipment tracking details. The response provides the complete context needed for customers to review their purchase history and for administrators to handle support requests and disputes.
- *
- * Customers can only retrieve orders that belong to their own account. Administrators with the 'admin' or 'superAdmin' role can retrieve any order on the platform, enabling them to assist customers with order-related inquiries and resolve disputes.
- *
- * The order items array includes product information as it appeared at the time of purchase (via product snapshots) and seller shop information as it appeared at purchase time (via seller profile snapshots). This historical preservation is essential for dispute resolution when products or seller profiles may have changed since the order was placed.
- *
- * Shipments provide carrier and tracking information for items that have been shipped, allowing customers to track their deliveries. Each shipment may contain multiple order items from the same seller.
- *
- * Related API operations: Use GET /customers/orders to list the customer's order history with pagination. Use GET /admin/orders when accessing as an administrator to list all orders on the platform.
- *
- * @param props.connection
- * @param props.orderId Unique identifier of the order to retrieve
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the ecommerce_mall_orders table using the provided orderId to retrieve the order header information including order_number, status, subtotal, shipping_cost, total_amount, and timestamps.
- *
- * Verify the authenticated customer owns this order by comparing ecommerce_mall_customer_id with the authenticated user's customer ID. For admin actors (admin or superAdmin), bypass ownership check but still verify admin role.
- *
- * If the order does not exist or ownership check fails, return 404 Not Found.
- *
- * Join and load related entities:
- * 1. Load ecommerce_mall_shipping_addresses to include shipping_address with recipient_name, phone, street_address, city, state, postal_code, country
- * 2. Load ecommerce_mall_order_items array with all items including: quantity, unit_price, status, created_at
- * 3. For each order item, load ecommerce_mall_product_snapshots with name, description, base_price, category_name, and ecommerce_mall_product_snapshot_images if available
- * 4. For each order item, load ecommerce_mall_seller_profile_snapshots with shop_name, shop_description, logo_url
- * 5. Load ecommerce_mall_shipments array with carrier, tracking_number, created_at for each shipment
- * 6. For each shipment, load associated ecommerce_mall_order_items
- *
- * Return the complete order structure with all nested data as the response body.
- * @path /ecommerceMall/customer/orders/:orderId
- * @accessor api.functional.ecommerceMall.customer.orders.at
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function at(
-  connection: IConnection,
-  props: at.Props,
-): Promise<at.Response> {
-  return true === connection.simulate
-    ? at.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...at.METADATA,
-          path: at.path(props),
-          status: null,
-        },
-      );
-}
-export namespace at {
-  export type Props = {
-    /**
-     * Unique identifier of the order to retrieve
-     */
-    orderId: string & tags.Format<"uuid">;
-  };
-  export type Response = IEcommerceMallOrder.IInvert;
-
-  export const METADATA = {
-    method: "GET",
-    path: "/ecommerceMall/customer/orders/:orderId",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Props) =>
-    `/ecommerceMall/customer/orders/${encodeURIComponent(props.orderId ?? "null")}`;
-  export const random = (): IEcommerceMallOrder.IInvert =>
-    typia.random<IEcommerceMallOrder.IInvert>();
-  export const simulate = (
-    connection: IConnection,
-    props: at.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: at.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("orderId")(() => typia.assert(props.orderId));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Update an existing order's mutable fields.
- *
- * This operation allows customers to modify limited order information after placement. Orders in this system are primarily immutable records reflecting completed checkout transactions, with computed totals and generated identifiers locked at creation time.
- *
- * The order number serves as the customer's primary reference identifier and cannot be modified after creation. The subtotal and total_amount fields are calculated during checkout based on cart contents and shipping selection, ensuring order accuracy. The status field reflects the current state of all order items and cannot be directly manipulated.
- *
- * Currently, this operation supports updating only the shipping address, enabling customers to correct delivery destinations before items are shipped. This is particularly useful when customers realize they provided an incorrect address or need to ship to an alternate location. The system preserves the historical shipping address information in the order record.
- *
- * Authorization requires the customer to be authenticated and own the order. Customers can only update their own orders and cannot modify orders belonging to other customers. Sellers and administrators have separate workflows for order management.
- *
- * If the order has already shipped, attempting to update the shipping address returns an error. The customer should instead contact support or request a cancellation for the affected items.
- *
- * @param props.connection
- * @param props.orderId Unique identifier of the order to update
- * @param props.body Order update fields - currently limited to shipping address
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor customer
- * @x-autobe-specification Retrieve the order by orderId from ecommerce_mall_orders table. Validate the order exists and is not deleted (deleted_at is null). Verify the authenticated customer owns this order (customer_id matches session). Verify order status allows updates - if any order items have status 'shipped' or beyond, return error as shipping address cannot be changed after shipment. Validate the new ecommerce_mall_shipping_address_id exists and belongs to the authenticated customer. Update only the shipping_address_id field and set updated_at to current timestamp. Return the updated order with all related data.
- * @path /ecommerceMall/customer/orders/:orderId
- * @accessor api.functional.ecommerceMall.customer.orders.update
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function update(
-  connection: IConnection,
-  props: update.Props,
-): Promise<update.Response> {
-  return true === connection.simulate
-    ? update.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...update.METADATA,
-          path: update.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace update {
-  export type Props = {
-    /**
-     * Unique identifier of the order to update
-     */
-    orderId: string & tags.Format<"uuid">;
-
-    /**
-     * Order update fields - currently limited to shipping address
-     */
-    body: IEcommerceMallOrder.IUpdate;
-  };
-  export type Body = IEcommerceMallOrder.IUpdate;
-  export type Response = IEcommerceMallOrder;
-
-  export const METADATA = {
-    method: "PUT",
-    path: "/ecommerceMall/customer/orders/:orderId",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/ecommerceMall/customer/orders/${encodeURIComponent(props.orderId ?? "null")}`;
-  export const random = (): IEcommerceMallOrder =>
-    typia.random<IEcommerceMallOrder>();
-  export const simulate = (
-    connection: IConnection,
-    props: update.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: update.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("orderId")(() => typia.assert(props.orderId));
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Soft-delete an order to remove it from the customer's active order list while preserving it for historical records.
- *
- * This operation marks the specified order as deleted by setting the deleted_at timestamp. The order record remains in the database for seller fulfillment references, dispute resolution, and business analytics purposes.
- *
- * The customer who placed the order can only delete their own orders. The deletion is a soft delete operation - the order data is preserved but the order no longer appears in the customer's active order list. This follows the platform's policy that order history is maintained for legal compliance and seller records.
- *
- * Deleting an order does not affect related shipments, inventory, or payment records. The order's items, shipping address, and transaction details remain accessible to administrators and for historical reporting.
- *
- * @param props.connection
- * @param props.orderId Unique identifier of the order to delete
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor customer
- * @x-autobe-specification 1. Authenticate the requesting customer via JWT session token.
- * 2. Validate the orderId parameter is a valid UUID format.
- * 3. Query ecommerce_mall_orders table to verify the order exists and belongs to the authenticated customer.
- * 4. Verify the order is not already deleted (deleted_at is null).
- * 5. Set the deleted_at field to current timestamp (soft delete).
- * 6. Return HTTP 204 No Content on success.
- * 7. If order not found or does not belong to customer, return HTTP 404 Not Found.
- * 8. If order already deleted, return HTTP 409 Conflict.
- * @path /ecommerceMall/customer/orders/:orderId
- * @accessor api.functional.ecommerceMall.customer.orders.erase
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function erase(
-  connection: IConnection,
-  props: erase.Props,
-): Promise<void> {
-  return true === connection.simulate
-    ? erase.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...erase.METADATA,
-          path: erase.path(props),
-          status: null,
-        },
-      );
-}
-export namespace erase {
-  export type Props = {
-    /**
-     * Unique identifier of the order to delete
-     */
-    orderId: string & tags.Format<"uuid">;
-  };
-
-  export const METADATA = {
-    method: "DELETE",
-    path: "/ecommerceMall/customer/orders/:orderId",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Props) =>
-    `/ecommerceMall/customer/orders/${encodeURIComponent(props.orderId ?? "null")}`;
-  export const random = (): void => typia.random<void>();
-  export const simulate = (
-    connection: IConnection,
-    props: erase.Props,
-  ): void => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: erase.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("orderId")(() => typia.assert(props.orderId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

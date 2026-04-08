@@ -1,13 +1,13 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
-import { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
 import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { RedditCommunityCommunityIconTransformer } from "./RedditCommunityCommunityIconTransformer";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
 
 export namespace RedditCommunityCommunityTransformer {
@@ -20,16 +20,16 @@ export namespace RedditCommunityCommunityTransformer {
         id: true,
         name: true,
         description: true,
+        icon: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
         owner: RedditCommunityMemberAtSummaryTransformer.select(),
-        _count: {
+        subscriptions: {
           select: {
-            subscriptions: true,
+            id: true,
           },
-        },
-        communityIcons: RedditCommunityCommunityIconTransformer.select(),
+        } satisfies Prisma.reddit_community_subscriptionsFindManyArgs,
       },
     } satisfies Prisma.reddit_community_communitiesFindManyArgs;
   }
@@ -40,20 +40,14 @@ export namespace RedditCommunityCommunityTransformer {
       id: input.id,
       name: input.name,
       description: input.description,
+      icon: input.icon,
       owner: await RedditCommunityMemberAtSummaryTransformer.transform(
         input.owner,
       ),
-      subscriber_count: input._count.subscriptions as number,
-      communityIcons: input.communityIcons
-        ? [
-            await RedditCommunityCommunityIconTransformer.transform(
-              input.communityIcons,
-            ),
-          ]
-        : [],
+      subscriber_count: input.subscriptions.length,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
-    };
+    } satisfies IRedditCommunityCommunity;
   }
 }

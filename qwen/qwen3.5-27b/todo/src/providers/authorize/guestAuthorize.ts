@@ -1,3 +1,4 @@
+// File: src/providers/authorize/guestAuthorize.ts
 import { ForbiddenException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
@@ -12,10 +13,11 @@ export async function guestAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const guest = await MyGlobal.prisma.multi_user_todo_guests.findFirst({
+  // Query using id field (guest is standalone actor)
+  const guest = await MyGlobal.prisma.todo_app_guests.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
+      deleted_at: null,  // Soft-delete check
     },
   });
 

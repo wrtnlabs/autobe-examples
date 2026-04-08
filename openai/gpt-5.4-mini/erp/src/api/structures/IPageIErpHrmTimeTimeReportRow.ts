@@ -18,7 +18,7 @@ export namespace IPageIErpHrmTimeTimeReportRow {
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IErpHrmTimeTimeTimeReportRow.ISummary.
+     * @x-autobe-specification List of records of type IErpHrmTimeTimeReportRow.ISummary.
      */
     data: IErpHrmTimeTimeReportRow.ISummary[];
   };

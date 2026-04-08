@@ -1,8 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
-import { IShoppingMallProductOptionDefinition } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionDefinition";
-import { IShoppingMallProductOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionValue";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
@@ -10,7 +10,7 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallProductOptionValueAtSummaryTransformer } from "./ShoppingMallProductOptionValueAtSummaryTransformer";
+import { ShoppingMallProductAtSummaryTransformer } from "./ShoppingMallProductAtSummaryTransformer";
 
 export namespace ShoppingMallProductVariantTransformer {
   export type Payload = Prisma.shopping_mall_product_variantsGetPayload<
@@ -21,54 +21,49 @@ export namespace ShoppingMallProductVariantTransformer {
       select: {
         id: true,
         sku_code: true,
-        price_override: true,
+        option_values: true,
+        price: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        product: {
+        product: ShoppingMallProductAtSummaryTransformer.select(),
+        productVariantSnapshots: {
           select: {
-            base_price: true,
-            variants: {
-              select: {
-                price_override: true,
-              },
-            } satisfies Prisma.shopping_mall_product_variantsFindManyArgs,
+            id: true,
           },
-        } satisfies Prisma.shopping_mall_productsFindManyArgs,
-        variantOptions:
-          ShoppingMallProductOptionValueAtSummaryTransformer.select(),
+        } satisfies Prisma.shopping_mall_product_variant_snapshotsFindManyArgs,
+        inventoryRecords: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.shopping_mall_inventory_recordsFindManyArgs,
+        cartItems: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.shopping_mall_cart_itemsFindManyArgs,
+        orderItems: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.shopping_mall_order_itemsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_product_variantsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallProductVariant> {
-    const prices = input.product.variants
-      .map((v) => v.price_override)
-      .filter((p): p is number => p !== null);
-    const minPrice =
-      prices.length > 0
-        ? Math.min(...prices)
-        : Number(input.product.base_price);
-    const maxPrice =
-      prices.length > 0
-        ? Math.max(...prices)
-        : Number(input.product.base_price);
     return {
       id: input.id,
-      skuCode: input.sku_code,
-      priceOverride: input.price_override,
-      product: {
-        min: minPrice,
-        max: maxPrice,
-      } satisfies IShoppingMallProduct.ISummary,
-      variantOptions: await ArrayUtil.asyncMap(
-        input.variantOptions,
-        ShoppingMallProductOptionValueAtSummaryTransformer.transform,
+      sku_code: input.sku_code,
+      option_values: input.option_values,
+      price: input.price,
+      product: await ShoppingMallProductAtSummaryTransformer.transform(
+        input.product,
       ),
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-    };
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+    } satisfies IShoppingMallProductVariant;
   }
 }

@@ -15,25 +15,55 @@ export async function deleteRedditCloneMemberSubscriptionsSubscriptionId(props: 
   member: MemberPayload;
   subscriptionId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Find the subscription by ID
+  // Verify subscription exists and belongs to the authenticated member
   const subscription =
-    await MyGlobal.prisma.reddit_clone_subscriptions.findUnique({
-      where: { id: props.subscriptionId },
+    await MyGlobal.prisma.reddit_clone_subscriptions.findFirst({
+      where: {
+        id: props.subscriptionId,
+        reddit_clone_member_id: props.member.id,
+      },
       select: {
         id: true,
-        reddit_clone_member_id: true,
       },
     });
-  // Verify subscription exists
+  // If subscription not found or belongs to different user, return 404
   if (subscription === null) {
     throw new HttpException("Not Found", 404);
-  }
-  // Verify subscription belongs to authenticated member
-  if (subscription.reddit_clone_member_id !== props.member.id) {
-    throw new HttpException("Forbidden", 403);
   }
   // Delete the subscription
   await MyGlobal.prisma.reddit_clone_subscriptions.delete({
     where: { id: props.subscriptionId },
   });
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function deleteRedditCloneMemberSubscriptionsSubscriptionId(props: {
+//   member: MemberPayload;
+//   subscriptionId: string & tags.Format<"uuid">;
+// }): Promise<void> {
+//   await MyGlobal.prisma.....delete({
+//     where: { ... },
+//   });
+// }
+// ```
+//--------------------------------------------------------------

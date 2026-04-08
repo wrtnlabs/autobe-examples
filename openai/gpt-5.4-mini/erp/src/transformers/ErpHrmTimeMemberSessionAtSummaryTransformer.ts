@@ -1,5 +1,4 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
 import { IErpHrmTimeMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMemberSession";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -13,6 +12,18 @@ export namespace ErpHrmTimeMemberSessionAtSummaryTransformer {
   export type Payload = Prisma.erp_hrm_time_member_sessionsGetPayload<
     ReturnType<typeof select>
   >;
+  export async function transform(
+    input: Payload,
+  ): Promise<IErpHrmTimeMemberSession.ISummary> {
+    return {
+      id: input.id,
+      ip: input.ip,
+      href: input.href,
+      referrer: input.referrer,
+      created_at: input.created_at.toISOString(),
+      expired_at: input.expired_at.toISOString(),
+    };
+  }
   export function select() {
     return {
       select: {
@@ -23,22 +34,11 @@ export namespace ErpHrmTimeMemberSessionAtSummaryTransformer {
         created_at: true,
         expired_at: true,
         member: {
-          select: {},
+          select: {
+            id: true,
+          },
         },
       },
     } satisfies Prisma.erp_hrm_time_member_sessionsFindManyArgs;
-  }
-  export async function transform(
-    input: Payload,
-  ): Promise<IErpHrmTimeMemberSession.ISummary> {
-    return {
-      id: input.id,
-      member: {} as IErpHrmTimeMember.ISummary,
-      ip: input.ip,
-      href: input.href,
-      referrer: input.referrer,
-      createdAt: input.created_at.toISOString(),
-      expiredAt: input.expired_at.toISOString(),
-    };
   }
 }

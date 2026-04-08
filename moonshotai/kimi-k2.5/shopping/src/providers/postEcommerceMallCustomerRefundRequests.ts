@@ -1,5 +1,10 @@
+import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
+import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
 import { IEcommerceMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequest";
 import { IEcommerceMallRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequestSnapshot";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
@@ -22,54 +27,73 @@ export async function postEcommerceMallCustomerRefundRequests(props: {
   customer: CustomerPayload;
   body: IEcommerceMallRefundRequest.ICreate;
 }): Promise<IEcommerceMallRefundRequest> {
-  // Fetch order item with order relation to verify ownership
-  const orderItem =
-    await MyGlobal.prisma.ecommerce_mall_order_items.findUniqueOrThrow({
+  // Look up the order item with its order to verify ownership and status
+  const orderItem = await MyGlobal.prisma.ecommerce_mall_order_items.findUnique(
+    {
       where: { id: props.body.orderItemId },
       select: {
         id: true,
         status: true,
+        seller_id: true,
         order: {
           select: {
             id: true,
             customer_id: true,
           },
-        } satisfies Prisma.ecommerce_mall_ordersFindManyArgs,
+        },
       },
-    });
-  // Validate customer ownership through order
-  if (orderItem.order.customer_id !== props.customer.id) {
-    throw new HttpException("Forbidden", 403);
+    },
+  );
+  if (orderItem === null) {
+    throw new HttpException("Order item not found", 404);
   }
-  // Validate order item status is delivered
+  // Verify order item is delivered
   if (orderItem.status !== "delivered") {
     throw new HttpException(
-      "Order item must be delivered to request refund",
-      400,
+      "Order item must be delivered to request a refund",
+      422,
     );
   }
-  // Check for existing refund request
-  const existingRefund =
+  // Verify customer owns the order
+  if (orderItem.order.customer_id !== props.customer.id) {
+    throw new HttpException(
+      "You can only request refunds for your own orders",
+      403,
+    );
+  }
+  // Check for existing pending refund request
+  const existingRequest =
     await MyGlobal.prisma.ecommerce_mall_refund_requests.findFirst({
       where: {
         order_item_id: props.body.orderItemId,
+        status: "pending",
         deleted_at: null,
       },
     });
-  if (existingRefund) {
+  if (existingRequest !== null) {
     throw new HttpException(
-      "Refund request already exists for this order item",
+      "A pending refund request already exists for this order item",
       409,
     );
   }
-  // Create refund request using collector
-  const collected = await EcommerceMallRefundRequestCollector.collect({
-    body: props.body,
-    customer: { id: props.customer.id },
+  // Get seller for the collector
+  const seller = await MyGlobal.prisma.ecommerce_mall_sellers.findUnique({
+    where: { id: orderItem.seller_id },
+    select: { id: true },
   });
+  if (seller === null) {
+    throw new HttpException("Seller not found", 404);
+  }
+  // Create the refund request using the Collector
   const created = await MyGlobal.prisma.ecommerce_mall_refund_requests.create({
-    data: collected,
+    data: await EcommerceMallRefundRequestCollector.collect({
+      body: props.body,
+      customer: { id: props.customer.id },
+      seller: { id: seller.id },
+      orderItem: { id: orderItem.id },
+    }),
     ...EcommerceMallRefundRequestTransformer.select(),
   });
+  // Transform and return the result
   return await EcommerceMallRefundRequestTransformer.transform(created);
 }

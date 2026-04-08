@@ -2,35 +2,33 @@ import { tags } from "typia";
 
 export namespace IShoppingMallDashboard {
   /**
-   * Seller dashboard summary statistics providing an at-a-glance view of shop performance and pending tasks requiring attention.
+   * Seller dashboard statistics showing pending cancellation and refund request counts requiring seller attention.
+   *
+   * This response provides real-time metrics for sellers to monitor their order management workload. The cancellationPendingCount represents the number of customer cancellation requests awaiting seller review. The refundPendingCount represents the number of customer refund requests awaiting seller review.
+   *
+   * Both counts reflect only requests for order items containing the seller's products with status 'pending'. When a seller approves or rejects a request, it is no longer included in the count.
    */
-  export type ISummary = {
+  export type ICancellationRefund = {
     /**
-     * Total number of products listed by the seller.
+     * Number of customer cancellation requests awaiting seller review.
      *
-     * @x-autobe-specification COUNT(*) FROM shopping_mall_products WHERE seller_id = auth.seller.id. Computed at query time.
+     * This count represents cancellation requests for order items containing the seller's products that are currently in 'pending' status. Each request is created by a customer seeking to cancel an order item before shipment. The seller must review and either approve or reject each request.
+     *
+     * The count decreases when the seller approves or rejects a pending request. Only requests with status 'pending' are included - approved, rejected, or cancelled requests are excluded.
+     *
+     * @x-autobe-specification COUNT(*) from shopping_mall_cancellation_requests JOIN shopping_mall_order_items ON shopping_mall_cancellation_requests.shopping_mall_order_item_id = shopping_mall_order_items.id WHERE shopping_mall_order_items.shopping_mall_seller_id = authenticated_seller_id AND shopping_mall_cancellation_requests.status = 'pending'. Returns integer >= 0.
      */
-    products_count: number & tags.Type<"int32">;
+    cancellationPendingCount: number & tags.Type<"int32"> & tags.Minimum<0>;
 
     /**
-     * Total number of order items across all seller's products.
+     * Number of customer refund requests awaiting seller review.
      *
-     * @x-autobe-specification COUNT(*) FROM shopping_mall_order_items JOIN shopping_mall_products ON order_items.product_id = products.id WHERE products.seller_id = auth.seller.id. Computed at query time.
-     */
-    order_items_count: number & tags.Type<"int32">;
-
-    /**
-     * Count of pending cancellation requests awaiting seller response.
+     * This count represents refund requests for order items containing the seller's products that are currently in 'pending' status. Each request is created by a customer seeking a refund for a delivered order item. The seller must review and either approve or reject each request.
      *
-     * @x-autobe-specification COUNT(*) FROM shopping_mall_cancellation_requests JOIN shopping_mall_order_items ON cancellation_requests.order_item_id = order_items.id JOIN shopping_mall_products ON order_items.product_id = products.id WHERE products.seller_id = auth.seller.id AND cancellation_requests.responded_at IS NULL. Computed at query time.
-     */
-    pending_cancellations_count: number & tags.Type<"int32">;
-
-    /**
-     * Count of pending refund requests awaiting seller response.
+     * The count decreases when the seller approves or rejects a pending request. Only requests with status 'pending' are included - approved, rejected, or cancelled requests are excluded.
      *
-     * @x-autobe-specification COUNT(*) FROM shopping_mall_refund_requests JOIN shopping_mall_order_items ON refund_requests.order_item_id = order_items.id JOIN shopping_mall_products ON order_items.product_id = products.id WHERE products.seller_id = auth.seller.id AND refund_requests.responded_at IS NULL. Computed at query time.
+     * @x-autobe-specification COUNT(*) from shopping_mall_refund_requests JOIN shopping_mall_order_items ON shopping_mall_refund_requests.shopping_mall_order_item_id = shopping_mall_order_items.id WHERE shopping_mall_order_items.shopping_mall_seller_id = authenticated_seller_id AND shopping_mall_refund_requests.status = 'pending'. Returns integer >= 0.
      */
-    pending_refunds_count: number & tags.Type<"int32">;
+    refundPendingCount: number & tags.Type<"int32"> & tags.Minimum<0>;
   };
 }

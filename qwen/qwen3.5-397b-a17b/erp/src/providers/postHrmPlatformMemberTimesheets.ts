@@ -26,49 +26,29 @@ export async function postHrmPlatformMemberTimesheets(props: {
   member: MemberPayload;
   body: IHrmPlatformTimesheet.ICreate;
 }): Promise<IHrmPlatformTimesheet> {
-  // Find the employee record for this authenticated member
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-      where: {
-        user_id: props.member.id,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-      },
-    });
-  // Create the timesheet using the collector
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
+    where: {
+      member_id: props.member.id,
+      deleted_at: null,
+    },
+  });
+  if (employee === null) {
+    throw new HttpException("Employee record not found", 404);
+  }
+  if (employee.status !== "active") {
+    throw new HttpException("Employee account is deactivated", 403);
+  }
   const created = await MyGlobal.prisma.hrm_platform_timesheets.create({
     data: await HrmPlatformTimesheetCollector.collect({
       body: props.body,
       hrmPlatformEmployees: {
         id: employee.id,
       },
+      hrmPlatformMemberSessions: {
+        id: props.member.session_id,
+      },
     }),
     ...HrmPlatformTimesheetTransformer.select(),
   });
-  // Auto-associate existing timelogs within the week date range
-  const weekStart = new Date(props.body.week_start_date);
-  const weekEnd = new Date(props.body.week_end_date);
-  await MyGlobal.prisma.hrm_platform_timelogs.updateMany({
-    where: {
-      employee_id: employee.id,
-      date: {
-        gte: weekStart,
-        lte: weekEnd,
-      },
-      timesheet_id: null,
-    },
-    data: {
-      timesheet_id: created.id,
-      updated_at: new Date(),
-    },
-  });
-  // Fetch the created timesheet with all relations including updated timelogs
-  const timesheet =
-    await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
-      where: { id: created.id },
-      ...HrmPlatformTimesheetTransformer.select(),
-    });
-  return await HrmPlatformTimesheetTransformer.transform(timesheet);
+  return await HrmPlatformTimesheetTransformer.transform(created);
 }

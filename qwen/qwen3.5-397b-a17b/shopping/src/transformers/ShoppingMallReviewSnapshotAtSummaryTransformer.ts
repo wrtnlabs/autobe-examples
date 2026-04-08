@@ -1,6 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import { IShoppingMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallMember";
 import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
 import { IShoppingMallReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReviewSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
@@ -38,6 +38,6 @@ export namespace ShoppingMallReviewSnapshotAtSummaryTransformer {
       review: await ShoppingMallReviewAtSummaryTransformer.transform(
         input.review,
       ),
-    };
+    } satisfies IShoppingMallReviewSnapshot.ISummary;
   }
 }

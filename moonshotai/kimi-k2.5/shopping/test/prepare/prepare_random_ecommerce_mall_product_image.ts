@@ -6,7 +6,7 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_ecommerce_mall_product_image(
-  input?: DeepPartial<IEcommerceMallProductImage.ICreate> | undefined,
+  input?: DeepPartial<IEcommerceMallProductImage.ICreate>,
 ): IEcommerceMallProductImage.ICreate {
   return {
     imageUrl: input?.imageUrl ?? typia.random<string & tags.Format<"uri">>(),

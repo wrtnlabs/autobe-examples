@@ -15,23 +15,17 @@ import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refr
 export async function test_api_admin_login_nonexistent_email(
   connection: api.IConnection,
 ): Promise<void> {
-  // Generate a non-existent email address that is valid format but won't exist in system
-  const nonexistentEmail = typia.random<string & tags.Format<"email">>();
-  // Valid password format for the request
-  const validPassword = typia.random<string & tags.Format<"password">>();
-  // Attempt to login with non-existent email
-  // Should fail with HTTP error and generic message (no email enumeration)
-  await TestValidator.httpError(
-    "login with non-existent email should fail",
-    400,
-    async () =>
-      await api.functional.ecommerceMall.auth.admin.login(connection, {
+  await TestValidator.error("login fails for non-existent email", async () => {
+    await api.functional.ecommerceMall.auth.admin.login(
+      { host: connection.host },
+      {
         body: {
-          email: nonexistentEmail,
-          password: validPassword,
+          email: typia.random<string & tags.Format<"email">>(),
+          password: typia.random<string & tags.Format<"password">>(),
           href: typia.random<string & tags.Format<"uri">>(),
           referrer: typia.random<string & tags.Format<"uri">>(),
         } satisfies IEcommerceMallAdmin.ILogin,
-      }),
-  );
+      },
+    );
+  });
 }

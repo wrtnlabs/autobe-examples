@@ -1,11 +1,11 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
+import { IErpHrmTimeEmployeeDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployeeDashboardSummary";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
 import { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
-import { IErpHrmTimeTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTask";
+import { IErpHrmTimeTaskHistoryEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTaskHistoryEntry";
 import { IErpHrmTimeTimeReportRow } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimeReportRow";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -14,9 +14,10 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ErpHrmTimeEmployeeAtSummaryTransformer } from "./ErpHrmTimeEmployeeAtSummaryTransformer";
+import { ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer } from "./ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer";
+import { ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer } from "./ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer";
 import { ErpHrmTimeProjectAtSummaryTransformer } from "./ErpHrmTimeProjectAtSummaryTransformer";
-import { ErpHrmTimeTaskAtSummaryTransformer } from "./ErpHrmTimeTaskAtSummaryTransformer";
+import { ErpHrmTimeTaskHistoryEntryAtSummaryTransformer } from "./ErpHrmTimeTaskHistoryEntryAtSummaryTransformer";
 
 export namespace ErpHrmTimeTimeReportRowTransformer {
   export type Payload = Prisma.erp_hrm_time_time_report_rowsGetPayload<
@@ -27,23 +28,35 @@ export namespace ErpHrmTimeTimeReportRowTransformer {
   ): Promise<IErpHrmTimeTimeReportRow> {
     return {
       id: input.id,
-      organization: input.organization,
-      employee: input.employee
-        ? await ErpHrmTimeEmployeeAtSummaryTransformer.transform(input.employee)
-        : null,
-      project: input.project
-        ? await ErpHrmTimeProjectAtSummaryTransformer.transform(input.project)
-        : null,
-      task: input.task
-        ? await ErpHrmTimeTaskAtSummaryTransformer.transform(input.task)
-        : null,
+      organization:
+        await ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer.transform(
+          input.organization,
+        ),
+      employee:
+        input.employee === null
+          ? null
+          : await ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer.transform(
+              input.employee,
+            ),
+      project:
+        input.project === null
+          ? null
+          : await ErpHrmTimeProjectAtSummaryTransformer.transform(
+              input.project,
+            ),
+      task:
+        input.task === null
+          ? null
+          : await ErpHrmTimeTaskHistoryEntryAtSummaryTransformer.transform(
+              input.task,
+            ),
       reportDate: input.report_date.toISOString(),
       billable: input.billable,
       loggedMinutes: input.logged_minutes,
       loggedHours: input.logged_hours,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
     };
   }
   export function select() {
@@ -57,10 +70,12 @@ export namespace ErpHrmTimeTimeReportRowTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        organization: true,
-        employee: ErpHrmTimeEmployeeAtSummaryTransformer.select(),
+        organization:
+          ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer.select(),
+        employee:
+          ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer.select(),
         project: ErpHrmTimeProjectAtSummaryTransformer.select(),
-        task: ErpHrmTimeTaskAtSummaryTransformer.select(),
+        task: ErpHrmTimeTaskHistoryEntryAtSummaryTransformer.select(),
       },
     } satisfies Prisma.erp_hrm_time_time_report_rowsFindManyArgs;
   }

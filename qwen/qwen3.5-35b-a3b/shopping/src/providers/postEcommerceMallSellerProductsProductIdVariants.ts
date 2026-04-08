@@ -1,6 +1,7 @@
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -21,66 +22,66 @@ export async function postEcommerceMallSellerProductsProductIdVariants(props: {
   productId: string & tags.Format<"uuid">;
   body: IEcommerceMallProductVariant.ICreate;
 }): Promise<IEcommerceMallProductVariant> {
-  const product = await MyGlobal.prisma.ecommerce_mall_products.findFirst({
-    where: {
-      id: props.productId,
-      seller: {
-        id: props.seller.id,
-      },
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      name: true,
-    },
-  });
-  if (product === null) {
-    throw new HttpException("Product not found or not accessible", 404);
-  }
-  const existingVariant =
-    await MyGlobal.prisma.ecommerce_mall_product_variants.findUnique({
+  const product =
+    await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
       where: {
-        sku: props.body.sku,
+        id: props.productId,
+        deleted_at: null,
       },
+      select: { id: true, seller_id: true },
     });
-  if (existingVariant !== null) {
-    throw new HttpException("SKU code must be unique across all variants", 409);
+  if (product.seller_id !== props.seller.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  if (props.body.base_price <= 0) {
-    throw new HttpException("base_price must be a positive number", 400);
-  }
-  if (props.body.stock_quantity < 0) {
-    throw new HttpException("stock_quantity must be non-negative", 400);
-  }
-  if (props.body.sale_price !== undefined && props.body.sale_price !== null) {
-    if (props.body.sale_price <= 0) {
-      throw new HttpException(
-        "sale_price must be a positive number if provided",
-        400,
-      );
-    }
-  }
-  if (props.body.status !== undefined && props.body.status !== null) {
-    if (
-      props.body.status !== "active" &&
-      props.body.status !== "inactive" &&
-      props.body.status !== "discontinued"
-    ) {
-      throw new HttpException(
-        "status must be one of: active, inactive, discontinued",
-        400,
-      );
-    }
-  }
-  const created = await MyGlobal.prisma.ecommerce_mall_product_variants.create({
+  const record = await MyGlobal.prisma.ecommerce_mall_product_variants.create({
     data: await EcommerceMallProductVariantCollector.collect({
       body: props.body,
-      ecommerceMallProducts: {
-        id: props.productId,
-      } satisfies IEntity,
-      ecommerceMallSellers: { id: props.seller.id } satisfies IEntity,
+      ecommerceMallProducts: { id: props.productId } as IEntity,
+      ecommerceMallSellers: { id: props.seller.id } as IEntity,
     }),
     ...EcommerceMallProductVariantTransformer.select(),
   });
-  return await EcommerceMallProductVariantTransformer.transform(created);
+  return await EcommerceMallProductVariantTransformer.transform(record);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+// import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+// import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function postEcommerceMallSellerProductsProductIdVariants(props: {
+//   seller: SellerPayload;
+//   productId: string & tags.Format<"uuid">;
+//   body: IEcommerceMallProductVariant.ICreate;
+// }): Promise<IEcommerceMallProductVariant> {
+//   const record = await MyGlobal.prisma.ecommerce_mall_product_variants.create({
+//     data: await EcommerceMallProductVariantCollector.collect({
+//       body: props.body,
+//       ...
+//     }),
+//     ...EcommerceMallProductVariantTransformer.select(),
+//   });
+//   return await EcommerceMallProductVariantTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

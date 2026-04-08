@@ -2,8 +2,10 @@ import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IE
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallAdminAtSummaryTransformer {
@@ -28,8 +30,8 @@ export namespace EcommerceMallAdminAtSummaryTransformer {
     return {
       id: input.id,
       email: input.email,
-      grade: input.grade,
-      status: input.status,
+      grade: input.grade as "regular" | "super_admin",
+      status: input.status as "active" | "suspended" | "banned",
       nickname: input.nickname,
       createdAt: input.created_at.toISOString(),
     };

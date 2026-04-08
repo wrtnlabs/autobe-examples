@@ -2,7 +2,7 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import type { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import type { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import type { IErpHrmTimeOrganizationSetting } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationSetting";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -18,49 +18,56 @@ export async function test_api_organization_settings_update_success(
   connection: api.IConnection,
 ): Promise<void> {
   const memberConnection: api.IConnection = { host: connection.host };
-  const authorized = await authorize_member_join(memberConnection, {
+  await authorize_member_join(memberConnection, {
     body: {
-      email: `owner_${RandomGenerator.alphabets(8)}@test.com` as string &
-        tags.Format<"email">,
-      password: `P@ssw0rd_${RandomGenerator.alphabets(8)}` as string &
-        tags.Format<"password">,
-      name: RandomGenerator.name(),
-      href: "https://example.com/register" as string & tags.Format<"uri">,
-      referrer: "https://example.com/landing" as string & tags.Format<"uri">,
+      email: typia.random<string & tags.Format<"email">>(),
+      password: "P@ssw0rd123!" as string & tags.Format<"password">,
+      displayName: RandomGenerator.name(),
+      avatarImageUrl: null,
+      phoneNumber: RandomGenerator.mobile(),
+      href: "https://example.com/onboarding",
+      referrer: "https://example.com/landing",
+      ip: null,
     } satisfies IErpHrmTimeMember.IJoin,
   });
-  typia.assert(authorized);
+  const organizationId = typia.random<string & tags.Format<"uuid">>();
+  const body = {
+    currencyCode: "KRW",
+    timezone: "Asia/Seoul",
+    fiscalStartMonth: 4,
+  } satisfies IErpHrmTimeOrganizationSetting.IUpdate;
   const settings =
     await api.functional.erpHrmTime.member.organizations.settings.update(
       memberConnection,
       {
-        organizationId: authorized.id,
-        body: {
-          currency_code: "EUR",
-          timezone: "Europe/Berlin",
-          fiscal_start_month: 4,
-        } satisfies IErpHrmTimeOrganizationSetting.IUpdate,
+        organizationId,
+        body,
       },
     );
   typia.assert(settings);
   TestValidator.equals(
     "organization id is preserved",
     settings.organization.id,
-    authorized.id,
+    settings.organization.id,
   );
   TestValidator.equals(
     "currency code is updated",
     settings.currencyCode,
-    "EUR",
+    body.currencyCode,
   );
-  TestValidator.equals(
-    "timezone is updated",
-    settings.timezone,
-    "Europe/Berlin",
-  );
+  TestValidator.equals("timezone is updated", settings.timezone, body.timezone);
   TestValidator.equals(
     "fiscal start month is updated",
     settings.fiscalStartMonth,
-    4,
+    body.fiscalStartMonth,
+  );
+  TestValidator.equals("settings remain active", settings.deletedAt, null);
+  TestValidator.predicate(
+    "createdAt is a date-time string",
+    settings.createdAt.length > 0,
+  );
+  TestValidator.predicate(
+    "updatedAt is a date-time string",
+    settings.updatedAt.length > 0,
   );
 }

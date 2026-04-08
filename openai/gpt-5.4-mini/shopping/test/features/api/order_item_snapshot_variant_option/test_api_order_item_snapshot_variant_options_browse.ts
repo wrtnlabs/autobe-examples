@@ -1,8 +1,18 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import type { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
+import type { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+import type { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
+import type { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
+import type { IMallPlatformOrderItemSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItemSnapshot";
 import type { IMallPlatformOrderItemSnapshotVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItemSnapshotVariantOption";
+import type { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
+import type { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
+import type { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import type { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import type { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
+import type { IMallPlatformSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerProfile";
 import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import type { IPageIMallPlatformOrderItemSnapshotVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformOrderItemSnapshotVariantOption";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -14,120 +24,90 @@ import typia, { tags } from "typia";
 import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
+import { generate_random_mall_platform_seller_order_item_snapshots_variant_options_create } from "../../../generate/generate_random_mall_platform_seller_order_item_snapshots_variant_options_create";
+import { prepare_random_mall_platform_order_item_snapshot_variant_option } from "../../../prepare/prepare_random_mall_platform_order_item_snapshot_variant_option";
 
 export async function test_api_order_item_snapshot_variant_options_browse(
   connection: api.IConnection,
 ): Promise<void> {
-  const joinConnection: api.IConnection = { host: connection.host };
-  const seller = await authorize_seller_join(joinConnection, {
+  const sellerConnection: api.IConnection = { host: connection.host };
+  const authorized = await authorize_seller_join(sellerConnection, {
     body: {
-      email: `${RandomGenerator.alphabets(10)}@test.com`,
-      password: `P@ssw0rd${RandomGenerator.alphabets(6)}`,
-      href: "https://example.com/register",
-      referrer: "https://example.com/",
-      ip: "127.0.0.1",
+      email:
+        `${RandomGenerator.alphaNumeric(8)}@test.com` satisfies string as string &
+          tags.Format<"email">,
+      password: RandomGenerator.alphaNumeric(12) satisfies string as string &
+        tags.Format<"password">,
     } satisfies IMallPlatformSeller.IJoin,
   });
-  typia.assert(seller);
-  const sellerConnection: api.IConnection = { host: connection.host };
-  sellerConnection.headers = {
-    Authorization: seller.token.access,
-  };
-  const orderItemId = typia.random<string & tags.Format<"uuid">>();
-  const snapshotId = typia.random<string & tags.Format<"uuid">>();
-  const search = RandomGenerator.alphabets(4);
-  const request: IMallPlatformOrderItemSnapshotVariantOption.IRequest = {
-    page: 1,
-    limit: 20,
-    search,
-    sort: "+optionName",
-  };
-  const output =
-    await api.functional.mallPlatform.seller.order_items.snapshots.variant_options.index(
-      sellerConnection,
-      {
-        orderItemId,
-        snapshotId,
-        body: request,
-      },
-    );
-  typia.assert(output);
-  TestValidator.equals(
-    "pagination current page",
-    output.pagination.current,
-    request.page ?? 1,
-  );
-  TestValidator.equals(
-    "pagination limit",
-    output.pagination.limit,
-    request.limit ?? output.pagination.limit,
-  );
-  TestValidator.predicate(
-    "pagination records are non-negative",
-    output.pagination.records >= 0,
-  );
-  TestValidator.predicate(
-    "pagination pages are non-negative",
-    output.pagination.pages >= 0,
-  );
-  TestValidator.predicate(
-    "page data does not exceed limit",
-    output.data.length <= output.pagination.limit,
-  );
-  const repeated =
-    await api.functional.mallPlatform.seller.order_items.snapshots.variant_options.index(
-      sellerConnection,
-      {
-        orderItemId,
-        snapshotId,
-        body: request,
-      },
-    );
-  typia.assert(repeated);
-  TestValidator.equals(
-    "stable ordering for identical explicit sort requests",
-    repeated.data,
-    output.data,
-  );
-  if (output.data.length > 0) {
-    for (const row of output.data) {
-      TestValidator.predicate(
-        "search filters preserved option fields",
-        row.optionName.toLowerCase().includes(search.toLowerCase()) ||
-          row.optionValue.toLowerCase().includes(search.toLowerCase()),
+  typia.assert(authorized);
+  const orderItemSnapshotId = typia.random<string & tags.Format<"uuid">>();
+  const createdRows: IMallPlatformOrderItemSnapshotVariantOption[] = [];
+  for (const body of [
+    { optionName: "color", optionValue: "red" },
+    { optionName: "size", optionValue: "large" },
+  ] satisfies IMallPlatformOrderItemSnapshotVariantOption.ICreate[]) {
+    const created =
+      await generate_random_mall_platform_seller_order_item_snapshots_variant_options_create(
+        sellerConnection,
+        {
+          params: { orderItemSnapshotId },
+          body,
+        },
       );
-    }
+    typia.assert(created);
+    createdRows.push(created);
   }
-  const unsorted =
-    await api.functional.mallPlatform.seller.order_items.snapshots.variant_options.index(
+  const page =
+    await api.functional.mallPlatform.seller.orderItemSnapshots.variantOptions.index(
       sellerConnection,
       {
-        orderItemId,
-        snapshotId,
+        orderItemSnapshotId,
         body: {
           page: 1,
-          limit: 20,
-          search,
-        },
+          limit: 10,
+          sort: "+optionName",
+        } satisfies IMallPlatformOrderItemSnapshotVariantOption.IRequest,
       },
     );
-  typia.assert(unsorted);
+  typia.assert(page);
+  TestValidator.equals("browse page current", page.pagination.current, 1);
+  TestValidator.equals("browse page limit", page.pagination.limit, 10);
+  TestValidator.predicate(
+    "browse page records include created rows",
+    page.pagination.records >= createdRows.length,
+  );
+  TestValidator.predicate(
+    "browse page pages are positive",
+    page.pagination.pages >= 1,
+  );
   TestValidator.equals(
-    "stable ordering when sort is omitted",
-    unsorted.data,
-    await api.functional.mallPlatform.seller.order_items.snapshots.variant_options
-      .index(sellerConnection, {
-        orderItemId,
-        snapshotId,
-        body: {
-          page: 1,
-          limit: 20,
-          search,
-        },
-      })
-      .then((value) => {
-        typia.assert(value);
-        return value.data;
-      }),
+    "browse row count matches created rows when page is large enough",
+    page.data.length,
+    createdRows.length,
+  );
+  TestValidator.predicate(
+    "rows belong to requested snapshot",
+    page.data.every((row) => row.orderItemSnapshot.id === orderItemSnapshotId),
+  );
+  TestValidator.predicate(
+    "rows include preserved option names",
+    page.data.some((row) => row.optionName === "color") &&
+      page.data.some((row) => row.optionName === "size"),
+  );
+  TestValidator.predicate(
+    "rows are stable by option name sort",
+    page.data.length < 2 || page.data[0].optionName <= page.data[1].optionName,
+  );
+  TestValidator.predicate(
+    "rows are immutable snapshots",
+    page.data.every((row) =>
+      createdRows.some(
+        (created) =>
+          created.id === row.id &&
+          created.optionName === row.optionName &&
+          created.optionValue === row.optionValue,
+      ),
+    ),
   );
 }

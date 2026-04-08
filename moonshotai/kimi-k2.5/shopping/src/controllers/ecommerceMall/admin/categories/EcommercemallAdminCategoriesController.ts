@@ -1,6 +1,6 @@
 import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia from "typia";
+import typia, { tags } from "typia";
 
 import { IEcommerceMallCategory } from "../../../../api/structures/IEcommerceMallCategory";
 import { AdminAuth } from "../../../../decorators/AdminAuth";
@@ -12,59 +12,46 @@ import { putEcommerceMallAdminCategoriesCategoryId } from "../../../../providers
 @Controller("/ecommerceMall/admin/categories")
 export class EcommercemallAdminCategoriesController {
   /**
-   * Create a new product category in the e-commerce platform.
+   * Create a new product category to organize products in the e-commerce platform.
    *
-   * This operation allows administrators to create new categories for organizing products. Categories form a hierarchical structure supporting one level of nesting - categories can be either top-level (no parent) or subcategories of an existing parent category.
+   * This endpoint allows administrators to create categories that help customers discover products through hierarchical browsing. Categories support one level of nesting, meaning they can be either top-level categories (no parent) or subcategories of an existing parent category.
    *
-   * **Authentication Requirements:**
-   * - Requires valid administrator authentication
-   * - Only users with admin privileges can create categories
-   * - Customers and sellers cannot access this endpoint
+   * Each category requires a unique name within its parent scope. Name uniqueness comparisons are performed case-insensitively - names that differ only by case (e.g., 'Electronics' and 'electronics') are considered duplicates and will be rejected.
    *
-   * **Category Creation Rules:**
-   * - Category name is required and must be unique within the same parent scope
-   * - If creating a subcategory, the parent_id must reference an existing category
-   * - Description is optional but recommended for clarity
-   * - Duplicate category names under the same parent are rejected with a validation error
+   * This operation is restricted to administrator users only. Customers and sellers cannot create categories.
    *
-   * **Related Operations:**
-   * - Use PATCH /categories to list and search existing categories
-   * - Use GET /categories/{categoryId} to retrieve a specific category
-   * - Use PUT /categories/{categoryId} to update an existing category
-   * - Use DELETE /categories/{categoryId} to remove a category
-   *
-   * **Business Impact:**
-   * When a category is created, it becomes available for sellers to assign their products to. A well-organized category structure helps customers discover products through browsing.
+   * When creating a subcategory (by providing parentId), the parent category must exist and not be deleted. The two-level hierarchy (parent + children) constraint prevents deeper nesting.
    *
    * @param connection
-   * @param body Category creation information including name, optional description, and optional parent category reference
+   * @param body Category creation data including name, optional description, and optional parent category
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Validate administrator authentication and authorization.
+   * @x-autobe-specification Validate the requesting user has administrator role. Validate the request body contains a non-empty name field and optional description and parentId fields.
    *
-   * Begin database transaction:
-   * 1. If parent_id is provided in request body:
-   *    - Verify the parent category exists in ecommerce_mall_categories
-   *    - Verify the parent category is not soft-deleted (deleted_at IS NULL)
-   *    - If parent does not exist or is deleted, return 404 error
+   * If parentId is provided:
+   * - Verify the parent category exists and is not deleted (deleted_at is null)
+   * - The parent must be a top-level category (parent_id is null) to maintain the two-level hierarchy constraint
    *
-   * 2. Validate category name uniqueness:
-   *    - Query ecommerce_mall_categories for existing record with same parent_id and name (case-insensitive comparison)
-   *    - If match found, return 409 Conflict with duplicate name error
+   * Check for duplicate category name using case-insensitive comparison within the same parent scope:
+   * - If parentId is provided: check uniqueness within that parent_id
+   * - If parentId is null (top-level): check uniqueness where parent_id is null
+   * - If a category with the same name (case-insensitive) already exists in the same scope, reject with conflict error
    *
-   * 3. Create new category record:
-   *    - Generate UUID for id
-   *    - Set parent_id if provided (NULL for top-level categories)
-   *    - Set name from request body
-   *    - Set description from request body (can be NULL)
-   *    - Set created_at to current timestamp
-   *    - Set updated_at to current timestamp
-   *    - Set deleted_at to NULL
-   *    - Insert into ecommerce_mall_categories
+   * Create a new category record in ecommerce_mall_categories table:
+   * - Generate a new UUID for id
+   * - Set parent_id from request (null for top-level)
+   * - Set name as provided (preserve original case from input)
+   * - Set description if provided, otherwise null
+   * - Set created_at and updated_at to current timestamp
+   * - Set deleted_at to null
    *
-   * 4. Commit transaction
+   * Insert the record and return the complete category entity including generated id and timestamps.
    *
-   * Return the newly created category with all fields including generated id and timestamps.
+   * Error scenarios:
+   * - 401 Unauthorized: User is not authenticated
+   * - 403 Forbidden: User is not an administrator
+   * - 400 Bad Request: Missing or invalid name, parent category does not exist, or parent is already a subcategory (would exceed 2-level depth)
+   * - 409 Conflict: Category with the same name already exists within the same parent scope (case-insensitive)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -86,48 +73,32 @@ export class EcommercemallAdminCategoriesController {
   }
 
   /**
-   * Update an existing product category.
+   * Update an existing product category's information.
    *
-   * This operation allows administrators to modify the name and description of an existing category in the platform's product taxonomy. Categories organize products into a browsable hierarchical structure with support for one level of nesting (parent categories and subcategories).
+   * This operation allows administrators to modify category details including the name and description. Category names must be unique within the same parent category to prevent confusion in product organization. Top-level categories have globally unique names, while subcategories under different parents can share names.
    *
-   * The category being updated is identified by its unique identifier in the URL path. The request body accepts the new name and optional description values. These are the only editable fields - the parent category relationship cannot be changed after creation per platform design constraints (hierarchy is immutable once established).
+   * Only administrators can update categories. Sellers and customers do not have permission to modify the category structure. This centralized management ensures a consistent and uniform taxonomy across the platform.
    *
-   * Administrators have exclusive permission to update categories. Customers and sellers cannot modify category information. This centralized management ensures consistency in the platform's classification system.
+   * The category's hierarchical position (parent/child relationship) cannot be changed after creation through this operation. To reorganize categories, administrators must delete and recreate them with the desired structure.
    *
-   * The system enforces unique category names within the same parent scope. If the new name conflicts with an existing category at the same hierarchy level (case-insensitive comparison), the request will be rejected. This prevents fragmentation and ensures clear navigation for customers.
-   *
-   * When a category is updated, its associated products are automatically reflected in the new classification. Categories with soft delete status (deleted_at is set) cannot be updated and will result in a not found error.
-   *
-   * Related operations:
-   * - GET /categories/{categoryId}: Retrieve detailed category information before updating
-   * - POST /categories: Create new categories
-   * - DELETE /categories/{categoryId}: Remove categories when no longer needed
+   * Duplicate category names within the same parent scope are rejected with validation errors. The system performs case-insensitive uniqueness checks.
    *
    * @param connection
-   * @param categoryId Target category's unique identifier
-   * @param body Category update information with new name and description values
+   * @param categoryId Unique identifier of the category to update
+   * @param body Category update data with name and optional description
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Update the ecommerce_mall_categories record identified by categoryId.
+   * @x-autobe-specification Validate the administrator's authorization to modify categories. Check that categoryId exists in ecommerce_mall_categories table.
    *
-   * Implementation steps:
-   * 1. Validate the category exists and is not soft deleted (deleted_at IS NULL)
-   * 2. Check administrator authorization - only admin/superAdmin actors allowed
-   * 3. Parse request body containing name and description fields
-   * 4. Validate name is not empty and within length constraints
-   * 5. Check for duplicate name within same parent category scope using @@unique([parent_id, name]) constraint
-   * 6. Perform case-insensitive name comparison to prevent near-duplicates
-   * 7. Update category record with new name and description values
-   * 8. Update the updated_at timestamp to current time
-   * 9. Return the full updated category entity
+   * Validate IUpdate request body fields:
+   * - name: required, non-empty string, unique across all categories (case-insensitive check)
+   * - description: optional string for category explanation
    *
-   * Edge cases:
-   * - If category not found or soft deleted, return 404
-   * - If duplicate name exists at same parent level, return 409 Conflict
-   * - If parent_id is included in request, ignore it (hierarchy is immutable)
-   * - Empty description is allowed (nullable field)
+   * Perform unique name constraint check excluding the current category being updated. If another category already uses the requested name (case-insensitive), reject with validation error.
    *
-   * Database query: UPDATE ecommerce_mall_categories SET name = ?, description = ?, updated_at = NOW() WHERE id = ? AND deleted_at IS NULL
+   * Update the category record with provided values. Preserve existing fields not included in the update.
+   *
+   * Return the complete updated category entity including its id, name, description, parentId (if subcategory), and timestamps.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":categoryId")
@@ -152,35 +123,43 @@ export class EcommercemallAdminCategoriesController {
   }
 
   /**
-   * Permanently removes a category from the e-commerce platform. This operation requires administrator privileges.
+   * Permanently removes a category from the platform.
    *
-   * The deletion behavior is determined by the category's position in the hierarchy:
+   * When a category is deleted, any products previously assigned to that category become uncategorized. Uncategorized products remain on the platform and can still be found through search and direct links, but they do not appear when customers browse by category.
    *
-   * 1. If the category is a leaf category (has no subcategories), it is directly deleted. Any products assigned to this category become uncategorized but remain on the platform.
+   * If a parent category with subcategories is deleted, all its subcategories are also deleted. Products in those deleted subcategories become uncategorized as well.
    *
-   * 2. If the category is a parent category with subcategories, the system performs a cascade deletion: all subcategories under this parent are deleted first, then the parent category itself is deleted. Products in both the parent and all its subcategories become uncategorized.
+   * Category deletion requires administrator privileges and cannot be performed by sellers or customers. Deleted categories cannot be recovered.
    *
-   * Uncategorized products retain all their data and remain searchable via direct search or product links. However, they no longer appear when customers browse by category.
-   *
-   * This operation returns no content upon successful deletion. If the specified category does not exist, returns a 404 error.
+   * This operation performs a soft delete, preserving the category record for audit purposes while marking it as inactive.
    *
    * @param connection
-   * @param categoryId Unique identifier of the category to delete
+   * @param categoryId The UUID that uniquely identifies the category to delete
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Validate administrator authentication and authorization. Query the ecommerce_mall_categories table by ID. If category not found, throw NOT_FOUND error.
+   * @x-autobe-specification 1. Validate that the caller has administrator privileges.
    *
-   * Check if the category is a parent (has subcategories where parent_id = this category's id). If parent category:
-   * 1. Query all subcategories (categories where parent_id = categoryId)
-   * 2. Delete all subcategories from ecommerce_mall_categories
-   * 3. Delete the parent category from ecommerce_mall_categories
-   * 4. Products in deleted categories lose their category assignment (set category_id to null or mark as uncategorized)
+   * 2. Find the category by categoryId from the ecommerce_mall_categories table.
    *
-   * If leaf category:
-   * 1. Delete the category from ecommerce_mall_categories
-   * 2. Update products in this category to become uncategorized
+   * 3. If category not found or already deleted (deleted_at is not null), return 404 Not Found.
    *
-   * Return HTTP 204 No Content on success.
+   * 4. Check if the category has subcategories by querying ecommerce_mall_categories where parent_id = categoryId.
+   *
+   * 5. Begin a transaction:
+   *    - Set deleted_at = current timestamp for the target category
+   *    - For all subcategories (if any), set deleted_at = current timestamp
+   *    - The database schema defines onDelete: Cascade for the parent relation, but we should explicitly handle subcategory deletion
+   *
+   * 6. Update all products in ecommerce_mall_products that reference this category or its subcategories to have category_id = null (uncategorized).
+   *
+   * 7. Commit the transaction.
+   *
+   * 8. Return 204 No Content with empty response body.
+   *
+   * Edge cases:
+   * - If category has active products, they become uncategorized (not deleted)
+   * - Cascade deletion of subcategories happens automatically due to database constraints
+   * - Soft delete preserves the category for historical reference in order snapshots
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":categoryId")
@@ -188,7 +167,7 @@ export class EcommercemallAdminCategoriesController {
     @AdminAuth()
     admin: AdminPayload,
     @TypedParam("categoryId")
-    categoryId: string,
+    categoryId: string & tags.Format<"uuid">,
   ): Promise<void> {
     try {
       return await deleteEcommerceMallAdminCategoriesCategoryId({

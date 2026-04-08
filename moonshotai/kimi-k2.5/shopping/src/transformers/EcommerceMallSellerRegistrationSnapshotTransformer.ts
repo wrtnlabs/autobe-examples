@@ -1,13 +1,17 @@
 import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallSellerRegistration } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerRegistration";
 import { IEcommerceMallSellerRegistrationSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerRegistrationSnapshot";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallAdminAtSummaryTransformer } from "./EcommerceMallAdminAtSummaryTransformer";
+import { EcommerceMallSellerRegistrationAtSummaryTransformer } from "./EcommerceMallSellerRegistrationAtSummaryTransformer";
 
 export namespace EcommerceMallSellerRegistrationSnapshotTransformer {
   export type Payload =
@@ -18,12 +22,11 @@ export namespace EcommerceMallSellerRegistrationSnapshotTransformer {
     return {
       select: {
         id: true,
+        ecommerce_mall_seller_registration_id: true,
+        ecommerce_mall_admin_id: true,
         created_at: true,
-        registration: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.ecommerce_mall_seller_registrationsFindManyArgs,
+        registration:
+          EcommerceMallSellerRegistrationAtSummaryTransformer.select(),
         reviewer: EcommerceMallAdminAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_seller_registration_snapshotsFindManyArgs;
@@ -33,13 +36,17 @@ export namespace EcommerceMallSellerRegistrationSnapshotTransformer {
   ): Promise<IEcommerceMallSellerRegistrationSnapshot> {
     return {
       id: input.id,
-      createdAt: input.created_at.toISOString(),
-      registration: {
-        id: input.registration.id,
-      } as IEcommerceMallSellerRegistration,
+      ecommerceMallSellerRegistrationId:
+        input.ecommerce_mall_seller_registration_id,
+      ecommerceMallAdminId: input.ecommerce_mall_admin_id,
+      registration:
+        await EcommerceMallSellerRegistrationAtSummaryTransformer.transform(
+          input.registration,
+        ),
       reviewer: input.reviewer
         ? await EcommerceMallAdminAtSummaryTransformer.transform(input.reviewer)
         : null,
+      createdAt: input.created_at.toISOString(),
     };
   }
 }

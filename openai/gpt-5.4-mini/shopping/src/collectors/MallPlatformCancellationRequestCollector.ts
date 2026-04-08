@@ -13,7 +13,6 @@ export namespace MallPlatformCancellationRequestCollector {
     orderItem: IEntity;
   }) {
     const id: string = v4();
-    const now = new Date();
     return {
       id,
       reason: props.body.reason,
@@ -21,13 +20,41 @@ export namespace MallPlatformCancellationRequestCollector {
       reviewed_at: null,
       review_result: null,
       reviewer_note: null,
-      created_at: now,
-      updated_at: now,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
       orderItem: {
         connect: { id: props.orderItem.id },
       },
-      reviewer: undefined,
     } satisfies Prisma.mall_platform_cancellation_requestsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace MallPlatformCancellationRequestCollector {
+//         export async function collect(props: {
+//           body: IMallPlatformCancellationRequest.ICreate;
+//           mallPlatformOrderItems: IEntity; // from path parameter orderItemId
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       reason: ...,
+//       status: ...,
+//       reviewed_at: ...,
+//       review_result: ...,
+//       reviewer_note: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       orderItem: ...,
+//       reviewer: ...,
+//       snapshots: ...,
+//           } satisfies Prisma.mall_platform_cancellation_requestsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

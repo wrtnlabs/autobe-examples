@@ -9,8 +9,10 @@ import { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmP
 import { IHrmPlatformTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTimelog";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmPlatformEmployeeAtSummaryTransformer } from "./HrmPlatformEmployeeAtSummaryTransformer";
 import { HrmPlatformProjectAtSummaryTransformer } from "./HrmPlatformProjectAtSummaryTransformer";
@@ -28,17 +30,9 @@ export namespace HrmPlatformTimelogAtSummaryTransformer {
         duration_minutes: true,
         description: true,
         billable: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
         employee: HrmPlatformEmployeeAtSummaryTransformer.select(),
         project: HrmPlatformProjectAtSummaryTransformer.select(),
         task: HrmPlatformTaskAtSummaryTransformer.select(),
-        timesheet: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.hrm_platform_timesheetsFindManyArgs,
       },
     } satisfies Prisma.hrm_platform_timelogsFindManyArgs;
   }
@@ -48,9 +42,9 @@ export namespace HrmPlatformTimelogAtSummaryTransformer {
     return {
       id: input.id,
       date: input.date.toISOString(),
-      duration_minutes: input.duration_minutes,
-      billable: input.billable,
+      durationMinutes: input.duration_minutes,
       description: input.description ?? undefined,
+      billable: input.billable,
       employee: await HrmPlatformEmployeeAtSummaryTransformer.transform(
         input.employee,
       ),
@@ -60,7 +54,6 @@ export namespace HrmPlatformTimelogAtSummaryTransformer {
       task: input.task
         ? await HrmPlatformTaskAtSummaryTransformer.transform(input.task)
         : undefined,
-      created_at: input.created_at.toISOString(),
-    };
+    } satisfies IHrmPlatformTimelog.ISummary;
   }
 }

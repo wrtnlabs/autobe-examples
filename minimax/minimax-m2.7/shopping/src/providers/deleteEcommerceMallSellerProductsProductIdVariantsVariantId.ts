@@ -16,87 +16,138 @@ export async function deleteEcommerceMallSellerProductsProductIdVariantsVariantI
   productId: string & tags.Format<"uuid">;
   variantId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // 1. Verify seller owns the product
-  const product = await MyGlobal.prisma.ecommerce_mall_products.findUnique({
-    where: { id: props.productId },
-    select: { id: true, ecommerce_mall_seller_id: true, deleted_at: true },
-  });
-  if (product === null || product.deleted_at !== null) {
-    throw new HttpException("Product not found", 404);
-  }
-  if (product.ecommerce_mall_seller_id !== props.seller.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // 2. Verify variant exists and belongs to product
-  const variant =
-    await MyGlobal.prisma.ecommerce_mall_product_variants.findUnique({
-      where: { id: props.variantId },
-      select: { id: true, ecommerce_mall_product_id: true, deleted_at: true },
-    });
-  if (
-    variant === null ||
-    variant.ecommerce_mall_product_id !== props.productId ||
-    variant.deleted_at !== null
-  ) {
-    throw new HttpException("Variant not found", 404);
-  }
-  // 3. Check deletion eligibility - no active order items (paid/shipped)
-  const activeOrderItemsCount =
-    await MyGlobal.prisma.ecommerce_mall_order_items.count({
-      where: {
-        ecommerce_mall_product_variant_id: props.variantId,
-        status: { in: ["paid", "shipped"] },
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    // 1. Ownership verification: Check product exists and belongs to seller
+    const product = await tx.ecommerce_mall_products.findUnique({
+      where: { id: props.productId },
+      select: {
+        id: true,
+        ecommerce_mall_seller_id: true,
+        deleted_at: true,
       },
     });
-  if (activeOrderItemsCount > 0) {
-    throw new HttpException(
-      "Cannot delete variant with active (paid or shipped) order items",
-      409,
-    );
-  }
-  // 3b. Get order item IDs for this variant (for checking pending requests)
-  const orderItems = await MyGlobal.prisma.ecommerce_mall_order_items.findMany({
-    where: { ecommerce_mall_product_variant_id: props.variantId },
-    select: { id: true },
-  });
-  const orderItemIds = orderItems.map((item) => item.id);
-  // 3c. Check pending cancellation requests
-  if (orderItemIds.length > 0) {
-    const pendingCancellationCount =
-      await MyGlobal.prisma.ecommerce_mall_cancellation_requests.count({
-        where: {
-          ecommerce_mall_order_item_id: { in: orderItemIds },
-          status: "pending",
+    if (product === null) {
+      throw new HttpException("Product not found", 404);
+    }
+    if (product.deleted_at !== null) {
+      throw new HttpException("Product not found", 404);
+    }
+    if (product.ecommerce_mall_seller_id !== props.seller.id) {
+      throw new HttpException("Forbidden", 403);
+    }
+    // 2. Variant existence check
+    const variant = await tx.ecommerce_mall_product_variants.findUnique({
+      where: { id: props.variantId },
+      select: {
+        id: true,
+        ecommerce_mall_product_id: true,
+        deleted_at: true,
+      },
+    });
+    if (variant === null) {
+      throw new HttpException("Variant not found", 404);
+    }
+    if (variant.ecommerce_mall_product_id !== props.productId) {
+      throw new HttpException("Variant not found", 404);
+    }
+    if (variant.deleted_at !== null) {
+      throw new HttpException("Variant not found", 404);
+    }
+    // 3. Deletion eligibility checks
+    // Check for paid or shipped order items
+    const activeOrderItems = await tx.ecommerce_mall_order_items.findFirst({
+      where: {
+        ecommerce_mall_product_variant_id: props.variantId,
+        status: {
+          in: ["paid", "shipped"],
         },
-      });
-    if (pendingCancellationCount > 0) {
+      },
+      select: {
+        id: true,
+      },
+    });
+    if (activeOrderItems !== null) {
       throw new HttpException(
-        "Cannot delete variant with pending cancellation requests",
-        409,
+        "Cannot delete variant: there are pending order items for this variant",
+        400,
       );
     }
-    // 3d. Check pending refund requests
-    const pendingRefundCount =
-      await MyGlobal.prisma.ecommerce_mall_refund_requests.count({
+    // Check for pending cancellation requests via order_items join
+    const pendingCancellation =
+      await tx.ecommerce_mall_cancellation_requests.findFirst({
         where: {
-          ecommerce_mall_order_item_id: { in: orderItemIds },
           status: "pending",
+          orderItem: {
+            ecommerce_mall_product_variant_id: props.variantId,
+          },
+        },
+        select: {
+          id: true,
         },
       });
-    if (pendingRefundCount > 0) {
+    if (pendingCancellation !== null) {
       throw new HttpException(
-        "Cannot delete variant with pending refund requests",
-        409,
+        "Cannot delete variant: there are pending cancellation requests for this variant",
+        400,
       );
     }
-  }
-  // 4. Soft delete the variant
-  await MyGlobal.prisma.ecommerce_mall_product_variants.update({
-    where: { id: props.variantId },
-    data: { deleted_at: new Date() },
-  });
-  // 5. Cascade delete inventory records
-  await MyGlobal.prisma.ecommerce_mall_inventory_records.deleteMany({
-    where: { ecommerce_mall_product_variant_id: props.variantId },
+    // Check for pending refund requests via order_items join
+    const pendingRefund = await tx.ecommerce_mall_refund_requests.findFirst({
+      where: {
+        status: "pending",
+        orderItem: {
+          ecommerce_mall_product_variant_id: props.variantId,
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+    if (pendingRefund !== null) {
+      throw new HttpException(
+        "Cannot delete variant: there are pending refund requests for this variant",
+        400,
+      );
+    }
+    // 4. Soft delete the variant
+    await tx.ecommerce_mall_product_variants.update({
+      where: { id: props.variantId },
+      data: {
+        deleted_at: toISOStringSafe(new Date()),
+      },
+    });
   });
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function deleteEcommerceMallSellerProductsProductIdVariantsVariantId(props: {
+//   seller: SellerPayload;
+//   productId: string & tags.Format<"uuid">;
+//   variantId: string & tags.Format<"uuid">;
+// }): Promise<void> {
+//   await MyGlobal.prisma.....delete({
+//     where: { ... },
+//   });
+// }
+// ```
+//--------------------------------------------------------------

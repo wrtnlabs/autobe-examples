@@ -1,5 +1,4 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIHrmPlatformRole";
@@ -21,37 +20,35 @@ export async function patchHrmPlatformMemberRoles(props: {
   body: IHrmPlatformRole.IRequest;
 }): Promise<IPageIHrmPlatformRole.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-      where: {
-        user_id: props.member.id,
-        deleted_at: null,
+  const membership =
+    await MyGlobal.prisma.hrm_platform_organization_memberships.findFirstOrThrow(
+      {
+        where: {
+          hrm_platform_member_id: props.member.id,
+          deleted_at: null,
+        },
+        select: {
+          hrm_platform_organization_id: true,
+        },
       },
-      select: {
-        organization_id: true,
-      },
-    });
+    );
   const whereInput = {
-    organization_id: employee.organization_id,
+    organization_id: membership.hrm_platform_organization_id,
     deleted_at: null,
     ...(props.body.search !== undefined && {
       name: { contains: props.body.search, mode: "insensitive" as const },
     }),
-    ...(props.body.is_builtin !== undefined && {
-      is_builtin: props.body.is_builtin,
+    ...(props.body.is_built_in !== undefined && {
+      is_built_in: props.body.is_built_in,
     }),
   } satisfies Prisma.hrm_platform_rolesWhereInput;
-  const orderByInput = {
-    [(props.body.sort as "name" | "created_at" | "is_builtin" | undefined) ??
-    "created_at"]: "desc" as const,
-  } satisfies Prisma.hrm_platform_rolesOrderByWithRelationInput;
   const data = await MyGlobal.prisma.hrm_platform_roles.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: orderByInput,
+    orderBy: { created_at: "desc" },
     ...HrmPlatformRoleAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.hrm_platform_roles.count({

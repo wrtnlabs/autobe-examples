@@ -8,6 +8,13 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+/**
+ * Register and authenticate a new member account for E2E testing.
+ *
+ * Creates a member account with randomized credentials including email, password, and username. The email serves as the unique login identifier, while the username is the public-facing identifier displayed on posts, comments, and profiles. Session context fields (href, referrer, ip) are automatically generated for security tracking.
+ *
+ * Upon successful registration, the system issues both access and refresh tokens which are returned in the IAuthorized response. The connection is mutated with the access token for subsequent authenticated API requests.
+ */
 export async function authorize_member_join(
   connection: api.IConnection,
   props: {
@@ -16,15 +23,12 @@ export async function authorize_member_join(
 ): Promise<IRedditCloneMember.IAuthorized> {
   const joinInput = {
     email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
-    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
-    username: props.body?.username ?? RandomGenerator.alphabets(8),
-    display_name: props.body?.display_name ?? RandomGenerator.name(2),
-    bio: props.body?.bio ?? null,
-    avatar_uri: props.body?.avatar_uri ?? null,
     href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
+    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
+    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
     referrer:
       props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
-    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
+    username: props.body?.username ?? RandomGenerator.name(1),
   } satisfies IRedditCloneMember.IJoin;
   return await api.functional.redditClone.auth.member.join(connection, {
     body: joinInput,

@@ -8,17 +8,20 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+/**
+ * Register and authenticate a new customer for E2E testing.
+ *
+ * Creates a customer account using the provided registration payload and returns the authorized customer profile.
+ *
+ * The underlying SDK call also updates the connection with the issued access token so subsequent authenticated requests can reuse the session without additional login steps.
+ */
 export async function authorize_customer_join(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IMallPlatformCustomer.IJoin>;
+    body: IMallPlatformCustomer.IJoin;
   },
 ): Promise<IMallPlatformCustomer.IAuthorized> {
-  const joinInput = {
-    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
-    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
-  } satisfies IMallPlatformCustomer.IJoin;
   return await api.functional.mallPlatform.auth.customer.join(connection, {
-    body: joinInput,
+    body: props.body,
   });
 }

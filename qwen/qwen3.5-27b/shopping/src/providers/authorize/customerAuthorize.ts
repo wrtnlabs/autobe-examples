@@ -16,6 +16,7 @@ export async function customerAuthorize(request: {
     where: {
       id: payload.id,
       deleted_at: null,
+      banned: false,
     },
   });
 

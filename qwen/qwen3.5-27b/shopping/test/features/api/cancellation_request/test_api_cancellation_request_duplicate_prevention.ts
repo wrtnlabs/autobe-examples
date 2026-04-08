@@ -2,9 +2,25 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IShoppingMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCancellationRequest";
+import type { IShoppingMallCancellationRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCancellationRequestSnapshot";
+import type { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import type { IShoppingMallCheckout } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCheckout";
 import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import type { IShoppingMallCustomerAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerAddress";
+import type { IShoppingMallCustomerCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerCart";
+import type { IShoppingMallCustomerCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerCartItem";
+import type { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import type { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import type { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+import type { IShoppingMallOrderItemSnapshotProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItemSnapshotProductImage";
+import type { IShoppingMallOrderItemSnapshotVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItemSnapshotVariantOption";
+import type { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import type { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
+import type { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import type { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
 import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import type { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
+import type { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -18,88 +34,147 @@ import { authorize_seller_join } from "../../../authorize/authorize_seller_join"
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
 import { generate_random_shopping_mall_customer_cancellation_requests_create } from "../../../generate/generate_random_shopping_mall_customer_cancellation_requests_create";
+import { generate_random_shopping_mall_customer_cart_items_create } from "../../../generate/generate_random_shopping_mall_customer_cart_items_create";
+import { generate_random_shopping_mall_customer_checkout } from "../../../generate/generate_random_shopping_mall_customer_checkout";
+import { generate_random_shopping_mall_seller_products_create } from "../../../generate/generate_random_shopping_mall_seller_products_create";
+import { generate_random_shopping_mall_seller_products_variants_create } from "../../../generate/generate_random_shopping_mall_seller_products_variants_create";
 import { prepare_random_shopping_mall_cancellation_request } from "../../../prepare/prepare_random_shopping_mall_cancellation_request";
+import { prepare_random_shopping_mall_checkout } from "../../../prepare/prepare_random_shopping_mall_checkout";
+import { prepare_random_shopping_mall_customer_cart_item } from "../../../prepare/prepare_random_shopping_mall_customer_cart_item";
+import { prepare_random_shopping_mall_product } from "../../../prepare/prepare_random_shopping_mall_product";
+import { prepare_random_shopping_mall_product_variant } from "../../../prepare/prepare_random_shopping_mall_product_variant";
 
 /**
- * Test that duplicate cancellation requests for the same order item are prevented.
+ * Test the business rule that prevents duplicate cancellation requests for the same order item.
  *
- * This test verifies that the system prevents customers from submitting multiple
- * cancellation requests for the same order item. After successfully creating one
- * cancellation request, any subsequent attempts to cancel the same order item
- * should be rejected with a VALIDATION_001 error.
+ * This test validates that the system correctly rejects duplicate cancellation requests when a customer attempts to cancel the same order item multiple times. The test sets up a complete order workflow and verifies that after creating an initial cancellation request, any subsequent attempt to cancel the same order item is rejected with a 409 Conflict status.
  *
- * Note: Full test execution requires the complete order flow (product creation,
- * cart management, order placement) which is not available in the current SDK.
- * This test demonstrates the duplicate prevention logic structure.
+ * 1. Customer registers and authenticates to establish a session.
+ * 2. Seller registers and authenticates to create products.
+ * 3. Seller creates a product with a variant that has available stock.
+ * 4. Customer adds the product variant to their shopping cart.
+ * 5. Customer places an order through checkout, creating an order item with 'paid' status.
+ * 6. First cancellation request is created successfully for the order item.
+ * 7. Second cancellation request for the same order item is attempted.
+ * 8. Validates that the second request fails with 409 Conflict status, confirming duplicate prevention.
  */
 export async function test_api_cancellation_request_duplicate_prevention(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Setup: Register and authenticate customer
+  // 1. Customer registration and authentication
   const customerConnection: api.IConnection = { host: connection.host };
-  const customerJoinBody = {
-    email: typia.random<string & tags.Format<"email">>(),
-    password: "12345678",
-    display_name: RandomGenerator.name(),
-    phone_number: RandomGenerator.mobile(),
-    href: typia.random<string & tags.Format<"uri">>(),
-    referrer: typia.random<string & tags.Format<"uri">>(),
-    ip: typia.random<string & tags.Format<"ipv4">>(),
-  } satisfies IShoppingMallCustomer.IJoin;
-  await authorize_customer_join(customerConnection, { body: customerJoinBody });
-  // 2. Setup: Register and authenticate seller
+  const customerEmail = typia.random<string & tags.Format<"email">>();
+  const customerPassword = RandomGenerator.alphaNumeric(16);
+  await authorize_customer_join(customerConnection, {
+    body: {
+      email: customerEmail,
+      password: customerPassword,
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+    } satisfies IShoppingMallCustomer.IJoin,
+  });
+  // 2. Seller registration and authentication
   const sellerConnection: api.IConnection = { host: connection.host };
-  const sellerJoinBody = {
-    email: typia.random<string & tags.Format<"email">>(),
-    password: "12345678",
-    shop_name: RandomGenerator.name(2),
-    shop_description: RandomGenerator.paragraph({ sentences: 2 }),
-    href: typia.random<string & tags.Format<"uri">>(),
-    referrer: typia.random<string & tags.Format<"uri">>(),
-    ip: typia.random<string & tags.Format<"ipv4">>(),
-  } satisfies IShoppingMallSeller.IJoin;
-  await authorize_seller_join(sellerConnection, { body: sellerJoinBody });
-  // 3. Test scenario: Attempt to create duplicate cancellation requests
-  // In a complete test environment with full order flow, this would:
-  // a) Create a product via seller
-  // b) Add to cart and create order via customer
-  // c) Submit first cancellation request (should succeed)
-  // d) Submit second cancellation request for same order item (should fail with VALIDATION_001)
-  // Since order creation endpoints are not available, we test the cancellation
-  // request endpoint behavior with a non-existent order item to verify error handling
-  const nonExistentOrderItemId: string & tags.Format<"uuid"> = typia.random<
-    string & tags.Format<"uuid">
-  >();
-  const cancellationRequest = {
-    orderItemId: nonExistentOrderItemId,
-    reason: "Customer wants to cancel this order item",
-  } satisfies IShoppingMallCancellationRequest.ICreate;
-  // First attempt - should fail because order item doesn't exist
-  await TestValidator.error(
-    "cancellation request fails for non-existent order item",
+  const sellerEmail = typia.random<string & tags.Format<"email">>();
+  const sellerPassword = RandomGenerator.alphaNumeric(16);
+  await authorize_seller_join(sellerConnection, {
+    body: {
+      email: sellerEmail,
+      password: sellerPassword,
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+    } satisfies IShoppingMallSeller.IJoin,
+  });
+  // 3. Seller creates a product
+  const product = await generate_random_shopping_mall_seller_products_create(
+    sellerConnection,
+    {
+      body: {
+        name: RandomGenerator.paragraph({ sentences: 2 }),
+        description: RandomGenerator.paragraph({ sentences: 3 }),
+        base_price: typia.random<
+          number & tags.Type<"uint32"> & tags.Minimum<1000>
+        >(),
+      } satisfies IShoppingMallProduct.ICreate,
+    },
+  );
+  typia.assert(product);
+  // 4. Seller creates a variant with initial stock
+  const variant =
+    await generate_random_shopping_mall_seller_products_variants_create(
+      sellerConnection,
+      {
+        params: { productId: product.id },
+        body: {
+          sku_code: `SKU-${RandomGenerator.alphaNumeric(8)}`,
+          variantOptions: [
+            { key: "color", value: "Red" },
+            { key: "size", value: "Large" },
+          ],
+          initialStockQuantity: 10,
+        } satisfies IShoppingMallProductVariant.ICreate,
+      },
+    );
+  typia.assert(variant);
+  // 5. Customer adds variant to cart
+  const cartItem =
+    await generate_random_shopping_mall_customer_cart_items_create(
+      customerConnection,
+      {
+        body: {
+          productVariantId: variant.id,
+          quantity: 1,
+        } satisfies IShoppingMallCustomerCartItem.ICreate,
+      },
+    );
+  typia.assert(cartItem);
+  // 6. Customer checkout to create order
+  const order = await generate_random_shopping_mall_customer_checkout(
+    customerConnection,
+    {
+      body: {
+        shopping_mall_customer_address_id: typia.random<
+          string & tags.Format<"uuid">
+        >(),
+        payment_token: RandomGenerator.alphaNumeric(32),
+      } satisfies IShoppingMallCheckout.ICreate,
+    },
+  );
+  typia.assert(order);
+  // Get the first order item from the created order
+  const orderItem = order.items[0];
+  typia.assert(orderItem);
+  // 7. Create first cancellation request (setup phase)
+  const firstCancellationRequest =
+    await generate_random_shopping_mall_customer_cancellation_requests_create(
+      customerConnection,
+      {
+        body: {
+          orderItemId: orderItem.id,
+          reason: "I want to cancel this order item for testing purposes.",
+        } satisfies IShoppingMallCancellationRequest.ICreate,
+      },
+    );
+  typia.assert(firstCancellationRequest);
+  TestValidator.equals(
+    "first cancellation request created successfully",
+    firstCancellationRequest.status,
+    "pending",
+  );
+  // 8. Attempt to create duplicate cancellation request (test phase)
+  await TestValidator.httpError(
+    "duplicate cancellation request should fail with 409 Conflict",
+    409,
     async () => {
-      await api.functional.shoppingMall.customer.cancellationRequests.create(
+      await generate_random_shopping_mall_customer_cancellation_requests_create(
         customerConnection,
-        { body: cancellationRequest },
+        {
+          body: {
+            orderItemId: orderItem.id,
+            reason: "This is a duplicate cancellation request attempt.",
+          } satisfies IShoppingMallCancellationRequest.ICreate,
+        },
       );
     },
   );
-  // Second attempt with same order item - should also fail
-  // In a real scenario with existing order item and first successful request,
-  // this would return VALIDATION_001 error indicating duplicate request
-  await TestValidator.error(
-    "duplicate cancellation request also fails",
-    async () => {
-      await api.functional.shoppingMall.customer.cancellationRequests.create(
-        customerConnection,
-        { body: cancellationRequest },
-      );
-    },
-  );
-  // Business logic validation (documented):
-  // - When order item exists and first cancellation succeeds, status = 'pending'
-  // - Second request for same order item should return VALIDATION_001
-  // - Error message should indicate cancellation request already exists
-  // - No additional cancellation request record should be created
-  // - Original request remains unchanged with 'pending' status
 }

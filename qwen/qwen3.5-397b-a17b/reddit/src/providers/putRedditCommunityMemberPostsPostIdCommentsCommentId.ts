@@ -1,7 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCommunityComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityComment";
 import { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
-import { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
 import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPost";
 import { ArrayUtil } from "@nestia/e2e";
@@ -36,14 +35,14 @@ export async function putRedditCommunityMemberPostsPostIdCommentsCommentId(props
   if (comment.reddit_community_post_id !== props.postId) {
     throw new HttpException(
       "Comment does not belong to the specified post",
-      400,
+      404,
     );
-  }
-  if (comment.deleted_at !== null) {
-    throw new HttpException("Comment has been deleted", 404);
   }
   if (comment.reddit_community_member_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
+  }
+  if (comment.deleted_at !== null) {
+    throw new HttpException("Comment not found", 404);
   }
   await MyGlobal.prisma.reddit_community_comments.update({
     where: { id: props.commentId },

@@ -8,50 +8,85 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 
 export namespace RedditCloneFileCollector {
+  /**
+   * Extract MIME type from base64 file content using magic bytes.
+   */
+  function extractMimeType(base64Content: string): string {
+    const header = base64Content.substring(0, 50);
+    if (header.startsWith("/9j/")) return "image/jpeg";
+    if (header.startsWith("iVBOR")) return "image/png";
+    if (header.startsWith("R0lGO")) return "image/gif";
+    if (header.startsWith("UklGR")) return "image/webp";
+    return "application/octet-stream";
+  }
+  /**
+   * Get file extension from MIME type.
+   */
+  function getExtension(mimeType: string): string {
+    const map: Record<string, string> = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/gif": "gif",
+      "image/webp": "webp",
+    };
+    return map[mimeType] ?? "bin";
+  }
   export async function collect(props: {
     body: IRedditCloneFile.ICreate;
     redditCloneMembers: IEntity;
+    redditCloneMemberSessions: IEntity;
   }) {
     const id: string = v4();
-    // Decode base64 file_data to compute file_size
-    const fileBuffer: Buffer = Buffer.from(props.body.file_data, "base64");
-    const fileSize: number = fileBuffer.length;
-    // Generate unique stored filename with extension
-    const fileExtension: string = getExtensionFromMimeType(
-      props.body.mime_type,
-    );
-    const storedFilename: string = `${id}${fileExtension}`;
-    // Generate storage path
-    const storagePath: string = `files/${storedFilename}`;
+    const mimeType: string = extractMimeType(props.body.file);
+    const extension: string = getExtension(mimeType);
+    const storedFilename: string = `${v4()}.${extension}`;
+    const fileSize: number = Math.ceil((props.body.file.length - 22) * 3) / 4;
     return {
-      // Scalar fields
       id,
-      original_filename: props.body.original_filename,
+      original_filename: props.body.originalFilename,
       stored_filename: storedFilename,
-      mime_type: props.body.mime_type,
+      mime_type: mimeType,
       file_size: fileSize,
-      storage_path: storagePath,
+      storage_path: `/uploads/files/${storedFilename}`,
       status: "pending",
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      // BelongsTo relation - connect to uploader from authorized actor
       uploader: { connect: { id: props.redditCloneMembers.id } },
-      // HasMany/HasOne relations - not needed (created from parent side)
-      communityIcons: undefined,
-      postImages: undefined,
-      scans: undefined,
-      thumbnails: undefined,
-      fileAssociation: undefined,
     } satisfies Prisma.reddit_clone_filesCreateInput;
   }
 }
-function getExtensionFromMimeType(mimeType: string): string {
-  const mimeToExt: Record<string, string> = {
-    "image/jpeg": ".jpg",
-    "image/png": ".png",
-    "image/gif": ".gif",
-    "image/webp": ".webp",
-  };
-  return mimeToExt[mimeType] ?? "";
-}
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace RedditCloneFileCollector {
+//         export async function collect(props: {
+//           body: IRedditCloneFile.ICreate;
+//           redditCloneMembers: IEntity; // from authorized actor
+// redditCloneMemberSessions: IEntity; // from authorized session
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       original_filename: ...,
+//       stored_filename: ...,
+//       mime_type: ...,
+//       file_size: ...,
+//       storage_path: ...,
+//       status: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       uploader: ...,
+//       communityIcons: ...,
+//       postImages: ...,
+//       scans: ...,
+//       thumbnails: ...,
+//       fileAssociation: ...,
+//           } satisfies Prisma.reddit_clone_filesCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

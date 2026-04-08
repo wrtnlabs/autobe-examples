@@ -11,15 +11,19 @@ export function prepare_random_erp_hrm_time_employee_contract(
   return {
     startDate:
       input?.startDate ?? typia.random<string & tags.Format<"date-time">>(),
-    endDate: input?.endDate !== undefined ? input.endDate : null,
-    payRate:
-      input?.payRate ??
-      typia.random<number & tags.Type<"double"> & tags.Minimum<0.01>>(),
+    endDate:
+      input?.endDate !== undefined
+        ? input.endDate
+        : typia.random<string & tags.Format<"date-time">>(),
+    payRate: input?.payRate ?? typia.random<number & tags.Type<"double">>(),
     payPeriod:
       input?.payPeriod ??
       RandomGenerator.pick(["hourly", "daily", "weekly", "monthly"] as const),
     workingHoursPerWeek:
       input?.workingHoursPerWeek ?? typia.random<number & tags.Type<"int32">>(),
-    notes: input?.notes !== undefined ? input.notes : null,
+    notes:
+      input?.notes !== undefined
+        ? input.notes
+        : RandomGenerator.paragraph({ sentences: 2 }),
   };
 }

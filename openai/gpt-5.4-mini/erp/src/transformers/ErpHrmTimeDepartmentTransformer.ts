@@ -1,6 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
@@ -9,6 +10,7 @@ import typia, { tags } from "typia";
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ErpHrmTimeDepartmentAtSummaryTransformer } from "./ErpHrmTimeDepartmentAtSummaryTransformer";
+import { ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer } from "./ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer";
 
 export namespace ErpHrmTimeDepartmentTransformer {
   export type Payload = Prisma.erp_hrm_time_departmentsGetPayload<
@@ -18,13 +20,16 @@ export namespace ErpHrmTimeDepartmentTransformer {
     return {
       select: {
         id: true,
-        organization: ErpHrmTimeDepartmentAtSummaryTransformer.select(),
-        parentDepartment: ErpHrmTimeDepartmentAtSummaryTransformer.select(),
         name: true,
         description: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        organization:
+          ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer.select(),
+        parentDepartment: ErpHrmTimeDepartmentAtSummaryTransformer.select(),
+        employees: { select: {} },
+        childDepartments: ErpHrmTimeDepartmentAtSummaryTransformer.select(),
       },
     } satisfies Prisma.erp_hrm_time_departmentsFindManyArgs;
   }
@@ -33,9 +38,10 @@ export namespace ErpHrmTimeDepartmentTransformer {
   ): Promise<IErpHrmTimeDepartment> {
     return {
       id: input.id,
-      organization: await ErpHrmTimeDepartmentAtSummaryTransformer.transform(
-        input.organization,
-      ),
+      organization:
+        await ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer.transform(
+          input.organization,
+        ),
       parentDepartment: input.parentDepartment
         ? await ErpHrmTimeDepartmentAtSummaryTransformer.transform(
             input.parentDepartment,

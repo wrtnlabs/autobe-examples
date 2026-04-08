@@ -1,0 +1,240 @@
+/// Organization-owned project entities that serve as containers for tasks,
+/// timesheets, and team members.
+///
+/// A project represents a specific piece of work or initiative the
+/// organization is undertaking. Each project tracks effort, budget, and
+/// timeline information while maintaining association with the organization
+/// that owns it.
+///
+/// **Core Attributes**:
+/// - Name: Unique identifier within the organization, used for project
+/// identification and navigation
+/// - Color code: Visual indicator for project display in UI components
+/// - Description: Optional text providing context about the project scope
+/// and objectives
+/// - Budget hours: Optional total estimated hours for project resource planning
+/// - Start and end dates: Optional timeline markers for project scheduling
+/// and duration calculation
+/// - Status: Workflow state controlling whether the project can receive new
+/// timelogs (active, archived, completed)
+///
+/// @namespace project
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_projects {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key identifier for the project entity.
+  id String @id
+  
+  /// References the organization that owns this project. All project data is
+  /// strictly isolated within its organization context. Projects cannot be
+  /// shared between organizations.
+  ///
+  /// Organization context determines data access boundaries — employees can
+  /// only view projects from their selected organization.
+  organization_id String
+  
+  /// Project name used for identification and display. Must be unique within
+  /// the organization.
+  ///
+  /// Project names are human-readable identifiers that help users quickly
+  /// locate and distinguish projects within their organization context.
+  name String
+  
+  /// Hex color code used for visual identification of the project in UI
+  /// components. Helps users quickly distinguish projects in lists and
+  /// dashboards.
+  ///
+  /// Color codes follow standard hex format (e.g., #FF5733) and are used for
+  /// badges, icons, and visual markers.
+  color_code String
+  
+  /// Optional text field providing context about the project scope,
+  /// objectives, or additional details.
+  ///
+  /// This field supports rich project documentation and can contain
+  /// longer-form text describing the project purpose, deliverables, or
+  /// important notes.
+  description String?
+  
+  /// Optional total estimated hours for the project, used for budget tracking
+  /// and resource planning.
+  ///
+  /// When set, the system tracks actual hours logged against the project and
+  /// enables budget utilization reporting. Projects without budget hours are
+  /// excluded from budget-focused reports.
+  budget_hours Float?
+  
+  /// Optional date when the project is expected to begin. Used for timeline
+  /// tracking and project duration calculations.
+  ///
+  /// Start date is independent of project status and can be set or updated
+  /// during project editing. If unset, the project has no scheduled start
+  /// date.
+  start_date DateTime?
+  
+  /// Optional date when the project is expected to complete. Used for timeline
+  /// tracking and deadline management.
+  ///
+  /// End date is independent of project status and can be set or updated
+  /// during project editing. If unset, the project has no scheduled end date.
+  end_date DateTime?
+  
+  /// Current workflow state of the project that controls user actions and
+  /// system behavior.
+  ///
+  /// Allowed values:
+  /// - active: Project can receive new timelogs and tasks
+  /// - archived: Project is preserved for historical reference, no new
+  /// timelogs allowed
+  /// - completed: Project has finished, no new timelogs allowed
+  ///
+  /// Archived and completed projects cannot be converted back to active
+  /// status. Both states preserve all existing data while preventing further
+  /// activity.
+  status String
+  
+  /// Timestamp when the project was initially created. Used for audit trail
+  /// and chronological sorting.
+  created_at DateTime
+  
+  /// Timestamp when the project was last modified. Used to track recent
+  /// changes and support sorting by recency.
+  updated_at DateTime
+  
+  /// Timestamp when the project was soft-deleted. Projects can only be deleted
+  /// if they have no associated timelogs.
+  ///
+  /// Soft deletion preserves the project record for audit purposes while
+  /// marking it as removed from active views. Projects with deleted_at set are
+  /// excluded from standard listings but can be accessed for historical
+  /// review.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  memberships hrm_platform_project_memberships[]
+  tasks hrm_platform_tasks[]
+  timers hrm_platform_timers[]
+  timelogs hrm_platform_timelogs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_id, name])
+  @@index([status])
+  @@index([organization_id])
+}
+
+/// Junction table that associates employees with projects and defines their
+/// role in each project.
+///
+/// A project membership records which employee is assigned to which project
+/// and in what capacity. Memberships define the role an employee plays
+/// within the project, either as a member or as a project lead. The same
+/// employee can be a member of multiple projects simultaneously, with each
+/// membership being independent.
+///
+/// Project membership roles:
+/// - **Member**: Standard role for employees who contribute work to the
+/// project but do not have management responsibilities.
+/// - **Project Lead**: Special role for employees who have management
+/// responsibilities within the project, including task management
+/// capabilities.
+///
+/// Memberships are scoped to organization context to ensure data isolation.
+/// When a membership is removed, the employee is no longer associated with
+/// that project for future work, but retains their historical work
+/// (timelogs, task history).
+///
+/// @namespace project
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_project_memberships {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the employee who is a member of this project.
+  ///
+  /// The employee must belong to the same organization as the project. This
+  /// ensures that only employees within the organization can be assigned to
+  /// its projects.
+  hrm_platform_employee_id String
+  
+  /// References the project that this employee is assigned to.
+  ///
+  /// The project belongs to the same organization as the employee. This
+  /// relationship enables employees to work on multiple projects and allows
+  /// projects to track their team composition.
+  hrm_platform_project_id String
+  
+  /// Organization context for data isolation.
+  ///
+  /// This field enforces organizational boundaries by ensuring that
+  /// memberships are scoped to a specific organization. The organization
+  /// should match the organization of both the employee and the project. This
+  /// enables efficient organization-scoped queries and maintains data security
+  /// by preventing cross-organization access.
+  organization_id String
+  
+  /// The role assigned to this employee within the project.
+  ///
+  /// Valid values are:
+  /// - **member**: Standard contributor role. Can log time, view tasks, and
+  /// contribute to project deliverables.
+  /// - **project_lead**: Management role. Can manage tasks within the project,
+  /// including creating, editing, and changing task status.
+  ///
+  /// The role determines the scope of actions the employee can perform on the
+  /// project.
+  role String
+  
+  /// Timestamp when this membership was created.
+  ///
+  /// This timestamp records when the employee was first assigned to the
+  /// project and is used for tracking membership history and auditing
+  /// purposes.
+  created_at DateTime
+  
+  /// Timestamp when this membership was last modified.
+  ///
+  /// This timestamp is updated whenever the membership details change,
+  /// including role changes or deactivation. It enables tracking of the most
+  /// recent modification to the membership.
+  updated_at DateTime
+  
+  /// Timestamp when this membership was soft-deleted.
+  ///
+  /// A null value indicates an active membership. A non-null value indicates
+  /// the membership has been removed. Soft delete enables audit trail and
+  /// potential recovery of membership history without permanent data loss.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_platform_employees @relation(fields: [hrm_platform_employee_id], references: [id], onDelete: Cascade)
+  project hrm_platform_projects @relation(fields: [hrm_platform_project_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrm_platform_employee_id, hrm_platform_project_id], map: "hrm_platform_project_memberships_hrm_platform_employee_115efc09")
+  @@index([hrm_platform_project_id])
+  // spellchecker: ignore-next-line
+  @@index([organization_id, hrm_platform_employee_id], map: "hrm_platform_project_memberships_organization_id_hrm_p_10190511")
+  @@index([organization_id, deleted_at])
+}

@@ -7,6 +7,7 @@ import { IPageIErpHrmTask } from "../../../../../api/structures/IPageIErpHrmTask
 import { AdminAuth } from "../../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
 import { deleteErpHrmAdminProjectsProjectIdTasksTaskId } from "../../../../../providers/deleteErpHrmAdminProjectsProjectIdTasksTaskId";
+import { getErpHrmAdminProjectsProjectIdTasksAnalytics } from "../../../../../providers/getErpHrmAdminProjectsProjectIdTasksAnalytics";
 import { getErpHrmAdminProjectsProjectIdTasksTaskId } from "../../../../../providers/getErpHrmAdminProjectsProjectIdTasksTaskId";
 import { patchErpHrmAdminProjectsProjectIdTasks } from "../../../../../providers/patchErpHrmAdminProjectsProjectIdTasks";
 import { postErpHrmAdminProjectsProjectIdTasks } from "../../../../../providers/postErpHrmAdminProjectsProjectIdTasks";
@@ -17,50 +18,62 @@ export class ErphrmAdminProjectsTasksController {
   /**
    * Create a new task within a specific project.
    *
-   * This endpoint creates a task under a project identified by the projectId path parameter. The task is linked to the project via erp_hrm_project_id foreign key.
+   * This endpoint creates a task under a project identified by the projectId path parameter. The task can optionally be assigned to a project member and can optionally have a parent task for subtasking (one level of nesting only).
    *
-   * Task creation requires the requesting user to have project:manage permission at the organization level, or the project-lead role on the specific project. Project leads can create tasks within their assigned projects but cannot manage tasks in other projects.
+   * Task creation requires either the project:manage permission at the organization level or the project-lead role on the specific project. Users with organization-level project:manage permission can create tasks on any project, while project leads can only create tasks within projects where they hold the project-lead role.
    *
-   * The task requires a title (mandatory) and priority level (mandatory). Optional fields include description, estimated hours, due date, and assignee. When an assignee is specified, the system validates that the employee is a member of the project (erp_hrm_project_members). If the assignee is not a project member, the system rejects the request with an error explaining that only project members can be assigned to tasks.
+   * When creating a task, the system validates that the assigned employee (if provided) is a member of the project. Parent tasks must belong to the same project and cannot themselves have a parent task.
    *
-   * The task status defaults to 'open' if not specified. Valid status values are: open, in-progress, completed, closed. Valid priority values are: low, medium, high, urgent.
-   *
-   * Task status changes are recorded in erp_hrm_task_histories for audit trail. The task supports one level of subtasking via optional parent_id reference.
+   * Newly created tasks default to status "open" and priority "medium". Status changes are automatically recorded in task history for audit trail purposes.
    *
    * @param connection
-   * @param projectId Target project's unique identifier (UUID)
-   * @param body Task creation data including required title and priority, optional description, assignee, estimated hours, due date, and parent task reference
+   * @param projectId Unique identifier of the project to create the task under (global scope).
+   * @param body Task creation payload including title, optional description, status (defaults to open), priority (defaults to medium), estimated hours, due date, assigned employee reference, and parent task reference for subtasking.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Extract projectId from path parameter
-   * 2. Validate user authorization:
-   *    - User has project:manage permission at organization level, OR
-   *    - User holds project-lead role on the specified project
-   * 3. Validate request body:
+   * @x-autobe-specification Create a new task for the specified project.
+   *
+   * 1. VALIDATE projectId exists and belongs to the user's current organization context.
+   *
+   * 2. AUTHORIZATION: Verify the requesting user has either:
+   *    - project:manage permission at the organization level, OR
+   *    - project-lead role on the specified project (via erp_hrm_project_members)
+   *    If neither condition is met, return 403 Forbidden.
+   *
+   * 3. VALIDATE request body:
    *    - title: required, non-empty string, max 255 characters
-   *    - priority: required, must be one of: low, medium, high, urgent
-   *    - status: optional, defaults to 'open', must be one of: open, in-progress, completed, closed
-   *    - description: optional string, max 2000 characters
-   *    - erp_hrm_employee_id: optional, if provided must be a project member
+   *    - description: optional string
+   *    - status: optional, must be one of ["open", "in-progress", "completed", "closed"], default "open"
+   *    - priority: optional, must be one of ["low", "medium", "high", "urgent"], default "medium"
    *    - estimated_hours: optional, positive number
-   *    - due_date: optional, valid ISO 8601 datetime
-   *    - parent_id: optional, if provided must exist and belong to same project
+   *    - due_date: optional, valid datetime
+   *    - erp_hrm_employee_id: optional, if provided must reference a valid project member
+   *    - parent_id: optional, if provided must reference a valid task in the same project with no existing parent
+   *
    * 4. If erp_hrm_employee_id is provided:
-   *    - Query erp_hrm_project_members to verify employee is assigned to project
-   *    - If not found, return 400 error: 'Only project members can be assigned to tasks'
+   *    - Verify the employee is a member of the project (query erp_hrm_project_members)
+   *    - If not a member, return 400 Bad Request with error: "Assigned employee must be a project member"
+   *
    * 5. If parent_id is provided:
-   *    - Query erp_hrm_tasks to verify parent task exists and belongs to same project
-   *    - Verify parent has no existing parent_id (one level nesting only)
-   * 6. Insert new record into erp_hrm_tasks with:
+   *    - Verify parent task exists and belongs to the same project
+   *    - Verify parent task has no existing parent_id (only one level of nesting allowed)
+   *    - If validation fails, return 400 Bad Request
+   *
+   * 6. INSERT new task record into erp_hrm_tasks with:
    *    - id: generated UUID
-   *    - erp_hrm_project_id: from path
+   *    - erp_hrm_project_id: from path parameter
+   *    - erp_hrm_employee_id: from request (nullable)
+   *    - parent_id: from request (nullable)
    *    - title: from request
-   *    - priority: from request
-   *    - status: from request or default 'open'
+   *    - description: from request (nullable)
+   *    - status: from request or default "open"
+   *    - priority: from request or default "medium"
+   *    - estimated_hours: from request (nullable)
+   *    - due_date: from request (nullable)
    *    - created_at: current timestamp
    *    - updated_at: current timestamp
-   *    - remaining fields from request or null
-   * 7. Return created task with 201 status
+   *
+   * 7. Return the newly created task with HTTP 201 Created.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -87,33 +100,20 @@ export class ErphrmAdminProjectsTasksController {
   /**
    * Retrieve a filtered and paginated list of tasks within a specific project.
    *
-   * This endpoint provides advanced search capabilities for tasks scoped to the specified project. The operation supports filtering by task status, priority, and assigned employee using exact match semantics.
+   * This endpoint allows users to search and filter tasks based on various criteria including task status, priority level, and assigned employee. The results are scoped to the specified project, ensuring tasks from other projects are not included.
    *
-   * Tasks are work items that belong to a project and can optionally be assigned to employees who are members of that project. Each task has a status (open, in-progress, completed, closed) and priority (low, medium, high, urgent) for workflow management.
+   * Task filtering supports exact match on status (open, in-progress, completed, closed), priority (low, medium, high, urgent), and assigned employee. Multiple filters can be combined simultaneously. Sorting options include due date, priority, and creation date with ascending or descending order.
    *
-   * The response includes paginated task summaries optimized for list displays, containing essential task information such as title, status, priority, due date, and assignee details.
+   * The response includes paginated task summaries optimized for list display, with each summary containing essential task information such as title, status, priority, due date, and assignee details. Archived projects preserve all their task data and remain searchable through this endpoint.
    *
-   * Only tasks within the specified project are returned. If the project does not exist or no tasks match the filter criteria, an empty list is returned.
+   * Users must have appropriate permissions to access tasks: employees who are project members can view tasks in their assigned projects, project leads can view and manage tasks within their projects, and users with project manage permission can access tasks across all projects in the organization.
    *
    * @param connection
-   * @param projectId Unique identifier of the project whose tasks to retrieve
-   * @param body Search criteria and pagination parameters for filtering tasks
+   * @param projectId Unique identifier of the project to scope task search (must belong to user's organization)
+   * @param body Search criteria including filters (status, priority, assignee), sorting options, and pagination parameters
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the erp_hrm_tasks table filtered by erp_hrm_project_id matching the path parameter projectId.
-   *
-   * Apply exact match filters from the request body:
-   * - Filter by status field if provided (values: open, in-progress, completed, closed)
-   * - Filter by priority field if provided (values: low, medium, high, urgent)
-   * - Filter by erp_hrm_employee_id if provided (exact match on assigned employee)
-   *
-   * Join with erp_hrm_employees table to include assignee information in response.
-   *
-   * Support pagination with configurable page size and sorting by created_at descending (most recent first).
-   *
-   * Return empty array if no tasks match the criteria - this is not an error condition.
-   *
-   * Verify the project exists before querying tasks. If project not found, return empty array.
+   * @x-autobe-specification Query erp_hrm_tasks table filtered by erp_hrm_project_id matching the path parameter. Apply exact-match filters on status, priority, and erp_hrm_employee_id fields as provided in request body. Support sorting by due_date, priority, and created_at with configurable order (asc/desc). Implement cursor-based or offset pagination with configurable page size (default 20, max 100). Join with erp_hrm_employees table to resolve assignee names when employee filter or output includes assignee information. Validate that the project exists and belongs to the user's organization before returning results. If the project does not exist or user lacks access, return 404 error. Ensure all task data remains isolated within the owning organization.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -138,60 +138,47 @@ export class ErphrmAdminProjectsTasksController {
   }
 
   /**
-   * Retrieve a specific task within a project by its unique identifier.
+   * Retrieve a specific task by its unique identifier within a project.
    *
-   * This endpoint returns detailed information about a single task, including its title, description, status, priority, estimated hours, due date, assignee information, and timestamps. The task must belong to the specified project.
+   * This endpoint returns the complete task details including its title, description, status, priority, estimated hours, due date, and assignment information. The task must belong to the specified project, and the requesting user must have appropriate permissions to view it.
    *
-   * **Authorization Requirements:**
-   * The requesting user must be a member of the project containing the task, OR hold the project:manage permission at the organization level. Project leads can view tasks within their assigned projects. Users with organization-level project manage permission can access any task across all projects in the organization.
+   * The response includes the project reference, the assigned employee details (if any), the parent task reference (if this is a subtask), and the complete history of status transitions with timestamps and user attribution. Subtasks associated with this task are also included in the response.
    *
-   * **Resource Relationships:**
-   * The task is linked to its parent project via erp_hrm_project_id. If the task has an assignee (erp_hrm_employee_id is not null), the response includes the assigned employee information. Tasks may have subtasks (children) via the optional parent_id reference, but these are not included in the response - use the subtasks relationship separately.
+   * Authorization is validated against the user's role and project membership. Employees can view tasks in projects they are assigned to. Project leads can view all tasks within their project. Users with project:manage permission at the organization level can access tasks across all projects.
    *
-   * **Task Status Values:**
-   * - open: Initial status when task is created
-   * - in-progress: Task has been started
-   * - completed: Task work is finished
-   * - closed: Task is finalized and no changes allowed
-   *
-   * **Task Priority Values:**
-   * - low, medium, high, urgent
-   *
-   * **Error Scenarios:**
-   * - Returns 404 if the task does not exist
-   * - Returns 404 if the task exists but belongs to a different project than specified in the path
-   * - Returns 403 if the user is not a project member and does not have project:manage permission
-   * - Returns 403 if the user is a project lead but the task belongs to a different project
+   * The operation enforces organization data isolation. All task data is scoped to the organization context established in the session. Attempting to retrieve a task from a project outside the current organization context results in a not found error.
    *
    * @param connection
-   * @param projectId UUID of the project containing the task (scoped to organization)
-   * @param taskId UUID of the task to retrieve
+   * @param projectId Unique identifier of the project containing the task (global scope)
+   * @param taskId Unique identifier of the task to retrieve (scoped to project)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Service layer implementation:
+   * @x-autobe-specification Retrieve task by ID within project context.
    *
-   * 1. **Parameter Validation**
-   *    - Validate projectId is a valid UUID format
-   *    - Validate taskId is a valid UUID format
+   * Implementation steps:
+   * 1. Extract projectId and taskId from path parameters
+   * 2. Verify user has valid organization session context
+   * 3. Validate authorization:
+   *    - User must have project:view permission OR be a project member OR be a project lead
+   *    - If project:view permission exists, grant access
+   *    - If user is project lead on the specified project, grant access
+   *    - If user is a member of the project (found in erp_hrm_project_members), grant access
+   *    - Otherwise, deny with 403 Forbidden
+   * 4. Query erp_hrm_projects to verify projectId exists and belongs to user's organization
+   * 5. Query erp_hrm_tasks to verify taskId exists and erp_hrm_project_id matches projectId
+   * 6. If task not found or project mismatch, return 404 Not Found
+   * 7. Load related data:
+   *    - Project details (name, color, status)
+   *    - Assignee employee details (if erp_hrm_employee_id is set)
+   *    - Parent task details (if parent_id is set, exclude its subtasks)
+   *    - Task history entries ordered by created_at descending
+   *    - Direct subtasks (tasks where parent_id equals this task's ID)
+   * 8. Return complete task entity with all loaded relations
    *
-   * 2. **Authorization Check**
-   *    - Get current authenticated user and their employee record for the organization
-   *    - Check if user has project:manage permission at organization level
-   *    - If not, verify user is a project member of the specified project (check erp_hrm_project_members table)
-   *    - If user is a project lead, verify the task belongs to their project
-   *
-   * 3. **Task Retrieval**
-   *    - Query erp_hrm_tasks table with taskId as primary key
-   *    - Verify erp_hrm_project_id matches the projectId path parameter
-   *    - Join with erp_hrm_projects to verify project exists and belongs to user's organization
-   *    - Join with erp_hrm_employees for assignee information (when erp_hrm_employee_id is not null)
-   *
-   * 4. **Response Construction**
-   *    - Map all task fields to IErpHrmTask DTO
-   *    - Include nested project summary if needed
-   *    - Include assignee summary if assigned
-   *    - Return 404 if task not found or project mismatch
-   *    - Return 403 if authorization fails
+   * Error handling:
+   * - 401 Unauthorized: No valid session or organization context
+   * - 403 Forbidden: User lacks permission to view this task
+   * - 404 Not Found: Project or task does not exist, or task does not belong to specified project
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":taskId")
@@ -218,50 +205,35 @@ export class ErphrmAdminProjectsTasksController {
   /**
    * Update an existing task within a specific project.
    *
-   * This operation modifies the attributes of a task identified by its unique ID within a project. The task must belong to the specified project, and the requesting user must have appropriate authorization.
+   * This endpoint modifies the properties of a task. Only tasks belonging to the specified project can be updated through this endpoint. The requesting user must be authorized either as a project lead for the containing project or hold the project:manage permission at the organization level.
    *
-   * **Authorization Requirements**:
-   * The user must have either the project:manage permission at the organization level, or the project-lead role on the specific project containing the task. Project leads can only modify tasks within projects where they hold that role. A user with project-lead role on Project A cannot modify tasks on Project B.
+   * When updating the assigned employee, the system validates that the new employee is a member of the project. Task status changes are automatically recorded in the task history for audit purposes.
    *
-   * **Mutable Attributes**:
-   * The task title, description, status, priority, estimated hours, due date, and assigned employee can be updated. Status transitions follow the defined workflow states (open, in-progress, completed, closed). When changing the assigned employee, the system verifies the employee is a member of the project.
-   *
-   * **Task History Recording**:
-   * When a project lead changes a task status, the system records the lead's identity in the task history entry. This creates an audit trail for status transitions.
-   *
-   * **Validation Rules**:
-   * - Title is required and cannot be empty
-   * - Status must be a valid workflow state (open, in-progress, completed, closed)
-   * - Priority must be a valid priority level (low, medium, high, urgent)
-   * - Estimated hours must be non-negative if provided
-   * - If assigning an employee, they must be a member of the project
-   * - If the task has subtasks, parent_id cannot be changed
-   *
-   * **Error Responses**:
-   * Returns 403 Forbidden if the user lacks authorization. Returns 404 Not Found if the task does not exist or belongs to a different project. Returns 400 Bad Request for validation failures.
+   * The task status follows a workflow: open -> in-progress -> completed -> closed. Valid status transitions depend on current status. Priority levels (low, medium, high, urgent) can be changed freely. Parent task can be set to create subtasks, but only one level of nesting is allowed.
    *
    * @param connection
-   * @param projectId Unique identifier of the project containing the task
-   * @param taskId Unique identifier of the task to update
-   * @param body Updated task attributes including title, description, status, priority, estimated_hours, due_date, and assigned employee
+   * @param projectId Unique identifier of the project containing the task (global scope).
+   * @param taskId Unique identifier of the task to update (scoped to project).
+   * @param body Update payload containing task properties to modify. All fields are optional; only provided fields will be updated.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Extract projectId from path and validate UUID format.
-   * 2. Extract taskId from path and validate UUID format.
-   * 3. Verify the task exists and belongs to the specified project.
-   * 4. Verify user authorization:
-   *    - Check if user has project:manage permission at organization level (via employee's role permissions)
-   *    - If not, check if user holds project-lead role on the specific project via erp_hrm_project_members
-   * 5. If user is a project-lead (not org-level admin), ensure the task belongs to a project where they are lead.
-   * 6. Parse and validate the request body (IErpHrmTask.IUpdate).
-   * 7. If erp_hrm_employee_id is being changed:
-   *    - Verify the new employee is a member of the project (check erp_hrm_project_members)
-   *    - Reject if the employee is not a project member
-   * 8. If parent_id is being changed on a task that has subtasks, reject the operation.
-   * 9. Validate status transitions according to business rules.
-   * 10. Update the task record with provided fields.
-   * 11. If status changed by a project-lead, create a task history entry recording the status change and the lead's identity.
-   * 12. Return the complete updated task entity with all related data.
+   * @x-autobe-specification 1. Extract projectId and taskId from path parameters.
+   * 2. Verify the task belongs to the specified project; return 404 if not found or mismatched.
+   * 3. Verify authorization: check if user has project:manage permission OR is a project-lead for the project; return 403 if unauthorized.
+   * 4. Validate request body fields:
+   *    - title: non-empty string, max 255 characters
+   *    - description: optional string, max 2000 characters
+   *    - status: must be one of open, in-progress, completed, closed
+   *    - priority: must be one of low, medium, high, urgent
+   *    - estimated_hours: optional positive number
+   *    - due_date: optional ISO 8601 datetime
+   *    - erp_hrm_employee_id: optional UUID, must reference a project member if provided
+   *    - parent_id: optional UUID, must reference a task in the same project, cannot create circular reference
+   * 5. If erp_hrm_employee_id is provided, verify the employee is a member of the project; return 400 if not a project member.
+   * 6. If parent_id is provided, verify the parent task exists in the same project and does not create circular nesting; return 400 if invalid.
+   * 7. Update the task record with provided fields.
+   * 8. If status changed, create an erp_hrm_task_histories entry recording the transition.
+   * 9. Return the complete updated task entity with related project and assignee information.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":taskId")
@@ -289,46 +261,31 @@ export class ErphrmAdminProjectsTasksController {
   }
 
   /**
-   * Permanently removes a task from the system.
+   * Permanently removes a task from its parent project.
    *
-   * This endpoint deletes a specific task identified by its ID within a project. The task must belong to the specified project; requests for tasks belonging to different projects will be rejected. Upon deletion, all subtasks (tasks with parent_id referencing the deleted task) are also permanently removed since they cannot exist independently.
+   * This operation permanently deletes the specified task and all associated task history records. The task must belong to the project identified by projectId. Only users with the project:manage permission or users who are project leads on the specified project can delete tasks.
    *
-   * The system verifies that the requesting user holds the project:manage permission in the current organization. Users with project lead status in the specific project can also delete tasks within that project but cannot delete tasks from other projects. Regular project members cannot delete tasks.
+   * Deleting a task does not affect the project's timelogs or other tasks. However, all task history entries recording status transitions for this task are also permanently removed as part of the cascade delete.
    *
-   * When a task is deleted, its associated task history records are also removed as part of the cascade deletion. Timelogs associated with the task are unaffected and remain in the system since timelogs record actual work performed.
-   *
-   * This operation is irreversible. Deleted tasks cannot be recovered. The system does not implement soft deletion for tasks.
+   * This operation cannot be undone. Consider archiving a task instead if you need to preserve the record while preventing further work on it.
    *
    * @param connection
    * @param projectId Unique identifier of the project containing the task (global scope)
-   * @param taskId Unique identifier of the task to delete (scoped to project)
+   * @param taskId Unique identifier of the task to delete
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Authorization Check:
-   *    - Verify the requesting user has project:manage permission in the current organization
-   *    - Alternative: Verify user is a project lead for the specified project
-   *    - If neither condition is met, return 403 Forbidden
+   * @x-autobe-specification 1. Validate user authorization: verify user has project:manage permission OR is a project lead on the specified project.
+   * 2. Verify project exists and belongs to current organization.
+   * 3. Verify task exists and its erp_hrm_project_id matches the provided projectId.
+   * 4. Verify task is not protected by any immutable constraint.
+   * 5. Delete the task record (cascade deletes erp_hrm_task_histories records).
+   * 6. Return null response body on successful deletion.
    *
-   * 2. Input Validation:
-   *    - Validate projectId is a valid UUID format
-   *    - Validate taskId is a valid UUID format
-   *
-   * 3. Existence Verification:
-   *    - Query erp_hrm_tasks table to find the task by taskId
-   *    - Verify the task.erp_hrm_project_id matches the provided projectId
-   *    - If task not found or project mismatch, return 404 Not Found
-   *
-   * 4. Deletion Process:
-   *    - Begin database transaction
-   *    - Delete the task from erp_hrm_tasks table
-   *    - Cascade delete automatically removes:
-   *      - All subtasks (tasks where parent_id = taskId)
-   *      - All task_history records for the deleted tasks
-   *    - Commit transaction
-   *
-   * 5. Response:
-   *    - Return 204 No Content on successful deletion
-   *    - No response body
+   * Error handling:
+   * - 403 if user lacks authorization
+   * - 404 if project does not exist
+   * - 404 if task does not exist or does not belong to the specified project
+   * - 500 on database or server errors
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":taskId")
@@ -345,6 +302,56 @@ export class ErphrmAdminProjectsTasksController {
         admin,
         projectId,
         taskId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve comprehensive analytics and statistics about tasks within a specific project.
+   *
+   * This endpoint provides aggregated metrics that help project leads and managers understand task distribution, progress, and workload within the project. The analytics include status breakdowns showing how many tasks are open, in-progress, completed, and closed, as well as priority distribution across low, medium, high, and urgent levels.
+   *
+   * The response includes completion metrics calculated from total versus completed tasks, average estimated hours for tasks with estimates, and overdue task counts based on due date comparison with current timestamp. Temporal trends show task creation patterns over the last 30 days.
+   *
+   * This operation requires the requesting user to have project:manage permission for the specified project, or be a member of the project. Users with organization-level project management permissions can access analytics for any project in their organization. The analytics data is scoped to the organization context.
+   *
+   * @param connection
+   * @param projectId Unique identifier of the project to retrieve task analytics for (UUID format)
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification Query erp_hrm_projects table to verify project exists and user has access permission. Return 404 if project not found.
+   *
+   * Query erp_hrm_tasks table filtered by erp_hrm_project_id matching the path parameter.
+   *
+   * Execute the following aggregations:
+   * 1. Status breakdown: COUNT tasks grouped by status field (open, in-progress, completed, closed)
+   * 2. Priority breakdown: COUNT tasks grouped by priority field (low, medium, high, urgent)
+   * 3. Completion rate: total_tasks > 0 ? (completed_tasks + closed_tasks) / total_tasks * 100 : 0
+   * 4. Average estimated hours: AVG(estimated_hours) WHERE estimated_hours IS NOT NULL
+   * 5. Overdue tasks: COUNT WHERE due_date < CURRENT_TIMESTAMP AND status NOT IN ('completed', 'closed')
+   * 6. Temporal trend: COUNT tasks created in last 30 days, grouped by date
+   *
+   * Join with erp_hrm_employees table for assignee information if needed for detailed breakdowns.
+   *
+   * Apply organization context filtering via erp_hrm_projects.erp_hrm_organization_id matching the authenticated user's organization scope.
+   *
+   * Return computed analytics object with all aggregated metrics. Handle empty project (no tasks) by returning zero counts for all metrics.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get("analytics")
+  public async analytics(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("projectId")
+    projectId: string & tags.Format<"uuid">,
+  ): Promise<IErpHrmTask> {
+    try {
+      return await getErpHrmAdminProjectsProjectIdTasksAnalytics({
+        admin,
+        projectId,
       });
     } catch (error) {
       console.log(error);

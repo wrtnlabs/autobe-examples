@@ -22,42 +22,63 @@ export async function patchHrmPlatformMemberProjectsProjectIdTasksTaskIdHistorie
   taskId: string & tags.Format<"uuid">;
   body: IHrmPlatformTaskHistory.IRequest;
 }): Promise<IPageIHrmPlatformTaskHistory.ISummary> {
-  const task = await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
+  const page = props.body.page ?? 1;
+  const limit = Math.min(props.body.limit ?? 20, 100);
+  const skip = (page - 1) * limit;
+  const projectMember =
+    await MyGlobal.prisma.hrm_platform_project_members.findFirst({
+      where: {
+        hrm_platform_project_id: props.projectId,
+        hrm_platform_employee_id: props.member.id,
+      },
+    });
+  if (!projectMember) {
+    throw new HttpException("Forbidden", 403);
+  }
+  await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
     where: {
       id: props.taskId,
       hrm_platform_project_id: props.projectId,
     },
   });
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
   const whereInput: Prisma.hrm_platform_task_historiesWhereInput = {
     hrm_platform_task_id: props.taskId,
-    ...(props.body.created_at_from && {
-      created_at: { gte: new Date(props.body.created_at_from) },
+    ...(props.body.oldStatus !== undefined && {
+      old_status: props.body.oldStatus,
     }),
-    ...(props.body.created_at_to && {
-      created_at: { lte: new Date(props.body.created_at_to) },
+    ...(props.body.newStatus !== undefined && {
+      new_status: props.body.newStatus,
     }),
-    ...(props.body.old_status && { old_status: props.body.old_status }),
-    ...(props.body.new_status && { new_status: props.body.new_status }),
-  };
+    ...(props.body.memberId !== undefined && {
+      hrm_platform_member_id: props.body.memberId,
+    }),
+    ...(props.body.dateFrom !== undefined || props.body.dateTo !== undefined
+      ? {
+          created_at: {
+            ...(props.body.dateFrom !== undefined && {
+              gte: new Date(props.body.dateFrom),
+            }),
+            ...(props.body.dateTo !== undefined && {
+              lte: new Date(props.body.dateTo),
+            }),
+          },
+        }
+      : {}),
+  } satisfies Prisma.hrm_platform_task_historiesWhereInput;
   const orderByInput: Prisma.hrm_platform_task_historiesOrderByWithRelationInput =
-    props.body.sort === "created_at_asc"
-      ? { created_at: "asc" }
-      : { created_at: "desc" };
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.hrm_platform_task_histories.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: orderByInput,
-      ...HrmPlatformTaskHistoryAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.hrm_platform_task_histories.count({
-      where: whereInput,
-    }),
-  ]);
+    {
+      created_at: props.body.order ?? "desc",
+    } satisfies Prisma.hrm_platform_task_historiesOrderByWithRelationInput;
+  const data = await MyGlobal.prisma.hrm_platform_task_histories.findMany({
+    where: whereInput,
+    skip,
+    take: limit,
+    orderBy: orderByInput,
+    ...HrmPlatformTaskHistoryAtSummaryTransformer.select(),
+  });
+  const total = await MyGlobal.prisma.hrm_platform_task_histories.count({
+    where: whereInput,
+  });
   return {
     pagination: {
       current: page,

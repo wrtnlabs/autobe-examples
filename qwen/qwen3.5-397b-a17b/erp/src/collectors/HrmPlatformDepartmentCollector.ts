@@ -21,9 +21,12 @@ export namespace HrmPlatformDepartmentCollector {
       updated_at: new Date(),
       deleted_at: null,
       organization: { connect: { id: props.hrmPlatformOrganizations.id } },
-      parentDepartment: props.body.parent_department_id
-        ? { connect: { id: props.body.parent_department_id } }
+      parentDepartment: props.body.parentDepartmentId
+        ? { connect: { id: props.body.parentDepartmentId } }
         : undefined,
+      childDepartments: undefined,
+      employees: undefined,
+      employeeInvitations: undefined,
     } satisfies Prisma.hrm_platform_departmentsCreateInput;
   }
 }

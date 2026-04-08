@@ -18,22 +18,15 @@ export namespace EcommerceMallProductVariantSnapshotAtSummaryTransformer {
       select: {
         id: true,
         sku_code: true,
-        options: true,
+        option_values: true,
         price: true,
         stock_quantity: true,
-        status: true,
         created_at: true,
-        product: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        productVariant: {
-          select: {
-            id: true,
-          },
-        },
+        updated_at: true,
+        productVariant: { select: { id: true } },
+        product: { select: { id: true } },
+        seller: { select: { id: true } },
+        productSnapshots: { select: { id: true } },
       },
     } satisfies Prisma.ecommerce_mall_product_variant_snapshotsFindManyArgs;
   }
@@ -43,11 +36,56 @@ export namespace EcommerceMallProductVariantSnapshotAtSummaryTransformer {
     return {
       id: input.id,
       sku_code: input.sku_code,
-      options: input.options,
-      price: Number(input.price),
+      option_values: input.option_values,
+      price: input.price,
       stock_quantity: input.stock_quantity,
-      status: input.status,
-      created_at: toISOStringSafe(input.created_at),
-    };
+      product_variant_id: input.productVariant.id,
+      product_id: input.product.id,
+      seller_id: input.seller.id,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+    } satisfies IEcommerceMallProductVariantSnapshot.ISummary;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallProductVariantSnapshotAtSummaryTransformer {
+//       export type Payload = Prisma.ecommerce_mall_product_variant_snapshotsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             sku_code: true,
+//             option_values: true,
+//             price: true,
+//             stock_quantity: true,
+//             created_at: true,
+//             updated_at: true,
+//             product_variant_id: true,
+//             product_id: true,
+//             seller_id: true,
+//           },
+//         } satisfies Prisma.ecommerce_mall_product_variant_snapshotsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallProductVariantSnapshot.ISummary> {
+//         return {
+//   id: {string},
+//   sku_code: {string},
+//   option_values: {string},
+//   price: {number | null},
+//   stock_quantity: {integer},
+//   product_variant_id: {string},
+//   product_id: {string},
+//   seller_id: {string},
+//   created_at: {string},
+//   updated_at: {string},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

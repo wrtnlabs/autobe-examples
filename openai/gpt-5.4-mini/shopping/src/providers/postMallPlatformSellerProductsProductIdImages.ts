@@ -2,7 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
 import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
-import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
+import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -27,35 +27,66 @@ export async function postMallPlatformSellerProductsProductIdImages(props: {
       where: { id: props.productId },
       select: {
         id: true,
-        deleted_at: true,
-        seller_account_id: true,
+        sellerAccount: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
-  if (product.deleted_at !== null) {
-    throw new HttpException("Product is not available", 404);
-  }
-  if (product.seller_account_id !== props.seller.id) {
+  if (product.sellerAccount.id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  try {
-    const created = await MyGlobal.prisma.mall_platform_product_images.create({
-      data: await MallPlatformProductImageCollector.collect({
-        body: props.body,
-        product: { id: props.productId },
-      }),
-      ...MallPlatformProductImageTransformer.select(),
-    });
-    return await MallPlatformProductImageTransformer.transform(created);
-  } catch (error) {
-    const unknownError = error as {
-      code?: string;
-    };
-    if (unknownError.code === "P2002") {
-      throw new HttpException(
-        "Product image already exists for this product",
-        400,
-      );
-    }
-    throw error;
-  }
+  const record = await MyGlobal.prisma.mall_platform_product_images.create({
+    data: await MallPlatformProductImageCollector.collect({
+      body: props.body,
+      product: {
+        id: props.productId,
+      },
+    }),
+    ...MallPlatformProductImageTransformer.select(),
+  });
+  return await MallPlatformProductImageTransformer.transform(record);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
+// import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
+// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+// import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function postMallPlatformSellerProductsProductIdImages(props: {
+//   seller: SellerPayload;
+//   productId: string & tags.Format<"uuid">;
+//   body: IMallPlatformProductImage.ICreate;
+// }): Promise<IMallPlatformProductImage> {
+//   const record = await MyGlobal.prisma.mall_platform_product_images.create({
+//     data: await MallPlatformProductImageCollector.collect({
+//       body: props.body,
+//       ...
+//     }),
+//     ...MallPlatformProductImageTransformer.select(),
+//   });
+//   return await MallPlatformProductImageTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

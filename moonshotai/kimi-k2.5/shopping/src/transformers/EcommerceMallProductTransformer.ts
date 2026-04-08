@@ -5,15 +5,16 @@ import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/stru
 import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallCategoryAtSummaryTransformer } from "./EcommerceMallCategoryAtSummaryTransformer";
-import { EcommerceMallProductImageTransformer } from "./EcommerceMallProductImageTransformer";
-import { EcommerceMallProductVariantTransformer } from "./EcommerceMallProductVariantTransformer";
+import { EcommerceMallProductVariantAtSummaryTransformer } from "./EcommerceMallProductVariantAtSummaryTransformer";
+import { EcommerceMallSellerAtSummaryTransformer } from "./EcommerceMallSellerAtSummaryTransformer";
 
 export namespace EcommerceMallProductTransformer {
   export type Payload = Prisma.ecommerce_mall_productsGetPayload<
@@ -28,25 +29,16 @@ export namespace EcommerceMallProductTransformer {
         base_price: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
-        seller: {
+        seller: EcommerceMallSellerAtSummaryTransformer.select(),
+        category: EcommerceMallCategoryAtSummaryTransformer.select(),
+        images: {
           select: {
             id: true,
-            email: true,
-            approval_status: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
+            image_url: true,
+            display_order: true,
           },
-        } satisfies Prisma.ecommerce_mall_sellersFindManyArgs,
-        category: EcommerceMallCategoryAtSummaryTransformer.select(),
-        images: EcommerceMallProductImageTransformer.select(),
-        variants: EcommerceMallProductVariantTransformer.select(),
-        reviews: {
-          select: {
-            rating: true,
-          },
-        } satisfies Prisma.ecommerce_mall_reviewsFindManyArgs,
+        } satisfies Prisma.ecommerce_mall_product_imagesFindManyArgs,
+        variants: EcommerceMallProductVariantAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_productsFindManyArgs;
   }
@@ -57,36 +49,28 @@ export namespace EcommerceMallProductTransformer {
       id: input.id,
       name: input.name,
       description: input.description,
-      basePrice: input.base_price,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-      seller: {
-        id: input.seller.id,
-        email: input.seller.email as string & tags.Format<"email">,
-        shopName: "",
-        approvalStatus: input.seller.approval_status,
-        createdAt: input.seller.created_at.toISOString(),
-        updatedAt: input.seller.updated_at.toISOString(),
-        deletedAt: input.seller.deleted_at?.toISOString() ?? null,
-      } satisfies IEcommerceMallSeller.ISummary,
+      base_price: input.base_price,
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      seller: await EcommerceMallSellerAtSummaryTransformer.transform(
+        input.seller,
+      ),
       category: await EcommerceMallCategoryAtSummaryTransformer.transform(
         input.category,
       ),
       images: await ArrayUtil.asyncMap(
         input.images,
-        EcommerceMallProductImageTransformer.transform,
+        async (item) =>
+          ({
+            id: item.id,
+            imageUrl: item.image_url,
+            displayOrder: item.display_order,
+          }) satisfies IEcommerceMallProductImage.ISummary,
       ),
       variants: await ArrayUtil.asyncMap(
         input.variants,
-        EcommerceMallProductVariantTransformer.transform,
+        EcommerceMallProductVariantAtSummaryTransformer.transform,
       ),
-      averageRating:
-        input.reviews.length > 0
-          ? input.reviews.reduce((sum, r) => sum + (r as any).rating, 0) /
-            input.reviews.length
-          : 0,
-      reviewCount: input.reviews.length,
     };
   }
 }

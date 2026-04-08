@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditClonePostSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace RedditClonePostSnapshotAtSummaryTransformer {
@@ -15,32 +17,48 @@ export namespace RedditClonePostSnapshotAtSummaryTransformer {
       select: {
         id: true,
         title: true,
-        content: true,
         post_type: true,
+        text_content: true,
         link_url: true,
-        file_url: true,
-        score: true,
-        original_created_at: true,
-        original_updated_at: true,
-        original_deleted_at: true,
-        captured_at: true,
-        post: true,
+        image_url: true,
+        snapshot_created_at: true,
       },
     } satisfies Prisma.reddit_clone_post_snapshotsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IRedditClonePostSnapshot.ISummary> {
+    const preview = computePreview(input);
     return {
       id: input.id,
-      reddit_clone_post_id: input.id,
       title: input.title,
       post_type: input.post_type,
-      score: input.score,
-      original_created_at: input.original_created_at.toISOString(),
-      original_updated_at: input.original_updated_at.toISOString(),
-      original_deleted_at: input.original_deleted_at?.toISOString() ?? null,
-      captured_at: input.captured_at.toISOString(),
+      preview,
+      snapshot_created_at: input.snapshot_created_at.toISOString(),
     };
+  }
+  function computePreview(input: Payload): string | null {
+    switch (input.post_type) {
+      case "text": {
+        if (!input.text_content) return null;
+        if (input.text_content.length <= 200) return input.text_content;
+        return input.text_content.substring(0, 200) + "...";
+      }
+      case "link": {
+        if (!input.link_url) return null;
+        try {
+          const url = new URL(input.link_url);
+          return url.hostname;
+        } catch {
+          return null;
+        }
+      }
+      case "image": {
+        return "Image";
+      }
+      default: {
+        return null;
+      }
+    }
   }
 }

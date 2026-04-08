@@ -1,4 +1,6 @@
+import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEcommerceMallRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequestSnapshot";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -17,23 +19,16 @@ export namespace EcommerceMallRefundRequestSnapshotTransformer {
     return {
       select: {
         id: true,
-        refundRequest: { select: { id: true } },
-        customerSnapshots: true,
-        sellerSnapshot: true,
-        adminSubtype: true,
-        ofSuperAdmin: true,
-        actor_type: true,
-        action_type: true,
-        status_before: true,
-        status_after: true,
-        reason_before: true,
-        reason_after: true,
-        response_before: true,
-        response_after: true,
-        metadata_before: true,
-        metadata_after: true,
+        order_item_id: true,
+        status: true,
+        reason: true,
         created_at: true,
+        responded_at: true,
+        approved_by_seller_id: true,
+        rejection_reason: true,
+        snapshot_at: true,
         deleted_at: true,
+        refundRequest: { select: { id: true } },
       },
     } satisfies Prisma.ecommerce_mall_refund_request_snapshotsFindManyArgs;
   }
@@ -42,48 +37,71 @@ export namespace EcommerceMallRefundRequestSnapshotTransformer {
   ): Promise<IEcommerceMallRefundRequestSnapshot> {
     return {
       id: input.id,
-      refundRequestId: input.refundRequest.id,
-      actorType: typia.assert<"customer" | "seller" | "admin" | "super_admin">(
-        input.actor_type,
-      ),
-      actionType: typia.assert<
-        | "approved"
-        | "rejected"
-        | "created"
-        | "status_changed"
-        | "reason_updated"
-        | "response_added"
-      >(input.action_type),
-      statusBefore:
-        input.status_before === undefined || input.status_before === null
-          ? undefined
-          : typia.assert<
-              | "pending"
-              | "approved"
-              | "rejected"
-              | "refunded"
-              | null
-              | undefined
-            >(input.status_before),
-      statusAfter:
-        input.status_after === undefined || input.status_after === null
-          ? undefined
-          : typia.assert<
-              | "pending"
-              | "approved"
-              | "rejected"
-              | "refunded"
-              | null
-              | undefined
-            >(input.status_after),
-      reasonBefore: input.reason_before ?? undefined,
-      reasonAfter: input.reason_after ?? undefined,
-      responseBefore: input.response_before ?? undefined,
-      responseAfter: input.response_after ?? undefined,
-      metadataBefore: input.metadata_before ?? undefined,
-      metadataAfter: input.metadata_after ?? undefined,
-      createdAt: toISOStringSafe(input.created_at),
-      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
-    };
+      refund_request_id: input.refundRequest.id ?? null,
+      order_item_id: input.order_item_id,
+      status: input.status,
+      reason: input.reason,
+      created_at: toISOStringSafe(input.created_at),
+      responded_at:
+        input.responded_at !== null
+          ? toISOStringSafe(input.responded_at)
+          : null,
+      approved_by_seller_id: input.approved_by_seller_id ?? null,
+      rejection_reason: input.rejection_reason ?? null,
+      snapshot_at: toISOStringSafe(input.snapshot_at),
+      deleted_at:
+        input.deleted_at !== null ? toISOStringSafe(input.deleted_at) : null,
+      order_item: null,
+      approved_by_seller: null,
+      rejected_by_seller: null,
+    } satisfies IEcommerceMallRefundRequestSnapshot;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallRefundRequestSnapshotTransformer {
+//       export type Payload = Prisma.ecommerce_mall_refund_request_snapshotsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             order_item_id: true,
+//             status: true,
+//             reason: true,
+//             created_at: true,
+//             responded_at: true,
+//             approved_by_seller_id: true,
+//             rejection_reason: true,
+//             snapshot_at: true,
+//             deleted_at: true,
+//             refund_request_id: true,
+//             ...
+//           },
+//         } satisfies Prisma.ecommerce_mall_refund_request_snapshotsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallRefundRequestSnapshot> {
+//         return {
+//   id: {string},
+//   refund_request_id: {string | null},
+//   order_item_id: {string},
+//   status: {string},
+//   reason: {string},
+//   created_at: {string},
+//   responded_at: {string | null},
+//   approved_by_seller_id: {string | null},
+//   rejection_reason: {string | null},
+//   snapshot_at: {string},
+//   deleted_at: {string | null},
+//   order_item: {IEcommerceMallOrderItem.ISummary | null},
+//   approved_by_seller: {IEcommerceMallSeller.ISummary | null},
+//   rejected_by_seller: {IEcommerceMallSeller.ISummary | null},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

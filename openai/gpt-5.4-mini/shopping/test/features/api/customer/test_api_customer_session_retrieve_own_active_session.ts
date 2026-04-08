@@ -1,8 +1,8 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IMallPlatformAdministratorSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministratorSession";
 import type { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+import type { IMallPlatformCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomerSession";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -17,16 +17,17 @@ export async function test_api_customer_session_retrieve_own_active_session(
   connection: api.IConnection,
 ): Promise<void> {
   const customerConnection: api.IConnection = { host: connection.host };
-  const authorized = await authorize_customer_join(customerConnection, {
+  const joined = await authorize_customer_join(customerConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
+      password: typia.random<string & tags.Format<"password">>(),
+      href: "https://example.com/register",
+      referrer: "https://example.com/landing",
+      ip: "127.0.0.1",
     } satisfies IMallPlatformCustomer.IJoin,
   });
-  typia.assert(authorized);
-  const sessionId: string & tags.Format<"uuid"> = typia.random<
-    string & tags.Format<"uuid">
-  >();
+  typia.assert(joined);
+  const sessionId: string & tags.Format<"uuid"> = joined.id;
   const session = await api.functional.mallPlatform.customer.sessions.at(
     customerConnection,
     {
@@ -35,32 +36,46 @@ export async function test_api_customer_session_retrieve_own_active_session(
   );
   typia.assert(session);
   TestValidator.equals(
-    "session id should match request",
+    "session id should match requested id",
     session.id,
     sessionId,
   );
-  TestValidator.predicate(
-    "owner id should exist",
-    session.administratorId.length > 0,
+  TestValidator.equals(
+    "session customer id should match authenticated customer",
+    session.customer.id,
+    joined.id,
+  );
+  TestValidator.equals(
+    "session customer email should match authenticated customer",
+    session.customer.email,
+    joined.email,
+  );
+  TestValidator.equals(
+    "session customer status should remain active",
+    session.customer.status,
+    "active",
+  );
+  TestValidator.equals(
+    "session href should be preserved",
+    session.href,
+    "https://example.com/register",
+  );
+  TestValidator.equals(
+    "session referrer should be preserved",
+    session.referrer,
+    "https://example.com/landing",
+  );
+  TestValidator.equals(
+    "session ip should be preserved",
+    session.ip,
+    "127.0.0.1",
   );
   TestValidator.predicate(
-    "session ip should be present",
-    session.ip.length > 0,
+    "session created_at should be a non-empty timestamp",
+    session.created_at.length > 0,
   );
   TestValidator.predicate(
-    "session href should be present",
-    session.href.length > 0,
-  );
-  TestValidator.predicate(
-    "session referrer should be present",
-    session.referrer.length >= 0,
-  );
-  TestValidator.predicate(
-    "session createdAt should be present",
-    session.createdAt.length > 0,
-  );
-  TestValidator.predicate(
-    "session expiredAt should be present",
-    session.expiredAt.length > 0,
+    "session expired_at should be a non-empty timestamp",
+    session.expired_at.length > 0,
   );
 }

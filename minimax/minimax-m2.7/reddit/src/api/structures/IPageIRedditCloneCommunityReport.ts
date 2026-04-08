@@ -7,7 +7,7 @@ export namespace IPageIRedditCloneCommunityReport {
    *
    * Collection of records with pagination information.
    */
-  export type IIndex = {
+  export type ISummary = {
     /**
      * Page information.
      *
@@ -18,8 +18,8 @@ export namespace IPageIRedditCloneCommunityReport {
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IRedditCloneCommunityReport.IIndex.
+     * @x-autobe-specification List of records of type IRedditCloneCommunityReport.ISummary.
      */
-    data: IRedditCloneCommunityReport.IIndex[];
+    data: IRedditCloneCommunityReport.ISummary[];
   };
 }

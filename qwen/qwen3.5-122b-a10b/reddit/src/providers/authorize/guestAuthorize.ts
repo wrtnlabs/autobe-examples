@@ -12,27 +12,18 @@ export async function guestAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const guest = await MyGlobal.prisma.reddit_platform_guests.findFirst({
+  const session = await MyGlobal.prisma.reddit_like_guest_sessions.findFirst({
     where: {
-      id: payload.id,
-      deleted_at: null,
-    },
-  });
-
-  if (guest === null) {
-    throw new ForbiddenException("You're not enrolled");
-  }
-
-  const session = await MyGlobal.prisma.reddit_platform_guest_sessions.findFirst({
-    where: {
-      reddit_platform_guest_id: guest.id,
+      id: payload.session_id,
+      redditLikeGuest: {
+        deleted_at: null,
+      },
       expired_at: { gt: new Date() },
-      deleted_at: null,
     },
   });
 
   if (session === null) {
-    throw new ForbiddenException("Your session has expired");
+    throw new ForbiddenException("You're not enrolled");
   }
 
   return payload;

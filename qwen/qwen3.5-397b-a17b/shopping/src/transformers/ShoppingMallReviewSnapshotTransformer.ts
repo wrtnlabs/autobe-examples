@@ -1,6 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import { IShoppingMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallMember";
 import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
 import { IShoppingMallReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReviewSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
@@ -32,12 +32,12 @@ export namespace ShoppingMallReviewSnapshotTransformer {
   ): Promise<IShoppingMallReviewSnapshot> {
     return {
       id: input.id,
+      rating: input.rating,
+      content: input.content ?? null,
+      created_at: input.created_at.toISOString(),
       review: await ShoppingMallReviewAtSummaryTransformer.transform(
         input.review,
       ),
-      rating: input.rating,
-      content: input.content,
-      created_at: input.created_at.toISOString(),
-    };
+    } satisfies IShoppingMallReviewSnapshot;
   }
 }

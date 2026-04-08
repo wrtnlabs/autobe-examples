@@ -1,1 +1,1 @@
-Implement API functions.
+Don't ask me to do that, and just do it right now.

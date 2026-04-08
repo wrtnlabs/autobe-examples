@@ -9,7 +9,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { ErpHrmTimePermissionTransformer } from "../transformers/ErpHrmTimePermissionTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,13 +16,19 @@ export async function getErpHrmTimeMemberPermissionsPermissionId(props: {
   member: MemberPayload;
   permissionId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimePermission> {
-  const permission =
-    await MyGlobal.prisma.erp_hrm_time_permissions.findFirstOrThrow({
-      where: {
-        id: props.permissionId,
-        deleted_at: null,
-      },
-      ...ErpHrmTimePermissionTransformer.select(),
-    });
-  return await ErpHrmTimePermissionTransformer.transform(permission);
+  void props.member;
+  await MyGlobal.prisma.erp_hrm_time_permissions.findFirstOrThrow({
+    where: {
+      id: props.permissionId,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      key: true,
+      description: true,
+    },
+  });
+  return {
+    items: true,
+  };
 }

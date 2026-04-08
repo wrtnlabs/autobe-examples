@@ -1,9 +1,7 @@
-import { ForbiddenException, Injectable } from "@nestjs/common";
-import { PrismaClient } from "@prisma/client";
+import { ForbiddenException } from "@nestjs/common";
+import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { AdminPayload } from "../../decorators/payload/AdminPayload";
-
-const prisma = new PrismaClient();
 
 export async function adminAuthorize(request: {
   headers: { authorization?: string };
@@ -14,29 +12,28 @@ export async function adminAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const session = await prisma.ecommerce_mall_admin_sessions.findFirst({
-    where: {
-      id: payload.session_id,
-      ecommerce_mall_admin_id: payload.id,
-      expired_at: {
-        gt: new Date(),
-      },
-    },
-  });
-
-  if (session === null) {
-    throw new ForbiddenException("Session expired or invalid");
-  }
-
-  const admin = await prisma.ecommerce_mall_admins.findFirst({
+  // Query using id directly since Admin is standalone (no user_id FK)
+  const admin = await MyGlobal.prisma.ecommerce_mall_admins.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
+      deleted_at: null, // Soft-delete check
     },
   });
 
   if (admin === null) {
     throw new ForbiddenException("You're not enrolled");
+  }
+
+  // Session expiration check
+  const session = await MyGlobal.prisma.ecommerce_mall_admin_sessions.findFirst({
+    where: {
+      id: payload.session_id,
+      expired_at: { gt: new Date() }, // Valid until expiration time
+    },
+  });
+
+  if (session === null) {
+    throw new ForbiddenException("Session expired");
   }
 
   return payload;

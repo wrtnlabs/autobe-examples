@@ -2,7 +2,16 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministrator";
+import type { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
+import type { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+import type { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
+import type { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
+import type { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
+import type { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
+import type { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
+import type { IMallPlatformRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformRefundRequest";
 import type { IMallPlatformRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformRefundRequestSnapshot";
+import type { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -16,26 +25,21 @@ import { authorize_administrator_refresh } from "../../../authorize/authorize_ad
 export async function test_api_refund_request_snapshot_retrieve(
   connection: api.IConnection,
 ): Promise<void> {
-  const adminConnection: api.IConnection = { host: connection.host };
-  await authorize_administrator_join(adminConnection, {
+  const administratorConnection: api.IConnection = { host: connection.host };
+  await authorize_administrator_join(administratorConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
+      password: typia.random<string & tags.Format<"password">>(),
     } satisfies IMallPlatformAdministrator.IJoin,
   });
-  const refundRequestId = typia.random<string & tags.Format<"uuid">>();
-  const snapshotId = typia.random<string & tags.Format<"uuid">>();
-  await TestValidator.httpError(
-    "administrator refund request snapshot retrieval should reject unknown identifiers",
-    [404],
-    async () => {
-      await api.functional.mallPlatform.administrator.refundRequests.snapshots.at(
-        adminConnection,
-        {
-          refundRequestId,
-          snapshotId,
-        },
-      );
-    },
-  );
+  const snapshot =
+    await api.functional.mallPlatform.administrator.orderItems.refundRequests.snapshots.at(
+      administratorConnection,
+      {
+        orderItemId: typia.random<string & tags.Format<"uuid">>(),
+        refundRequestId: typia.random<string & tags.Format<"uuid">>(),
+        snapshotId: typia.random<string & tags.Format<"uuid">>(),
+      },
+    );
+  typia.assert(snapshot);
 }

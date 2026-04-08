@@ -17,18 +17,26 @@ export async function postShoppingMallAuthSellerLogin(props: {
   body: IShoppingMallSeller.ILogin;
 }): Promise<IShoppingMallSeller.IAuthorized> {
   const seller = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
-    where: { email: props.body.email },
+    where: {
+      email: props.body.email,
+      deleted_at: null,
+    },
     select: {
       id: true,
+      email: true,
       password_hash: true,
+      approval_status: true,
+      rejection_reason: true,
+      created_at: true,
+      updated_at: true,
       deleted_at: true,
     },
   });
   if (!seller) {
     throw new HttpException("Invalid credentials", 401);
   }
-  if (seller.deleted_at !== null) {
-    throw new HttpException("Account has been deleted", 401);
+  if (seller.approval_status !== "approved") {
+    throw new HttpException("Account not approved", 403);
   }
   const isValid = await PasswordUtil.verify(
     props.body.password,
@@ -42,7 +50,7 @@ export async function postShoppingMallAuthSellerLogin(props: {
   const session = await MyGlobal.prisma.shopping_mall_seller_sessions.create({
     data: {
       id: v4(),
-      seller_id: seller.id,
+      shopping_mall_seller_id: seller.id,
       ip: props.body.ip ?? props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
@@ -56,7 +64,7 @@ export async function postShoppingMallAuthSellerLogin(props: {
         type: "seller",
         id: seller.id,
         session_id: session.id,
-        created_at: new Date().toISOString(),
+        created_at: toISOStringSafe(new Date()),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
@@ -67,16 +75,22 @@ export async function postShoppingMallAuthSellerLogin(props: {
         id: seller.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: new Date().toISOString(),
+        created_at: toISOStringSafe(new Date()),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpires.toISOString(),
-    refreshable_until: refreshExpires.toISOString(),
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
   };
   return {
     id: seller.id,
+    email: seller.email,
+    approval_status: seller.approval_status,
+    rejection_reason: seller.rejection_reason ?? undefined,
+    created_at: toISOStringSafe(seller.created_at),
+    updated_at: toISOStringSafe(seller.updated_at),
+    deleted_at: seller.deleted_at ? toISOStringSafe(seller.deleted_at) : null,
     token,
   } satisfies IShoppingMallSeller.IAuthorized;
 }

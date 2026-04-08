@@ -2,8 +2,8 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IEcommerceMallAdminRequest } from "../../../../../api/structures/IEcommerceMallAdminRequest";
-import { IPageIEcommerceMallAdminRequest } from "../../../../../api/structures/IPageIEcommerceMallAdminRequest";
+import { IEcommerceMallAdminRequestOfCustomer } from "../../../../../api/structures/IEcommerceMallAdminRequestOfCustomer";
+import { IPageIEcommerceMallAdminRequestOfCustomer } from "../../../../../api/structures/IPageIEcommerceMallAdminRequestOfCustomer";
 import { AdminAuth } from "../../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
 import { getEcommerceMallAdminAdminRequestsRequestId } from "../../../../../providers/getEcommerceMallAdminAdminRequestsRequestId";
@@ -12,36 +12,36 @@ import { patchEcommerceMallAdminAdminRequests } from "../../../../../providers/p
 @Controller("/ecommerceMall/admin/admin/requests")
 export class EcommercemallAdminAdminRequestsController {
   /**
-   * Retrieve a filtered and paginated list of administrator requests submitted by users.
+   * Retrieve a filtered and paginated list of administrator requests.
    *
-   * This operation allows super administrators to search and browse admin requests with various filters. The endpoint supports filtering by request status (pending, approved, rejected), actor type (customer or seller), requested privilege grade (admin or super_admin), and submission date range.
+   * This operation allows super administrators to browse and search through all admin requests submitted by platform users (customers and sellers) who wish to gain administrative privileges. The list can be filtered by request status, actor type, requested grade, and submission date range.
    *
-   * The response is paginated with configurable page sizes and sorting options. Each result includes the request ID, actor type, requested grade, reason text, current status, submission timestamp, and reviewer information if the request has been processed.
+   * Super administrators can review pending requests and approve them as regular administrators or super administrators, or reject them with a reason. The response includes request summaries with requester information, requested grades, submission timestamps, and current status.
    *
-   * Super administrators use this endpoint to review pending admin requests before making approval decisions. The search supports partial reason matching via text search on the reason field.
+   * Only super administrators have permission to access this endpoint. Regular administrators cannot view or manage admin requests.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters
+   * @param body Search criteria and pagination parameters for filtering admin requests
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_admin_requests table with pagination and filtering.
+   * @x-autobe-specification Query ecommerce_mall_admin_requests table with pagination and filtering.
    *
-   * Apply search filters:
-   * - status: Filter by request status (pending, approved, rejected)
-   * - actor_type: Filter by requesting actor type (customer, seller)
-   * - requested_grade: Filter by requested privilege grade (admin, super_admin)
-   * - created_at_from and created_at_to: Filter by submission date range
-   * - reason: Partial text match on reason field
+   * Authorization: Validate session token and verify the authenticated user has super administrator privileges. Return 403 Forbidden if not authorized.
    *
-   * Join with ecommerce_mall_super_admins table to include reviewer information when available (reviewed_by_id -> ecommerce_mall_super_admins join).
+   * Search and filter criteria (all optional):
+   * - status: Filter by request status ('pending', 'approved', 'rejected')
+   * - actorType: Filter by requester type ('customer' or 'seller')
+   * - requestedGrade: Filter by requested administrator grade ('admin' or 'super_admin')
+   * - createdAtFrom: Filter requests submitted after this timestamp
+   * - createdAtTo: Filter requests submitted before this timestamp
    *
-   * Apply cursor-based or offset pagination with configurable page sizes (default 20, max 100).
+   * Apply soft-delete filtering: Exclude records where deleted_at IS NOT NULL.
    *
-   * Sort by created_at descending (newest first) by default.
+   * Sorting: Default to created_at descending (newest first).
    *
-   * Exclude soft-deleted records (WHERE deleted_at IS NULL).
+   * Pagination: Support page number and page size parameters with configurable limits.
    *
-   * Return total count for pagination metadata.
+   * Response: Return paginated list of admin request summaries including id, actorType, requestedGrade, reason (truncated if long), status, createdAt, and review information if reviewed.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -49,8 +49,8 @@ export class EcommercemallAdminAdminRequestsController {
     @AdminAuth()
     admin: AdminPayload,
     @TypedBody()
-    body: IEcommerceMallAdminRequest.IRequest,
-  ): Promise<IPageIEcommerceMallAdminRequest.ISummary> {
+    body: IEcommerceMallAdminRequestOfCustomer.IRequest,
+  ): Promise<IPageIEcommerceMallAdminRequestOfCustomer.ISummary> {
     try {
       return await patchEcommerceMallAdminAdminRequests({
         admin,
@@ -63,29 +63,29 @@ export class EcommercemallAdminAdminRequestsController {
   }
 
   /**
-   * Retrieve detailed information about a specific administrator request on the platform.
+   * Retrieve details of a specific administrator request.
    *
-   * This endpoint returns the complete details of an admin request including the requesting user's type (customer or seller), the requested privilege grade, the reason provided by the requester, current status, and any review information if the request has been processed by a super administrator.
+   * This endpoint allows super administrators to view the complete details of any admin request in the system. The response includes the requesting user's actor type (customer or seller), the requested administrator grade, the reason provided during submission, the current approval status, and reviewer information if the request has been processed.
    *
-   * The admin request tracks a polymorphic relationship where the requesting user can be either a customer or a seller. The actor_type discriminator field indicates which type of actor submitted the request.
+   * The requesting user's identity is tracked through the polymorphic relationship stored in the ecommerce_mall_admin_requests table, where actor_type indicates whether the request originated from a customer or seller account.
    *
-   * Super administrators use this endpoint to review individual requests before taking approval or rejection actions. The response includes timestamps for submission and last modification, allowing super admins to track the request lifecycle.
-   *
-   * If the request has been reviewed, the response includes the reviewing super administrator's ID and any rejection reason they provided.
+   * This operation is restricted to super administrators only. Regular administrators cannot access admin request details as they do not have the authority to review or act on such requests.
    *
    * @param connection
-   * @param requestId Unique identifier of the admin request to retrieve
+   * @param requestId Unique identifier of the admin request to retrieve (global scope)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_admin_requests table filtering by the requestId UUID parameter. Return the matching record including all fields: id, actor_type, requested_grade, reason, status, reviewed_by_id, reviewed_reason, created_at, updated_at, deleted_at.
+   * @x-autobe-specification Query ecommerce_mall_admin_requests table using the provided requestId.
    *
-   * Validate that the authenticated user is a super administrator. Return 403 Forbidden if the user lacks super admin privileges.
+   * Verify the request exists and has not been soft-deleted (deleted_at IS NULL).
    *
-   * Handle soft-deleted records: if deleted_at is not null, return 404 Not Found.
+   * If the request does not exist or is deleted, return 404 Not Found error.
    *
-   * Join with ecommerce_mall_super_admins table to include reviewer information if available.
+   * Join with ecommerce_mall_super_admins table to include reviewer information when the request has been reviewed.
    *
-   * Return 404 Not Found if no matching record exists.
+   * Return the complete admin request record including all fields: id, actor_type, requested_grade, reason, status, reviewed_by_id, reviewed_reason, created_at, updated_at.
+   *
+   * Authorization: Ensure the authenticated user is a super administrator. Return 403 Forbidden if not authorized.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":requestId")
@@ -94,7 +94,7 @@ export class EcommercemallAdminAdminRequestsController {
     admin: AdminPayload,
     @TypedParam("requestId")
     requestId: string & tags.Format<"uuid">,
-  ): Promise<IEcommerceMallAdminRequest> {
+  ): Promise<IEcommerceMallAdminRequestOfCustomer> {
     try {
       return await getEcommerceMallAdminAdminRequestsRequestId({
         admin,

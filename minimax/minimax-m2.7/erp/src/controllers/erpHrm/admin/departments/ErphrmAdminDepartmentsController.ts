@@ -3,70 +3,54 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IErpHrmDepartment } from "../../../../api/structures/IErpHrmDepartment";
-import { IPageIErpHrmDepartment } from "../../../../api/structures/IPageIErpHrmDepartment";
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
 import { deleteErpHrmAdminDepartmentsDepartmentId } from "../../../../providers/deleteErpHrmAdminDepartmentsDepartmentId";
-import { getErpHrmAdminDepartmentsDepartmentId } from "../../../../providers/getErpHrmAdminDepartmentsDepartmentId";
-import { patchErpHrmAdminDepartments } from "../../../../providers/patchErpHrmAdminDepartments";
 import { postErpHrmAdminDepartments } from "../../../../providers/postErpHrmAdminDepartments";
 import { putErpHrmAdminDepartmentsDepartmentId } from "../../../../providers/putErpHrmAdminDepartmentsDepartmentId";
 
 @Controller("/erpHrm/admin/departments")
 export class ErphrmAdminDepartmentsController {
   /**
-   * Create a new department within the current organization.
+   * Create a new department within the organization.
    *
-   * This endpoint creates a department as an organizational unit that represents a functional area, team, or division within the organization. Departments group employees together for structural, reporting, and administrative purposes.
+   * This operation creates a department for organizing employees. Users must have organization management permission to create departments.
    *
-   * The creating user must have organization management permission (org:manage) within the current organization context. The department is automatically associated with the user's current organization based on the session context.
+   * The department name must be unique within the organization. An optional parent department can be specified to establish a one-level hierarchical relationship. Only one level of parent hierarchy is supported - a department with a parent cannot have another parent.
    *
-   * **Department Name Uniqueness**: The system enforces unique department names within each organization. If a department with the same name already exists in the organization, the creation will fail with a conflict error.
-   *
-   * **Parent Department Hierarchy**: Departments support one level of hierarchy through parent department references. A department may optionally specify a parent_id to create a subordinate relationship. The parent must exist and belong to the same organization. A department with a parent cannot have another department as its parent (enforced one-level hierarchy constraint).
-   *
-   * **Related Operations**:
-   * - `GET /departments` should be used to list existing departments before creation to check for name conflicts
-   * - `GET /departments/{departmentId}` can retrieve the created department's details after creation
-   * - `PUT /departments/{departmentId}` can update department properties including name, description, or parent assignment
-   *
-   * The request body contains the department creation data including the required name and optional description and parent department reference.
+   * The created department is immediately available for assigning employees and establishing organizational structure.
    *
    * @param connection
-   * @param body Department creation data containing name (required), optional description, and optional parent department reference for hierarchy
+   * @param body Department creation details including name and optional description and parent department
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement department creation with the following steps:
+   * @x-autobe-specification Create a new department in the erp_hrm_departments table.
    *
-   * 1. **Authentication & Authorization**: Verify the request has valid session with organization context. Ensure the authenticated user has org:manage permission in the current organization.
+   * 1. Authorization: Verify user has org:manage permission in the current organization context.
    *
-   * 2. **Input Validation**:
-   *    - Validate name field is present and non-empty
-   *    - Validate name length (recommend 1-255 characters)
-   *    - Validate description length if provided (recommend max 1000 characters)
-   *    - Validate parent_id format (UUID) if provided
+   * 2. Validate request body:
+   *    - name: Required, non-empty string
+   *    - description: Optional string
+   *    - parentId: Optional UUID, if provided must reference a valid department in the same organization
    *
-   * 3. **Organization Context**: Extract erp_hrm_organization_id from the authenticated session's current organization context.
+   * 3. Verify parent department constraints (if parentId provided):
+   *    - Query erp_hrm_departments to verify parent exists and belongs to same organization
+   *    - Verify parent department does not already have a parent (hierarchy depth of 1 only)
    *
-   * 4. **Parent Department Validation** (if parent_id provided):
-   *    - Query the parent department by parent_id
-   *    - Verify parent belongs to the same organization
-   *    - Verify parent does not itself have a parent (one-level hierarchy rule)
-   *    - Return 400 error if parent validation fails
+   * 4. Verify name uniqueness:
+   *    - Query for existing department with same name in the organization (ignoring soft-deleted)
+   *    - Return error if duplicate name exists
    *
-   * 5. **Duplicate Name Check**: Query erp_hrm_departments for existing department with same erp_hrm_organization_id and name where deleted_at IS NULL. Return 409 Conflict if duplicate found.
+   * 5. Create department record:
+   *    - Generate UUID for id
+   *    - Set erp_hrm_organization_id from session context
+   *    - Set parent_id from request (or null)
+   *    - Set name from request
+   *    - Set description from request (or null)
+   *    - Set created_at and updated_at to current timestamp
+   *    - Set deleted_at to null
    *
-   * 6. **Create Department**: Insert new record into erp_hrm_departments with:
-   *    - id: Generate new UUID
-   *    - erp_hrm_organization_id: From session context
-   *    - parent_id: From request (null if not provided)
-   *    - name: From request
-   *    - description: From request (null if not provided)
-   *    - created_at: Current timestamp
-   *    - updated_at: Current timestamp
-   *    - deleted_at: null
-   *
-   * 7. **Response**: Return the created department record with HTTP 201 status.
+   * 6. Return the created department record.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -88,149 +72,29 @@ export class ErphrmAdminDepartmentsController {
   }
 
   /**
-   * Retrieve a filtered and paginated list of departments within the current organization.
-   *
-   * This operation allows organization members to browse and search departments. All employees within an organization can view the complete list of departments, regardless of their role or permissions.
-   *
-   * The response includes department information with name, description, and parent department relationship. Results are sorted alphabetically by name by default. The list includes both active and inactive departments.
-   *
-   * Filters can be applied to narrow results by department name (partial match) and parent department assignment. Pagination is supported with configurable page sizes.
-   *
-   * This operation does not require any specific permissions - all organization members can access the department list to understand the organizational structure and reporting relationships.
-   *
-   * @param connection
-   * @param body Search criteria and pagination parameters
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the erp_hrm_departments table with organization-scoped filtering.
-   *
-   * 1. ORGANIZATION CONTEXT: Extract erp_hrm_organization_id from the authenticated session. Only return departments belonging to this organization.
-   *
-   * 2. BASE QUERY: Select departments where erp_hrm_organization_id matches the session organization and deleted_at is null (active departments) OR include inactive based on filter criteria.
-   *
-   * 3. SEARCH FILTERS (from request body):
-   *    - name: Partial match filter on department name (case-insensitive)
-   *    - parent_id: Filter by specific parent department UUID
-   *    - includeInactive: Boolean to include departments with non-null deleted_at
-   *
-   * 4. SORTING: Default alphabetical sort by name ascending. Support custom sort field and direction via request body.
-   *
-   * 5. PAGINATION: Apply cursor-based or offset pagination with configurable page size (default 20, max 100).
-   *
-   * 6. RESPONSE: Return paginated list with IErpHrmDepartment.ISummary items containing:
-   *    - id: Department UUID
-   *    - name: Department name
-   *    - description: Optional description
-   *    - parentId: Parent department UUID or null
-   *    - createdAt: Creation timestamp
-   *    - updatedAt: Last modification timestamp
-   *
-   * 7. JOIN: Optionally join with parent department table to include parent department name in response if requested.
-   *
-   * 8. VALIDATION: Return 400 error if invalid filter values provided.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Patch()
-  public async index(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedBody()
-    body: IErpHrmDepartment.IRequest,
-  ): Promise<IPageIErpHrmDepartment.ISummary> {
-    try {
-      return await patchErpHrmAdminDepartments({
-        admin,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve detailed information about a specific department by its unique identifier.
-   *
-   * This endpoint fetches the complete department record including its name, description, organizational assignment, and parent department relationship. The response includes all metadata such as creation and update timestamps.
-   *
-   * The operation requires the requester to be an authenticated member within the organization. The system verifies the department belongs to the currently selected organization context before returning data. If the department has been soft-deleted (deleted_at is not null), the system returns a not-found error to maintain data privacy.
-   *
-   * The returned department includes its parent department reference, allowing clients to reconstruct the organizational hierarchy. This is useful for displaying reporting structures and departmental relationships within the organization.
-   *
-   * Related operations:
-   * - PATCH /departments - List all departments with filtering
-   * - POST /departments - Create a new department
-   * - PUT /departments/{departmentId} - Update department details
-   * - DELETE /departments/{departmentId} - Remove a department
-   *
-   * @param connection
-   * @param departmentId Unique identifier of the department to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Retrieve a single department from the erp_hrm_departments table by its id field.
-   *
-   * Implementation steps:
-   * 1. Extract departmentId from path parameters
-   * 2. Verify user is authenticated as a member with valid organization context
-   * 3. Query the database: SELECT * FROM erp_hrm_departments WHERE id = departmentId AND erp_hrm_organization_id = currentOrganizationId
-   * 4. Check if deleted_at IS NULL - if not, return 404 error
-   * 5. Include parent department relation in query result
-   * 6. Return the department entity with 200 status
-   *
-   * Edge cases:
-   * - Department not found: Return 404 with appropriate error message
-   * - Department belongs to different organization: Return 404 (not 403) for security
-   * - Department is soft-deleted: Return 404
-   * - Invalid UUID format: Return 400 validation error
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":departmentId")
-  public async at(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("departmentId")
-    departmentId: string & tags.Format<"uuid">,
-  ): Promise<IErpHrmDepartment> {
-    try {
-      return await getErpHrmAdminDepartmentsDepartmentId({
-        admin,
-        departmentId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
    * Update an existing department within the current organization.
    *
-   * This endpoint allows authorized users to modify department attributes including the name, description, and parent department assignment. The operation requires organization management permission and only affects departments belonging to the currently selected organization.
+   * This endpoint modifies the department's name, description, and parent department assignment. The department must belong to the currently selected organization context. Only users with organization management permission can perform this operation.
    *
-   * Department attributes that can be modified include the department name, optional description text, and optional parent department reference. The parent department assignment enables hierarchical organization structures with one level of nesting.
+   * The department name must be unique within the organization. If changing the parent department, the new parent must exist and belong to the same organization. The one-level hierarchy constraint is enforced: a department cannot have a parent that already has a parent.
    *
-   * The system validates that the department exists and belongs to the current organization. It also prevents duplicate department names within the same organization. The parent department, if specified, must belong to the same organization and cannot create multi-level hierarchy violations.
-   *
-   * Security requires the requesting user to have organization management permission (org:manage). The department must not be soft-deleted (deleted_at must be null).
-   *
-   * Related operations: Use GET /departments/{departmentId} to retrieve current department details before updating. Use PATCH /departments for listing departments within the organization.
+   * Changes take effect immediately upon successful update. The response returns the updated department entity with all current values.
    *
    * @param connection
    * @param departmentId Unique identifier of the department to update (UUID format)
-   * @param body Department update attributes including name, description, and optional parent department reference
+   * @param body Department update fields including name, description, and parent department assignment
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Retrieve the target department by departmentId from erp_hrm_departments where id equals the path parameter and deleted_at is null. Verify the department belongs to the current organization context (erp_hrm_organization_id matches).
+   * @x-autobe-specification Query the erp_hrm_departments table by departmentId (UUID primary key) within the current organization context. Validate that the department exists and is not soft-deleted (deleted_at IS NULL).
    *
-   * Validate the request body: name is required and must be non-empty string (max 255 characters), description is optional string, parent_id is optional UUID that must reference an existing active department in the same organization if provided.
+   * Validate the request body:
+   * - name: required string, max 255 characters, must be unique within organization (check @@unique([erp_hrm_organization_id, name]) excluding current department)
+   * - description: optional string, max 1000 characters
+   * - parentId: optional UUID, if provided must reference an existing active department in the same organization, and that parent must not have its own parent (enforce one-level hierarchy)
    *
-   * Check hierarchy constraint: If parent_id is provided, verify the parent department does not have its own parent (one-level hierarchy only).
+   * Apply updates to the department record and set updated_at to current timestamp.
    *
-   * Check unique constraint: If name is being changed, verify no other department in the same organization has that name.
-   *
-   * Update the department record with the provided values, setting updated_at to current timestamp.
-   *
-   * Return the complete updated department entity including id, erp_hrm_organization_id, parent_id, name, description, created_at, updated_at, and deleted_at.
+   * Return the full updated department entity including id, organization_id, parent_id, name, description, created_at, updated_at, and deleted_at.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":departmentId")
@@ -255,40 +119,43 @@ export class ErphrmAdminDepartmentsController {
   }
 
   /**
-   * Removes a department from the organization.
+   * Permanently removes a department from the organization.
    *
-   * This endpoint deletes the specified department and performs cascading updates to maintain data integrity. When a department is deleted, all employees previously assigned to that department will have their department assignment cleared (set to null). Child departments that were under the deleted department will be converted to top-level departments by removing their parent reference.
+   * This operation requires the org:manage permission. When a department is deleted, the system performs the following cascading updates:
    *
-   * Only users with organization management permission can delete departments. The operation performs a soft delete by setting the deleted_at timestamp, preserving the department record for historical reference and activity logs.
+   * - All employees assigned to this department have their department reference set to null (employees are not deleted)
+   * - All child departments that had this department as parent become top-level departments (their parent reference is removed)
+   * - The department record is soft deleted (deleted_at timestamp is set) rather than permanently removed
    *
-   * The system validates that the department exists and belongs to the current organization context before deletion. Attempting to delete a non-existent department or a department from another organization will result in a not found error.
+   * This operation cannot be performed on non-existent departments or departments outside the user's organization context. The system validates organization isolation on every request.
    *
    * @param connection
-   * @param departmentId Unique identifier of the department to delete
+   * @param departmentId Unique identifier of the department to delete (UUID format)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Extract organization context from authenticated user's session
-   * 2. Validate user has 'org:manage' permission for the organization
-   * 3. Query erp_hrm_departments table to verify department exists and belongs to the organization
-   *    - If not found, return 404 error
+   * @x-autobe-specification DELETE operation for erp_hrm_departments table with soft delete behavior.
+   *
+   * Implementation steps:
+   * 1. Validate user has org:manage permission in the current organization context
+   * 2. Verify department exists and belongs to the user's organization
+   * 3. Verify department has not already been soft deleted (deleted_at is null)
    * 4. Begin database transaction
-   * 5. Update all employees in erp_hrm_employees table:
-   *    - Set erp_hrm_department_id to null where erp_hrm_department_id equals the department's id
-   *    - Preserve all employee records (no deletion)
-   * 6. Update all child departments in erp_hrm_departments table:
-   *    - Set parent_id to null where parent_id equals the department's id
-   *    - This converts child departments to top-level
-   * 7. Soft delete the department:
-   *    - Set deleted_at to current timestamp
-   *    - Keep all other department fields intact
+   * 5. Set deleted_at timestamp on the department record (soft delete)
+   * 6. Set department_id to null for all employees assigned to this department
+   * 7. Set parent_id to null for all child departments referencing this department
    * 8. Commit transaction
-   * 9. Return 204 No Content on success
+   * 9. Return null response (no content on successful deletion)
+   *
+   * Error handling:
+   * - 403 Forbidden: User lacks org:manage permission
+   * - 404 Not Found: Department does not exist or does not belong to organization
+   * - 409 Conflict: Department already deleted (deleted_at is not null)
    *
    * Edge cases:
-   * - Department not found → 404 error
-   * - User lacks permission → 403 error
-   * - Department already deleted → 404 error (treated as not found)
-   * - Organization mismatch → 404 error
+   * - Department with no employees: proceed with deletion, no employee updates needed
+   * - Department with no child departments: proceed with deletion, no child updates needed
+   * - Department that is a child itself: only this department is deleted, parent remains unchanged
+   * - Concurrent deletion attempts: database unique constraint prevents duplicate soft deletes
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":departmentId")

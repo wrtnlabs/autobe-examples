@@ -6,16 +6,16 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_ecommerce_mall_review(
-  input?: DeepPartial<IEcommerceMallReview.ICreate>,
+  input?: DeepPartial<IEcommerceMallReview.ICreate> | undefined,
 ): IEcommerceMallReview.ICreate {
   return {
-    order_item_id:
-      input?.order_item_id ?? typia.random<string & tags.Format<"uuid">>(),
+    orderItemId:
+      input?.orderItemId ?? typia.random<string & tags.Format<"uuid">>(),
     rating:
       input?.rating ??
       typia.random<
         number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>
       >(),
-    content: input?.content ?? RandomGenerator.paragraph({ sentences: 3 }),
+    content: input?.content ?? RandomGenerator.paragraph({ sentences: 5 }),
   };
 }

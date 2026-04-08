@@ -15,9 +15,9 @@ export async function deleteErpHrmTimeMemberProjectsProjectId(props: {
   member: MemberPayload;
   projectId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  await MyGlobal.prisma.$transaction(async (prisma) => {
-    const membership =
-      await prisma.erp_hrm_time_organization_memberships.findFirst({
+  const membership =
+    await MyGlobal.prisma.erp_hrm_time_organization_memberships.findFirstOrThrow(
+      {
         where: {
           erp_hrm_time_member_id: props.member.id,
           is_selected_context: true,
@@ -26,39 +26,37 @@ export async function deleteErpHrmTimeMemberProjectsProjectId(props: {
         select: {
           erp_hrm_time_organization_id: true,
         },
-      });
-    if (membership === null) {
-      throw new HttpException("Project not found", 404);
-    }
-    const project = await prisma.erp_hrm_time_projects.findFirst({
-      where: {
-        id: props.projectId,
-        erp_hrm_time_organization_id: membership.erp_hrm_time_organization_id,
       },
-      select: {
-        id: true,
-      },
-    });
-    if (project === null) {
-      throw new HttpException("Project not found", 404);
-    }
-    const timelog = await prisma.erp_hrm_time_timelogs.findFirst({
-      where: {
-        erp_hrm_time_project_id: props.projectId,
-      },
-      select: {
-        id: true,
-      },
-    });
-    if (timelog !== null) {
-      throw new HttpException(
-        "Project cannot be deleted because timelogs exist.",
-        409,
-      );
-    }
+    );
+  const project = await MyGlobal.prisma.erp_hrm_time_projects.findFirstOrThrow({
+    where: {
+      id: props.projectId,
+      erp_hrm_time_organization_id: membership.erp_hrm_time_organization_id,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+    },
+  });
+  const timelog = await MyGlobal.prisma.erp_hrm_time_timelogs.findFirst({
+    where: {
+      erp_hrm_time_project_id: project.id,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+    },
+  });
+  if (timelog !== null) {
+    throw new HttpException(
+      "Project cannot be deleted because timelogs exist.",
+      400,
+    );
+  }
+  await MyGlobal.prisma.$transaction(async (prisma) => {
     await prisma.erp_hrm_time_projects.delete({
       where: {
-        id: props.projectId,
+        id: project.id,
       },
     });
   });

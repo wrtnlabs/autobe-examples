@@ -2,13 +2,18 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import type { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import type { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import type { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
+import type { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import type { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import type { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
+import type { IEcommerceMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshot";
+import type { IEcommerceMallProductSnapshotVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshotVariant";
 import type { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
 import type { IEcommerceMallProductVariantOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOptionValue";
 import type { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReview";
 import type { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import type { IEcommerceMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfile";
+import type { IEcommerceMallShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShippingAddress";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import type { IPageIEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallReview";
@@ -18,65 +23,60 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+import { authorize_customer_join } from "../../../authorize/authorize_customer_join";
+import { authorize_customer_login } from "../../../authorize/authorize_customer_login";
+import { authorize_customer_refresh } from "../../../authorize/authorize_customer_refresh";
 import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
 import { generate_random_ecommerce_mall_seller_products_create } from "../../../generate/generate_random_ecommerce_mall_seller_products_create";
 import { prepare_random_ecommerce_mall_product } from "../../../prepare/prepare_random_ecommerce_mall_product";
 
-/**
- * Test retrieving reviews for a product that has no reviews yet.
- * This validates the empty state handling.
- *
- * Steps:
- * 1. Register a seller and create an approved seller account
- * 2. Create a product with the seller
- * 3. Call GET /ecommerceMall/products/{productId}/reviews
- *
- * Validations:
- * - Response status should be 200
- * - Response should include pagination metadata
- * - Data array should be empty (no reviews)
- * - Pagination records count should be 0
- * - Pagination pages count should be 0
- * - Response should still have valid schema structure (pagination + data fields)
- */
 export async function test_api_product_reviews_retrieval_empty_reviews(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Register a seller
+  // 1. Create a seller account and get it approved
   const sellerConnection: api.IConnection = { host: connection.host };
   await authorize_seller_join(sellerConnection, {});
-  // 2. Create a product with the seller
+  // 2. Create a product (seller is already logged in from authorize_seller_join)
   const product = await generate_random_ecommerce_mall_seller_products_create(
     sellerConnection,
     {},
   );
   typia.assert(product);
-  // 3. Retrieve reviews for the product (which should be empty)
+  // 3. Create a customer account
+  const customerConnection: api.IConnection = { host: connection.host };
+  await authorize_customer_join(customerConnection, {});
+  // 4. Get reviews for the product (should be empty since no reviews exist)
   const reviewsResponse =
-    await api.functional.ecommerceMall.products.reviews.list(connection, {
-      productId: product.id,
-    });
+    await api.functional.ecommerceMall.customer.products.reviews.at(
+      customerConnection,
+      {
+        productId: product.id,
+      },
+    );
   typia.assert(reviewsResponse);
-  // 4. Validate the empty state response
-  TestValidator.equals("data array should be empty", reviewsResponse.data, []);
+  // 5. Validate the response - data array should be empty
+  TestValidator.equals("data array is empty", reviewsResponse.data.length, 0);
+  // 6. Validate pagination values
   TestValidator.equals(
-    "records count should be 0",
+    "pagination.records is 0",
     reviewsResponse.pagination.records,
     0,
   );
   TestValidator.equals(
-    "pages count should be 0",
+    "pagination.pages is 0",
     reviewsResponse.pagination.pages,
     0,
   );
-  TestValidator.predicate(
-    "pagination exists",
-    reviewsResponse.pagination !== null,
+  TestValidator.equals(
+    "pagination.current is 1",
+    reviewsResponse.pagination.current,
+    1,
   );
-  TestValidator.predicate(
-    "data array exists",
-    Array.isArray(reviewsResponse.data),
+  TestValidator.equals(
+    "pagination.limit exists",
+    reviewsResponse.pagination.limit > 0,
+    true,
   );
 }

@@ -1,5 +1,5 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
 import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -10,50 +10,45 @@ import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ErpHrmTimeOrganizationDashboardSummaryTransformer {
-  export type Payload =
-    Prisma.erp_hrm_time_organization_dashboard_summariesGetPayload<
-      ReturnType<typeof select>
-    >;
+  export type Payload = Prisma.erp_hrm_time_organizationsGetPayload<
+    ReturnType<typeof select>
+  >;
   export function select() {
     return {
       select: {
         id: true,
-        snapshot_date: true,
-        active_employee_count: true,
-        pending_timesheet_count: true,
-        weekly_hours_total: true,
-        budget_utilization_over_80_count: true,
-        top_project_id: true,
-        top_project_budget_hours: true,
-        top_project_actual_hours: true,
-        top_project_budget_utilization_percent: true,
+        name: true,
+        description: true,
+        logo_image_url: true,
+        status: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        organization: {
-          select: {
-            id: true,
-          },
-        },
+        ownerMember: { select: {} },
+        organizationMemberships: { select: {} },
+        employees: { select: {} },
+        setting: { select: {} },
+        departments: { select: {} },
+        roles: { select: {} },
+        projects: { select: {} },
+        timeReportRows: { select: {} },
+        projectBudgetReportRows: { select: {} },
+        weeklySummaryReportRows: { select: {} },
+        organizationDashboardSummaries: { select: {} },
+        activityLogEntries: { select: {} },
       },
-    } satisfies Prisma.erp_hrm_time_organization_dashboard_summariesFindManyArgs;
+    } satisfies Prisma.erp_hrm_time_organizationsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IErpHrmTimeOrganizationDashboardSummary> {
     return {
       id: input.id,
-      organization: input.organization as IErpHrmTimeOrganization.ISummary,
-      snapshotDate: input.snapshot_date.toISOString(),
-      activeEmployeeCount: input.active_employee_count,
-      pendingTimesheetCount: input.pending_timesheet_count,
-      weeklyHoursTotal: input.weekly_hours_total,
-      budgetUtilizationOver80Count: input.budget_utilization_over_80_count,
-      topProjectId: input.top_project_id,
-      topProjectBudgetHours: input.top_project_budget_hours,
-      topProjectActualHours: input.top_project_actual_hours,
-      topProjectBudgetUtilizationPercent:
-        input.top_project_budget_utilization_percent,
+      ownerMember: {} as IErpHrmTimeMember.ISummary,
+      name: input.name,
+      description: input.description,
+      logoImageUrl: input.logo_image_url,
+      status: input.status,
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
       deletedAt: input.deleted_at?.toISOString() ?? null,

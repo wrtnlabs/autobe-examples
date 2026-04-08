@@ -1,14 +1,16 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
 import { IRedditCloneCommunityModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunityModerator";
-import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
+import { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCloneCommunityAtSummaryTransformer } from "./RedditCloneCommunityAtSummaryTransformer";
-import { RedditCloneMemberAtSummaryTransformer } from "./RedditCloneMemberAtSummaryTransformer";
+import { RedditCloneUserProfileAtSummaryTransformer } from "./RedditCloneUserProfileAtSummaryTransformer";
 
 export namespace RedditCloneCommunityModeratorTransformer {
   export type Payload = Prisma.reddit_clone_community_moderatorsGetPayload<
@@ -22,8 +24,8 @@ export namespace RedditCloneCommunityModeratorTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        userProfile: RedditCloneUserProfileAtSummaryTransformer.select(),
         community: RedditCloneCommunityAtSummaryTransformer.select(),
-        member: RedditCloneMemberAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_clone_community_moderatorsFindManyArgs;
   }
@@ -33,11 +35,11 @@ export namespace RedditCloneCommunityModeratorTransformer {
     return {
       id: input.id,
       role: input.role,
+      userProfile: await RedditCloneUserProfileAtSummaryTransformer.transform(
+        input.userProfile,
+      ),
       community: await RedditCloneCommunityAtSummaryTransformer.transform(
         input.community,
-      ),
-      member: await RedditCloneMemberAtSummaryTransformer.transform(
-        input.member,
       ),
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),

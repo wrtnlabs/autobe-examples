@@ -3,9 +3,12 @@ import { IEcommerceMallSellerProfileSnapshot } from "@ORGANIZATION/PROJECT-api/l
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { EcommerceMallSellerAtSummaryTransformer } from "./EcommerceMallSellerAtSummaryTransformer";
 
 export namespace EcommerceMallSellerProfileSnapshotTransformer {
   export type Payload =
@@ -16,21 +19,11 @@ export namespace EcommerceMallSellerProfileSnapshotTransformer {
     return {
       select: {
         id: true,
-        seller_id: true,
+        seller: EcommerceMallSellerAtSummaryTransformer.select(),
         shop_name: true,
         shop_description: true,
         logo_image_url: true,
         created_at: true,
-        seller: {
-          select: {
-            id: true,
-            email: true,
-            approval_status: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
-          },
-        },
       },
     } satisfies Prisma.ecommerce_mall_seller_profile_snapshotsFindManyArgs;
   }
@@ -39,20 +32,13 @@ export namespace EcommerceMallSellerProfileSnapshotTransformer {
   ): Promise<IEcommerceMallSellerProfileSnapshot> {
     return {
       id: input.id,
-      sellerId: input.seller_id,
+      seller: await EcommerceMallSellerAtSummaryTransformer.transform(
+        input.seller,
+      ),
       shopName: input.shop_name,
       shopDescription: input.shop_description ?? null,
       logoImageUrl: input.logo_image_url ?? null,
       createdAt: input.created_at.toISOString(),
-      seller: {
-        id: input.seller.id,
-        email: input.seller.email,
-        shopName: "",
-        approvalStatus: input.seller.approval_status,
-        createdAt: input.seller.created_at.toISOString(),
-        updatedAt: input.seller.updated_at.toISOString(),
-        deletedAt: input.seller.deleted_at?.toISOString() ?? null,
-      } satisfies IEcommerceMallSeller.ISummary,
     };
   }
 }

@@ -27,7 +27,7 @@ export async function postHrmPlatformMemberTimesheetsTimesheetIdReject(props: {
   body: IHrmPlatformTimesheet.IReject;
 }): Promise<IHrmPlatformTimesheet> {
   const timesheet =
-    await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
+    await MyGlobal.prisma.hrm_platform_timesheets.findFirstOrThrow({
       where: {
         id: props.timesheetId,
         deleted_at: null,
@@ -39,43 +39,58 @@ export async function postHrmPlatformMemberTimesheetsTimesheetIdReject(props: {
       },
     });
   if (timesheet.status !== "submitted") {
-    throw new HttpException("Only submitted timesheets can be rejected", 400);
-  }
-  if (
-    props.body.rejection_reason === null ||
-    props.body.rejection_reason.trim().length === 0
-  ) {
     throw new HttpException(
-      "Rejection reason is required and cannot be empty",
+      "Timesheet must be in submitted status to reject",
       400,
     );
   }
-  const reviewerEmployee =
+  const employee =
     await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
       where: {
-        user_id: props.member.id,
+        id: timesheet.employee_id,
         deleted_at: null,
       },
       select: {
         id: true,
+        organization_id: true,
       },
     });
+  const membership =
+    await MyGlobal.prisma.hrm_platform_organization_memberships.findFirstOrThrow(
+      {
+        where: {
+          hrm_platform_member_id: props.member.id,
+          hrm_platform_organization_id: employee.organization_id,
+          deleted_at: null,
+        },
+        select: {
+          id: true,
+          is_owner: true,
+        },
+      },
+    );
+  if (!membership.is_owner) {
+    throw new HttpException(
+      "Insufficient permissions to reject timesheet",
+      403,
+    );
+  }
+  const reviewedAt = toISOStringSafe(new Date());
   await MyGlobal.prisma.hrm_platform_timesheets.update({
     where: {
       id: props.timesheetId,
     },
     data: {
-      status: "draft",
-      reviewed_at: new Date(),
+      status: "rejected",
+      reviewer_id: props.member.id,
+      reviewed_at: reviewedAt,
       rejection_reason: props.body.rejection_reason,
-      reviewed_by_employee_id: reviewerEmployee.id,
     },
   });
   const updated =
     await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
       where: {
         id: props.timesheetId,
-        deleted_at: null,
       },
       ...HrmPlatformTimesheetTransformer.select(),
     });

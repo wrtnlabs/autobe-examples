@@ -1,23 +1,18 @@
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
-import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
-import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
-import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
-import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
 import { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReview";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
 import { EcommerceMallOrderAtSummaryTransformer } from "./EcommerceMallOrderAtSummaryTransformer";
-import { EcommerceMallOrderItemAtSummaryTransformer } from "./EcommerceMallOrderItemAtSummaryTransformer";
 import { EcommerceMallProductAtSummaryTransformer } from "./EcommerceMallProductAtSummaryTransformer";
 
 export namespace EcommerceMallReviewTransformer {
@@ -33,10 +28,18 @@ export namespace EcommerceMallReviewTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        customer: EcommerceMallCustomerAtSummaryTransformer.select(),
+        customer: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_customersFindManyArgs,
         product: EcommerceMallProductAtSummaryTransformer.select(),
         order: EcommerceMallOrderAtSummaryTransformer.select(),
-        orderItem: EcommerceMallOrderItemAtSummaryTransformer.select(),
+        orderItem: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_order_itemsFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_reviewsFindManyArgs;
   }
@@ -47,21 +50,19 @@ export namespace EcommerceMallReviewTransformer {
       id: input.id,
       rating: input.rating,
       content: input.content,
-      customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
-        input.customer,
-      ),
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
+      customer: {
+        id: input.customer.id,
+      } satisfies IEcommerceMallCustomer.ISummary,
       product: await EcommerceMallProductAtSummaryTransformer.transform(
         input.product,
       ),
       order: await EcommerceMallOrderAtSummaryTransformer.transform(
         input.order,
       ),
-      orderItem: await EcommerceMallOrderItemAtSummaryTransformer.transform(
-        input.orderItem,
-      ),
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      orderItemId: input.orderItem.id,
     };
   }
 }

@@ -17,46 +17,61 @@ export async function deleteHrmPlatformMemberTimesheetsTimesheetId(props: {
 }): Promise<void> {
   const timesheet =
     await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
-      where: {
-        id: props.timesheetId,
-        deleted_at: null,
-      },
+      where: { id: props.timesheetId, deleted_at: null },
       select: {
         id: true,
+        employee_id: true,
         status: true,
         employee: {
           select: {
             id: true,
-            user_id: true,
+            member_id: true,
             role: {
               select: {
+                id: true,
                 rolePermissions: {
-                  where: { deleted_at: null },
-                  select: { permission: true },
+                  select: {
+                    permission: {
+                      select: {
+                        id: true,
+                        code: true,
+                      },
+                    },
+                  },
                 },
               },
             },
           },
         },
       },
-    } satisfies Prisma.hrm_platform_timesheetsFindUniqueOrThrowArgs);
-  if (timesheet.status !== "draft") {
+    });
+  const isOwner = timesheet.employee.member_id === props.member.id;
+  const hasTimeManage = timesheet.employee.role.rolePermissions.some(
+    (rp) => rp.permission.code === "time:manage",
+  );
+  if (!isOwner && !hasTimeManage) {
+    throw new HttpException("Forbidden", 403);
+  }
+  if (timesheet.status === "approved") {
     throw new HttpException(
-      "Cannot delete timesheet that is not in draft status",
+      "Approved timesheets are locked and cannot be deleted",
       400,
     );
   }
-  const isOwner = timesheet.employee.user_id === props.member.id;
-  if (!isOwner) {
-    const hasManagePermission = timesheet.employee.role.rolePermissions.some(
-      (rp) => rp.permission === "time:manage",
+  if (
+    !hasTimeManage &&
+    timesheet.status !== "draft" &&
+    timesheet.status !== "rejected"
+  ) {
+    throw new HttpException(
+      "Only draft and rejected timesheets can be deleted",
+      400,
     );
-    if (!hasManagePermission) {
-      throw new HttpException("Forbidden", 403);
-    }
   }
   await MyGlobal.prisma.hrm_platform_timesheets.update({
     where: { id: props.timesheetId },
-    data: { deleted_at: new Date() },
+    data: {
+      deleted_at: new Date(),
+    },
   });
 }

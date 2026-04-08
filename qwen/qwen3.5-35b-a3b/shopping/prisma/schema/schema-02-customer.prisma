@@ -1,0 +1,407 @@
+/// Customer shipping addresses with recipient details and default selection.
+///
+/// Each customer can maintain multiple shipping addresses. One address can
+/// be marked as default for convenient checkout. Addresses are soft-deleted
+/// to preserve historical order data.
+///
+/// @namespace customer
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_customer_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer who owns this address.
+  ///
+  /// Addresses cannot exist without a customer. Each address belongs to
+  /// exactly one customer.
+  ecommerce_mall_member_id String
+  
+  /// Name of the person who will receive the package.
+  recipient_name String
+  
+  /// Phone number of the recipient for delivery contact.
+  phone String
+  
+  /// Street address including building number and street name.
+  street String
+  
+  /// City or municipality name.
+  city String
+  
+  /// State, province, or region name.
+  state String
+  
+  /// Postal or ZIP code for the address.
+  postal_code String
+  
+  /// Country name or ISO country code.
+  country String
+  
+  /// Whether this is the customer's default shipping address. Only one address
+  /// per customer can be default.
+  is_default Boolean
+  
+  /// Timestamp when this address was created.
+  created_at DateTime
+  
+  /// Timestamp when this address was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this address was soft-deleted. NULL means active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_members @relation(fields: [ecommerce_mall_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orders ecommerce_mall_orders[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_member_id, is_default], map: "ecommerce_mall_customer_addresses_ecommerce_mall_membe_a02fbf6d")
+  @@index([ecommerce_mall_member_id])
+}
+
+/// Customer wishlists for saving and organizing desired products across
+/// multiple collections.
+///
+/// Stores individual wishlist entities that customers create to organize
+/// products they want to purchase. Each customer can have multiple wishlists
+/// (e.g., 'Gift Ideas', 'Birthday List', 'Future Purchases') with custom
+/// titles and descriptions. Wishlist items are stored in the
+/// ecommerce_mall_wishlist_items junction table, maintaining a many-to-many
+/// relationship between customers and products through this wishlist entity.
+///
+/// @namespace customer
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_customer_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer account that owns this wishlist.
+  ///
+  /// References the member account that created and manages this wishlist.
+  /// Each customer can own multiple wishlists.
+  ecommerce_mall_member_id String
+  
+  /// Display name of the wishlist.
+  ///
+  /// Short title shown in the customer's wishlist list. Unique per customer to
+  /// allow organization into multiple named wishlists.
+  title String
+  
+  /// Optional detailed description of the wishlist purpose.
+  ///
+  /// Allows customers to provide context about the wishlist (e.g., 'Christmas
+  /// gifts for family', 'Birthday presents').
+  description String?
+  
+  /// Whether the wishlist is visible to other users.
+  ///
+  /// When true, the wishlist can be shared and viewed by other customers. When
+  /// false, only the owner can access it.
+  is_public Boolean
+  
+  /// Display order priority among the customer's wishlists.
+  ///
+  /// Lower numbers appear first in the customer's wishlist list. Used for
+  /// custom ordering.
+  sort_order Int
+  
+  /// Timestamp when the wishlist was created.
+  ///
+  /// Immutable creation timestamp recorded at insert time.
+  created_at DateTime
+  
+  /// Timestamp when the wishlist was last modified.
+  ///
+  /// Updated on title, description, or is_public changes. Always newer than
+  /// created_at.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for wishlist removal.
+  ///
+  /// Nullable until deleted. When set, indicates the wishlist is soft-deleted
+  /// but data is preserved.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member ecommerce_mall_members @relation(fields: [ecommerce_mall_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  items ecommerce_mall_wishlist_items[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_member_id, title], map: "ecommerce_mall_customer_wishlists_ecommerce_mall_membe_dae83dfa")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_member_id, created_at], map: "ecommerce_mall_customer_wishlists_ecommerce_mall_membe_9cff05f7")
+}
+
+/// Junction table linking customer wishlists to products (many-to-many
+/// relationship).
+///
+/// This table enables customers to add products to their wishlists. Each row
+/// represents one product in one customer's wishlist. The composite unique
+/// constraint ensures a product can only appear once per wishlist.
+///
+/// **Relationships:**
+/// - Belongs to one customer wishlist via {@link
+/// ecommerce_mall_customer_wishlists}
+/// - References one product via {@link ecommerce_mall_products}
+/// - Managed through the parent wishlist entity
+///
+/// @namespace customer
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key reference to the customer's wishlist that owns this item.
+  ///
+  /// Each wishlist item belongs to exactly one wishlist. The relationship is
+  /// non-optional as items cannot exist without a parent wishlist.
+  ecommerce_mall_wishlist_id String
+  
+  /// Foreign key reference to the product that is wishlisted.
+  ///
+  /// Points to the core product entity. Allows fetching product details (name,
+  /// price, images) for wishlist display. The product may exist independently
+  /// of the wishlist.
+  ecommerce_mall_product_id String
+  
+  /// Timestamp when this wishlist item was added. Automatically set by
+  /// database on insert.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this wishlist item. Updated on any
+  /// change.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. NULL when active, set when item is removed from
+  /// wishlist.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  wishlist ecommerce_mall_customer_wishlists @relation(fields: [ecommerce_mall_wishlist_id], references: [id], onDelete: Cascade)
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_wishlist_id, ecommerce_mall_product_id], map: "ecommerce_mall_wishlist_items_ecommerce_mall_wishlist__f21ac611")
+  @@index([ecommerce_mall_product_id])
+}
+
+/// Customer product reviews with ratings and text after delivery.
+///
+/// This table stores customer product reviews that can only be written after
+/// the purchased item has been delivered. Each customer is limited to one
+/// review per product per order to ensure reviews are tied to actual
+/// purchases and prevent review spam.
+///
+/// @namespace customer
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_customer_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the {ecommerce_mall_members} account that wrote this review.
+  ///
+  /// Ensures ownership tracking and enables customer-specific review
+  /// management including edit and delete operations.
+  customer_id String
+  
+  /// References the {ecommerce_mall_products} that is being reviewed.
+  ///
+  /// Enables product-level review aggregation and display on product detail
+  /// pages. Used to calculate average ratings from non-deleted reviews.
+  product_id String
+  
+  /// References the {ecommerce_mall_orders} that contains this reviewed order
+  /// item.
+  ///
+  /// Used to enforce the one-review-per-product-per-order constraint and
+  /// verify order completion status.
+  order_id String
+  
+  /// References the specific {ecommerce_mall_order_items} that was delivered
+  /// and reviewed.
+  ///
+  /// Required to verify the item has delivered status before allowing review
+  /// creation. Enables tracking of which purchase was reviewed.
+  order_item_id String
+  
+  /// Customer rating from 1 to 5 stars.
+  ///
+  /// Required field representing the numeric rating given to the product. Used
+  /// to calculate average ratings across all non-deleted reviews for a
+  /// product.
+  rating Int
+  
+  /// Optional written review text from the customer.
+  ///
+  /// Customer's detailed feedback about the product experience. Can be null
+  /// for ratings without written comments.
+  text String?
+  
+  /// Timestamp when the review was created.
+  ///
+  /// Immutable creation timestamp for audit and sorting purposes.
+  created_at DateTime
+  
+  /// Timestamp of the last review modification.
+  ///
+  /// Tracks when the review was last edited for audit trail purposes.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for review removal.
+  ///
+  /// When null, the review is active. When set, the review is deleted but
+  /// preserved in snapshots for audit purposes. Used to filter out deleted
+  /// reviews from average calculations.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_members @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  product ecommerce_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  order ecommerce_mall_orders @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  orderItem ecommerce_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  reviewSnapshots ecommerce_mall_customer_review_snapshots[]
+  reviewAuditSnapshots ecommerce_mall_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([order_item_id])
+  // spellchecker: ignore-next-line
+  @@unique([customer_id, product_id, order_id], map: "ecommerce_mall_customer_reviews_customer_id_product_id_f9eddf56")
+  @@index([product_id])
+  @@index([order_id])
+  @@index([deleted_at])
+}
+
+/// Immutable audit snapshots of customer review modifications preserving
+/// review state at each edit point for compliance and transparency.
+///
+/// ### Audit Trail
+///
+/// Each snapshot captures the complete mutable state of a review when it is
+/// modified, creating an immutable historical record. The main {@link
+/// ecommerce_mall_customer_reviews} table holds the current review state,
+/// while this snapshot table maintains a chronological history of all
+/// changes.
+///
+/// ### Snapshot Content
+///
+/// Every snapshot includes the review's rating value, review body text, and
+/// status flag as they existed at the moment of modification. This enables
+/// tracking when ratings changed, what review text was displayed during
+/// specific periods, and the evolution of review deletion states.
+///
+/// ### Use Cases
+///
+/// - Compliance verification for review moderation history
+/// - Dispute resolution with full modification timeline
+/// - Product owner insights into how customer feedback evolved
+/// - Audit requirements for platform transparency
+///
+/// @namespace customer
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_customer_review_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the main customer review that this snapshot represents.
+  ///
+  /// Each snapshot is tied to exactly one review in the {@link
+  /// ecommerce_mall_customer_reviews} table. The relationship enables
+  /// retrieving the complete modification history for a specific review by
+  /// querying all snapshots with the same review_id ordered by created_at.
+  ecommerce_mall_customer_review_id String
+  
+  /// Review rating value (1-5 scale) at the time this snapshot was created.
+  ///
+  /// Captures the customer's star rating as it existed during this version of
+  /// the review. Changes to the rating over time are preserved as separate
+  /// snapshot records, enabling historical rating analysis.
+  rating Int
+  
+  /// Review text content at the time this snapshot was created.
+  ///
+  /// Stores the customer's written feedback as it existed when this snapshot
+  /// was captured. Multiple snapshots may have different body text reflecting
+  /// review edits made by the customer over time.
+  body String?
+  
+  /// Review status (active/deleted) at the time this snapshot was created.
+  ///
+  /// Records whether the review was active or deleted when this snapshot was
+  /// generated. This is essential for audit compliance as it preserves the
+  /// state even if the main review is later modified or the status changes
+  /// again.
+  status String
+  
+  /// Timestamp when this snapshot was created, representing the point-in-time
+  /// of the review state.
+  ///
+  /// Always set automatically by the database when the snapshot record is
+  /// inserted. Never updated or deleted as snapshots are immutable audit
+  /// records.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  review ecommerce_mall_customer_reviews @relation(fields: [ecommerce_mall_customer_review_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_customer_review_id, created_at], map: "ecommerce_mall_customer_review_snapshots_ecommerce_mal_940eba93")
+}

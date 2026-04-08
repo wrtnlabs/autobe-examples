@@ -1,0 +1,306 @@
+/// Community entities that serve as organizational units for content and
+/// user interaction.
+///
+/// Each community has a unique name, description, and icon image. The
+/// creator of a community becomes its owner with full administrative
+/// privileges. Communities are the primary organizational structure where
+/// users subscribe, create posts, and participate in discussions.
+///
+/// Communities support browsing, searching by name, and display subscriber
+/// counts. They serve as the container for posts, comments, and
+/// community-specific moderation actions.
+///
+/// @namespace communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Unique identifier for each community entity.
+  id String @id
+  
+  /// Reference to the user profile of the community owner.
+  ///
+  /// The owner is the user who created the community and has the highest
+  /// authority within it. Owners can add and remove moderators, and have full
+  /// control over community settings and content.
+  owner_id String
+  
+  /// Unique community name used for identification and URL routing.
+  ///
+  /// The name must be unique across all communities and is used to identify
+  /// the community in URLs and references. Users search and browse communities
+  /// by this name.
+  name String
+  
+  /// Community description text explaining the purpose and focus of the
+  /// community.
+  ///
+  /// This field contains descriptive text about what the community is about,
+  /// its rules, and what type of content is appropriate. Displayed on the
+  /// community page for users to understand the community's purpose.
+  description String
+  
+  /// URL to the community icon image.
+  ///
+  /// The icon is displayed alongside the community name in lists, headers, and
+  /// navigation. Provides visual identification for the community.
+  icon String?
+  
+  /// Timestamp when the community was created.
+  ///
+  /// Records the exact date and time when the community entity was first
+  /// created. Used for sorting communities by creation date and tracking
+  /// community age.
+  created_at DateTime
+  
+  /// Timestamp when the community was last updated.
+  ///
+  /// Tracks the most recent modification to community metadata including name,
+  /// description, or icon changes.
+  updated_at DateTime
+  
+  /// Timestamp when the community was soft-deleted.
+  ///
+  /// Nullable field for soft-delete functionality. When set, the community is
+  /// marked as deleted but data is retained for potential recovery or audit
+  /// purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner reddit_clone_user_profiles @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  subscriptions reddit_clone_community_subscriptions[]
+  moderators reddit_clone_community_moderators[]
+  bans reddit_clone_community_bans[]
+  posts reddit_clone_posts[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([owner_id])
+}
+
+/// User subscriptions to communities enabling membership and post creation
+/// rights.
+///
+/// This junction table establishes the many-to-many relationship between
+/// members and communities. Subscribing is a prerequisite for creating posts
+/// within a community. Each subscription record tracks when a user joined a
+/// community and allows soft deletion for unsubscribe operations while
+/// maintaining audit history.
+///
+/// @namespace communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who subscribed to the community.
+  ///
+  /// This foreign key links to the member actor table, establishing which user
+  /// has subscribed to the community. Required for tracking membership and
+  /// enforcing post creation permissions.
+  reddit_clone_member_id String
+  
+  /// Reference to the community being subscribed to.
+  ///
+  /// This foreign key links to the community entity, identifying which
+  /// community the member has joined. Used to validate post creation
+  /// permissions and display subscribed communities.
+  reddit_clone_community_id String
+  
+  /// Timestamp when the subscription was created.
+  ///
+  /// Records when the user first subscribed to the community. Used for sorting
+  /// subscriptions by join date and tracking community growth over time.
+  created_at DateTime
+  
+  /// Timestamp when the subscription was last updated.
+  ///
+  /// Tracks modifications to the subscription record. Updated on any changes
+  /// to maintain audit trail.
+  updated_at DateTime
+  
+  /// Timestamp when the subscription was soft deleted (unsubscribed).
+  ///
+  /// Nullable field for soft delete functionality. When set, indicates the
+  /// user has unsubscribed from the community while preserving the record for
+  /// audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
+  community reddit_clone_communities @relation(fields: [reddit_clone_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_clone_member_id, reddit_clone_community_id], map: "reddit_clone_community_subscriptions_reddit_clone_memb_08383c29")
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_community_id, created_at], map: "reddit_clone_community_subscriptions_reddit_clone_comm_69ad6fe8")
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_member_id, created_at], map: "reddit_clone_community_subscriptions_reddit_clone_memb_c824de67")
+}
+
+/// Moderator role assignments within communities with owner and moderator
+/// distinctions.
+///
+/// This table tracks which users have moderator privileges in each
+/// community. The owner role is assigned to the community creator and has
+/// highest authority. Moderator roles can be assigned by the owner or
+/// existing moderators.
+///
+/// Owners can add and remove moderators, while moderators can only add other
+/// moderators. Moderators cannot remove the owner or other moderators.
+///
+/// @namespace communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for moderator assignment record.
+  id String @id
+  
+  /// Reference to the community where this user has moderator privileges.
+  ///
+  /// Each moderator assignment is scoped to a specific community. A user can
+  /// be a moderator in multiple communities.
+  reddit_clone_community_id String
+  
+  /// Reference to the user profile of the moderator.
+  ///
+  /// Links to the user who has been granted moderator privileges in this
+  /// community.
+  reddit_clone_user_profile_id String
+  
+  /// The moderator role type: 'owner' or 'moderator'.
+  ///
+  /// Owner is the community creator with highest authority. Moderators have
+  /// elevated privileges but cannot remove the owner or other moderators.
+  role String
+  
+  /// Timestamp when this moderator assignment was created.
+  created_at DateTime
+  
+  /// Timestamp when this moderator assignment was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this moderator assignment was soft deleted. Null means the
+  /// assignment is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_clone_communities @relation(fields: [reddit_clone_community_id], references: [id], onDelete: Cascade)
+  userProfile reddit_clone_user_profiles @relation(fields: [reddit_clone_user_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_community_id, created_at], map: "reddit_clone_community_moderators_reddit_clone_communi_5e44e44a")
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_user_profile_id, created_at], map: "reddit_clone_community_moderators_reddit_clone_user_pr_2c62c594")
+}
+
+/// User ban records tracking restrictions within specific communities.
+///
+/// Bans prevent users from creating posts and comments in a community while
+/// allowing content viewing. Each ban records the banned user, the
+/// community, the moderator who issued the ban, the reason, and optional
+/// expiration time for temporary bans.
+///
+/// Bans are managed by community moderators and can be removed (unbanned)
+/// via soft delete. The deleted_at field enables tracking of past bans while
+/// distinguishing active from inactive restrictions.
+///
+/// @namespace communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_community_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for ban record.
+  id String @id
+  
+  /// Reference to the community where the ban is enforced.
+  ///
+  /// This foreign key links the ban to the specific community context. The ban
+  /// restricts the user's ability to create content within this community
+  /// only.
+  reddit_clone_community_id String
+  
+  /// Reference to the member account that has been banned.
+  ///
+  /// This identifies the user who is restricted from creating posts and
+  /// comments in the community. The member can still view content.
+  reddit_clone_member_id String
+  
+  /// Reference to the moderator who issued this ban.
+  ///
+  /// Records which moderator (or owner) enforced the restriction. This enables
+  /// audit trails and accountability for moderation actions.
+  reddit_clone_moderator_id String
+  
+  /// Text explanation for why the user was banned.
+  ///
+  /// Moderators must provide a reason when issuing a ban. This helps with
+  /// transparency and allows the banned user to understand the violation.
+  ban_reason String
+  
+  /// Optional expiration timestamp for temporary bans.
+  ///
+  /// When set, the ban automatically becomes inactive after this time. When
+  /// null, the ban is permanent until manually removed by a moderator.
+  expires_at DateTime?
+  
+  /// Timestamp when the ban was created.
+  created_at DateTime
+  
+  /// Timestamp when the ban was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the ban was removed (unbanned).
+  ///
+  /// Soft delete field enabling tracking of past bans while distinguishing
+  /// active from inactive restrictions. When null, the ban is currently
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_clone_communities @relation(fields: [reddit_clone_community_id], references: [id], onDelete: Cascade)
+  bannedMember reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
+  banningModerator reddit_clone_moderators @relation(fields: [reddit_clone_moderator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_clone_member_id])
+  @@index([reddit_clone_moderator_id])
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_community_id, reddit_clone_member_id], map: "reddit_clone_community_bans_reddit_clone_community_id__dfd19f50")
+  // spellchecker: ignore-next-line
+  @@index([reddit_clone_community_id, deleted_at], map: "reddit_clone_community_bans_reddit_clone_community_id__09ea049b")
+}

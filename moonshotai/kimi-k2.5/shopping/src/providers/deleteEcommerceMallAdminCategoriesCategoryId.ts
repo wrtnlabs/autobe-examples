@@ -13,45 +13,73 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteEcommerceMallAdminCategoriesCategoryId(props: {
   admin: AdminPayload;
-  categoryId: string;
+  categoryId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Verify category exists - throws 404 if not found
-  await MyGlobal.prisma.ecommerce_mall_categories.findUniqueOrThrow({
+  // Find the category and verify it exists and is not already deleted
+  const category = await MyGlobal.prisma.ecommerce_mall_categories.findUnique({
     where: { id: props.categoryId },
+    select: { id: true, deleted_at: true },
   });
-  // Find all subcategories if this is a parent category
-  const subcategories =
-    await MyGlobal.prisma.ecommerce_mall_categories.findMany({
-      where: { parent_id: props.categoryId },
-    });
-  // Collect all category IDs that will be affected (parent + subcategories)
+  if (category === null || category.deleted_at !== null) {
+    throw new HttpException("Category not found", 404);
+  }
+  // Recursively find all descendant category IDs
   const allCategoryIds: string[] = [props.categoryId];
-  for (const sub of subcategories) {
-    allCategoryIds.push(sub.id);
-  }
-  // Update all products in affected categories to become uncategorized
-  // The database foreign key constraint with onDelete: SetNull will handle setting category_id to null
-  const now = toISOStringSafe(new Date());
-  await MyGlobal.prisma.ecommerce_mall_products.updateMany({
-    where: {
-      category_id: {
-        in: allCategoryIds,
-      },
-    },
-    data: {
-      updated_at: now,
-    },
-  });
-  // Delete subcategories first if any exist (to satisfy FK constraints)
-  if (subcategories.length > 0) {
-    await MyGlobal.prisma.ecommerce_mall_categories.deleteMany({
+  const queue: string[] = [props.categoryId];
+  while (queue.length > 0) {
+    const currentParentId = queue.shift()!;
+    const children = await MyGlobal.prisma.ecommerce_mall_categories.findMany({
       where: {
-        parent_id: props.categoryId,
+        parent_id: currentParentId,
+        deleted_at: null,
+      },
+      select: { id: true },
+    });
+    for (const child of children) {
+      allCategoryIds.push(child.id);
+      queue.push(child.id);
+    }
+  }
+  // Execute transaction: uncategorize products and soft delete categories
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    // Step 1: Uncategorize all products in this category and all subcategories
+    await tx.ecommerce_mall_products.updateMany({
+      where: {
+        category_id: {
+          in: allCategoryIds,
+        },
+        deleted_at: null,
+      },
+      data: {
+        category_id: null,
+        updated_at: new Date(),
       },
     });
-  }
-  // Delete the main category
-  await MyGlobal.prisma.ecommerce_mall_categories.delete({
-    where: { id: props.categoryId },
+    // Step 2: Soft delete all subcategories (excluding the main category)
+    const subcategoryIds = allCategoryIds.filter(
+      (id) => id !== props.categoryId,
+    );
+    if (subcategoryIds.length > 0) {
+      await tx.ecommerce_mall_categories.updateMany({
+        where: {
+          id: {
+            in: subcategoryIds,
+          },
+          deleted_at: null,
+        },
+        data: {
+          deleted_at: new Date(),
+          updated_at: new Date(),
+        },
+      });
+    }
+    // Step 3: Soft delete the main category
+    await tx.ecommerce_mall_categories.update({
+      where: { id: props.categoryId },
+      data: {
+        deleted_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
   });
 }

@@ -9,6 +9,14 @@ import typia, { tags } from "typia";
 
 import { prepare_random_mall_platform_category } from "../prepare/prepare_random_mall_platform_category";
 
+/**
+ * Generate a random mall platform category via the API for E2E testing.
+ *
+ * Prepares category creation data using the matching prepare function, then
+ * calls the administrator category creation endpoint to persist the resource.
+ * This is intended for end-to-end test setups that need a real category entity
+ * created through the API.
+ */
 export async function generate_random_mall_platform_administrator_categories_create(
   connection: api.IConnection,
   props: {
@@ -17,12 +25,10 @@ export async function generate_random_mall_platform_administrator_categories_cre
 ): Promise<IMallPlatformCategory> {
   const prepared: IMallPlatformCategory.ICreate =
     prepare_random_mall_platform_category(props.body);
-  const result: IMallPlatformCategory =
-    await api.functional.mallPlatform.administrator.categories.create(
-      connection,
-      {
-        body: prepared,
-      },
-    );
-  return result;
+  return await api.functional.mallPlatform.administrator.categories.create(
+    connection,
+    {
+      body: prepared,
+    },
+  );
 }

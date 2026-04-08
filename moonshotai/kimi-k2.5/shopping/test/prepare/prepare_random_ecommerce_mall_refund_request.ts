@@ -11,6 +11,12 @@ export function prepare_random_ecommerce_mall_refund_request(
   return {
     orderItemId:
       input?.orderItemId ?? typia.random<string & tags.Format<"uuid">>(),
-    reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 3 }),
+    reason:
+      input?.reason ??
+      RandomGenerator.content({
+        paragraphs: 1,
+        sentenceMin: 2,
+        sentenceMax: 4,
+      }),
   };
 }

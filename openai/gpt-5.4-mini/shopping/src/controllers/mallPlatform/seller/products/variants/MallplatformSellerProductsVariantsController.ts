@@ -15,24 +15,26 @@ import { putMallPlatformSellerProductsProductIdVariantsVariantId } from "../../.
 @Controller("/mallPlatform/seller/products/:productId/variants")
 export class MallplatformSellerProductsVariantsController {
   /**
-   * Create a new purchasable variant for a product owned by the current seller.
+   * Create a new purchasable variant for a product.
    *
-   * A product variant represents one exact SKU-level selling option for a product, including its option values, SKU code, and optional price override. Sellers use this operation to add additional purchasable choices to an existing product so customers can select the correct combination when shopping.
+   * This operation lets the owning seller add a SKU-identified variation to an existing product, such as a specific color and size combination. The variant belongs to the product identified by the path parameter and becomes part of the product's sellable options after it is created successfully.
    *
-   * The created variant is scoped to the product identified in the path, and it becomes part of the product's purchasable catalog only when it has stock and is otherwise available. Variant creation must respect SKU uniqueness across the platform and must reject attempts to create a duplicate SKU code. If the target product is not eligible for seller modification, the request must fail with a validation or authorization error.
+   * The service must verify that the product exists and that the authenticated seller owns it. It must reject requests that try to create a duplicate SKU code, because variant SKU codes must be unique across the platform. Validation should also ensure that the variant payload includes the required option values and any other required fields defined by the variant create contract.
+   *
+   * If the product cannot be modified because it does not exist, the request should return not found. If the authenticated seller does not own the product, it should return forbidden. If the SKU already exists, it should return a conflict or validation error. The creation should be transactional so that no partial variant data is persisted when validation fails.
    *
    * @param connection
-   * @param productId Identifier of the product that will own the new variant.
-   * @param body Payload used to create a new variant under the target product.
+   * @param productId The identifier of the product that will own the new variant.
+   * @param body The data required to create a product variant under the specified product, including SKU code, option values, and any optional pricing override.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load the target product by productId and verify that it exists and belongs to the authenticated seller. Reject the request if the seller does not own the product, if the product is not editable due to account restrictions, or if the product is deleted/inactive according to platform rules.
+   * @x-autobe-specification Load the target product by productId and confirm it exists. Verify the authenticated seller owns the product and is allowed to modify it.
    *
-   * Validate the incoming variant payload against the product-variant create contract. Enforce required fields for SKU code and option values, and validate any optional price override according to pricing rules. Check SKU code uniqueness globally before insert; if a duplicate exists, return a conflict-style validation error.
+   * Validate the create payload using the product variant creation contract. Require the SKU code and option values, and support an optional variant price override if allowed by the domain model. Enforce SKU uniqueness at the application or database level before insert.
    *
-   * Insert the product variant row within a transaction. Persist the variant's association to the parent product, its SKU code, option values, optional price override, and default availability/stock-related state as defined by the schema. Do not create inventory movement here unless the business flow explicitly provides stock addition through a separate inventory endpoint.
+   * Insert the new variant linked to the product. The request body must not repeat productId because the route already provides the parent scope. Return the created variant record after persistence.
    *
-   * If the domain requires product-level change history, create the corresponding snapshot record after successful insert so the previous product state can be reconstructed. Keep the operation idempotency expectations clear in service tests: repeated submissions with the same SKU must fail, not create duplicates. Return the created variant entity on success.
+   * Handle errors as follows: not found when the product does not exist, forbidden when the seller does not own the product, and conflict or validation failure when the SKU code is already used. Keep the operation transactional to prevent partial writes.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -57,20 +59,20 @@ export class MallplatformSellerProductsVariantsController {
   }
 
   /**
-   * Retrieve a paginated list of variants that belong to a specific product.
+   * Returns a paginated list of variants for one product.
    *
-   * This operation is used to browse the purchasable options for one product within its product context. Each variant represents a concrete SKU-level choice such as a color or size combination, and the returned summaries should reflect the variant's SKU code, option values, pricing override, and current availability state derived from inventory.
+   * This endpoint is used to inspect the product’s purchasable variants in a seller-facing management view. Each item summarizes the variant’s SKU code, option values, optional price override, and current availability-related state derived from stock context.
    *
-   * The product scope is fixed by the path parameter. The request body is used only for list controls such as pagination, keyword matching, sorting, and filters. Products with no variants must still be handled gracefully by returning an empty page rather than an error, and globally unique SKU rules must be enforced when variant data is displayed or edited through related operations.
+   * The product identifier is required because variants belong to exactly one product. The endpoint supports search, pagination, and sorting so clients can work with large variant sets. If the product does not exist, the request should return a not found error. If the caller is not allowed to access the product, the request should return a forbidden error.
    *
    * @param connection
-   * @param productId Identifier of the product whose variants are being listed.
-   * @param body Pagination, search, and sorting criteria for listing product variants within a specific product.
+   * @param productId The product identifier whose variants should be listed.
+   * @param body Search, pagination, and sorting criteria for listing the variants of the specified product.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query mall_platform_product_variants for the given product ID with pagination and optional filtering. Join to mall_platform_inventory_records only if the response summary requires stock-derived availability; otherwise compute availability via the service layer from the variant's current inventory position. Filter strictly by mall_platform_product_id equal to the path productId. Support search across sku_code and option_values if the request schema includes a keyword field. Sort by the requested sort key, defaulting to newest-first or by creation time when unspecified.
+   * @x-autobe-specification Resolve the parent product by productId first, then query mall_platform_product_variants constrained to that product. Apply request filters, pagination, and sorting only within the product scope. Return summary rows only; do not expand full inventory history, snapshots, or unrelated product data.
    *
-   * Return a paginated summary list. Do not include variants from other products. If the product does not exist, return a not-found error. If the caller lacks access to the owning seller's product, enforce authorization before querying. Do not duplicate productId in the request body. Ensure inactive or out-of-stock variants are still listed if the business rules require visibility, but surface their current status accurately. The response type must be paginated because this is an index operation.
+   * The service must not return variants from other products. If the product is missing, return not found. If access is denied, return forbidden. Validate request pagination and search parameters before querying. The summary should be derived from the current database state, including SKU code, option values, optional price override, and variant availability derived from inventory state.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -95,24 +97,22 @@ export class MallplatformSellerProductsVariantsController {
   }
 
   /**
-   * Retrieve a single product variant within its product scope.
+   * Retrieve a single product variant within the scope of its parent product.
    *
-   * This operation returns the full purchasable variant record for the specified product and variant identifiers, allowing callers to inspect the SKU code, option combination, optional price override, and current availability state for a variant that belongs to a particular product.
+   * This endpoint returns the full variant record for the specified product and variant pair so clients can display SKU-level details such as option values, pricing, and availability. The product scope ensures the variant belongs to the requested product and prevents cross-product ambiguity.
    *
-   * The variant is resolved only in the context of its parent product, which prevents cross-product access to unrelated variant records. Consumers can use this endpoint to power product detail pages, seller management views, and administrative oversight screens where the full variant entity is needed.
-   *
-   * If the product does not exist, the variant does not belong to the product, or the caller is not allowed to view the record, the service should return the appropriate not-found or forbidden response according to platform authorization rules.
+   * If the product does not exist, the variant does not exist, or the variant does not belong to the specified product, the server should return a not-found response. This operation is read-only and does not modify inventory, product data, or snapshot history.
    *
    * @param connection
    * @param productId The product identifier that scopes the variant lookup.
    * @param variantId The variant identifier within the specified product.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load the parent product by productId and verify it exists. Then load the product variant by variantId with a matching product reference to ensure nested ownership.
+   * @x-autobe-specification Load the product by productId and then load the variant by variantId constrained to that product. Verify that the variant belongs to the requested product before returning it.
    *
-   * Return the full product variant entity if found. Do not infer or synthesize data from snapshots, inventory history, or cart/order tables for this endpoint; it is a direct read of the current variant record only. Keep authorization aligned with platform rules: customers may view product data, sellers may view their own products, and administrators may view any product variant.
+   * Prefer a single query that joins or filters by both identifiers to avoid cross-product leakage. If separate lookups are required, return 404 when the product is missing, when the variant is missing, or when the ownership relationship does not match. Do not expose variants from other products.
    *
-   * If the variant is missing, belongs to another product, or the parent product is missing, respond with not found. If authorization fails, respond with forbidden. The request body must remain null because this is a GET detail retrieval operation.
+   * Return the canonical product variant entity shape from mall_platform_product_variants, including the persisted fields needed by the UI and downstream business logic such as SKU code, option combination, optional price override, and availability state. Do not invent fields that are not in the schema, and do not create or modify inventory records in this operation.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":variantId")
@@ -137,27 +137,25 @@ export class MallplatformSellerProductsVariantsController {
   }
 
   /**
-   * Update a product variant that belongs to a specific product.
+   * Updates a single product variant within the specified product.
    *
-   * This operation lets the owning seller edit the variant’s SKU code, option values, optional price override, and active availability state. The variant remains tied to its parent product, and the product/variant relationship must be validated before any update is applied. SKU code must remain unique across product variants, so attempts to reuse an existing SKU code are rejected.
+   * This operation lets the product owner edit a variant's SKU code, option values, pricing override, and availability-related data while keeping the variant tied to its parent product. Both identifiers are required so the server can confirm that the variant belongs to the specified product before applying changes.
    *
-   * Because variant edits must preserve historical traceability, the service must create a record in `mall_platform_product_variant_snapshots` before applying the update. That snapshot should preserve the previous variant state so the earlier version can be reviewed later for dispute resolution and history inspection.
-   *
-   * The server must reject updates for missing products, variants that do not belong to the given product, unauthorized sellers, or SKU collisions. If the variant is no longer available for sale, downstream product listing and cart behavior must reflect that state immediately.
+   * The server must reject requests for missing records, cross-product variant references, unauthorized callers, and duplicate SKU codes. Because variant edits are part of the marketplace's auditable pricing and inventory-sensitive history, the implementation should preserve the previous state in a snapshot before committing the update.
    *
    * @param connection
-   * @param productId The product identifier that scopes the variant being updated.
-   * @param variantId The variant identifier within the specified product.
-   * @param body The editable fields for a product variant update. Do not include path identifiers in the body.
+   * @param productId The identifier of the parent product that owns the variant.
+   * @param variantId The identifier of the variant to update within the specified product.
+   * @param body Editable fields for a product variant, including SKU code, option values, price override, and supported availability settings.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load the product by productId and the variant by variantId, ensuring the variant's product ID matches the path productId. Reject the request with not found if either record is missing or the relationship does not match.
+   * @x-autobe-specification Load the parent product by productId and verify the variant belongs to it. Reject the request if either record is missing or if the caller is not the owning seller or an administrator with product oversight privileges.
    *
-   * Validate that skuCode is unique across mall_platform_product_variants, excluding the current variant ID. Validate optionValues as a required textual description of the variant option combination. Validate priceOverride as nullable numeric data when provided. Validate isActive as a boolean flag controlling sale availability.
+   * Validate the update payload against the product variant model. Enforce global uniqueness of skuCode across mall_platform_product_variants, excluding the current variant row. Apply any option-value constraints required by the domain model and ensure price override updates remain valid for the product's pricing rules.
    *
-   * Before persisting the change, capture the current variant state into mall_platform_product_variant_snapshots, storing the current variant ID, product ID, sku code, option summary, price override, and a snapshot reason indicating an update event. Then update the variant row and commit in a single transaction.
+   * Before persisting the change, insert a variant snapshot capturing the previous variant state so historical review and dispute workflows can reconstruct what changed. Execute the snapshot write and the variant update inside one transaction. If variant option rows are normalized into a child table, synchronize them in the same transaction.
    *
-   * If the SKU code conflicts with another variant, return a validation error. If the caller is not the owning seller or lacks permission, return forbidden. Keep the response consistent with the updated canonical variant entity shape used elsewhere in the service.
+   * Return the updated variant after commit. Surface uniqueness conflicts, authorization failures, and concurrent modification issues as appropriate errors, and do not allow partial updates if any step fails.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":variantId")
@@ -185,24 +183,26 @@ export class MallplatformSellerProductsVariantsController {
   }
 
   /**
-   * Delete a single product variant from a seller-owned product.
+   * Deletes a product variant that belongs to the specified product.
    *
-   * This operation removes the specified variant from active catalog use under the given product. It is intended for seller-side product management and uses the product scope to ensure the variant is deleted only from its owning product context.
+   * This operation removes one purchasable variant from a seller-owned product. It is only allowed when the variant is no longer needed for active order processing or dispute handling. If the deleted variant was the last remaining variant for the product, the product becomes unavailable for future purchase selection, although it may still remain visible according to normal catalog rules.
    *
-   * The deletion is allowed only when the variant has no pending order items in paid or shipped status, and no pending cancellation or refund requests. If deletion succeeds, the variant is removed from active use and no longer appears in purchase selection. Any related inventory history and downstream catalog visibility are handled by the service layer according to product lifecycle rules.
+   * The deletion is restricted to the product owner or an administrator, depending on the platform authorization policy. The operation must reject requests when the product or variant does not exist, when the variant does not belong to the specified product, or when pending paid/shipped order items, cancellation requests, or refund requests still reference the variant.
    *
-   * If the variant does not exist, does not belong to the specified product, or is blocked by active order/dispute state, the service must reject the request with an appropriate error.
+   * Historical records and snapshots must remain preserved for audit and dispute review. The deletion only affects the active variant record and its active availability in the catalog.
    *
    * @param connection
-   * @param productId Identifier of the parent product that owns the variant.
-   * @param variantId Identifier of the product variant to delete within the specified product.
+   * @param productId The identifier of the product that owns the variant.
+   * @param variantId The identifier of the variant to delete within the specified product.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load the target product variant by productId and variantId, verifying that the variant belongs to the product before any mutation. Enforce seller authorization at the service boundary so only the owning seller can delete the variant.
-   *
-   * Before deletion, check for blocking references: order items for the variant with paid or shipped status, cancellation requests in pending state, and refund requests in pending state. If any blocking record exists, abort with a business-rule violation and do not change the database.
-   *
-   * If the variant is eligible, delete it from active use in a transaction. Ensure cascading or follow-up cleanup for dependent inventory records is performed according to schema constraints and domain rules. The product itself must remain intact. Return the deleted variant representation if the API layer standardizes delete responses that way; otherwise return no content.
+   * @x-autobe-specification Load the product and variant using both path identifiers and verify that the variant belongs to the specified product.
+   * Check authorization so only the product owner or an administrator can perform the deletion.
+   * Before deleting, verify that no order items for the variant are still pending in paid or shipped status, and that no pending cancellation requests or refund requests exist for the variant.
+   * If any blocker exists, reject the request with a conflict-style business error and do not remove the record.
+   * If the variant is the last active variant for the product, mark the product as unavailable for purchase by virtue of having no purchasable variants remaining.
+   * Delete only the active variant record; preserve snapshots and historical records intact.
+   * Return success with no response body when deletion completes.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":variantId")

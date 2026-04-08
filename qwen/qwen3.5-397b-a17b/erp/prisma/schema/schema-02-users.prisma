@@ -1,0 +1,70 @@
+/// Global user profiles containing display name, avatar image, and phone
+/// number shared across all organizations.
+///
+/// Each profile belongs to exactly one {@link hrm_platform_members} account
+/// and provides identity information that persists regardless of which
+/// organization context the user is working in. This separation allows
+/// profile management independent of authentication concerns.
+///
+/// The profile contains personal presentation data (display name, avatar)
+/// and contact information (phone number) that remains consistent as users
+/// switch between organizations or join new ones.
+///
+/// @namespace users
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the member account that owns this profile.
+  ///
+  /// Each profile belongs to exactly one {@link hrm_platform_members} account.
+  /// The unique constraint on this field enforces a 1:1 relationship, ensuring
+  /// each member has at most one profile.
+  hrm_platform_member_id String
+  
+  /// The user's preferred display name shown throughout the application.
+  ///
+  /// This name appears in project assignments, timesheet reviews, activity
+  /// logs, and other places where user identity is displayed. Users can edit
+  /// this at any time to update how they appear across all organizations.
+  display_name String
+  
+  /// URL to the user's avatar image.
+  ///
+  /// This image is displayed alongside the user's name in various UI contexts
+  /// such as project member lists, timesheet approvals, and activity logs.
+  /// Users can upload or change their avatar image through profile settings.
+  avatar_url String
+  
+  /// The user's contact phone number.
+  ///
+  /// Optional contact information that users can provide for organizational
+  /// communication. This field is nullable as not all users may wish to share
+  /// their phone number.
+  phone_number String?
+  
+  /// Timestamp when the profile was first created.
+  created_at DateTime
+  
+  /// Timestamp when the profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the profile was soft deleted. Null means the profile is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member hrm_platform_members @relation(fields: [hrm_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([hrm_platform_member_id])
+}

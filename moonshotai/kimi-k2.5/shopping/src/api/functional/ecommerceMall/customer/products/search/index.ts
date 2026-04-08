@@ -10,51 +10,45 @@ import { IEcommerceMallProduct } from "../../../../../structures/IEcommerceMallP
 import { IPageIEcommerceMallProduct } from "../../../../../structures/IPageIEcommerceMallProduct";
 
 /**
- * Search and browse products in the catalog with filtering and sorting options.
+ * Search and browse products with comprehensive filtering and pagination.
  *
- * This operation provides comprehensive product discovery functionality for customers. It supports keyword-based product name search using partial matching, enabling customers to find products even with incomplete search terms. The search can be constrained to specific categories or subcategories through the category filter parameter.
+ * This endpoint enables customers to discover products across all sellers. It supports full-text search by product name with partial matching, category-based filtering for both parent categories and subcategories, price range filters, and stock availability filtering.
  *
- * Price range filtering allows customers to narrow results to products within their budget by specifying minimum and/or maximum price boundaries. The stock availability filter can exclude out-of-stock products from results, showing only products with at least one in-stock variant.
+ * Products are automatically filtered to exclude deleted products regardless of search criteria. Products without any variants are included in results but marked as unavailable for purchase. Similarly, products with only out-of-stock variants are marked accordingly.
  *
- * Multiple sorting options are available: newest products first (based on creation timestamp), price ascending (lowest first), and price descending (highest first). When sorting by price, the system considers the lowest available price across all variants of each product.
+ * Search results can be sorted by newest first, price low-to-high, or price high-to-low. Results are paginated and include summary information optimized for list displays: main thumbnail image, product name, base price or price range, seller shop name, and average customer rating.
  *
- * Search results are returned in paginated format with configurable page sizes. Each product in the results includes summary information: product name, main thumbnail image, price range (accounting for variant-specific prices), seller shop name, and average customer rating calculated from reviews.
- *
- * Deleted products are automatically excluded from search results per business rules. Products without any variants are included but marked as unavailable for purchase.
+ * Related operations include viewing product details via GET /products/{productId} and managing wishlist items.
  *
  * @param props.connection
- * @param props.body Search criteria including keyword filters, category filters, price range constraints, and pagination parameters
+ * @param props.body Search criteria including text search, category filters, price range, stock availability, sorting, and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implementation requires querying ecommerce_mall_products table with complex filtering and aggregation.
+ * @x-autobe-specification Query ecommerce_mall_products table joining with ecommerce_mall_categories for category filtering, ecommerce_mall_sellers and ecommerce_mall_seller_profiles for seller information, and ecommerce_mall_product_variants for availability checks.
  *
- * **Database Query Strategy**:
- * 1. Start with base query from ecommerce_mall_products where deleted_at IS NULL
- * 2. Join with ecommerce_mall_categories for category name and hierarchy
- * 3. Join with ecommerce_mall_sellers (via seller_id) to get shop names
- * 4. Left join with ecommerce_mall_product_variants to calculate price ranges and stock availability
- * 5. Left join with ecommerce_mall_reviews to calculate average ratings
+ * Apply mandatory filter: deleted_at IS NULL to exclude deleted products per section 336.
  *
- * **Filtering Logic**:
- * - Name search: Use PostgreSQL trigram index (gin_trgm_ops) on name field for partial matching with ILIKE OR similarity matching
- * - Category filter: Match exact category_id or include products from subcategories (check parent_id relationship in categories table)
- * - Price range: Compare against MIN and MAX of variant prices OR base_price for products with no variants
- * - Stock availability: Include only products where at least one variant has positive calculated stock from inventory_records
+ * Apply optional filters from request body:
+ * - name: partial match using GIN trigram index on name column
+ * - categoryId: filter by exact category match
+ * - minPrice/maxPrice: filter by base_price range
+ * - inStockOnly: when true, only include products with at least one variant having positive current stock (computed from inventory_records)
  *
- * **Sorting Implementation**:
- * - Newest first: ORDER BY created_at DESC
- * - Price low to high: ORDER BY COALESCE(MIN(variant.price), base_price) ASC
- * - Price high to low: ORDER BY COALESCE(MAX(variant.price), base_price) DESC
+ * Sorting options:
+ * - newest: ORDER BY created_at DESC
+ * - price_asc: ORDER BY base_price ASC
+ * - price_desc: ORDER BY base_price DESC
  *
- * **Aggregation Requirements**:
- * - Calculate priceRangeMin as MIN(variant price or base_price)
- * - Calculate priceRangeMax as MAX(variant price or base_price) - same as min if product has no variants or single variant
- * - Calculate averageRating as AVG(reviews.rating) where reviews.deleted_at IS NULL
- * - Calculate reviewCount as COUNT(reviews) where deleted_at IS NULL
+ * Pagination: cursor-based with configurable page size.
  *
- * **Pagination**: Use cursor-based or offset pagination with limit/offset. Return IPage structure with pagination metadata and data array.
+ * Response construction:
+ * - mainImage: first image (display_order=0) from ecommerce_mall_product_images
+ * - priceRange: computed from MIN/MAX of variant prices (including those using base_price when variant.price IS NULL)
+ * - sellerShopName: from joined ecommerce_mall_seller_profiles
+ * - averageRating: computed from ecommerce_mall_reviews for this product
+ * - availabilityStatus: 'available' if at least one variant with stock>0, 'unavailable' if no variants or all out of stock
  *
- * **Performance**: Consider query optimization with appropriate indexes (created_at, category_id, seller_id, name GIN index).
+ * Include total count for pagination metadata.
  * @path /ecommerceMall/customer/products/search
  * @accessor api.functional.ecommerceMall.customer.products.search.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -84,7 +78,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria including keyword filters, category filters, price range constraints, and pagination parameters
+     * Search criteria including text search, category filters, price range, stock availability, sorting, and pagination parameters
      */
     body: IEcommerceMallProduct.IRequest;
   };

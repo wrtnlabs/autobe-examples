@@ -2,33 +2,72 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IErpHrmTimeEmployee } from "../../../../api/structures/IErpHrmTimeEmployee";
-import { IPageIErpHrmTimeEmployee } from "../../../../api/structures/IPageIErpHrmTimeEmployee";
+import { IErpHrmTimeEmployeeDashboardSummary } from "../../../../api/structures/IErpHrmTimeEmployeeDashboardSummary";
+import { IPageIErpHrmTimeEmployeeDashboardSummary } from "../../../../api/structures/IPageIErpHrmTimeEmployeeDashboardSummary";
 import { MemberAuth } from "../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
+import { deleteErpHrmTimeMemberEmployeesEmployeeId } from "../../../../providers/deleteErpHrmTimeMemberEmployeesEmployeeId";
 import { getErpHrmTimeMemberEmployeesEmployeeId } from "../../../../providers/getErpHrmTimeMemberEmployeesEmployeeId";
 import { patchErpHrmTimeMemberEmployees } from "../../../../providers/patchErpHrmTimeMemberEmployees";
-import { postErpHrmTimeMemberEmployeesEmployeeIdReactivate } from "../../../../providers/postErpHrmTimeMemberEmployeesEmployeeIdReactivate";
+import { postErpHrmTimeMemberEmployees } from "../../../../providers/postErpHrmTimeMemberEmployees";
 import { putErpHrmTimeMemberEmployeesEmployeeId } from "../../../../providers/putErpHrmTimeMemberEmployeesEmployeeId";
 
 @Controller("/erpHrmTime/member/employees")
 export class ErphrmtimeMemberEmployeesController {
   /**
-   * Retrieve a paginated list of employees for the current organization context.
+   * Create a new employee record in the currently selected organization.
    *
-   * This endpoint supports browsing the organization’s employee directory, which is used to find staff records and review summary information. Users can search by employee name and filter the list by department, employment type, and status, while the results remain limited to the currently selected organization.
+   * This endpoint is used by organization members with employee management permission to add a person to the organization, assign the employee’s role, and capture employment details such as department, position or title, and employment type. The employee record represents that user account’s participation in the selected organization and is always isolated to the current organization context.
    *
-   * Access depends on the caller’s employee-view permission within the active organization context. The response returns summary data intended for directory and table views, and the system must keep pagination stable so users can move through pages without losing the current search and filter selections. Requests with invalid filter values or pagination settings should be rejected with validation errors.
+   * The created employee must belong to exactly one organization and must be assigned exactly one role from that organization. The request must be rejected if the referenced role does not belong to the current organization, if the selected organization context is missing, or if the target user account is already represented as an employee in the same organization. Department assignment is optional, but when provided it must also belong to the same organization. The response returns the newly created employee record for immediate use in the UI.
+   *
+   * Common validation failures include permission denial, invalid organization context, duplicate employee membership, and invalid references to role or department data. The operation should not expose or accept data outside the current organization scope.
    *
    * @param connection
-   * @param body Search, filter, and pagination criteria for browsing employees in the active organization.
+   * @param body Employee creation data for the current organization context.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Read employee records from erp_hrm_time_employees within the active organization context only.
-   * Join against related lookup data as needed for summary fields such as department and role, but do not leak cross-organization rows.
-   * Apply request filters for department, employment type, status, and case-insensitive name search. Support stable sorting and pagination in the list query; default ordering should be deterministic for repeatable pages.
-   * Return a paginated summary payload using the service’s standard page contract.
-   * Validate that department filters belong to the current organization and that employment type/status values are among the allowed enum values from the employee domain. Reject invalid pagination or sort inputs with a 400-style validation error. If the caller lacks permission to view employee lists in the current organization, return a forbidden error. If the organization context is missing or invalid, return an organization-context error.
+   * @x-autobe-specification Authorize the caller with employee management permission in the currently selected organization context.
+   *
+   * Resolve the current organization from the auth/session context and reject the request if no organization is selected or the caller is not a member of that organization.
+   *
+   * Validate the request body against the employee create contract. Ensure the referenced user account exists when the request links to an account, and prevent creation of more than one employee record for the same user account within the same organization. Verify that the role belongs to the current organization and that exactly one role is assigned. If a department is provided, verify that it belongs to the same organization. Validate the employment type against the supported set from the requirements: full-time, part-time, contractor, intern.
+   *
+   * Persist the employee record within a transaction. If invitation-related behavior is implemented by the surrounding workflow, allow the service layer to connect a pending invitation or existing account association, but do not create cross-organization links. After insert, load the created employee with its organization-scoped relations needed by the API response.
+   *
+   * Return standard authorization, validation, not-found, and conflict errors for missing permissions, invalid foreign keys, and duplicate employee membership. Do not allow any data from another organization to be attached or returned.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedBody()
+    body: IErpHrmTimeEmployeeDashboardSummary.ICreate,
+  ): Promise<IErpHrmTimeEmployeeDashboardSummary> {
+    try {
+      return await postErpHrmTimeMemberEmployees({
+        member,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a paginated list of employees for the currently selected organization.
+   *
+   * This endpoint supports browsing employees by name, department, employment type, and status so organization members can understand how staff are grouped and managed within the tenant. Each result represents an employee record scoped to the active organization context and reflects the employee's current role, department assignment, position title, employment type, and status.
+   *
+   * Access is limited to users with employee-view permission in the selected organization. Search, filtering, and pagination apply only to the active organization context, and the response must never include employees from other organizations.
+   *
+   * @param connection
+   * @param body Search, filter, sort, and pagination criteria for the organization employee list.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Query erp_hrm_time_employees for the active organization context only. Enforce tenant isolation using the current organization membership/context, and reject requests without a selected organization. Apply optional filters for department ID, employment type, and status, plus case-insensitive name search against the related member profile display name. Sort by a supported field, defaulting to created_at descending if no sort is provided. Return a paginated summary list with each row including employee identity, role, department, position title, employment type, status, and basic member/profile information needed for list views. Do not expose employees from other organizations. Validate that filter values are within the organization and that sort fields are allowed. If the caller lacks employee:view permission in the current organization, return a forbidden error.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -36,8 +75,8 @@ export class ErphrmtimeMemberEmployeesController {
     @MemberAuth()
     member: MemberPayload,
     @TypedBody()
-    body: IErpHrmTimeEmployee.IRequest,
-  ): Promise<IPageIErpHrmTimeEmployee.ISummary> {
+    body: IErpHrmTimeEmployeeDashboardSummary.IRequest,
+  ): Promise<IPageIErpHrmTimeEmployeeDashboardSummary.ISummary> {
     try {
       return await patchErpHrmTimeMemberEmployees({
         member,
@@ -50,21 +89,21 @@ export class ErphrmtimeMemberEmployeesController {
   }
 
   /**
-   * Retrieve a single employee record for the currently selected organization context.
+   * Retrieve a single employee record within the current organization context.
    *
-   * This operation returns the employee profile used for human resource administration and employee detail screens. It is scoped to the active organization, so the employee must belong to that organization before the record can be returned. The employee record represents a user account’s participation in a specific organization and includes the employee’s role assignment, department, employment type, and status.
+   * This endpoint returns the employee's organization-scoped profile, including the linked user account, assigned role, optional department, position title, employment type, and current status. It is intended for employee detail pages and administrative review screens where the full employee record is required.
    *
-   * Access is restricted to users with employee visibility permission or stronger organization management privileges. The response is intended for employee detail views and related workflows such as role assignment review, department grouping, and employment status management. If the employee does not exist in the current organization context, the request must fail with a not-found error; if the caller lacks permission, it must fail with an authorization error.
+   * Access is limited by organization context and permissions. A user may view their own employee record, while users with employee view permission may view other employees in the same organization. The employee must belong to the selected organization; requests for employees outside the active context must be rejected. If the employee does not exist, or the caller is not authorized to view it, the request must fail with the appropriate not-found or forbidden response.
    *
    * @param connection
-   * @param employeeId The employee identifier within the current organization context.
+   * @param employeeId Employee identifier in UUID format (organization-scoped via the selected organization context).
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Fetch the employee by employeeId with a query constrained to the current organization context from the authenticated member session.
-   * Join or load the employee’s role and optional department only if the API response schema requires nested references; otherwise return the persisted employee entity fields directly.
-   * Validate that the resolved employee belongs to the selected organization before returning data. Reject the request with 404 if no employee exists in the current organization, even if the identifier exists in another tenant.
-   * Enforce permission checks before data retrieval or before response serialization: callers must have employee:view permission, with employee:manage or org:manage also allowed through role-based access.
-   * Do not expose employees from other organizations or any cross-tenant references. Preserve the employee’s status, role, department, and employment type exactly as stored. No mutation occurs in this operation.
+   * @x-autobe-specification Load the employee by primary key UUID and ensure the record belongs to the caller's selected organization. Reject access if the organization context is missing, the employee is not in that organization, or the caller lacks employee view permission and is not the owner of the employee record.
+   *
+   * Return the employee with its referenced organization, member, role, and department relationships resolved as needed by the DTO. Do not expose records from other organizations. Use the schema fields exactly as defined: id, erp_hrm_time_organization_id, erp_hrm_time_member_id, erp_hrm_time_role_id, erp_hrm_time_department_id, position_title, employment_type, status, created_at, updated_at, deleted_at.
+   *
+   * Since this is a read-only detail endpoint, no mutation or locking is required. If the employee was deleted or is unavailable in the current organization context, return not found. If the caller cannot access the selected organization, return forbidden.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":employeeId")
@@ -73,7 +112,7 @@ export class ErphrmtimeMemberEmployeesController {
     member: MemberPayload,
     @TypedParam("employeeId")
     employeeId: string & tags.Format<"uuid">,
-  ): Promise<IErpHrmTimeEmployee> {
+  ): Promise<IErpHrmTimeEmployeeDashboardSummary> {
     try {
       return await getErpHrmTimeMemberEmployeesEmployeeId({
         member,
@@ -86,30 +125,24 @@ export class ErphrmtimeMemberEmployeesController {
   }
 
   /**
-   * Update an employee record within the current organization.
+   * Update an organization employee record.
    *
-   * This operation allows authorized users to maintain an employee’s organization-scoped employment details, including department assignment, position or title, employment type, role, and status. An employee belongs to one user account and one organization, and exactly one role must always be assigned within that organization.
+   * This operation lets authorized organization staff modify an employee's record within the currently selected organization. It is used to maintain the employee's department assignment, position title, employment classification, role assignment, and current status as the organization changes over time.
    *
-   * The employee record is used for staff grouping, access control, and human resources management. Department assignment is optional, but when present it must reference an existing department in the same organization. If the department has been removed, the employee’s department reference is cleared rather than moving the employee to another organization. Deactivating an employee preserves historical timelogs, timesheets, and contracts, while preventing new time tracking actions until the employee is reactivated.
+   * The employee record is organization-scoped and links a member account to exactly one organization and one role, with an optional department. Changes must stay within the same organization context, and any department or role referenced must exist in that organization. If a department is removed from the organization, employee records are expected to clear that department reference rather than lose the employee record.
    *
-   * Only users with employee management permission may perform this update. The service must validate organization scope from the authenticated context, reject cross-organization access, and return clear validation errors when the employee does not exist, the referenced role or department is invalid, or the requested status change conflicts with business rules.
+   * Validation errors should be returned when the employee does not exist in the selected organization, when a referenced department or role is invalid for the organization, or when a requested status change is not allowed by business rules. The API should also preserve the employee's historical timelogs, timesheets, and contracts while updating only the current employee record.
    *
    * @param connection
-   * @param employeeId The employee identifier within the current organization scope.
-   * @param body Fields to update on the employee record.
+   * @param employeeId Unique identifier of the employee within the organization.
+   * @param body Fields that may be updated for an organization employee record.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the employee by employeeId within the authenticated organization scope. Reject the request with not found if the employee does not belong to the current organization.
+   * @x-autobe-specification Load the employee by id within the selected organization context and reject the request if the record does not belong to that organization. Apply partial field updates only for fields present in the request body: erp_hrm_time_department_id, position_title, employment_type, erp_hrm_time_role_id, and status.
    *
-   * Apply only mutable employee fields from IErpHrmTimeEmployee.IUpdate. Support updates for department, position/title, employment type, role assignment, and status-related fields as allowed by the underlying schema and business rules. Do not allow changing the organization or user-account ownership of the employee through this endpoint.
+   * Validate that department changes reference an existing department in the same organization, or allow null to clear the assignment. Validate that role changes reference an existing role in the same organization and preserve the invariant that the employee has exactly one role. Validate employment_type against the allowed business values: full-time, part-time, contractor, intern. Validate status against the allowed employee states used by the system, and ensure deactivation/reactivation rules are enforced by the service layer.
    *
-   * Validate that any supplied department belongs to the same organization and exists. If the department is missing or deleted, clear the department reference only when the request explicitly indicates removal; otherwise reject invalid references. Validate that the assigned role belongs to the same organization and that exactly one role remains assigned after the update.
-   *
-   * If status is changed to deactivated, enforce the rule that the employee cannot be left in a state that would break historical records; existing timelogs, timesheets, and contracts remain untouched. If reactivating, simply persist the status change and do not recreate any memberships or contracts automatically.
-   *
-   * Use a transaction for updates that touch multiple relational fields. If the schema includes audit-related write hooks, they may emit activity log entries outside this endpoint; otherwise do not fabricate activity records here. Return the updated employee entity after persistence.
-   *
-   * Common errors: 404 when the employee does not exist in scope; 400 for invalid department, role, or employment type; 403 when the caller lacks employee management permission; 409 when a requested change violates organization rules or uniqueness constraints.
+   * Update updated_at automatically. Do not modify organization_id or member_id through this endpoint. Persist changes in a transaction and return the updated employee entity. If the employee is not found, return a not found error. If a referenced department or role is invalid for the organization, return a validation error. If the user lacks employee management permission, return a forbidden error.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":employeeId")
@@ -119,8 +152,8 @@ export class ErphrmtimeMemberEmployeesController {
     @TypedParam("employeeId")
     employeeId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IErpHrmTimeEmployee.IUpdate,
-  ): Promise<IErpHrmTimeEmployee> {
+    body: IErpHrmTimeEmployeeDashboardSummary.IUpdate,
+  ): Promise<IErpHrmTimeEmployeeDashboardSummary> {
     try {
       return await putErpHrmTimeMemberEmployeesEmployeeId({
         member,
@@ -134,34 +167,36 @@ export class ErphrmtimeMemberEmployeesController {
   }
 
   /**
-   * Reactivate a deactivated employee and restore active participation in the organization.
+   * Permanently removes an employee from the current organization.
    *
-   * This operation changes the employee record from deactivated back to active for the currently selected organization. It is intended for organization members with employee management privileges who need to restore access for someone whose employment or access pause has ended. The employee remains the same record, and the operation does not create a new employee entry.
+   * This operation deletes the employee record identified by the path parameter from the selected organization context. It is intended for organization managers and other authorized users who can maintain employee records, and it must never affect employees in other organizations.
    *
-   * Reactivation preserves the employee's historical records, including prior timelogs and timesheets. After reactivation, the employee can again log time and submit timesheets according to the organization rules. The system also records an activity log entry describing the reactivation event, including the acting user, the affected employee, the action timestamp, and related details.
+   * Before deletion, the service should verify that the target employee belongs to the active organization and that the caller has permission to manage employees in that organization. If the employee is referenced by other organization data, the deletion must honor database constraints and the organization rules defined for the platform. Historical data that is stored in other entities must be handled consistently by the persistence layer.
    *
-   * If the employee does not exist in the current organization, is already active, or the caller lacks the required permission, the request must be rejected with an appropriate error response.
+   * If the employee cannot be found in the current organization, or if the caller is not authorized to remove employee records, the request should fail with the appropriate validation or authorization error.
    *
    * @param connection
-   * @param employeeId Unique identifier of the employee to reactivate within the current organization.
+   * @param employeeId Identifier of the employee to permanently delete within the current organization scope.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the employee by id within the current organization scope. Verify the authenticated member has employee management permission. Confirm the employee belongs to the current organization and is currently deactivated; if not found or already active, return a domain error.
+   * @x-autobe-specification Load the target employee by id within the current organization scope using the active organization context from the authenticated request.
+   * Verify that the caller has employee management authority for the organization before attempting deletion.
    *
-   * Update the employee status to active and persist the change in a single transaction. Do not alter historical timelogs, timesheets, contracts, or other preserved records. After the employee status update succeeds, insert an activity log entry in erp_hrm_time_activity_log_entries using the current organization id, acting member id, action type for employee reactivation, the employee id as the target entity, and a human-readable details message.
+   * Confirm the employee belongs to the active organization; return not found if the id exists in another organization or does not exist.
+   * Delete the employee row directly through the employee repository. The employee schema defines organization, member, role, and optional department foreign keys with cascade relations, so rely on the database for referential cleanup and constraint enforcement.
    *
-   * If there are related permission or state checks that fail, abort without writing either the employee update or the activity log entry. Return the updated employee entity after reload so the client receives the current state. Use the existing employee schema fields only; do not assume any additional status or audit columns beyond those provided.
+   * Do not accept a request body. Do not perform partial updates or status changes here; this endpoint is a true deletion operation. If the database rejects the delete because of downstream references or policy constraints, propagate the error in a user-safe way.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post(":employeeId/reactivate")
-  public async reactivate(
+  @TypedRoute.Delete(":employeeId")
+  public async erase(
     @MemberAuth()
     member: MemberPayload,
     @TypedParam("employeeId")
     employeeId: string & tags.Format<"uuid">,
-  ): Promise<IErpHrmTimeEmployee> {
+  ): Promise<void> {
     try {
-      return await postErpHrmTimeMemberEmployeesEmployeeIdReactivate({
+      return await deleteErpHrmTimeMemberEmployeesEmployeeId({
         member,
         employeeId,
       });

@@ -15,11 +15,11 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getEcommerceMallSuperAdminAdminsAdminId(props: {
   superAdmin: SuperadminPayload;
-  adminId: string;
+  adminId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallAdmin> {
   const admin = await MyGlobal.prisma.ecommerce_mall_admins.findUniqueOrThrow({
     where: { id: props.adminId },
     ...EcommerceMallAdminTransformer.select(),
   });
-  return EcommerceMallAdminTransformer.transform(admin);
+  return await EcommerceMallAdminTransformer.transform(admin);
 }

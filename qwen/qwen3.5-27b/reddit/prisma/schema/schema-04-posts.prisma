@@ -1,141 +1,168 @@
-/// Main post entity representing user-generated content within communities.
+/// Posts created by users in communities, supporting text, link, and image
+/// types with required titles.
 ///
-/// Posts are the primary content unit on the platform. Users can create
-/// posts in communities they are subscribed to. Each post supports three
-/// types (text, link, image), tracks voting scores, and maintains a complete
-/// audit trail through snapshots.
+/// Posts are the primary content entities in the reddit clone platform. Each
+/// post belongs to exactly one {@link reddit_clone_communities} and is
+/// authored by one {@link reddit_clone_user_profiles}. Posts support three
+/// content types: text posts with body content, link posts with URLs, and
+/// image posts with image URLs.
 ///
-/// **Key Characteristics**:
-/// - Belongs to exactly one community (required relationship)
-/// - Created by a specific user (author)
-/// - Supports multiple media types with different content structures
-/// - Accumulates vote score based on community engagement
-/// - Supports soft-delete for content moderation
+/// Posts are visible to all users but can only be created by users
+/// subscribed to the target community. Posts support voting via {@link
+/// reddit_clone_post_votes}, comments, and reporting for community
+/// moderation.
 ///
-/// **Business Rules**:
-/// - Users must be subscribed to a community before posting to it
-/// - Posts can be edited by their author or deleted by moderators
-/// - Vote score = (upvotes - downvotes)
-/// - Each post can have zero or more child comments
-///
-/// @namespace Posts
+/// @namespace posts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
 model reddit_clone_posts {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary Key for the posts table.
   id String @id
   
-  /// The community where this post is published. Posts are scoped to a single
-  /// community for organizational and moderation purposes. Users must be
-  /// subscribed to the community to post there. {@link
-  /// reddit_clone_communities.id}
+  /// Foreign key referencing the user profile who created this post.
+  ///
+  /// This establishes the authorship relationship between posts and {@link
+  /// reddit_clone_user_profiles}. The author's karma is affected by votes on
+  /// this post via {@link reddit_clone_post_votes}.
+  reddit_clone_user_profile_id String
+  
+  /// Foreign key referencing the community where this post was created.
+  ///
+  /// Posts can only be created in communities where the author is subscribed
+  /// via {@link reddit_clone_community_subscriptions}. The community provides
+  /// the context and moderation rules for the post.
   reddit_clone_community_id String
   
-  /// The user who authored this post. This establishes post ownership for
-  /// edit/delete permissions and karma attribution. {@link
-  /// reddit_clone_members.id}
-  reddit_clone_members_id String
-  
-  /// The headline or summary of the post content. Required for all post types.
-  /// Maximum 500 characters.
+  /// The title of the post.
+  ///
+  /// This field is required for all posts and must be provided when creating a
+  /// post. The title is used for display in post lists and search results.
   title String
   
-  /// The main body content of the post. For text-type posts, this contains the
-  /// full article. For link/image types, this may be null or contain a
-  /// caption.
-  content String?
-  
-  /// Classifies the post format. Valid values: 'text' (article-style post),
-  /// 'link' (external URL reference), 'image' (visual media post).
+  /// The type of content this post contains.
+  ///
+  /// Valid values are: 'text' for text posts, 'link' for link posts, and
+  /// 'image' for image posts. This discriminator determines which content
+  /// field should be populated.
   post_type String
   
-  /// The current net vote score for this post, calculated as (upvotes -
-  /// downvotes). Starts at 0 and adjusts with each vote action.
-  score Int
+  /// The body text content for text-type posts.
+  ///
+  /// This field is populated only when post_type is 'text'. For link and image
+  /// posts, this field is null.
+  text_content String?
   
-  /// Timestamp when this post was originally published.
+  /// The URL for link-type posts.
+  ///
+  /// This field contains the external URL when post_type is 'link'. For text
+  /// and image posts, this field is null.
+  link_url String?
+  
+  /// The image URL for image-type posts.
+  ///
+  /// This field contains the image URL when post_type is 'image'. For text and
+  /// link posts, this field is null.
+  image_url String?
+  
+  /// Timestamp when this post was created.
+  ///
+  /// This field is set automatically when the post is first created and is
+  /// used for sorting posts by recency.
   created_at DateTime
   
-  /// Timestamp of the last modification to this post.
+  /// Timestamp when this post was last updated.
+  ///
+  /// This field is updated whenever the post content is modified by the author
+  /// or moderators.
   updated_at DateTime
   
-  /// Timestamp when this post was soft-deleted. Null means the post is active.
-  /// Used for moderation and author-initiated deletion.
+  /// Timestamp when this post was soft-deleted.
+  ///
+  /// This field is set when the post is deleted by the author or moderators.
+  /// Posts with a deleted_at value are hidden from normal views but retained
+  /// for audit purposes.
   deleted_at DateTime?
   
   //----
   // BELONGED RELATIONS,
   //   - format: (propertyKey targetModel constraint)
   //----
+  userProfile reddit_clone_user_profiles @relation(fields: [reddit_clone_user_profile_id], references: [id], onDelete: Cascade)
   community reddit_clone_communities @relation(fields: [reddit_clone_community_id], references: [id], onDelete: Cascade)
-  author reddit_clone_members @relation(fields: [reddit_clone_members_id], references: [id], onDelete: Cascade)
   
   //----
   // HAS RELATIONS
   //   - format: (propertyKey targetModel)
   //----
-  images reddit_clone_post_images[]
+  postVotes reddit_clone_post_votes[]
   snapshots reddit_clone_post_snapshots[]
   comments reddit_clone_comments[]
-  commentSnapshots reddit_clone_comment_snapshots[]
   reports reddit_clone_reports[]
   
   //----
   // INDEXES
   //----
-  @@index([reddit_clone_community_id, created_at])
-  @@index([reddit_clone_members_id, created_at])
-  @@index([post_type, created_at])
-  @@index([score, created_at])
+  @@index([reddit_clone_user_profile_id])
+  @@index([reddit_clone_community_id])
+  @@index([created_at])
 }
 
-/// Images associated with image-type posts, supporting multiple images per
-/// post.
+/// User votes on posts for scoring and karma calculation.
 ///
-/// This table stores image file references for posts of type 'image'. Each
-/// image-type post can have multiple images stored here, with sequence
-/// ordering to maintain the intended display order.
+/// Each vote represents a single user's vote (upvote or downvote) on a
+/// specific post. Votes are used to calculate post scores and update user
+/// karma. Each user can only have one vote per post, which can be changed or
+/// removed.
 ///
-/// Key relationships:
-/// - Belongs to {@link reddit_clone_posts} via reddit_clone_post_id (1:N
-/// relationship)
-/// - Images are managed through their parent post, not independently
+/// Votes are subsidiary entities managed through their parent posts. They
+/// support the voting system where post scores are calculated as the sum of
+/// upvotes minus downvotes.
 ///
-/// Behavioral notes:
-/// - Sequence numbers start from 1 and increment for each image in a post
-/// - When a post is deleted, all associated images are also deleted (cascade)
-/// - Images can be reordered by updating sequence values
-///
-/// @namespace Posts
+/// @namespace posts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_clone_post_images {
+model reddit_clone_post_votes {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Belonged post's {@link reddit_clone_posts.id}. This image belongs to this
-  /// post.
+  /// Foreign key to the post being voted on.
+  ///
+  /// This establishes the relationship between a vote and its target post.
+  /// Each vote is associated with exactly one post.
   reddit_clone_post_id String
   
-  /// URL of the uploaded image file stored in the file storage system.
-  file_url String
+  /// Foreign key to the member who cast the vote.
+  ///
+  /// This establishes the relationship between a vote and the user who cast
+  /// it. Each vote is cast by exactly one member.
+  reddit_clone_member_id String
   
-  /// Display order of this image within the post. Starts from 1 and increments
-  /// for each additional image.
-  sequence Int
+  /// The type of vote cast by the member.
+  ///
+  /// This field stores whether the vote is an upvote or downvote. Valid values
+  /// are 'upvote' (adds 1 to post score) or 'downvote' (subtracts 1 from post
+  /// score).
+  vote_type String
   
-  /// Timestamp when this image was attached to the post.
+  /// Timestamp when the vote was created.
+  ///
+  /// This field tracks when the user first cast their vote on the post.
   created_at DateTime
   
-  /// Timestamp when this image record was last modified.
+  /// Timestamp when the vote was last updated.
+  ///
+  /// This field tracks when the user last changed their vote (e.g., switching
+  /// from upvote to downvote).
   updated_at DateTime
   
-  /// Timestamp when this image was soft-deleted. Null means the image is
-  /// active.
+  /// Timestamp when the vote was soft deleted.
+  ///
+  /// This field is used for soft delete functionality. When a user removes
+  /// their vote, this field is set instead of physically deleting the record.
   deleted_at DateTime?
   
   //----
@@ -143,72 +170,83 @@ model reddit_clone_post_images {
   //   - format: (propertyKey targetModel constraint)
   //----
   post reddit_clone_posts @relation(fields: [reddit_clone_post_id], references: [id], onDelete: Cascade)
+  member reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
   
   //----
   // INDEXES
   //----
-  @@unique([reddit_clone_post_id, sequence])
+  // spellchecker: ignore-next-line
+  @@unique([reddit_clone_post_id, reddit_clone_member_id], map: "reddit_clone_post_votes_reddit_clone_post_id_reddit_cl_be31becf")
+  @@index([reddit_clone_post_id])
+  @@index([reddit_clone_member_id])
 }
 
-/// Historical snapshots of post state at the time of modification.
+/// Point-in-time snapshots of posts capturing all field values at the moment
+/// of creation or update for edit history and audit trail.
 ///
-/// Each snapshot captures a complete, point-in-time copy of a post's data
-/// when it was created or significantly modified. This enables audit trails,
-/// content recovery, and historical analysis of post evolution. Snapshots
-/// are immutable once created and serve as an append-only audit log.
+/// Snapshots are created when a post is first published and whenever it is
+/// edited. Each snapshot stores a complete copy of the post data at that
+/// moment, enabling users to view previous versions and moderators to audit
+/// changes.
 ///
-/// Key relationships:
-/// - References {@link reddit_clone_posts.id} via foreign key
-/// - Denormalizes all post fields for historical accuracy
-/// - Multiple snapshots can exist per post (one per modification)
+/// Snapshots are immutable and append-only. They reference the parent post
+/// via foreign key and include all denormalized fields from the original
+/// post.
 ///
-/// Behavioral notes:
-/// - Snapshots are append-only; never updated or deleted
-/// - Captures the exact state of the post at the moment of snapshot
-/// - Includes original timestamps from the post to preserve historical context
-///
-/// @namespace Posts
+/// @namespace posts
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
 model reddit_clone_post_snapshots {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary key for the post snapshot record.
   id String @id
   
-  /// Reference to the main post entity being snapshot. {@link
-  /// reddit_clone_posts.id}
+  /// Foreign key reference to the parent post that this snapshot captures.
+  ///
+  /// Each snapshot belongs to exactly one post. Multiple snapshots can exist
+  /// for a single post, representing its edit history over time.
   reddit_clone_post_id String
   
-  /// Title of the post at the time of snapshot.
+  /// The title of the post at the time this snapshot was created.
+  ///
+  /// This is a denormalized copy of the post title field, captured at
+  /// point-in-time for historical reference.
   title String
   
-  /// Text content of the post at the time of snapshot.
-  content String?
-  
-  /// Type of post: text, link, or image.
+  /// The type of post (text, link, or image) at the time this snapshot was
+  /// created.
+  ///
+  /// This is a denormalized copy of the post type discriminator field.
   post_type String
   
-  /// URL for link-type posts.
+  /// The text content of the post at the time this snapshot was created, if
+  /// the post type is 'text'.
+  ///
+  /// This field is nullable and only populated for text-type posts. This is a
+  /// denormalized copy of the post's text_content field.
+  text_content String?
+  
+  /// The URL link of the post at the time this snapshot was created, if the
+  /// post type is 'link'.
+  ///
+  /// This field is nullable and only populated for link-type posts. This is a
+  /// denormalized copy of the post's link_url field.
   link_url String?
   
-  /// URL of the image file for image-type posts.
-  file_url String?
+  /// The image URL of the post at the time this snapshot was created, if the
+  /// post type is 'image'.
+  ///
+  /// This field is nullable and only populated for image-type posts. This is a
+  /// denormalized copy of the post's image_url field.
+  image_url String?
   
-  /// Current vote score at the time of snapshot.
-  score Int
-  
-  /// Timestamp when the original post was created.
-  original_created_at DateTime
-  
-  /// Timestamp when the original post was last updated.
-  original_updated_at DateTime
-  
-  /// Timestamp when the original post was deleted (soft delete).
-  original_deleted_at DateTime?
-  
-  /// Timestamp when this snapshot was taken.
-  captured_at DateTime
+  /// The timestamp when this snapshot was created, capturing the exact moment
+  /// the post state was recorded.
+  ///
+  /// This field represents when the snapshot was taken, not when the original
+  /// post was created or updated.
+  snapshot_created_at DateTime
   
   //----
   // BELONGED RELATIONS,
@@ -220,5 +258,5 @@ model reddit_clone_post_snapshots {
   // INDEXES
   //----
   // spellchecker: ignore-next-line
-  @@index([reddit_clone_post_id, captured_at], map: "reddit_clone_post_snapshots_reddit_clone_post_id_captu_ff4f9755")
+  @@index([reddit_clone_post_id, snapshot_created_at], map: "reddit_clone_post_snapshots_reddit_clone_post_id_snaps_c44d163a")
 }

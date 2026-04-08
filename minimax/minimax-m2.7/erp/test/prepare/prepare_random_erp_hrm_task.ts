@@ -9,34 +9,22 @@ export function prepare_random_erp_hrm_task(
   input?: DeepPartial<IErpHrmTask.ICreate>,
 ): IErpHrmTask.ICreate {
   return {
-    title: (input?.title ??
-      RandomGenerator.paragraph({ sentences: 1 })) as string &
-      tags.MaxLength<255>,
-    priority:
-      input?.priority ??
-      RandomGenerator.pick(["low", "medium", "high", "urgent"] as const),
-    status: input?.status,
+    title:
+      input?.title ??
+      RandomGenerator.alphabets(
+        typia.random<number & tags.Minimum<1> & tags.Maximum<50>>(),
+      ),
     description:
-      input?.description === null
-        ? null
-        : (input?.description ?? RandomGenerator.content({ paragraphs: 1 })),
-    erp_hrm_employee_id:
-      input?.erp_hrm_employee_id === null
-        ? null
-        : (input?.erp_hrm_employee_id ??
-          typia.random<string & tags.Format<"uuid">>()),
-    estimated_hours:
-      input?.estimated_hours === null
-        ? null
-        : (input?.estimated_hours ?? typia.random<number & tags.Minimum<0>>()),
-    due_date:
-      input?.due_date === null
-        ? null
-        : (input?.due_date ??
-          typia.random<string & tags.Format<"date-time">>()),
-    parent_id:
-      input?.parent_id === null
-        ? null
-        : (input?.parent_id ?? typia.random<string & tags.Format<"uuid">>()),
+      input?.description ?? RandomGenerator.content({ paragraphs: 2 }),
+    estimatedHours:
+      input?.estimatedHours ??
+      typia.random<
+        number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<200>
+      >(),
+    dueDate:
+      input?.dueDate ?? typia.random<string & tags.Format<"date-time">>(),
+    erpHrmEmployeeId:
+      input?.erpHrmEmployeeId ?? typia.random<string & tags.Format<"uuid">>(),
+    parentId: input?.parentId ?? typia.random<string & tags.Format<"uuid">>(),
   };
 }

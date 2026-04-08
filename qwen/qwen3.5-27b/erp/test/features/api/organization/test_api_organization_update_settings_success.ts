@@ -1,10 +1,8 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
-import type { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
-import type { IHrmPlatformOrganizationLogo } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganizationLogo";
-import type { IHrmPlatformOrganizationSetting } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganizationSetting";
+import type { IHrmTimeTrackMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackMember";
+import type { IHrmTimeTrackOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackOrganization";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -14,105 +12,120 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
+import { generate_random_hrm_time_track_member_organizations_create } from "../../../generate/generate_random_hrm_time_track_member_organizations_create";
+import { prepare_random_hrm_time_track_organization } from "../../../prepare/prepare_random_hrm_time_track_organization";
 
 /**
- * Test the primary success path for updating an organization's configuration settings.
- * 1. Register and authenticate as organization owner
- * 2. Update organization settings with all fields (name, description, currency, timezone, fiscal_year_start_month, image_url)
- * 3. Verify the response contains updated organization with joined settings and logo data
- * 4. Validate all updated fields are correctly stored
+ * Test the primary success path for updating organization settings.
+ *
+ * Validates that an authenticated member can successfully update an organization's display name, description, logo URL, currency code, timezone, and fiscal start month. All changes take effect immediately and are reflected in the returned organization record. The updated_at timestamp should be updated to reflect the modification time.
+ *
+ * Special attention is given to verifying that all updatable fields are correctly modified and that system-generated timestamps (created_at remains unchanged, updated_at is refreshed) are properly maintained.
+ *
+ * 1. Member authenticates via registration endpoint.
+ * 2. Organization is created with initial settings.
+ * 3. Organization settings are updated with new values for all fields.
+ * 4. Response is validated to ensure all fields match the update request.
+ * 5. Timestamps are verified to confirm update operation occurred.
  */
 export async function test_api_organization_update_settings_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Register and authenticate as organization owner
+  // 1. Member authentication
   const memberConnection: api.IConnection = { host: connection.host };
-  const member = await authorize_member_join(memberConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: typia.random<string & tags.Format<"ipv4">>(),
-    } satisfies IHrmPlatformMember.IJoin,
-  });
-  typia.assert(member);
-  // 2. Prepare update body with all fields
+  await authorize_member_join(memberConnection);
+  // 2. Create initial organization
+  const organization: IHrmTimeTrackOrganization =
+    await generate_random_hrm_time_track_member_organizations_create(
+      memberConnection,
+      {},
+    );
+  typia.assert(organization);
+  const originalCreatedAt: string = organization.created_at;
+  const originalUpdatedAt: string = organization.updated_at;
+  // 3. Prepare update body with new values
   const updateBody = {
     name: RandomGenerator.paragraph({ sentences: 2 }),
     description: RandomGenerator.paragraph({ sentences: 3 }),
-    currency: RandomGenerator.pick(["USD", "EUR", "KRW", "JPY", "GBP"]),
+    logo: typia.random<string & tags.Format<"uri">>(),
+    currency: RandomGenerator.pick([
+      "USD",
+      "EUR",
+      "KRW",
+      "JPY",
+      "GBP",
+    ] as const),
     timezone: RandomGenerator.pick([
       "Asia/Seoul",
       "America/New_York",
       "Europe/London",
-      "UTC",
-    ]),
-    fiscal_year_start_month: typia.random<
+      "Asia/Tokyo",
+    ] as const),
+    fiscal_start_month: typia.random<
       number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<12>
     >(),
-    image_url: typia.random<string & tags.Format<"uri">>(),
-  } satisfies IHrmPlatformOrganization.IUpdate;
-  // 3. Update organization settings (assuming member owns organization with same ID)
-  const updatedOrganization =
-    await api.functional.hrmPlatform.member.organizations.update(
+  } satisfies IHrmTimeTrackOrganization.IUpdate;
+  // 4. Update organization
+  const updatedOrganization: IHrmTimeTrackOrganization =
+    await api.functional.hrmTimeTrack.member.organizations.update(
       memberConnection,
       {
-        organizationId: member.id,
+        organizationId: organization.id,
         body: updateBody,
       },
     );
   typia.assert(updatedOrganization);
-  // 4. Validate organization name is updated
+  // 5. Validate updated values match request
   TestValidator.equals(
-    "organization name updated",
+    "name updated",
     updatedOrganization.name,
     updateBody.name,
   );
-  // 5. Validate description is updated
   TestValidator.equals(
-    "organization description updated",
+    "description updated",
     updatedOrganization.description,
     updateBody.description,
   );
-  // 6. Validate currency is stored in settings
   TestValidator.equals(
-    "currency stored in settings",
-    updatedOrganization.settings.currency,
+    "logo updated",
+    updatedOrganization.logo,
+    updateBody.logo,
+  );
+  TestValidator.equals(
+    "currency updated",
+    updatedOrganization.currency,
     updateBody.currency,
   );
-  // 7. Validate timezone is stored in settings
   TestValidator.equals(
-    "timezone stored in settings",
-    updatedOrganization.settings.timezone,
+    "timezone updated",
+    updatedOrganization.timezone,
     updateBody.timezone,
   );
-  // 8. Validate fiscal year start month is stored in settings
   TestValidator.equals(
-    "fiscal year start month stored in settings",
-    updatedOrganization.settings.fiscal_year_start_month,
-    updateBody.fiscal_year_start_month,
+    "fiscal_start_month updated",
+    updatedOrganization.fiscal_start_month,
+    updateBody.fiscal_start_month,
   );
-  // 9. Validate logo image URL is stored
+  // 6. Validate timestamps
   TestValidator.equals(
-    "logo image URL stored",
-    updatedOrganization.logo.image_url,
-    updateBody.image_url,
+    "created_at unchanged",
+    updatedOrganization.created_at,
+    originalCreatedAt,
   );
-  // 10. Validate updated_at timestamp exists
-  TestValidator.predicate(
-    "updated_at timestamp exists",
-    updatedOrganization.updated_at !== null,
+  TestValidator.notEquals(
+    "updated_at changed",
+    updatedOrganization.updated_at,
+    originalUpdatedAt,
   );
-  // 11. Validate owner is the authenticated member
+  // 7. Validate organization ID remains the same
   TestValidator.equals(
-    "owner matches authenticated member",
-    updatedOrganization.owner.id,
-    member.id,
+    "organization id unchanged",
+    updatedOrganization.id,
+    organization.id,
   );
-  // 12. Validate organization is active (not deleted)
+  // 8. Validate organization is still active (not deleted)
   TestValidator.equals(
-    "organization is active",
+    "organization not deleted",
     updatedOrganization.deleted_at,
     null,
   );

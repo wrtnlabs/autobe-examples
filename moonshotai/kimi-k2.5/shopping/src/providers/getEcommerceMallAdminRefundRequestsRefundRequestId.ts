@@ -1,5 +1,10 @@
+import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
+import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
 import { IEcommerceMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequest";
 import { IEcommerceMallRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequestSnapshot";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
@@ -19,12 +24,15 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getEcommerceMallAdminRefundRequestsRefundRequestId(props: {
   admin: AdminPayload;
-  refundRequestId: string & tags.Format<"uuid">;
+  refundRequestId: string;
 }): Promise<IEcommerceMallRefundRequest> {
-  const record =
+  const refundRequest =
     await MyGlobal.prisma.ecommerce_mall_refund_requests.findUniqueOrThrow({
-      where: { id: props.refundRequestId },
+      where: {
+        id: props.refundRequestId,
+        deleted_at: null,
+      },
       ...EcommerceMallRefundRequestTransformer.select(),
     });
-  return await EcommerceMallRefundRequestTransformer.transform(record);
+  return await EcommerceMallRefundRequestTransformer.transform(refundRequest);
 }

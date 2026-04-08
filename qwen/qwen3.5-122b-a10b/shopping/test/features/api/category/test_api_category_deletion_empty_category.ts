@@ -1,6 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
+import type { IEcommerceAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceAdmin";
+import type { IEcommerceAdministratorGrade } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceAdministratorGrade";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -13,55 +14,49 @@ import { authorize_admin_login } from "../../../authorize/authorize_admin_login"
 import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
 
 /**
- * Test that an administrator can successfully delete an empty category.
+ * Test administrator category deletion for empty categories.
  *
- * This test verifies:
- * 1. Administrator authentication via join endpoint
- * 2. Category deletion endpoint responds correctly with valid admin credentials
- * 3. The deletion operation completes without errors
+ * Validates the category deletion endpoint structure and administrator authentication requirements. Tests that an administrator can access the category deletion endpoint with proper credentials.
  *
- * Note: Since no category creation API is available in the provided SDK,
- * this test focuses on the authentication flow and deletion endpoint behavior.
- * In a complete implementation, a category would be created first using
- * admin category creation endpoint, then deleted.
+ * **SDK Limitation Note:** This test cannot fully validate successful deletion of an empty category because no category creation SDK function is available in the provided API functions. In a complete implementation, the test would:
+ * 1. Create a category with no products and no subcategories
+ * 2. Verify the category exists
+ * 3. Delete the category
+ * 4. Validate the category is soft-deleted (deleted_at set)
+ * 5. Confirm the category is removed from listings
+ *
+ * This test validates the administrator authentication flow and deletion endpoint invocation structure.
+ *
+ * 1. Administrator registers and authenticates with the system.
+ * 2. Deletion endpoint is called with a category ID (validation of non-existent category).
+ * 3. Validates proper error handling when category does not exist.
+ *
+ * **Expected Behavior:** Since no category creation is possible with available SDK functions, this test uses a random UUID which will result in a 404 error, validating the endpoint's error handling for non-existent categories.
  */
 export async function test_api_category_deletion_empty_category(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create admin connection and authenticate
+  // 1. Administrator authentication
   const adminConnection: api.IConnection = { host: connection.host };
-  const adminAuth: IEcommerceMallAdmin.IAuthorized = await authorize_admin_join(
-    adminConnection,
-    {
-      body: {
-        email: typia.random<string & tags.MinLength<1> & tags.MaxLength<255> & tags.Format<"email">>(),
-        password: RandomGenerator.alphaNumeric(16),
-      } satisfies IEcommerceMallAdmin.IJoin,
-    },
-  );
-  typia.assert(adminAuth);
-  // Validate admin authentication response
-  TestValidator.equals(
-    "admin id is uuid",
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      adminAuth.id,
-    ),
-    true,
-  );
-  TestValidator.equals("admin email valid", adminAuth.email, adminAuth.email);
-  TestValidator.predicate("admin has token", adminAuth.token.access.length > 0);
-  // 2. Generate a category ID to delete
-  // Note: In production, this would be a category created via admin category creation endpoint
+  await authorize_admin_join(adminConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
+      reason: RandomGenerator.paragraph({ sentences: 2 }),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+      ip: typia.random<string & tags.Format<"ipv4">>(),
+    } satisfies IEcommerceAdmin.IJoin,
+  });
+  // 2. Attempt to delete category (non-existent due to SDK limitation)
   const categoryId: string & tags.Format<"uuid"> = typia.random<
     string & tags.Format<"uuid">
   >();
-  // 3. Attempt to delete the category
-  // The endpoint will return 204 No Content on success or appropriate error if category doesn't exist
-  // This tests the authentication and endpoint availability
-  await api.functional.ecommerceMall.admin.categories.erase(adminConnection, {
-    categoryId,
+  // Since we cannot create a category with available SDK functions,
+  // this validates error handling for non-existent categories
+  await TestValidator.httpError("category not found", 404, async () => {
+    await api.functional.ecommerce.admin.categories.erase(adminConnection, {
+      categoryId,
+    });
   });
-  // 4. Deletion successful - endpoint returned void (204 No Content)
-  // No additional validation needed as typia.assert on response would catch type errors
-  // The successful completion of the erase call indicates the operation worked
 }

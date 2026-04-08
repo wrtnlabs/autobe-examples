@@ -1,6 +1,11 @@
 import api from "@ORGANIZATION/PROJECT-api";
+import type { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import type { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import type { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import type { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
+import type { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+import type { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+import type { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
 import type { IEcommerceMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequest";
 import type { IEcommerceMallRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequestSnapshot";
 import type { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
@@ -22,11 +27,9 @@ export async function generate_random_ecommerce_mall_customer_refund_requests_cr
   const prepared: IEcommerceMallRefundRequest.ICreate =
     prepare_random_ecommerce_mall_refund_request(props.body);
   const result: IEcommerceMallRefundRequest =
-    await api.functional.ecommerceMall.customer.refundRequests.create(
+    await api.functional.ecommerceMall.customer.refund_requests.create(
       connection,
-      {
-        body: prepared,
-      },
+      { body: prepared },
     );
   return result;
 }

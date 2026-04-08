@@ -16,7 +16,7 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getEcommerceMallSellerProfileSnapshotsSnapshotId(props: {
   seller: SellerPayload;
-  snapshotId: string;
+  snapshotId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallSellerProfileSnapshot> {
   const snapshot =
     await MyGlobal.prisma.ecommerce_mall_seller_profile_snapshots.findUniqueOrThrow(
@@ -25,11 +25,8 @@ export async function getEcommerceMallSellerProfileSnapshotsSnapshotId(props: {
         ...EcommerceMallSellerProfileSnapshotTransformer.select(),
       },
     );
-  if (snapshot.seller_id !== props.seller.id) {
-    throw new HttpException(
-      "Forbidden - Cannot access snapshots of other sellers",
-      403,
-    );
+  if (snapshot.seller.id !== props.seller.id) {
+    throw new HttpException("Forbidden", 403);
   }
   return await EcommerceMallSellerProfileSnapshotTransformer.transform(
     snapshot,

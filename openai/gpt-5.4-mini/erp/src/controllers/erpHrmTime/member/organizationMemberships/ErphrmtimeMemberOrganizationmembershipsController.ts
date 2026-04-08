@@ -6,34 +6,70 @@ import { IErpHrmTimeOrganizationMembership } from "../../../../api/structures/IE
 import { IPageIErpHrmTimeOrganizationMembership } from "../../../../api/structures/IPageIErpHrmTimeOrganizationMembership";
 import { MemberAuth } from "../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
+import { deleteErpHrmTimeMemberOrganizationMembershipsOrganizationMembershipId } from "../../../../providers/deleteErpHrmTimeMemberOrganizationMembershipsOrganizationMembershipId";
 import { getErpHrmTimeMemberOrganizationMembershipsOrganizationMembershipId } from "../../../../providers/getErpHrmTimeMemberOrganizationMembershipsOrganizationMembershipId";
 import { patchErpHrmTimeMemberOrganizationMemberships } from "../../../../providers/patchErpHrmTimeMemberOrganizationMemberships";
+import { postErpHrmTimeMemberOrganizationMemberships } from "../../../../providers/postErpHrmTimeMemberOrganizationMemberships";
 import { putErpHrmTimeMemberOrganizationMembershipsOrganizationMembershipId } from "../../../../providers/putErpHrmTimeMemberOrganizationMembershipsOrganizationMembershipId";
 
 @Controller("/erpHrmTime/member/organizationMemberships")
 export class ErphrmtimeMemberOrganizationmembershipsController {
   /**
-   * Retrieve a paginated list of organization memberships for the currently selected organization.
+   * Create a new organization membership for an account within the currently selected organization.
    *
-   * This endpoint returns membership records that connect user accounts to the active organization context, including the membership's role and status. It is intended for organization-level member management and browsing, where access is evaluated only within the current organization selected by the signed-in user.
+   * This operation links a member account to an organization and establishes the organization-scoped access context for that person. It is used when an existing account is added to an organization or when a pending invitation is converted into an active membership. The membership record stores the member reference, organization reference, status, and whether the membership is the selected organization context for the member.
    *
-   * The result set is scoped to the active organization and must not include memberships from other organizations. Consumers may filter and sort the list to support member administration screens, role reviews, and status-based browsing. Authorization should require organization-scoped access, and callers without access to the active organization must be rejected.
+   * The service must enforce that the same member cannot be added to the same organization more than once, and it must resolve the target organization from the current organization context. If the member already belongs to other organizations, those memberships remain unchanged because access is always evaluated per organization membership.
    *
-   * Validation and error handling should enforce that pagination values are valid, filters are well-formed, and the selected organization context belongs to the authenticated member. If the current session has no valid organization context, or if the caller lacks permission to view memberships in that organization, the request must fail with an authorization error.
+   * Validation and persistence errors should be surfaced when the referenced member or organization does not exist, when the membership already exists, or when the caller lacks the required organizational authority to create memberships in the selected organization.
    *
    * @param connection
-   * @param body Pagination, search, and filter criteria for browsing memberships within the selected organization context.
+   * @param body Data required to create an organization membership for an existing member account.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement as a membership search endpoint scoped to the authenticated user's selected organization context.
+   * @x-autobe-specification Resolve the organization from the active organization context and verify the caller has permission to add memberships in that organization. Validate that the target member exists and that no active or existing membership already links the same member and organization pair, using the unique constraint on (erp_hrm_time_member_id, erp_hrm_time_organization_id).
    *
-   * Query erp_hrm_time_organization_memberships using the active organization identifier from session/context, never from client-supplied body fields. Apply filters for membership status, role, and member search criteria. Join to the member table only as needed for name/email display and to resolve membership ownership details for summaries.
+   * Create a new organization membership row with the provided member reference and organization reference, then set the membership status according to the business flow used by invitations or direct additions. Persist is_selected_context according to the service rule for the current organization context, ensuring only the intended membership becomes active in the selected organization scope.
    *
-   * Support pagination, sorting, and stable ordering. Default ordering should prioritize the selected-organization membership list UX, typically by member display name or creation order if present in schema. Ensure the response excludes memberships from other organizations even if the same user has multiple memberships elsewhere.
+   * Use a transaction if any related updates are required to normalize selected-context state. Reject attempts to create duplicate memberships with a conflict error, and reject missing member or organization references with not-found errors. Do not expose or accept system-managed fields such as id, created_at, updated_at, or deleted_at in the request body.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedBody()
+    body: IErpHrmTimeOrganizationMembership.ICreate,
+  ): Promise<IErpHrmTimeOrganizationMembership> {
+    try {
+      return await postErpHrmTimeMemberOrganizationMemberships({
+        member,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a paginated list of organization memberships within the active organization context.
    *
-   * Enforce authorization before querying: callers must have permission to view members in the active organization. Return forbidden if the user is outside the organization or lacks member-view privileges. Validate all paging parameters and reject invalid filter values. If the selected organization context is missing or no longer corresponds to one of the user's memberships, return a context error.
+   * This operation exposes the membership links between member accounts and organizations, including each membership's status and whether it is the currently selected organization context. It is intended for organization-scoped browsing and administration, where the active organization determines which memberships are visible and actionable.
    *
-   * Return paginated summary rows rather than full nested entities to keep the list efficient. Include enough information for administrative member tables, especially membership identity, linked member identity, role, and status. Do not allow the request body to override organization scope.
+   * The list is filtered and sorted within the current organization boundary. Consumers can use it to inspect which members belong to the organization and how their membership context is currently configured. Because membership access is organization-specific, results must never cross into another organization's data.
+   *
+   * Validation and authorization errors should be returned when the requester does not have permission to view membership data or when the selected organization context is missing or inconsistent with the active membership scope.
+   *
+   * @param connection
+   * @param body Search, filter, pagination, and sorting criteria for organization memberships.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Query erp_hrm_time_organization_memberships using the active organization context as the primary scope. Filter by erp_hrm_time_organization_id from the current selected organization, and optionally filter by erp_hrm_time_member_id, status, and is_selected_context. Support pagination, search, and sorting in the request body; sorting should be applied on allowed columns such as created_at, updated_at, status, and is_selected_context.
+   *
+   * Return only memberships visible in the current organization. Use joins to member and organization only if needed for downstream summary composition, but do not expose fields beyond the membership summary contract. Respect the unique membership constraint on (erp_hrm_time_member_id, erp_hrm_time_organization_id). Exclude logically deleted records by default unless the request explicitly asks for deleted items and the caller is authorized for administrative recovery workflows.
+   *
+   * If the selected organization context is absent or does not match the membership scope, reject the request as a context error. If the caller lacks organization-scoped membership access, return a forbidden error. Ensure the response shape is a paginated summary collection suitable for list screens.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -55,23 +91,19 @@ export class ErphrmtimeMemberOrganizationmembershipsController {
   }
 
   /**
-   * Retrieve a single organization membership for the selected organization context.
+   * Retrieve a single organization membership record.
    *
-   * An organization membership represents the business link between a user account and one organization. It carries the organization-scoped role and membership status that determine whether the member currently has access inside that organization.
+   * This endpoint returns the organization membership that links a member account to an organization, including the membership status and whether the membership is the currently selected organization context. It is used to inspect the access-scoped relationship between a user account and an organization without exposing unrelated organizations or other members' data.
    *
-   * Use this operation when viewing membership details for administration, role assignment review, or access checks. The returned membership reflects the current organization context, so the caller can only inspect membership data within the organization they are working in.
-   *
-   * If the membership does not exist in the selected organization context, or if the caller is not allowed to view organization membership data, the server must return the appropriate not-found or authorization error.
+   * The membership record belongs to exactly one member account and exactly one organization, and the lookup must respect the caller's current organization scope. If the requested membership does not exist, is outside the active organization context, or has been removed, the service must return a not-found response. Access should be restricted to authenticated members with permission to view organization membership data in the selected organization.
    *
    * @param connection
-   * @param organizationMembershipId The organization membership identifier within the selected organization context.
+   * @param organizationMembershipId Organization membership identifier (UUID) in the current organization scope.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the organization membership by its identifier, but always enforce the currently selected organization context from the authenticated member session. Query erp_hrm_time_organization_memberships by primary identifier and organization scope; reject access if the record belongs to a different organization than the active context.
+   * @x-autobe-specification Load the organization membership by UUID from erp_hrm_time_organization_memberships with its related member and organization references if needed by the response mapper. Enforce organization context: the resolved membership must belong to the caller's selected organization and must not be deleted. Use the primary key lookup first, then verify the record's organization matches the active organization context before returning it. If the record is missing, deleted, or context-mismatched, return not found.
    *
-   * Return the full membership entity needed for detail views, including the linked user account reference, organization reference, assigned role, membership status, and selected organization context fields that exist in the schema. Do not expose memberships across organizations even if the same user belongs to multiple organizations.
-   *
-   * Handle missing records with a not-found response. Handle authorization failures when the caller lacks permission to view organization membership information in the active organization. Do not mutate data in this operation.
+   * Do not infer role assignment fields because they are not present in this schema. Return only the membership entity shape that is supported by the loaded schema and the shared DTO conventions for this service. The accessor must remain unique under the organizationMemberships namespace.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":organizationMembershipId")
@@ -95,20 +127,24 @@ export class ErphrmtimeMemberOrganizationmembershipsController {
   }
 
   /**
-   * Update an organization membership record.
+   * Update an organization membership record within the current organization scope.
    *
-   * This operation modifies the membership link between a member account and an organization. The membership stores the organization-scoped access association, the current membership status, and whether this membership is the member's selected organization context.
+   * This operation modifies the membership status and selected-context flag for a member account linked to an organization. An organization membership is the access link that determines which organization the member is currently working in, so changes here immediately affect organization-scoped access and context selection.
    *
-   * Use this endpoint to change the membership status or selected-context flag for the specified membership. The system must preserve the uniqueness of the member-and-organization pair, and it must keep organization access isolated to the current organization context. If the membership does not exist, the request must fail with a not-found error. If the update would violate membership rules or organization context constraints, the request must be rejected with a validation error.
+   * The membership record belongs to exactly one member and one organization, and those relationships are fixed by the existing record. Only the membership status and the selected-context flag may be updated through this endpoint. If the selected-context flag is changed, the service must ensure the member’s organization context remains consistent with the active membership rules used throughout the platform.
+   *
+   * The service must validate that the membership exists, belongs to the current organization scope, and has not been removed. It should reject attempts to modify immutable identity fields or to apply changes that would violate the one-membership-per-member-and-organization constraint. If the update cannot be applied because the membership is missing or inaccessible in the current organization context, return the appropriate not-found or forbidden error.
    *
    * @param connection
-   * @param organizationMembershipId The organization membership identifier (UUID) to update.
-   * @param body Fields to update on the organization membership. Do not include the membership identifier or foreign keys.
+   * @param organizationMembershipId The unique identifier of the organization membership to update.
+   * @param body Fields used to update the membership status and selected organization context flag.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the organization membership by its UUID and verify it belongs to the currently selected organization context before applying updates. Allow updates only to fields supported by the membership update DTO, such as status and selected-context flag, and never allow modification of the member or organization foreign keys through this endpoint.
+   * @x-autobe-specification Load the membership by UUID and enforce organization-context access before any update. Do not allow changing erp_hrm_time_member_id or erp_hrm_time_organization_id because the endpoint is for updating the existing membership record only.
    *
-   * Enforce the existing unique member-and-organization constraint at save time. When setting a membership as the selected context, clear the selected-context flag from other memberships of the same member so that only one organization context remains active at a time. Preserve all audit timestamps, updating updated_at on success. If the requested status is not allowed by business rules, or if the update targets a membership outside the active organization scope, return a validation or authorization error as appropriate.
+   * Update only status and is_selected_context from the request body. Persist updated_at automatically. If is_selected_context is set to true, ensure the selected membership behavior remains coherent for the member within the organization context; if the domain rules require a single selected membership per member, clear other selected memberships for the same member in the same organization scope within the same transaction.
+   *
+   * Validate that the membership exists and is not deleted. If the current context does not match the membership organization, reject with forbidden or not found according to the service's access policy. Preserve referential integrity with member and organization relations. Return the updated membership record after commit.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":organizationMembershipId")
@@ -126,6 +162,48 @@ export class ErphrmtimeMemberOrganizationmembershipsController {
           member,
           organizationMembershipId,
           body,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove a member’s association with the current organization.
+   *
+   * This operation deletes the organization membership record identified by the path parameter. Organization memberships define which users can access a tenant and which organization context is active for the member, so the deletion must be performed only within the currently selected organization and only by an authorized actor.
+   *
+   * The membership removal affects access control for the target user in that organization, but it does not delete the underlying user account. Related organization-scoped data remains governed by the broader account and organization lifecycle rules, including employee deactivation behavior where applicable.
+   *
+   * If the membership does not belong to the current organization, does not exist, or the caller lacks permission to manage members, the request must fail with an appropriate authorization or not-found error. The endpoint should also protect against removing the last remaining owner membership when that would violate organization ownership rules.
+   *
+   * @param connection
+   * @param organizationMembershipId The unique identifier of the organization membership to remove within the current organization context.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Load the organization membership by organizationMembershipId and verify it belongs to the authenticated user’s current organization context. Enforce permission checks so only callers with membership-management authority in the organization can delete the record.
+   *
+   * Before deletion, validate business rules that prevent removing memberships needed to preserve organization ownership integrity. If the membership corresponds to the sole owner relationship for the organization, reject the request and instruct the caller to transfer ownership or delete the organization first.
+   *
+   * Perform the deletion in a transaction. If the domain model requires side effects, ensure any membership-linked selection state is cleared for the affected member and that downstream access checks no longer treat the user as part of the organization. Do not delete the user account itself.
+   *
+   * Return 404 when the membership does not exist in the current scope, 403 when the caller lacks rights, and a conflict-style error when ownership constraints prevent deletion. No response body is required on success.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":organizationMembershipId")
+  public async erase(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("organizationMembershipId")
+    organizationMembershipId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteErpHrmTimeMemberOrganizationMembershipsOrganizationMembershipId(
+        {
+          member,
+          organizationMembershipId,
         },
       );
     } catch (error) {

@@ -1,0 +1,163 @@
+/// User-submitted reports about posts or comments for moderator review.
+///
+/// Reports enable community members to flag inappropriate content for
+/// moderator attention. Each report references either a post or comment
+/// using polymorphic foreign keys, includes a reason from the reporter, and
+/// tracks moderation status through the review workflow.
+///
+/// Reports are created by members and reviewed by moderators who can approve
+/// (delete content) or dismiss (keep content) the report.
+///
+/// @namespace reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who submitted this report.
+  ///
+  /// References the user account that created the report to track who flagged
+  /// the content for moderation review.
+  reddit_clone_member_id String
+  
+  /// The post being reported (when report_type is 'post').
+  ///
+  /// Nullable because reports can target either posts or comments. Only
+  /// populated when report_type equals 'post'.
+  reddit_clone_post_id String?
+  
+  /// The comment being reported (when report_type is 'comment').
+  ///
+  /// Nullable because reports can target either posts or comments. Only
+  /// populated when report_type equals 'comment'.
+  reddit_clone_comment_id String?
+  
+  /// Type of content being reported.
+  ///
+  /// Discriminator field that indicates whether this report targets a 'post'
+  /// or 'comment'. Determines which foreign key (reddit_clone_post_id or
+  /// reddit_clone_comment_id) is populated.
+  report_type String
+  
+  /// The reporter's explanation for flagging this content.
+  ///
+  /// Required text field where the member explains why the content violates
+  /// community guidelines or deserves moderator attention.
+  reason String
+  
+  /// Current moderation status of this report.
+  ///
+  /// Tracks the workflow state: 'pending' (awaiting review), 'approved'
+  /// (content deleted), or 'dismissed' (content kept).
+  status String
+  
+  /// When this report was submitted.
+  ///
+  /// Timestamp recording when the member first flagged the content for
+  /// moderation review.
+  created_at DateTime
+  
+  /// When this report was last modified.
+  ///
+  /// Timestamp tracking the most recent update to the report status or
+  /// metadata.
+  updated_at DateTime
+  
+  /// When this report was soft-deleted.
+  ///
+  /// Nullable timestamp for soft-delete support. Dismissed reports may be
+  /// soft-deleted to remove them from active moderation queues.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  reporter reddit_clone_members @relation(fields: [reddit_clone_member_id], references: [id], onDelete: Cascade)
+  reportedPost reddit_clone_posts? @relation(fields: [reddit_clone_post_id], references: [id], onDelete: Cascade)
+  reportedComment reddit_clone_comments? @relation(fields: [reddit_clone_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  action reddit_clone_report_actions?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_clone_member_id])
+  @@index([reddit_clone_post_id])
+  @@index([reddit_clone_comment_id])
+  @@index([report_type])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Moderator actions on reports recording approve or dismiss decisions.
+///
+/// This table tracks when moderators take action on user-submitted reports.
+/// Each action records which moderator made the decision, what type of
+/// action was taken (approve to delete content or dismiss to keep content),
+/// and when the action occurred.
+///
+/// Actions are subsidiary to reports and are managed through the parent
+/// report entity. When a moderator approves a report, the reported content
+/// (post or comment) is deleted. When dismissed, the content remains and the
+/// report is removed from the active report list. Each report can have only
+/// one action, enforced by a unique constraint on the report foreign key.
+///
+/// @namespace reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_clone_report_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for report action records.
+  id String @id
+  
+  /// Foreign key reference to the report that was acted upon.
+  ///
+  /// This links the action to the specific {@link reddit_clone_reports} report
+  /// that the moderator reviewed. Each report can have only one action
+  /// (approve or dismiss), after which the report is resolved. This is
+  /// enforced by a unique constraint.
+  reddit_clone_report_id String
+  
+  /// Foreign key reference to the moderator who took the action.
+  ///
+  /// This identifies which {@link reddit_clone_moderators} user reviewed and
+  /// acted on the report. Moderators must be authenticated and have moderator
+  /// privileges in the relevant community.
+  reddit_clone_moderator_id String
+  
+  /// The type of action taken on the report.
+  ///
+  /// Valid values are 'approve' (delete the reported content) or 'dismiss'
+  /// (keep the content and remove report from active list). This field
+  /// determines the outcome of the moderation decision.
+  action_type String
+  
+  /// Timestamp when the moderator action was recorded.
+  ///
+  /// This audit timestamp tracks when the moderator reviewed and decided on
+  /// the report. Used for reporting and accountability purposes.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report reddit_clone_reports @relation(fields: [reddit_clone_report_id], references: [id], onDelete: Cascade)
+  moderator reddit_clone_moderators @relation(fields: [reddit_clone_moderator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_clone_moderator_id])
+  @@unique([reddit_clone_report_id])
+  @@index([action_type, created_at])
+}

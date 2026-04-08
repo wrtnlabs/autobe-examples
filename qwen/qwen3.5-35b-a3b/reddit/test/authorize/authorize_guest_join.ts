@@ -1,29 +1,39 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IRedditCommunityGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityGuest";
+import type { IRedditPlatformGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditPlatformGuest";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+/**
+ * Register and authenticate a new guest session for E2E testing.
+ *
+ * Creates a guest account with randomized device fingerprint and browser context,
+ * mutates the connection with the auth token for subsequent authenticated requests.
+ * Guests can access public content like popular feeds but have limited permissions
+ * compared to registered users.
+ *
+ * @param connection - HTTP connection object to mutate with auth token
+ * @param props - Optional join body overrides
+ * @returns IAuthorized with guest session ID and JWT credentials
+ */
 export async function authorize_guest_join(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IRedditCommunityGuest.IJoin>;
+    body?: DeepPartial<IRedditPlatformGuest.IJoin>;
   },
-): Promise<IRedditCommunityGuest.IAuthorized> {
+): Promise<IRedditPlatformGuest.IAuthorized> {
   const joinInput = {
-    device_id:
-      props.body?.device_id ?? typia.random<string & tags.Format<"uuid">>(),
-    user_agent: props.body?.user_agent ?? typia.random<string>(),
+    fingerprint: props.body?.fingerprint ?? typia.random<string>(),
     href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
     referrer:
       props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
     ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
-  } satisfies IRedditCommunityGuest.IJoin;
-  return await api.functional.redditCommunity.auth.guest.join(connection, {
+  } satisfies IRedditPlatformGuest.IJoin;
+  return await api.functional.redditPlatform.auth.guest.join(connection, {
     body: joinInput,
   });
 }

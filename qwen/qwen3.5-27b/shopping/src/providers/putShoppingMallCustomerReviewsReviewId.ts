@@ -1,7 +1,15 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallCustomerAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerAddress";
+import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
 import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -20,92 +28,106 @@ export async function putShoppingMallCustomerReviewsReviewId(props: {
   reviewId: string & tags.Format<"uuid">;
   body: IShoppingMallReview.IUpdate;
 }): Promise<IShoppingMallReview> {
-  // 1. Find the review and verify it exists
+  // Find the review and verify ownership
   const review = await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
     where: { id: props.reviewId },
     select: {
       id: true,
-      shopping_customer_id: true,
-      deleted_at: true,
-      shopping_order_item_id: true,
+      shopping_mall_customer_id: true,
       rating: true,
       content: true,
-      created_at: true,
-      updated_at: true,
+      deleted_at: true,
     },
   });
-  // 2. Verify the customer owns this review
-  if (review.shopping_customer_id !== props.customer.id) {
+  // Verify ownership
+  if (review.shopping_mall_customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // 3. Verify the review is not deleted
+  // Verify review is not deleted
   if (review.deleted_at !== null) {
-    throw new HttpException("Review is deleted", 400);
+    throw new HttpException("Review is already deleted", 400);
   }
-  // 4. Create a snapshot before updating
+  // Create snapshot before update
   await MyGlobal.prisma.shopping_mall_review_snapshots.create({
     data: {
       id: v4(),
-      review: { connect: { id: review.id } },
-      snapshot_data: JSON.stringify({
-        id: review.id,
-        shopping_order_item_id: review.shopping_order_item_id,
-        shopping_customer_id: review.shopping_customer_id,
-        rating: review.rating,
-        content: review.content,
-        created_at: toISOStringSafe(review.created_at),
-        updated_at: toISOStringSafe(review.updated_at),
-        deleted_at: review.deleted_at,
-      }),
+      shopping_mall_review_id: props.reviewId,
+      shopping_mall_customer_id: review.shopping_mall_customer_id,
+      shopping_mall_customer_session_id: props.customer.session_id,
+      rating_before: review.rating,
+      rating_after: props.body.rating ?? review.rating,
+      text_content_before: review.content,
+      text_content_after: props.body.content,
+      deleted_at_before: review.deleted_at,
+      deleted_at_after: review.deleted_at,
       created_at: new Date(),
     },
   });
-  // 5. Build update data with optional fields
-  const updateData: Prisma.shopping_mall_reviewsUpdateInput = {
-    updated_at: new Date(),
-    ...(props.body.rating !== undefined && { rating: props.body.rating }),
-    ...(props.body.content !== undefined && { content: props.body.content }),
-  };
-  // 6. Update the review
+  // Update the review
   await MyGlobal.prisma.shopping_mall_reviews.update({
     where: { id: props.reviewId },
-    data: updateData,
+    data: {
+      ...(props.body.rating !== undefined && { rating: props.body.rating }),
+      ...(props.body.content !== undefined && { content: props.body.content }),
+      updated_at: new Date(),
+    },
   });
-  // 7. Recalculate average rating for the product
-  const orderItem = await MyGlobal.prisma.shopping_mall_order_items.findUnique({
-    where: { id: review.shopping_order_item_id },
-    select: { product_snapshot: true },
-  });
-  if (orderItem?.product_snapshot) {
-    const productData = JSON.parse(orderItem.product_snapshot);
-    const productId = productData.id;
-    const orderItemIds =
-      await MyGlobal.prisma.shopping_mall_order_items.findMany({
-        where: {
-          product_snapshot: {
-            contains: JSON.stringify({ id: productId }),
-          },
-        },
-        select: { id: true },
-      });
-    const reviews = await MyGlobal.prisma.shopping_mall_reviews.findMany({
-      where: {
-        shopping_order_item_id: { in: orderItemIds.map((i) => i.id) },
-        deleted_at: null,
-      },
-      select: { rating: true },
-    });
-    if (reviews.length > 0) {
-      const avgRating =
-        reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
-      // Note: Average rating would be cached/updated in product cache if applicable
-    }
-  }
-  // 8. Fetch and return the updated review
-  const updatedReview =
-    await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
+  // Fetch updated review with transformer select
+  const updated = await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow(
+    {
       where: { id: props.reviewId },
       ...ShoppingMallReviewTransformer.select(),
-    });
-  return await ShoppingMallReviewTransformer.transform(updatedReview);
+    },
+  );
+  return await ShoppingMallReviewTransformer.transform(updated);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
+// import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+// import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+// import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+// import { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
+// import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+// import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+// import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
+// import { IShoppingMallCustomerAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerAddress";
+// import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+// import { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function putShoppingMallCustomerReviewsReviewId(props: {
+//   customer: CustomerPayload;
+//   reviewId: string & tags.Format<"uuid">;
+//   body: IShoppingMallReview.IUpdate;
+// }): Promise<IShoppingMallReview> {
+//   await MyGlobal.prisma.shopping_mall_reviews.update({
+//     where: { ... },
+//     data: { ... },
+//   });
+//   const updated = await MyGlobal.prisma.shopping_mall_reviews.findUniqueOrThrow({
+//     where: { ... },
+//     ...ShoppingMallReviewTransformer.select(),
+//   });
+//   return await ShoppingMallReviewTransformer.transform(updated);
+// }
+// ```
+//--------------------------------------------------------------

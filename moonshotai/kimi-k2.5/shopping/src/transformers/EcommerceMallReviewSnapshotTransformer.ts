@@ -2,8 +2,10 @@ import { IEcommerceMallReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/stru
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallReviewSnapshotTransformer {
@@ -17,6 +19,11 @@ export namespace EcommerceMallReviewSnapshotTransformer {
         rating: true,
         content: true,
         created_at: true,
+        review: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_reviewsFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_review_snapshotsFindManyArgs;
   }
@@ -25,8 +32,9 @@ export namespace EcommerceMallReviewSnapshotTransformer {
   ): Promise<IEcommerceMallReviewSnapshot> {
     return {
       id: input.id,
+      reviewId: input.review.id,
       rating: input.rating,
-      content: input.content ?? null,
+      content: input.content,
       createdAt: input.created_at.toISOString(),
     };
   }

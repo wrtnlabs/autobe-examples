@@ -10,20 +10,19 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallRefundRequestCollector {
   export async function collect(props: {
     body: IShoppingMallRefundRequest.ICreate;
+    shoppingMallOrderItems: IEntity;
     shoppingMallCustomers: IEntity;
     shoppingMallCustomerSessions: IEntity;
   }) {
-    const id: string = v4();
     return {
-      id,
+      id: v4(),
       reason: props.body.reason,
       status: "pending",
-      requested_at: new Date(),
-      responded_at: null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      orderItem: { connect: { id: props.body.orderItemId } },
+      responded_at: null,
+      orderItem: { connect: { id: props.shoppingMallOrderItems.id } },
       customer: { connect: { id: props.shoppingMallCustomers.id } },
       customerSession: {
         connect: { id: props.shoppingMallCustomerSessions.id },
@@ -31,3 +30,36 @@ export namespace ShoppingMallRefundRequestCollector {
     } satisfies Prisma.shopping_mall_refund_requestsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace ShoppingMallRefundRequestCollector {
+//         export async function collect(props: {
+//           body: IShoppingMallRefundRequest.ICreate;
+//           shoppingMallOrderItems: IEntity; // from path parameter itemId
+// shoppingMallCustomers: IEntity; // from authorized actor
+// shoppingMallCustomerSessions: IEntity; // from authorized session
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       reason: ...,
+//       status: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       responded_at: ...,
+//       orderItem: ...,
+//       customer: ...,
+//       customerSession: ...,
+//       seller: ...,
+//       sellerSession: ...,
+//       refundRequestSnapshots: ...,
+//       snapshots: ...,
+//           } satisfies Prisma.shopping_mall_refund_requestsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

@@ -1,14 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IErpHrmDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmDepartment";
-import type { IErpHrmEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmEmployee";
 import type { IErpHrmMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmMember";
-import type { IErpHrmOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmOrganization";
-import type { IErpHrmProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProjectMember";
-import type { IErpHrmRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmRole";
-import type { IErpHrmTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTask";
-import type { IErpHrmTimer } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimer";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -23,62 +16,64 @@ export async function test_api_member_login_with_valid_credentials(
   connection: api.IConnection,
 ): Promise<void> {
   // 1. Create a new member account via join endpoint
-  const joinConnection: api.IConnection = { host: connection.host };
-  const email = typia.random<string & tags.Format<"email">>();
-  const password = RandomGenerator.alphaNumeric(16);
-  const displayName = RandomGenerator.name();
-  const joined = await api.functional.erpHrm.auth.member.join(joinConnection, {
-    body: {
-      email,
-      password,
-      displayName,
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-    } satisfies IErpHrmMember.IJoin,
-  });
-  typia.assert(joined);
-  // 2. Login using the registered email and correct password
-  const loginConnection: api.IConnection = { host: connection.host };
-  const authorized = await api.functional.erpHrm.auth.member.login(
-    loginConnection,
-    {
-      body: {
-        email,
-        password,
-        href: typia.random<string & tags.Format<"uri">>(),
-        referrer: typia.random<string & tags.Format<"uri">>(),
-      } satisfies IErpHrmMember.ILogin,
-    },
+  const joinBody = {
+    email: typia.random<string & tags.Format<"email">>(),
+    password: RandomGenerator.alphaNumeric(16),
+    display_name: RandomGenerator.name(),
+    href: typia.random<string & tags.Format<"uri">>(),
+    referrer: typia.random<string & tags.Format<"uri">>(),
+  } satisfies IErpHrmMember.IJoin;
+  const joinResponse = await api.functional.erpHrm.auth.member.join(
+    connection,
+    { body: joinBody },
   );
-  typia.assert(authorized);
-  // 3. Validate business logic - email matches registered email
+  typia.assert(joinResponse);
+  // 2. Login with the same credentials
+  const loginBody = {
+    email: joinBody.email,
+    password: joinBody.password,
+    href: joinBody.href,
+    referrer: joinBody.referrer,
+  } satisfies IErpHrmMember.ILogin;
+  const loginResponse = await api.functional.erpHrm.auth.member.login(
+    connection,
+    { body: loginBody },
+  );
+  typia.assert(loginResponse);
+  // 3. Validate response structure
   TestValidator.equals(
-    "member email matches registered email",
-    authorized.email,
-    email,
+    "email matches input",
+    loginResponse.email,
+    joinBody.email,
   );
-  // 4. Validate response structure via typia.assert covers complete type validation
-  TestValidator.predicate(
-    "has access token",
-    authorized.token.access.length > 0,
+  TestValidator.equals(
+    "display_name matches input",
+    loginResponse.display_name,
+    joinBody.display_name,
   );
-  TestValidator.predicate(
-    "has refresh token",
-    authorized.token.refresh.length > 0,
+  TestValidator.equals(
+    "displayName matches input",
+    loginResponse.displayName,
+    joinBody.display_name,
   );
+  // 4. Validate token structure
   TestValidator.predicate(
-    "has expired_at timestamp",
-    authorized.token.expired_at.length > 0,
-  );
-  TestValidator.predicate(
-    "has refreshable_until timestamp",
-    authorized.token.refreshable_until.length > 0,
+    "access token is non-empty string",
+    loginResponse.token.access.length > 0,
   );
   TestValidator.predicate(
-    "has activeTimers array",
-    Array.isArray(authorized.activeTimers),
+    "refresh token is non-empty string",
+    loginResponse.token.refresh.length > 0,
   );
-  TestValidator.predicate("has projectSummary", !!authorized.projectSummary);
-  TestValidator.predicate("has taskOverview", !!authorized.taskOverview);
-  TestValidator.predicate("has recentActivity", !!authorized.recentActivity);
+  TestValidator.predicate(
+    "expired_at is valid date-time",
+    !!Date.parse(loginResponse.token.expired_at),
+  );
+  TestValidator.predicate(
+    "refreshable_until is valid date-time",
+    !!Date.parse(loginResponse.token.refreshable_until),
+  );
+  // 5. Verify tokens are strings (type validation via typia.assert already done)
+  const accessToken: string = loginResponse.token.access;
+  const refreshToken: string = loginResponse.token.refresh;
 }

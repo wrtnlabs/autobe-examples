@@ -9,7 +9,6 @@ export function prepare_random_ecommerce_mall_admin_promotion(
   input?: DeepPartial<IEcommerceMallAdminPromotion.ICreate>,
 ): IEcommerceMallAdminPromotion.ICreate {
   return {
-    adminId: input?.adminId ?? typia.random<string & tags.Format<"uuid">>(),
     reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 2 }),
   };
 }

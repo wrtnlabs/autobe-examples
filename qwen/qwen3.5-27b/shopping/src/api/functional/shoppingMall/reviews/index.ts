@@ -10,42 +10,48 @@ import { IPageIShoppingMallReview } from "../../../structures/IPageIShoppingMall
 import { IShoppingMallReview } from "../../../structures/IShoppingMallReview";
 
 /**
- * Retrieve a filtered and paginated list of product reviews from the shopping mall platform.
+ * Search and list reviews with flexible filtering and pagination.
  *
- * This operation provides comprehensive search capabilities for browsing customer reviews. Reviews are customer feedback on purchased products, containing star ratings (1-5) and optional text content describing the purchase experience. The system ensures only non-deleted reviews are returned, maintaining data integrity while respecting customer deletion requests.
+ * This operation retrieves reviews from the shopping mall platform with support for various filters including product, customer, rating, and date range. Reviews are sorted by newest first by default, showing the most recent customer feedback at the top.
  *
- * Reviews are sorted by submission date in descending order (newest first) by default, helping customers see the most recent feedback. Each review is associated with a specific order item, ensuring customers can only review products they have actually purchased and received.
+ * By default, only non-deleted reviews are returned. Deleted reviews can be included by explicitly setting the deletion status filter. This endpoint supports both public review browsing (e.g., on product detail pages) and administrative oversight of all platform reviews.
  *
- * The operation supports multiple filtering options including product ID, customer ID, rating value, and creation date range. This enables targeted searches such as finding all reviews for a specific product, viewing a customer's review history, or finding highly-rated products.
- *
- * When a review is from a deleted customer account, the system displays the reviewer as "deleted user" while preserving the review content for other customers' reference. This maintains the integrity of product feedback even when customer accounts are removed.
- *
- * Related operations include creating new reviews (POST /products/{productId}/reviews), updating existing reviews (PUT /reviews/{reviewId}), and deleting reviews (DELETE /reviews/{reviewId}).
+ * The response includes paginated review summaries with rating, content preview, customer information, product reference, and timestamps. Use this operation to display reviews on product pages, view customer review history, or perform administrative review monitoring.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for filtering reviews
+ * @param props.body Search criteria including product ID, customer ID, rating filters, deletion status, date ranges, sorting preferences, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query shopping_mall_reviews table with pagination and filtering capabilities.
+ * @x-autobe-specification Query shopping_mall_reviews table with pagination and filtering support.
  *
- * 1. Apply soft delete filter: WHERE deleted_at IS NULL to exclude deleted reviews
- * 2. Support filtering by:
- *    - productId: Join with shopping_mall_order_items to filter by product
- *    - customerId: Filter by shopping_customer_id for owner-specific queries
- *    - rating: Filter by exact rating value (1-5)
- *    - createdAt range: Filter by created_at timestamp
- * 3. Apply sorting: ORDER BY created_at DESC (newest first) as default
- * 4. Apply pagination: LIMIT and OFFSET based on page and limit parameters
- * 5. Count total matching records for pagination metadata
- * 6. Join with shopping_mall_order_items to include product information
- * 7. Join with shopping_mall_customers to include reviewer information (handle deleted users as 'deleted user')
- * 8. For customer queries, verify authentication and optionally filter by current user's reviews
- * 9. Return review summaries with: id, rating, content, createdAt, reviewer info, product info
+ * Apply search filters:
+ * - Filter by shopping_mall_product_id if provided (for product review pages)
+ * - Filter by shopping_mall_customer_id if provided (for customer review history)
+ * - Filter by rating range (min/max) if provided
+ * - Filter by deleted_at status (null for active reviews, or include deleted)
+ * - Filter by created_at date range if provided
  *
- * Error handling:
- * - Return 400 for invalid filter parameters
- * - Return 401 if unauthenticated user attempts owner-specific queries
- * - Return 404 if no reviews match criteria
+ * Sorting:
+ * - Default: ORDER BY created_at DESC (newest first as per requirements)
+ * - Support custom sorting if specified in request
+ *
+ * Pagination:
+ * - Use cursor-based pagination for large result sets
+ * - Return page metadata (current cursor, next cursor, has more)
+ *
+ * Data exclusion:
+ * - By default, exclude soft-deleted reviews (deleted_at IS NULL)
+ * - Include deleted reviews only if explicitly requested via filter
+ *
+ * Join operations:
+ * - Join with shopping_mall_customers for customer name if needed
+ * - Join with shopping_mall_products for product name if needed
+ * - Join with shopping_mall_order_items to verify review eligibility
+ *
+ * Validation:
+ * - Ensure customer_id matches authenticated user if filtering by current user
+ * - Ensure product_id references valid product
+ * - Ensure rating values are between 1-5
  * @path /shoppingMall/reviews
  * @accessor api.functional.shoppingMall.reviews.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -75,7 +81,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for filtering reviews
+     * Search criteria including product ID, customer ID, rating filters, deletion status, date ranges, sorting preferences, and pagination parameters.
      */
     body: IShoppingMallReview.IRequest;
   };
@@ -124,37 +130,39 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific customer review by its unique identifier.
+ * Retrieve a single review by its unique identifier.
  *
- * This operation allows customers to view the complete details of their own product review, including the star rating, text feedback content, and timestamps. Reviews are customer-submitted feedback for products they have purchased and received, helping other buyers make informed purchasing decisions.
+ * This operation returns complete details of a customer review including the rating, text content, timestamps, and associated entity information. Reviews are linked to the customer who wrote them, the product being reviewed, and the specific order item that was delivered.
  *
- * Access to review details is restricted to the review owner only. Customers cannot view other customers' review details to protect privacy and prevent unauthorized access to personal feedback. The system verifies that the authenticated customer matches the review's author before returning any data.
+ * The response includes the review's deletion status. Soft-deleted reviews (where deleted_at is set) are still retrievable through this endpoint for administrative purposes and dispute resolution, but should be excluded from public display and average rating calculations on product pages.
  *
- * Reviews that have been soft-deleted are not accessible through this endpoint. If a customer has deleted their review, attempting to retrieve it will result in a 404 Not Found error. The system maintains immutable snapshots of deleted reviews for audit purposes, but these are not exposed through the customer-facing API.
- *
- * This operation is typically used when a customer wants to review their own feedback before making edits, or to verify the content of their submitted review. It can be used in conjunction with the update and delete review operations to manage review lifecycle.
+ * This endpoint is useful for viewing individual review details, verifying review authenticity, and supporting dispute resolution workflows.
  *
  * @param props.connection
- * @param props.reviewId Unique identifier of the review to retrieve (UUID format)
+ * @param props.reviewId Unique identifier of the review to retrieve (UUID format, global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the shopping_mall_reviews table for a single review record by primary key id.
+ * @x-autobe-specification Query shopping_mall_reviews table by id (UUID).
  *
- * 1. Validate the reviewId parameter is a valid UUID format.
+ * Join with:
+ * - shopping_mall_customers on shopping_mall_customer_id to get customer information
+ * - shopping_mall_products on shopping_mall_product_id to get product information
+ * - shopping_mall_order_items on shopping_mall_order_item_id to get order item information
  *
- * 2. Execute a SELECT query on shopping_mall_reviews where id equals the provided reviewId AND deleted_at IS NULL (exclude soft-deleted reviews).
+ * Return the complete review entity including:
+ * - All review fields (id, rating, content, created_at, updated_at, deleted_at)
+ * - Associated customer data (id, email, display name)
+ * - Associated product data (id, name, seller_id)
+ * - Associated order item data (id, order_id, quantity, price, status)
  *
- * 3. Verify the authenticated customer's ID matches the review's shopping_customer_id field. If not the same, return 403 Forbidden error - customers can only view their own review details.
+ * Handle soft-deleted reviews:
+ * - Include deleted_at field to indicate deletion status
+ * - Do not filter out deleted reviews - they may be needed for administrative review
+ * - Client-side logic determines whether to display deleted reviews
  *
- * 4. Join with shopping_mall_order_items to verify the review is associated with a valid order item.
- *
- * 5. Return the review object with all fields: id, shopping_order_item_id, shopping_customer_id, rating, content, created_at, updated_at.
- *
- * 6. If no review found or review is deleted, return 404 Not Found error.
- *
- * 7. If customer is not the owner, return 403 Forbidden error.
- *
- * 8. Include error handling for database connection failures and validation errors.
+ * Error handling:
+ * - Return 404 if review with given ID does not exist
+ * - Return appropriate error if related entities (customer, product, order_item) are deleted (cascade behavior)
  * @path /shoppingMall/reviews/:reviewId
  * @accessor api.functional.shoppingMall.reviews.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -183,7 +191,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the review to retrieve (UUID format)
+     * Unique identifier of the review to retrieve (UUID format, global scope).
      */
     reviewId: string & tags.Format<"uuid">;
   };

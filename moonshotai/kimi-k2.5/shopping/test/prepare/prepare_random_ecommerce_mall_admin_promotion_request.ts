@@ -9,6 +9,14 @@ export function prepare_random_ecommerce_mall_admin_promotion_request(
   input?: DeepPartial<IEcommerceMallAdminPromotionRequest.ICreate>,
 ): IEcommerceMallAdminPromotionRequest.ICreate {
   return {
-    reason: input?.reason ?? RandomGenerator.content({ paragraphs: 2 }),
+    reason:
+      input?.reason ??
+      RandomGenerator.content({
+        paragraphs: 2,
+        sentenceMin: 5,
+        sentenceMax: 10,
+        wordMin: 3,
+        wordMax: 8,
+      }),
   };
 }

@@ -18,48 +18,24 @@ export async function postHrmPlatformMemberOrganizations(props: {
   member: MemberPayload;
   body: IHrmPlatformOrganization.ICreate;
 }): Promise<IHrmPlatformOrganization> {
-  const organization = await MyGlobal.prisma.hrm_platform_organizations.create({
+  const created = await MyGlobal.prisma.hrm_platform_organizations.create({
     data: await HrmPlatformOrganizationCollector.collect({
       body: props.body,
+      hrmPlatformMembers: { id: props.member.id },
+      hrmPlatformMemberSessions: { id: props.member.session_id },
     }),
     ...HrmPlatformOrganizationTransformer.select(),
   });
-  let ownerRole = await MyGlobal.prisma.hrm_platform_roles.findFirst({
-    where: {
-      organization_id: organization.id,
-      name: "Owner",
-      is_builtin: true,
-      deleted_at: null,
-    },
-  });
-  if (!ownerRole) {
-    ownerRole = await MyGlobal.prisma.hrm_platform_roles.create({
-      data: {
-        id: v4(),
-        organization_id: organization.id,
-        name: "Owner",
-        description: "Full access to all organization features",
-        is_builtin: true,
-        created_at: new Date(),
-        updated_at: new Date(),
-        deleted_at: null,
-      },
-    });
-  }
-  await MyGlobal.prisma.hrm_platform_employees.create({
+  await MyGlobal.prisma.hrm_platform_organization_memberships.create({
     data: {
       id: v4(),
-      organization_id: organization.id,
-      user_id: props.member.id,
-      role_id: ownerRole.id,
-      department_id: null,
-      position: null,
-      employment_type: "full-time",
-      status: "active",
+      hrm_platform_member_id: props.member.id,
+      hrm_platform_organization_id: created.id,
+      is_owner: true,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
     },
   });
-  return await HrmPlatformOrganizationTransformer.transform(organization);
+  return await HrmPlatformOrganizationTransformer.transform(created);
 }

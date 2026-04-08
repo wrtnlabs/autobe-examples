@@ -1,5 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
+import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
+import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import { IShoppingMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallMember";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { IShoppingMallSellerApprovalRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerApprovalRequest";
 import { ArrayUtil } from "@nestia/e2e";
@@ -9,7 +11,7 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallAdministratorAtSummaryTransformer } from "./ShoppingMallAdministratorAtSummaryTransformer";
+import { ShoppingMallAdminAtSummaryTransformer } from "./ShoppingMallAdminAtSummaryTransformer";
 import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
 
 export namespace ShoppingMallSellerApprovalRequestTransformer {
@@ -22,19 +24,11 @@ export namespace ShoppingMallSellerApprovalRequestTransformer {
         id: true,
         status: true,
         rejection_reason: true,
-        submitted_at: true,
-        reviewed_at: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
         seller: ShoppingMallSellerAtSummaryTransformer.select(),
-        reviewingAdministrator:
-          ShoppingMallAdministratorAtSummaryTransformer.select(),
-        snapshots: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.shopping_mall_seller_approval_request_snapshotsFindManyArgs,
+        reviewedByAdmin: ShoppingMallAdminAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_seller_approval_requestsFindManyArgs;
   }
@@ -43,23 +37,19 @@ export namespace ShoppingMallSellerApprovalRequestTransformer {
   ): Promise<IShoppingMallSellerApprovalRequest> {
     return {
       id: input.id,
-      status: typia.assert<"pending" | "approved" | "rejected">(input.status),
-      rejection_reason: input.rejection_reason ?? undefined,
-      submitted_at: toISOStringSafe(input.submitted_at),
-      reviewed_at: input.reviewed_at
-        ? toISOStringSafe(input.reviewed_at)
-        : null,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
       seller: await ShoppingMallSellerAtSummaryTransformer.transform(
         input.seller,
       ),
-      reviewingAdministrator: input.reviewingAdministrator
-        ? await ShoppingMallAdministratorAtSummaryTransformer.transform(
-            input.reviewingAdministrator,
+      reviewedByAdmin: input.reviewedByAdmin
+        ? await ShoppingMallAdminAtSummaryTransformer.transform(
+            input.reviewedByAdmin,
           )
         : null,
-    };
+      status: input.status,
+      rejectionReason: input.rejection_reason ?? null,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
+    } satisfies IShoppingMallSellerApprovalRequest;
   }
 }

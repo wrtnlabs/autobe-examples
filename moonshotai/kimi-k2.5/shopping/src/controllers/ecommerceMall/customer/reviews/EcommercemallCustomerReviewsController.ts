@@ -1,6 +1,6 @@
 import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IEcommerceMallReview } from "../../../../api/structures/IEcommerceMallReview";
 import { CustomerAuth } from "../../../../decorators/CustomerAuth";
@@ -14,35 +14,48 @@ export class EcommercemallCustomerReviewsController {
   /**
    * Create a new review for a delivered order item.
    *
-   * This endpoint allows authenticated customers to submit product reviews after receiving and experiencing the purchased item. A review consists of a mandatory star rating from 1 to 5 and optional text content describing the customer's experience.
+   * A customer can write a review for a product they have purchased and received. Reviews can only be submitted when the corresponding order item has status 'delivered'. Each order item can only be reviewed once.
    *
-   * Reviews can only be created when the associated order item has been delivered. This requirement ensures feedback legitimacy by verifying the customer has actually received the product. The system enforces a one-review-per-order-item policy - if a review already exists for the specified order item, the request will be rejected.
+   * The review consists of a mandatory star rating (from 1 to 5 stars) representing customer satisfaction, and optional text content describing their experience with the product.
    *
-   * Authorization: This endpoint requires customer authentication. Only the customer who placed the order can create a review for that order item.
-   *
-   * Related operations:
-   * - Customers can edit their reviews using PUT /reviews/{reviewId}
-   * - Customers can delete their reviews using DELETE /reviews/{reviewId}
-   * - Product reviews can be viewed using GET /products/{productId}/reviews
-   *
-   * Upon successful creation, the product's average rating is automatically recalculated to include the new review. The review will be displayed on the product detail page with the customer's name, rating stars, review content, and creation timestamp.
-   *
-   * Validation rules:
-   * - Rating must be between 1 and 5 (inclusive)
-   * - Order item must have status "delivered"
-   * - No existing review may be associated with the same order item
-   * - Customer must be the owner of the order
-   *
-   * Edge cases:
-   * - If the order item is not yet delivered, returns error
-   * - If a review already exists for this order item, returns conflict error
-   * - If the order item belongs to a different customer, returns authorization error
+   * Order item ownership is verified to ensure only the purchasing customer can review. The order item's status is checked to confirm delivery before review creation. If the order item already has a review or was not delivered, creation fails.
    *
    * @param connection
-   * @param body Review creation data including order item reference, rating, and optional text content
+   * @param body Review creation data including order item reference, rating, and optional content
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Validate the customer is authenticated and owns the order containing the orderItemId. Verify the order item has status "delivered". Check that no existing review exists for this order item (unique constraint on order_item_id). Insert a new review record with customer_id, product_id, order_id, order_item_id, rating (1-5), and optional content. Set created_at and updated_at timestamps. After successful insertion, trigger a background recalculation of the product's average rating from all non-deleted reviews. Return the created review record with generated UUID.
+   * @x-autobe-specification Create a new review record in ecommerce_mall_reviews.
+   *
+   * **Authorization**: Only authenticated customers can create reviews.
+   *
+   * **Validation Rules**:
+   * 1. Verify requester is authenticated as the customer who owns the order item.
+   * 2. Verify ecommerce_mall_order_items.status is 'delivered'.
+   * 3. Verify no existing review exists for this order item (@@unique([order_item_id]) constraint).
+   *
+   * **Creation Data**:
+   * - id: Generate new UUID
+   * - customer_id: Current authenticated customer ID
+   * - product_id: From order_item.product_id
+   * - order_id: From order_item.order_id
+   * - order_item_id: From request body
+   * - rating: From request body (1-5)
+   * - content: From request body (optional string)
+   * - created_at: Current timestamp
+   * - updated_at: Current timestamp
+   * - deleted_at: null
+   *
+   * **Business Logic**:
+   * - After successful creation, recalculate the product's average rating using all non-deleted reviews for that product.
+   * - The review is immediately visible on the product detail page.
+   *
+   * **Error Handling**:
+   * - 400: Invalid request (missing required fields, rating out of range)
+   * - 401: Not authenticated
+   * - 403: Order item doesn't belong to current customer
+   * - 409: Order item already has a review
+   * - 422: Order item status is not 'delivered' yet
+   * - 404: Order item not found
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -64,22 +77,22 @@ export class EcommercemallCustomerReviewsController {
   }
 
   /**
-   * Update a customer's existing product review.
+   * Update an existing product review.
    *
-   * This operation allows customers to modify their previously submitted reviews. The review must belong to the authenticated customer attempting the update.
+   * This operation allows customers to modify reviews they have previously submitted. Customers can update both the star rating and the text content of their review. The rating must be an integer between 1 and 5, while the text content is optional.
    *
-   * When a review is updated, the system automatically creates an immutable snapshot preserving the previous rating and content values. This maintains a complete audit trail of all review changes for dispute resolution and record-keeping purposes.
+   * When a review is updated, the system automatically creates a snapshot preserving the previous state of the review. This snapshot records the rating and text content values before the edit, along with the timestamp of the change. Snapshots are immutable and serve as an audit trail for dispute resolution.
    *
-   * The rating field is required and must be an integer value from 1 to 5 stars. The content field is optional and can contain free-form text feedback about the product experience. If content is not provided, the review will consist of only the star rating.
+   * Only the original author of the review can perform updates. Attempting to update another customer's review will result in an authorization error. Deleted reviews cannot be updated.
    *
-   * Only non-deleted reviews can be updated. Attempting to update a review that has been soft-deleted will result in an error.
+   * Related operations include creating reviews (POST /reviews), retrieving review details (GET /reviews/{reviewId}), and deleting reviews (DELETE /reviews/{reviewId}).
    *
    * @param connection
-   * @param reviewId Unique identifier of the review to update
-   * @param body Updated review data containing new rating and optional content
+   * @param reviewId The unique identifier of the review to update
+   * @param body Updated review data containing the new rating and optional text content
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Update an existing review by its ID. First verify the authenticated customer is the owner of the review (customer_id matches). Validate that the review exists and has not been soft-deleted. Validate rating is an integer between 1 and 5 inclusive. Before applying updates, create a snapshot in ecommerce_mall_review_snapshots table preserving the current rating and content values. Then update the review record with new rating and content, set updated_at to current timestamp. Return the updated review record joined with customer profile for display name.
+   * @x-autobe-specification Validate that the requesting customer is the author of the review and that the review has not been deleted. Validate that the rating is an integer between 1 and 5. Create a review snapshot record in ecommerce_mall_review_snapshots table capturing the current rating, text content, and timestamp before applying changes. Update the review record in ecommerce_mall_reviews table with the new rating and text content values. Update the product's average rating by recalculating from all non-deleted reviews for the associated product. Return the updated review entity joined with customer profile information to display the reviewer name.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":reviewId")
@@ -87,7 +100,7 @@ export class EcommercemallCustomerReviewsController {
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedParam("reviewId")
-    reviewId: string & tags.Format<"uuid">,
+    reviewId: string,
     @TypedBody()
     body: IEcommerceMallReview.IUpdate,
   ): Promise<IEcommerceMallReview> {
@@ -104,40 +117,43 @@ export class EcommercemallCustomerReviewsController {
   }
 
   /**
-   * Marks a customer review as deleted (soft delete), removing it from public visibility.
+   * Permanently marks a customer review as deleted from public view.
    *
-   * When a customer decides to remove their review from the platform, this operation performs a soft delete by setting the deleted_at timestamp on the review record. The review will no longer appear on product pages or in public listings, but the record itself is preserved for data integrity and audit purposes.
+   * This operation performs a soft delete by setting the deleted_at timestamp on the review record. Once deleted, the review will no longer appear on the product detail page or in public review listings. The product's average rating is recalculated excluding this deleted review.
    *
-   * All previously created snapshots of the review remain preserved and accessible to administrators for dispute resolution and audit purposes. The snapshots capture the rating, text content, and timestamps of all previous versions.
+   * Deleted reviews remain in the database with their associated snapshots preserved for record-keeping and dispute resolution purposes. This ensures data integrity for commercial transaction history even after deletion.
    *
-   * Only the original author of the review can delete their review. The product's average rating is immediately recalculated to exclude this review upon soft deletion.
+   * Only the original author who created the review can delete it. Attempting to delete another customer's review will result in an authorization error. Reviews that have already been deleted cannot be deleted again.
    *
-   * This operation requires authentication. The requesting user must be authenticated as the customer who created the review.
+   * The operation returns the updated review record with the deleted_at timestamp set to the current time.
    *
    * @param connection
-   * @param reviewId The unique identifier of the review to delete
+   * @param reviewId The unique identifier (UUID) of the review to delete (global scope)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification This operation handles the deletion of a review entity.
+   * @x-autobe-specification Implement soft delete by updating the deleted_at field to current timestamp.
    *
-   * **Authorization**: Requires customer authentication. The requesting user must be the owner of the review (review.customerId must match the authenticated customer).
+   * Authorization checks:
+   * 1. Verify the authenticated user is the customer who created the review (customer_id matches)
+   * 2. Return 403 Forbidden if the user is not the original author
+   * 3. Return 404 Not Found if review doesn't exist or is already deleted
    *
-   * **Database Operations**:
-   * 1. Look up the review by reviewId in the ecommerce_mall_reviews table
-   * 2. Verify the review belongs to the authenticated customer
-   * 3. If authorization fails, return 403 Forbidden
-   * 4. If review not found, return 404 Not Found
-   * 5. Update the review record to mark it as deleted (soft delete) or permanently remove it (hard delete) based on system design - either approach preserves the review snapshots
-   * 6. Record the deletion action in the audit log
+   * Database operations:
+   * 1. Query ecommerce_mall_reviews by id = reviewId
+   * 2. Verify deleted_at is NULL (not already deleted)
+   * 3. Set deleted_at = NOW()
+   * 4. Set updated_at = NOW()
+   * 5. Save the record
    *
-   * **Related Data Handling**:
-   * - Product's average rating must be recalculated to exclude this review
-   * - Snapshots in ecommerce_mall_review_snapshots table are NOT affected by this operation
-   * - The review no longer appears in public listings on product pages
+   * Business logic:
+   * - Trigger product average rating recalculation excluding this review
+   * - Preserve all review_snapshots records (do not delete)
+   * - Do not cascade delete to related entities
    *
-   * **Edge Cases**:
-   * - If the review was already deleted, return 404 or 410 depending on implementation
-   * - The deletion is idempotent - subsequent deletion attempts for the same review return success
+   * Edge cases:
+   * - Review already deleted: return 404
+   * - Non-existent review: return 404
+   * - Unauthorized user: return 403
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":reviewId")

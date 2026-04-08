@@ -24,3 +24,29 @@ export namespace EcommerceMallCategoryCollector {
     } satisfies Prisma.ecommerce_mall_categoriesCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallCategoryCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallCategory.ICreate;
+//           
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       name: ...,
+//       description: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       parent: ...,
+//       subcategories: ...,
+//       products: ...,
+//           } satisfies Prisma.ecommerce_mall_categoriesCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

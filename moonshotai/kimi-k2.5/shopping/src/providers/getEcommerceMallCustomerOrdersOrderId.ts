@@ -3,15 +3,12 @@ import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
-import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
 import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
 import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
-import { IEcommerceMallShipmentDelivery } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentDelivery";
 import { IEcommerceMallShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentItem";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -27,10 +24,13 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getEcommerceMallCustomerOrdersOrderId(props: {
   customer: CustomerPayload;
-  orderId: string & tags.Format<"uuid">;
+  orderId: string;
 }): Promise<IEcommerceMallOrder> {
   const order = await MyGlobal.prisma.ecommerce_mall_orders.findUniqueOrThrow({
-    where: { id: props.orderId },
+    where: {
+      id: props.orderId,
+      deleted_at: null,
+    },
     ...EcommerceMallOrderTransformer.select(),
   });
   if (order.customer.id !== props.customer.id) {

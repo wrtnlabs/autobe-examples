@@ -3,10 +3,24 @@ import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structur
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import type { IPageIShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallOrderItem";
+import type { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import type { IShoppingMallCheckout } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCheckout";
 import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import type { IShoppingMallCustomerAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerAddress";
+import type { IShoppingMallCustomerCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerCart";
+import type { IShoppingMallCustomerCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerCartItem";
+import type { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import type { IShoppingMallInventoryRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallInventoryRecord";
 import type { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import type { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+import type { IShoppingMallOrderItemSnapshotProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItemSnapshotProductImage";
+import type { IShoppingMallOrderItemSnapshotVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItemSnapshotVariantOption";
+import type { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import type { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
+import type { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import type { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
 import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import type { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
 import type { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -17,173 +31,289 @@ import typia, { tags } from "typia";
 import { authorize_customer_join } from "../../../authorize/authorize_customer_join";
 import { authorize_customer_login } from "../../../authorize/authorize_customer_login";
 import { authorize_customer_refresh } from "../../../authorize/authorize_customer_refresh";
-import { generate_random_shopping_mall_customer_customers_me_orders_create } from "../../../generate/generate_random_shopping_mall_customer_customers_me_orders_create";
-import { prepare_random_shopping_mall_order } from "../../../prepare/prepare_random_shopping_mall_order";
+import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
+import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
+import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
+import { generate_random_shopping_mall_customer_addresses_create } from "../../../generate/generate_random_shopping_mall_customer_addresses_create";
+import { generate_random_shopping_mall_customer_cart_items_create } from "../../../generate/generate_random_shopping_mall_customer_cart_items_create";
+import { generate_random_shopping_mall_customer_checkout } from "../../../generate/generate_random_shopping_mall_customer_checkout";
+import { generate_random_shopping_mall_seller_products_create } from "../../../generate/generate_random_shopping_mall_seller_products_create";
+import { generate_random_shopping_mall_seller_products_variants_create } from "../../../generate/generate_random_shopping_mall_seller_products_variants_create";
+import { generate_random_shopping_mall_seller_products_variants_inventory_create } from "../../../generate/generate_random_shopping_mall_seller_products_variants_inventory_create";
+import { generate_random_shopping_mall_seller_shipments_create } from "../../../generate/generate_random_shopping_mall_seller_shipments_create";
+import { prepare_random_shopping_mall_checkout } from "../../../prepare/prepare_random_shopping_mall_checkout";
+import { prepare_random_shopping_mall_customer_address } from "../../../prepare/prepare_random_shopping_mall_customer_address";
+import { prepare_random_shopping_mall_customer_cart_item } from "../../../prepare/prepare_random_shopping_mall_customer_cart_item";
+import { prepare_random_shopping_mall_inventory_record } from "../../../prepare/prepare_random_shopping_mall_inventory_record";
+import { prepare_random_shopping_mall_product } from "../../../prepare/prepare_random_shopping_mall_product";
+import { prepare_random_shopping_mall_product_variant } from "../../../prepare/prepare_random_shopping_mall_product_variant";
+import { prepare_random_shopping_mall_shipment } from "../../../prepare/prepare_random_shopping_mall_shipment";
 
+/**
+ * Test that a customer can filter order items by their fulfillment status within an order.
+ *
+ * Validates the order items filtering functionality by creating an order with multiple items in different fulfillment states (paid, shipped, delivered), then testing that the status filter correctly returns only items matching the specified status. Ensures that items with different statuses are properly excluded from the filtered results.
+ *
+ * The test creates a complete e-commerce workflow: seller registration, product creation with variants and inventory, customer registration, cart operations, checkout, shipment creation, and delivery confirmation. This results in an order with mixed item statuses that can be filtered.
+ *
+ * 1. Seller registers and authenticates to the platform.
+ * 2. Seller creates a product with name, description, and base price.
+ * 3. Seller creates multiple product variants with SKU codes, options, and initial stock.
+ * 4. Customer registers and authenticates to the platform.
+ * 5. Customer adds multiple product variants to their shopping cart.
+ * 6. Customer creates a shipping address for delivery.
+ * 7. Customer places an order through checkout, creating order items with 'paid' status.
+ * 8. Seller creates a shipment for some order items, changing their status to 'shipped'.
+ * 9. Customer confirms delivery for some items, changing their status to 'delivered'.
+ * 10. Customer filters order items by status='shipped' and verifies only shipped items are returned.
+ * 11. Customer filters order items by status='delivered' and verifies only delivered items are returned.
+ * 12. Customer filters order items by status='paid' and verifies only paid items are returned.
+ */
 export async function test_api_order_items_filter_by_status(
   connection: api.IConnection,
 ): Promise<void> {
-  /**
-   * Test filtering order items by status within a customer's order.
-   * This test verifies that the order items API correctly filters items
-   * based on their fulfillment status (paid, shipped, delivered, cancelled, refunded).
-   * It also validates pagination metadata and edge cases like filtering with no matches.
-   */
-  // 1. Create customer connection and authenticate
+  // 1. Seller setup - register and authenticate
+  const sellerConnection: api.IConnection = { host: connection.host };
+  await authorize_seller_join(sellerConnection, {});
+  // 2. Seller creates a product
+  const product = await generate_random_shopping_mall_seller_products_create(
+    sellerConnection,
+    {},
+  );
+  typia.assert(product);
+  // 3. Seller creates multiple product variants with initial stock
+  const variant1 =
+    await generate_random_shopping_mall_seller_products_variants_create(
+      sellerConnection,
+      {
+        params: { productId: product.id },
+        body: {
+          initialStockQuantity: 10,
+        },
+      },
+    );
+  typia.assert(variant1);
+  const variant2 =
+    await generate_random_shopping_mall_seller_products_variants_create(
+      sellerConnection,
+      {
+        params: { productId: product.id },
+        body: {
+          initialStockQuantity: 10,
+        },
+      },
+    );
+  typia.assert(variant2);
+  const variant3 =
+    await generate_random_shopping_mall_seller_products_variants_create(
+      sellerConnection,
+      {
+        params: { productId: product.id },
+        body: {
+          initialStockQuantity: 10,
+        },
+      },
+    );
+  typia.assert(variant3);
+  // 4. Customer setup - register and authenticate
   const customerConnection: api.IConnection = { host: connection.host };
-  await authorize_customer_join(customerConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-      display_name: RandomGenerator.name(),
-      phone_number: RandomGenerator.mobile(),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: typia.random<string & tags.Format<"ipv4">>(),
-    } satisfies IShoppingMallCustomer.IJoin,
-  });
-  // 2. Create an order with multiple items
-  const order =
-    await generate_random_shopping_mall_customer_customers_me_orders_create(
+  await authorize_customer_join(customerConnection, {});
+  // 5. Customer adds multiple product variants to cart
+  const cartItem1 =
+    await generate_random_shopping_mall_customer_cart_items_create(
       customerConnection,
-      {},
+      {
+        body: {
+          productVariantId: variant1.id,
+          quantity: 1,
+        },
+      },
     );
+  typia.assert(cartItem1);
+  const cartItem2 =
+    await generate_random_shopping_mall_customer_cart_items_create(
+      customerConnection,
+      {
+        body: {
+          productVariantId: variant2.id,
+          quantity: 1,
+        },
+      },
+    );
+  typia.assert(cartItem2);
+  const cartItem3 =
+    await generate_random_shopping_mall_customer_cart_items_create(
+      customerConnection,
+      {
+        body: {
+          productVariantId: variant3.id,
+          quantity: 1,
+        },
+      },
+    );
+  typia.assert(cartItem3);
+  // 6. Customer creates a shipping address
+  const address = await generate_random_shopping_mall_customer_addresses_create(
+    customerConnection,
+    {},
+  );
+  typia.assert(address);
+  // 7. Customer places an order through checkout
+  const order = await generate_random_shopping_mall_customer_checkout(
+    customerConnection,
+    {
+      body: {
+        shopping_mall_customer_address_id: address.id,
+        payment_token: "test_payment_token_12345",
+      },
+    },
+  );
   typia.assert(order);
-  // 3. Test filtering by "paid" status
-  const paidFilter = {
-    status: "paid" as const,
-  } satisfies IShoppingMallOrderItem.IRequest;
-  const paidResult =
-    await api.functional.shoppingMall.customer.orders.items.index(
-      customerConnection,
-      {
-        orderId: order.id,
-        body: paidFilter,
-      },
-    );
-  typia.assert(paidResult);
+  // Verify order has 3 items with 'paid' status
+  TestValidator.equals("order has 3 items", order.items.length, 3);
   TestValidator.predicate(
-    "paid filter returns valid pagination",
-    paidResult.pagination.records >= 0 && paidResult.pagination.pages >= 0,
+    "all items initially paid",
+    order.items.every((item) => item.status === "paid"),
   );
-  // 4. Test filtering by "shipped" status
-  const shippedFilter = {
-    status: "shipped" as const,
-  } satisfies IShoppingMallOrderItem.IRequest;
-  const shippedResult =
+  // 8. Seller creates a shipment for first item (becomes 'shipped')
+  const shipment1 = await generate_random_shopping_mall_seller_shipments_create(
+    sellerConnection,
+    {
+      body: {
+        carrier_name: "TestCarrier1",
+        tracking_number: "TRACK123456789",
+        order_item_ids: [order.items[0].id],
+      },
+    },
+  );
+  typia.assert(shipment1);
+  // 9. Customer confirms delivery for first item (becomes 'delivered')
+  const confirmedShipment1 =
+    await api.functional.shoppingMall.customer.orders.shipments.delivered.confirmDelivery(
+      customerConnection,
+      {
+        orderId: order.id,
+        shipmentId: shipment1.id,
+      },
+    );
+  typia.assert(confirmedShipment1);
+  // 10. Seller creates a shipment for second item (becomes 'shipped', not delivered)
+  const shipment2 = await generate_random_shopping_mall_seller_shipments_create(
+    sellerConnection,
+    {
+      body: {
+        carrier_name: "TestCarrier2",
+        tracking_number: "TRACK987654321",
+        order_item_ids: [order.items[1].id],
+      },
+    },
+  );
+  typia.assert(shipment2);
+  // Third item remains 'paid'
+  // Refresh order to get updated item statuses
+  const updatedOrder =
     await api.functional.shoppingMall.customer.orders.items.index(
       customerConnection,
       {
         orderId: order.id,
-        body: shippedFilter,
+        body: {},
       },
     );
-  typia.assert(shippedResult);
-  TestValidator.predicate(
-    "shipped filter returns valid pagination",
-    shippedResult.pagination.records >= 0 &&
-      shippedResult.pagination.pages >= 0,
+  typia.assert(updatedOrder);
+  // Verify we have items with different statuses
+  const hasDelivered = updatedOrder.data.some(
+    (item) => item.status === "delivered",
   );
-  // 5. Test filtering by "delivered" status
-  const deliveredFilter = {
-    status: "delivered" as const,
-  } satisfies IShoppingMallOrderItem.IRequest;
-  const deliveredResult =
+  const hasShipped = updatedOrder.data.some(
+    (item) => item.status === "shipped",
+  );
+  const hasPaid = updatedOrder.data.some((item) => item.status === "paid");
+  TestValidator.predicate("has delivered items", hasDelivered);
+  TestValidator.predicate("has shipped items", hasShipped);
+  TestValidator.predicate("has paid items", hasPaid);
+  // 11. Filter by status='delivered' - should return only delivered items
+  const deliveredFilter =
     await api.functional.shoppingMall.customer.orders.items.index(
       customerConnection,
       {
         orderId: order.id,
-        body: deliveredFilter,
+        body: {
+          status: "delivered",
+        },
       },
     );
-  typia.assert(deliveredResult);
-  TestValidator.predicate(
-    "delivered filter returns valid pagination",
-    deliveredResult.pagination.records >= 0 &&
-      deliveredResult.pagination.pages >= 0,
-  );
-  // 6. Test filtering by "cancelled" status
-  const cancelledFilter = {
-    status: "cancelled" as const,
-  } satisfies IShoppingMallOrderItem.IRequest;
-  const cancelledResult =
-    await api.functional.shoppingMall.customer.orders.items.index(
-      customerConnection,
-      {
-        orderId: order.id,
-        body: cancelledFilter,
-      },
-    );
-  typia.assert(cancelledResult);
-  TestValidator.predicate(
-    "cancelled filter returns valid pagination",
-    cancelledResult.pagination.records >= 0 &&
-      cancelledResult.pagination.pages >= 0,
-  );
-  // 7. Test filtering by "refunded" status
-  const refundedFilter = {
-    status: "refunded" as const,
-  } satisfies IShoppingMallOrderItem.IRequest;
-  const refundedResult =
-    await api.functional.shoppingMall.customer.orders.items.index(
-      customerConnection,
-      {
-        orderId: order.id,
-        body: refundedFilter,
-      },
-    );
-  typia.assert(refundedResult);
-  TestValidator.predicate(
-    "refunded filter returns valid pagination",
-    refundedResult.pagination.records >= 0 &&
-      refundedResult.pagination.pages >= 0,
-  );
-  // 8. Test filtering with no matching items (should return empty data array)
-  // All items in a newly created order should be "paid", so filtering by other statuses should return empty
-  const noMatchFilter = {
-    status: "delivered" as const,
-  } satisfies IShoppingMallOrderItem.IRequest;
-  const noMatchResult =
-    await api.functional.shoppingMall.customer.orders.items.index(
-      customerConnection,
-      {
-        orderId: order.id,
-        body: noMatchFilter,
-      },
-    );
-  typia.assert(noMatchResult);
+  typia.assert(deliveredFilter);
   TestValidator.equals(
-    "no match filter returns empty data array",
-    noMatchResult.data.length,
+    "delivered filter returns correct count",
+    deliveredFilter.data.length,
+    deliveredFilter.pagination.records,
+  );
+  TestValidator.predicate(
+    "all delivered items have delivered status",
+    deliveredFilter.data.every((item) => item.status === "delivered"),
+  );
+  // 12. Filter by status='shipped' - should return only shipped items
+  const shippedFilter =
+    await api.functional.shoppingMall.customer.orders.items.index(
+      customerConnection,
+      {
+        orderId: order.id,
+        body: {
+          status: "shipped",
+        },
+      },
+    );
+  typia.assert(shippedFilter);
+  TestValidator.equals(
+    "shipped filter returns correct count",
+    shippedFilter.data.length,
+    shippedFilter.pagination.records,
+  );
+  TestValidator.predicate(
+    "all shipped items have shipped status",
+    shippedFilter.data.every((item) => item.status === "shipped"),
+  );
+  // 13. Filter by status='paid' - should return only paid items
+  const paidFilter =
+    await api.functional.shoppingMall.customer.orders.items.index(
+      customerConnection,
+      {
+        orderId: order.id,
+        body: {
+          status: "paid",
+        },
+      },
+    );
+  typia.assert(paidFilter);
+  TestValidator.equals(
+    "paid filter returns correct count",
+    paidFilter.data.length,
+    paidFilter.pagination.records,
+  );
+  TestValidator.predicate(
+    "all paid items have paid status",
+    paidFilter.data.every((item) => item.status === "paid"),
+  );
+  // 14. Filter by status='cancelled' - should return empty (no cancelled items)
+  const cancelledFilter =
+    await api.functional.shoppingMall.customer.orders.items.index(
+      customerConnection,
+      {
+        orderId: order.id,
+        body: {
+          status: "cancelled",
+        },
+      },
+    );
+  typia.assert(cancelledFilter);
+  TestValidator.equals(
+    "cancelled filter returns empty",
+    cancelledFilter.data.length,
     0,
   );
   TestValidator.equals(
-    "no match filter returns zero records",
-    noMatchResult.pagination.records,
+    "cancelled filter pagination records is 0",
+    cancelledFilter.pagination.records,
     0,
   );
-  TestValidator.equals(
-    "no match filter returns zero pages",
-    noMatchResult.pagination.pages,
-    0,
-  );
-  // 9. Verify that "paid" filter returns the correct number of items
-  TestValidator.equals(
-    "paid filter returns all order items",
-    paidResult.data.length,
-    order.orderItems.length,
-  );
-  TestValidator.equals(
-    "paid filter records count matches order items",
-    paidResult.pagination.records,
-    order.orderItems.length,
-  );
-  // 10. Verify all returned items have the correct status
-  for (const item of paidResult.data) {
-    TestValidator.equals(
-      `item ${item.id} has paid status`,
-      item.status,
-      "paid",
-    );
-  }
 }

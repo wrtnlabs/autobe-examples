@@ -16,16 +16,16 @@ export namespace ShoppingMallRefundRequestSnapshotTransformer {
     return {
       select: {
         id: true,
+        status: true,
+        reason: true,
+        seller_response_type: true,
+        seller_response_comment: true,
+        created_at: true,
         refundRequest: {
           select: {
             id: true,
           },
         },
-        reason: true,
-        status: true,
-        seller_response: true,
-        responded_at: true,
-        created_at: true,
       },
     } satisfies Prisma.shopping_mall_refund_request_snapshotsFindManyArgs;
   }
@@ -34,12 +34,12 @@ export namespace ShoppingMallRefundRequestSnapshotTransformer {
   ): Promise<IShoppingMallRefundRequestSnapshot> {
     return {
       id: input.id,
-      shopping_mall_refund_request_id: input.refundRequest.id,
-      reason: input.reason,
+      refundRequestId: input.refundRequest.id,
       status: input.status,
-      seller_response: input.seller_response ?? null,
-      responded_at: input.responded_at?.toISOString() ?? null,
-      created_at: input.created_at.toISOString(),
-    };
+      reason: input.reason,
+      sellerResponseType: input.seller_response_type,
+      sellerResponseComment: input.seller_response_comment,
+      createdAt: input.created_at.toISOString(),
+    } satisfies IShoppingMallRefundRequestSnapshot;
   }
 }

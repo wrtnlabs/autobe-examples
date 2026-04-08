@@ -1,8 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallAdminPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdminPromotionRequest";
-import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
-import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
-import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSuperAdmin";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
@@ -10,8 +8,7 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallCustomerAtSummaryTransformer } from "./ShoppingMallCustomerAtSummaryTransformer";
-import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
+import { ShoppingMallSuperAdminAtSummaryTransformer } from "./ShoppingMallSuperAdminAtSummaryTransformer";
 
 export namespace ShoppingMallAdminPromotionRequestTransformer {
   export type Payload = Prisma.shopping_mall_admin_promotion_requestsGetPayload<
@@ -24,20 +21,11 @@ export namespace ShoppingMallAdminPromotionRequestTransformer {
         actor_type: true,
         reason: true,
         status: true,
-        rejection_reason: true,
+        rejection_note: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        customerRequest: {
-          select: {
-            customer: ShoppingMallCustomerAtSummaryTransformer.select(),
-          },
-        } satisfies Prisma.shopping_mall_admin_promotion_request_of_customersFindManyArgs,
-        sellerRequest: {
-          select: {
-            seller: ShoppingMallSellerAtSummaryTransformer.select(),
-          },
-        } satisfies Prisma.shopping_mall_admin_promotion_request_of_sellersFindManyArgs,
+        reviewer: ShoppingMallSuperAdminAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_admin_promotion_requestsFindManyArgs;
   }
@@ -49,18 +37,15 @@ export namespace ShoppingMallAdminPromotionRequestTransformer {
       actor_type: input.actor_type,
       reason: input.reason,
       status: input.status,
-      rejection_reason: input.rejection_reason ?? undefined,
-      submitter:
-        input.actor_type === "customer"
-          ? await ShoppingMallCustomerAtSummaryTransformer.transform(
-              input.customerRequest!.customer,
-            )
-          : await ShoppingMallSellerAtSummaryTransformer.transform(
-              input.sellerRequest!.seller,
-            ),
+      rejection_note: input.rejection_note ?? null,
+      reviewer: input.reviewer
+        ? await ShoppingMallSuperAdminAtSummaryTransformer.transform(
+            input.reviewer,
+          )
+        : null,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
-    };
+    } satisfies IShoppingMallAdminPromotionRequest;
   }
 }

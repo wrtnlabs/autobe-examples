@@ -1,4 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
+import { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
 import { IErpHrmTimeProjectBudgetReportRow } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProjectBudgetReportRow";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -7,6 +10,8 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer } from "./ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer";
+import { ErpHrmTimeProjectAtSummaryTransformer } from "./ErpHrmTimeProjectAtSummaryTransformer";
 
 export namespace ErpHrmTimeProjectBudgetReportRowTransformer {
   export type Payload =
@@ -18,8 +23,13 @@ export namespace ErpHrmTimeProjectBudgetReportRowTransformer {
   ): Promise<IErpHrmTimeProjectBudgetReportRow> {
     return {
       id: input.id,
-      organizationId: input.organization_id,
-      projectId: input.project_id,
+      organization:
+        await ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer.transform(
+          input.organization,
+        ),
+      project: await ErpHrmTimeProjectAtSummaryTransformer.transform(
+        input.project,
+      ),
       reportDate: input.report_date.toISOString(),
       periodStartDate: input.period_start_date.toISOString(),
       periodEndDate: input.period_end_date.toISOString(),
@@ -34,8 +44,6 @@ export namespace ErpHrmTimeProjectBudgetReportRowTransformer {
     return {
       select: {
         id: true,
-        organization_id: true,
-        project_id: true,
         report_date: true,
         period_start_date: true,
         period_end_date: true,
@@ -44,6 +52,9 @@ export namespace ErpHrmTimeProjectBudgetReportRowTransformer {
         utilization_percent: true,
         billable_hours: true,
         non_billable_hours: true,
+        organization:
+          ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer.select(),
+        project: ErpHrmTimeProjectAtSummaryTransformer.select(),
       },
     } satisfies Prisma.erp_hrm_time_project_budget_report_rowsFindManyArgs;
   }

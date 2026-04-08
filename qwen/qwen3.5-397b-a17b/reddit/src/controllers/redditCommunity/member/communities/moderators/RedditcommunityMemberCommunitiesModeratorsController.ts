@@ -6,42 +6,52 @@ import { IPageIRedditCommunityModerator } from "../../../../../api/structures/IP
 import { IRedditCommunityModerator } from "../../../../../api/structures/IRedditCommunityModerator";
 import { MemberAuth } from "../../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
-import { deleteRedditCommunityMemberCommunitiesCommunityNameModeratorsMemberId } from "../../../../../providers/deleteRedditCommunityMemberCommunitiesCommunityNameModeratorsMemberId";
-import { patchRedditCommunityMemberCommunitiesCommunityNameModerators } from "../../../../../providers/patchRedditCommunityMemberCommunitiesCommunityNameModerators";
-import { postRedditCommunityMemberCommunitiesCommunityNameModerators } from "../../../../../providers/postRedditCommunityMemberCommunitiesCommunityNameModerators";
+import { deleteRedditCommunityMemberCommunitiesCommunityIdModeratorsModeratorId } from "../../../../../providers/deleteRedditCommunityMemberCommunitiesCommunityIdModeratorsModeratorId";
+import { getRedditCommunityMemberCommunitiesCommunityIdModeratorsModeratorId } from "../../../../../providers/getRedditCommunityMemberCommunitiesCommunityIdModeratorsModeratorId";
+import { patchRedditCommunityMemberCommunitiesCommunityIdModerators } from "../../../../../providers/patchRedditCommunityMemberCommunitiesCommunityIdModerators";
+import { postRedditCommunityMemberCommunitiesCommunityIdModerators } from "../../../../../providers/postRedditCommunityMemberCommunitiesCommunityIdModerators";
+import { putRedditCommunityMemberCommunitiesCommunityIdModeratorsModeratorId } from "../../../../../providers/putRedditCommunityMemberCommunitiesCommunityIdModeratorsModeratorId";
 
-@Controller("/redditCommunity/member/communities/:communityName/moderators")
+@Controller("/redditCommunity/member/communities/:communityId/moderators")
 export class RedditcommunityMemberCommunitiesModeratorsController {
   /**
-   * Add a member to a community's moderation team.
+   * Add a moderator to a community.
    *
-   * This operation creates a moderator record that grants the specified member moderation privileges within the community. The community owner or existing moderators can add new moderators to help manage community content and governance, as defined in the moderation privilege rules.
+   * Creates a moderator assignment linking a member to a community with a specified role (owner or moderator). The community creator automatically becomes the owner. Existing owners and moderators can add new moderators to the community.
    *
-   * The requesting user must be either the community owner or an existing moderator of the community. A member can only be added as a moderator once per community - attempting to add an existing moderator returns a conflict error. The added_by_id is automatically set to the authenticated user's member ID.
-   *
-   * Upon successful creation, the new moderator gains abilities to delete posts and comments, ban and unban users, view reports, and add other moderators to the team. Only the community owner can remove moderators.
+   * Only users with moderation authority (owner or existing moderators) can add new moderators. A member can only have one role per community. The owner role has the highest authority and cannot be removed except by deleting the community itself.
    *
    * @param connection
-   * @param communityName Unique community name (scoped globally)
-   * @param body Moderator creation data containing only the target member identifier. The community context is provided via path parameter, and added_by_id is automatically set from the authenticated user's session.
+   * @param communityId Community identifier (UUID) to add the moderator to.
+   * @param body Moderator assignment details including the member to add and their role type.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_community_communities by name to get community_id. Validate community exists and is not soft-deleted (deleted_at is null). Validate requesting user is community owner or existing moderator (authorization check in middleware). Check unique constraint: verify no existing active moderator record for [community_id, member_id] where deleted_at is null. Create reddit_community_moderators record with community_id, member_id, added_by_id (requesting user's member id), created_at, updated_at. Return created moderator record with joined owner and member data. Handle errors: community not found (404), duplicate moderator (409), user not authorized (403 - middleware).
+   * @x-autobe-specification Insert a new record into reddit_community_moderators table with the provided communityId, memberId, and role.
+   *
+   * Validate that the authenticated user has moderator authority (owner or moderator role) in the target community by checking reddit_community_moderators table.
+   *
+   * Validate that the target member exists in reddit_community_members table.
+   *
+   * Validate that no existing moderator assignment exists for this member-community pair (check composite unique constraint on reddit_community_member_id and reddit_community_community_id).
+   *
+   * Set assigned_at to current timestamp. Set created_at and updated_at to current timestamp. Set deleted_at to null.
+   *
+   * Return the created moderator assignment with full entity data including member and community relationships.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
   public async create(
     @MemberAuth()
     member: MemberPayload,
-    @TypedParam("communityName")
-    communityName: string,
+    @TypedParam("communityId")
+    communityId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IRedditCommunityModerator.ICreate,
   ): Promise<IRedditCommunityModerator> {
     try {
-      return await postRedditCommunityMemberCommunitiesCommunityNameModerators({
+      return await postRedditCommunityMemberCommunitiesCommunityIdModerators({
         member,
-        communityName,
+        communityId,
         body,
       });
     } catch (error) {
@@ -51,40 +61,134 @@ export class RedditcommunityMemberCommunitiesModeratorsController {
   }
 
   /**
-   * Retrieve a paginated list of moderators for a specific community.
+   * Retrieve a paginated list of moderators for a specific community with optional filtering and search capabilities.
    *
-   * This operation returns all active moderators appointed to manage the community, including information about when each moderator was added and who appointed them. The response includes moderator profile details such as username and display name for identification.
+   * This endpoint returns all users who have moderation authority over the specified community, including both the owner and any additional moderators. Each moderator record includes their role type (owner or moderator), assignment date, and basic member information.
    *
-   * Supports pagination and filtering by moderator status. Only active moderators (not soft-deleted) are included in the results. Community owners and moderators can access this endpoint to view the moderation team composition.
+   * The operation supports filtering by role type to distinguish between owners and moderators. Results are paginated using cursor-based pagination for efficient handling of large moderator lists. This endpoint is accessible to community members and can be used to display the moderation team on community pages.
    *
    * @param connection
-   * @param communityName Unique community name identifier (scoped globally)
-   * @param body Search criteria and pagination parameters for filtering moderators
+   * @param communityId Unique identifier of the community (UUID format). Specifies which community's moderators to retrieve.
+   * @param body Search and filter criteria for moderator list including role type filter, assignment date ranges, and pagination parameters.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query reddit_community_moderators table filtered by community name via join with reddit_community_communities.
-   * Join with reddit_community_members to get moderator profile information (username, display name).
-   * Join with reddit_community_members again (as addedBy) to get information about who appointed each moderator.
-   * Filter out soft-deleted records (deleted_at IS NOT NULL).
-   * Apply pagination with cursor-based or offset-based approach.
-   * Support filtering by date range (created_at) for audit purposes.
-   * Return IPageIRedditCommunityModerator.ISummary with moderator details and appointment metadata.
+   * @x-autobe-specification Query reddit_community_moderators table filtered by reddit_community_community_id matching the path parameter.
+   * Join with reddit_community_members to include member profile information (username, display name, avatar).
+   * Apply role filter if provided in request body (owner or moderator).
+   * Apply date range filters on assigned_at if provided.
+   * Return cursor-based pagination with IPageIRedditCommunityModerator.ISummary response type.
+   * Exclude soft-deleted records (deleted_at is not null).
+   * Sort by assigned_at descending by default (most recently assigned first).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
   public async index(
     @MemberAuth()
     member: MemberPayload,
-    @TypedParam("communityName")
-    communityName: string,
+    @TypedParam("communityId")
+    communityId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IRedditCommunityModerator.IRequest,
   ): Promise<IPageIRedditCommunityModerator.ISummary> {
     try {
-      return await patchRedditCommunityMemberCommunitiesCommunityNameModerators(
+      return await patchRedditCommunityMemberCommunitiesCommunityIdModerators({
+        member,
+        communityId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve detailed information about a specific moderator in a community.
+   *
+   * Returns the moderator's role (owner or moderator), assignment date, and complete member profile information including username, display name, and avatar. This endpoint is used to view individual moderator details within a community's moderation team.
+   *
+   * The operation validates that the moderator assignment exists for the specified community. If the moderator is not assigned to this community, a 404 error is returned.
+   *
+   * @param connection
+   * @param communityId Unique identifier of the community (UUID format).
+   * @param moderatorId Unique identifier of the moderator member (UUID format).
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Query the reddit_community_moderators table filtering by reddit_community_community_id and reddit_community_member_id (which serves as moderatorId). Join with reddit_community_members to include complete member profile data (username, display_name, avatar, karma). Return the full moderator record including role, assigned_at timestamp, and nested member object. Validate that the community exists and the moderator assignment is active (deleted_at is null). Return 404 if the moderator is not found in this community.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":moderatorId")
+  public async at(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("communityId")
+    communityId: string & tags.Format<"uuid">,
+    @TypedParam("moderatorId")
+    moderatorId: string & tags.Format<"uuid">,
+  ): Promise<IRedditCommunityModerator> {
+    try {
+      return await getRedditCommunityMemberCommunitiesCommunityIdModeratorsModeratorId(
         {
           member,
-          communityName,
+          communityId,
+          moderatorId,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a moderator's role assignment within a community.
+   *
+   * This operation modifies the role of an existing moderator in the specified community. The role can be changed between 'owner' and 'moderator' levels, subject to authorization rules.
+   *
+   * Only the community owner or users with sufficient moderator authority can perform this operation. The owner cannot be removed from their role. Moderators cannot remove other moderators or the owner - only the owner has this authority.
+   *
+   * The operation validates that the moderator assignment exists and that the caller has permission to make the change. Returns the updated moderator assignment with the new role.
+   *
+   * @param connection
+   * @param communityId Community identifier (UUID format).
+   * @param moderatorId Member identifier of the moderator to update (UUID format).
+   * @param body Moderator role update request containing the new role assignment.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Query reddit_community_moderators table to find the moderator assignment by community ID and member ID.
+   *
+   * Validate that the moderator assignment exists and is not soft-deleted.
+   *
+   * Check caller authorization: verify caller is the community owner (from reddit_community_communities.owner_id) or has moderator privileges.
+   *
+   * Enforce business rules: moderators cannot remove the owner, moderators cannot remove other moderators. Only owner can demote moderators.
+   *
+   * Update the role field in reddit_community_moderators table with the new role value.
+   *
+   * Update the updated_at timestamp.
+   *
+   * Return the updated moderator assignment record.
+   *
+   * Handle errors: 404 if moderator not found, 403 if insufficient permissions, 400 if attempting to remove owner.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":moderatorId")
+  public async update(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("communityId")
+    communityId: string & tags.Format<"uuid">,
+    @TypedParam("moderatorId")
+    moderatorId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IRedditCommunityModerator.IUpdate,
+  ): Promise<IRedditCommunityModerator> {
+    try {
+      return await putRedditCommunityMemberCommunitiesCommunityIdModeratorsModeratorId(
+        {
+          member,
+          communityId,
+          moderatorId,
           body,
         },
       );
@@ -95,47 +199,51 @@ export class RedditcommunityMemberCommunitiesModeratorsController {
   }
 
   /**
-   * Remove a moderator from a community's moderation team.
+   * Remove a moderator from a community.
    *
-   * This operation permanently removes a user's moderator privileges from the specified community. The moderator record is soft-deleted, preserving audit trail while revoking all moderation capabilities.
+   * This operation removes a user's moderator assignment from a specific community. Only the community owner has authority to remove moderators. The community owner cannot be removed by any user.
    *
-   * Only the community owner can execute this operation. Moderators cannot remove other moderators or the community owner. Attempting to remove the owner or removing without owner privileges will be rejected.
+   * When a moderator is removed, they immediately lose all moderation privileges for the community. The user can still view community content and participate as a regular member unless banned.
    *
-   * After removal, the user loses all moderation authority in this community including content deletion, user banning, and report management capabilities.
+   * Authorization requires the requesting user to be the community owner. Attempts by non-owners or moderators to remove moderators are rejected. Attempts to remove the community owner are always rejected.
    *
    * @param connection
-   * @param communityName Unique community name identifier (scoped globally)
-   * @param memberId UUID of the member to remove from moderation team
+   * @param communityId Community UUID (global scope).
+   * @param moderatorId Member UUID to remove from moderators (scoped to community).
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Lookup community by name (communities.name unique constraint)
-   * 2. Verify community exists and is not soft-deleted
-   * 3. Verify requester is the community owner (communities.reddit_community_member_id matches authenticated member)
-   * 4. Verify target moderator exists (reddit_community_moderators with community_id and member_id)
-   * 5. Verify target is not the owner (member_id != communities.reddit_community_member_id)
-   * 6. Soft-delete the moderator record by setting deleted_at to current timestamp
-   * 7. Return success response
+   * @x-autobe-specification Delete a moderator assignment by community and member IDs.
    *
-   * Authorization: Member-only endpoint. Requester must be authenticated.
-   * Business Rule: Only owner can remove moderators (sections 75, 118, 165).
-   * Edge Cases: Reject if requester is not owner, if target is owner, if moderator record doesn't exist, if community is deleted.
+   * 1. Verify the requesting user is authenticated as a member
+   * 2. Load the moderator assignment by reddit_community_community_id and reddit_community_member_id
+   * 3. Verify the assignment exists and is not already deleted
+   * 4. Load the community's owner by querying reddit_community_moderators where reddit_community_community_id matches and role === 'owner'
+   * 5. Verify the requesting user's member ID matches the owner's member ID
+   * 6. Verify the target moderator is not the community owner (reject if trying to remove owner)
+   * 7. Perform soft delete by setting deleted_at to current timestamp
+   * 8. Return 204 No Content on success
+   *
+   * Error cases:
+   * - 404: Community not found, moderator assignment not found
+   * - 403: Requesting user is not the community owner (including if requester is a moderator)
+   * - 400: Attempting to remove the community owner
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Delete(":memberId")
+  @TypedRoute.Delete(":moderatorId")
   public async erase(
     @MemberAuth()
     member: MemberPayload,
-    @TypedParam("communityName")
-    communityName: string,
-    @TypedParam("memberId")
-    memberId: string & tags.Format<"uuid">,
+    @TypedParam("communityId")
+    communityId: string & tags.Format<"uuid">,
+    @TypedParam("moderatorId")
+    moderatorId: string & tags.Format<"uuid">,
   ): Promise<void> {
     try {
-      return await deleteRedditCommunityMemberCommunitiesCommunityNameModeratorsMemberId(
+      return await deleteRedditCommunityMemberCommunitiesCommunityIdModeratorsModeratorId(
         {
           member,
-          communityName,
-          memberId,
+          communityId,
+          moderatorId,
         },
       );
     } catch (error) {

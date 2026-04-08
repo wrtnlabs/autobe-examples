@@ -1,5 +1,5 @@
 import { IEcommerceMallSellerApproval } from "./IEcommerceMallSellerApproval";
-import { IPage } from "./IPage";
+import { IPageIEcommerceMall } from "./IPageIEcommerceMall";
 
 export namespace IPageIEcommerceMallSellerApproval {
   /**
@@ -13,7 +13,7 @@ export namespace IPageIEcommerceMallSellerApproval {
      *
      * @x-autobe-specification Pagination information for the page.
      */
-    pagination: IPage.IPagination;
+    pagination: IPageIEcommerceMall.IPagination;
 
     /**
      * List of records.

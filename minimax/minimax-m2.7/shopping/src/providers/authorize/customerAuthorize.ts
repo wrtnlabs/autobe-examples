@@ -32,7 +32,7 @@ export async function customerAuthorize(request: {
   });
 
   if (session === null) {
-    throw new UnauthorizedException("Session expired");
+    throw new UnauthorizedException("Session expired or invalid");
   }
 
   return payload;

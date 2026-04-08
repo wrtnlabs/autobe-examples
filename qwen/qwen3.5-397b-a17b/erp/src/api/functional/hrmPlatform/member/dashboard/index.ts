@@ -3,32 +3,42 @@ import typia from "typia";
 
 import { IHrmPlatformDashboard } from "../../../../structures/IHrmPlatformDashboard";
 
+export * as organization from "./organization/index";
+
 /**
- * Retrieve personalized dashboard data for the current user's organization context.
+ * Retrieves the current employee's personal dashboard overview with time tracking summaries and work items.
  *
- * This endpoint provides a comprehensive overview of time tracking activity and pending actions tailored to the user's role and permissions. For employees, the dashboard displays personal time tracking metrics including hours logged today and the current week, active timer status if running, the five most recent timelog entries, current week's timesheet submission status, and tasks assigned to the user that are open or in progress.
+ * This endpoint provides employees with a comprehensive view of their time tracking activity and assigned work. The dashboard displays hours logged today and this week, active timer status if running, the five most recent timelogs, pending timesheet status for the current week, and tasks assigned to the employee with open or in-progress status.
  *
- * For users with report:view permission, the dashboard additionally includes organization-wide analytics such as count of active employees, aggregate hours logged across the organization this week, number of timesheets pending approval, projects with budget utilization tracking, and top performers ranked by hours logged. All data is scoped to the user's currently selected organization context.
- *
- * The response structure adapts dynamically based on the authenticated user's role and permissions within the organization.
+ * All data is scoped to the currently selected organization context. The response aggregates information from timelogs, timers, timesheets, and tasks tables to provide a unified dashboard view.
  *
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query dashboard data based on user's role and permissions.
+ * @x-autobe-specification Query the database to assemble personal dashboard data for the current authenticated employee.
  *
- * For employees: Query hrm_platform_timelogs for today's and this week's total duration_minutes. Query hrm_platform_timers for active timer status (employee_id = current user). Query hrm_platform_timesheets for current week's draft/submitted status. Query hrm_platform_tasks for tasks assigned to employee with status 'open' or 'in-progress'. Query hrm_platform_timelogs for last 5 recent entries ordered by date DESC.
+ * 1. Hours logged today: Sum duration_minutes from hrm_platform_timelogs where hrm_platform_employee_id equals current employee and date equals today (midnight UTC to midnight UTC). Convert to hours (divide by 60).
  *
- * For users with report:view permission: Query hrm_platform_employees count where status='active'. Query hrm_platform_timelogs sum for organization-wide weekly hours. Query hrm_platform_timesheets count where status='submitted'. Query hrm_platform_projects with budget_hours and calculate utilization from timelogs. Query top 5 employees by weekly timelog duration.
+ * 2. Hours logged this week: Sum duration_minutes from hrm_platform_timelogs where hrm_platform_employee_id equals current employee and date falls within current week (Monday 00:00 to Sunday 23:59 in organization timezone). Convert to hours.
  *
- * Apply organization_id filter from user's current context on all queries. Return computed dashboard object with all requested sections.
- * @path /hrmPlatform/member/dashboard
- * @accessor api.functional.hrmPlatform.member.dashboard.at
+ * 3. Active timer: Query hrm_platform_timers where hrm_platform_employee_id equals current employee and stopped_at is null. Return timer object with id, project, task, description, started_at, and calculated elapsed duration if found; null otherwise.
+ *
+ * 4. Recent timelogs: Query hrm_platform_timelogs where hrm_platform_employee_id equals current employee, order by created_at descending, limit 5. Include timelog fields plus related project name and task title if available.
+ *
+ * 5. Pending timesheet status: Query hrm_platform_timesheets where employee_id equals current employee and week_start_date equals current week's Monday. Return timesheet id, status, total hours (sum of included timelogs), and submitted_at if exists.
+ *
+ * 6. Assigned tasks: Query hrm_platform_tasks where assigned_employee_id equals current employee and status in ('open', 'in-progress'). Include task id, title, status, priority, due_date, and project name. Order by priority (urgent first) then due_date ascending.
+ *
+ * Enforce organization context on all queries - join through employee record to filter by organization_id. Handle null cases gracefully when no data exists for a section.
+ * @path /hrmPlatform/member/dashboard/personal
+ * @accessor api.functional.hrmPlatform.member.dashboard.personal
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function at(connection: IConnection): Promise<at.Response> {
+export async function personal(
+  connection: IConnection,
+): Promise<personal.Response> {
   return true === connection.simulate
-    ? at.simulate(connection)
+    ? personal.simulate(connection)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -38,18 +48,18 @@ export async function at(connection: IConnection): Promise<at.Response> {
           },
         },
         {
-          ...at.METADATA,
-          path: at.path(),
+          ...personal.METADATA,
+          path: personal.path(),
           status: null,
         },
       );
 }
-export namespace at {
-  export type Response = IHrmPlatformDashboard;
+export namespace personal {
+  export type Response = IHrmPlatformDashboard.IPersonal;
 
   export const METADATA = {
     method: "GET",
-    path: "/hrmPlatform/member/dashboard",
+    path: "/hrmPlatform/member/dashboard/personal",
     request: null,
     response: {
       type: "application/json",
@@ -57,9 +67,9 @@ export namespace at {
     },
   } as const;
 
-  export const path = () => "/hrmPlatform/member/dashboard";
-  export const random = (): IHrmPlatformDashboard =>
-    typia.random<IHrmPlatformDashboard>();
+  export const path = () => "/hrmPlatform/member/dashboard/personal";
+  export const random = (): IHrmPlatformDashboard.IPersonal =>
+    typia.random<IHrmPlatformDashboard.IPersonal>();
   export const simulate = (_connection: IConnection): Response => {
     return random();
   };

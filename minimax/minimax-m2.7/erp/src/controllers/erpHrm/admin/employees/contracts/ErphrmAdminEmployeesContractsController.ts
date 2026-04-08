@@ -6,6 +6,7 @@ import { IErpHrmContract } from "../../../../../api/structures/IErpHrmContract";
 import { IPageIErpHrmContract } from "../../../../../api/structures/IPageIErpHrmContract";
 import { AdminAuth } from "../../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
+import { deleteErpHrmAdminEmployeesEmployeeIdContractsContractId } from "../../../../../providers/deleteErpHrmAdminEmployeesEmployeeIdContractsContractId";
 import { getErpHrmAdminEmployeesEmployeeIdContractsContractId } from "../../../../../providers/getErpHrmAdminEmployeesEmployeeIdContractsContractId";
 import { patchErpHrmAdminEmployeesEmployeeIdContracts } from "../../../../../providers/patchErpHrmAdminEmployeesEmployeeIdContracts";
 import { postErpHrmAdminEmployeesEmployeeIdContracts } from "../../../../../providers/postErpHrmAdminEmployeesEmployeeIdContracts";
@@ -14,48 +15,39 @@ import { putErpHrmAdminEmployeesEmployeeIdContractsContractId } from "../../../.
 @Controller("/erpHrm/admin/employees/:employeeId/contracts")
 export class ErphrmAdminEmployeesContractsController {
   /**
-   * Create a new employment contract for an employee within an organization.
+   * Create a new employment contract for an employee within the organization.
    *
-   * This endpoint creates a contract that defines the employment terms for a specific employee, including compensation details and contract validity period. The contract becomes either active immediately (if no other active contract exists) or future-dated (if the start date is in the future relative to any existing active contract).
+   * This endpoint allows users with employee management permission to establish a new employment contract for an existing employee. The contract defines the terms of employment including compensation, pay period, and working hours. When a new contract is created with a start date that would overlap with an existing active contract, the system automatically ends the previous contract by setting its end date to the day before the new contract begins.
    *
-   * When creating a contract that would overlap with an existing active contract, the system automatically ends the previous contract by setting its end date to the day before the new contract's start date. This ensures clean, non-overlapping contract periods as defined in the employee-to-contract relationship model.
+   * Contracts are immutable once created with an end date — past contracts cannot be edited as they serve as historical employment records. Only the current active contract can be modified.
    *
-   * Contracts are immutable historical records - once a contract ends and becomes historical, it cannot be modified. This protects the integrity of employment history documentation for compliance and auditing purposes.
-   *
-   * Required permission: The employee:manage permission scope grants the ability to create contracts for employees in the organization. Users without this permission will receive a 403 Forbidden response.
-   *
-   * The response returns the complete contract entity including the generated ID, timestamps, and all provided values.
+   * The employee must belong to the current organization context, and the authenticated user must have the employee:manage permission to create contracts.
    *
    * @param connection
-   * @param employeeId UUID of the employee for whom the contract is being created. Must be a valid UUID referencing an existing employee in the current organization context.
-   * @param body Contract creation data including compensation terms and contract validity period.
+   * @param employeeId Unique identifier of the employee for whom the contract is being created. The employee must exist and belong to the current organization context.
+   * @param body Contract creation payload containing employment terms including start date, compensation details, and working hours. All required fields must be provided; optional fields may be omitted.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Validate the authenticated user has employee:manage permission in the organization context.
+   * @x-autobe-specification Create a new contract for the specified employee.
    *
-   * 2. Verify the employee exists and belongs to the current organization context.
-   *
-   * 3. Validate required fields in request body:
-   *    - start_date: ISO 8601 date string, required
-   *    - pay_rate: positive numeric value, required
-   *    - pay_period: one of ["hourly", "daily", "weekly", "monthly"], required
-   *    - working_hours_per_week: positive numeric value, required
-   *
-   * 4. Validate optional fields:
-   *    - end_date: ISO 8601 date string, optional (null indicates ongoing contract)
-   *    - notes: string, optional, max 2000 characters
-   *
-   * 5. Business logic:
-   *    - If end_date is provided, it must be after start_date
-   *    - Query for existing active contract: SELECT * FROM erp_hrm_contracts WHERE erp_hrm_employee_id = :employeeId AND end_date IS NULL
-   *    - If an active contract exists and new contract's start_date <= current date:
-   *      - Set the existing contract's end_date to (new start_date - 1 day)
-   *      - Update updated_at timestamp
-   *    - If new contract's start_date is in the future, keep existing active contract intact until the new contract becomes active
-   *
-   * 6. Insert the new contract record with all provided values and auto-generated timestamps (created_at, updated_at).
-   *
-   * 7. Return the complete contract entity with HTTP 201 Created status.
+   * 1. Validate the authenticated user has employee:manage permission in the current organization context.
+   * 2. Verify the employeeId exists and belongs to the current organization.
+   * 3. Validate request body:
+   *    - start_date: required, must be a valid date
+   *    - pay_rate: required, must be a positive numeric value
+   *    - pay_period: required, must be one of: hourly, daily, weekly, monthly
+   *    - working_hours_per_week: required, must be a positive number
+   *    - end_date: optional, if provided must be after start_date
+   *    - notes: optional, string
+   * 4. Check for existing active contract for this employee:
+   *    - If exists and new contract start_date overlaps, automatically set the existing contract's end_date to one day before the new contract's start_date
+   * 5. Create the new contract record with:
+   *    - id: generated UUID
+   *    - erp_hrm_employee_id: from path parameter
+   *    - all provided fields
+   *    - created_at: current timestamp
+   *    - updated_at: current timestamp
+   * 6. Return the created contract as the response body.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -66,7 +58,7 @@ export class ErphrmAdminEmployeesContractsController {
     employeeId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IErpHrmContract.ICreate,
-  ): Promise<IErpHrmContract> {
+  ): Promise<IErpHrmContract.IResponse> {
     try {
       return await postErpHrmAdminEmployeesEmployeeIdContracts({
         admin,
@@ -80,36 +72,35 @@ export class ErphrmAdminEmployeesContractsController {
   }
 
   /**
-   * Retrieve a filtered and paginated list of contracts for a specific employee.
+   * Retrieve a paginated list of contracts for a specific employee within the organization.
    *
-   * This operation lists all employment contracts associated with the specified employee within the current organization context. The contracts are displayed in reverse chronological order by start date, with the most recent contract appearing first.
+   * This endpoint allows authorized users to search and filter an employee's contract history. Contracts are displayed in reverse chronological order by start date, with the most recent contract appearing first.
    *
-   * Security: This operation requires the employee:manage permission to view contract history. Employees can view their own contracts without this permission. The operation enforces organization-level data isolation - only contracts from the current organization context are accessible.
+   * Users with employee:view permission can view all contracts for any employee in their organization. Employees can always view their own contract history regardless of permissions. The response includes contract details such as pay rate, pay period, working hours, and status.
    *
-   * Each contract in the response displays key employment terms including start date, end date, pay rate with pay period, working hours per week, and status. Historical contracts that have ended are preserved as immutable records and cannot be modified.
-   *
-   * Related Operations: Use GET /employees/{employeeId}/contracts/{contractId} to retrieve detailed information about a specific contract. Use POST /employees/{employeeId}/contracts to create a new contract for the employee.
+   * The operation enforces organization-level data isolation, ensuring contracts are only retrieved from the user's current organization context.
    *
    * @param connection
-   * @param employeeId UUID of the employee whose contracts to retrieve
-   * @param body Search criteria and pagination parameters for filtering contracts
+   * @param employeeId Unique identifier of the employee whose contracts to retrieve (UUID format)
+   * @param body Search criteria and pagination parameters for filtering employee contracts
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the erp_hrm_contracts table filtering by erp_hrm_employee_id matching the path parameter employeeId.
+   * @x-autobe-specification Query erp_hrm_contracts table filtered by erp_hrm_employee_id matching the path parameter.
    *
    * Apply search filters from request body:
-   * - Filter by start_date range (from/to)
-   * - Filter by end_date range (from/to) - null end_date indicates ongoing contract
+   * - Filter by date range (start_date_from, start_date_to, end_date_from, end_date_to)
+   * - Filter by contract status (active, ended, ongoing) based on end_date presence
    * - Filter by pay_period type (hourly, daily, weekly, monthly)
-   * - Filter by status (active, ended, ongoing based on end_date presence)
    *
-   * Sort results by start_date in descending order (most recent first) as per business requirement [232].
+   * Sort results by start_date in descending order (most recent first) as per business requirements.
    *
-   * Implement pagination with configurable page size and cursor-based navigation.
+   * Implement cursor-based or offset pagination with configurable page size (default 20, max 100).
    *
-   * Join with erp_hrm_employees to verify organization context and permission.
+   * Join with erp_hrm_employees table to verify employee belongs to the current organization context.
    *
-   * Return IPageIErpHrmContract.ISummary containing contract summaries optimized for list display.
+   * Return contract summaries including: id, start_date, end_date, pay_rate, pay_period, working_hours_per_week, notes, status (active/ended/ongoing), and created_at.
+   *
+   * If requesting user does not have employee:view permission and is not the employee themselves, return 403 Forbidden error.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -120,7 +111,7 @@ export class ErphrmAdminEmployeesContractsController {
     employeeId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IErpHrmContract.IRequest,
-  ): Promise<IPageIErpHrmContract.ISummary> {
+  ): Promise<IPageIErpHrmContract> {
     try {
       return await patchErpHrmAdminEmployeesEmployeeIdContracts({
         admin,
@@ -136,49 +127,32 @@ export class ErphrmAdminEmployeesContractsController {
   /**
    * Retrieve a specific employment contract by its unique identifier.
    *
-   * This endpoint returns the complete details of a single contract belonging to the specified employee. The contract contains all employment terms including compensation details, working hours, and contract validity dates.
+   * This endpoint returns the complete details of a single contract belonging to the specified employee. The operation supports two access patterns: employees can view their own contracts without additional permissions, while users with employee:view permission can access any employee's contract details within their organization.
    *
-   * Permissions:
-   * - Employees can view their own contracts without additional permission checks
-   * - Users with the employee:view permission can view any employee's contract within their organization
-   * - Users without appropriate permissions receive an authorization error
-   *
-   * Data Access:
-   * - The system validates that the contract exists and belongs to the specified employee
-   * - Contracts are immutable historical records - past contracts cannot be edited
-   * - The response includes all contract fields: start_date, end_date, pay_rate, pay_period, working_hours_per_week, notes, and timestamps
-   *
-   * This operation is typically used after listing employee contracts to retrieve full details of a specific contract term.
-   *
-   * Error Handling:
-   * - 404 Not Found if the employee or contract does not exist
-   * - 403 Forbidden if the requesting user lacks permission to view the contract
+   * The returned contract includes all employment terms such as start and end dates, compensation details (pay rate and pay period), working hours commitment, and any additional notes. Historical contracts remain immutable once superseded by newer agreements.
    *
    * @param connection
    * @param employeeId Unique identifier of the employee who owns the contract (global scope)
    * @param contractId Unique identifier of the contract to retrieve (scoped to employee)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Retrieve a contract by its ID within an employee's contract history.
+   * @x-autobe-specification Retrieve a single contract from the erp_hrm_contracts table using the composite key of employee_id and contract_id.
    *
-   * Implementation Steps:
-   * 1. Extract employeeId and contractId from path parameters
-   * 2. Validate both IDs are valid UUIDs
-   * 3. Verify the requesting user has permission to view the contract:
-   *    - If the employee belongs to the requesting user, allow access
-   *    - If the user has employee:view permission for the organization, allow access
-   *    - Otherwise, reject with 403 Forbidden
-   * 4. Query the erp_hrm_contracts table by contractId
-   * 5. Validate the contract's erp_hrm_employee_id matches the provided employeeId
-   * 6. Return the contract data with related employee context if needed
-   * 7. If contract not found or employee mismatch, return 404 Not Found
+   * 1. Verify the requesting user has permission to view contracts:
+   *    - Allow if the requesting user's employee ID matches the employeeId path parameter
+   *    - Allow if the requesting user has employee:view permission in the current organization context
+   *    - Reject with 403 Forbidden if neither condition is met
    *
-   * Edge Cases:
-   * - Employee does not exist
-   * - Contract does not exist
-   * - Contract belongs to a different employee (security validation)
-   * - Contract's employee is deactivated but historical data is still accessible
-   * - Employee belongs to a different organization than the requesting user's context
+   * 2. Query the erp_hrm_contracts table filtering by:
+   *    - id = contractId (UUID)
+   *    - erp_hrm_employee_id = employeeId (UUID)
+   *    - Ensure the contract belongs to an employee in the current organization context
+   *
+   * 3. If no contract found, return 404 Not Found with appropriate error message
+   *
+   * 4. Return the full contract entity including all fields: id, employee_id, start_date, end_date, pay_rate, pay_period, working_hours_per_week, notes, created_at, updated_at
+   *
+   * 5. Do not apply any filtering, pagination, or sorting since this returns a single resource
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":contractId")
@@ -203,35 +177,29 @@ export class ErphrmAdminEmployeesContractsController {
   }
 
   /**
-   * Update an existing employment contract for a specific employee within the organization.
+   * Update an active employee contract with new terms.
    *
-   * This endpoint allows authorized users with employee:manage permission to modify contract terms including pay rate, pay period, working hours, end date, and notes. Only contracts that are currently active or scheduled (with future start dates) can be modified. Once a contract becomes a historical record with an end_date in the past, it is immutable for compliance and auditing purposes.
+   * This endpoint allows users with employee:manage permission to modify the current active contract for an employee. Only contracts that have not yet ended (no past end_date) can be edited. The update operation supports changing compensation terms (pay_rate, pay_period, working_hours_per_week), setting an end date to terminate the contract, or adding notes.
    *
-   * The operation validates that the specified contract belongs to the specified employee and that the user has the employee:manage permission. Only one contract can be active at any given time, so updating a contract's date range may trigger automatic adjustment of overlapping contracts.
+   * Past contracts are immutable historical records and cannot be modified once their end date has passed. This ensures employment history integrity for compliance and auditing purposes.
    *
-   * Users with appropriate permissions can update any employee's contract. The response returns the updated contract with all current values.
+   * The employeeId in the path must match the erp_hrm_employee_id of the contract. Attempting to update a contract belonging to a different employee will result in a 403 Forbidden response.
    *
    * @param connection
-   * @param employeeId UUID of the employee who owns the contract
-   * @param contractId UUID of the contract to update
-   * @param body Contract fields to update including pay_rate, pay_period, working_hours_per_week, dates, and notes
+   * @param employeeId Unique identifier of the employee who owns this contract (UUID format).
+   * @param contractId Unique identifier of the contract to update (UUID format).
+   * @param body Fields to update on the active contract. Only provided fields are modified; omitted fields retain their current values.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Extract employeeId and contractId from path parameters.
-   * 2. Verify the authenticated user has employee:manage permission in the organization context.
-   * 3. Query the erp_hrm_contracts table to find the contract by contractId.
-   * 4. Validate the contract exists and belongs to the specified employeeId.
-   * 5. Check that the contract is not yet historical:
-   *    - If end_date is not null AND end_date < current date, reject with 400 error
-   *    - Historical contracts are immutable and cannot be modified.
-   * 6. If updating start_date or creating overlapping date ranges:
-   *    - Query existing contracts for the same employee.
-   *    - Ensure no date overlap with other active contracts.
-   *    - If overlap detected, reject with 400 error.
-   * 7. Apply updates to the contract record in erp_hrm_contracts:
-   *    - Update only provided fields (partial update support).
-   *    - Update the updated_at timestamp.
-   * 8. Return the updated contract record with employee and organization context.
+   * @x-autobe-specification 1. Validate the authenticated user has employee:manage permission in the organization context.
+   * 2. Verify the employeeId exists and belongs to the current organization.
+   * 3. Retrieve the contract by contractId and verify it belongs to the specified employee.
+   * 4. Validate the contract is still active (end_date is null OR end_date is in the future).
+   * 5. Reject update if contract has an end_date in the past (historical/ended contracts are immutable).
+   * 6. Validate provided fields: pay_rate (positive number), pay_period (one of: hourly, daily, weekly, monthly), working_hours_per_week (positive number), end_date (must be after or equal to start_date).
+   * 7. Update only the provided fields; omit fields are left unchanged.
+   * 8. Set updated_at to current timestamp.
+   * 9. Return the fully updated contract entity.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":contractId")
@@ -251,6 +219,44 @@ export class ErphrmAdminEmployeesContractsController {
         employeeId,
         contractId,
         body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Permanently removes a contract from an employee record.
+   *
+   * This operation deletes the specified contract belonging to the identified employee. Contracts with an end_date in the past are immutable historical records that cannot be removed. Only contracts with a null end_date or a future end_date can be deleted through this endpoint.
+   *
+   * When the active contract is deleted, the employee will have no active contract until a new one is created. This operation is typically used to correct contract entry errors before a new contract is created with the correct terms.
+   *
+   * The system validates that the employee exists within the current organization context, is in active status, and that the contract belongs to the specified employee. Contracts linked to deactivated employees cannot be deleted through this endpoint.
+   *
+   * @param connection
+   * @param employeeId Unique identifier of the employee who owns the contract (global scope)
+   * @param contractId Unique identifier of the contract to delete (scoped to employee)
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor admin
+   * @x-autobe-specification Validate the employee exists within the current organization context. Verify the contract exists and belongs to the specified employee. Ensure the contract is the current active contract (end_date is null or end_date is after current date). Reject deletion if the contract has an end_date in the past (immutable historical record). Perform cascade delete of the contract record from erp_hrm_contracts table. Return null on successful deletion.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Delete(":contractId")
+  public async erase(
+    @AdminAuth()
+    admin: AdminPayload,
+    @TypedParam("employeeId")
+    employeeId: string & tags.Format<"uuid">,
+    @TypedParam("contractId")
+    contractId: string & tags.Format<"uuid">,
+  ): Promise<void> {
+    try {
+      return await deleteErpHrmAdminEmployeesEmployeeIdContractsContractId({
+        admin,
+        employeeId,
+        contractId,
       });
     } catch (error) {
       console.log(error);

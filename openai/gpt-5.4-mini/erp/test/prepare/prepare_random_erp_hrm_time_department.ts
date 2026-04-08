@@ -11,10 +11,12 @@ export function prepare_random_erp_hrm_time_department(
   return {
     name: input?.name ?? RandomGenerator.name(2),
     description:
-      input?.description !== undefined
-        ? input.description
-        : RandomGenerator.paragraph({ sentences: 1 }),
+      input?.description === undefined
+        ? RandomGenerator.paragraph({ sentences: 2 })
+        : input.description,
     parentDepartmentId:
-      input?.parentDepartmentId ?? typia.random<string & tags.Format<"uuid">>(),
+      input?.parentDepartmentId === undefined
+        ? typia.random<string & tags.Format<"uuid">>()
+        : input.parentDepartmentId,
   };
 }

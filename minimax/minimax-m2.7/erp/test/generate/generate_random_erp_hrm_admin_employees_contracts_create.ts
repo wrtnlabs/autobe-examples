@@ -22,14 +22,14 @@ export async function generate_random_erp_hrm_admin_employees_contracts_create(
       employeeId: string;
     };
   },
-): Promise<IErpHrmContract> {
+): Promise<IErpHrmContract.IResponse> {
   const prepared: IErpHrmContract.ICreate = prepare_random_erp_hrm_contract(
     props.body,
   );
-  const result: IErpHrmContract =
+  const result: IErpHrmContract.IResponse =
     await api.functional.erpHrm.admin.employees.contracts.create(connection, {
-      employeeId: props.params.employeeId,
       body: prepared,
+      employeeId: props.params.employeeId,
     });
   return result;
 }

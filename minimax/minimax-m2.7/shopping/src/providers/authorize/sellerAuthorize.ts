@@ -15,8 +15,8 @@ export async function sellerAuthorize(request: {
   const seller = await MyGlobal.prisma.ecommerce_mall_sellers.findFirst({
     where: {
       id: payload.id,
-      approval_status: "approved",
       deleted_at: null,
+      approval_status: "approved",
     },
   });
 

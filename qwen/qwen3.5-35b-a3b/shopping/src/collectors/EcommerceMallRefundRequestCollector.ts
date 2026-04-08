@@ -10,30 +10,46 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallRefundRequestCollector {
   export async function collect(props: {
     body: IEcommerceMallRefundRequest.ICreate;
-    customer: IEntity;
-    ecommerceMallOrderItems: IEntity & {
-      delivery_date: Date;
-    };
   }) {
     const id: string = v4();
-    const refundCode: string = `RFN-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
     return {
       id,
-      refund_code: refundCode,
-      status: "pending" as const,
       reason: props.body.reason,
-      evidence_description: props.body.evidence_description ?? null,
-      seller_response: null,
-      rejection_reason: null,
-      delivery_date: props.ecommerceMallOrderItems.delivery_date.toISOString(),
-      submitted_at: new Date().toISOString(),
-      decision_at: null,
-      processed_at: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      status: "pending",
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
-      customer: { connect: { id: props.customer.id } },
-      orderItem: { connect: { id: props.ecommerceMallOrderItems.id } },
+      item: { connect: { id: props.body.order_item_id } },
+      approvedBySeller: undefined,
+      rejectedBySeller: undefined,
     } satisfies Prisma.ecommerce_mall_refund_requestsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallRefundRequestCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallRefundRequest.ICreate;
+//           
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       reason: ...,
+//       status: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       item: ...,
+//       approvedBySeller: ...,
+//       rejectedBySeller: ...,
+//       snapshots: ...,
+//       snapshot: ...,
+//           } satisfies Prisma.ecommerce_mall_refund_requestsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

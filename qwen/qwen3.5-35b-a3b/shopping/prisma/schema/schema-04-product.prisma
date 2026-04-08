@@ -1,0 +1,624 @@
+/// Core product listings that represent sellable items in the ecommerce
+/// catalog, owned by sellers and organized within categories.
+///
+/// Products form the foundation of the product catalog with their name,
+/// description, base price, and categorical organization. Each product is
+/// associated with exactly one seller and one category, enabling seller
+/// product management and category-based browsing.
+///
+/// Soft delete is supported through the nullable deleted_at timestamp, with
+/// application-level constraints preventing deletion of products with
+/// pending orders, cancellations, or refunds. Product modifications trigger
+/// snapshot creation in the ecommerce_mall_product_snapshots table for audit
+/// trail purposes.
+///
+/// @namespace product
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the category that organizes this product in the catalog
+  /// hierarchy.
+  ///
+  /// Products belong to exactly one category, enabling category-based browsing
+  /// and filtering. The category provides organizational structure for the
+  /// product catalog and supports hierarchical subcategory relationships
+  /// through the parent category reference.
+  category_id String
+  
+  /// References the seller who owns and manages this product listing.
+  ///
+  /// Products are owned by sellers, establishing the seller's responsibility
+  /// for product content, pricing, and inventory. The seller relationship
+  /// enables seller-specific product listings and supports seller dashboard
+  /// metrics including product count.
+  seller_id String
+  
+  /// Product name for display in product listings and detail views.
+  ///
+  /// The product name appears in category browse pages, search results,
+  /// product cards, and wishlist displays. It serves as the primary identifier
+  /// for customers browsing or searching the catalog.
+  name String
+  
+  /// Detailed product description with specifications, features, and usage
+  /// information.
+  ///
+  /// Product descriptions appear on the product detail page and may be
+  /// summarized in listing views. They provide customers with comprehensive
+  /// information about the product to support purchase decisions.
+  description String
+  
+  /// Base price of the product in the platform currency.
+  ///
+  /// The base price applies when no variant override is set. Product variants
+  /// may have individual prices that override this base price. The base price
+  /// is used for price range display and comparison shopping.
+  base_price Float
+  
+  /// Timestamp when the product was created.
+  created_at DateTime
+  
+  /// Timestamp of the last product modification.
+  updated_at DateTime
+  
+  /// Soft delete timestamp; null means the product is active.
+  ///
+  /// When set, indicates the product has been soft-deleted. Products with
+  /// active orders, pending cancellations, or pending refunds cannot be
+  /// soft-deleted (enforced at application level).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  category ecommerce_mall_categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  wishlistItems ecommerce_mall_wishlist_items[]
+  customerReviews ecommerce_mall_customer_reviews[]
+  images ecommerce_mall_product_images[]
+  variants ecommerce_mall_product_variants[]
+  reviews ecommerce_mall_reviews[]
+  reviewSnapshots ecommerce_mall_review_snapshots[]
+  reviewStat ecommerce_mall_product_review_stats?
+  snapshots ecommerce_mall_snapshots[]
+  productSnapshots ecommerce_mall_product_snapshots[]
+  variantSnapshots ecommerce_mall_product_variant_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([seller_id])
+  @@index([category_id, seller_id])
+}
+
+/// Product category entity with one-level subcategory hierarchy, managed by
+/// administrators for catalog organization.
+///
+/// **Hierarchy**:
+/// Categories support a single level of parent-child relationships via
+/// parent_id. Top-level categories have NULL parent_id. Child categories
+/// reference their parent via FK constraint. This design prevents deep
+/// nesting while allowing logical grouping.
+///
+/// **Management**:
+/// Only administrators can create, update, or delete categories. Categories
+/// are soft-deleted (deleted_at) to preserve product relationships.
+/// Categories with no products can be safely removed.
+///
+/// @namespace product
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key identifier for the category.
+  id String @id
+  
+  /// Reference to parent category for one-level hierarchy.
+  ///
+  /// **Relationship**:
+  /// - Parent → Children: One category can have multiple child categories
+  /// - Child → Parent: Each child references exactly one parent
+  ///
+  /// **Constraints**:
+  /// - Nullable: Top-level categories have NULL parent_id
+  /// - Self-referencing: Both parent and child reference
+  /// ecommerce_mall_categories
+  parent_id String?
+  
+  /// Administrator who created this category for audit trail.
+  ///
+  /// **Relationship**:
+  /// Links to ecommerce_mall_administrators table.
+  ///
+  /// **Semantics**:
+  /// - Tracks which administrator created the category
+  /// - Used for accountability and change tracking
+  creator_id String?
+  
+  /// Display name of the category.
+  ///
+  /// **Constraints**:
+  /// - Required: Must be provided
+  /// - Unique per parent: Combined with parent_id, must be unique
+  /// - Max length: 100 characters
+  /// - Searchable: Used in catalog browsing and full-text search
+  name String
+  
+  /// Optional detailed description of the category.
+  ///
+  /// **Usage**:
+  /// - Provided for SEO and user guidance
+  /// - Nullable: Top-level categories may omit
+  /// - Searchable: Indexed for full-text search
+  /// - Max length: 500 characters
+  description String?
+  
+  /// Display order priority within parent category.
+  ///
+  /// **Semantics**:
+  /// - Lower values appear first
+  /// - Default: 0 if not specified
+  /// - Allows manual ordering of categories
+  /// - Nullable: Auto-ordered if NULL
+  sort_order Int?
+  
+  /// Timestamp when category was created.
+  ///
+  /// **Semantics**:
+  /// - Immutable: Set once at creation
+  /// - Used for audit trail and chronological browsing
+  /// - Always present (NOT NULL)
+  created_at DateTime
+  
+  /// Timestamp of last category modification.
+  ///
+  /// **Semantics**:
+  /// - Updated on any field change
+  /// - Tracks when category was last modified
+  /// - Always present (NOT NULL)
+  updated_at DateTime
+  
+  /// Soft delete timestamp for category removal.
+  ///
+  /// **Semantics**:
+  /// - NULL = active category
+  /// - Non-NULL = soft-deleted (preserved for history)
+  /// - Categories with products should be soft-deleted
+  /// - Deleted categories excluded from active catalogs
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  parent ecommerce_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  creator ecommerce_mall_administrators? @relation(fields: [creator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  products ecommerce_mall_products[]
+  children ecommerce_mall_categories[] @relation("recursive")
+  ecommerceMallCategoriesSnapshotss ecommerce_mall_snapshots[]
+  productSnapshots ecommerce_mall_product_snapshots[]
+  ecommerceMallCategorySnapshots ecommerce_mall_categories_snapshots[] @relation("ecommerce_mall_categories_snapshots_of_category_id")
+  childCategories ecommerce_mall_categories_snapshots[] @relation("ecommerce_mall_categories_snapshots_of_parent_category_id")
+  
+  //----
+  // INDEXES
+  //----
+  @@index([creator_id])
+  @@unique([parent_id, name])
+}
+
+/// Multiple images per product with display order for main image.
+///
+/// Each product can have multiple product images stored here. The image with
+/// display_order = 1 is the main image shown in listings.
+///
+/// @namespace product
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for product images.
+  id String @id
+  
+  /// Reference to the parent product this image belongs to.
+  ///
+  /// Images are managed through the product entity and have no independent
+  /// lifecycle.
+  product_id String
+  
+  /// URL to the image storage location.
+  ///
+  /// Supports both local and external storage providers.
+  image_url String
+  
+  /// Display position of the image.
+  ///
+  /// Images with lower display_order values appear first. The image with
+  /// display_order = 1 is shown as the main image in product listings.
+  display_order Int
+  
+  /// Timestamp when the product image record was created.
+  created_at DateTime
+  
+  /// Timestamp when the product image record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the product image record was soft deleted.
+  ///
+  /// NULL means the image is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product ecommerce_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([product_id, display_order])
+  @@index([product_id])
+}
+
+/// Product variants (SKUs) that define specific product options with unique
+/// SKU codes, optional price overrides, and stock quantities for inventory
+/// tracking.
+///
+/// ### Variant Identification
+/// Each variant represents a unique combination of product options (e.g.,
+/// color, size) identified by a SKU code that is unique within its parent
+/// product. Variants enable customers to select specific configurations when
+/// purchasing products.
+///
+/// ### Pricing and Stock
+/// Variants may override the base product price with variant-specific
+/// pricing. Stock quantity tracks available inventory for each variant,
+/// preventing overselling and enabling out-of-stock detection.
+///
+/// @namespace product
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent product that this variant belongs to.
+  ///
+  /// A product can have multiple variants representing different option
+  /// combinations (e.g., same shirt in different sizes or colors). Deleting a
+  /// product also deletes all its variants.
+  product_id String
+  
+  /// Unique Stock Keeping Unit identifier for this variant.
+  ///
+  /// SKU codes must be unique within their parent product. This code is used
+  /// for inventory management, order tracking, and supply chain operations.
+  sku_code String
+  
+  /// JSON-formatted option values for this variant (e.g., {"color": "red",
+  /// "size": "L"}).
+  ///
+  /// Stores the specific option combination that defines this variant (colors,
+  /// sizes, materials, etc.). Used to display variant options to customers and
+  /// filter search results.
+  option_values String
+  
+  /// Optional price override for this variant.
+  ///
+  /// When present, this price overrides the base product price. If null, the
+  /// variant uses the parent product's base price. Prices are stored as
+  /// decimal values representing currency amounts.
+  price Float?
+  
+  /// Current available stock quantity for this variant.
+  ///
+  /// Represents the number of units available for purchase. Stock is
+  /// automatically decreased on order placement and restored on cancellations
+  /// or refunds. Variants with zero stock cannot be added to cart.
+  stock_quantity Int
+  
+  /// Timestamp when this variant was created.
+  created_at DateTime
+  
+  /// Timestamp when this variant was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this variant was soft-deleted.
+  ///
+  /// Soft deletion allows recovery of variants before permanent removal.
+  /// Deleted variants are excluded from customer-facing listings but remain in
+  /// the database for order history and audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product ecommerce_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  inventoryRecords ecommerce_mall_inventory_records[]
+  orderItems ecommerce_mall_order_items[]
+  snapshots ecommerce_mall_snapshots[]
+  snapshotHistories ecommerce_mall_product_variant_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([product_id, sku_code])
+  @@index([stock_quantity])
+  @@index([deleted_at])
+}
+
+/// Operational stock change history tracking all inventory movements for
+/// product variants.
+///
+/// This table records every stock change (positive or negative) as an
+/// immutable transaction log. The current stock level for any product
+/// variant is calculated as the sum of all quantity_change values across all
+/// records for that variant. This design supports inventory auditing, stock
+/// level calculation, and provides traceability for all stock movements
+/// without creating snapshot duplicates.
+///
+/// ### Stock Movement Types
+/// Records support multiple operation types: RESTOCK (manual inventory
+/// addition), ADJUSTMENT (correction for damaged/lost items), LOSS
+/// (unaccounted stock loss), ORDER_DEDUCTION (automatic stock reduction on
+/// order placement), REFUND_RETURN (automatic stock restoration on refund
+/// approval), CANCELLATION_RETURN (automatic stock restoration on order
+/// cancellation approval).
+///
+/// ### Audit and Traceability
+/// Each record links to the triggering event via reference_id, enabling full
+/// traceability. Negative values indicate stock leaving inventory (orders),
+/// positive values indicate stock entering (restocks, refunds,
+/// cancellations). All records are immutable—corrections are made via new
+/// records, not updates.
+///
+/// ### Business Rules
+/// - Variants with zero stock cannot be added to cart (enforced at
+/// application layer)
+/// - Current stock calculation: `SUM(quantity_change) GROUP BY
+/// product_variant_id`
+/// - Deleted records are soft-deleted but preserved for audit integrity
+///
+/// {@link ecommerce_mall_product_variants}
+///
+/// @namespace product
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_inventory_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for inventory record identification.
+  id String @id
+  
+  /// Reference to the product variant whose stock is being tracked.
+  ///
+  /// Every inventory movement must be associated with a specific variant. This
+  /// FK enables calculating current stock levels and querying variant-specific
+  /// inventory history. The product_variant_id uniquely identifies which SKU
+  /// this stock change applies to.
+  ///
+  /// {@link ecommerce_mall_product_variants}
+  ecommerce_mall_product_variant_id String
+  
+  /// Amount of stock change for this transaction (positive or negative).
+  ///
+  /// Positive values indicate stock entering inventory (restock, refund
+  /// return, cancellation return). Negative values indicate stock leaving
+  /// inventory (order placement, adjustments). The current stock level for a
+  /// variant is calculated as `SUM(quantity_change)` across all records for
+  /// that variant. Zero is not allowed—every record must represent an actual
+  /// stock movement.
+  ///
+  /// ### Examples:
+  /// - `quantity_change: 100` → restock of 100 units
+  /// - `quantity_change: -1` → one unit sold via order
+  /// - `quantity_change: -5` → adjustment reducing stock by 5 units
+  /// - `quantity_change: 0` → NOT ALLOWED (no transaction occurred)
+  quantity_change Int
+  
+  /// Category of stock movement operation.
+  ///
+  /// Defines the business reason for this inventory change. This field
+  /// categorizes the movement type for reporting, filtering, and analytics
+  /// purposes.
+  ///
+  /// ### Allowed values:
+  /// - `RESTOCK`: Manual inventory addition (warehouse receiving)
+  /// - `ADJUSTMENT`: Stock correction for damaged/lost items
+  /// - `LOSS`: Unaccounted stock loss (theft, damage, discrepancy)
+  /// - `ORDER_DEDUCTION`: Automatic stock reduction on order placement
+  /// - `REFUND_RETURN`: Automatic stock restoration on refund approval
+  /// - `CANCELLATION_RETURN`: Automatic stock restoration on order
+  /// cancellation approval
+  ///
+  /// ### Usage:
+  /// - `ORDER_DEDUCTION`: Automatically triggered when order is placed
+  /// (negative)
+  /// - `REFUND_RETURN`: Automatically triggered when refund is approved
+  /// (positive)
+  /// - `CANCELLATION_RETURN`: Automatically triggered when cancellation is
+  /// approved (positive)
+  /// - `RESTOCK/ADJUSTMENT/LOSS`: Manually triggered by inventory operations
+  operation_type String
+  
+  /// Optional reference to the triggering transaction for traceability.
+  ///
+  /// Links this inventory record to the source event that caused the stock
+  /// change. For automatic movements (ORDER_DEDUCTION, REFUND_RETURN,
+  /// CANCELLATION_RETURN), this references the order_item_id. For manual
+  /// operations (RESTOCK, ADJUSTMENT, LOSS), this may reference an
+  /// inventory_adjustment_id or be null if no specific document exists.
+  ///
+  /// ### Examples:
+  /// - `reference_id: order_item_uuid` → order placement triggered this
+  /// deduction
+  /// - `reference_id: null` → manual restock without associated document
+  /// - `reference_id: inventory_adjustment_id` → adjustment operation
+  ///
+  /// ### Usage:
+  /// - Enables full audit trail from stock change back to source transaction
+  /// - Supports reconciliation and investigation of stock discrepancies
+  /// - Optional field allows manual operations without a specific reference
+  /// document
+  reference_id String?
+  
+  /// Optional notes or additional context for this inventory movement.
+  ///
+  /// Free-form text field for documenting special circumstances, user
+  /// comments, or additional information about this stock change. Useful for
+  /// manual operations (RESTOCK, ADJUSTMENT, LOSS) where context may be
+  /// important for auditing or investigation purposes.
+  ///
+  /// ### Examples:
+  /// - "Q4 restock from supplier XYZ"
+  /// - "Damaged during warehouse inspection"
+  /// - "Stock discrepancy resolved during annual count"
+  ///
+  /// ### Best Practices:
+  /// - Keep notes concise and factual
+  /// - Include relevant dates, quantities, or reasons
+  /// - Use for manual operations that lack structured reference documents
+  notes String?
+  
+  /// Timestamp when this inventory record was created.
+  ///
+  /// Marks the exact time this stock movement was recorded in the system. Used
+  /// for chronological ordering, audit trails, and calculating inventory
+  /// history timelines. All records have this field and it is never nullable.
+  ///
+  /// ### Usage:
+  /// - Chronological queries: `ORDER BY created_at DESC`
+  /// - Audit timeline reconstruction
+  /// - Stock movement history visualization
+  /// - Period-based inventory reporting
+  created_at DateTime
+  
+  /// Timestamp of last update to this inventory record.
+  ///
+  /// Always equals created_at for inventory records (no updates occur after
+  /// creation). Stock movements are immutable—corrections are made via new
+  /// records, not by modifying existing ones. This field is maintained for
+  /// consistency with other business entities and to support soft-delete
+  /// tracking.
+  ///
+  /// ### Note:
+  /// Inventory records are never modified after creation. This field exists
+  /// for uniformity across the schema and to support soft-delete operations.
+  ///
+  /// ### Best Practices:
+  /// - Never update inventory records directly
+  /// - Create new records for corrections or adjustments
+  updated_at DateTime
+  
+  /// Timestamp when this inventory record was soft-deleted (nullable).
+  ///
+  /// Inventory records are soft-deleted rather than hard-deleted to preserve
+  /// audit integrity and historical accuracy. A null value indicates the
+  /// record is active. A non-null value indicates the record has been deleted
+  /// and should be excluded from current stock calculations.
+  ///
+  /// ### Soft-Delete Semantics:
+  /// - `deleted_at = NULL`: Record is active and included in stock calculations
+  /// - `deleted_at = datetime`: Record is deleted and excluded from
+  /// calculations
+  ///
+  /// ### Audit Requirement:
+  /// Soft-deletion is mandatory for inventory records. Never perform
+  /// hard-deletes on this table as it would corrupt the audit trail and make
+  /// stock reconciliation impossible.
+  ///
+  /// ### Usage:
+  /// - Filter active records: `WHERE deleted_at IS NULL`
+  /// - Calculate current stock: `SUM(quantity_change) WHERE deleted_at IS NULL`
+  /// - Audit trail preservation: soft-deleted records remain queryable
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  productVariant ecommerce_mall_product_variants @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_id, created_at], map: "ecommerce_mall_inventory_records_ecommerce_mall_produc_19d25df6")
+}
+
+/// Customer product wishlists that store collections of desired products for
+/// later purchase consideration.
+///
+/// This table enables customers to create multiple wishlists (e.g.,
+/// "Favorites", "Birthday List", "Work Items") and populate them with
+/// products. Each wishlist is owned by a single customer and maintains an
+/// audit trail via created_at, updated_at, and deleted_at timestamps.
+/// Product references are stored in the ecommerce_mall_wishlist_items
+/// junction table to maintain 1NF compliance and enable flexible wishlist
+/// management.
+///
+/// @namespace product
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the customer who owns this wishlist.
+  ///
+  /// A customer can create multiple wishlists to organize their desired
+  /// products. This is a required foreign key that cannot be null. The
+  /// relationship is 1:N from customer to wishlists.
+  customer_id String
+  
+  /// Timestamp when this wishlist was created.
+  created_at DateTime
+  
+  /// Timestamp when this wishlist was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this wishlist was soft-deleted. NULL if the wishlist is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_mall_members @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([customer_id, created_at])
+  @@index([deleted_at])
+}

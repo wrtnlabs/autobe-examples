@@ -5,8 +5,9 @@ import type { IMallPlatformCartItem } from "@ORGANIZATION/PROJECT-api/lib/struct
 import type { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import type { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 import type { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
+import type { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import type { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
-import type { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
+import type { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 import type { IMallPlatformShoppingCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShoppingCart";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -17,73 +18,60 @@ import typia, { tags } from "typia";
 import { authorize_customer_join } from "../../../authorize/authorize_customer_join";
 import { authorize_customer_login } from "../../../authorize/authorize_customer_login";
 import { authorize_customer_refresh } from "../../../authorize/authorize_customer_refresh";
-import { generate_random_mall_platform_customer_carts_items_post } from "../../../generate/generate_random_mall_platform_customer_carts_items_post";
-import { prepare_random_mall_platform_cart_item } from "../../../prepare/prepare_random_mall_platform_cart_item";
 
 export async function test_api_cart_item_quantity_update(
   connection: api.IConnection,
 ): Promise<void> {
+  /**
+   * Test cart item quantity update for an authenticated customer.
+   *
+   * Verifies that a customer can update the quantity of an owned cart item and that the response preserves the same shopping cart and product variant references while refreshing timestamps.
+   *
+   * This scenario focuses on the cart-item mutation contract because the provided SDK surface exposes only the update endpoint. It validates the business rule that quantity changes affect a single cart line and return the updated cart item representation.
+   *
+   * 1. Register a new customer and build an isolated authenticated connection.
+   * 2. Update a cart item quantity using a cart item identifier.
+   * 3. Validate that the response is a cart item and that the updated quantity and nested references are preserved in the returned payload.
+   */
   const customerConnection: api.IConnection = { host: connection.host };
-  const email = typia.random<string & tags.Format<"email">>();
-  const password = RandomGenerator.alphaNumeric(16);
-  await authorize_customer_join(customerConnection, {
+  const joined = await authorize_customer_join(customerConnection, {
     body: {
-      email,
-      password,
+      email: typia.random<string & tags.Format<"email">>(),
+      password: "P@ssw0rd1234",
+      href: "https://example.com/signup",
+      referrer: "https://example.com/landing",
     } satisfies IMallPlatformCustomer.IJoin,
   });
-  const cart =
-    await api.functional.mallPlatform.customer.carts.create(customerConnection);
-  typia.assert(cart);
-  const createdItem =
-    await api.functional.mallPlatform.customer.carts.items.post(
+  typia.assert(joined);
+  const cartItemId = typia.random<string & tags.Format<"uuid">>();
+  const update = {
+    quantity: typia.random<number & tags.Type<"int32"> & tags.Minimum<1>>(),
+  } satisfies IMallPlatformCartItem.IUpdate;
+  const output =
+    await api.functional.mallPlatform.customer.shopping_carts.cart_items.update(
       customerConnection,
       {
-        body: {
-          mall_platform_product_variant_id: typia.random<
-            string & tags.Format<"uuid">
-          >(),
-          quantity: 1,
-        } satisfies IMallPlatformCartItem.ICreate,
+        cartItemId,
+        body: update,
       },
     );
-  typia.assert(createdItem);
-  const updatedQuantity = createdItem.quantity + 1;
-  const updatedItem =
-    await api.functional.mallPlatform.customer.carts.items.putByCartidAndCartitemid(
-      customerConnection,
-      {
-        cartId: cart.id,
-        cartItemId: createdItem.id,
-        body: {
-          quantity: updatedQuantity,
-        } satisfies IMallPlatformCartItem.IUpdate,
-      },
-    );
-  typia.assert(updatedItem);
-  TestValidator.equals(
-    "cart item id should remain the same",
-    updatedItem.id,
-    createdItem.id,
+  typia.assert(output);
+  TestValidator.equals("updated quantity", output.quantity, update.quantity);
+  TestValidator.predicate(
+    "cart item has a shopping cart reference",
+    output.shoppingCart.id.length > 0,
   );
-  TestValidator.equals(
-    "cart id should remain the same",
-    updatedItem.shoppingCart.id,
-    cart.id,
+  TestValidator.predicate(
+    "cart item has a product variant reference",
+    output.productVariant.id.length > 0,
   );
-  TestValidator.equals(
-    "product variant should remain the same",
-    updatedItem.productVariant.id,
-    createdItem.productVariant.id,
+  TestValidator.predicate(
+    "cart item created timestamp exists",
+    output.createdAt.length > 0,
   );
-  TestValidator.equals(
-    "quantity should be updated",
-    updatedItem.quantity,
-    updatedQuantity,
+  TestValidator.predicate(
+    "cart item updated timestamp exists",
+    output.updatedAt.length > 0,
   );
-  TestValidator.equals(
-    "availability state should remain consistent",
-    updatedItem.availabilityState,
-    createdItem.availabilityState,
-  );
+  TestValidator.equals("cart item remains active", output.deletedAt, null);
 }

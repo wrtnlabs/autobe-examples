@@ -1,12 +1,8 @@
 import { IEcommerceMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCartItem";
-import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
-import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
-import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
 import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
-import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -24,23 +20,39 @@ export async function getEcommerceMallCustomerCartItemsCartItemId(props: {
   customer: CustomerPayload;
   cartItemId: string;
 }): Promise<IEcommerceMallCartItem> {
-  // Check existence and ownership with minimal query
-  const check = await MyGlobal.prisma.ecommerce_mall_cart_items.findUnique({
-    where: { id: props.cartItemId },
-    select: { id: true, customer_id: true },
-  });
-  if (check === null) {
-    throw new HttpException("Not Found", 404);
-  }
-  // Verify ownership - cart item must belong to authenticated customer
-  if (check.customer_id !== props.customer.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Fetch full cart item with transformer selection
-  const cartItem =
+  // Get the base select from transformer
+  const baseSelect = EcommerceMallCartItemTransformer.select();
+  // Extract select fields, excluding customer if present to avoid type conflict
+  const { customer, ...baseSelectRest } = (baseSelect as any).select;
+  // Query the cart item with all related data including customer id
+  const cartItem: any =
     await MyGlobal.prisma.ecommerce_mall_cart_items.findUniqueOrThrow({
       where: { id: props.cartItemId },
-      ...EcommerceMallCartItemTransformer.select(),
+      select: {
+        ...baseSelectRest,
+        customer: {
+          select: {
+            id: true,
+          },
+        },
+      },
     });
-  return await EcommerceMallCartItemTransformer.transform(cartItem);
+  // Verify ownership - cart item must belong to the authenticated customer
+  if (cartItem.customer?.id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Calculate available stock for the variant
+  const inventoryRecords =
+    await MyGlobal.prisma.ecommerce_mall_inventory_records.findMany({
+      where: { product_variant_id: cartItem.productVariant?.id },
+      select: { quantity_change: true },
+    });
+  const availableStock = inventoryRecords.reduce(
+    (sum, record) => sum + record.quantity_change,
+    0,
+  );
+  // Transform and return the cart item with stock context
+  return await EcommerceMallCartItemTransformer.transform(cartItem as any, {
+    availableStock,
+  });
 }

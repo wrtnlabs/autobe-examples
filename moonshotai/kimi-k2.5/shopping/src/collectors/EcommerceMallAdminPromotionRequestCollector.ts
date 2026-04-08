@@ -10,19 +10,18 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallAdminPromotionRequestCollector {
   export async function collect(props: {
     body: IEcommerceMallAdminPromotionRequest.ICreate;
+    ecommerceMallCustomers: IEntity;
+    ecommerceMallSellers: IEntity;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
+      id,
       status: "pending",
       reason: props.body.reason,
       rejection_reason: null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      reviewer: undefined,
-      snapshots: undefined,
-      customerSubtype: undefined,
-      sellerRequest: undefined,
     } satisfies Prisma.ecommerce_mall_admin_promotion_requestsCreateInput;
   }
 }

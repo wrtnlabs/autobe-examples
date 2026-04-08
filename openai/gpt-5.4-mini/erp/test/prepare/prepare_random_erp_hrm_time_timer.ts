@@ -11,17 +11,8 @@ export function prepare_random_erp_hrm_time_timer(
   return {
     project_id:
       input?.project_id ?? typia.random<string & tags.Format<"uuid">>(),
-    task_id:
-      input?.task_id === undefined
-        ? typia.random<string & tags.Format<"uuid">>()
-        : input.task_id === null
-          ? null
-          : input.task_id,
+    task_id: input?.task_id ?? null,
     description:
-      input?.description === undefined
-        ? RandomGenerator.paragraph({ sentences: 1 })
-        : input.description === null
-          ? null
-          : input.description,
+      input?.description ?? RandomGenerator.paragraph({ sentences: 2 }),
   };
 }

@@ -19,58 +19,71 @@ export async function patchEcommerceMallAdminAdmins(props: {
   admin: AdminPayload;
   body: IEcommerceMallAdmin.IRequest;
 }): Promise<IPageIEcommerceMallAdmin.ISummary> {
-  const limit = props.body.limit ?? 20;
-  const page = (props.body.page ?? 1) < 1 ? 1 : (props.body.page ?? 1);
-  const sort = props.body.sort ?? "-created_at";
-  // Build where clause for filters
-  const whereInput: Prisma.ecommerce_mall_adminsWhereInput = {
-    deleted_at: null,
-    ...(props.body.grade !== undefined && { grade: props.body.grade }),
-    ...(props.body.status !== undefined && { status: props.body.status }),
-    ...(props.body.email !== undefined && {
-      email: { contains: props.body.email, mode: "insensitive" },
-    }),
-    ...(props.body.nickname !== undefined && {
-      nickname: { contains: props.body.nickname, mode: "insensitive" },
-    }),
-  };
-  // Build orderBy based on sort parameter
-  let orderByInput: Prisma.ecommerce_mall_adminsOrderByWithRelationInput;
-  if (sort === "created_at") {
-    orderByInput = { created_at: "asc" };
-  } else if (sort === "-created_at") {
-    orderByInput = { created_at: "desc" };
-  } else if (sort === "grade") {
-    orderByInput = { grade: "asc" };
-  } else {
-    orderByInput = { grade: "desc" };
-  }
-  // Calculate skip for pagination
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  // Query administrators with filters, sorting, and pagination
-  const admins = await MyGlobal.prisma.ecommerce_mall_admins.findMany({
+  const sortBy = props.body.sortBy ?? "createdAt";
+  const sortOrder = props.body.sortOrder ?? "desc";
+  const createdAtCondition: {
+    gte?: Date;
+    lte?: Date;
+  } = {};
+  if (
+    props.body.createdAtMin !== undefined &&
+    props.body.createdAtMin !== null
+  ) {
+    createdAtCondition.gte = new Date(props.body.createdAtMin);
+  }
+  if (
+    props.body.createdAtMax !== undefined &&
+    props.body.createdAtMax !== null
+  ) {
+    createdAtCondition.lte = new Date(props.body.createdAtMax);
+  }
+  const whereInput = {
+    ...(props.body.grade !== undefined &&
+      props.body.grade !== null && { grade: props.body.grade }),
+    ...(props.body.status !== undefined &&
+      props.body.status !== null && { status: props.body.status }),
+    ...(props.body.search !== undefined &&
+      props.body.search !== null && {
+        nickname: { contains: props.body.search },
+      }),
+    ...(props.body.email !== undefined &&
+      props.body.email !== null && {
+        email: { contains: props.body.email },
+      }),
+    ...(Object.keys(createdAtCondition).length > 0 && {
+      created_at: createdAtCondition,
+    }),
+    ...(props.body.includeDeleted !== true && { deleted_at: null }),
+  } satisfies Prisma.ecommerce_mall_adminsWhereInput;
+  const orderByInput: Prisma.ecommerce_mall_adminsOrderByWithRelationInput =
+    sortBy === "grade"
+      ? { grade: sortOrder }
+      : sortBy === "status"
+        ? { status: sortOrder }
+        : { created_at: sortOrder };
+  const data = await MyGlobal.prisma.ecommerce_mall_admins.findMany({
     where: whereInput,
-    orderBy: orderByInput,
     skip,
     take: limit,
+    orderBy: orderByInput,
     ...EcommerceMallAdminAtSummaryTransformer.select(),
   });
-  // Count total matching records
   const total = await MyGlobal.prisma.ecommerce_mall_admins.count({
     where: whereInput,
   });
-  // Transform results using transformer
-  const data = await ArrayUtil.asyncMap(
-    admins,
-    EcommerceMallAdminAtSummaryTransformer.transform,
-  );
   return {
-    data,
+    data: await ArrayUtil.asyncMap(
+      data,
+      EcommerceMallAdminAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
+    } satisfies IPage.IPagination,
   };
 }

@@ -8,6 +8,13 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+/**
+ * Register and authenticate a new guest for E2E testing.
+ *
+ * Creates a guest session with a randomized device fingerprint, mutates the connection with the auth token. Guests are anonymous users identified by device fingerprint, allowing the system to recognize returning visitors without requiring registration.
+ *
+ * The device fingerprint is required and must be unique per device. Optional fields include IP address, current page URL, and referrer URL for analytics and security auditing.
+ */
 export async function authorize_guest_join(
   connection: api.IConnection,
   props: {

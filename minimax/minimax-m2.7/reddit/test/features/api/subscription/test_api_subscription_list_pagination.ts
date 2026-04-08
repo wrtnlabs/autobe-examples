@@ -2,14 +2,15 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import type { IPageIRedditClonePostTextContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIRedditClonePostTextContent";
-import type { IRedditCloneCommunityBan } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunityBan";
+import type { IPageIRedditCloneSubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIRedditCloneSubscription";
+import type { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
+import type { IRedditCloneCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunityIcon";
 import type { IRedditCloneFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFile";
 import type { IRedditCloneFileAssociation } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileAssociation";
-import type { IRedditCloneMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMemberSession";
-import type { IRedditClonePostTextContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostTextContent";
-import type { IRedditCloneUserKarma } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserKarma";
-import type { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
+import type { IRedditCloneFileScan } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileScan";
+import type { IRedditCloneFileThumbnail } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileThumbnail";
+import type { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
+import type { IRedditCloneSubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneSubscription";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -19,140 +20,91 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
+import { generate_random_reddit_clone_member_communities_create } from "../../../generate/generate_random_reddit_clone_member_communities_create";
+import { generate_random_reddit_clone_member_subscriptions_create } from "../../../generate/generate_random_reddit_clone_member_subscriptions_create";
+import { prepare_random_reddit_clone_community } from "../../../prepare/prepare_random_reddit_clone_community";
+import { prepare_random_reddit_clone_subscription } from "../../../prepare/prepare_random_reddit_clone_subscription";
 
 export async function test_api_subscription_list_pagination(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create and authenticate a member
+  // 1. Create member connection and authenticate
   const memberConnection: api.IConnection = { host: connection.host };
-  await authorize_member_join(memberConnection, {});
-  // 2. Test pagination with different parameters
-  // Get first page with default or small limit
-  const firstPage = await api.functional.redditClone.member.subscriptions.index(
+  const member = await api.functional.redditClone.auth.member.join(
     memberConnection,
     {
       body: {
-        page: 1,
-        limit: 2 satisfies number &
-          tags.Type<"int32"> &
-          tags.Minimum<1> &
-          tags.Maximum<100>,
-      } satisfies IRedditClonePostTextContent.IRequest,
+        email: typia.random<string & tags.Format<"email">>(),
+        password: RandomGenerator.alphaNumeric(16),
+        username: RandomGenerator.name(1),
+        href: typia.random<string & tags.Format<"uri">>(),
+        referrer: typia.random<string & tags.Format<"uri">>(),
+      },
     },
   );
-  typia.assert(firstPage);
-  // Validate pagination metadata structure
-  TestValidator.equals(
-    "pagination exists",
-    firstPage.pagination !== null,
-    true,
+  typia.assert(member);
+  // 2. Create 5 communities
+  const communities: IRedditCloneCommunity[] = await ArrayUtil.asyncRepeat(
+    5,
+    async (index: number) => {
+      const community =
+        await api.functional.redditClone.member.communities.create(
+          memberConnection,
+          {
+            body: {
+              name: `${RandomGenerator.alphabets(8)}_${Date.now()}_${index}`,
+              description: RandomGenerator.paragraph({ sentences: 2 }),
+            },
+          },
+        );
+      typia.assert(community);
+      return community;
+    },
   );
-  TestValidator.equals("current page is 1", firstPage.pagination.current, 1);
-  TestValidator.equals("limit is 2", firstPage.pagination.limit, 2);
-  TestValidator.predicate("records >= 0", firstPage.pagination.records >= 0);
-  TestValidator.predicate("pages >= 0", firstPage.pagination.pages >= 0);
-  // Calculate expected pages based on records and limit
-  const expectedPages = Math.ceil(
-    firstPage.pagination.records / firstPage.pagination.limit,
+  // 3. Subscribe to all 5 communities
+  const subscriptions: IRedditCloneSubscription[] = await ArrayUtil.asyncRepeat(
+    5,
+    async (index: number) => {
+      const subscription =
+        await api.functional.redditClone.member.subscriptions.create(
+          memberConnection,
+          {
+            body: {
+              communityId: communities[index].id,
+            },
+          },
+        );
+      typia.assert(subscription);
+      return subscription;
+    },
   );
-  TestValidator.equals(
-    "pages calculation correct",
-    firstPage.pagination.pages,
-    expectedPages,
-  );
-  // 3. Test pagination with different page parameter
-  const secondPage =
-    await api.functional.redditClone.member.subscriptions.index(
+  // 4. Call GET /redditClone/member/subscriptions with limit=2
+  const firstPage: IPageIRedditCloneSubscription.ISummary =
+    await api.functional.redditClone.member.subscriptions.list(
       memberConnection,
-      {
-        body: {
-          page: 2,
-          limit: 2 satisfies number &
-            tags.Type<"int32"> &
-            tags.Minimum<1> &
-            tags.Maximum<100>,
-        } satisfies IRedditClonePostTextContent.IRequest,
-      },
+    );
+  typia.assert(firstPage);
+  // 5. Validate first page response
+  TestValidator.equals("first page data length", firstPage.data.length, 2);
+  TestValidator.equals("first page limit", firstPage.pagination.limit, 2);
+  TestValidator.equals("first page records", firstPage.pagination.records, 5);
+  TestValidator.equals("first page pages", firstPage.pagination.pages, 3);
+  TestValidator.equals("first page current", firstPage.pagination.current, 1);
+  // 6. Get second page using cursor from last item
+  const lastItem = firstPage.data[firstPage.data.length - 1];
+  const secondPage: IPageIRedditCloneSubscription.ISummary =
+    await api.functional.redditClone.member.subscriptions.list(
+      memberConnection,
     );
   typia.assert(secondPage);
+  // 7. Validate second page response
+  TestValidator.equals("second page data length", secondPage.data.length, 2);
   TestValidator.equals("second page current", secondPage.pagination.current, 2);
-  TestValidator.equals("second page limit", secondPage.pagination.limit, 2);
-  // 4. Test with different limit values
-  const smallLimit =
-    await api.functional.redditClone.member.subscriptions.index(
-      memberConnection,
-      {
-        body: {
-          page: 1,
-          limit: 1 satisfies number &
-            tags.Type<"int32"> &
-            tags.Minimum<1> &
-            tags.Maximum<100>,
-        } satisfies IRedditClonePostTextContent.IRequest,
-      },
-    );
-  typia.assert(smallLimit);
-  TestValidator.equals("small limit value", smallLimit.pagination.limit, 1);
-  // 5. Test records consistency across pagination parameters
-  // Total records should remain consistent regardless of pagination
-  TestValidator.equals(
-    "records consistent",
-    firstPage.pagination.records,
-    secondPage.pagination.records,
+  // Validate results are different from first page
+  const firstPageIds = firstPage.data.map((s) => s.id);
+  const secondPageIds = secondPage.data.map((s) => s.id);
+  TestValidator.predicate(
+    "second page results are different from first page",
+    firstPageIds.some((id) => secondPageIds.includes(id)) === false,
   );
-  // 6. Test edge case: requesting page beyond available data
-  const highPage = await api.functional.redditClone.member.subscriptions.index(
-    memberConnection,
-    {
-      body: {
-        page: 999,
-        limit: 10 satisfies number &
-          tags.Type<"int32"> &
-          tags.Minimum<1> &
-          tags.Maximum<100>,
-      } satisfies IRedditClonePostTextContent.IRequest,
-    },
-  );
-  typia.assert(highPage);
-  // High page should return empty data but pagination metadata should be valid
-  TestValidator.equals("high page current", highPage.pagination.current, 999);
-  TestValidator.equals("high page data empty", highPage.data.length, 0);
-  TestValidator.equals(
-    "records unchanged",
-    highPage.pagination.records,
-    firstPage.pagination.records,
-  );
-  // 7. Test with larger limit
-  const largeLimit =
-    await api.functional.redditClone.member.subscriptions.index(
-      memberConnection,
-      {
-        body: {
-          page: 1,
-          limit: 50 satisfies number &
-            tags.Type<"int32"> &
-            tags.Minimum<1> &
-            tags.Maximum<100>,
-        } satisfies IRedditClonePostTextContent.IRequest,
-      },
-    );
-  typia.assert(largeLimit);
-  TestValidator.equals("large limit value", largeLimit.pagination.limit, 50);
-  TestValidator.predicate("data count <= limit", largeLimit.data.length <= 50);
-  // 8. Validate data structure in response
-  for (const subscription of firstPage.data) {
-    typia.assert(subscription);
-    TestValidator.predicate(
-      "subscription has id",
-      subscription.id !== undefined,
-    );
-    TestValidator.predicate(
-      "subscription has member",
-      subscription.member !== undefined,
-    );
-    TestValidator.predicate(
-      "subscription has community",
-      subscription.community !== undefined,
-    );
-  }
 }

@@ -3,8 +3,10 @@ import { IEcommerceMallAdminAuditLog } from "@ORGANIZATION/PROJECT-api/lib/struc
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallAdminAtSummaryTransformer } from "./EcommerceMallAdminAtSummaryTransformer";
 
@@ -30,8 +32,8 @@ export namespace EcommerceMallAdminAuditLogAtSummaryTransformer {
     return {
       id: input.id,
       action: input.action,
-      resourceType: input.resource_type ?? null,
-      resourceId: input.resource_id ?? null,
+      resourceType: input.resource_type,
+      resourceId: input.resource_id,
       admin: await EcommerceMallAdminAtSummaryTransformer.transform(
         input.admin,
       ),

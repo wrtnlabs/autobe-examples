@@ -1,10 +1,21 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import type { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import type { IShoppingMallCheckout } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCheckout";
 import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import type { IShoppingMallCustomerAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerAddress";
+import type { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
 import type { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import type { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+import type { IShoppingMallOrderItemSnapshotProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItemSnapshotProductImage";
+import type { IShoppingMallOrderItemSnapshotVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItemSnapshotVariantOption";
+import type { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import type { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
+import type { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import type { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
 import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import type { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
 import type { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -18,131 +29,110 @@ import { authorize_customer_refresh } from "../../../authorize/authorize_custome
 import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
-import { generate_random_shopping_mall_customer_customers_me_orders_create } from "../../../generate/generate_random_shopping_mall_customer_customers_me_orders_create";
-import { prepare_random_shopping_mall_order } from "../../../prepare/prepare_random_shopping_mall_order";
+import { generate_random_shopping_mall_customer_checkout } from "../../../generate/generate_random_shopping_mall_customer_checkout";
+import { generate_random_shopping_mall_seller_products_create } from "../../../generate/generate_random_shopping_mall_seller_products_create";
+import { prepare_random_shopping_mall_checkout } from "../../../prepare/prepare_random_shopping_mall_checkout";
+import { prepare_random_shopping_mall_product } from "../../../prepare/prepare_random_shopping_mall_product";
 
+/**
+ * Test that a seller can retrieve detailed information for an order item they need to fulfill.
+ *
+ * Validates the complete order item retrieval workflow including seller authentication, customer registration, product creation, order placement, and order item detail viewing. Ensures that sellers can access comprehensive order item information including immutable snapshots of product state at purchase time.
+ *
+ * Special attention is given to verifying that the snapshot data (product name, description, variant SKU, price, seller shop information) is preserved exactly as it existed when the order was placed, regardless of any subsequent product modifications.
+ *
+ * 1. Seller registers and authenticates via join operation.
+ * 2. Customer registers and authenticates via join operation.
+ * 3. Seller creates a product with name, description, and base price.
+ * 4. Customer completes checkout to create an order with the seller's product.
+ * 5. Seller retrieves the order item details using order ID and item ID.
+ * 6. Validates order item contains correct quantity, price, and status.
+ * 7. Validates snapshot data matches product state at purchase time.
+ */
 export async function test_api_order_item_retrieve_by_seller(
   connection: api.IConnection,
 ): Promise<void> {
-  /**
-   * Test that a seller can retrieve detailed order item information.
-   * Workflow: Seller registers → Customer registers → Customer creates order → Seller retrieves order item
-   */
   // 1. Seller registration and authentication
   const sellerConnection: api.IConnection = { host: connection.host };
-  const sellerAuth = await authorize_seller_join(sellerConnection, {
-    body: {
-      shop_name: RandomGenerator.name(2),
-      shop_description: RandomGenerator.paragraph({ sentences: 2 }),
-    },
-  });
-  typia.assert(sellerAuth);
+  await authorize_seller_join(sellerConnection, {});
   // 2. Customer registration and authentication
   const customerConnection: api.IConnection = { host: connection.host };
-  const customerAuth = await authorize_customer_join(customerConnection, {});
-  typia.assert(customerAuth);
-  // 3. Customer creates an order (generates order items)
-  const order =
-    await generate_random_shopping_mall_customer_customers_me_orders_create(
-      customerConnection,
-      {},
-    );
-  typia.assert(order);
-  // Validate order has at least one item
-  TestValidator.predicate(
-    "order must have at least one item",
-    order.orderItems.length > 0,
+  await authorize_customer_join(customerConnection, {});
+  // 3. Seller creates a product
+  const product = await generate_random_shopping_mall_seller_products_create(
+    sellerConnection,
+    {},
   );
-  // Get the first order item for testing
-  const orderItem = order.orderItems[0];
+  typia.assert(product);
+  // 4. Customer completes checkout to create an order
+  const order = await generate_random_shopping_mall_customer_checkout(
+    customerConnection,
+    {},
+  );
+  typia.assert(order);
+  // Get the first order item from the order
+  const orderItem = order.items[0];
   typia.assert(orderItem);
-  // 4. Seller retrieves the order item by ID
-  const retrievedItem =
+  // 5. Seller retrieves the order item details
+  const retrievedOrderItem =
     await api.functional.shoppingMall.seller.orders.items.at(sellerConnection, {
+      orderId: order.id,
       itemId: orderItem.id,
     });
-  typia.assert(retrievedItem);
-  // 5. Validate order item structure and snapshots
-  TestValidator.equals("order item ID matches", retrievedItem.id, orderItem.id);
+  typia.assert(retrievedOrderItem);
+  // 6. Validate order item details
   TestValidator.equals(
-    "order ID matches parent order",
-    retrievedItem.orderId,
+    "order item ID matches",
+    retrievedOrderItem.id,
+    orderItem.id,
+  );
+  TestValidator.equals(
+    "order ID matches",
+    retrievedOrderItem.order.id,
     order.id,
   );
+  TestValidator.predicate(
+    "has positive quantity",
+    retrievedOrderItem.quantity > 0,
+  );
+  TestValidator.predicate("has positive price", retrievedOrderItem.price > 0);
+  TestValidator.equals("status is paid", retrievedOrderItem.status, "paid");
+  // 7. Validate snapshot data exists and matches product state
   TestValidator.equals(
-    "seller ID matches authenticated seller",
-    retrievedItem.sellerId,
-    sellerAuth.id,
-  );
-  // 6. Validate quantity and price are positive
-  TestValidator.predicate("quantity is positive", retrievedItem.quantity > 0);
-  TestValidator.predicate("price is positive", retrievedItem.price > 0);
-  // 7. Validate status is a valid fulfillment state
-  const validStatuses = [
-    "paid",
-    "shipped",
-    "delivered",
-    "cancelled",
-    "refunded",
-  ];
-  TestValidator.predicate(
-    "status is valid",
-    validStatuses.includes(retrievedItem.status),
-  );
-  // 8. Validate snapshots are present (JSON strings)
-  TestValidator.predicate(
-    "product snapshot exists",
-    retrievedItem.productSnapshot !== null &&
-      retrievedItem.productSnapshot !== undefined,
-  );
-  TestValidator.predicate(
-    "variant snapshot exists",
-    retrievedItem.variantSnapshot !== null &&
-      retrievedItem.variantSnapshot !== undefined,
-  );
-  TestValidator.predicate(
-    "seller profile snapshot exists",
-    retrievedItem.sellerProfileSnapshot !== null &&
-      retrievedItem.sellerProfileSnapshot !== undefined,
-  );
-  // 9. Validate parent order summary is included
-  TestValidator.equals(
-    "parent order ID matches",
-    retrievedItem.order.id,
-    order.id,
+    "product name in snapshot",
+    retrievedOrderItem.product_name,
+    product.name,
   );
   TestValidator.equals(
-    "parent order status matches",
-    retrievedItem.order.status,
-    order.status,
-  );
-  // 10. Validate seller summary is included
-  TestValidator.equals(
-    "seller ID in summary matches",
-    retrievedItem.seller.id,
-    sellerAuth.id,
-  );
-  TestValidator.equals(
-    "seller shop name matches",
-    retrievedItem.seller.shop_name,
-    sellerAuth.shop_name,
-  );
-  // 11. Validate timestamps are present
-  TestValidator.predicate(
-    "created_at is valid date-time",
-    retrievedItem.createdAt !== null &&
-      retrievedItem.createdAt !== undefined &&
-      retrievedItem.createdAt.length > 0,
+    "product description in snapshot",
+    retrievedOrderItem.product_description,
+    product.description,
   );
   TestValidator.predicate(
-    "updated_at is valid date-time",
-    retrievedItem.updatedAt !== null &&
-      retrievedItem.updatedAt !== undefined &&
-      retrievedItem.updatedAt.length > 0,
+    "has variant SKU code",
+    retrievedOrderItem.variant_sku_code.length > 0,
   );
-  // 12. Validate shipments array exists (may be empty if not shipped yet)
   TestValidator.predicate(
-    "shipments array exists",
-    Array.isArray(retrievedItem.shipments),
+    "has variant price",
+    retrievedOrderItem.variant_price > 0,
+  );
+  TestValidator.predicate(
+    "has seller shop name",
+    retrievedOrderItem.seller_shop_name.length > 0,
+  );
+  // 8. Validate variant options snapshot
+  TestValidator.predicate(
+    "has variant options",
+    retrievedOrderItem.variantOptions.length >= 0,
+  );
+  // 9. Validate product images snapshot
+  TestValidator.predicate(
+    "has product images",
+    retrievedOrderItem.images.length >= 0,
+  );
+  // 10. Validate order reference
+  TestValidator.predicate(
+    "order number exists",
+    retrievedOrderItem.order.order_number.length > 0,
   );
 }

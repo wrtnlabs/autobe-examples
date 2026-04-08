@@ -1,0 +1,290 @@
+/// Ban records tracking user restrictions in communities with reason,
+/// timestamps, and optional unbanning for audit purposes.
+///
+/// ## Purpose
+/// This table enforces community-level access control by recording when
+/// users are banned from specific communities. Each ban tracks who was
+/// banned, which community banned them, who issued the ban, and when it
+/// occurred.
+///
+/// ## Business Rules
+/// A user can have at most one active ban per community. Bans are permanent
+/// by default but can be lifted with an optional unbanned_at timestamp.
+/// Every ban must have a reason recorded to maintain moderation
+/// accountability.
+///
+/// @namespace bans
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_ban_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The user who was banned from the community. This reference enables access
+  /// control enforcement to prevent banned users from participating in
+  /// community activities.
+  user_id String
+  
+  /// The community where the ban was issued. This reference identifies which
+  /// community's access was restricted by this ban record.
+  community_id String
+  
+  /// The moderator or community owner who issued this ban. This reference
+  /// maintains an audit trail of who made the moderation decision, enabling
+  /// accountability and transparency in community management.
+  banned_by String
+  
+  /// Timestamp when the ban was issued. This marks when the user lost access
+  /// to the community.
+  banned_at DateTime
+  
+  /// Optional timestamp when the ban was lifted. If null, the ban is
+  /// permanent. This enables tracking of temporary versus permanent bans while
+  /// maintaining a complete ban history.
+  unbanned_at DateTime?
+  
+  /// The reason for the ban recorded by the moderator. This provides context
+  /// for the moderation action and helps users understand why they were banned
+  /// from the community.
+  reason String
+  
+  /// Record creation timestamp for tracking when this ban record was added to
+  /// the system.
+  created_at DateTime
+  
+  /// Last update timestamp for tracking when this ban record was modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for tracking when this record was logically deleted
+  /// while preserving the audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user reddit_platform_members @relation("reddit_platform_ban_records_of_user_id", fields: [user_id], references: [id], onDelete: Cascade)
+  community reddit_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  bannedBy reddit_platform_members @relation("reddit_platform_ban_records_of_banned_by", fields: [banned_by], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshot reddit_platform_ban_records_snapshots?
+  snapshots reddit_platform_ban_record_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([banned_by])
+  @@unique([user_id, community_id])
+  @@index([community_id, banned_at])
+}
+
+/// Point-in-time snapshot table for audit trail tracking all state changes
+/// to ban records over time.
+///
+/// This snapshot table captures the complete state of ban records at
+/// specific points in time, enabling historical reconstruction and audit
+/// capabilities. Each ban record can have multiple snapshots representing
+/// its state at different moments (initial creation, unbanning, etc.).
+///
+/// @namespace bans
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_ban_records_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original ban record that this snapshot represents.
+  ///
+  /// Each ban record can have multiple snapshots over its lifetime, tracking
+  /// state changes such as initial banning, unbanning, or reason updates. The
+  /// snapshot captures the complete state of the ban record at a specific
+  /// point in time.
+  reddit_platform_ban_record_id String
+  
+  /// Reference to the member who was banned from the community.
+  ///
+  /// This user is the subject of the ban action and cannot post, comment, or
+  /// vote in the banned community while the ban is active.
+  reddit_platform_user_id String
+  
+  /// Reference to the community where the ban was issued.
+  ///
+  /// Bans are community-specific; a user can be banned from one community
+  /// while remaining active in others.
+  reddit_platform_community_id String
+  
+  /// Reference to the member (moderator or owner) who issued the ban.
+  ///
+  /// This tracks which authorized user performed the moderation action,
+  /// providing accountability in the moderation system.
+  reddit_platform_banned_by_id String?
+  
+  /// Human-readable reason for the ban as provided by the moderating user.
+  ///
+  /// This field captures the explanation for why the ban was issued, which may
+  /// include policy violations, disruptive behavior, or other community
+  /// guideline breaches.
+  reason String?
+  
+  /// Timestamp when the ban was initially issued.
+  ///
+  /// This marks the point in time when the user's access to the community was
+  /// revoked.
+  banned_at DateTime?
+  
+  /// Timestamp when the ban was lifted, if applicable.
+  ///
+  /// If nullable, the ban is still active. If set, the user was unbanned at
+  /// this point in time.
+  unbanned_at DateTime?
+  
+  /// Timestamp when this snapshot was created.
+  ///
+  /// Tracks when the point-in-time state was recorded in the audit trail.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot was last updated.
+  ///
+  /// Since snapshots are immutable records, this typically equals created_at
+  /// unless the snapshot itself is modified for correction purposes.
+  updated_at DateTime
+  
+  /// Timestamp when this snapshot was soft-deleted, if applicable.
+  ///
+  /// Snapshots may be deleted for legal compliance (e.g., GDPR data deletion
+  /// requests) or administrative cleanup.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  banRecord reddit_platform_ban_records @relation(fields: [reddit_platform_ban_record_id], references: [id], onDelete: Cascade)
+  user reddit_platform_members @relation("reddit_platform_ban_records_snapshots_of_reddit_platfo_894ca136", fields: [reddit_platform_user_id], references: [id], onDelete: Cascade)
+  community reddit_platform_communities @relation(fields: [reddit_platform_community_id], references: [id], onDelete: Cascade)
+  bannedBy reddit_platform_members? @relation("reddit_platform_ban_records_snapshots_of_reddit_platfo_ab7e8b3c", fields: [reddit_platform_banned_by_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_user_id], map: "reddit_platform_ban_records_snapshots_reddit_platform__14e2afcb")
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_community_id], map: "reddit_platform_ban_records_snapshots_reddit_platform__0d417bb3")
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_banned_by_id], map: "reddit_platform_ban_records_snapshots_reddit_platform__d089dc22")
+  // spellchecker: ignore-next-line
+  @@unique([reddit_platform_ban_record_id], map: "reddit_platform_ban_records_snapshots_reddit_platform__de73424a")
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_ban_record_id, created_at], map: "reddit_platform_ban_records_snapshots_reddit_platform__41827777")
+}
+
+/// Audit trail table for ban records capturing point-in-time snapshots of
+/// state changes over time.
+///
+/// This table stores historical versions of ban records, enabling compliance
+/// auditing, historical tracking of ban modifications, unbanning events, and
+/// data integrity verification. Each snapshot represents the state of a ban
+/// record at a specific moment in time.
+///
+/// ## Key Features
+///
+/// - Append-only design: snapshots are never modified or deleted
+/// - Point-in-time queries: reconstruct ban record state at any historical
+/// timestamp
+/// - Audit compliance: track all changes to ban records for regulatory
+/// requirements
+///
+/// ## Relationship with Ban Records
+///
+/// Ban records (`reddit_platform_ban_records`) hold the current state of
+/// bans. When a ban record is created, edited, or unbanned, a new snapshot
+/// is appended to this table. This separation ensures the main ban table
+/// remains optimized for queries while snapshots provide historical context.
+///
+/// @namespace bans
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_ban_record_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the ban record this snapshot represents.
+  ///
+  /// Links to the main `reddit_platform_ban_records` table. Multiple snapshots
+  /// can reference the same ban record, forming an audit trail of state
+  /// changes over time.
+  reddit_platform_ban_record_id String
+  
+  /// The user who was banned from the community.
+  ///
+  /// Stores the user_id from the ban record at the time of snapshot.
+  /// References the `reddit_platform_members` table in the Authorization
+  /// group.
+  reddit_platform_user_id String
+  
+  /// The community where the ban was issued.
+  ///
+  /// Stores the community_id from the ban record at the time of snapshot.
+  /// References the `reddit_platform_communities` table in the Communities
+  /// group.
+  reddit_platform_community_id String
+  
+  /// The moderator who issued the ban.
+  ///
+  /// Stores the banned_by FK from the ban record at the time of snapshot.
+  /// References the `reddit_platform_members` table, identifying which
+  /// moderator performed the ban action.
+  banned_by_id String?
+  
+  /// Timestamp when the ban was issued.
+  ///
+  /// Stores the banned_at datetime from the ban record at the time of
+  /// snapshot. This is when the user was initially banned from the community.
+  banned_at DateTime
+  
+  /// Reason for the ban.
+  ///
+  /// Stores the reason string from the ban record at the time of snapshot.
+  /// Contains the moderation notes explaining why the ban was issued.
+  reason String
+  
+  /// Timestamp when the ban was lifted (if applicable).
+  ///
+  /// Stores the unbanned_at datetime from the ban record at the time of
+  /// snapshot. Null if the ban is still active. This tracks when and if a ban
+  /// was revoked.
+  unbanned_at DateTime?
+  
+  /// Timestamp when this snapshot was created.
+  ///
+  /// Records when the snapshot was taken. This differs from the ban timestamps
+  /// (banned_at, unbanned_at) as it represents when this particular snapshot
+  /// was created in the audit trail.
+  snapshot_created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  banRecord reddit_platform_ban_records @relation(fields: [reddit_platform_ban_record_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_ban_record_id], map: "reddit_platform_ban_record_snapshots_reddit_platform_b_16d68088")
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_user_id, reddit_platform_community_id], map: "reddit_platform_ban_record_snapshots_reddit_platform_u_3c2d5349")
+  @@index([snapshot_created_at])
+}

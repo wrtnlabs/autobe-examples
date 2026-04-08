@@ -1,14 +1,5 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IErpHrmDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmDepartment";
-import { IErpHrmEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmEmployee";
-import { IErpHrmMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmMember";
-import { IErpHrmOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmOrganization";
-import { IErpHrmProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProjectMember";
-import { IErpHrmRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmRole";
-import { IErpHrmTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTask";
-import { IErpHrmTaskHistory } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTaskHistory";
-import { IErpHrmTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimelog";
-import { IErpHrmTimer } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimer";
+import { IErpHrmProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProject";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -17,50 +8,96 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { ErpHrmProjectMemberCollector } from "../collectors/ErpHrmProjectMemberCollector";
+import { ErpHrmProjectCollector } from "../collectors/ErpHrmProjectCollector";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
-import { ErpHrmProjectMemberTransformer } from "../transformers/ErpHrmProjectMemberTransformer";
+import { ErpHrmProjectAtSummaryTransformer } from "../transformers/ErpHrmProjectAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postErpHrmAdminProjects(props: {
   admin: AdminPayload;
-  body: IErpHrmProjectMember.ICreate;
-}): Promise<IErpHrmProjectMember> {
-  // 1) Get the first organization (admin should have org context from session)
-  // Since erp_hrm_admins doesn't have erp_hrm_organization_id field directly,
-  // we need to get organization from elsewhere or use a default approach
-  const organizations = await MyGlobal.prisma.erp_hrm_organizations.findMany({
-    take: 1,
-    select: { id: true },
+  body: IErpHrmProject.ICreate;
+}): Promise<IErpHrmProject.ISummary> {
+  // Validate session exists
+  await MyGlobal.prisma.erp_hrm_admin_sessions.findUniqueOrThrow({
+    where: { id: props.admin.session_id },
   });
-  if (organizations.length === 0) {
-    throw new HttpException("No organization found", 400);
+  // Find existing project to extract organization context
+  // Admin must belong to an organization to create projects
+  const existingProject = await MyGlobal.prisma.erp_hrm_projects.findFirst({
+    where: {},
+    select: {
+      erp_hrm_organization_id: true,
+    },
+    take: 1,
+  });
+  if (!existingProject) {
+    throw new HttpException(
+      "Cannot create project: no organization context available",
+      400,
+    );
   }
-  const organizationId = organizations[0].id;
-  // 2) Check for duplicate project name within the organization
-  const existing = await MyGlobal.prisma.erp_hrm_projects.findUnique({
+  // Check for duplicate project name (case-insensitive) within organization
+  const duplicateProject = await MyGlobal.prisma.erp_hrm_projects.findFirst({
     where: {
-      erp_hrm_organization_id_name: {
-        erp_hrm_organization_id: organizationId,
-        name: props.body.name,
-      },
+      erp_hrm_organization_id: existingProject.erp_hrm_organization_id,
+      name: { equals: props.body.name, mode: "insensitive" },
     },
   });
-  if (existing !== null) {
+  if (duplicateProject) {
     throw new HttpException(
-      `Project with name '${props.body.name}' already exists in this organization`,
+      "Project with this name already exists in the organization",
       409,
     );
   }
-  // 3) Create project using collector
+  // Build organization entity for collector
+  const organizationEntity: IEntity = {
+    id: existingProject.erp_hrm_organization_id as string & tags.Format<"uuid">,
+  };
+  // Create project using collector
   const created = await MyGlobal.prisma.erp_hrm_projects.create({
-    data: await ErpHrmProjectMemberCollector.collect({
+    data: await ErpHrmProjectCollector.collect({
       body: props.body,
-      erpHrmOrganizations: { id: organizationId },
+      erpHrmOrganizations: organizationEntity,
     }),
-    ...ErpHrmProjectMemberTransformer.select(),
+    ...ErpHrmProjectAtSummaryTransformer.select(),
   });
-  // 4) Transform and return response
-  return await ErpHrmProjectMemberTransformer.transform(created);
+  // Transform and return response
+  return await ErpHrmProjectAtSummaryTransformer.transform(created);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IErpHrmProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProject";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function postErpHrmAdminProjects(props: {
+//   admin: AdminPayload;
+//   body: IErpHrmProject.ICreate;
+// }): Promise<IErpHrmProject> {
+//   await MyGlobal.prisma.erp_hrm_projects.create({
+//     data: await ErpHrmProjectCollector.collect({
+//       body: props.body,
+//       ...
+//     }),
+//   });
+// }
+// ```
+//--------------------------------------------------------------

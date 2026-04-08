@@ -1,7 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeActivityLogEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeActivityLogEntry";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIErpHrmTimeActivityLogEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIErpHrmTimeActivityLogEntry";
 import { ArrayUtil } from "@nestia/e2e";
@@ -24,79 +24,48 @@ export async function patchErpHrmTimeMemberActivityLogEntries(props: {
   const page: number = props.body.page ?? 1;
   const limit: number = props.body.limit ?? 100;
   const skip: number = (page - 1) * limit;
-  if (
-    props.body.createdAtFrom !== undefined &&
-    props.body.createdAtTo !== undefined &&
-    props.body.createdAtFrom !== null &&
-    props.body.createdAtTo !== null &&
-    props.body.createdAtFrom > props.body.createdAtTo
-  ) {
-    throw new HttpException("Invalid date range", 400);
-  }
-  const orderBy: Prisma.erp_hrm_time_activity_log_entriesOrderByWithRelationInput =
-    props.body.sort === undefined ||
-    props.body.sort === "" ||
-    props.body.sort === "createdAt:desc"
-      ? { created_at: "desc" }
-      : props.body.sort === "createdAt:asc"
-        ? { created_at: "asc" }
-        : props.body.sort === "actionType:asc"
-          ? { action_type: "asc" }
-          : props.body.sort === "actionType:desc"
-            ? { action_type: "desc" }
-            : props.body.sort === "memberId:asc"
-              ? { member_id: "asc" }
-              : props.body.sort === "memberId:desc"
-                ? { member_id: "desc" }
-                : (() => {
-                    throw new HttpException("Unsupported sort field", 400);
-                  })();
+  const isAscending: boolean = props.body.sort === "asc";
   const where: Prisma.erp_hrm_time_activity_log_entriesWhereInput = {
+    ...(props.body.actionType !== undefined
+      ? { action_type: props.body.actionType }
+      : {}),
+    ...(props.body.memberId !== undefined
+      ? { member_id: props.body.memberId }
+      : {}),
+    ...(props.body.from !== undefined || props.body.to !== undefined
+      ? {
+          created_at: {
+            ...(props.body.from !== undefined ? { gte: props.body.from } : {}),
+            ...(props.body.to !== undefined ? { lte: props.body.to } : {}),
+          },
+        }
+      : {}),
     deleted_at: null,
-    ...(props.body.actionType !== undefined && {
-      action_type: props.body.actionType,
-    }),
-    ...(props.body.memberId !== undefined && {
-      member_id: props.body.memberId,
-    }),
-    ...(props.body.createdAtFrom !== undefined &&
-      props.body.createdAtFrom !== null && {
-        created_at: {
-          gte: props.body.createdAtFrom,
-          ...(props.body.createdAtTo !== undefined &&
-            props.body.createdAtTo !== null && { lte: props.body.createdAtTo }),
-        },
-      }),
-    ...(props.body.createdAtFrom === undefined &&
-      props.body.createdAtTo !== undefined &&
-      props.body.createdAtTo !== null && {
-        created_at: { lte: props.body.createdAtTo },
-      }),
   };
-  const data = await MyGlobal.prisma.erp_hrm_time_activity_log_entries.findMany(
-    {
+  const records =
+    await MyGlobal.prisma.erp_hrm_time_activity_log_entries.findMany({
       where,
       skip,
       take: limit,
-      orderBy,
+      orderBy: [
+        { created_at: isAscending ? "asc" : "desc" },
+        { id: isAscending ? "asc" : "desc" },
+      ],
       ...ErpHrmTimeActivityLogEntryAtSummaryTransformer.select(),
-    },
-  );
-  const records = await MyGlobal.prisma.erp_hrm_time_activity_log_entries.count(
-    {
-      where,
-    },
-  );
+    });
+  const total = await MyGlobal.prisma.erp_hrm_time_activity_log_entries.count({
+    where,
+  });
   return {
     data: await ArrayUtil.asyncMap(
-      data,
+      records,
       ErpHrmTimeActivityLogEntryAtSummaryTransformer.transform,
     ),
     pagination: {
       current: page,
       limit,
-      records,
-      pages: Math.ceil(records / limit),
+      records: total,
+      pages: Math.ceil(total / limit),
     },
   };
 }

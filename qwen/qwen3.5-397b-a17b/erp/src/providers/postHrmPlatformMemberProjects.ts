@@ -19,21 +19,23 @@ export async function postHrmPlatformMemberProjects(props: {
   member: MemberPayload;
   body: IHrmPlatformProject.ICreate;
 }): Promise<IHrmPlatformProject> {
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-      where: {
-        user_id: props.member.id,
-        deleted_at: null,
+  const membership =
+    await MyGlobal.prisma.hrm_platform_organization_memberships.findFirstOrThrow(
+      {
+        where: {
+          hrm_platform_member_id: props.member.id,
+          deleted_at: null,
+        },
+        select: {
+          hrm_platform_organization_id: true,
+        },
       },
-      select: {
-        organization_id: true,
-      },
-    });
+    );
   const created = await MyGlobal.prisma.hrm_platform_projects.create({
     data: await HrmPlatformProjectCollector.collect({
       body: props.body,
       hrmPlatformOrganizations: {
-        id: employee.organization_id,
+        id: membership.hrm_platform_organization_id,
       },
     }),
     ...HrmPlatformProjectTransformer.select(),

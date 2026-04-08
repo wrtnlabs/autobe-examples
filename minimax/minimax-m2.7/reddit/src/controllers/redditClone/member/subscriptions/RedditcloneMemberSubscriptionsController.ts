@@ -2,11 +2,12 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IPageIRedditClonePostTextContent } from "../../../../api/structures/IPageIRedditClonePostTextContent";
-import { IRedditClonePostTextContent } from "../../../../api/structures/IRedditClonePostTextContent";
+import { IPageIRedditCloneSubscription } from "../../../../api/structures/IPageIRedditCloneSubscription";
+import { IRedditCloneSubscription } from "../../../../api/structures/IRedditCloneSubscription";
 import { MemberAuth } from "../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
 import { deleteRedditCloneMemberSubscriptionsSubscriptionId } from "../../../../providers/deleteRedditCloneMemberSubscriptionsSubscriptionId";
+import { getRedditCloneMemberSubscriptions } from "../../../../providers/getRedditCloneMemberSubscriptions";
 import { getRedditCloneMemberSubscriptionsSubscriptionId } from "../../../../providers/getRedditCloneMemberSubscriptionsSubscriptionId";
 import { patchRedditCloneMemberSubscriptions } from "../../../../providers/patchRedditCloneMemberSubscriptions";
 import { postRedditCloneMemberSubscriptions } from "../../../../providers/postRedditCloneMemberSubscriptions";
@@ -14,32 +15,69 @@ import { postRedditCloneMemberSubscriptions } from "../../../../providers/postRe
 @Controller("/redditClone/member/subscriptions")
 export class RedditcloneMemberSubscriptionsController {
   /**
-   * Subscribe the authenticated member to a community.
+   * Retrieve a paginated list of communities the authenticated user is currently subscribed to.
    *
-   * This endpoint establishes a subscription relationship between the authenticated user and the specified community. A subscription is required before a user can create posts in a community, and it also grants access to view all community content regardless of publication status.
+   * This endpoint returns the user's subscription history with full community details including the community name, description, and current subscriber count. The results are ordered chronologically by subscription creation date, with the most recent subscriptions appearing first by default.
    *
-   * The subscription is directional and persistent until the user explicitly unsubscribes. When a user subscribes, they gain the ability to create posts, vote on content, and comment within that community. The subscription remains active even if the community changes its name, description, or icon.
+   * Each subscription record in the response includes the associated community information, allowing clients to display subscribed communities without additional API calls. The response is paginated to handle users with many subscriptions efficiently.
    *
-   * This operation requires the authenticated member to provide a valid community identifier in the request body. The system validates that the community exists, the user is not already subscribed to the community, and the user is not banned from the community. If any validation fails, an appropriate error is returned without modifying any existing records.
-   *
-   * Subscriptions are stored as independent records in the reddit_clone_subscriptions table, linking individual users to specific communities with a timestamp for chronological ordering. Each user may subscribe to the same community only once, enforced by a unique constraint on the combination of member_id and community_id.
+   * Authentication is required - unauthenticated requests will receive an authorization error.
    *
    * @param connection
-   * @param body Subscription creation payload containing the community identifier
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Extract authenticated member from session/context
-   * 2. Parse request body to get communityIdentifier (community name or id)
-   * 3. Validate request body (communityIdentifier required)
-   * 4. Query reddit_clone_communities to find community by name or id
-   * 5. If community not found, return 404 error
-   * 6. Query reddit_clone_community_bans to check if member is banned from this community
-   * 7. If banned, return 403 error with ban notice
-   * 8. Query reddit_clone_subscriptions to check for existing subscription
-   * 9. If already subscribed, return 409 conflict error
-   * 10. Generate UUID for new subscription
-   * 11. Insert new record into reddit_clone_subscriptions with current timestamp
-   * 12. Return created subscription resource
+   * @x-autobe-specification Query reddit_clone_subscriptions table filtered by the authenticated user's ID (reddit_clone_member_id).
+   *
+   * JOIN with reddit_clone_communities table to retrieve community details: name, description, icon, and subscriber_count.
+   *
+   * Apply default ordering by created_at DESC (most recent first).
+   *
+   * Implement cursor-based pagination using created_at and id as cursor fields to handle large result sets efficiently.
+   *
+   * Validate pagination parameters: limit must be between 1 and 100, defaulting to 20 if not provided.
+   *
+   * Handle empty results gracefully - return empty array with pagination metadata when user has no subscriptions.
+   *
+   * Exclude communities where deleted_at is not null (soft-deleted communities should not appear in results).
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get()
+  public async list(
+    @MemberAuth()
+    member: MemberPayload,
+  ): Promise<IPageIRedditCloneSubscription.ISummary> {
+    try {
+      return await getRedditCloneMemberSubscriptions({
+        member,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Subscribe the authenticated user to a community.
+   *
+   * This endpoint establishes a subscription relationship between the currently authenticated user and the specified community. Once subscribed, the user gains the ability to create posts within that community.
+   *
+   * The operation enforces several constraints: users cannot subscribe to the same community more than once (returns duplicate error), users cannot subscribe if they are banned from the target community (returns ban notice), and the community must exist (returns not found error).
+   *
+   * Subscriptions are directional relationships where users follow communities. The subscription persists until the user explicitly unsubscribes. When a community is deleted, all associated subscriptions are automatically terminated via cascade delete.
+   *
+   * @param connection
+   * @param body Community subscription request containing the target community identifier
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification 1. Extract authenticated user ID from session/token
+   * 2. Validate communityId is provided in request body
+   * 3. Verify the community exists in reddit_clone_communities
+   * 4. Check if user is banned from this community (query reddit_clone_community_bans)
+   * 5. If banned, return 403 with ban notice error
+   * 6. Check if subscription already exists (query reddit_clone_subscriptions)
+   * 7. If exists, return 409 duplicate subscription error
+   * 8. Create new subscription record with id (UUID), member_id, community_id, created_at
+   * 9. Return created subscription with full details including community info
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -47,8 +85,8 @@ export class RedditcloneMemberSubscriptionsController {
     @MemberAuth()
     member: MemberPayload,
     @TypedBody()
-    body: IRedditClonePostTextContent.ICreate,
-  ): Promise<IRedditClonePostTextContent> {
+    body: IRedditCloneSubscription.ICreate,
+  ): Promise<IRedditCloneSubscription> {
     try {
       return await postRedditCloneMemberSubscriptions({
         member,
@@ -61,37 +99,19 @@ export class RedditcloneMemberSubscriptionsController {
   }
 
   /**
-   * Retrieve a filtered and paginated list of subscription records.
+   * Retrieve a paginated list of communities that the authenticated user is currently subscribed to.
    *
-   * This endpoint provides advanced search capabilities for subscriptions across the platform. It supports two primary use cases: members viewing their own subscription history, and community moderators or owners viewing the subscriber list for their community.
+   * This operation returns the user's subscription history with full community details including name, description, and subscriber count. The list is ordered by subscription date by default, showing the most recently subscribed communities first.
    *
-   * For members, this operation returns all communities they have subscribed to, ordered by subscription date. Each subscription record includes the community details such as name, description, icon, and subscriber count.
+   * The authenticated user must have an active session. Subscriptions remain valid even if community metadata changes. When a community is deleted, its subscriptions are automatically cleaned up and will not appear in results.
    *
-   * For community moderators and owners, this operation can filter subscriptions by community to view all users subscribed to a specific community. The subscriber list displays each subscriber's username and the date they subscribed.
-   *
-   * The subscription system establishes a formal following relationship between users and communities. Each subscription links a member to a community with a creation timestamp for chronological ordering. A user cannot subscribe to the same community more than once.
-   *
-   * This operation is accessible only to authenticated members. The results are paginated and can be filtered by member ID, community ID, or subscription date range.
+   * This endpoint supports pagination with configurable page sizes and optional sorting parameters.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for filtering subscriptions
+   * @param body Pagination parameters including page number, page size, and optional sorting criteria
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the reddit_clone_subscriptions table with filtering and pagination.
-   *
-   * 1. Validate authentication - require authenticated member session
-   * 2. Parse request body for filter criteria:
-   *    - memberId: filter by specific member's subscriptions
-   *    - communityId: filter by specific community's subscribers
-   *    - communityName: filter by community name (join with communities table)
-   *    - createdAfter: filter subscriptions created after timestamp
-   *    - createdBefore: filter subscriptions created before timestamp
-   * 3. If memberId is specified and differs from authenticated user, verify the authenticated user is a moderator or owner of the target community
-   * 4. Join with reddit_clone_communities table to include community details (name, description, icon)
-   * 5. Join with reddit_clone_members table to include subscriber details (username)
-   * 6. Apply ordering: default by created_at DESC (most recent first)
-   * 7. Apply pagination: offset-based with page and limit parameters
-   * 8. Return paginated results with total count
+   * @x-autobe-specification Query reddit_clone_subscriptions table filtered by the authenticated user's member_id. Join with reddit_clone_communities to retrieve community details (name, description, icon, subscriber_count). Apply pagination with limit and offset. Default ordering: created_at DESC (most recent first). Exclude subscriptions where community.deleted_at is not null. Return total count for pagination metadata.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -99,8 +119,8 @@ export class RedditcloneMemberSubscriptionsController {
     @MemberAuth()
     member: MemberPayload,
     @TypedBody()
-    body: IRedditClonePostTextContent.IRequest,
-  ): Promise<IPageIRedditClonePostTextContent.ISummary> {
+    body: IRedditCloneSubscription.IRequest,
+  ): Promise<IPageIRedditCloneSubscription.ISummary> {
     try {
       return await patchRedditCloneMemberSubscriptions({
         member,
@@ -113,39 +133,28 @@ export class RedditcloneMemberSubscriptionsController {
   }
 
   /**
-   * Retrieve a specific subscription by its unique identifier.
+   * Retrieve detailed information about a specific subscription.
    *
-   * This endpoint returns the full subscription record for a given subscription ID. The subscription links a member to a community and includes the timestamp when the subscription was created.
+   * This endpoint returns a single subscription record identified by its unique UUID. The subscription represents the relationship between a user and a community, showing when the user subscribed.
    *
-   * **Authorization**: Only the subscriber who owns this subscription, or moderators/owners of the subscribed community, can retrieve subscription details. Unauthorized requests return 403 Forbidden.
+   * The response includes the subscription's metadata along with basic information about the associated member and community for context. This operation is useful for verifying subscription status, checking subscription history, or displaying subscription details in a user interface.
    *
-   * **Database relationship**: This operation queries the reddit_clone_subscriptions table, joining with reddit_clone_members and reddit_clone_communities to provide complete context about the subscription relationship.
-   *
-   * **Use cases**:
-   * - User verifying their subscription status to a community
-   * - Community moderators viewing subscription details
-   * - System administrators auditing subscription records
-   *
-   * **Error handling**:
-   * - 404 Not Found: If subscriptionId does not exist
-   * - 403 Forbidden: If requester is not authorized to view this subscription
-   * - 400 Bad Request: If subscriptionId format is invalid
+   * If the subscription does not exist, the API returns a 404 Not Found error.
    *
    * @param connection
-   * @param subscriptionId Unique identifier of the subscription to retrieve (UUID format)
+   * @param subscriptionId Unique identifier of the subscription (UUID format)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the reddit_clone_subscriptions table using the provided subscriptionId as the primary key.
+   * @x-autobe-specification Query the reddit_clone_subscriptions table using the provided subscriptionId as the primary key lookup.
    *
-   * 1. Validate subscriptionId is a valid UUID format
-   * 2. Query subscription by ID with JOINs to:
-   *    - reddit_clone_members (for subscriber username)
-   *    - reddit_clone_communities (for community name and details)
-   * 3. Verify authorization:
-   *    - Requester's member ID matches reddit_clone_member_id, OR
-   *    - Requester is moderator/owner of the community
-   * 4. Return subscription entity with populated member and community information
-   * 5. Handle errors: 404 for missing subscription, 403 for unauthorized access
+   * Join with reddit_clone_members table to retrieve basic member information (id, username).
+   * Join with reddit_clone_communities table to retrieve basic community information (id, name).
+   *
+   * Return the full subscription record including: id, reddit_clone_member_id, reddit_clone_community_id, created_at.
+   *
+   * If subscription is not found, return 404 error with appropriate message.
+   *
+   * Handle UUID format validation - return 400 Bad Request if subscriptionId is not a valid UUID.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":subscriptionId")
@@ -154,7 +163,7 @@ export class RedditcloneMemberSubscriptionsController {
     member: MemberPayload,
     @TypedParam("subscriptionId")
     subscriptionId: string & tags.Format<"uuid">,
-  ): Promise<IRedditClonePostTextContent> {
+  ): Promise<IRedditCloneSubscription.IInvert> {
     try {
       return await getRedditCloneMemberSubscriptionsSubscriptionId({
         member,
@@ -167,65 +176,34 @@ export class RedditcloneMemberSubscriptionsController {
   }
 
   /**
-   * Unsubscribe from a community by removing the subscription record.
+   * Remove a user's subscription to a community.
    *
-   * This endpoint allows authenticated members to remove their subscription to a community. Once unsubscribed, the user will no longer be able to create posts in that community, though their existing posts and comments remain visible.
+   * This endpoint allows authenticated users to unsubscribe from a community they previously joined. Once unsubscribed, the user will no longer see posts from this community in their home feed and will need to subscribe again if they want to create posts in it.
    *
-   * The subscription is identified by its unique identifier. The system verifies that the authenticated user owns the subscription before allowing deletion. Attempting to delete another user's subscription returns an authorization error.
+   * The subscription must belong to the authenticated user making the request. Users cannot unsubscribe other users from communities. Community owners and moderators cannot remove subscriptions on behalf of other users - users must unsubscribe themselves.
    *
-   * Deletion is permanent and immediate. There is no recovery mechanism for accidentally deleted subscriptions; users must subscribe again if they wish to rejoin the community.
-   *
-   * ## Authorization
-   *
-   * Only the member who created the subscription can delete it. The member_id is extracted from the authenticated session token. Attempting to delete another user's subscription is rejected with a 403 Forbidden response.
-   *
-   * ## Error Scenarios
-   *
-   * | Scenario | Response | Details |
-   * |----------|----------|----------|
-   * | Subscription not found | 404 Not Found | No subscription exists with the given ID |
-   * | Not subscription owner | 403 Forbidden | User does not own this subscription |
-   * | Not authenticated | 401 Unauthorized | No valid session token provided |
-   *
-   * ## Related Operations
-   *
-   * - POST /communities/{name}/subscribe - Subscribe to a community
-   * - GET /users/{username}/subscriptions - List user's subscribed communities
+   * Deleting a subscription does not affect the community's existence or any posts within it. It only removes the user's association with that community for post creation purposes.
    *
    * @param connection
    * @param subscriptionId Unique identifier of the subscription to delete
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification ## Implementation Specification
+   * @x-autobe-specification Delete the subscription record identified by subscriptionId from reddit_clone_subscriptions table.
    *
-   * ### Database Operation
-   * - Query the reddit_clone_subscriptions table using the provided subscriptionId
-   * - Verify the subscription exists; if not, return 404 Not Found
-   * - Verify the subscription's reddit_clone_member_id matches the authenticated user's member ID
-   * - If IDs do not match, return 403 Forbidden
-   * - Delete the subscription record from the database
-   * - Return 204 No Content on successful deletion
+   * Implementation steps:
+   * 1. Authenticate the requesting user from session
+   * 2. Validate subscriptionId is a valid UUID format
+   * 3. Query reddit_clone_subscriptions table to find the subscription with matching id
+   * 4. Verify the subscription belongs to the authenticated user (reddit_clone_member_id matches session user)
+   * 5. If subscription not found or belongs to different user, return 404 error
+   * 6. Delete the subscription record from the database
+   * 7. Return 204 No Content on success
    *
-   * ### Authentication
-   * - Extract member_id from the authenticated session (JWT token in Authorization header)
-   * - Reject request if no valid session exists (401 Unauthorized)
-   *
-   * ### Validation Rules
-   * - subscriptionId must be a valid UUID format
-   * - Subscription must exist in the database
-   * - Subscription must belong to the authenticated member
-   *
-   * ### Cascading Behavior
-   * - Deleting a subscription does NOT affect:
-   *   - Posts created by the user in the community
-   *   - Comments made by the user in the community
-   *   - User's subscription status in other communities
-   * - Deleting a community automatically cascades to delete all its subscriptions (handled by database foreign key constraint)
-   *
-   * ### Edge Cases
-   * - Attempting to unsubscribe from a community you are not subscribed to returns 404 (subscription not found)
-   * - Duplicate deletion requests return 404 (subscription no longer exists after first deletion)
-   * - Deleted subscriptions cannot be recovered; user must subscribe again via POST /communities/{name}/subscribe
+   * Edge cases:
+   * - Invalid UUID format: return 400 Bad Request
+   * - Subscription does not exist: return 404 Not Found
+   * - Subscription belongs to another user: return 404 Not Found (do not reveal existence)
+   * - User not authenticated: return 401 Unauthorized
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":subscriptionId")

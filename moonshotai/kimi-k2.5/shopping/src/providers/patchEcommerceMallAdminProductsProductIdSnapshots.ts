@@ -1,10 +1,8 @@
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshot";
-import { IEcommerceMallProductSnapshotImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshotImage";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIEcommerceMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallProductSnapshot";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -20,62 +18,84 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchEcommerceMallAdminProductsProductIdSnapshots(props: {
   admin: AdminPayload;
-  productId: string & tags.Format<"uuid">;
+  productId: string;
   body: IEcommerceMallProductSnapshot.IRequest;
 }): Promise<IPageIEcommerceMallProductSnapshot.ISummary> {
   // Verify product exists
   await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
     where: { id: props.productId },
   });
-  // Build where clause with product_id filter
+  const limit = props.body.limit ?? 100;
+  const page = props.body.page ?? 1;
+  // Build where clause with filters
   const whereInput: Prisma.ecommerce_mall_product_snapshotsWhereInput = {
     product_id: props.productId,
+    ...(props.body.createdAtFrom && {
+      created_at: { gte: new Date(props.body.createdAtFrom) },
+    }),
+    ...(props.body.createdAtTo && {
+      created_at: { lte: new Date(props.body.createdAtTo) },
+    }),
   };
-  // Apply date range filters
-  if (
-    props.body.created_at_from !== undefined &&
-    props.body.created_at_from !== null
-  ) {
-    whereInput.created_at = { gte: new Date(props.body.created_at_from) };
+  // Handle cursor-based pagination
+  if (props.body.cursor) {
+    const cursorSnapshot =
+      await MyGlobal.prisma.ecommerce_mall_product_snapshots.findUnique({
+        where: { id: props.body.cursor },
+        select: { created_at: true },
+      });
+    if (cursorSnapshot) {
+      const sortDirection = props.body.sort === "created_at_ASC" ? "gt" : "lt";
+      const existingDateFilter = whereInput.created_at || {};
+      whereInput.created_at = Object.assign({}, existingDateFilter as object, {
+        [sortDirection]: cursorSnapshot.created_at,
+      });
+    }
   }
-  if (
-    props.body.created_at_to !== undefined &&
-    props.body.created_at_to !== null
-  ) {
-    whereInput.created_at = {
-      ...((whereInput.created_at ?? {}) as object),
-      lte: new Date(props.body.created_at_to),
-    };
-  }
-  // Pagination parameters
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
-  // Query snapshots with transformer select
+  // Determine sort order
+  const orderBy: Prisma.ecommerce_mall_product_snapshotsOrderByWithRelationInput =
+    props.body.sort === "created_at_ASC"
+      ? { created_at: "asc" }
+      : { created_at: "desc" };
+  // Calculate skip for offset pagination
+  const skip = props.body.cursor ? undefined : (page - 1) * limit;
+  // Query snapshots
+  const selectResult =
+    EcommerceMallProductSnapshotAtSummaryTransformer.select();
   const snapshots =
     await MyGlobal.prisma.ecommerce_mall_product_snapshots.findMany({
       where: whereInput,
       skip,
       take: limit,
-      orderBy: { created_at: "desc" },
-      ...EcommerceMallProductSnapshotAtSummaryTransformer.select(),
+      orderBy,
+      ...selectResult,
     });
-  // Count total for pagination
+  // Get total count
   const total = await MyGlobal.prisma.ecommerce_mall_product_snapshots.count({
-    where: whereInput,
+    where: {
+      product_id: props.productId,
+      ...(props.body.createdAtFrom && {
+        created_at: { gte: new Date(props.body.createdAtFrom) },
+      }),
+      ...(props.body.createdAtTo && {
+        created_at: { lte: new Date(props.body.createdAtTo) },
+      }),
+    },
   });
   // Transform results
-  const data = await ArrayUtil.asyncMap(
+  const transformed = await ArrayUtil.asyncMap(
     snapshots,
     EcommerceMallProductSnapshotAtSummaryTransformer.transform,
   );
+  // Calculate pagination
+  const pages = Math.ceil(total / limit);
   return {
-    data,
+    data: transformed,
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
-      pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+      pages,
+    },
   };
 }

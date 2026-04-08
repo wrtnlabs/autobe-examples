@@ -17,11 +17,12 @@ export async function authorize_super_admin_join(
   const joinInput = {
     email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
     password:
-      props.body?.password ?? typia.random<string & tags.Format<"password">>(),
+      props.body?.password ??
+      (RandomGenerator.alphaNumeric(16) as string & tags.Format<"password">),
     href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
     referrer:
       props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
-    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
+    ...(props.body?.ip !== undefined && { ip: props.body.ip }),
   } satisfies IEcommerceMallSuperAdmin.IJoin;
   return await api.functional.ecommerceMall.auth.superAdmin.join(connection, {
     body: joinInput,

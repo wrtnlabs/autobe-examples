@@ -18,7 +18,7 @@ export namespace IPageIEcommerceMallSellerApprovalRequest {
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IEcommerceMallSellerApprovalRequest.ISummary.
+     * @x-autobe-specification List of records of type IEcommerceMallSellerApprovalRequests.ISummary.
      */
     data: IEcommerceMallSellerApprovalRequest.ISummary[];
   };

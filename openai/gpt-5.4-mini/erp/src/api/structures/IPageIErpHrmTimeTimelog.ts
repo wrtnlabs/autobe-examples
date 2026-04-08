@@ -18,7 +18,7 @@ export namespace IPageIErpHrmTimeTimelog {
     /**
      * List of records.
      *
-     * @x-autobe-specification List of records of type IErpHrmTimeTimeLog.ISummary.
+     * @x-autobe-specification List of records of type IErpHrmTimeTimelog.ISummary.
      */
     data: IErpHrmTimeTimelog.ISummary[];
   };

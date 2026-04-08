@@ -13,6 +13,7 @@ export namespace ErpHrmTimeTimesheetCollector {
     employee: IEntity;
   }) {
     const id: string = v4();
+    const now = new Date();
     return {
       id,
       week_start_date: new Date(props.body.weekStartDate),
@@ -21,12 +22,12 @@ export namespace ErpHrmTimeTimesheetCollector {
       submitted_at: null,
       reviewed_at: null,
       rejection_reason: null,
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
-      employee: {
-        connect: { id: props.employee.id },
-      },
+      employee: { connect: { id: props.employee.id } },
+      reviewedByMember: undefined,
+      timesheetTimelogs: undefined,
     } satisfies Prisma.erp_hrm_time_timesheetsCreateInput;
   }
 }

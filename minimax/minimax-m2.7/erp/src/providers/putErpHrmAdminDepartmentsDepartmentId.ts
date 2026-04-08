@@ -20,7 +20,7 @@ export async function putErpHrmAdminDepartmentsDepartmentId(props: {
   departmentId: string & tags.Format<"uuid">;
   body: IErpHrmDepartment.IUpdate;
 }): Promise<IErpHrmDepartment> {
-  // 1. Find the existing department (must exist and not be soft-deleted)
+  // 1. Find existing department - must exist and not be soft-deleted
   const existing = await MyGlobal.prisma.erp_hrm_departments.findUniqueOrThrow({
     where: {
       id: props.departmentId,
@@ -29,51 +29,11 @@ export async function putErpHrmAdminDepartmentsDepartmentId(props: {
     select: {
       id: true,
       erp_hrm_organization_id: true,
-      name: true,
-      parent_id: true,
     },
   });
-  // 2. Validate parent_id if provided - must exist in same org and have no parent (one-level hierarchy)
-  if (props.body.parent_id !== undefined) {
-    if (props.body.parent_id !== null) {
-      // Parent is being set - verify it exists and has no parent itself
-      const parentDept =
-        await MyGlobal.prisma.erp_hrm_departments.findUniqueOrThrow({
-          where: {
-            id: props.body.parent_id,
-            deleted_at: null,
-          },
-          select: {
-            id: true,
-            erp_hrm_organization_id: true,
-            parent_id: true,
-          },
-        });
-      // Verify same organization
-      if (
-        parentDept.erp_hrm_organization_id !== existing.erp_hrm_organization_id
-      ) {
-        throw new HttpException(
-          "Parent department must belong to the same organization",
-          400,
-        );
-      }
-      // Verify parent has no parent itself (one-level hierarchy)
-      if (parentDept.parent_id !== null) {
-        throw new HttpException(
-          "Cannot set parent: parent department already has a parent (one-level hierarchy only)",
-          400,
-        );
-      }
-      // Cannot set itself as parent
-      if (parentDept.id === props.departmentId) {
-        throw new HttpException("Cannot set department as its own parent", 400);
-      }
-    }
-  }
-  // 3. Check unique name constraint if name is changing
-  if (props.body.name !== existing.name) {
-    const duplicateName = await MyGlobal.prisma.erp_hrm_departments.findFirst({
+  // 2. Validate name uniqueness within organization (if name is being updated)
+  if (props.body.name !== undefined) {
+    const duplicate = await MyGlobal.prisma.erp_hrm_departments.findFirst({
       where: {
         erp_hrm_organization_id: existing.erp_hrm_organization_id,
         name: props.body.name,
@@ -81,39 +41,114 @@ export async function putErpHrmAdminDepartmentsDepartmentId(props: {
         id: { not: props.departmentId },
       },
     });
-    if (duplicateName) {
+    if (duplicate !== null) {
       throw new HttpException(
         "Department name already exists in this organization",
         400,
       );
     }
   }
-  // 4. Build update data - filter out undefined values
+  // 3. Validate parent department if provided (one-level hierarchy constraint)
+  if (props.body.parentId !== undefined && props.body.parentId !== null) {
+    const parent = await MyGlobal.prisma.erp_hrm_departments.findUnique({
+      where: {
+        id: props.body.parentId,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        erp_hrm_organization_id: true,
+        parent_id: true,
+      },
+    });
+    if (parent === null) {
+      throw new HttpException("Parent department not found", 404);
+    }
+    if (parent.erp_hrm_organization_id !== existing.erp_hrm_organization_id) {
+      throw new HttpException(
+        "Parent department must belong to the same organization",
+        400,
+      );
+    }
+    if (parent.parent_id !== null) {
+      throw new HttpException(
+        "Cannot set a department as parent if it already has a parent (one-level hierarchy constraint)",
+        400,
+      );
+    }
+    if (parent.id === props.departmentId) {
+      throw new HttpException("Department cannot be its own parent", 400);
+    }
+  }
+  // 4. Build update data with only provided fields
   const updateData: {
-    name: string;
+    name?: string;
     description?: string | null;
-    parent_id?: (string & tags.Format<"uuid">) | null;
+    parent_id?: string | null;
     updated_at: Date;
   } = {
-    name: props.body.name,
     updated_at: new Date(),
   };
+  if (props.body.name !== undefined) {
+    updateData.name = props.body.name;
+  }
   if (props.body.description !== undefined) {
     updateData.description = props.body.description;
   }
-  if (props.body.parent_id !== undefined) {
-    updateData.parent_id = props.body.parent_id;
+  if (props.body.parentId !== undefined) {
+    updateData.parent_id = props.body.parentId;
   }
   // 5. Update the department
   await MyGlobal.prisma.erp_hrm_departments.update({
     where: { id: props.departmentId },
     data: updateData,
   });
-  // 6. Fetch updated department with relations for response
+  // 6. Fetch updated department with full relations and return using transformer
   const updated = await MyGlobal.prisma.erp_hrm_departments.findUniqueOrThrow({
     where: { id: props.departmentId },
     ...ErpHrmDepartmentTransformer.select(),
   });
-  // 7. Transform and return - transformer handles date conversion to ISO strings
   return await ErpHrmDepartmentTransformer.transform(updated);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IErpHrmDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmDepartment";
+// import { IErpHrmOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmOrganization";
+// import { IErpHrmMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmMember";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function putErpHrmAdminDepartmentsDepartmentId(props: {
+//   admin: AdminPayload;
+//   departmentId: string & tags.Format<"uuid">;
+//   body: IErpHrmDepartment.IUpdate;
+// }): Promise<IErpHrmDepartment> {
+//   await MyGlobal.prisma.erp_hrm_departments.update({
+//     where: { ... },
+//     data: { ... },
+//   });
+//   const updated = await MyGlobal.prisma.erp_hrm_departments.findUniqueOrThrow({
+//     where: { ... },
+//     ...ErpHrmDepartmentTransformer.select(),
+//   });
+//   return await ErpHrmDepartmentTransformer.transform(updated);
+// }
+// ```
+//--------------------------------------------------------------

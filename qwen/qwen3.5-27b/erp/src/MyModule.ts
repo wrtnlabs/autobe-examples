@@ -1,114 +1,78 @@
 import { Module } from "@nestjs/common";
 
-import { HrmplatformAdminActivity_logsController } from "./controllers/hrmPlatform/admin/activity-logs/HrmplatformAdminActivity_logsController";
-import { HrmplatformAdminActivity_logsChangesController } from "./controllers/hrmPlatform/admin/activity-logs/changes/HrmplatformAdminActivity_logsChangesController";
-import { HrmplatformAdminDepartmentsController } from "./controllers/hrmPlatform/admin/departments/HrmplatformAdminDepartmentsController";
-import { HrmplatformAdminEmployeesController } from "./controllers/hrmPlatform/admin/employees/HrmplatformAdminEmployeesController";
-import { HrmplatformAdminInvitationsController } from "./controllers/hrmPlatform/admin/invitations/HrmplatformAdminInvitationsController";
-import { HrmplatformAdminOrganization_dashboardController } from "./controllers/hrmPlatform/admin/organization-dashboard/HrmplatformAdminOrganization_dashboardController";
-import { HrmplatformAdminOrganizationsController } from "./controllers/hrmPlatform/admin/organizations/HrmplatformAdminOrganizationsController";
-import { HrmplatformAdminOrganizationsLogoController } from "./controllers/hrmPlatform/admin/organizations/logo/HrmplatformAdminOrganizationsLogoController";
-import { HrmplatformAdminOrganizationsSettingsController } from "./controllers/hrmPlatform/admin/organizations/settings/HrmplatformAdminOrganizationsSettingsController";
-import { HrmplatformAdminProject_budget_reportsController } from "./controllers/hrmPlatform/admin/project-budget-reports/HrmplatformAdminProject_budget_reportsController";
-import { HrmplatformAdminProjectsTasksController } from "./controllers/hrmPlatform/admin/projects/tasks/HrmplatformAdminProjectsTasksController";
-import { HrmplatformAdminRolesController } from "./controllers/hrmPlatform/admin/roles/HrmplatformAdminRolesController";
-import { HrmplatformAdminRolesPermissionsController } from "./controllers/hrmPlatform/admin/roles/permissions/HrmplatformAdminRolesPermissionsController";
-import { HrmplatformAdminSnapshotsController } from "./controllers/hrmPlatform/admin/snapshots/HrmplatformAdminSnapshotsController";
-import { HrmplatformAdminTask_historiesController } from "./controllers/hrmPlatform/admin/task-histories/HrmplatformAdminTask_historiesController";
-import { HrmplatformAdminTask_snapshotsController } from "./controllers/hrmPlatform/admin/task-snapshots/HrmplatformAdminTask_snapshotsController";
-import { HrmplatformAdminTasksController } from "./controllers/hrmPlatform/admin/tasks/HrmplatformAdminTasksController";
-import { HrmplatformAdminTime_reportsController } from "./controllers/hrmPlatform/admin/time-reports/HrmplatformAdminTime_reportsController";
-import { HrmplatformAdminTimelogsController } from "./controllers/hrmPlatform/admin/timelogs/HrmplatformAdminTimelogsController";
-import { HrmplatformAdminTimersController } from "./controllers/hrmPlatform/admin/timers/HrmplatformAdminTimersController";
-import { HrmplatformAdminTimesheet_snapshotsController } from "./controllers/hrmPlatform/admin/timesheet-snapshots/HrmplatformAdminTimesheet_snapshotsController";
-import { HrmplatformAdminTimesheetsController } from "./controllers/hrmPlatform/admin/timesheets/HrmplatformAdminTimesheetsController";
-import { HrmplatformAdminWeekly_summary_reportsController } from "./controllers/hrmPlatform/admin/weekly-summary-reports/HrmplatformAdminWeekly_summary_reportsController";
-import { HrmplatformAuthAdminController } from "./controllers/hrmPlatform/auth/admin/HrmplatformAuthAdminController";
-import { HrmplatformAuthGuestController } from "./controllers/hrmPlatform/auth/guest/HrmplatformAuthGuestController";
-import { HrmplatformAuthMemberController } from "./controllers/hrmPlatform/auth/member/HrmplatformAuthMemberController";
-import { HrmplatformContractsController } from "./controllers/hrmPlatform/contracts/HrmplatformContractsController";
-import { HrmplatformContractsSnapshotsController } from "./controllers/hrmPlatform/contracts/snapshots/HrmplatformContractsSnapshotsController";
-import { HrmplatformGuestSessionsController } from "./controllers/hrmPlatform/guest/sessions/HrmplatformGuestSessionsController";
-import { HrmplatformMemberActivity_logsController } from "./controllers/hrmPlatform/member/activity-logs/HrmplatformMemberActivity_logsController";
-import { HrmplatformMemberActivity_logsChangesController } from "./controllers/hrmPlatform/member/activity-logs/changes/HrmplatformMemberActivity_logsChangesController";
-import { HrmplatformMemberDepartmentsController } from "./controllers/hrmPlatform/member/departments/HrmplatformMemberDepartmentsController";
-import { HrmplatformMemberEmployeesController } from "./controllers/hrmPlatform/member/employees/HrmplatformMemberEmployeesController";
-import { HrmplatformMemberOrganizationsController } from "./controllers/hrmPlatform/member/organizations/HrmplatformMemberOrganizationsController";
-import { HrmplatformMemberOrganizationsLogoController } from "./controllers/hrmPlatform/member/organizations/logo/HrmplatformMemberOrganizationsLogoController";
-import { HrmplatformMemberOrganizationsSettingsController } from "./controllers/hrmPlatform/member/organizations/settings/HrmplatformMemberOrganizationsSettingsController";
-import { HrmplatformMemberPersonal_dashboardController } from "./controllers/hrmPlatform/member/personal-dashboard/HrmplatformMemberPersonal_dashboardController";
-import { HrmplatformMemberProfileController } from "./controllers/hrmPlatform/member/profile/HrmplatformMemberProfileController";
-import { HrmplatformMemberProjectsController } from "./controllers/hrmPlatform/member/projects/HrmplatformMemberProjectsController";
-import { HrmplatformMemberProjectsBudget_reportController } from "./controllers/hrmPlatform/member/projects/budget-report/HrmplatformMemberProjectsBudget_reportController";
-import { HrmplatformMemberProjectsMembershipsController } from "./controllers/hrmPlatform/member/projects/memberships/HrmplatformMemberProjectsMembershipsController";
-import { HrmplatformMemberProjectsMy_projectsController } from "./controllers/hrmPlatform/member/projects/my-projects/HrmplatformMemberProjectsMy_projectsController";
-import { HrmplatformMemberProjectsSnapshotsController } from "./controllers/hrmPlatform/member/projects/snapshots/HrmplatformMemberProjectsSnapshotsController";
-import { HrmplatformMemberProjectsTasksController } from "./controllers/hrmPlatform/member/projects/tasks/HrmplatformMemberProjectsTasksController";
-import { HrmplatformMemberProjectsTeam_activityController } from "./controllers/hrmPlatform/member/projects/team-activity/HrmplatformMemberProjectsTeam_activityController";
-import { HrmplatformMemberTask_historiesController } from "./controllers/hrmPlatform/member/task-histories/HrmplatformMemberTask_historiesController";
-import { HrmplatformMemberTask_snapshotsController } from "./controllers/hrmPlatform/member/task-snapshots/HrmplatformMemberTask_snapshotsController";
-import { HrmplatformMemberTasksController } from "./controllers/hrmPlatform/member/tasks/HrmplatformMemberTasksController";
-import { HrmplatformMemberTimelogsController } from "./controllers/hrmPlatform/member/timelogs/HrmplatformMemberTimelogsController";
-import { HrmplatformMemberTimersController } from "./controllers/hrmPlatform/member/timers/HrmplatformMemberTimersController";
-import { HrmplatformMemberTimesheet_snapshotsController } from "./controllers/hrmPlatform/member/timesheet-snapshots/HrmplatformMemberTimesheet_snapshotsController";
-import { HrmplatformMemberTimesheetsController } from "./controllers/hrmPlatform/member/timesheets/HrmplatformMemberTimesheetsController";
-import { HrmplatformOrganizationsController } from "./controllers/hrmPlatform/organizations/HrmplatformOrganizationsController";
+import { HrmtimetrackAuthGuestController } from "./controllers/hrmTimeTrack/auth/guest/HrmtimetrackAuthGuestController";
+import { HrmtimetrackAuthMemberController } from "./controllers/hrmTimeTrack/auth/member/HrmtimetrackAuthMemberController";
+import { HrmtimetrackGuestsController } from "./controllers/hrmTimeTrack/guests/HrmtimetrackGuestsController";
+import { HrmtimetrackMemberActivity_logsController } from "./controllers/hrmTimeTrack/member/activity-logs/HrmtimetrackMemberActivity_logsController";
+import { HrmtimetrackMemberDashboardController } from "./controllers/hrmTimeTrack/member/dashboard/HrmtimetrackMemberDashboardController";
+import { HrmtimetrackMemberDepartmentsController } from "./controllers/hrmTimeTrack/member/departments/HrmtimetrackMemberDepartmentsController";
+import { HrmtimetrackMemberEffective_permissionsController } from "./controllers/hrmTimeTrack/member/effective-permissions/HrmtimetrackMemberEffective_permissionsController";
+import { HrmtimetrackMemberEmail_verificationsController } from "./controllers/hrmTimeTrack/member/email-verifications/HrmtimetrackMemberEmail_verificationsController";
+import { HrmtimetrackMemberEmployee_snapshotsController } from "./controllers/hrmTimeTrack/member/employee-snapshots/HrmtimetrackMemberEmployee_snapshotsController";
+import { HrmtimetrackMemberEmployeesController } from "./controllers/hrmTimeTrack/member/employees/HrmtimetrackMemberEmployeesController";
+import { HrmtimetrackMemberEmployeesContractsController } from "./controllers/hrmTimeTrack/member/employees/contracts/HrmtimetrackMemberEmployeesContractsController";
+import { HrmtimetrackMemberOrganization_snapshotsController } from "./controllers/hrmTimeTrack/member/organization-snapshots/HrmtimetrackMemberOrganization_snapshotsController";
+import { HrmtimetrackMemberOrganizationsController } from "./controllers/hrmTimeTrack/member/organizations/HrmtimetrackMemberOrganizationsController";
+import { HrmtimetrackMemberOrganizations_switchController } from "./controllers/hrmTimeTrack/member/organizations/switch/HrmtimetrackMemberOrganizations_switchController";
+import { HrmtimetrackMemberPassword_resetsController } from "./controllers/hrmTimeTrack/member/password-resets/HrmtimetrackMemberPassword_resetsController";
+import { HrmtimetrackMemberProfileController } from "./controllers/hrmTimeTrack/member/profile/HrmtimetrackMemberProfileController";
+import { HrmtimetrackMemberProjectsController } from "./controllers/hrmTimeTrack/member/projects/HrmtimetrackMemberProjectsController";
+import { HrmtimetrackMemberProjectsMembersController } from "./controllers/hrmTimeTrack/member/projects/members/HrmtimetrackMemberProjectsMembersController";
+import { HrmtimetrackMemberReportsDepartmentsController } from "./controllers/hrmTimeTrack/member/reports/departments/HrmtimetrackMemberReportsDepartmentsController";
+import { HrmtimetrackMemberReportsEmployeesController } from "./controllers/hrmTimeTrack/member/reports/employees/HrmtimetrackMemberReportsEmployeesController";
+import { HrmtimetrackMemberReportsRolesController } from "./controllers/hrmTimeTrack/member/reports/roles/HrmtimetrackMemberReportsRolesController";
+import { HrmtimetrackMemberRole_snapshotsController } from "./controllers/hrmTimeTrack/member/role-snapshots/HrmtimetrackMemberRole_snapshotsController";
+import { HrmtimetrackMemberRole_snapshotsPermissionsController } from "./controllers/hrmTimeTrack/member/role-snapshots/permissions/HrmtimetrackMemberRole_snapshotsPermissionsController";
+import { HrmtimetrackMemberRolesController } from "./controllers/hrmTimeTrack/member/roles/HrmtimetrackMemberRolesController";
+import { HrmtimetrackMemberRolesPermissionsController } from "./controllers/hrmTimeTrack/member/roles/permissions/HrmtimetrackMemberRolesPermissionsController";
+import { HrmtimetrackMemberSessionsController } from "./controllers/hrmTimeTrack/member/sessions/HrmtimetrackMemberSessionsController";
+import { HrmtimetrackMemberTasksController } from "./controllers/hrmTimeTrack/member/tasks/HrmtimetrackMemberTasksController";
+import { HrmtimetrackMemberTasksHistoriesController } from "./controllers/hrmTimeTrack/member/tasks/histories/HrmtimetrackMemberTasksHistoriesController";
+import { HrmtimetrackMemberTimelogsController } from "./controllers/hrmTimeTrack/member/timelogs/HrmtimetrackMemberTimelogsController";
+import { HrmtimetrackMemberTimersController } from "./controllers/hrmTimeTrack/member/timers/HrmtimetrackMemberTimersController";
+import { HrmtimetrackMemberTimersSnapshotsController } from "./controllers/hrmTimeTrack/member/timers/snapshots/HrmtimetrackMemberTimersSnapshotsController";
+import { HrmtimetrackMemberTimesheetsController } from "./controllers/hrmTimeTrack/member/timesheets/HrmtimetrackMemberTimesheetsController";
+import { HrmtimetrackMemberTimesheetsSnapshotsController } from "./controllers/hrmTimeTrack/member/timesheets/snapshots/HrmtimetrackMemberTimesheetsSnapshotsController";
+import { HrmtimetrackMemberTimesheetsTimelogsController } from "./controllers/hrmTimeTrack/member/timesheets/timelogs/HrmtimetrackMemberTimesheetsTimelogsController";
+import { HrmtimetrackMembersController } from "./controllers/hrmTimeTrack/members/HrmtimetrackMembersController";
 
 @Module({
   controllers: [
-    HrmplatformAuthGuestController,
-    HrmplatformAuthMemberController,
-    HrmplatformAuthAdminController,
-    HrmplatformMemberProfileController,
-    HrmplatformGuestSessionsController,
-    HrmplatformOrganizationsController,
-    HrmplatformMemberOrganizationsController,
-    HrmplatformAdminOrganizationsController,
-    HrmplatformMemberOrganizationsSettingsController,
-    HrmplatformAdminOrganizationsSettingsController,
-    HrmplatformMemberOrganizationsLogoController,
-    HrmplatformAdminOrganizationsLogoController,
-    HrmplatformMemberEmployeesController,
-    HrmplatformAdminEmployeesController,
-    HrmplatformAdminSnapshotsController,
-    HrmplatformMemberDepartmentsController,
-    HrmplatformAdminDepartmentsController,
-    HrmplatformAdminInvitationsController,
-    HrmplatformAdminRolesController,
-    HrmplatformAdminRolesPermissionsController,
-    HrmplatformContractsController,
-    HrmplatformContractsSnapshotsController,
-    HrmplatformMemberProjectsController,
-    HrmplatformMemberProjectsSnapshotsController,
-    HrmplatformMemberProjectsMembershipsController,
-    HrmplatformMemberTasksController,
-    HrmplatformAdminTasksController,
-    HrmplatformMemberProjectsTasksController,
-    HrmplatformAdminProjectsTasksController,
-    HrmplatformMemberTask_snapshotsController,
-    HrmplatformAdminTask_snapshotsController,
-    HrmplatformMemberTask_historiesController,
-    HrmplatformAdminTask_historiesController,
-    HrmplatformMemberTimersController,
-    HrmplatformAdminTimersController,
-    HrmplatformMemberTimelogsController,
-    HrmplatformAdminTimelogsController,
-    HrmplatformMemberTimesheetsController,
-    HrmplatformAdminTimesheetsController,
-    HrmplatformMemberTimesheet_snapshotsController,
-    HrmplatformAdminTimesheet_snapshotsController,
-    HrmplatformAdminActivity_logsController,
-    HrmplatformMemberActivity_logsController,
-    HrmplatformAdminActivity_logsChangesController,
-    HrmplatformMemberActivity_logsChangesController,
-    HrmplatformMemberPersonal_dashboardController,
-    HrmplatformAdminOrganization_dashboardController,
-    HrmplatformAdminTime_reportsController,
-    HrmplatformAdminProject_budget_reportsController,
-    HrmplatformAdminWeekly_summary_reportsController,
-    HrmplatformMemberProjectsMy_projectsController,
-    HrmplatformMemberProjectsBudget_reportController,
-    HrmplatformMemberProjectsTeam_activityController,
+    HrmtimetrackAuthGuestController,
+    HrmtimetrackAuthMemberController,
+    HrmtimetrackMembersController,
+    HrmtimetrackMemberProfileController,
+    HrmtimetrackMemberSessionsController,
+    HrmtimetrackMemberPassword_resetsController,
+    HrmtimetrackMemberEmail_verificationsController,
+    HrmtimetrackGuestsController,
+    HrmtimetrackMemberOrganizationsController,
+    HrmtimetrackMemberOrganization_snapshotsController,
+    HrmtimetrackMemberEmployeesController,
+    HrmtimetrackMemberEmployee_snapshotsController,
+    HrmtimetrackMemberEmployeesContractsController,
+    HrmtimetrackMemberDepartmentsController,
+    HrmtimetrackMemberRolesController,
+    HrmtimetrackMemberRole_snapshotsController,
+    HrmtimetrackMemberRolesPermissionsController,
+    HrmtimetrackMemberRole_snapshotsPermissionsController,
+    HrmtimetrackMemberProjectsController,
+    HrmtimetrackMemberProjectsMembersController,
+    HrmtimetrackMemberTasksController,
+    HrmtimetrackMemberTasksHistoriesController,
+    HrmtimetrackMemberTimelogsController,
+    HrmtimetrackMemberTimesheetsController,
+    HrmtimetrackMemberTimesheetsTimelogsController,
+    HrmtimetrackMemberTimesheetsSnapshotsController,
+    HrmtimetrackMemberTimersController,
+    HrmtimetrackMemberTimersSnapshotsController,
+    HrmtimetrackMemberActivity_logsController,
+    HrmtimetrackMemberOrganizations_switchController,
+    HrmtimetrackMemberDashboardController,
+    HrmtimetrackMemberReportsEmployeesController,
+    HrmtimetrackMemberReportsDepartmentsController,
+    HrmtimetrackMemberReportsRolesController,
+    HrmtimetrackMemberEffective_permissionsController,
   ],
 })
 export class MyModule {}

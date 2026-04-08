@@ -10,51 +10,35 @@ import { postErpHrmAdminInvitationsInvitationIdResend } from "../../../../../pro
 @Controller("/erpHrm/admin/invitations/:invitationId/resend")
 export class ErphrmAdminInvitationsController {
   /**
-   * Resend an existing pending invitation to generate a new invitation link and extend the expiration time.
+   * Resend an existing pending invitation to the invited email address.
    *
-   * This operation regenerates the invitation token and updates the expiration timestamp for a pending invitation. Users with `employee:manage` permission can resend invitations that are still in "pending" status to allow the invited user additional time to accept.
+   * This operation regenerates the invitation token and updates the invitation timestamp, effectively sending a new invitation notification to the same email address. Only pending invitations can be resent; accepted or expired invitations cannot be processed through this endpoint.
    *
-   * The operation validates that the invitation belongs to the currently selected organization context and that the invitation status is "pending". Only pending invitations can be resent; accepted or expired invitations return an error.
+   * The inviter must have `employee:manage` permission. The invitation must belong to the currently selected organization context. Resending updates the `updated_at` timestamp and generates a new secure token for verification.
    *
-   * When successfully resend:
-   * - A new secure token is generated for the invitation link
-   * - The expiration timestamp is extended based on the organization's invitation expiration policy
-   * - The updated_at timestamp is refreshed
-   * - The invitation record is returned with the new token and expiration
-   *
-   * The invited user will receive a new invitation notification at their email address containing the updated invitation link.
-   *
-   * **Security**: Requires `employee:manage` permission. Invitations are scoped to the organization context, preventing cross-organization invitation manipulation.
-   *
-   * **Error Handling**: Returns 404 if invitation not found. Returns 400 if invitation is not in pending status. Returns 403 if invitation belongs to a different organization.
+   * If the invitation has already been accepted or expired, the system returns an error indicating the current status cannot be resent.
    *
    * @param connection
-   * @param invitationId Unique identifier of the invitation to resend
+   * @param invitationId Unique identifier of the invitation to resend (UUID)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Resend a pending invitation by regenerating its token and extending expiration.
+   * @x-autobe-specification Resend a pending invitation by regenerating its token and updating the timestamp.
    *
-   * 1. Extract invitationId from path parameter (UUID format)
-   * 2. Verify user has `employee:manage` permission in current organization
-   * 3. Retrieve invitation from erp_hrm_invitations table where id matches invitationId
-   * 4. Validate invitation exists - return 404 if not found
-   * 5. Validate invitation.erp_hrm_organization_id matches current organization context - return 403 if mismatch
-   * 6. Validate invitation.status equals "pending" - return 400 if not pending
-   * 7. Validate invitation.deleted_at is null (not soft-deleted) - return 404 if deleted
-   * 8. Generate new secure token using cryptographically random string
-   * 9. Calculate new expiration timestamp (expires_at = now + expiration_period from organization settings, default 7 days)
-   * 10. Update invitation record:
-   *     - token = new_token
-   *     - expires_at = new_expiration
-   *     - updated_at = current_timestamp
-   * 11. Return the updated invitation record
-   *
-   * Transaction: Wrap steps 8-10 in a database transaction to ensure atomic update.
+   * 1. Validate invitationId exists and is a valid UUID
+   * 2. Query erp_hrm_invitations table by id
+   * 3. Verify invitation.deleted_at IS NULL (not soft deleted)
+   * 4. Verify invitation.erp_hrm_organization_id matches the current organization context
+   * 5. Verify invitation.status = 'pending' (return 400 error if not pending)
+   * 6. Generate new secure token using cryptographic random generator
+   * 7. Update invitation: token = newToken, updated_at = current_timestamp
+   * 8. Log activity in erp_hrm_activity_logs: action_type = 'invitation_resent'
+   * 9. Return the updated invitation record
    *
    * Edge cases:
-   * - If invitation has already been accepted: return 400 with message "Cannot resend accepted invitation"
-   * - If invitation has expired: return 400 with message "Cannot resend expired invitation"
-   * - If invitation belongs to different organization: return 403 with message "Invitation not found in current organization"
+   * - Already accepted invitation: return 400 Bad Request with message
+   * - Already expired invitation: return 400 Bad Request with message
+   * - Non-existent invitation: return 404 Not Found
+   * - Invitation from different organization: return 404 Not Found (data isolation)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -63,7 +47,7 @@ export class ErphrmAdminInvitationsController {
     admin: AdminPayload,
     @TypedParam("invitationId")
     invitationId: string & tags.Format<"uuid">,
-  ): Promise<IErpHrmInvitation> {
+  ): Promise<IErpHrmInvitation.IResendResponse> {
     try {
       return await postErpHrmAdminInvitationsInvitationIdResend({
         admin,

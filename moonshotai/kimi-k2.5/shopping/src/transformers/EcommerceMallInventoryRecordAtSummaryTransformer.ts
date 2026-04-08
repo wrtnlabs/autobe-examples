@@ -1,10 +1,15 @@
 import { IEcommerceMallInventoryRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallInventoryRecord";
+import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { EcommerceMallProductVariantAtSummaryTransformer } from "./EcommerceMallProductVariantAtSummaryTransformer";
 
 export namespace EcommerceMallInventoryRecordAtSummaryTransformer {
   export type Payload = Prisma.ecommerce_mall_inventory_recordsGetPayload<
@@ -17,11 +22,7 @@ export namespace EcommerceMallInventoryRecordAtSummaryTransformer {
         quantity_change: true,
         reason: true,
         created_at: true,
-        variant: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.ecommerce_mall_product_variantsFindManyArgs,
+        variant: EcommerceMallProductVariantAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_inventory_recordsFindManyArgs;
   }
@@ -30,6 +31,9 @@ export namespace EcommerceMallInventoryRecordAtSummaryTransformer {
   ): Promise<IEcommerceMallInventoryRecord.ISummary> {
     return {
       id: input.id,
+      variant: await EcommerceMallProductVariantAtSummaryTransformer.transform(
+        input.variant,
+      ),
       quantityChange: input.quantity_change,
       reason: input.reason,
       createdAt: input.created_at.toISOString(),

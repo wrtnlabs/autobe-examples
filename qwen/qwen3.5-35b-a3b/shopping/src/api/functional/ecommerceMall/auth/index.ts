@@ -1,5 +1,5 @@
 export * as guest from "./guest/index";
-export * as customer from "./customer/index";
+export * as member from "./member/index";
 export * as seller from "./seller/index";
-export * as admin from "./admin/index";
-export * as superAdmin from "./superAdmin/index";
+export * as administrator from "./administrator/index";
+export * as super_administrator from "./super_administrator/index";

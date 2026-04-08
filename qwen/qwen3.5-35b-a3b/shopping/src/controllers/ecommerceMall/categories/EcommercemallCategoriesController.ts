@@ -5,49 +5,61 @@ import typia, { tags } from "typia";
 import { IEcommerceMallCategory } from "../../../api/structures/IEcommerceMallCategory";
 import { IPageIEcommerceMallCategory } from "../../../api/structures/IPageIEcommerceMallCategory";
 import { getEcommerceMallCategoriesCategoryId } from "../../../providers/getEcommerceMallCategoriesCategoryId";
-import { getEcommerceMallCategoriesTree } from "../../../providers/getEcommerceMallCategoriesTree";
 import { patchEcommerceMallCategories } from "../../../providers/patchEcommerceMallCategories";
 
 @Controller("/ecommerceMall/categories")
 export class EcommercemallCategoriesController {
   /**
-   * Retrieve a filtered and paginated list of product categories for browsing and discovery.
+   * Retrieve a paginated list of product categories with optional search filters and sorting.
    *
-   * This operation returns categories organized hierarchically from the `ecommerce_mall_categories` table, supporting filtering by `is_active` status, `parent_id` for hierarchical navigation, `display_order` for ranking, and search terms in the `name` or `slug` columns. Categories serve as the organizational structure that customers use to browse and discover products in the e-commerce platform.
+   * This endpoint allows browsing all categories in the system. Each category includes its name, description, parent relationship, and metadata. Categories support a one-level hierarchy where subcategories reference a parent category. Soft-deleted categories are excluded by default but can be included for administrator oversight.
    *
-   * Supports pagination with configurable page size and cursor-based navigation for efficient browsing of large category lists. Results are sorted by `display_order` by default (ascending) to show primary categories first, with additional sorting options for `name` (alphabetical) or `created_at` (newest first).
-   *
-   * All registered actors (customers, sellers, administrators, super administrators) can browse categories. Categories with `is_active=false` are excluded from results by default but can be included for administrative purposes. Soft-deleted categories (where `deleted_at` is not null) are always excluded from customer browsing but may be included for administrative audit purposes.
+   * Categories are managed exclusively by administrators, but all users can browse the category list for product discovery and catalog navigation.
    *
    * @param connection
-   * @param body Request body containing search filters, pagination parameters, and sort options for category listing
+   * @param body Search and pagination criteria for listing categories. Includes name filter (partial match), parent_id filter for subcategories only, sort order, and pagination parameters.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query ecommerce_mall_categories table with pagination and filtering.
+   * @x-autobe-specification Query ecommerce_mall_categories table with the following logic:
    *
-   * Apply search filters:
-   * - Search by name (partial match) or slug (exact match) from IRequest.searchTerm
-   * - Filter by parent_id for hierarchical browsing (retrieve subcategories of a specific parent)
-   * - Filter by is_active status to include only active categories
-   * - Sort by display_order (ascending), name (alphabetical), or created_at (newest first)
+   * 1. **Base Query**:
+   *    - Default filter: deleted_at IS NULL (active categories only)
+   *    - Include soft-deleted if include_deleted=true parameter
    *
-   * Pagination:
-   * - Use cursor-based pagination with pagination.page and pagination.pageSize
-   * - Return hasNextPage and cursor for next page navigation
+   * 2. **Filters**:
+   *    - name: Partial match using PostgreSQL ilike with % wildcards
+   *    - parent_id: Exact match for subcategories of specific parent (NULL for top-level)
+   *    - sort_order: Equality filter to find categories with specific sort priority
    *
-   * Hierarchy:
-   * - Return parent_id and children count for each category to enable tree navigation
-   * - For categories with parent_id, include parent category summary for breadcrumb display
+   * 3. **Sorting**:
+   *    - name: Alphabetical (asc/desc)
+   *    - sort_order: Ascending (default)
+   *    - created_at: Chronological (asc/desc)
+   *    - updated_at: Modified date (asc/desc)
+   *    Default: sort_order ASC
    *
-   * Security:
-   * - Validate actor authentication
-   * - If includesDeleted=true and actor is not admin, return only active categories
-   * - If includesDeleted=true and actor is admin, include soft-deleted categories where deleted_at is not null
+   * 4. **Pagination**:
+   *    - Cursor-based pagination for large result sets
+   *    - Default: page=1, limit=20
+   *    - Max limit: 100 items per page
+   *    - Returns: data array, hasNextCursor, nextCursor
    *
-   * Edge cases:
-   * - Root categories (parent_id=null) have no parent category reference
-   * - Leaf categories (no children) return empty children array
-   * - Handle concurrent category modifications with appropriate locking
+   * 5. **Join Operations**:
+   *    - Optional: Join with ecommerce_mall_categories for parent category details (if requested via include_parent=true)
+   *
+   * 6. **Authorization**:
+   *    - Any authenticated user can browse categories
+   *    - No special role required for list operation
+   *
+   * 7. **Edge Cases**:
+   *    - No categories exist: Return empty array with pagination metadata
+   *    - Invalid sort field: Use default sort_order ASC
+   *    - Empty name filter: Treat as no filter (all categories)
+   *
+   * 8. **Performance**:
+   *    - Use GIN indexes on name and description for partial match
+   *    - Index on parent_id for hierarchy queries
+   *    - Limit results to prevent large payloads
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -66,24 +78,31 @@ export class EcommercemallCategoriesController {
   }
 
   /**
-   * Retrieve detailed information for a specific product category by its unique identifier.
+   * Retrieve a single category by its unique identifier.
    *
-   * This operation returns complete category metadata including the display name, URL-friendly slug, optional description, display order for ranking, and optional icon URI. The category structure supports hierarchical organization through a parent-child relationship, allowing nested categorization of products.
+   * Returns the complete category entity including its display name, optional description, parent category reference for hierarchical navigation, sort order, and creation/modification timestamps. Subcategories reference their parent category, enabling customers to browse the one-level hierarchy structure.
    *
-   * Categories are the primary classification mechanism for organizing products on the platform. Each category contains metadata used for display in navigation menus, category listing pages, and product filtering interfaces. The active status determines whether the category is visible to customers browsing the catalog.
-   *
-   * Both customers and administrators can retrieve category details. Customers use this endpoint to view category information before browsing products, while administrators use it to manage category content. The operation validates that the category exists and returns a 404 error if the category ID is not found.
+   * Categories are publicly visible to all customers. The endpoint returns soft-deleted categories only if explicitly requested via an admin flag; otherwise, deleted categories return a 404 Not Found response.
    *
    * @param connection
-   * @param categoryId The unique identifier of the category to retrieve
+   * @param categoryId Unique identifier of the category to retrieve.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query ecommerce_mall_categories table by id (UUID) field.
-   * Apply soft delete filtering (deleted_at IS NULL) to exclude deleted categories.
-   * Return complete category record with all fields including parent_id reference.
-   * If category is not found or soft-deleted, return 404 Not Found.
-   * No joins required - all category data is stored in single table.
-   * Include parent category reference for hierarchy awareness but do not load parent category data in this operation.
+   * @x-autobe-specification 1. Validate categoryId is a valid UUID format.
+   * 2. Query ecommerce_mall_categories table for record where id = {categoryId} AND deleted_at IS NULL.
+   * 3. If not found, return 404 Not Found.
+   * 4. Join with parent category (self-reference) if parent_id is present to include parent category summary.
+   * 5. Join with creator administrator if creator_id is present to include creator information.
+   * 6. Return full category entity with all fields.
+   * 7. Do NOT include soft-deleted categories in responses unless admin flag is provided.
+   *
+   * Edge cases:
+   * - Category with no parent (top-level): parent_id is NULL, omit parent reference.
+   * - Category deleted: Return 404 without soft-delete explanation.
+   * - Category without description: description field is NULL.
+   *
+   * Permissions:
+   * - No authentication required for browsing; categories are publicly visible.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":categoryId")
@@ -95,45 +114,6 @@ export class EcommercemallCategoriesController {
       return await getEcommerceMallCategoriesCategoryId({
         categoryId,
       });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve a hierarchical tree structure of all active product categories on the platform.
-   *
-   * This operation returns a navigable category hierarchy that customers use to browse and discover products. The response organizes categories into a tree structure where each category may contain its child subcategories, respecting the one-level nesting limit defined in the system.
-   *
-   * Categories are filtered to include only those with is_active=true, and are sorted by their display_order attribute within each parent level. Root categories (those without a parent) appear at the top level, with their subcategories nested beneath them.
-   *
-   * The hierarchical structure enables intuitive customer navigation through the product catalog, allowing users to expand parent categories to view available subcategories and browse products by category.
-   *
-   * Related operations:
-   * - GET /categories - Lists all categories in flat format
-   * - PATCH /categories - Browse categories with search and filter criteria
-   *
-   * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query ecommerce_mall_categories table for all categories where is_active = true and deleted_at is null.
-   *
-   * Join the table with itself on parent_id to establish parent-child relationships. Each category's parent_id references another category's id, creating a hierarchical relationship.
-   *
-   * Apply ordering by display_order ASC within each parent level to respect the catalog organization.
-   *
-   * Transform the flat database result into a tree structure by grouping child categories under their respective parent categories. Root categories have null parent_id.
-   *
-   * Validate that subcategories do not exceed one level of nesting by checking that subcategories themselves have no children.
-   *
-   * Return the hierarchical tree structure with nested children arrays for each category level.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get("tree")
-  public async tree(): Promise<IEcommerceMallCategory.ITree> {
-    try {
-      return await getEcommerceMallCategoriesTree();
     } catch (error) {
       console.log(error);
       throw error;

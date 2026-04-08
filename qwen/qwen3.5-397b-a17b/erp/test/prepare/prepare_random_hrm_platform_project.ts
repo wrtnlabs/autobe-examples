@@ -5,33 +5,53 @@ import { ArrayUtil, RandomGenerator } from "@nestia/e2e";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+/**
+ * Prepare random HRM platform project creation data for E2E testing.
+ *
+ * Generates a complete IHrmPlatformProject.ICreate with randomized values for all properties.
+ * The function supports test-time customization through the optional input parameter,
+ * allowing specific fields to be overridden while auto-generating the rest.
+ *
+ * Required fields include {@link name} for project identification and {@link color} as a hex
+ * color code for UI visual distinction. Optional fields allow specifying {@link description}
+ * for context, {@link budgetHours} for capacity planning, and {@link startDate}/{@link endDate}
+ * for timeline tracking.
+ *
+ * @param input - Optional partial data for test-time customization
+ * @returns Complete IHrmPlatformProject.ICreate object with all required fields populated
+ */
 export function prepare_random_hrm_platform_project(
   input?: DeepPartial<IHrmPlatformProject.ICreate>,
 ): IHrmPlatformProject.ICreate {
   return {
     name:
       input?.name ??
-      RandomGenerator.paragraph({ sentences: 1, wordMin: 2, wordMax: 4 }),
+      RandomGenerator.paragraph({ sentences: 2, wordMin: 2, wordMax: 4 }),
     description:
       input?.description ??
       RandomGenerator.content({
-        paragraphs: 1,
-        sentenceMin: 2,
-        sentenceMax: 4,
+        paragraphs: 2,
+        sentenceMin: 3,
+        sentenceMax: 5,
       }),
-    color_code:
-      input?.color_code ?? "#" + RandomGenerator.alphabets(6).toUpperCase(),
-    status:
-      input?.status ??
-      RandomGenerator.pick(["active", "archived", "completed"] as const),
-    budget_hours:
-      input?.budget_hours ??
+    color:
+      input?.color ??
+      RandomGenerator.pick([
+        "#FF5733",
+        "#33FF57",
+        "#3357FF",
+        "#FF33F5",
+        "#F5FF33",
+        "#33FFF5",
+      ] as const),
+    budgetHours:
+      input?.budgetHours ??
       typia.random<
         number & tags.Type<"uint32"> & tags.Minimum<100> & tags.Maximum<10000>
       >(),
-    start_date:
-      input?.start_date ?? typia.random<string & tags.Format<"date-time">>(),
-    end_date:
-      input?.end_date ?? typia.random<string & tags.Format<"date-time">>(),
+    startDate:
+      input?.startDate ?? typia.random<string & tags.Format<"date-time">>(),
+    endDate:
+      input?.endDate ?? typia.random<string & tags.Format<"date-time">>(),
   };
 }

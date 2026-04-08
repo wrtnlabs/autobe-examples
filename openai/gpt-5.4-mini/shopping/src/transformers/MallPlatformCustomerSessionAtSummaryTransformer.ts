@@ -32,14 +32,50 @@ export namespace MallPlatformCustomerSessionAtSummaryTransformer {
   ): Promise<IMallPlatformCustomerSession.ISummary> {
     return {
       id: input.id,
-      customer: await MallPlatformCustomerAtSummaryTransformer.transform(
-        input.customer,
-      ),
       ip: input.ip,
       href: input.href,
       referrer: input.referrer,
-      createdAt: input.created_at.toISOString(),
-      expiredAt: input.expired_at.toISOString(),
-    };
+      created_at: input.created_at.toISOString(),
+      expired_at: input.expired_at.toISOString(),
+      customer: await MallPlatformCustomerAtSummaryTransformer.transform(
+        input.customer,
+      ),
+    } satisfies IMallPlatformCustomerSession.ISummary;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace MallPlatformCustomerSessionAtSummaryTransformer {
+//       export type Payload = Prisma.mall_platform_customer_sessionsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             ip: true,
+//             href: true,
+//             referrer: true,
+//             created_at: true,
+//             expired_at: true,
+//             customer: MallPlatformCustomerAtSummaryTransformer.select(),
+//           },
+//         } satisfies Prisma.mall_platform_customer_sessionsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IMallPlatformCustomerSession.ISummary> {
+//         return {
+//   id: {string},
+//   ip: {string},
+//   href: {string},
+//   referrer: {string},
+//   created_at: {string},
+//   expired_at: {string},
+//   customer: await MallPlatformCustomerAtSummaryTransformer.transform(input.customer),
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

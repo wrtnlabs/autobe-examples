@@ -15,7 +15,7 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { ErpHrmContractCollector } from "../collectors/ErpHrmContractCollector";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
-import { ErpHrmContractTransformer } from "../transformers/ErpHrmContractTransformer";
+import { ErpHrmContractAtResponseTransformer } from "../transformers/ErpHrmContractAtResponseTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -23,52 +23,89 @@ export async function postErpHrmAdminEmployeesEmployeeIdContracts(props: {
   admin: AdminPayload;
   employeeId: string & tags.Format<"uuid">;
   body: IErpHrmContract.ICreate;
-}): Promise<IErpHrmContract> {
-  // Validate employee exists
-  const employee = await MyGlobal.prisma.erp_hrm_employees.findUniqueOrThrow({
+}): Promise<IErpHrmContract.IResponse> {
+  // 1. Verify the employee exists
+  await MyGlobal.prisma.erp_hrm_employees.findUniqueOrThrow({
     where: { id: props.employeeId },
     select: { id: true },
   });
-  // Check for existing active contract (end_date IS NULL)
+  // 2. Check for existing active contract that overlaps with new contract
+  const newStartDate = new Date(props.body.startDate);
+  // Find active contract: end_date is null (ongoing) OR end_date >= new start date
   const existingActiveContract =
     await MyGlobal.prisma.erp_hrm_contracts.findFirst({
       where: {
         erp_hrm_employee_id: props.employeeId,
         end_date: null,
+        start_date: { lte: newStartDate },
       },
-      select: {
-        id: true,
+      select: { id: true, start_date: true },
+    });
+  // 3. If overlapping active contract exists, automatically end it
+  if (existingActiveContract) {
+    // Set end_date to one day before the new contract's start_date
+    const endDate = new Date(newStartDate);
+    endDate.setDate(endDate.getDate() - 1);
+    await MyGlobal.prisma.erp_hrm_contracts.update({
+      where: { id: existingActiveContract.id },
+      data: {
+        end_date: endDate,
+        updated_at: new Date(),
       },
     });
-  const newContractStartDate = new Date(props.body.start_date);
-  const currentDate = new Date();
-  currentDate.setHours(0, 0, 0, 0);
-  // If existing active contract found and new contract starts now or in the past,
-  // end the existing contract one day before
-  if (existingActiveContract) {
-    const newStartDate = new Date(newContractStartDate);
-    newStartDate.setHours(0, 0, 0, 0);
-    if (newStartDate <= currentDate) {
-      // End the existing contract one day before new contract starts
-      const endDate = new Date(newContractStartDate);
-      endDate.setDate(endDate.getDate() - 1);
-      endDate.setHours(23, 59, 59, 999);
-      await MyGlobal.prisma.erp_hrm_contracts.update({
-        where: { id: existingActiveContract.id },
-        data: {
-          end_date: endDate,
-          updated_at: new Date(),
-        },
-      });
-    }
   }
-  // Create new contract using collector
-  const createdContract = await MyGlobal.prisma.erp_hrm_contracts.create({
+  // 4. Create the new contract
+  const record = await MyGlobal.prisma.erp_hrm_contracts.create({
     data: await ErpHrmContractCollector.collect({
       body: props.body,
-      erpHrmEmployees: employee,
+      erpHrmEmployees: { id: props.employeeId },
     }),
-    ...ErpHrmContractTransformer.select(),
+    ...ErpHrmContractAtResponseTransformer.select(),
   });
-  return await ErpHrmContractTransformer.transform(createdContract);
+  // 5. Return the created contract
+  return await ErpHrmContractAtResponseTransformer.transform(record);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IErpHrmContract } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmContract";
+// import { IErpHrmEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmEmployee";
+// import { IErpHrmMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmMember";
+// import { IErpHrmRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmRole";
+// import { IErpHrmOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmOrganization";
+// import { IErpHrmDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmDepartment";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function postErpHrmAdminEmployeesEmployeeIdContracts(props: {
+//   admin: AdminPayload;
+//   employeeId: string & tags.Format<"uuid">;
+//   body: IErpHrmContract.ICreate;
+// }): Promise<IErpHrmContract.IResponse> {
+//   const record = await MyGlobal.prisma.erp_hrm_contracts.create({
+//     data: await ErpHrmContractCollector.collect({
+//       body: props.body,
+//       ...
+//     }),
+//     ...ErpHrmContractAtResponseTransformer.select(),
+//   });
+//   return await ErpHrmContractAtResponseTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

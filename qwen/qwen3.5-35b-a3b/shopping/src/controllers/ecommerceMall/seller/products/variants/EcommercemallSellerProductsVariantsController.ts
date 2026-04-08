@@ -3,42 +3,52 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IEcommerceMallProductVariant } from "../../../../../api/structures/IEcommerceMallProductVariant";
-import { IPageIEcommerceMallProductVariant } from "../../../../../api/structures/IPageIEcommerceMallProductVariant";
 import { SellerAuth } from "../../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../../decorators/payload/SellerPayload";
 import { deleteEcommerceMallSellerProductsProductIdVariantsVariantId } from "../../../../../providers/deleteEcommerceMallSellerProductsProductIdVariantsVariantId";
-import { patchEcommerceMallSellerProductsProductIdVariants } from "../../../../../providers/patchEcommerceMallSellerProductsProductIdVariants";
 import { postEcommerceMallSellerProductsProductIdVariants } from "../../../../../providers/postEcommerceMallSellerProductsProductIdVariants";
 import { putEcommerceMallSellerProductsProductIdVariantsVariantId } from "../../../../../providers/putEcommerceMallSellerProductsProductIdVariantsVariantId";
 
 @Controller("/ecommerceMall/seller/products/:productId/variants")
 export class EcommercemallSellerProductsVariantsController {
   /**
-   * Create a new product variant for an existing product.
+   * Create a new product variant for a specific product.
    *
-   * This operation allows sellers to add a new variant to their product catalog. Each variant represents a specific combination of product options (e.g., size: Large, color: Red) with its own unique SKU code, pricing configuration, and stock quantity tracking.
+   * Sellers can add variants to their products to represent different option combinations (e.g., size, color). Each variant requires a unique SKU code within the product, option values in JSON format, and an initial stock quantity. Variants may optionally override the product's base price.
    *
-   * The variant creation requires specification of option attributes (such as size, color, material) using key-value pairs, a unique SKU code for inventory management, base price in cents, and initial stock quantity. Optionally, sellers can specify a promotional sale price, display sort order, and mark the variant as the default selection for the product.
-   *
-   * Every variant creation is logged in the system audit trail. The product's overall availability status is automatically updated based on the variant's stock quantity and status. Products must have at least one active variant to be marked as purchasable.
+   * The product must exist and be owned by the authenticated seller. Upon creation, the variant is linked to the product and becomes available for purchase if the product now has at least one variant.
    *
    * @param connection
-   * @param productId ID of the parent product to which this variant belongs.
-   * @param body Creation data for the new product variant including SKU code, option attributes, pricing, and stock quantity.
+   * @param productId UUID of the parent product to add variant to.
+   * @param body Variant creation parameters including unique SKU code, option values, price override, and initial stock quantity.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Create a new ProductVariant record for the specified product_id.
+   * @x-autobe-specification Validate that the authenticated user is a seller actor.
    *
-   * 1. Validate that the product exists and the requesting seller is the product owner.
-   * 2. Validate that the SKU code is unique across all product variants in the system.
-   * 3. Validate required fields: sku (unique), options (key-value pairs or JSON), base_price (positive number), stock_quantity (non-negative integer).
-   * 4. Validate optional fields: sale_price (must be > 0 if provided, and typically less than base_price), status (must be one of: active, inactive, discontinued).
-   * 5. Insert new ProductVariant record with: product_id, sku, options, base_price, sale_price, stock_quantity, status, sort_order (default: 0), is_default (default: false), created_at, updated_at.
-   * 6. For structured option attributes, insert corresponding rows into ecommerce_mall_product_variant_options table with product_variant_id, key, value pairs.
-   * 7. Update the product's inventory status if needed.
-   * 8. Return the newly created variant with all fields including system-generated id and timestamps.
-   * 9. Handle unique constraint violation for SKU with appropriate error response.
-   * 10. Handle product not found or unauthorized seller with appropriate error responses.
+   * 1. Look up ecommerce_mall_products by productId
+   * 2. Verify product exists and is not soft-deleted (deleted_at IS NULL)
+   * 3. Verify product.seller_id matches authenticated seller_id
+   * 4. Validate request body:
+   *    - sku_code: non-empty string, unique within this product (check @@unique([product_id, sku_code]))
+   *    - option_values: valid JSON string representing option key-value pairs
+   *    - stock_quantity: non-negative integer (>= 0)
+   *    - price: optional float, if present must be positive (> 0)
+   * 5. Create variant record in ecommerce_mall_product_variants:
+   *    - product_id: from path parameter
+   *    - sku_code: from request
+   *    - option_values: from request (store as string JSON)
+   *    - price: from request (nullable)
+   *    - stock_quantity: from request
+   *    - created_at, updated_at: current timestamp
+   *    - deleted_at: NULL
+   * 6. Return the newly created IProductVariant with all fields
+   *
+   * Error handling:
+   * - 404 if product not found or already deleted
+   * - 403 if product does not belong to authenticated seller
+   * - 409 if SKU code already exists for this product
+   * - 400 if stock_quantity < 0 or price <= 0 (when provided)
+   * - 400 if option_values is not valid JSON
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -63,127 +73,48 @@ export class EcommercemallSellerProductsVariantsController {
   }
 
   /**
-   * Retrieve a filtered and paginated list of product variants belonging to a specific product.
+   * Update a product variant's attributes including SKU code, option values, price override, and stock quantity.
    *
-   * This operation allows sellers to view all variants belonging to their product with comprehensive search and filtering capabilities. Each variant represents a unique combination of product options (such as size, color, material) with a unique SKU code, individual pricing, and stock quantity tracking.
+   * This operation allows sellers to modify their product variant information. Each update creates an immutable audit snapshot capturing the variant's state before modification, preserving historical records for compliance and traceability.
    *
-   * **Authorization Requirements**
+   * ### Validation Rules
    *
-   * This operation requires seller authentication. Sellers can only access variants for products they own—the system validates that the authenticated seller's ID matches the product's seller_id before returning any variant data. Attempting to access another seller's products will result in an authorization error.
+   * - The product must exist and be owned by the authenticated seller
+   * - The variant must exist within the specified product and be owned by the seller
+   * - SKU code must be unique within the product (cannot duplicate existing variant SKU codes)
+   * - Stock quantity must be non-negative
+   * - Price override, if provided, must be a positive number
    *
-   * **Search and Filtering**
+   * ### Error Conditions
    *
-   * Supports filtering by stock quantity ranges, variant status (active, inactive, or discontinued values defined in the database), price ranges using base_price or sale_price fields, and SKU code patterns using trigram search for fuzzy matching. Results are sorted by sort_order with pagination for efficient browsing of large variant sets.
-   *
-   * **Response Content**
-   *
-   * Each variant response includes complete option key-value pairs aggregated from the ecommerce_mall_product_variant_options child table, along with base price, optional sale price, current stock quantity, reserved quantity, and status information. Soft-deleted variants (where deleted_at is not null) are excluded from results.
-   *
-   * **Pagination and Ordering**
-   *
-   * Results support configurable page size, sort field selection, and sort direction. The default sort is by sort_order ascending with created_at descending as a secondary sort for consistent ordering.
-   *
-   * Related operations:
-   * - GET /ecommerceMall/seller/products/{productId}/variants/{variantId} - Retrieve a single variant
-   * - POST /ecommerceMall/seller/products/{productId}/variants - Create a new variant
-   * - PUT /ecommerceMall/seller/products/{productId}/variants/{variantId} - Update a variant
-   * - DELETE /ecommerceMall/seller/products/{productId}/variants/{variantId} - Soft delete a variant
-   *
+   * - 404 Not Found: Product or variant does not exist
+   * - 403 Forbidden: Variant is not owned by the authenticated seller
+   * - 409 Conflict: SKU code already exists for another variant in the same product
+   * - 422 Unprocessable Entity: Invalid stock quantity (negative) or price (non-positive)
    *
    * @param connection
-   * @param productId The unique identifier of the product whose variants to retrieve
-   * @param body Search criteria and pagination parameters for filtering product variants
+   * @param productId UUID of the parent product. The variant must belong to this product.
+   * @param variantId UUID of the variant to update.
+   * @param body Update fields for the product variant. All fields are optional and will be merged with existing values. Only provided fields will be updated.
+   *
+   *             - sku_code: New unique SKU identifier (must be unique within this product)
+   *             - option_values: JSON object defining variant options (e.g., {"color": "red", "size": "L"})
+   *             - price: Variant-specific price override (null uses base product price)
+   *             - stock_quantity: Available inventory units (must be >= 0)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_product_variants table where product_id matches the path parameter productId.
-   *
-   * Validate that the requesting seller owns the product by checking ecommerce_mall_products.seller_id against the authenticated seller's ID.
-   *
-   * Apply search filters from request body:
-   * - stock_quantity: range filter (min, max)
-   * - status: enum filter (active, inactive, discontinued)
-   * - base_price: numeric range filter
-   * - sku: pattern match using gin_trgm_ops trigram search
-   * - is_default: boolean filter
-   *
-   * Join with ecommerce_mall_product_variant_options to aggregate option key-value pairs as JSON object.
-   *
-   * Apply pagination parameters: page number, page size, sort field, sort direction.
-   *
-   * Return cursor-based pagination metadata for next/previous page navigation.
-   *
-   * Sort variants by sort_order ascending by default, with secondary sort by created_at descending.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Patch()
-  public async index(
-    @SellerAuth()
-    seller: SellerPayload,
-    @TypedParam("productId")
-    productId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IEcommerceMallProductVariant.IRequest,
-  ): Promise<IPageIEcommerceMallProductVariant.ISummary> {
-    try {
-      return await patchEcommerceMallSellerProductsProductIdVariants({
-        seller,
-        productId,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update an existing product variant within a seller's product catalog.
-   *
-   * This operation allows sellers to modify variant properties including the unique SKU code, option values (key-value pairs for attributes like size, color, material), pricing information (base price and optional sale price), and status. Every edit operation automatically creates an immutable snapshot capturing the variant state before modification for audit trail and dispute resolution purposes.
-   *
-   * The variant must belong to a product owned by the authenticated seller. The SKU code must remain unique across all variants in the system. Stock quantity cannot be modified directly through this endpoint as it is managed through dedicated inventory record operations.
-   *
-   * After successful update, the variant becomes immediately available in product listings with the new properties. The updated_at timestamp is automatically set to the current time. If the variant is a default selection for the product, changing the is_default flag affects product display ordering.
-   *
-   * Related operations:
-   * - GET /products/{productId}/variants - List all variants for a product
-   * - GET /products/{productId}/variants/{variantId} - Retrieve variant details
-   * - DELETE /products/{productId}/variants/{variantId} - Delete variant (if no pending orders)
-   *
-   * @param connection
-   * @param productId UUID identifier of the parent product that owns this variant.
-   * @param variantId UUID identifier of the variant to update.
-   * @param body Variant properties to update. At least one field must be provided. SKU must be unique across all variants. Stock quantity is read-only.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Authorization: Verify seller actor authentication and ownership of the parent product (product_id matches seller's product records)
-   *
-   * 2. Path Parameter Validation: Validate productId and variantId are valid UUID format
-   *
-   * 3. Record Lookup: Query ecommerce_mall_product_variants table for variantId, join with ecommerce_mall_products to verify product_id ownership
-   *
-   * 4. Update Restrictions: Stock quantity is read-only (managed through inventory_records). Reserved_quantity is system-managed.
-   *
-   * 5. SKU Uniqueness Check: Verify sku field uniqueness across all product_variants in ecommerce_mall_product_variants.sku (unique constraint)
-   *
-   * 6. Options Format Validation: Ensure options field contains valid JSON object with string key-value pairs. Consider migrating to ecommerce_mall_product_variant_options child table.
-   *
-   * 7. Price Validation: base_price must be non-negative number. sale_price must be either null or positive and not exceed base_price.
-   *
-   * 8. Status Validation: Accept only valid status values (active, inactive, discontinued)
-   *
-   * 9. Snapshot Creation: Insert record into ecommerce_mall_product_variant_snapshots capturing complete variant state before modification (snapshot_type = 'update')
-   *
-   * 10. Database Update: Execute UPDATE on ecommerce_mall_product_variants setting sku, options, base_price, sale_price, status, sort_order, is_default, updated_at = NOW()
-   *
-   * 11. Response Construction: Return complete updated variant object with all fields including relationships (product reference)
-   *
-   * 12. Error Handling:
-   *     - 404: Variant not found or does not belong to seller's product
-   *     - 400: Invalid SKU (duplicate), invalid options format, invalid price values, invalid status value
-   *     - 403: Seller does not own the product
-   *
-   * 13. Transaction: All operations (snapshot, update) must be atomic within a database transaction
+   * @x-autobe-specification 1. Authenticate seller and extract seller_id from session token
+   * 2. Verify product exists and is owned by seller: SELECT * FROM ecommerce_mall_products WHERE id = productId AND seller_id = seller_id AND deleted_at IS NULL
+   * 3. Verify variant exists, belongs to product, and is not deleted: SELECT * FROM ecommerce_mall_product_variants WHERE id = variantId AND product_id = productId AND deleted_at IS NULL
+   * 4. Check SKU uniqueness: SELECT 1 FROM ecommerce_mall_product_variants WHERE product_id = productId AND sku_code = requestBody.sku_code AND id != variantId AND deleted_at IS NULL; if found, return 409 Conflict
+   * 5. Validate stock_quantity >= 0 if provided
+   * 6. Validate price > 0 if provided and not null
+   * 7. Create snapshot record:
+   *    - INSERT INTO ecommerce_mall_product_variant_snapshots (product_variant_id, product_id, seller_id, sku_code, option_values, price, stock_quantity, created_at)
+   *    - SELECT id, product_id, seller_id, sku_code, option_values, price, stock_quantity, NOW() FROM ecommerce_mall_product_variants WHERE id = variantId
+   * 8. Update variant record:
+   *    - UPDATE ecommerce_mall_product_variants SET sku_code = COALESCE(requestBody.sku_code, sku_code), option_values = COALESCE(requestBody.option_values, option_values), price = requestBody.price, stock_quantity = COALESCE(requestBody.stock_quantity, stock_quantity), updated_at = NOW() WHERE id = variantId
+   * 9. Return updated variant with full entity fields (id, product_id, sku_code, option_values, price, stock_quantity, created_at, updated_at)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":variantId")
@@ -211,45 +142,63 @@ export class EcommercemallSellerProductsVariantsController {
   }
 
   /**
-   * Soft delete a product variant from the seller's product catalog.
+   * Delete a product variant from the seller's product catalog.
    *
-   * This operation marks a product variant as deleted by setting the deleted_at timestamp. The variant is removed from active product listings and will no longer appear in search results or customer-facing product detail pages.
+   * This endpoint permanently removes a product variant from the seller's product. The variant deletion is subject to strict validation to protect order integrity and customer transactions.
    *
-   * A variant can only be deleted if it has no pending order items with paid or shipped status, no pending cancellation requests, and no pending refund requests. This restriction preserves order history integrity and prevents deletion of variants with active transactions.
+   * ### Deletion Conditions
    *
-   * The seller must own the product containing this variant. Authorization is enforced by verifying the authenticated seller's ID matches the product's seller_id field.
+   * A variant can only be deleted when all of the following conditions are met:
    *
-   * When a variant is soft deleted:
-   * - The variant's deleted_at timestamp is set (variant remains in database for historical records)
-   * - All associated inventory records are also soft deleted (their deleted_at timestamps are set)
-   * - The variant no longer appears in active product listings or search results
-   * - Product snapshots and historical order data remain intact and unaffected
+   * - No order items with status 'paid' or 'shipped' exist for this variant
+   * - No pending cancellation requests exist for this variant
+   * - No pending refund requests exist for this variant
+   *
+   * If any condition is violated, the deletion request is rejected with an error explaining which orders or requests are blocking the deletion.
+   *
+   * ### Deletion Behavior
+   *
+   * When successfully deleted:
+   *
+   * - The variant is soft-deleted (deleted_at timestamp set) and excluded from all customer-facing listings
+   * - All associated inventory records are removed
+   * - The variant no longer appears in product detail pages or search results
+   * - The variant cannot be purchased again
+   * - Product snapshots are preserved for audit purposes
+   *
+   * ### Seller Ownership Validation
+   *
+   * The requesting seller must be the owner of the parent product. Only the product's owner (seller) can manage its variants.
    *
    * @param connection
-   * @param productId ID of the product containing the variant
-   * @param variantId ID of the variant to delete
+   * @param productId UUID of the parent product that contains this variant.
+   * @param variantId UUID of the product variant to delete.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Execute DELETE operation on ecommerce_mall_product_variants table.
+   * @x-autobe-specification DELETE operation to soft-delete a product variant from ecommerce_mall_product_variants.
    *
-   * 1. Validate authentication: Ensure authenticated user is a seller actor.
+   * Implementation steps:
+   * 1. Validate that the authenticated seller owns the parent product (join with ecommerce_mall_products on product_id, verify seller_id matches authenticated user)
+   * 2. Verify the variant exists and has not been previously deleted (WHERE deleted_at IS NULL)
+   * 3. Check for blocking conditions by querying:
+   *    - ecommerce_mall_order_items: SELECT 1 WHERE ecommerce_mall_product_variant_id = variantId AND status IN ('paid', 'shipped')
+   *    - ecommerce_mall_cancellation_requests: SELECT 1 WHERE referencing variant (via order_items relationship) AND status = 'pending'
+   *    - ecommerce_mall_refund_requests: SELECT 1 WHERE order_item_id references variant AND status = 'pending'
+   * 4. If any blocking records exist, return 409 Conflict with details of blocking orders/requests
+   * 5. If no blocking conditions:
+   *    - Soft-delete the variant: UPDATE ecommerce_mall_product_variants SET deleted_at = NOW() WHERE id = variantId
+   *    - Soft-delete all associated inventory records: UPDATE ecommerce_mall_inventory_records SET deleted_at = NOW() WHERE ecommerce_mall_product_variant_id = variantId
+   * 6. Return 204 No Content
    *
-   * 2. Verify ownership: Query ecommerce_mall_products to confirm the product exists and belongs to the authenticated seller (products.seller_id == authenticatedSellerId).
+   * Error cases:
+   * - 404 Not Found: Variant does not exist or already deleted
+   * - 403 Forbidden: Authenticated seller does not own the parent product
+   * - 409 Conflict: Variant has pending orders, cancellations, or refunds
    *
-   * 3. Validate deletion conditions by checking for pending transactions:
-   *    - Query ecommerce_mall_order_items for any items referencing this variant with order status 'paid' or 'shipped'
-   *    - Query ecommerce_mall_cancellation_requests for any pending requests for order items containing this variant
-   *    - Query ecommerce_mall_refund_requests for any pending requests for order items containing this variant
-   *
-   * 4. If any pending transactions exist, reject deletion with error 409 (Conflict) including explanation of blocking transactions.
-   *
-   * 5. If validation passes, delete the variant record from ecommerce_mall_product_variants.
-   *
-   * 6. Delete all inventory records (ecommerce_mall_inventory_records) associated with this variant.
-   *
-   * 7. Return the deleted variant's complete data including id, skuCode, basePrice, and all option values.
-   *
-   * 8. Ensure atomicity: All deletions occur within a single transaction.
+   * Edge cases:
+   * - Variant with no inventory records: Still deletable if no blocking orders/requests
+   * - Variant with only cancelled/refunded order items: Deletable (those items are not in 'paid' or 'shipped' status)
+   * - Concurrent deletion attempts: Use row-level locking or transaction isolation to prevent race conditions
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":variantId")

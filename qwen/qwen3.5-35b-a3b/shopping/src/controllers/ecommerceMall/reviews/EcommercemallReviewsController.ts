@@ -1,44 +1,115 @@
-import { TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IEcommerceMallReview } from "../../../api/structures/IEcommerceMallReview";
+import { IPageIEcommerceMallReview } from "../../../api/structures/IPageIEcommerceMallReview";
 import { getEcommerceMallReviewsReviewId } from "../../../providers/getEcommerceMallReviewsReviewId";
+import { patchEcommerceMallReviews } from "../../../providers/patchEcommerceMallReviews";
 
-@Controller("/ecommerceMall/reviews/:reviewId")
+@Controller("/ecommerceMall/reviews")
 export class EcommercemallReviewsController {
   /**
-   * Retrieves a single product review by its unique identifier, displaying complete review information including rating, title, and content.
+   * Search and list customer product reviews with filtering and pagination support.
    *
-   * This operation provides detailed information about a specific customer review, enabling consumers to read product feedback and assess the helpfulness of written reviews. The returned review includes the star rating (1-5), optional title, full text content, verified purchase status, and timestamps for creation and last modification.
+   * This endpoint retrieves product reviews with comprehensive search capabilities including product filtering, customer filtering, rating range filtering, and date range filtering. Pagination is implemented for efficient handling of large result sets.
    *
-   * The operation respects data visibility rules based on the requester's authentication status and permissions. For unauthenticated or regular customers, only non-deleted reviews are returned, ensuring deleted content remains hidden from public view. Administrators and authorized personnel can access deleted reviews for moderation and dispute resolution purposes.
+   * Reviews are returned sorted by creation date (newest first) by default, with optional sorting by rating or update date. The endpoint supports filtering by product ID, customer ID, rating score, and creation date range.
    *
-   * Deleted reviews that have been marked with a deletion timestamp are excluded from standard retrieval to maintain data privacy while preserving the audit trail for authorized actors with elevated privileges.
+   * Deleted reviews are excluded from results by default, but can be included with an explicit filter for administrative oversight purposes. Only non-deleted reviews contribute to product average rating calculations.
+   *
+   * ### Authorization
+   * - Members: Can view reviews for products they have reviewed (their own reviews only)
+   * - Administrators: Can view all reviews for platform oversight
+   *
+   * @param connection
+   * @param body Search criteria for listing reviews including product/customer filters, rating range, date range, sorting, and pagination parameters.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor null
+   * @x-autobe-specification Query ecommerce_mall_reviews table with pagination and filtering.
+   *
+   * ### Search Criteria (from requestBody):
+   * - product_id (optional): Filter reviews by specific product
+   * - customer_id (optional): Filter reviews by specific customer/member
+   * - rating (optional): Filter by exact rating score (1-5)
+   * - rating_min (optional): Minimum rating filter (1-5)
+   * - rating_max (optional): Maximum rating filter (1-5)
+   * - created_after (optional): Filter reviews created after this date
+   * - created_before (optional): Filter reviews created before this date
+   * - include_deleted (optional): Include deleted reviews in results (admin only)
+   * - sort_by (optional): 'created_at' (default), 'rating', 'updated_at'
+   * - sort_order (optional): 'desc' (default), 'asc'
+   * - page (required): Page number (1-indexed)
+   * - page_size (required): Number of items per page (1-100)
+   *
+   * ### Implementation Logic:
+   * 1. Validate pagination parameters (page >= 1, page_size between 1-100)
+   * 2. Build query with provided filters
+   * 3. If include_deleted is false or not provided, add WHERE deleted_at IS NULL
+   * 4. If include_deleted is true AND caller is not administrator, reject with 403
+   * 5. Apply sort_by and sort_order to results
+   * 6. Execute paginated query with COUNT for total
+   * 7. Return IPageIEcommerceMallReview.ISummary with reviews and pagination metadata
+   *
+   * ### Join Operations:
+   * - Join with ecommerce_mall_products to get product name for summary
+   * - Join with ecommerce_mall_members to get customer display_name
+   *
+   * ### Edge Cases:
+   * - Return empty array with total=0 when no matching reviews
+   * - Handle NULL review_text in summary (omit from response)
+   * - Ensure deleted reviews don't affect average rating calculations
+   *
+   * ### Error Handling:
+   * - 400: Invalid pagination parameters
+   * - 400: Invalid rating values (must be 1-5)
+   * - 403: Non-admin users requesting deleted reviews
+   * - 404: Product/customer ID not found (if provided)
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch()
+  public async index(
+    @TypedBody()
+    body: IEcommerceMallReview.IRequest,
+  ): Promise<IPageIEcommerceMallReview.ISummary> {
+    try {
+      return await patchEcommerceMallReviews({
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a single review by its unique identifier for display on product detail pages.
+   *
+   * Returns the complete review entity including the reviewer's display name, star rating, text content, and metadata. The operation includes related product information and order item reference to provide full context for the review display.
+   *
+   * Soft-deleted reviews are hidden from public access but may be retrieved by the review owner or platform administrators for audit purposes.
    *
    * @param connection
    * @param reviewId Unique identifier of the review to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query ecommerce_mall_reviews table for single review by UUID.
-   *
-   * 1. Validate reviewId is valid UUID format
-   * 2. Fetch review record from ecommerce_mall_reviews where id matches reviewId
-   * 3. For unauthenticated requests: Filter out reviews where deleted_at IS NOT NULL
-   * 4. For authenticated customer: Return review if customer_id matches authenticated user OR deleted_at IS NULL
-   * 5. For administrator: Return review regardless of deleted_at status
-   * 6. Load related customer profile (customer display name) via customer_id
-   * 7. If customer profile is deleted, set display name to 'deleted user'
-   * 8. Return review with all fields: id, customer_id, product_id, order_id, rating, title, body, is_verified_purchase, created_at, updated_at, deleted_at
-   * 9. Handle 404 if review not found or inaccessible due to deletion status
-   * 10. Handle 403 if customer attempts to access another customer's deleted review
-   *
-   * Database query: SELECT * FROM ecommerce_mall_reviews WHERE id = :reviewId AND (deleted_at IS NULL OR :hasAdminAccess = true)
-   *
-   * Join with customer table for display name resolution when rendering review author information.
+   * @x-autobe-specification 1. Validate reviewId is a valid UUID format
+   * 2. Query ecommerce_mall_reviews table for record with matching id
+   * 3. Join with ecommerce_mall_members to get reviewer display_name
+   * 4. Join with ecommerce_mall_products to get product name and category
+   * 5. Join with ecommerce_mall_order_items to get order reference
+   * 6. Check deleted_at field:
+   *    - If deleted_at is not null:
+   *      - Return 404 if requester is not review owner and not administrator
+   *      - Return full record if requester is owner or administrator
+   *    - If deleted_at is null:
+   *      - Return full record
+   * 7. Format response with member display_name (use "deleted user" if member account was deleted)
+   * 8. Include all review fields: id, rating, review_text, created_at, updated_at, deleted_at (if applicable)
+   * 9. If review not found, return 404 Not Found
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get()
+  @TypedRoute.Get(":reviewId")
   public async at(
     @TypedParam("reviewId")
     reviewId: string & tags.Format<"uuid">,

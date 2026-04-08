@@ -6,34 +6,19 @@ import {
 } from "@nestia/fetcher";
 import typia, { tags } from "typia";
 
-import { IPageIRedditClonePost } from "../../../../structures/IPageIRedditClonePost";
 import { IRedditClonePost } from "../../../../structures/IRedditClonePost";
 
+export * as votes from "./votes/index";
 export * as comments from "./comments/index";
-export * as images from "./images/index";
-export * as _vote from "./_vote/index";
 
 /**
- * Create a new post in a community. This operation allows authenticated members to publish content within communities they have subscribed to. The post will be visible to all users (including guests) in the community feed and the author's profile.
- *
- * The system validates several business rules before post creation: the user must be logged in, must be subscribed to the target community, must not be banned from the community, and must provide a valid title (1-500 characters) and post type selection (text, link, or image). The content field is optional and may be null for link or image type posts.
- *
- * Upon successful creation, the post is assigned a unique identifier, the vote score is initialized to zero, and the creation timestamp is recorded. The post immediately becomes visible in the community feed and the author's home feed. If the post type is 'image', additional images can be uploaded separately through the post images endpoint.
- *
- * This operation is related to GET /posts/{post_id} for retrieving the created post, PATCH /posts/{post_id} for editing the post, and DELETE /posts/{post_id} for removing the post.
+ * Create a new post in a community.\n\nThis operation allows authenticated users to create posts in communities they have subscribed to. Posts support three content types: text posts with body content, link posts with external URLs, and image posts with image URLs. Every post requires a title and must be associated with both the author and a target community.\n\n**Post Types:**\n- **Text posts**: Include a title and text body content\n- **Link posts**: Include a title and an external URL\n- **Image posts**: Include a title and an image URL\n\n**Requirements:**\n- Users must be authenticated members\n- Users must be subscribed to the target community\n- Title is required for all post types\n- Content must match the selected post type\n\n**Post Creation:**\nThe system automatically associates the post with the authenticated user and records the creation timestamp. The post becomes immediately visible in the community feed and the user's post history.
  *
  * @param props.connection
- * @param props.body Post creation data including title, content, type, and target community
+ * @param props.body Post creation data including title, post type (text/link/image), and corresponding content field.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Authenticate the requesting user from the JWT token in the Authorization header.
- * 2. Validate the request body: title (required, 1-500 chars), post_type (required, enum: text/link/image), community_id (required, UUID), content (optional, 0-10000 chars).
- * 3. Verify the user is subscribed to the target community by checking reddit_clone_subscriptions table.
- * 4. Verify the user is not banned from the community by checking reddit_clone_bans table for active bans (lifted_at is null).
- * 5. Verify the user's account is not deleted (deleted_at is null in reddit_clone_members).
- * 6. Create a new record in reddit_clone_posts with: id (generate UUID), reddit_clone_community_id, reddit_clone_members_id (from auth), title, content, post_type, score (0), created_at (current timestamp), updated_at (current timestamp), deleted_at (null).
- * 7. Return the created post object with all fields including the generated ID and timestamps.
- * 8. Handle errors: return 401 if not authenticated, 403 if not subscribed or banned, 400 for validation errors, 500 for system failures.
+ * @x-autobe-specification Create a new post in the reddit_clone_posts table.\n\n**Pre-conditions:**\n1. Verify the authenticated user is a member (not guest)\n2. Validate the user is subscribed to the target community via reddit_clone_community_subscriptions (check that no deleted_at exists for the subscription)\n3. Validate the community exists and is not deleted\n\n**Validation:**\n1. Title must be present and non-empty\n2. Post type must be one of: 'text', 'link', 'image'\n3. If post_type is 'text', text_content must be provided\n4. If post_type is 'link', link_url must be provided and valid\n5. If post_type is 'image', image_url must be provided\n\n**Database Operations:**\n1. Insert a new record into reddit_clone_posts with:\n   - id: generate UUID\n   - reddit_clone_user_profile_id: from authenticated user's profile\n   - reddit_clone_community_id: from request body\n   - title, post_type, and appropriate content field from request\n   - created_at: current timestamp\n   - updated_at: current timestamp\n   - deleted_at: null\n2. Return the created post entity\n\n**Error Handling:**\n- Return 400 if validation fails (missing title, invalid post type, missing content for type)\n- Return 403 if user is not subscribed to the community\n- Return 404 if community does not exist or is deleted\n- Return 401 if user is not authenticated
  * @path /redditClone/member/posts
  * @accessor api.functional.redditClone.member.posts.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -63,7 +48,7 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Post creation data including title, content, type, and target community
+     * Post creation data including title, post type (text/link/image), and corresponding content field.
      */
     body: IRedditClonePost.ICreate;
   };
@@ -112,172 +97,30 @@ export namespace create {
 }
 
 /**
- * Retrieve a filtered and paginated list of posts with advanced search and sorting capabilities.
- *
- * This operation provides comprehensive post discovery across different feed types. The feed_type parameter determines which posts are returned: 'home' shows posts only from communities the authenticated member subscribes to, 'popular' displays posts from all communities (accessible to guests), and 'community' filters to a specific community by ID.
- *
- * The API supports multiple sorting strategies including hot (algorithmically ranked by engagement and recency), new (chronologically recent), top (highest voted with optional time range filtering), and controversial (posts with polarized voting patterns). Time-based filtering for top posts includes today, this week, this month, this year, and all-time options.
- *
- * Each post in the response includes essential preview information: title, author username, community name, vote score, comment count, and time since posting. For text posts, the first 200 characters of content are displayed. Image posts show thumbnail references, and link posts display the domain name.
- *
- * Posts are automatically filtered to exclude soft-deleted content (where deleted_at is set) and posts from communities where the viewing user is blocked or banned. The home feed requires authentication and only shows posts from subscribed communities, while popular and community feeds are accessible to all users including guests.
- *
- * Pagination uses offset-based navigation with configurable page sizes, returning metadata including total count, current page, and total pages. When sort order or filter criteria change, pagination resets to the first page to maintain consistent user experience.
- *
- * @param props.connection
- * @param props.body Search criteria, filtering options, sort order, and pagination parameters for post listing
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the reddit_clone_posts table with pagination and filtering based on request parameters.
- *
- * 1. **Feed Type Filtering**:
- *    - 'popular': Return posts from all communities, ordered by algorithm combining score and recency
- *    - 'home': Return posts only from communities where the current member is subscribed (requires authentication)
- *    - 'community': Return posts from a specific community (requires community_id parameter)
- *
- * 2. **Sorting**:
- *    - 'hot': Score weighted by recency (score / (age_hours ^ 1.8))
- *    - 'new': Order by created_at descending
- *    - 'top': Order by score descending, with optional time filter (today, week, month, year, all-time)
- *    - 'controversial': Posts with high variance in votes (many both up and down votes)
- *
- * 3. **Visibility Rules**:
- *    - Exclude posts where deleted_at is not null
- *    - For home feed: Join with reddit_clone_subscriptions to filter by member's subscribed communities
- *    - For all feeds: Check if user is blocked or banned from the post's community and exclude if so
- *    - For community feed: Verify community_id matches the requested community
- *
- * 4. **Aggregations**:
- *    - Count comments per post from reddit_clone_comments (where reddit_clone_post_id matches and deleted_at is null)
- *    - Include post score from reddit_clone_posts.score field
- *
- * 5. **Pagination**:
- *    - Apply cursor-based or offset-based pagination based on request parameters
- *    - Return total count and pagination metadata
- *
- * 6. **Error Handling**:
- *    - Return 400 for invalid sort order or time filter values
- *    - Return 401 for home feed requests without authentication
- *    - Return 404 for non-existent community in community feed requests
- * @path /redditClone/member/posts
- * @accessor api.functional.redditClone.member.posts.index
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function index(
-  connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
-  return true === connection.simulate
-    ? index.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...index.METADATA,
-          path: index.path(),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace index {
-  export type Props = {
-    /**
-     * Search criteria, filtering options, sort order, and pagination parameters for post listing
-     */
-    body: IRedditClonePost.IRequest;
-  };
-  export type Body = IRedditClonePost.IRequest;
-  export type Response = IPageIRedditClonePost.ISummary;
-
-  export const METADATA = {
-    method: "PATCH",
-    path: "/redditClone/member/posts",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = () => "/redditClone/member/posts";
-  export const random = (): IPageIRedditClonePost.ISummary =>
-    typia.random<IPageIRedditClonePost.ISummary>();
-  export const simulate = (
-    connection: IConnection,
-    props: index.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: index.path(),
-      contentType: "application/json",
-    });
-    try {
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
  * Update an existing post's title and content.
  *
- * This operation allows post authors to modify their published content. Users can edit the title (1-500 characters) and content (1-10000 characters) of posts they have created. The post type (text, link, or image) cannot be changed after creation—if users need to change the post type, they must create a new post instead.
+ * This operation allows post owners to modify their posts after creation. The title can be updated for any post type. Content updates depend on the post type: text posts update text_content, link posts update link_url, and image posts update image_url. The original creation timestamp is preserved, and the updated_at timestamp is refreshed.
  *
- * Authorization is enforced at the application level: only the original author of the post can update it. The system verifies the authenticated user's identity matches the post's author before allowing modifications. Posts that have been deleted (soft-deleted) cannot be updated.
- *
- * The operation maintains an audit trail by creating snapshots in the reddit_clone_post_snapshots table before applying changes, enabling content history tracking and moderation review. The updated_at timestamp is automatically refreshed to reflect the modification time.
- *
- * Related operations include GET /posts/{postId} for retrieving post details, DELETE /posts/{postId} for removing posts, and GET /users/{username}/posts for viewing a user's post history.
+ * Only the post owner can edit their post. Attempts to edit posts owned by other users are rejected. The post type (text, link, or image) cannot be changed after creation.
  *
  * @param props.connection
- * @param props.postId Unique identifier of the post to update (UUID format)
- * @param props.body Post update data containing title and/or content
+ * @param props.postId The unique identifier of the post to update (global scope).
+ * @param props.body Post update data including title and content fields based on post type. Title is always required. Content field depends on post_type.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Update an existing post's title and content fields.
+ * @x-autobe-specification Query the reddit_clone_posts table by postId. Verify the requesting user's reddit_clone_user_profile_id matches the post's reddit_clone_user_profile_id. If ownership verification fails, return 403 Forbidden.
  *
- * **Authorization**:
- * - Verify the authenticated user is the post author (compare reddit_clone_members_id with current user ID)
- * - Deny update if user is not the author
- * - Deny update if post is already deleted (deleted_at is not null)
+ * Update the following fields based on the request body:
+ * - title: always updatable
+ * - text_content: for post_type 'text'
+ * - link_url: for post_type 'link'
+ * - image_url: for post_type 'image'
  *
- * **Validation**:
- * - Title must be 1-500 characters
- * - Content must be 1-10000 characters if provided (may be null for link/image posts)
- * - Post type cannot be modified (reject if included in request)
+ * Do NOT allow changing post_type after creation. Do NOT allow modifying created_at. Set updated_at to current timestamp.
  *
- * **Database Operations**:
- * 1. Find post by postId
- * 2. Verify post exists and belongs to authenticated user
- * 3. Verify post is not deleted
- * 4. Update title and content fields
- * 5. Update updated_at timestamp to current time
- * 6. Create a snapshot in reddit_clone_post_snapshots before modification (for audit trail)
- * 7. Return updated post with full details including author and community information
+ * Validate that required content fields are provided based on post_type (text posts need text_content, link posts need link_url, image posts need image_url). Reject if title is missing or empty.
  *
- * **Error Handling**:
- * - Return 404 if post not found
- * - Return 403 if user is not the author
- * - Return 400 if validation fails
- * - Return 409 if post is already deleted
+ * Return the updated post entity with all fields including vote score and comment count computed from related tables.
  * @path /redditClone/member/posts/:postId
  * @accessor api.functional.redditClone.member.posts.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -307,12 +150,12 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * Unique identifier of the post to update (UUID format)
+     * The unique identifier of the post to update (global scope).
      */
     postId: string & tags.Format<"uuid">;
 
     /**
-     * Post update data containing title and/or content
+     * Post update data including title and content fields based on post type. Title is always required. Content field depends on post_type.
      */
     body: IRedditClonePost.IUpdate;
   };
@@ -363,43 +206,30 @@ export namespace update {
 }
 
 /**
- * Delete a post from the platform, removing it from all feeds and associated content.
+ * Permanently deletes a post by the authenticated user.
  *
- * This operation permanently removes a post from the community and platform. When a post is deleted, all associated comments are also removed, and the post is eliminated from all user feeds including community feeds, home feeds, and popular feeds.
+ * This operation allows only the original author of a post to delete it. When a post is deleted, the following cascading effects occur:
  *
- * Authorization is restricted to the post author or community moderators. The post author can delete their own posts at any time. Community moderators have the authority to delete any post within their moderated community, regardless of authorship.
+ * - All votes on the post are removed
+ * - All comments on the post are removed
+ * - All reports on the post are removed
+ * - The author's karma score is adjusted to reflect the removed post
  *
- * When deletion occurs, the system performs several cascading operations: all comments on the post are deleted, votes on the post are removed, and karma scores are adjusted for all affected users including the post author and users who voted on the content. The post's vote contribution is subtracted from the author's karma score.
- *
- * This operation is irreversible. Once a post is deleted, it cannot be restored by any user including the original author or moderators. The deletion is recorded in the system for audit purposes but the content is permanently removed from user-facing interfaces.
- *
- * Related operations include GET /posts/{postId} for retrieving post details before deletion, and GET /users/{username}/posts for viewing a user's post history.
+ * Only the user who originally created the post can delete it. Users cannot delete posts they do not own, even if they have moderator privileges in that community.
  *
  * @param props.connection
- * @param props.postId Unique identifier of the post to delete
+ * @param props.postId UUID of the post to delete (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Verify the postId exists and is a valid UUID
- * 2. Authenticate the requesting user (member required)
- * 3. Retrieve the post with its community and author information
- * 4. Check deletion authorization:
- *    - If user is the post author, allow deletion
- *    - If user is a moderator of the post's community, allow deletion
- *    - Otherwise, reject with 403 Forbidden
- * 5. If authorized, execute deletion within a database transaction:
- *    - Delete all comments associated with the post (cascade)
- *    - Delete all votes on the post and adjust affected users' karma scores
- *    - Set deleted_at timestamp on the post record (soft delete)
- *    - Remove the post from all community feeds and user home feeds
- * 6. Update karma scores:
- *    - Remove the post's vote contribution from the author's karma
- *    - Adjust karma of users who voted on the post
- * 7. Return 204 No Content on success
- *
- * Error handling:
- * - 404 Not Found if post doesn't exist
- * - 403 Forbidden if user lacks deletion authority
- * - 400 Bad Request if post is already deleted
+ * @x-autobe-specification 1. Verify the authenticated user is the author of the post by checking reddit_clone_user_profile_id.
+ * 2. If user is not the author, reject the delete request with 403 Forbidden.
+ * 3. If authorized, delete the post and cascade delete all related data:
+ *    - Delete all votes in reddit_clone_post_votes for this post
+ *    - Delete all comments in reddit_clone_comments for this post (and their nested replies)
+ *    - Delete all reports in reddit_clone_reports for this post
+ * 4. Adjust the author's karma score by subtracting the post's final vote score.
+ * 5. Set the post's deleted_at timestamp (soft delete) or hard delete based on retention policy.
+ * 6. Return 204 No Content on success.
  * @path /redditClone/member/posts/:postId
  * @accessor api.functional.redditClone.member.posts.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -428,7 +258,7 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Unique identifier of the post to delete
+     * UUID of the post to delete (global scope)
      */
     postId: string & tags.Format<"uuid">;
   };
@@ -458,122 +288,6 @@ export namespace erase {
     });
     try {
       assert.param("postId")(() => typia.assert(props.postId));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Cast or update a vote on a specific post to express approval or disapproval of the content.
- *
- * This operation allows users to upvote (value: 1), downvote (value: -1), or remove their vote (value: 0) on a post. The vote directly affects the post's score, which is calculated as the sum of all upvotes minus downvotes. When a user upvotes a post, the author's karma increases by one point. When a user downvotes, the author's karma decreases by one point.
- *
- * Guest users can vote on posts in the popular feed and community feeds without authentication. Registered members have full voting privileges across all accessible content. If a user is banned from a community, their vote attempts on posts in that community are silently ignored to prevent banned users from influencing content visibility.
- *
- * The system ensures vote integrity by preventing duplicate votes from the same user on the same post. If a user attempts to vote multiple times, only the final vote state is recorded. Vote operations are transactional - both the vote record and score update succeed or fail together to maintain data consistency. Users can retry voting if a temporary system issue occurs, with automatic deduplication to prevent duplicate votes if the original was processed.
- *
- * Related operations include GET /posts/{postId} to view post details with current score, and POST /comments/{commentId}/vote for voting on comments within the same post.
- *
- * @param props.connection
- * @param props.postId The unique identifier of the post to vote on
- * @param props.body Vote value to cast on the post
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the reddit_clone_posts table to find the post by postId. Check if the post exists and is not soft-deleted (deleted_at is null). Validate the authenticated user's permissions - guests can vote on public posts, members can vote on posts in communities they can access.
- *
- * Check if the user already has a vote on this post by querying the reddit_clone_votes table (or equivalent vote tracking mechanism). If a vote exists:
- * - If the new vote value differs, update the existing vote record
- * - Calculate the score delta: (new_value - old_value)
- * - Update the post's score field atomically
- *
- * If no vote exists:
- * - Insert a new vote record with the user's ID, post ID, and vote value
- * - Update the post's score by adding the vote value
- *
- * Handle banned users: Check if the user is banned from the post's community via reddit_clone_bans table. If banned, silently ignore the vote attempt (return success but don't record vote).
- *
- * Ensure transactional integrity: Vote record and score update must succeed or fail together. Use database transaction to prevent partial updates.
- *
- * Return the updated post entity with the new score value. Include vote information in response if available.
- * @path /redditClone/member/posts/:postId/vote
- * @accessor api.functional.redditClone.member.posts.vote
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function vote(
-  connection: IConnection,
-  props: vote.Props,
-): Promise<vote.Response> {
-  return true === connection.simulate
-    ? vote.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...vote.METADATA,
-          path: vote.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace vote {
-  export type Props = {
-    /**
-     * The unique identifier of the post to vote on
-     */
-    postId: string & tags.Format<"uuid">;
-
-    /**
-     * Vote value to cast on the post
-     */
-    body: IRedditClonePost.IVoteRequest;
-  };
-  export type Body = IRedditClonePost.IVoteRequest;
-  export type Response = IRedditClonePost;
-
-  export const METADATA = {
-    method: "PATCH",
-    path: "/redditClone/member/posts/:postId/vote",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/redditClone/member/posts/${encodeURIComponent(props.postId ?? "null")}/vote`;
-  export const random = (): IRedditClonePost =>
-    typia.random<IRedditClonePost>();
-  export const simulate = (
-    connection: IConnection,
-    props: vote.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: vote.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("postId")(() => typia.assert(props.postId));
-      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

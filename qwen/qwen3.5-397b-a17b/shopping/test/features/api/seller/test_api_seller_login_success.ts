@@ -12,77 +12,75 @@ import { authorize_seller_join } from "../../../authorize/authorize_seller_join"
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
 
+/**
+ * Test successful seller login with approved account status.
+ *
+ * Validates the complete seller authentication flow including account registration, credential validation, and JWT token issuance. Ensures that only sellers with approved status can successfully authenticate and that the response contains all required authorization token fields.
+ *
+ * The test creates a seller account with randomized credentials, then attempts login with the same credentials. Session context metadata (href, referrer, ip) is captured for security auditing purposes. The authorization token response is validated to ensure proper JWT structure and expiration timestamps.
+ *
+ * 1. Register a new seller account with random email and password using authorize_seller_join utility.
+ * 2. Login with the registered credentials using authorize_seller_login utility with session context.
+ * 3. Validate response contains seller account information with approval_status.
+ * 4. Validate authorization token contains access, refresh, expired_at, and refreshable_until fields.
+ * 5. Verify token expiration timestamps are set to future dates.
+ */
 export async function test_api_seller_login_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Register a new seller account for login test
-  const joinCredentials: IShoppingMallSeller.IJoin = {
-    email: typia.random<string & tags.Format<"email">>(),
-    password: RandomGenerator.alphaNumeric(16),
-    href: typia.random<string & tags.Format<"uri">>(),
-    referrer: typia.random<string & tags.Format<"uri">>(),
-    ip: typia.random<string & tags.Format<"ipv4">>(),
-  };
-  const joinResult = await authorize_seller_join(connection, {
-    body: joinCredentials,
+  // 1. Register seller account with credentials
+  const password = RandomGenerator.alphaNumeric(16);
+  const sellerJoinResult = await authorize_seller_join(connection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: password,
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+      ip: typia.random<string & tags.Format<"ipv4">>(),
+    } satisfies IShoppingMallSeller.IJoin,
   });
-  typia.assert(joinResult);
-  // 2. Login with the same credentials
-  const loginCredentials: IShoppingMallSeller.ILogin = {
-    email: joinCredentials.email,
-    password: joinCredentials.password,
+  typia.assert(sellerJoinResult);
+  // 2. Login with registered credentials (same password)
+  const loginCredentials = {
+    email: sellerJoinResult.email,
+    password: password,
     href: typia.random<string & tags.Format<"uri">>(),
     referrer: typia.random<string & tags.Format<"uri">>(),
     ip: typia.random<string & tags.Format<"ipv4">>(),
-  };
-  const loginConnection: api.IConnection = { host: connection.host };
-  const loginResult = await authorize_seller_login(loginConnection, {
+  } satisfies IShoppingMallSeller.ILogin;
+  const loginResult = await authorize_seller_login(connection, {
     body: loginCredentials,
   });
   typia.assert(loginResult);
-  // 3. Validate login response structure
-  TestValidator.equals("seller ID matches", loginResult.id, joinResult.id);
-  TestValidator.predicate(
-    "has access token",
-    loginResult.token.access.length > 0,
+  // 3. Validate seller account information matches registration
+  TestValidator.equals(
+    "seller id matches",
+    loginResult.id,
+    sellerJoinResult.id,
+  );
+  TestValidator.equals(
+    "email matches",
+    loginResult.email,
+    sellerJoinResult.email,
   );
   TestValidator.predicate(
-    "has refresh token",
-    loginResult.token.refresh.length > 0,
+    "approval status is approved",
+    loginResult.approval_status === "approved",
   );
-  TestValidator.predicate(
-    "has expiration timestamp",
-    loginResult.token.expired_at.length > 0,
-  );
-  TestValidator.predicate(
-    "has refreshable until timestamp",
-    loginResult.token.refreshable_until.length > 0,
-  );
-  // 4. Validate timestamps are valid ISO 8601 format
+  // 4. Validate token expiration timestamps are in the future
+  const now = new Date();
   const expiredAt = new Date(loginResult.token.expired_at);
   const refreshableUntil = new Date(loginResult.token.refreshable_until);
   TestValidator.predicate(
-    "expired_at is valid date",
-    !isNaN(expiredAt.getTime()),
+    "expired_at is in future",
+    expiredAt.getTime() > now.getTime(),
   );
   TestValidator.predicate(
-    "refreshable_until is valid date",
-    !isNaN(refreshableUntil.getTime()),
+    "refreshable_until is in future",
+    refreshableUntil.getTime() > now.getTime(),
   );
   TestValidator.predicate(
     "refreshable_until is after expired_at",
-    refreshableUntil >= expiredAt,
-  );
-  // 5. Verify the token can be used for authenticated operations
-  // The authorize_seller_login function already sets the Authorization header
-  // on loginConnection, so we can verify it was set
-  TestValidator.predicate(
-    "Authorization header is set",
-    loginConnection.headers?.Authorization !== undefined,
-  );
-  TestValidator.equals(
-    "Authorization header matches access token",
-    loginConnection.headers?.Authorization,
-    loginResult.token.access,
+    refreshableUntil.getTime() > expiredAt.getTime(),
   );
 }

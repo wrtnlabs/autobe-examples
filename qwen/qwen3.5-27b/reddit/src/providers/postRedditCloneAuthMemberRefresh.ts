@@ -15,83 +15,94 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postRedditCloneAuthMemberRefresh(props: {
   body: IRedditCloneMember.IRefresh;
 }): Promise<IRedditCloneMember.IAuthorized> {
-  // 1. Extract refresh token
-  const refreshToken = props.body.refresh_token;
-  // 2. Find session by refresh token
   const session = await MyGlobal.prisma.reddit_clone_member_sessions.findFirst({
     where: {
-      refresh_token: refreshToken,
+      refresh_token: props.body.refresh_token,
+      deleted_at: null,
+      expired_at: {
+        gt: new Date(),
+      },
     },
-    include: {
-      member: true,
+    select: {
+      id: true,
+      member: {
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          created_at: true,
+          updated_at: true,
+          deleted_at: true,
+          profile: {
+            select: {
+              display_name: true,
+              bio: true,
+              avatar: true,
+              karma: true,
+            },
+          },
+        },
+      },
     },
   });
   if (!session) {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // 3. Validate session not expired
-  const now = new Date();
-  if (session.refresh_token_expires_at <= now) {
-    throw new HttpException("Refresh token has expired", 401);
-  }
-  // 4. Validate member not deleted
-  if (session.member.deleted_at !== null) {
+  const member = session.member;
+  const profile = member.profile;
+  if (member.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  // 5. Generate new tokens
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  if (!profile) {
+    throw new HttpException("User profile not found", 404);
+  }
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const accessToken = jwt.sign(
     {
       type: "member",
-      id: session.member.id,
+      id: member.id,
       session_id: session.id,
-      created_at: now.toISOString(),
+      created_at: new Date().toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
   );
-  const newRefreshToken = jwt.sign(
+  const refreshToken = jwt.sign(
     {
       type: "member",
-      id: session.member.id,
+      id: member.id,
       session_id: session.id,
       tokenType: "refresh",
-      created_at: now.toISOString(),
+      created_at: new Date().toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 6. Update session with new tokens
   await MyGlobal.prisma.reddit_clone_member_sessions.update({
     where: { id: session.id },
     data: {
       access_token: accessToken,
-      refresh_token: newRefreshToken,
-      access_token_expires_at: accessExpires,
-      refresh_token_expires_at: refreshExpires,
+      refresh_token: refreshToken,
       expired_at: refreshExpires,
     },
   });
-  // 7. Fetch member data
-  const member = session.member;
-  // 8. Return IAuthorized response
   return {
     id: member.id,
     email: member.email,
     username: member.username,
-    display_name: member.display_name,
-    bio: member.bio,
-    avatar_uri: member.avatar_uri,
-    karma: member.karma,
-    created_at: member.created_at.toISOString(),
-    updated_at: member.updated_at.toISOString(),
-    deleted_at: member.deleted_at?.toISOString() ?? null,
+    created_at: toISOStringSafe(member.created_at),
+    updated_at: toISOStringSafe(member.updated_at),
+    deleted_at: null,
+    display_name: profile.display_name,
+    bio: profile.bio,
+    avatar: profile.avatar,
+    karma: profile.karma,
     token: {
       access: accessToken,
-      refresh: newRefreshToken,
-      expired_at: accessExpires.toISOString(),
-      refreshable_until: refreshExpires.toISOString(),
+      refresh: refreshToken,
+      expired_at: toISOStringSafe(accessExpires),
+      refreshable_until: toISOStringSafe(refreshExpires),
     },
   };
 }

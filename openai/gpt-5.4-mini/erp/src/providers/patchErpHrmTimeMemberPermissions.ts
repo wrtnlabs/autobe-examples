@@ -11,7 +11,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { ErpHrmTimePermissionAtSummaryTransformer } from "../transformers/ErpHrmTimePermissionAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -22,46 +21,62 @@ export async function patchErpHrmTimeMemberPermissions(props: {
   if (props.member.type !== "member") {
     throw new HttpException("Forbidden", 403);
   }
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const order = props.body.order ?? "asc";
-  const search = props.body.search;
-  if (
-    props.body.sort !== undefined &&
-    props.body.sort !== "key" &&
-    props.body.sort !== "description"
-  ) {
-    throw new HttpException("Unsupported sort field", 400);
-  }
-  const where = {
-    deleted_at: null,
-    ...(search === undefined
+  const page: number = props.body.page ?? 1;
+  const limit: number = props.body.limit ?? 100;
+  const skip: number = (page - 1) * limit;
+  const where: Prisma.erp_hrm_time_permissionsWhereInput = {
+    ...(props.body.deleted === true ? {} : { deleted_at: null }),
+    ...(props.body.search === undefined
       ? {}
       : {
           OR: [
-            { key: { contains: search, mode: "insensitive" } },
-            { description: { contains: search, mode: "insensitive" } },
+            { key: { contains: props.body.search, mode: "insensitive" } },
+            {
+              description: { contains: props.body.search, mode: "insensitive" },
+            },
           ],
         }),
-  } satisfies Prisma.erp_hrm_time_permissionsWhereInput;
-  const orderBy = (
-    props.body.sort === "description" ? { description: order } : { key: order }
-  ) satisfies Prisma.erp_hrm_time_permissionsOrderByWithRelationInput;
+  };
+  const orderBy: Prisma.erp_hrm_time_permissionsOrderByWithRelationInput =
+    props.body.sort === "key_desc"
+      ? { key: "desc" }
+      : props.body.sort === "description_asc"
+        ? { description: "asc" }
+        : props.body.sort === "description_desc"
+          ? { description: "desc" }
+          : props.body.sort === "createdAt_asc"
+            ? { created_at: "asc" }
+            : props.body.sort === "createdAt_desc"
+              ? { created_at: "desc" }
+              : props.body.sort === "updatedAt_asc"
+                ? { updated_at: "asc" }
+                : props.body.sort === "updatedAt_desc"
+                  ? { updated_at: "desc" }
+                  : props.body.sort === "deletedAt_asc"
+                    ? { deleted_at: "asc" }
+                    : props.body.sort === "deletedAt_desc"
+                      ? { deleted_at: "desc" }
+                      : { key: "asc" };
   const data = await MyGlobal.prisma.erp_hrm_time_permissions.findMany({
     where,
-    skip: (page - 1) * limit,
-    take: limit,
     orderBy,
-    ...ErpHrmTimePermissionAtSummaryTransformer.select(),
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      key: true,
+      description: true,
+    },
   });
   const records = await MyGlobal.prisma.erp_hrm_time_permissions.count({
     where,
   });
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      ErpHrmTimePermissionAtSummaryTransformer.transform,
-    ),
+    data: await ArrayUtil.asyncMap(data, async (item) => ({
+      id: item.id,
+      key: item.key,
+      description: item.description,
+    })),
     pagination: {
       current: page,
       limit,

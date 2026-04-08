@@ -1,128 +1,69 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
+import { IEcommerceMallCart } from "../../../../../../api/structures/IEcommerceMallCart";
 import { IEcommerceMallCartItem } from "../../../../../../api/structures/IEcommerceMallCartItem";
 import { CustomerAuth } from "../../../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../../../decorators/payload/CustomerPayload";
-import { deleteEcommerceMallCustomerCustomersCartItemsItemId } from "../../../../../../providers/deleteEcommerceMallCustomerCustomersCartItemsItemId";
-import { putEcommerceMallCustomerCustomersCartItemsItemId } from "../../../../../../providers/putEcommerceMallCustomerCustomersCartItemsItemId";
+import { postEcommerceMallCustomerCustomersCartItems } from "../../../../../../providers/postEcommerceMallCustomerCustomersCartItems";
 
-@Controller("/ecommerceMall/customer/customers/cart/items/:itemId")
+@Controller("/ecommerceMall/customer/customers/cart/items")
 export class EcommercemallCustomerCustomersCartItemsController {
   /**
-   * Update the quantity of an existing item in the customer's shopping cart.
+   * Add a product variant to the customer's shopping cart.
    *
-   * This operation modifies the quantity of a specific cart item identified by its unique identifier. The cart item must belong to the authenticated customer. When quantity is updated, the system immediately recalculates the line item subtotal and updates the overall cart total.
+   * This operation allows customers to add items to their shopping cart by specifying a product variant and desired quantity. If the specified variant already exists in the cart, the quantities are combined into a single line item rather than creating duplicate entries. The system automatically creates a new cart for the customer if they do not have one yet.
    *
-   * The operation succeeds regardless of the current stock status of the referenced product variant. Customers can increase or decrease quantities even for out-of-stock items. Setting quantity to zero effectively removes the item from the cart, though the dedicated DELETE endpoint should be used for explicit removal.
+   * The operation validates that the variant exists and is not deleted. Stock availability is not enforced at add-to-cart time, but the cart response includes stock status warnings when quantity exceeds available inventory.
    *
-   * The system validates that the requested quantity is a positive integer greater than zero. Invalid quantity values result in validation errors.
-   *
-   * This operation is part of the shopping cart management flow. After updating cart items, customers may proceed to checkout using the checkout preparation and confirmation endpoints.
-   *
-   * **Security**: Requires customer authentication via valid session token. Only the owner of the cart can modify its contents.
+   * Successful addition returns the updated cart with all items, enabling the customer to immediately see their updated cart state.
    *
    * @param connection
-   * @param itemId Unique identifier of the cart item to update
-   * @param body New quantity for the cart item
+   * @param body The product variant to add and the desired quantity
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Update cart item quantity in ecommerce_mall_cart_items table.
+   * @x-autobe-specification Implement add-to-cart functionality for authenticated customers.
    *
-   * 1. Authentication: Extract customer ID from authenticated session token.
-   * 2. Path Parameter: Retrieve itemId from URL path parameter.
-   * 3. Validation:
-   *    - itemId must be a valid UUID
-   *    - quantity must be a positive integer (> 0)
-   * 4. Authorization: Query cart item by itemId, verify it belongs to customer's cart via ecommerce_mall_cart_items JOIN ecommerce_mall_carts. Return 404 if item not found or does not belong to customer.
-   * 5. Update: Set new quantity value and update updated_at timestamp.
-   * 6. Response: Return updated cart item with current price from product variant, product details, and calculated subtotal.
-   * 7. Edge Cases:
-   *    - Item not found → 404 Not Found
-   *    - Item belongs to different customer → 404 Not Found (data isolation)
-   *    - Invalid quantity (<=0) → 400 Bad Request
-   *    - Cart cleared during checkout → 404 Not Found
+   * 1. Retrieve the authenticated customer from the session context.
+   *
+   * 2. Retrieve or create the customer's cart:
+   *    - Query ecommerce_mall_carts for an existing cart by ecommerce_mall_customer_id
+   *    - If no cart exists, create a new cart record with current timestamp as created_at
+   *
+   * 3. Validate the product variant:
+   *    - Query ecommerce_mall_product_variants to verify the variant exists and is not soft-deleted (deleted_at IS NULL)
+   *    - If variant not found or deleted, return error
+   *
+   * 4. Check for existing cart item:
+   *    - Query ecommerce_mall_cart_items for existing item with same ecommerce_mall_cart_id and ecommerce_mall_product_variant_id
+   *    - If exists: increment quantity by the requested amount
+   *    - If not exists: create new cart_item with quantity
+   *
+   * 5. Update timestamps:
+   *    - Set updated_at on the cart to current timestamp
+   *
+   * 6. Fetch and return the complete updated cart:
+   *    - Join with cart_items, product_variants, and products to return full item details including product name, variant options, price, and availability status
+   *
+   * Business Rules:
+   * - Quantity must be a positive integer greater than 0
+   * - Same variant can only appear once per cart (unique constraint on cart_id + variant_id)
+   * - Cart is created automatically on first item addition
+   * - Stock status is informational only - no enforcement at add-to-cart time
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put()
-  public async update(
+  @TypedRoute.Post()
+  public async create(
     @CustomerAuth()
     customer: CustomerPayload,
-    @TypedParam("itemId")
-    itemId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IEcommerceMallCartItem.IUpdate,
-  ): Promise<IEcommerceMallCartItem> {
+    body: IEcommerceMallCartItem.ICreate,
+  ): Promise<IEcommerceMallCart> {
     try {
-      return await putEcommerceMallCustomerCustomersCartItemsItemId({
+      return await postEcommerceMallCustomerCustomersCartItems({
         customer,
-        itemId,
         body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Remove a specific item from the customer's shopping cart.
-   *
-   * This operation permanently removes a single cart item based on its unique identifier. The deletion is immediate and irreversible. Customers can remove any cart item regardless of its current availability status - items that are out of stock, unavailable, or have been deleted by the seller can still be removed.
-   *
-   * When an item is removed, the system recalculates the cart total by summing the remaining items' line subtotals. If this was the last item in the cart, an empty cart state is displayed to the customer.
-   *
-   * The operation is scoped to the authenticated customer. Each customer can only remove items from their own cart - attempting to remove items from another customer's cart returns a not-found error for security reasons.
-   *
-   * Cart items belong to the ecommerce_mall_cart_items table, which stores the cart reference (ecommerce_mall_cart_id), product variant reference (ecommerce_mall_product_variant_id), quantity, and timestamps. Deleting a cart item triggers cascade deletion of related records through the cart relationship.
-   *
-   * Related operations: GET /customers/cart to view current cart contents, POST /customers/cart/items to add new items, PUT /customers/cart/items/:itemId to update item quantities.
-   *
-   * @param connection
-   * @param itemId Unique identifier of the cart item to remove
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Remove a cart item from the customer's shopping cart.
-   *
-   * 1. Authentication: Verify the request includes valid customer authentication token. Extract customer ID from session.
-   *
-   * 2. Parameter Validation:
-   *    - Validate itemId is a valid UUID format
-   *    - Verify the cart item exists in ecommerce_mall_cart_items table
-   *    - Verify the cart item belongs to a cart owned by the authenticated customer
-   *
-   * 3. Authorization Check:
-   *    - Query ecommerce_mall_carts table to verify ownership
-   *    - Join with ecommerce_mall_customers to confirm customer ownership
-   *    - Return 404 if cart item not found or not owned by customer
-   *
-   * 4. Deletion Process:
-   *    - Delete the cart item from ecommerce_mall_cart_items using cascade relationship
-   *    - Update the cart's updated_at timestamp in ecommerce_mall_carts
-   *
-   * 5. Response:
-   *    - Return 204 No Content on successful deletion
-   *    - No response body required
-   *
-   * Edge Cases:
-   * - Item already removed: Return 204 (idempotent)
-   * - Item belongs to another customer: Return 404
-   * - Invalid UUID format: Return 400 Bad Request
-   * - Missing authentication: Return 401 Unauthorized
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Delete()
-  public async erase(
-    @CustomerAuth()
-    customer: CustomerPayload,
-    @TypedParam("itemId")
-    itemId: string & tags.Format<"uuid">,
-  ): Promise<void> {
-    try {
-      return await deleteEcommerceMallCustomerCustomersCartItemsItemId({
-        customer,
-        itemId,
       });
     } catch (error) {
       console.log(error);

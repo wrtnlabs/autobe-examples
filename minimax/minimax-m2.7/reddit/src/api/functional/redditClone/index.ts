@@ -1,10 +1,10 @@
 export * as auth from "./auth/index";
 export * as members from "./members/index";
 export * as member from "./member/index";
+export * as guest from "./guest/index";
 export * as users from "./users/index";
+export * as profiles from "./profiles/index";
 export * as communities from "./communities/index";
 export * as posts from "./posts/index";
-export * as guest from "./guest/index";
-export * as comments from "./comments/index";
+export * as redditClone from "./redditClone/index";
 export * as files from "./files/index";
-export * as file_associations from "./file_associations/index";

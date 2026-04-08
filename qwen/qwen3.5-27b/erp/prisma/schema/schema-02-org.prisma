@@ -1,0 +1,919 @@
+/// Organization entities serving as the root container for multi-tenant HRM
+/// and time tracking data.
+///
+/// Each organization owns employees, departments, roles, and projects within
+/// its isolated data boundary. Organizations provide the foundational scope
+/// for all business operations and ensure complete data separation between
+/// tenants.
+///
+/// Organization settings include identity information (name, description,
+/// logo), operational preferences (currency, timezone), and fiscal
+/// configuration (fiscal start month) that apply to all entities within the
+/// organization.
+///
+/// @namespace org
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_organizations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for organization entity.
+  id String @id
+  
+  /// Organization display name used for identification across the platform.
+  ///
+  /// The name appears in user interfaces, reports, and communications. It must
+  /// be unique within the system to avoid confusion when users belong to
+  /// multiple organizations.
+  name String
+  
+  /// Optional detailed description of the organization's purpose and scope.
+  ///
+  /// Provides context for organization members and appears in organizational
+  /// documentation and profiles.
+  description String?
+  
+  /// URL to the organization's logo image for branding purposes.
+  ///
+  /// Displayed in the interface to provide visual identification of the
+  /// organization context.
+  logo String?
+  
+  /// ISO currency code (e.g., USD, EUR, KRW) for financial calculations within
+  /// the organization.
+  ///
+  /// All monetary values including employee pay rates, billable rates, and
+  /// project budgets use this currency. Changing currency affects all
+  /// financial data in the organization.
+  currency String
+  
+  /// IANA timezone identifier (e.g., Asia/Seoul, America/New_York) for
+  /// time-based operations.
+  ///
+  /// All timestamps, work schedules, and time tracking are interpreted
+  /// relative to this timezone. Affects timesheet week boundaries, timer
+  /// operations, and reporting.
+  timezone String
+  
+  /// Month number (1-12) marking the beginning of the organization's fiscal
+  /// year.
+  ///
+  /// January = 1, February = 2, ..., December = 12. Used for financial
+  /// reporting, pay period calculations, and timesheet approval cycles aligned
+  /// with fiscal periods.
+  fiscal_start_month Int
+  
+  /// Timestamp when the organization was created. Immutable after creation.
+  created_at DateTime
+  
+  /// Timestamp when the organization settings were last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the organization was soft-deleted. Null indicates active
+  /// organization.
+  ///
+  /// Soft deletion preserves data for audit purposes while removing the
+  /// organization from active operations. All child entities become
+  /// inaccessible when parent organization is deleted.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  guestInvitations hrm_time_track_guests[]
+  memberSessions hrm_time_track_member_sessions[]
+  snapshots hrm_time_track_organization_snapshots[]
+  employees hrm_time_track_employees[]
+  employeeSnapshots hrm_time_track_employee_snapshots[]
+  departments hrm_time_track_departments[]
+  roles hrm_time_track_roles[]
+  projects hrm_time_track_projects[]
+  timelogs hrm_time_track_timelogs[]
+  activityLogs hrm_time_track_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([deleted_at])
+}
+
+/// Point-in-time snapshots of organization settings for audit trail and
+/// history tracking.
+///
+/// These records are immutable once created and preserve the exact state of
+/// organization settings at a specific moment in time. They enable complete
+/// audit trails for compliance and historical reporting.
+///
+/// @namespace org
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_organization_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the organization being snapshot.
+  ///
+  /// This foreign key links each snapshot to its parent organization, enabling
+  /// retrieval of all historical versions of a specific organization's
+  /// settings.
+  hrm_time_track_organization_id String
+  
+  /// Organization name at the time of snapshot.
+  ///
+  /// Captures the legal or doing-business-as name of the organization as it
+  /// existed when the snapshot was taken.
+  name String
+  
+  /// Organization description at the time of snapshot.
+  ///
+  /// Preserves the business description and mission statement active at
+  /// snapshot time.
+  description String?
+  
+  /// Organization logo URL at the time of snapshot.
+  ///
+  /// Stores the logo image URL that was associated with the organization when
+  /// the snapshot was created.
+  logo_url String?
+  
+  /// Base currency code used by the organization at snapshot time.
+  ///
+  /// Captures the three-letter ISO 4217 currency code (e.g., 'USD', 'EUR',
+  /// 'KRW') that was active when the snapshot was taken.
+  currency String
+  
+  /// Primary timezone for the organization at snapshot time.
+  ///
+  /// Preserves the IANA timezone identifier (e.g., 'Asia/Seoul',
+  /// 'America/New_York') that was configured when the snapshot was created.
+  timezone String
+  
+  /// Fiscal year start month (1-12) at snapshot time.
+  ///
+  /// Records which month (1=January, 12=December) marked the beginning of the
+  /// fiscal year when the snapshot was taken.
+  fiscal_start_month Int
+  
+  /// Timestamp when this snapshot was created.
+  ///
+  /// Immutably records the exact moment this point-in-time copy was captured
+  /// for audit purposes.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_time_track_organizations @relation(fields: [hrm_time_track_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_organization_id, created_at], map: "hrm_time_track_organization_snapshots_hrm_time_track_o_2ce2a2ad")
+}
+
+/// Employee records representing a person's role and status within a
+/// specific organization.
+///
+/// Each employee record links a user account to an organization,
+/// establishing the person's membership and working relationship within that
+/// organizational context. Employee records are organization-scoped, meaning
+/// a single user can have independent employee records across multiple
+/// organizations.
+///
+/// The employee record defines the person's position, employment type,
+/// status, and department assignment within the organization. It serves as
+/// the foundation for employment contracts, timesheets, and project
+/// assignments.
+///
+/// @namespace org
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_employees {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for employee records.
+  id String @id
+  
+  /// Reference to the organization that employs this person.
+  ///
+  /// This foreign key establishes the organizational context for the employee
+  /// record. All employee data, permissions, and relationships are scoped to
+  /// this organization. An employee cannot exist without an associated
+  /// organization.
+  hrm_time_track_organization_id String
+  
+  /// Reference to the user account associated with this employee.
+  ///
+  /// This foreign key links the employee record to the authenticated user
+  /// account. The member represents the person's global identity across all
+  /// organizations. Each employee record must have an associated member
+  /// account.
+  hrm_time_track_member_id String
+  
+  /// Reference to the department within the organization where this employee
+  /// works.
+  ///
+  /// This foreign key establishes the employee's departmental assignment.
+  /// Department assignment is optional and can be updated as organizational
+  /// structure changes. The department must belong to the same organization as
+  /// the employee.
+  hrm_time_track_department_id String?
+  
+  /// Reference to the role assigned to this employee within the organization.
+  ///
+  /// This foreign key defines the employee's permissions and access level.
+  /// Role assignment is optional and can be changed by users with employee
+  /// management permissions. The role must belong to the same organization as
+  /// the employee.
+  hrm_time_track_role_id String?
+  
+  /// Job title or position of the employee within the organization.
+  ///
+  /// This field stores the employee's official job title or position name
+  /// (e.g., 'Senior Developer', 'Marketing Manager'). It is used for display
+  /// purposes and organizational reporting.
+  position String
+  
+  /// Classification of the employee's employment arrangement.
+  ///
+  /// This field categorizes the employment type such as full-time, part-time,
+  /// contract, or internship. The value must conform to the Employee
+  /// Employment Type Classification business category.
+  employment_type String
+  
+  /// Current employment status of the employee.
+  ///
+  /// This field tracks the employee's active status such as active, on leave,
+  /// terminated, or pending. The value must conform to the Employee Status
+  /// Classification business category and affects access and permissions.
+  status String
+  
+  /// Date when the employee started working for the organization.
+  ///
+  /// This field records the official start date of employment. It is used for
+  /// tenure calculations, anniversary tracking, and employment history
+  /// reporting.
+  hire_date DateTime
+  
+  /// Date when the employee's employment ended, if applicable.
+  ///
+  /// This field records the end date for terminated or resigned employees. It
+  /// is nullable for active employees and is used for employment history and
+  /// reporting purposes.
+  termination_date DateTime?
+  
+  /// Timestamp when this employee record was created in the system.
+  created_at DateTime
+  
+  /// Timestamp when this employee record was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this employee record was soft deleted. Null indicates the
+  /// record is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_time_track_organizations @relation(fields: [hrm_time_track_organization_id], references: [id], onDelete: Cascade)
+  member hrm_time_track_members @relation(fields: [hrm_time_track_member_id], references: [id], onDelete: Cascade)
+  department hrm_time_track_departments? @relation(fields: [hrm_time_track_department_id], references: [id], onDelete: Cascade)
+  role hrm_time_track_roles? @relation(fields: [hrm_time_track_role_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots hrm_time_track_employee_snapshots[]
+  contracts hrm_time_track_employee_contracts[]
+  projectMembers hrm_time_track_project_members[]
+  assignedTasks hrm_time_track_tasks[]
+  timelogs hrm_time_track_timelogs[]
+  timesheets hrm_time_track_timesheets[]
+  timers hrm_time_track_timers[]
+  timerSnapshots hrm_time_track_timer_snapshots[]
+  activityLogs hrm_time_track_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_time_track_department_id])
+  @@index([hrm_time_track_role_id])
+  // spellchecker: ignore-next-line
+  @@unique([hrm_time_track_organization_id, hrm_time_track_member_id], map: "hrm_time_track_employees_hrm_time_track_organization_i_0c491e1d")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_organization_id, status], map: "hrm_time_track_employees_hrm_time_track_organization_i_6823d5f6")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_organization_id, hrm_time_track_department_id], map: "hrm_time_track_employees_hrm_time_track_organization_i_39748303")
+  @@index([hrm_time_track_member_id])
+}
+
+/// Point-in-time snapshots of employee records for audit trail and history
+/// tracking.
+///
+/// These snapshots capture the complete state of an employee record at
+/// specific moments in time, preserving historical data even after employee
+/// records are updated or deactivated. Each snapshot contains denormalized
+/// copies of all employee fields including organization, user, department,
+/// and role assignments.
+///
+/// Snapshots are append-only and immutable once created, providing a
+/// reliable audit trail for compliance and historical reporting. They enable
+/// reconstruction of employee state at any point in time and support
+/// tracking of employment history across status changes, role assignments,
+/// and department transfers.
+///
+/// @namespace org
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_employee_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for employee snapshot record.
+  id String @id
+  
+  /// Reference to the employee record being snapshot.
+  ///
+  /// This foreign key links the snapshot to its source employee record in
+  /// hrm_time_track_employees. Multiple snapshots can exist for a single
+  /// employee, each capturing a different point in time.
+  hrm_time_track_employee_id String
+  
+  /// Denormalized reference to the organization the employee belongs to.
+  ///
+  /// Stored as a denormalized copy from the employee record to preserve
+  /// organizational context even if the employee record is later modified or
+  /// the organization structure changes.
+  hrm_time_track_organization_id String
+  
+  /// Denormalized reference to the user account associated with this employee.
+  ///
+  /// Links the employee snapshot to the hrm_time_track_members user record,
+  /// preserving the user-employee relationship at the time of snapshot.
+  hrm_time_track_member_id String
+  
+  /// Denormalized reference to the department assignment at snapshot time.
+  ///
+  /// This field is nullable as department assignment is optional for
+  /// employees. Captures the department context even if the employee is later
+  /// reassigned or the department is deleted.
+  hrm_time_track_department_id String?
+  
+  /// Denormalized reference to the role assigned to this employee at snapshot
+  /// time.
+  ///
+  /// Every active employee must have a role assigned, so this field is not
+  /// nullable. Preserves the role and permission context even if the role is
+  /// later changed.
+  hrm_time_track_role_id String
+  
+  /// Denormalized copy of the employee's position or job title at snapshot
+  /// time.
+  ///
+  /// This optional field captures the employee's specific job role description
+  /// (e.g., 'Software Engineer', 'Marketing Manager'). Independent of the role
+  /// assignment which controls system permissions.
+  position_title String?
+  
+  /// Denormalized copy of the employee's employment classification at snapshot
+  /// time.
+  ///
+  /// One of four values: 'full-time', 'part-time', 'contractor', or 'intern'.
+  /// Used for reporting and compliance purposes, capturing the worker
+  /// classification at the moment of snapshot.
+  employment_type String
+  
+  /// Denormalized copy of the employee's status at snapshot time.
+  ///
+  /// Either 'active' or 'deactivated'. Active employees can log time and
+  /// submit timesheets, while deactivated employees cannot. This field cannot
+  /// be null as every employee must have a status.
+  status String
+  
+  /// Timestamp when this snapshot was created.
+  ///
+  /// Records the exact point in time when the employee state was captured.
+  /// Used for chronological ordering of snapshots and for querying employee
+  /// state at specific historical moments.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_time_track_employees @relation(fields: [hrm_time_track_employee_id], references: [id], onDelete: Cascade)
+  organization hrm_time_track_organizations @relation(fields: [hrm_time_track_organization_id], references: [id], onDelete: Cascade)
+  member hrm_time_track_members @relation(fields: [hrm_time_track_member_id], references: [id], onDelete: Cascade)
+  department hrm_time_track_departments? @relation(fields: [hrm_time_track_department_id], references: [id], onDelete: Cascade)
+  role hrm_time_track_roles @relation(fields: [hrm_time_track_role_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_organization_id], map: "hrm_time_track_employee_snapshots_hrm_time_track_organ_c74f8b95")
+  @@index([hrm_time_track_member_id])
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_department_id], map: "hrm_time_track_employee_snapshots_hrm_time_track_depar_5dacc289")
+  @@index([hrm_time_track_role_id])
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_employee_id, created_at], map: "hrm_time_track_employee_snapshots_hrm_time_track_emplo_f7511d81")
+}
+
+/// Employment contracts for employees tracking pay terms, working hours, and
+/// contract periods.
+///
+/// Each contract defines an employee's compensation and working conditions
+/// within an organization. Contracts include start date, optional end date,
+/// pay rate, pay period (hourly/daily/weekly/monthly), and working hours per
+/// week. Only one contract can be active at any time per employee, with
+/// previous contracts automatically ended when new ones are created.
+///
+/// Contract relationships:
+/// - Belongs to {@link hrm_time_track_employees} via foreign key
+/// - Contracts are immutable once ended (historical records)
+/// - Active contracts can be edited (pay rate, pay period, working hours,
+/// notes, end date extension) but start date is immutable
+///
+/// @namespace org
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_employee_contracts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for employee contract records.
+  id String @id
+  
+  /// References the employee this contract belongs to.
+  ///
+  /// Each employee can have multiple contracts over time, but only one active
+  /// contract at any given time. When a new contract is created for an
+  /// employee with an existing active contract, the previous contract is
+  /// automatically ended.
+  hrm_time_track_employee_id String
+  
+  /// Contract start date.
+  ///
+  /// This field is mandatory and immutable once the contract is created. It
+  /// defines when the employment terms begin.
+  start_date DateTime
+  
+  /// Contract end date.
+  ///
+  /// This field is optional. If not set, the contract is considered ongoing
+  /// until explicitly ended or replaced by a new contract. Can be extended
+  /// when editing an active contract.
+  end_date DateTime?
+  
+  /// Employee pay rate amount.
+  ///
+  /// This field is mandatory and represents the compensation amount. The
+  /// actual payment frequency is determined by the pay_period field.
+  pay_rate Float
+  
+  /// Pay period classification.
+  ///
+  /// Allowed values: hourly, daily, weekly, monthly. This field is mandatory
+  /// and defines how the pay_rate should be interpreted.
+  pay_period String
+  
+  /// Number of working hours per week.
+  ///
+  /// This field is mandatory and defines the expected weekly working hours for
+  /// the employee under this contract.
+  working_hours_per_week Float
+  
+  /// Optional notes for the contract.
+  ///
+  /// Can contain additional information or special conditions related to the
+  /// employment contract.
+  notes String?
+  
+  /// Timestamp when the contract was created.
+  created_at DateTime
+  
+  /// Timestamp when the contract was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the contract was soft deleted.
+  ///
+  /// Used for soft delete functionality to preserve historical contract
+  /// records.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_time_track_employees @relation(fields: [hrm_time_track_employee_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  activityLogs hrm_time_track_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_employee_id, created_at], map: "hrm_time_track_employee_contracts_hrm_time_track_emplo_96158332")
+}
+
+/// Department organizational units with hierarchical structure within
+/// organizations.
+///
+/// Departments categorize employees into organizational units for management
+/// and reporting purposes. Each department belongs to exactly one
+/// organization and can have a parent department to form a hierarchical
+/// structure. Department names must be unique within an organization.
+///
+/// When a department is deleted (soft delete), employees previously assigned
+/// to that department have their department field set to null, but the
+/// employee records remain intact. Department assignment does not affect an
+/// employee's role or permissions.
+///
+/// @namespace org
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_departments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the organization that owns this department.
+  ///
+  /// Each department belongs to exactly one organization. This establishes the
+  /// organizational boundary for the department and ensures data isolation
+  /// between organizations.
+  hrm_time_track_organization_id String
+  
+  /// Foreign key to the parent department for hierarchical structure.
+  ///
+  /// Optional self-referencing field that enables multi-level department
+  /// hierarchies. Null value indicates a top-level department with no parent.
+  parent_department_id String?
+  
+  /// Department name for identification and display.
+  ///
+  /// Department names must be unique within an organization. This field is
+  /// used for department selection in employee assignments and for
+  /// organizational reporting.
+  name String
+  
+  /// Optional description providing additional context about the department's
+  /// purpose and responsibilities.
+  description String?
+  
+  /// Timestamp when this department was created.
+  created_at DateTime
+  
+  /// Timestamp when this department was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this department was soft deleted. Null indicates the
+  /// department is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_time_track_organizations @relation(fields: [hrm_time_track_organization_id], references: [id], onDelete: Cascade)
+  parentDepartment hrm_time_track_departments? @relation("recursive", fields: [parent_department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  employees hrm_time_track_employees[]
+  employeeSnapshots hrm_time_track_employee_snapshots[]
+  childDepartments hrm_time_track_departments[] @relation("recursive")
+  activityLogs hrm_time_track_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([parent_department_id])
+  // spellchecker: ignore-next-line
+  @@unique([hrm_time_track_organization_id, name], map: "hrm_time_track_departments_hrm_time_track_organization_a49c37e9")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_organization_id, created_at], map: "hrm_time_track_departments_hrm_time_track_organization_d6e1957a")
+}
+
+/// Role definitions within organizations that control user permissions and
+/// access levels.
+///
+/// Roles define what actions users can perform within an organization. Each
+/// role contains a set of permissions that grant access to specific features
+/// like organization management, employee management, project management,
+/// time tracking, and reporting. Roles can be either built-in
+/// (system-defined with standard permission sets) or custom (user-created
+/// with tailored permissions).
+///
+/// Built-in roles provide default permission configurations for common
+/// organizational needs, while custom roles allow organizations to create
+/// specialized access patterns. Role names must be unique within each
+/// organization to prevent confusion and ensure clear permission assignment.
+///
+/// @namespace org
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the organization that owns this role.
+  ///
+  /// Each role belongs to exactly one organization. Roles are
+  /// organization-scoped and cannot be shared across organizations. This
+  /// ensures multi-tenancy isolation where each organization manages its own
+  /// role definitions independently.
+  hrm_time_track_organization_id String
+  
+  /// Human-readable name of the role.
+  ///
+  /// Role names are unique within an organization and are used to identify and
+  /// display roles in the user interface. Examples include 'Administrator',
+  /// 'Manager', 'Employee', 'Time Keeper'. The name should be descriptive and
+  /// distinguishable from other roles in the same organization.
+  name String
+  
+  /// Detailed description of the role's purpose and intended use.
+  ///
+  /// The description provides context about what the role is for and what
+  /// permissions it typically grants. This helps administrators understand
+  /// when to assign this role to employees. Descriptions can include
+  /// information about the role's scope, typical use cases, and any special
+  /// considerations.
+  description String?
+  
+  /// Indicates whether this is a built-in system role or a custom user-created
+  /// role.
+  ///
+  /// Built-in roles are predefined by the system with standard permission sets
+  /// and cannot be deleted (only soft-deleted). Custom roles are created by
+  /// organization administrators and can be fully managed including deletion.
+  /// This distinction helps prevent accidental removal of essential system
+  /// roles while allowing flexibility for organization-specific needs.
+  is_builtin Boolean
+  
+  /// Timestamp when this role was created.
+  ///
+  /// Recorded automatically when the role is first created. Used for audit
+  /// trail, sorting roles by creation date, and tracking when roles were added
+  /// to the organization.
+  created_at DateTime
+  
+  /// Timestamp when this role was last modified.
+  ///
+  /// Updated automatically whenever any field of the role is changed. Used to
+  /// track role modifications, detect stale data, and support optimistic
+  /// concurrency control in updates.
+  updated_at DateTime
+  
+  /// Timestamp when this role was soft-deleted.
+  ///
+  /// When set, the role is considered deleted but the record remains in the
+  /// database for audit purposes. Soft-deleted roles cannot be assigned to new
+  /// employees but existing assignments remain intact. Built-in roles can only
+  /// be soft-deleted, never permanently removed.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_time_track_organizations @relation(fields: [hrm_time_track_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  guestInvitations hrm_time_track_guests[]
+  employees hrm_time_track_employees[]
+  employeeSnapshots hrm_time_track_employee_snapshots[]
+  snapshots hrm_time_track_role_snapshots[]
+  permissions hrm_time_track_role_permissions[]
+  activityLogs hrm_time_track_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([hrm_time_track_organization_id, name])
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_organization_id, created_at], map: "hrm_time_track_roles_hrm_time_track_organization_id_cr_ba5cbba3")
+}
+
+/// Point-in-time snapshots of role definitions for audit trail and history
+/// tracking.
+///
+/// These snapshots capture the complete state of a role at a specific
+/// moment, including name, description, built-in status, and associated
+/// permissions. Snapshots are created when roles are created, updated, or
+/// deleted to maintain a complete audit history of permission changes within
+/// an organization.
+///
+/// Snapshots are append-only and immutable once created. They reference the
+/// parent role via foreign key and optionally track which member triggered
+/// the snapshot event.
+///
+/// @namespace org
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_role_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for role snapshot records.
+  id String @id
+  
+  /// Reference to the role being snapshot.
+  ///
+  /// This foreign key links the snapshot to its parent role in {@link
+  /// hrm_time_track_roles}. The snapshot captures the state of this role at a
+  /// specific point in time.
+  hrm_time_track_role_id String
+  
+  /// Reference to the member who triggered this snapshot.
+  ///
+  /// This foreign key identifies which {@link hrm_time_track_members}
+  /// performed the action that created this snapshot (role creation, update,
+  /// or deletion). May be null for system-generated snapshots.
+  created_by_member_id String?
+  
+  /// Role name at the time of snapshot.
+  ///
+  /// This field captures the role's name as it existed when the snapshot was
+  /// created. Used for audit trail to track name changes over time.
+  name String
+  
+  /// Role description at the time of snapshot.
+  ///
+  /// This field captures the role's description as it existed when the
+  /// snapshot was created. May be null if the role had no description.
+  description String?
+  
+  /// Whether this role is a built-in role at the time of snapshot.
+  ///
+  /// Built-in roles (Owner, Manager, Employee) cannot be deleted. This field
+  /// captures the built-in status at snapshot time for audit purposes.
+  is_builtin Boolean
+  
+  /// Timestamp when this snapshot was created.
+  ///
+  /// Records the exact point in time when the role state was captured for
+  /// audit trail purposes.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  role hrm_time_track_roles @relation(fields: [hrm_time_track_role_id], references: [id], onDelete: Cascade)
+  createdByMember hrm_time_track_members? @relation(fields: [created_by_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  permissions hrm_time_track_role_snapshot_permissions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([created_by_member_id])
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_role_id, created_at], map: "hrm_time_track_role_snapshots_hrm_time_track_role_id_c_18b7f547")
+}
+
+/// Junction table linking roles to their granted permissions within
+/// organizations.
+///
+/// This table stores the permission assignments for each role. Each role can
+/// have multiple permissions, and each permission entry is unique per role.
+/// Permissions define what actions are allowed, including organization
+/// management, employee management, employee viewing, project management,
+/// project viewing, time management, timesheet approval, time viewing all,
+/// and report viewing.
+///
+/// The table is append-only with no soft delete since permission changes are
+/// handled by removing and re-adding entries rather than marking them
+/// deleted.
+///
+/// @namespace org
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_role_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for role permission records.
+  id String @id
+  
+  /// Foreign key referencing the role that owns this permission.
+  ///
+  /// Links to {@link hrm_time_track_roles} to establish the relationship
+  /// between roles and their granted permissions. Each role can have multiple
+  /// permission entries.
+  hrm_time_track_role_id String
+  
+  /// Permission code defining the granted access right.
+  ///
+  /// Valid permission values include: organization_management,
+  /// employee_management, employee_viewing, project_management,
+  /// project_viewing, time_management, timesheet_approval, time_viewing_all,
+  /// and report_viewing. The permission value is validated at the application
+  /// layer against the allowed permission list.
+  permission String
+  
+  /// Timestamp when this permission was granted to the role.
+  ///
+  /// Records the exact time when the permission assignment was created. Used
+  /// for audit trail and tracking permission changes over time.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  role hrm_time_track_roles @relation(fields: [hrm_time_track_role_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrm_time_track_role_id, permission], map: "hrm_time_track_role_permissions_hrm_time_track_role_id_d78bb87b")
+  @@index([hrm_time_track_role_id])
+}
+
+/// Junction table tracking permissions granted to roles at snapshot time for
+/// audit trail.
+///
+/// This table captures the permission set assigned to each role at the
+/// moment a role snapshot was created. It enables historical auditing of
+/// permission changes by preserving the exact permissions that were granted
+/// to a role at specific points in time. Each role snapshot can have
+/// multiple permission records, one for each permission granted to that
+/// role.
+///
+/// The table maintains referential integrity with {@link
+/// hrm_time_track_role_snapshots} and enforces uniqueness to prevent
+/// duplicate permissions within the same snapshot.
+///
+/// @namespace org
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_role_snapshot_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for role snapshot permission records.
+  id String @id
+  
+  /// Foreign key reference to the role snapshot this permission belongs to.
+  ///
+  /// This field establishes the relationship between a permission record and
+  /// its parent role snapshot. Each permission record is tied to exactly one
+  /// role snapshot, enabling the reconstruction of the complete permission set
+  /// for a role at the time the snapshot was taken.
+  hrm_time_track_role_snapshot_id String
+  
+  /// The permission identifier granted to the role at snapshot time.
+  ///
+  /// This field stores the permission name as a string value. Available
+  /// permissions include organization_management, employee_management,
+  /// employee_viewing, project_management, project_viewing, time_management,
+  /// timesheet_approval, time_viewing_all, and report viewing. The permission
+  /// value is captured at the time of snapshot creation and remains immutable.
+  permission String
+  
+  /// Timestamp recording when this role snapshot permission was created.
+  ///
+  /// This field captures the exact moment when the permission was recorded in
+  /// the snapshot. Since snapshots are immutable audit records, this timestamp
+  /// reflects when the snapshot (and its associated permissions) was created
+  /// and cannot be modified.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  roleSnapshot hrm_time_track_role_snapshots @relation(fields: [hrm_time_track_role_snapshot_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrm_time_track_role_snapshot_id, permission], map: "hrm_time_track_role_snapshot_permissions_hrm_time_trac_1c4bd5da")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_role_snapshot_id], map: "hrm_time_track_role_snapshot_permissions_hrm_time_trac_d9dbf8c7")
+}

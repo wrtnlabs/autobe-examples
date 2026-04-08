@@ -6,31 +6,32 @@ import {
 } from "@nestia/fetcher";
 import typia, { tags } from "typia";
 
-import { IErpHrmTimeTask } from "../../../../../structures/IErpHrmTimeTask";
-import { IPageIErpHrmTimeTask } from "../../../../../structures/IPageIErpHrmTimeTask";
+import { IErpHrmTimeTaskHistoryEntry } from "../../../../../structures/IErpHrmTimeTaskHistoryEntry";
+import { IPageIErpHrmTimeTaskHistoryEntry } from "../../../../../structures/IPageIErpHrmTimeTaskHistoryEntry";
 
 export * as historyEntries from "./historyEntries/index";
-export * as history from "./history/index";
 
 /**
- * Create a new task within a project.
+ * Create a new task inside a project.
  *
- * This operation creates a project work item inside the selected project context. A task belongs to exactly one project, starts in the open status by default, and may include a description, priority, estimated hours, due date, an assigned employee, and a parent task for one-level subtask nesting.
+ * This operation creates a work item that belongs to exactly one project and uses the project's task space for planning and tracking delivery work. A task may include a title, description, priority, estimated hours, due date, an assigned employee, and a single parent task for one-level subtask nesting. The task is created in the open status by default.
  *
- * The assigned employee, when provided, must be a member of the same project. The parent task, when provided, must also belong to the same project. Only users with project management permission or project-lead authority for this project can create tasks here.
+ * The project context is required because tasks are always scoped to one project. The server must verify that the caller is allowed to manage tasks in that project, either through project management permission or by holding the project-lead role for that specific project. If an assignee is provided, the assignee must be a member of the same project. If a parent task is provided, it must also belong to the same project and must not create deeper task hierarchies.
  *
- * If the project is not eligible for task creation, or if the assigned employee or parent task does not match the project scope, the request must be rejected with a validation error.
+ * Validation failures should be returned when the project does not exist, the caller lacks task creation authority, the assigned employee is not a project member, or the parent task is outside the project. The created task should be returned with its current persisted state and identifiers so the client can immediately continue task workflow operations.
  *
  * @param props.connection
- * @param props.projectId The project identifier for the project that will own the new task.
- * @param props.body Task details used to create a new task in the selected project.
+ * @param props.projectId Project identifier that scopes the new task to a single project.
+ * @param props.body Task data to create within the specified project. The project id is taken from the path and must not be included here.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the target project by id within the current organization context and verify that it exists and is not deleted. Enforce authorization so only users with project:manage permission or a project-lead membership for the same project can create tasks.
+ * @x-autobe-specification Load the target project by projectId and confirm it belongs to the current organization context. Enforce authorization: allow creation only for callers with project:manage permission or callers whose project membership for this project has project_role = 'project-lead'.
  *
- * Validate the request body against the task creation rules: title is required; description, estimated_hours, due_date, assigned employee, and parent task are optional; priority must be one of the supported task priorities; the new task status must be set to open regardless of client input. If an assigned employee id is provided, confirm that the employee is assigned to the same project through erp_hrm_time_project_memberships. If a parent task id is provided, confirm that it belongs to the same project and that the nesting depth does not exceed one level.
+ * Create the task with the project id from the path and persist only fields supported by erp_hrm_time_tasks: title, description, status, priority, estimated_hours, due_date, assigned employee, and parent task. Ignore any attempt to pass project context in the request body; the path defines the scope.
  *
- * Persist the task in erp_hrm_time_tasks with the project foreign key, optional employee and parent_task references, and audit timestamps. Do not create history entries here unless the implementation layer explicitly records status creation events elsewhere. Return the created task entity. Reject requests for missing project, invalid scope, unauthorized access, invalid assignment, or invalid parent task with the appropriate domain error.
+ * Apply business rules: default status to 'open' when not explicitly provided; if an employee is assigned, verify the employee is a member of the same project via erp_hrm_time_project_memberships; if parentTaskId is provided, verify it belongs to the same project and reject nesting beyond one level. Reject creation if the parent task already has a parent. Record created_at/updated_at automatically and return the created task.
+ *
+ * Use a transaction if additional membership checks or history/audit side effects are performed. On not found, return 404; on authorization or scope violations, return 403; on invalid assignment or hierarchy, return 400. Ensure organization isolation so tasks cannot be created into projects outside the selected organization.
  * @path /erpHrmTime/member/projects/:projectId/tasks
  * @accessor api.functional.erpHrmTime.member.projects.tasks.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -60,17 +61,17 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * The project identifier for the project that will own the new task.
+     * Project identifier that scopes the new task to a single project.
      */
     projectId: string & tags.Format<"uuid">;
 
     /**
-     * Task details used to create a new task in the selected project.
+     * Task data to create within the specified project. The project id is taken from the path and must not be included here.
      */
-    body: IErpHrmTimeTask.ICreate;
+    body: IErpHrmTimeTaskHistoryEntry.ICreate;
   };
-  export type Body = IErpHrmTimeTask.ICreate;
-  export type Response = IErpHrmTimeTask;
+  export type Body = IErpHrmTimeTaskHistoryEntry.ICreate;
+  export type Response = IErpHrmTimeTaskHistoryEntry;
 
   export const METADATA = {
     method: "POST",
@@ -87,7 +88,8 @@ export namespace create {
 
   export const path = (props: Omit<Props, "body">) =>
     `/erpHrmTime/member/projects/${encodeURIComponent(props.projectId ?? "null")}/tasks`;
-  export const random = (): IErpHrmTimeTask => typia.random<IErpHrmTimeTask>();
+  export const random = (): IErpHrmTimeTaskHistoryEntry =>
+    typia.random<IErpHrmTimeTaskHistoryEntry>();
   export const simulate = (
     connection: IConnection,
     props: create.Props,
@@ -115,28 +117,26 @@ export namespace create {
 }
 
 /**
- * Retrieve a paginated list of tasks for a specific project.
+ * Retrieve a paginated list of tasks within a specific project.
  *
- * This operation returns the tasks that belong to the selected project and supports browsing work items by status, priority, assignee, and due date. It is intended for users who need to review and manage task progress inside the current project context.
+ * This operation is used to browse work items that belong to the selected project and supports task management workflows such as planning, assignment review, and progress tracking. Results are always limited to the project identified by the path parameter, so callers only see tasks from that project and its one-level subtask structure.
  *
- * The task list is scoped by project and must only include records from that project. Filtering and pagination apply within the project boundary, and the response is optimized for list views rather than full task details. The task title, description, status, priority, estimated hours, and due date are core task fields that shape list browsing and planning behavior.
+ * The list can be filtered by task status, priority, and assigned employee, and it can be sorted to support common project management views such as due-date ordering, priority ordering, or newest-first review. The response is optimized for list display and returns summary task information rather than full task details.
  *
- * If the project does not exist, or the caller lacks permission to view tasks in the project, the service must return an appropriate authorization or not-found error. Invalid filter values, malformed pagination settings, or attempts to query outside the project scope should be rejected before executing the database query.
+ * Access is restricted to users who are allowed to view tasks in the project. When a task is assigned to an employee, the assignment must belong to the same project. Invalid project scope, unknown task filters, or unauthorized access should be rejected with the appropriate error response.
  *
  * @param props.connection
- * @param props.projectId The project identifier within the current organization scope.
- * @param props.body Search, filter, pagination, and sorting criteria for browsing project tasks, including title search, status, priority, assignee, and due date range.
+ * @param props.projectId Project identifier within the current organization context.
+ * @param props.body Pagination, filtering, and sorting criteria for browsing tasks in a project.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the project by projectId and verify the caller has access to the project within the current organization context.
- * Use the task table as the primary source and filter rows by the project foreign key.
- * Apply optional filters from the request body for status, priority, and assigned employee; combine them with pagination and sorting rules from the list-search contract.
- * Return tasks ordered according to the requested sort fields when provided, otherwise apply a stable default order suitable for task browsing.
- * Join only what is necessary for summary output, avoiding expensive detail joins unless required by the summary DTO.
- * Ensure assignee filters respect project scope and do not return tasks assigned to employees outside the selected organization.
- * Reject invalid enum values, negative pagination values, or unsupported sort fields with a validation error.
- * If the project is missing, return not found. If the user cannot view the project or tasks within it, return forbidden.
- * Use the paginated response wrapper for task summaries.
+ * @x-autobe-specification Load the project by id and verify the caller has access to the organization context and project task browsing permission.
+ *
+ * Query erp_hrm_time_tasks with erp_hrm_time_project_id equal to the path projectId. Apply optional filters from the request body: status, priority, and assigned employee. The assigned employee filter must be constrained to employees that are members of the same project, because task assignment is project-scoped.
+ *
+ * Support pagination with page and pageSize, plus sorting by due date, priority, and created_at. Default ordering should favor current project review workflows, such as due date ascending or created_at descending depending on the request contract. Return a paginated summary page rather than full entities.
+ *
+ * Exclude tasks from other projects entirely. If the project does not exist or is not accessible in the current organization context, return a not-found or forbidden response according to the service policy. If the request body contains invalid status, priority, or employee references, fail validation before querying. Include parent task references in the summary if the DTO supports it, but do not expand recursive subtasks in this list response.
  * @path /erpHrmTime/member/projects/:projectId/tasks
  * @accessor api.functional.erpHrmTime.member.projects.tasks.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -166,17 +166,17 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * The project identifier within the current organization scope.
+     * Project identifier within the current organization context.
      */
     projectId: string & tags.Format<"uuid">;
 
     /**
-     * Search, filter, pagination, and sorting criteria for browsing project tasks, including title search, status, priority, assignee, and due date range.
+     * Pagination, filtering, and sorting criteria for browsing tasks in a project.
      */
-    body: IErpHrmTimeTask.IRequest;
+    body: IErpHrmTimeTaskHistoryEntry.IRequest;
   };
-  export type Body = IErpHrmTimeTask.IRequest;
-  export type Response = IPageIErpHrmTimeTask.ISummary;
+  export type Body = IErpHrmTimeTaskHistoryEntry.IRequest;
+  export type Response = IPageIErpHrmTimeTaskHistoryEntry.ISummary;
 
   export const METADATA = {
     method: "PATCH",
@@ -193,8 +193,8 @@ export namespace index {
 
   export const path = (props: Omit<Props, "body">) =>
     `/erpHrmTime/member/projects/${encodeURIComponent(props.projectId ?? "null")}/tasks`;
-  export const random = (): IPageIErpHrmTimeTask.ISummary =>
-    typia.random<IPageIErpHrmTimeTask.ISummary>();
+  export const random = (): IPageIErpHrmTimeTaskHistoryEntry.ISummary =>
+    typia.random<IPageIErpHrmTimeTaskHistoryEntry.ISummary>();
   export const simulate = (
     connection: IConnection,
     props: index.Props,
@@ -222,24 +222,24 @@ export namespace index {
 }
 
 /**
- * Retrieve a single task within a project.
+ * Retrieve the full details of a task within a specific project.
  *
- * This operation returns the full task record for the specified project and task identifiers, including the task title, description, current status, priority, estimated effort, due date, and assigned employee reference. Tasks are always scoped to a project, so the project path parameter is required to resolve the task in the correct project context.
+ * This operation returns a single task record together with its project-scoped fields, including title, description, status, priority, estimated hours, due date, assignment, parent task reference, and audit timestamps. It is intended for task detail screens where users need to inspect the current state of work inside a project.
  *
- * The task entity also supports a one-level parent task relationship for subtasks. Consumers can use this endpoint to inspect a task’s current state and its assignment within the project. Access must respect the caller’s organization context and project visibility rules, and the task must belong to the given project.
+ * The task must belong to the project identified in the path, and the project must belong to the caller’s current organization context. If the task is assigned to an employee or linked to a parent task, those relationships must also be validated within the same project scope. Access should follow the project permissions defined by the application, allowing users with project visibility or project management rights to view the record.
  *
- * If the task does not exist, does not belong to the specified project, or is not accessible in the current organization context, the request should fail with the appropriate not-found or authorization error.
+ * Return a not-found error when either the project or task does not exist in the active organization context, and return a conflict or validation error if the task does not belong to the specified project. The endpoint does not modify any data.
  *
  * @param props.connection
- * @param props.projectId Project identifier for the task's parent project.
- * @param props.taskId Task identifier within the specified project.
+ * @param props.projectId The unique identifier of the project that owns the task (UUID, scoped to the current organization).
+ * @param props.taskId The unique identifier of the task within the specified project (UUID, scoped to the current project).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the task by project scope first, then resolve the task by its id within the same organization. Verify that the task belongs to the given project before returning it.
+ * @x-autobe-specification Load the project by projectId within the current organization context, then load the task by taskId constrained to the same project id. Reject the request if the project does not belong to the current organization or if the task does not belong to the project.
  *
- * Use a join or relation load against erp_hrm_time_projects and erp_hrm_time_tasks to ensure the path projectId and taskId refer to the same organization-scoped project/task pair. Return the full task record fields defined in erp_hrm_time_tasks: id, erp_hrm_time_project_id, erp_hrm_time_employee_id, parent_task_id, title, description, status, priority, estimated_hours, due_date, created_at, updated_at, and deleted_at.
+ * Select the task fields defined in erp_hrm_time_tasks: id, erp_hrm_time_project_id, erp_hrm_time_employee_id, parent_task_id, title, description, status, priority, estimated_hours, due_date, created_at, updated_at, deleted_at. Include related project, employee, and parent task references only as identifiers or nested DTOs if the shared component model supports them, but do not invent fields not present in the schema.
  *
- * Do not include child task collections in the response. If the task is not found under the specified project, return 404. If the caller lacks access to the organization or project, return the standard authorization error.
+ * Enforce authorization according to project access rules: users with project:view, project:manage, or equivalent project-lead access for the project may read the task. Keep organization isolation strict by always constraining the lookup through the active organization context. Return 404 when the project or task is missing, and return 403 when the caller lacks permission to view project tasks.
  * @path /erpHrmTime/member/projects/:projectId/tasks/:taskId
  * @accessor api.functional.erpHrmTime.member.projects.tasks.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -268,16 +268,16 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Project identifier for the task's parent project.
+     * The unique identifier of the project that owns the task (UUID, scoped to the current organization).
      */
     projectId: string & tags.Format<"uuid">;
 
     /**
-     * Task identifier within the specified project.
+     * The unique identifier of the task within the specified project (UUID, scoped to the current project).
      */
     taskId: string & tags.Format<"uuid">;
   };
-  export type Response = IErpHrmTimeTask;
+  export type Response = IErpHrmTimeTaskHistoryEntry;
 
   export const METADATA = {
     method: "GET",
@@ -291,7 +291,8 @@ export namespace at {
 
   export const path = (props: Props) =>
     `/erpHrmTime/member/projects/${encodeURIComponent(props.projectId ?? "null")}/tasks/${encodeURIComponent(props.taskId ?? "null")}`;
-  export const random = (): IErpHrmTimeTask => typia.random<IErpHrmTimeTask>();
+  export const random = (): IErpHrmTimeTaskHistoryEntry =>
+    typia.random<IErpHrmTimeTaskHistoryEntry>();
   export const simulate = (
     connection: IConnection,
     props: at.Props,
@@ -319,29 +320,27 @@ export namespace at {
 }
 
 /**
- * Update a task that belongs to a specific project.
+ * Update an existing task that belongs to a project.
  *
- * This endpoint lets authorized users edit task details within the context of a single project. A task may include a title, description, status, priority, estimated hours, due date, assigned employee, and parent task. The task remains scoped to the project identified in the path, and any assigned employee must be a member of that same project.
+ * This operation lets authorized users edit a project work item inside the currently selected organization. A task always belongs to exactly one project, and the project context in the path is used to ensure the task being edited is part of that project. The task may carry a title, description, status, priority, estimated hours, due date, assigned employee, and an optional parent task for a one-level subtask structure.
  *
- * Task status changes are tracked as part of the task history, so consumers should expect the system to record status transitions when the status value changes. The endpoint also preserves the one-level subtask structure by allowing a parent task only within the same project.
+ * Task assignment and hierarchy must remain valid within the same project. If an assigned employee is provided, that employee must belong to the project. If a parent task is provided, it must also belong to the same project and must not create a deeper nesting structure. Status changes should be recorded in task history by the service layer, and the operation must reject updates that violate project scope, task hierarchy rules, or organization isolation.
  *
- * Authorization is limited to users who can manage the project or act as a project lead for that project. Validation errors are returned when the task does not exist, the project context does not match, the assigned employee is not part of the project, the parent task is invalid, or the caller lacks sufficient permission.
+ * The request is intended for users who have permission to manage projects or tasks within the project context, including project leads where applicable. Validation errors should be returned when the project or task is not found, the task does not belong to the specified project, or the update attempts to assign invalid related entities.
  *
  * @param props.connection
- * @param props.projectId The project identifier that scopes the task (UUID).
- * @param props.taskId The task identifier within the specified project (UUID).
- * @param props.body The task fields to update within the project scope.
+ * @param props.projectId Project identifier within the current organization scope.
+ * @param props.taskId Task identifier within the selected project scope.
+ * @param props.body Fields to update on the task.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the task by projectId and taskId in the same query scope to ensure the task belongs to the specified project. Verify organization context from the authenticated member before any modification.
+ * @x-autobe-specification Load the task by taskId and verify it belongs to projectId within the current organization context. Reject the request with not found if either the project or task does not exist in scope, or if the task is not associated with the specified project.
  *
- * Authorize if the caller has project:manage permission or is a project lead for the target project. Reject access if neither condition is met.
+ * Validate that any assigned employee belongs to the same project before updating the task. Validate that any parent task belongs to the same project and that the resulting relation preserves the one-level subtask rule. Validate status, priority, due date, and estimated hours according to the task business rules defined by the domain model.
  *
- * Validate update payload fields against task business rules: title is required for persisted state, status must be one of the allowed task states, priority must be one of the allowed values, estimated hours and due date are optional, and description may be null or empty depending on DTO definition. If assigned employee is provided, confirm the employee belongs to the same project. If parent task is provided, confirm it exists, belongs to the same project, and does not create deeper nesting beyond one level.
+ * Persist only the provided mutable fields. If the status changes, create a task history entry capturing the old status, new status, timestamp, and actor. Use a transaction so the task update and history insert remain consistent. If the update includes no actual field changes, return the current task record without altering history.
  *
- * If status changes, write a task history entry capturing the previous status, new status, timestamp, and acting user. Use a transaction so the task update and history insert succeed or fail together.
- *
- * Return not found when the task does not exist within the specified project. Return validation errors for invalid assignee/parent relationships. Return forbidden for insufficient permissions. Preserve all other fields not included in the update request.
+ * Ensure all writes are scoped to the selected organization and that cross-organization references are never accepted. Return standard validation or not-found errors for invalid project scope, invalid employee assignment, invalid parent task, or forbidden access.
  * @path /erpHrmTime/member/projects/:projectId/tasks/:taskId
  * @accessor api.functional.erpHrmTime.member.projects.tasks.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -371,22 +370,22 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * The project identifier that scopes the task (UUID).
+     * Project identifier within the current organization scope.
      */
     projectId: string & tags.Format<"uuid">;
 
     /**
-     * The task identifier within the specified project (UUID).
+     * Task identifier within the selected project scope.
      */
     taskId: string & tags.Format<"uuid">;
 
     /**
-     * The task fields to update within the project scope.
+     * Fields to update on the task.
      */
-    body: IErpHrmTimeTask.IUpdate;
+    body: IErpHrmTimeTaskHistoryEntry.IUpdate;
   };
-  export type Body = IErpHrmTimeTask.IUpdate;
-  export type Response = IErpHrmTimeTask;
+  export type Body = IErpHrmTimeTaskHistoryEntry.IUpdate;
+  export type Response = IErpHrmTimeTaskHistoryEntry;
 
   export const METADATA = {
     method: "PUT",
@@ -403,7 +402,8 @@ export namespace update {
 
   export const path = (props: Omit<Props, "body">) =>
     `/erpHrmTime/member/projects/${encodeURIComponent(props.projectId ?? "null")}/tasks/${encodeURIComponent(props.taskId ?? "null")}`;
-  export const random = (): IErpHrmTimeTask => typia.random<IErpHrmTimeTask>();
+  export const random = (): IErpHrmTimeTaskHistoryEntry =>
+    typia.random<IErpHrmTimeTaskHistoryEntry>();
   export const simulate = (
     connection: IConnection,
     props: update.Props,
@@ -432,20 +432,26 @@ export namespace update {
 }
 
 /**
- * Permanently removes a task from a project.
+ * Permanently deletes a task from the specified project.
  *
- * This operation is used to delete a project task within the current organization context. The task must belong to the project identified by `projectId`, and the caller must have permission to manage tasks in that project. Tasks may be part of a project hierarchy and may have history entries, so the service must validate project ownership before deletion and reject attempts to delete a task that does not belong to the specified project.
+ * This operation removes a task that belongs to the given project within the current organization context. It is intended for project management workflows where a user needs to remove work items that are no longer needed. The task must be resolved within the target project, and the caller must have the authority to manage tasks in that project through project management permission or project-lead membership.
  *
- * Deletion is intended for project-managed work items and affects only the targeted task record. Related behavior such as task history visibility, subtasks, and any downstream business rules must be enforced by the service layer according to project and task constraints. If the task cannot be deleted because it is protected by domain rules or the identifiers do not match, the request must fail with an appropriate error.
+ * Before deletion, the service should verify that the task exists, that it belongs to the specified project, and that the caller is allowed to manage that project. If the task has dependent subtasks or other domain constraints that prevent removal, the request should be rejected with a clear conflict or validation error. A successful request returns no response body.
+ *
+ * If the project does not belong to the current organization context, or if the caller lacks the required authority, the operation must fail without modifying data.
  *
  * @param props.connection
- * @param props.projectId Identifier of the project that owns the task.
- * @param props.taskId Identifier of the task to delete within the project.
+ * @param props.projectId Identifier of the project that owns the task, scoped to the current organization.
+ * @param props.taskId Identifier of the task to delete within the specified project.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the project by projectId within the current organization context and verify that the caller is authorized to manage tasks for that project. Then load the task by taskId and confirm it belongs to the specified project. If the task does not exist, return not found. If the task exists but belongs to a different project or organization, return not found or forbidden according to the service's access policy.
+ * @x-autobe-specification Load the project by projectId within the current organization context, then load the task by taskId constrained to that project. Verify the caller has project management authority or equivalent task deletion permission within the selected organization.
  *
- * Delete the task record using a transaction-safe operation. If the database enforces foreign key constraints from child subtasks or history records, the implementation must rely on the existing domain rules for task deletion and surface a business error when deletion is not allowed. Do not accept a request body. Return success with no content on completion.
+ * Enforce deletion preconditions using actual task relationships: reject if the task is missing, belongs to another project, or violates hierarchy constraints such as having child subtasks. If downstream schema rules require preserving task history or blocking deletes when related records exist, enforce those constraints before issuing the delete.
+ *
+ * Perform the delete in a transaction. If the database has foreign key restrictions to task history or other task-linked records, either rely on the database to block the delete and convert the constraint failure into a domain error, or explicitly check dependencies first if required by the service conventions. Do not cascade-delete historical audit rows unless the domain model explicitly allows it.
+ *
+ * Return an appropriate success response with no body. On invalid context, missing resource, permission failure, or dependency conflict, surface a clear error that identifies the project/task scope involved.
  * @path /erpHrmTime/member/projects/:projectId/tasks/:taskId
  * @accessor api.functional.erpHrmTime.member.projects.tasks.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -474,12 +480,12 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Identifier of the project that owns the task.
+     * Identifier of the project that owns the task, scoped to the current organization.
      */
     projectId: string & tags.Format<"uuid">;
 
     /**
-     * Identifier of the task to delete within the project.
+     * Identifier of the task to delete within the specified project.
      */
     taskId: string & tags.Format<"uuid">;
   };

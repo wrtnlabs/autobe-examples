@@ -2,9 +2,6 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
-import { IShoppingMallProductOptionDefinition } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionDefinition";
-import { IShoppingMallProductOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionValue";
-import { IShoppingMallProductRating } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductRating";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
@@ -16,7 +13,6 @@ import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallCategoryAtSummaryTransformer } from "./ShoppingMallCategoryAtSummaryTransformer";
 import { ShoppingMallProductImageTransformer } from "./ShoppingMallProductImageTransformer";
-import { ShoppingMallProductOptionDefinitionTransformer } from "./ShoppingMallProductOptionDefinitionTransformer";
 import { ShoppingMallProductVariantTransformer } from "./ShoppingMallProductVariantTransformer";
 import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
 
@@ -38,13 +34,6 @@ export namespace ShoppingMallProductTransformer {
         category: ShoppingMallCategoryAtSummaryTransformer.select(),
         images: ShoppingMallProductImageTransformer.select(),
         variants: ShoppingMallProductVariantTransformer.select(),
-        optionDefinitions:
-          ShoppingMallProductOptionDefinitionTransformer.select(),
-        reviews: {
-          select: {
-            rating: true,
-          },
-        } satisfies Prisma.shopping_mall_reviewsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_productsFindManyArgs;
   }
@@ -70,21 +59,9 @@ export namespace ShoppingMallProductTransformer {
         input.variants,
         ShoppingMallProductVariantTransformer.transform,
       ),
-      optionDefinitions: await ArrayUtil.asyncMap(
-        input.optionDefinitions,
-        ShoppingMallProductOptionDefinitionTransformer.transform,
-      ),
-      rating: {
-        averageRating:
-          input.reviews.length > 0
-            ? input.reviews.reduce((sum, r) => sum + r.rating, 0) /
-              input.reviews.length
-            : null,
-        totalReviews: input.reviews.length,
-      },
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
-    };
+    } satisfies IShoppingMallProduct;
   }
 }

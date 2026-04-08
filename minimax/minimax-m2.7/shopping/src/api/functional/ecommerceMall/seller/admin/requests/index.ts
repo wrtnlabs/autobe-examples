@@ -4,66 +4,46 @@ import {
   NestiaSimulator,
   PlainFetcher,
 } from "@nestia/fetcher";
-import typia from "typia";
+import typia, { tags } from "typia";
 
-import { IEcommerceMallAdminRequest } from "../../../../../structures/IEcommerceMallAdminRequest";
+import { IEcommerceMallAdminRequestOfCustomer } from "../../../../../structures/IEcommerceMallAdminRequestOfCustomer";
 
 /**
- * Submit a request to become an administrator on the platform.
+ * Cancel a pending administrator request.
  *
- * Any authenticated platform user (customer or seller) can submit a request to become an administrator. The request must include a reason explaining why the user wants to become an administrator and what they intend to do with the role.
+ * This operation allows the requesting user to withdraw their own pending admin request before it is reviewed and acted upon by a super administrator. When cancelled, the request status transitions from pending to cancelled, and the user becomes eligible to submit a new admin request in the future.
  *
- * The system validates that the requesting user is not already an administrator. Users who are already administrators cannot submit additional requests and will receive an error response.
+ * The requesting user must be the original submitter of the admin request. Only requests with pending status can be cancelled. Approved or rejected requests cannot be cancelled through this endpoint. An optional cancellation reason can be provided to explain why the request is being withdrawn.
  *
- * The system also validates that the user does not have an existing pending admin request. Each user can only have one pending admin request at any time. If a pending request exists, the system rejects the submission with an appropriate error.
- *
- * The submitted reason must be between 1 and 1000 characters. Requests without a reason or with a reason outside this length will be rejected by the system.
- *
- * Upon successful submission, the request enters a pending state and awaits review by super administrators. The requesting user can view the status of their own admin request at any time.
- *
- * The request tracks the requested privilege grade. When requested_grade is not specified, it defaults to 'admin' (regular administrator). The 'super_admin' grade requires approval from an existing super administrator.
- *
- * This operation creates a record in the ecommerce_mall_admin_requests table with actor_type determined from the authenticated user's session context (customer or seller), along with subtype records in either ecommerce_mall_admin_request_of_customers or ecommerce_mall_admin_request_of_sellers depending on the actor type.
+ * The cancelled request remains in the system for audit purposes but will not be reviewed by super administrators.
  *
  * @param props.connection
- * @param props.body Admin request submission details including reason and optional requested grade
+ * @param props.requestId Unique identifier of the admin request to cancel
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Validate the authenticated user's identity and extract actor_type from session context.
+ * @x-autobe-specification Implement the cancel operation for admin requests with the following steps:
  *
- * Check if the user is already an administrator (customer with admin privileges or seller with admin privileges). If already an administrator, reject with error code ADMIN_ALREADY_EXISTS.
+ * 1. **Extract Requester from Session**: Get the authenticated user's ID and actor type from the session token. This user is the potential canceller.
  *
- * Query ecommerce_mall_admin_request_of_customers or ecommerce_mall_admin_request_of_sellers to check for existing pending requests by this user. If a pending request exists, reject with error code PENDING_REQUEST_EXISTS.
+ * 2. **Retrieve Admin Request**: Load the admin request by requestId from the ecommerce_mall_admin_requests table. If not found, return 404 error.
  *
- * Validate the reason field: must be between 1 and 1000 characters. If invalid, reject with error code INVALID_REASON.
+ * 3. **Validate Request Status**: Verify the request status is 'pending'. If status is 'approved', 'rejected', or 'cancelled', return 400 error indicating the request cannot be cancelled.
  *
- * Determine the requested_grade: default to 'admin' if not provided in request body. Validate it is either 'admin' or 'super_admin'.
+ * 4. **Validate Requester Ownership**: Verify the requesting user is the original submitter of the request. Match based on actor_type and the user's ID from session. If not the owner, return 403 error indicating unauthorized cancellation.
  *
- * Create a new record in ecommerce_mall_admin_requests table with:
- * - id: generated UUID
- * - actor_type: extracted from session (customer or seller)
- * - requested_grade: provided or default 'admin'
- * - reason: validated reason text
- * - status: 'pending'
- * - created_at: current timestamp
- * - updated_at: current timestamp
- * - reviewed_by_id: null
- * - reviewed_reason: null
- * - deleted_at: null
+ * 5. **Update Request Status**: Set status to 'cancelled' and update the updated_at timestamp. Optionally store cancellation_reason if provided in request body.
  *
- * Create corresponding subtype record in ecommerce_mall_admin_request_of_customers or ecommerce_mall_admin_request_of_sellers linking to the new admin request and the authenticated user.
- *
- * Return the created admin request with all fields including the generated ID and pending status.
- * @path /ecommerceMall/seller/admin/requests
- * @accessor api.functional.ecommerceMall.seller.admin.requests.create
+ * 6. **Return Updated Request**: Return the complete admin request object with cancelled status.
+ * @path /ecommerceMall/seller/admin/requests/:requestId/cancel
+ * @accessor api.functional.ecommerceMall.seller.admin.requests.cancel
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function create(
+export async function cancel(
   connection: IConnection,
-  props: create.Props,
-): Promise<create.Response> {
+  props: cancel.Props,
+): Promise<cancel.Response> {
   return true === connection.simulate
-    ? create.simulate(connection, props)
+    ? cancel.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -73,51 +53,47 @@ export async function create(
           },
         },
         {
-          ...create.METADATA,
-          path: create.path(),
+          ...cancel.METADATA,
+          path: cancel.path(props),
           status: null,
         },
-        props.body,
       );
 }
-export namespace create {
+export namespace cancel {
   export type Props = {
     /**
-     * Admin request submission details including reason and optional requested grade
+     * Unique identifier of the admin request to cancel
      */
-    body: IEcommerceMallAdminRequest.ICreate;
+    requestId: string & tags.Format<"uuid">;
   };
-  export type Body = IEcommerceMallAdminRequest.ICreate;
-  export type Response = IEcommerceMallAdminRequest;
+  export type Response = IEcommerceMallAdminRequestOfCustomer;
 
   export const METADATA = {
     method: "POST",
-    path: "/ecommerceMall/seller/admin/requests",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
+    path: "/ecommerceMall/seller/admin/requests/:requestId/cancel",
+    request: null,
     response: {
       type: "application/json",
       encrypted: false,
     },
   } as const;
 
-  export const path = () => "/ecommerceMall/seller/admin/requests";
-  export const random = (): IEcommerceMallAdminRequest =>
-    typia.random<IEcommerceMallAdminRequest>();
+  export const path = (props: Props) =>
+    `/ecommerceMall/seller/admin/requests/${encodeURIComponent(props.requestId ?? "null")}/cancel`;
+  export const random = (): IEcommerceMallAdminRequestOfCustomer =>
+    typia.random<IEcommerceMallAdminRequestOfCustomer>();
   export const simulate = (
     connection: IConnection,
-    props: create.Props,
+    props: cancel.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: create.path(),
+      path: cancel.path(props),
       contentType: "application/json",
     });
     try {
-      assert.body(() => typia.assert(props.body));
+      assert.param("requestId")(() => typia.assert(props.requestId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

@@ -1,29 +1,29 @@
 import { Module } from "@nestjs/common";
 
 import { EcommercemallAdminAdminAudit_logsController } from "./controllers/ecommerceMall/admin/admin/audit-logs/EcommercemallAdminAdminAudit_logsController";
-import { EcommercemallAdminAdminAuditlogsController } from "./controllers/ecommerceMall/admin/admin/auditLogs/EcommercemallAdminAdminAuditlogsController";
-import { EcommercemallAdminAdminCategoriesController } from "./controllers/ecommerceMall/admin/admin/categories/EcommercemallAdminAdminCategoriesController";
-import { EcommercemallAdminAdminCategoriesSubcategoriesController } from "./controllers/ecommerceMall/admin/admin/categories/subcategories/EcommercemallAdminAdminCategoriesSubcategoriesController";
-import { EcommercemallAdminAdminDashboardMetricsController } from "./controllers/ecommerceMall/admin/admin/dashboard/metrics/EcommercemallAdminAdminDashboardMetricsController";
+import { EcommercemallAdminAdminPassword_resetsController } from "./controllers/ecommerceMall/admin/admin/password-resets/EcommercemallAdminAdminPassword_resetsController";
+import { EcommercemallAdminAdminProfileController } from "./controllers/ecommerceMall/admin/admin/profile/EcommercemallAdminAdminProfileController";
 import { EcommercemallAdminAdminRequestsController } from "./controllers/ecommerceMall/admin/admin/requests/EcommercemallAdminAdminRequestsController";
-import { EcommercemallAdminAdminsController } from "./controllers/ecommerceMall/admin/admins/EcommercemallAdminAdminsController";
-import { EcommercemallAdminCancellation_request_snapshotsController } from "./controllers/ecommerceMall/admin/cancellation-request-snapshots/EcommercemallAdminCancellation_request_snapshotsController";
-import { EcommercemallAdminCancellation_requestsController } from "./controllers/ecommerceMall/admin/cancellation-requests/EcommercemallAdminCancellation_requestsController";
-import { EcommercemallAdminCancellation_requestsSnapshotsController } from "./controllers/ecommerceMall/admin/cancellation-requests/snapshots/EcommercemallAdminCancellation_requestsSnapshotsController";
+import { EcommercemallAdminAdminSeller_approvalsController } from "./controllers/ecommerceMall/admin/admin/seller-approvals/EcommercemallAdminAdminSeller_approvalsController";
+import { EcommercemallAdminAdminSeller_suspensionsController } from "./controllers/ecommerceMall/admin/admin/seller-suspensions/EcommercemallAdminAdminSeller_suspensionsController";
+import { EcommercemallAdminAdminSessionsController } from "./controllers/ecommerceMall/admin/admin/sessions/EcommercemallAdminAdminSessionsController";
 import { EcommercemallAdminCategoriesController } from "./controllers/ecommerceMall/admin/categories/EcommercemallAdminCategoriesController";
 import { EcommercemallAdminCustomersController } from "./controllers/ecommerceMall/admin/customers/EcommercemallAdminCustomersController";
-import { EcommercemallAdminOrder_itemsController } from "./controllers/ecommerceMall/admin/order-items/EcommercemallAdminOrder_itemsController";
-import { EcommercemallAdminOrdersItemsController } from "./controllers/ecommerceMall/admin/orders/items/EcommercemallAdminOrdersItemsController";
+import { EcommercemallAdminCustomersAddressesController } from "./controllers/ecommerceMall/admin/customers/addresses/validate/EcommercemallAdminCustomersAddressesController";
+import { EcommercemallAdminCustomersPassword_resetsController } from "./controllers/ecommerceMall/admin/customers/password-resets/EcommercemallAdminCustomersPassword_resetsController";
+import { EcommercemallAdminCustomersSessionsController } from "./controllers/ecommerceMall/admin/customers/sessions/EcommercemallAdminCustomersSessionsController";
+import { EcommercemallAdminInventoryOverviewController } from "./controllers/ecommerceMall/admin/inventory/overview/EcommercemallAdminInventoryOverviewController";
+import { EcommercemallAdminOrdersController } from "./controllers/ecommerceMall/admin/orders/EcommercemallAdminOrdersController";
+import { EcommercemallAdminPaymentsConfigController } from "./controllers/ecommerceMall/admin/payments/config/EcommercemallAdminPaymentsConfigController";
+import { EcommercemallAdminProductvariantsInventoryrecordsController } from "./controllers/ecommerceMall/admin/productVariants/inventoryRecords/EcommercemallAdminProductvariantsInventoryrecordsController";
+import { EcommercemallAdminProductsRating_statisticsController } from "./controllers/ecommerceMall/admin/products/rating-statistics/EcommercemallAdminProductsRating_statisticsController";
+import { EcommercemallAdminProductsReviewsController } from "./controllers/ecommerceMall/admin/products/reviews/EcommercemallAdminProductsReviewsController";
 import { EcommercemallAdminProductsSnapshotsController } from "./controllers/ecommerceMall/admin/products/snapshots/EcommercemallAdminProductsSnapshotsController";
-import { EcommercemallAdminProductsVariantsSnapshotsController } from "./controllers/ecommerceMall/admin/products/variants/snapshots/EcommercemallAdminProductsVariantsSnapshotsController";
-import { EcommercemallAdminRefund_request_snapshotsController } from "./controllers/ecommerceMall/admin/refund-request-snapshots/EcommercemallAdminRefund_request_snapshotsController";
-import { EcommercemallAdminRefund_requestsController } from "./controllers/ecommerceMall/admin/refund-requests/EcommercemallAdminRefund_requestsController";
-import { EcommercemallAdminRefund_requestsSnapshotsController } from "./controllers/ecommerceMall/admin/refund-requests/snapshots/EcommercemallAdminRefund_requestsSnapshotsController";
-import { EcommercemallAdminReviewsSnapshotsController } from "./controllers/ecommerceMall/admin/reviews/snapshots/EcommercemallAdminReviewsSnapshotsController";
-import { EcommercemallAdminSeller_approvalsController } from "./controllers/ecommerceMall/admin/seller-approvals/EcommercemallAdminSeller_approvalsController";
-import { EcommercemallAdminSeller_suspensionsController } from "./controllers/ecommerceMall/admin/seller-suspensions/EcommercemallAdminSeller_suspensionsController";
 import { EcommercemallAdminSellersController } from "./controllers/ecommerceMall/admin/sellers/EcommercemallAdminSellersController";
+import { EcommercemallAdminSellersPassword_resetsController } from "./controllers/ecommerceMall/admin/sellers/password-resets/EcommercemallAdminSellersPassword_resetsController";
+import { EcommercemallAdminSellersSessionsController } from "./controllers/ecommerceMall/admin/sellers/sessions/EcommercemallAdminSellersSessionsController";
 import { EcommercemallAuthAdminController } from "./controllers/ecommerceMall/auth/admin/EcommercemallAuthAdminController";
+import { EcommercemallAuthAdminRequestController } from "./controllers/ecommerceMall/auth/admin/request/EcommercemallAuthAdminRequestController";
 import { EcommercemallAuthCustomerController } from "./controllers/ecommerceMall/auth/customer/EcommercemallAuthCustomerController";
 import { EcommercemallAuthGuestController } from "./controllers/ecommerceMall/auth/guest/EcommercemallAuthGuestController";
 import { EcommercemallAuthSellerController } from "./controllers/ecommerceMall/auth/seller/EcommercemallAuthSellerController";
@@ -31,172 +31,202 @@ import { EcommercemallAuthSuperadminController } from "./controllers/ecommerceMa
 import { EcommercemallCategoriesController } from "./controllers/ecommerceMall/categories/EcommercemallCategoriesController";
 import { EcommercemallCategoriesProductsController } from "./controllers/ecommerceMall/categories/products/EcommercemallCategoriesProductsController";
 import { EcommercemallCustomerAddressesController } from "./controllers/ecommerceMall/customer/addresses/EcommercemallCustomerAddressesController";
-import { EcommercemallCustomerAdminRequestsController } from "./controllers/ecommerceMall/customer/admin/requests/EcommercemallCustomerAdminRequestsController";
-import { EcommercemallCustomerCancellation_request_snapshotsController } from "./controllers/ecommerceMall/customer/cancellation-request-snapshots/EcommercemallCustomerCancellation_request_snapshotsController";
+import { EcommercemallCustomerAdminRequestsController } from "./controllers/ecommerceMall/customer/admin/requests/cancel/EcommercemallCustomerAdminRequestsController";
 import { EcommercemallCustomerCancellation_requestsController } from "./controllers/ecommerceMall/customer/cancellation-requests/EcommercemallCustomerCancellation_requestsController";
 import { EcommercemallCustomerCancellation_requestsSnapshotsController } from "./controllers/ecommerceMall/customer/cancellation-requests/snapshots/EcommercemallCustomerCancellation_requestsSnapshotsController";
+import { EcommercemallCustomerCartController } from "./controllers/ecommerceMall/customer/cart/EcommercemallCustomerCartController";
 import { EcommercemallCustomerCartItemsController } from "./controllers/ecommerceMall/customer/cart/items/EcommercemallCustomerCartItemsController";
-import { EcommercemallCustomerCheckoutConfirmController } from "./controllers/ecommerceMall/customer/checkout/confirm/EcommercemallCustomerCheckoutConfirmController";
-import { EcommercemallCustomerCheckoutController } from "./controllers/ecommerceMall/customer/checkout/prepare/EcommercemallCustomerCheckoutController";
+import { EcommercemallCustomerCustomerEmail_verificationsController } from "./controllers/ecommerceMall/customer/customer/email-verifications/EcommercemallCustomerCustomerEmail_verificationsController";
+import { EcommercemallCustomerCustomerPassword_resetsController } from "./controllers/ecommerceMall/customer/customer/password-resets/EcommercemallCustomerCustomerPassword_resetsController";
+import { EcommercemallCustomerCustomerSessionsController } from "./controllers/ecommerceMall/customer/customer/sessions/EcommercemallCustomerCustomerSessionsController";
 import { EcommercemallCustomerCustomersAddressesController } from "./controllers/ecommerceMall/customer/customers/addresses/EcommercemallCustomerCustomersAddressesController";
-import { EcommercemallCustomerCustomersCartController } from "./controllers/ecommerceMall/customer/customers/cart/EcommercemallCustomerCustomersCartController";
 import { EcommercemallCustomerCustomersCartItemsController } from "./controllers/ecommerceMall/customer/customers/cart/items/EcommercemallCustomerCustomersCartItemsController";
-import { EcommercemallCustomerCustomersOrdersItemsReviewController } from "./controllers/ecommerceMall/customer/customers/orders/items/review/EcommercemallCustomerCustomersOrdersItemsReviewController";
-import { EcommercemallCustomerCustomersReviewsController } from "./controllers/ecommerceMall/customer/customers/reviews/EcommercemallCustomerCustomersReviewsController";
-import { EcommercemallCustomerCustomersWishlistController } from "./controllers/ecommerceMall/customer/customers/wishlist/EcommercemallCustomerCustomersWishlistController";
+import { EcommercemallCustomerCustomersCheckoutController } from "./controllers/ecommerceMall/customer/customers/checkout/EcommercemallCustomerCustomersCheckoutController";
+import { EcommercemallCustomerCustomersProfileController } from "./controllers/ecommerceMall/customer/customers/profile/EcommercemallCustomerCustomersProfileController";
+import { EcommercemallCustomerEcommercemallCartItemsController } from "./controllers/ecommerceMall/customer/ecommerceMall/cart/items/EcommercemallCustomerEcommercemallCartItemsController";
+import { EcommercemallCustomerEcommercemallOrdersController } from "./controllers/ecommerceMall/customer/ecommerceMall/orders/EcommercemallCustomerEcommercemallOrdersController";
+import { EcommercemallCustomerEcommercemallOrdersItemsController } from "./controllers/ecommerceMall/customer/ecommerceMall/orders/items/EcommercemallCustomerEcommercemallOrdersItemsController";
 import { EcommercemallCustomerOrdersController } from "./controllers/ecommerceMall/customer/orders/EcommercemallCustomerOrdersController";
-import { EcommercemallCustomerOrdersItemsController } from "./controllers/ecommerceMall/customer/orders/items/EcommercemallCustomerOrdersItemsController";
-import { EcommercemallCustomerOrdersShipmentsConfirm_deliveryController } from "./controllers/ecommerceMall/customer/orders/shipments/confirm-delivery/EcommercemallCustomerOrdersShipmentsConfirm_deliveryController";
-import { EcommercemallCustomerOrdersShipmentsTrackingController } from "./controllers/ecommerceMall/customer/orders/shipments/tracking/EcommercemallCustomerOrdersShipmentsTrackingController";
+import { EcommercemallCustomerOrdersItemsReviewController } from "./controllers/ecommerceMall/customer/orders/items/review/EcommercemallCustomerOrdersItemsReviewController";
+import { EcommercemallCustomerPaymentsController } from "./controllers/ecommerceMall/customer/payments/checkout/EcommercemallCustomerPaymentsController";
+import { EcommercemallCustomerProductsReviewsController } from "./controllers/ecommerceMall/customer/products/reviews/EcommercemallCustomerProductsReviewsController";
+import { EcommercemallCustomerProductsSearchController } from "./controllers/ecommerceMall/customer/products/search/EcommercemallCustomerProductsSearchController";
 import { EcommercemallCustomerProfileController } from "./controllers/ecommerceMall/customer/profile/EcommercemallCustomerProfileController";
-import { EcommercemallCustomerRefund_request_snapshotsController } from "./controllers/ecommerceMall/customer/refund-request-snapshots/EcommercemallCustomerRefund_request_snapshotsController";
+import { EcommercemallCustomerProfile_exportController } from "./controllers/ecommerceMall/customer/profile/export/EcommercemallCustomerProfile_exportController";
+import { EcommercemallCustomerProfileValidateController } from "./controllers/ecommerceMall/customer/profile/validate/EcommercemallCustomerProfileValidateController";
 import { EcommercemallCustomerRefund_requestsController } from "./controllers/ecommerceMall/customer/refund-requests/EcommercemallCustomerRefund_requestsController";
 import { EcommercemallCustomerRefund_requestsSnapshotsController } from "./controllers/ecommerceMall/customer/refund-requests/snapshots/EcommercemallCustomerRefund_requestsSnapshotsController";
 import { EcommercemallCustomerReviewsController } from "./controllers/ecommerceMall/customer/reviews/EcommercemallCustomerReviewsController";
 import { EcommercemallCustomerReviewsSnapshotsController } from "./controllers/ecommerceMall/customer/reviews/snapshots/EcommercemallCustomerReviewsSnapshotsController";
-import { EcommercemallCustomerSessionsController } from "./controllers/ecommerceMall/customer/sessions/EcommercemallCustomerSessionsController";
 import { EcommercemallCustomerWishlistController } from "./controllers/ecommerceMall/customer/wishlist/EcommercemallCustomerWishlistController";
-import { EcommercemallGuestSessionsController } from "./controllers/ecommerceMall/guest/sessions/EcommercemallGuestSessionsController";
-import { EcommercemallProductsImagesController } from "./controllers/ecommerceMall/products/images/EcommercemallProductsImagesController";
-import { EcommercemallProductsReviewsController } from "./controllers/ecommerceMall/products/reviews/EcommercemallProductsReviewsController";
-import { EcommercemallProductsController } from "./controllers/ecommerceMall/products/search/EcommercemallProductsController";
-import { EcommercemallProductsVariantsController } from "./controllers/ecommerceMall/products/variants/EcommercemallProductsVariantsController";
+import { EcommercemallGuest_sessionsController } from "./controllers/ecommerceMall/guest-sessions/EcommercemallGuest_sessionsController";
+import { EcommercemallGuestProductsRating_statisticsController } from "./controllers/ecommerceMall/guest/products/rating-statistics/EcommercemallGuestProductsRating_statisticsController";
+import { EcommercemallGuestProductsReviewsController } from "./controllers/ecommerceMall/guest/products/reviews/EcommercemallGuestProductsReviewsController";
+import { EcommercemallGuestProductsSearchController } from "./controllers/ecommerceMall/guest/products/search/EcommercemallGuestProductsSearchController";
+import { EcommercemallOrdersItemsController } from "./controllers/ecommerceMall/orders/items/EcommercemallOrdersItemsController";
+import { EcommercemallOrdersShipmentsController } from "./controllers/ecommerceMall/orders/shipments/EcommercemallOrdersShipmentsController";
+import { EcommercemallPaymentsWebhookController } from "./controllers/ecommerceMall/payments/webhook/EcommercemallPaymentsWebhookController";
+import { EcommercemallProductsController } from "./controllers/ecommerceMall/products/EcommercemallProductsController";
 import { EcommercemallReviewsController } from "./controllers/ecommerceMall/reviews/EcommercemallReviewsController";
-import { EcommercemallSellerAdminRequestsController } from "./controllers/ecommerceMall/seller/admin/requests/EcommercemallSellerAdminRequestsController";
-import { EcommercemallSellerCancellation_request_snapshotsController } from "./controllers/ecommerceMall/seller/cancellation-request-snapshots/EcommercemallSellerCancellation_request_snapshotsController";
+import { EcommercemallSellerAdmin_requestsController } from "./controllers/ecommerceMall/seller/admin-requests/EcommercemallSellerAdmin_requestsController";
+import { EcommercemallSellerAdminRequestsController } from "./controllers/ecommerceMall/seller/admin/requests/cancel/EcommercemallSellerAdminRequestsController";
 import { EcommercemallSellerCancellation_requestsController } from "./controllers/ecommerceMall/seller/cancellation-requests/EcommercemallSellerCancellation_requestsController";
-import { EcommercemallSellerCancellation_requestsSnapshotsController } from "./controllers/ecommerceMall/seller/cancellation-requests/snapshots/EcommercemallSellerCancellation_requestsSnapshotsController";
 import { EcommercemallSellerDashboardController } from "./controllers/ecommerceMall/seller/dashboard/EcommercemallSellerDashboardController";
-import { EcommercemallSellerDashboardOrder_itemsController } from "./controllers/ecommerceMall/seller/dashboard/order-items/EcommercemallSellerDashboardOrder_itemsController";
-import { EcommercemallSellerDashboardSummaryController } from "./controllers/ecommerceMall/seller/dashboard/summary/EcommercemallSellerDashboardSummaryController";
-import { EcommercemallSellerInventory_historyController } from "./controllers/ecommerceMall/seller/inventory-history/EcommercemallSellerInventory_historyController";
-import { EcommercemallSellerOrdersItemsController } from "./controllers/ecommerceMall/seller/orders/items/EcommercemallSellerOrdersItemsController";
-import { EcommercemallSellerProduct_snapshotsController } from "./controllers/ecommerceMall/seller/product-snapshots/EcommercemallSellerProduct_snapshotsController";
+import { EcommercemallSellerEcommercemallVariantsInventoryController } from "./controllers/ecommerceMall/seller/ecommerceMall/variants/inventory/EcommercemallSellerEcommercemallVariantsInventoryController";
+import { EcommercemallSellerInventoriesController } from "./controllers/ecommerceMall/seller/inventories/EcommercemallSellerInventoriesController";
+import { EcommercemallSellerInventoriesLow_stockController } from "./controllers/ecommerceMall/seller/inventories/low-stock/EcommercemallSellerInventoriesLow_stockController";
+import { EcommercemallSellerOrder_itemsController } from "./controllers/ecommerceMall/seller/order-items/EcommercemallSellerOrder_itemsController";
+import { EcommercemallSellerOrdersShipmentsController } from "./controllers/ecommerceMall/seller/orders/shipments/EcommercemallSellerOrdersShipmentsController";
+import { EcommercemallSellerProductvariantsInventoryrecordsController } from "./controllers/ecommerceMall/seller/productVariants/inventoryRecords/EcommercemallSellerProductvariantsInventoryrecordsController";
 import { EcommercemallSellerProductsController } from "./controllers/ecommerceMall/seller/products/EcommercemallSellerProductsController";
 import { EcommercemallSellerProductsImagesController } from "./controllers/ecommerceMall/seller/products/images/EcommercemallSellerProductsImagesController";
+import { EcommercemallSellerProductsRating_statisticsController } from "./controllers/ecommerceMall/seller/products/rating-statistics/EcommercemallSellerProductsRating_statisticsController";
+import { EcommercemallSellerProductsReviewsController } from "./controllers/ecommerceMall/seller/products/reviews/EcommercemallSellerProductsReviewsController";
 import { EcommercemallSellerProductsSnapshotsController } from "./controllers/ecommerceMall/seller/products/snapshots/EcommercemallSellerProductsSnapshotsController";
 import { EcommercemallSellerProductsVariantsController } from "./controllers/ecommerceMall/seller/products/variants/EcommercemallSellerProductsVariantsController";
 import { EcommercemallSellerProductsVariantsInventoryController } from "./controllers/ecommerceMall/seller/products/variants/inventory/EcommercemallSellerProductsVariantsInventoryController";
-import { EcommercemallSellerProductsVariantsOptionsController } from "./controllers/ecommerceMall/seller/products/variants/options/EcommercemallSellerProductsVariantsOptionsController";
-import { EcommercemallSellerProductsVariantsSnapshotsController } from "./controllers/ecommerceMall/seller/products/variants/snapshots/EcommercemallSellerProductsVariantsSnapshotsController";
-import { EcommercemallSellerProfileController } from "./controllers/ecommerceMall/seller/profile/EcommercemallSellerProfileController";
+import { EcommercemallSellerProductsVariantsOption_valuesController } from "./controllers/ecommerceMall/seller/products/variants/option-values/EcommercemallSellerProductsVariantsOption_valuesController";
 import { EcommercemallSellerProfileSnapshotsController } from "./controllers/ecommerceMall/seller/profile/snapshots/EcommercemallSellerProfileSnapshotsController";
-import { EcommercemallSellerRefund_request_snapshotsController } from "./controllers/ecommerceMall/seller/refund-request-snapshots/EcommercemallSellerRefund_request_snapshotsController";
 import { EcommercemallSellerRefund_requestsController } from "./controllers/ecommerceMall/seller/refund-requests/EcommercemallSellerRefund_requestsController";
-import { EcommercemallSellerRefund_requestsSnapshotsController } from "./controllers/ecommerceMall/seller/refund-requests/snapshots/EcommercemallSellerRefund_requestsSnapshotsController";
-import { EcommercemallSellerSeller_profile_snapshotsController } from "./controllers/ecommerceMall/seller/seller-profile-snapshots/EcommercemallSellerSeller_profile_snapshotsController";
-import { EcommercemallSellerSellerAdmin_requestsController } from "./controllers/ecommerceMall/seller/seller/admin-requests/EcommercemallSellerSellerAdmin_requestsController";
-import { EcommercemallSellerSellerProductsVariantsController } from "./controllers/ecommerceMall/seller/seller/products/variants/EcommercemallSellerSellerProductsVariantsController";
-import { EcommercemallSellerSellerProfileController } from "./controllers/ecommerceMall/seller/seller/profile/EcommercemallSellerSellerProfileController";
-import { EcommercemallSellerShipmentsController } from "./controllers/ecommerceMall/seller/shipments/EcommercemallSellerShipmentsController";
-import { EcommercemallSellerShipmentsItemsController } from "./controllers/ecommerceMall/seller/shipments/items/EcommercemallSellerShipmentsItemsController";
-import { EcommercemallSellers_publicController } from "./controllers/ecommerceMall/sellers/public/EcommercemallSellers_publicController";
-import { EcommercemallSuperadminAdmin_promotionsController } from "./controllers/ecommerceMall/superAdmin/admin-promotions/EcommercemallSuperadminAdmin_promotionsController";
+import { EcommercemallSellerReviewsController } from "./controllers/ecommerceMall/seller/reviews/EcommercemallSellerReviewsController";
+import { EcommercemallSellerSellerEmail_verificationsController } from "./controllers/ecommerceMall/seller/seller/email-verifications/EcommercemallSellerSellerEmail_verificationsController";
+import { EcommercemallSellerSellerPassword_resetsController } from "./controllers/ecommerceMall/seller/seller/password-resets/EcommercemallSellerSellerPassword_resetsController";
+import { EcommercemallSellerSellerSessionsController } from "./controllers/ecommerceMall/seller/seller/sessions/EcommercemallSellerSellerSessionsController";
+import { EcommercemallSellerSellersProfileController } from "./controllers/ecommerceMall/seller/sellers/profile/EcommercemallSellerSellersProfileController";
+import { EcommercemallSellerSellersRejection_reasonController } from "./controllers/ecommerceMall/seller/sellers/rejection-reason/EcommercemallSellerSellersRejection_reasonController";
+import { EcommercemallSellerVariantsInventoryController } from "./controllers/ecommerceMall/seller/variants/inventory/EcommercemallSellerVariantsInventoryController";
+import { EcommercemallSellerVariantsInventoryHistoryController } from "./controllers/ecommerceMall/seller/variants/inventory/history/EcommercemallSellerVariantsInventoryHistoryController";
+import { EcommercemallShipmentsItemsController } from "./controllers/ecommerceMall/shipments/items/EcommercemallShipmentsItemsController";
+import { EcommercemallSuperadminAdminAudit_logsController } from "./controllers/ecommerceMall/superAdmin/admin/audit-logs/EcommercemallSuperadminAdminAudit_logsController";
 import { EcommercemallSuperadminAdminRequestsController } from "./controllers/ecommerceMall/superAdmin/admin/requests/EcommercemallSuperadminAdminRequestsController";
 import { EcommercemallSuperadminAdminsController } from "./controllers/ecommerceMall/superAdmin/admins/EcommercemallSuperadminAdminsController";
-import { EcommercemallSuperadminSellerAdmin_requestsController } from "./controllers/ecommerceMall/superAdmin/seller/admin-requests/EcommercemallSuperadminSellerAdmin_requestsController";
-import { EcommercemallSuperadminSuper_adminAudit_logsController } from "./controllers/ecommerceMall/superAdmin/super-admin/audit-logs/EcommercemallSuperadminSuper_adminAudit_logsController";
+import { EcommercemallSuperadminAdminsPassword_resetsController } from "./controllers/ecommerceMall/superAdmin/admins/password-resets/EcommercemallSuperadminAdminsPassword_resetsController";
+import { EcommercemallSuperadminAdminsSessionsController } from "./controllers/ecommerceMall/superAdmin/admins/sessions/EcommercemallSuperadminAdminsSessionsController";
+import { EcommercemallSuperadminCategoriesController } from "./controllers/ecommerceMall/superAdmin/categories/EcommercemallSuperadminCategoriesController";
+import { EcommercemallSuperadminPassword_resetsController } from "./controllers/ecommerceMall/superAdmin/password-resets/EcommercemallSuperadminPassword_resetsController";
+import { EcommercemallSuperadminProductvariantsInventoryrecordsController } from "./controllers/ecommerceMall/superAdmin/productVariants/inventoryRecords/EcommercemallSuperadminProductvariantsInventoryrecordsController";
+import { EcommercemallSuperadminProductsSnapshotsController } from "./controllers/ecommerceMall/superAdmin/products/snapshots/EcommercemallSuperadminProductsSnapshotsController";
+import { EcommercemallSuperadminProfileController } from "./controllers/ecommerceMall/superAdmin/profile/EcommercemallSuperadminProfileController";
+import { EcommercemallSuperadminSessionsController } from "./controllers/ecommerceMall/superAdmin/sessions/EcommercemallSuperadminSessionsController";
 import { EcommercemallSuperadminSuper_adminsController } from "./controllers/ecommerceMall/superAdmin/super-admins/EcommercemallSuperadminSuper_adminsController";
+import { EcommercemallSuperadminSuperadminAdmin_promotionsController } from "./controllers/ecommerceMall/superAdmin/superAdmin/admin-promotions/EcommercemallSuperadminSuperadminAdmin_promotionsController";
+import { EcommercemallSuperadminSuperadminAdminsController } from "./controllers/ecommerceMall/superAdmin/superAdmin/admins/EcommercemallSuperadminSuperadminAdminsController";
+import { EcommercemallSuperadminSuperadminAudit_logsController } from "./controllers/ecommerceMall/superAdmin/superAdmin/audit-logs/EcommercemallSuperadminSuperadminAudit_logsController";
 
 @Module({
   controllers: [
     EcommercemallAuthGuestController,
     EcommercemallAuthCustomerController,
     EcommercemallAuthSellerController,
+    EcommercemallAuthAdminRequestController,
     EcommercemallAuthAdminController,
     EcommercemallAuthSuperadminController,
+    EcommercemallGuest_sessionsController,
     EcommercemallAdminCustomersController,
+    EcommercemallCustomerCustomersProfileController,
+    EcommercemallCustomerCustomerSessionsController,
+    EcommercemallAdminCustomersSessionsController,
+    EcommercemallCustomerCustomerPassword_resetsController,
+    EcommercemallAdminCustomersPassword_resetsController,
+    EcommercemallCustomerCustomerEmail_verificationsController,
+    EcommercemallAdminSellersController,
+    EcommercemallSellerSellersProfileController,
+    EcommercemallSellerSellerSessionsController,
+    EcommercemallAdminSellersSessionsController,
+    EcommercemallSellerSellerPassword_resetsController,
+    EcommercemallAdminSellersPassword_resetsController,
+    EcommercemallSellerSellerEmail_verificationsController,
+    EcommercemallSuperadminAdminsController,
+    EcommercemallAdminAdminProfileController,
+    EcommercemallAdminAdminSessionsController,
+    EcommercemallSuperadminAdminsSessionsController,
+    EcommercemallAdminAdminPassword_resetsController,
+    EcommercemallSuperadminAdminsPassword_resetsController,
+    EcommercemallSuperadminSuper_adminsController,
+    EcommercemallSuperadminProfileController,
+    EcommercemallSuperadminSessionsController,
+    EcommercemallSuperadminPassword_resetsController,
     EcommercemallCustomerProfileController,
     EcommercemallCustomerAddressesController,
     EcommercemallCustomerCustomersAddressesController,
-    EcommercemallAdminSellersController,
-    EcommercemallSellers_publicController,
-    EcommercemallSuperadminAdminsController,
-    EcommercemallSuperadminSuper_adminsController,
-    EcommercemallGuestSessionsController,
-    EcommercemallCustomerSessionsController,
-    EcommercemallAdminAdminAuditlogsController,
-    EcommercemallAdminAdminAudit_logsController,
-    EcommercemallSuperadminSuper_adminAudit_logsController,
-    EcommercemallAdminAdminRequestsController,
-    EcommercemallSuperadminAdminRequestsController,
-    EcommercemallCustomerAdminRequestsController,
-    EcommercemallSellerAdminRequestsController,
-    EcommercemallSellerSellerAdmin_requestsController,
-    EcommercemallSuperadminSellerAdmin_requestsController,
-    EcommercemallCustomerCancellation_request_snapshotsController,
-    EcommercemallSellerCancellation_request_snapshotsController,
-    EcommercemallAdminCancellation_request_snapshotsController,
-    EcommercemallCustomerRefund_request_snapshotsController,
-    EcommercemallSellerRefund_request_snapshotsController,
-    EcommercemallAdminRefund_request_snapshotsController,
-    EcommercemallCustomerWishlistController,
-    EcommercemallCustomerCustomersWishlistController,
+    EcommercemallSellerProfileSnapshotsController,
+    EcommercemallSellerAdmin_requestsController,
+    EcommercemallCategoriesController,
+    EcommercemallCategoriesProductsController,
+    EcommercemallAdminCategoriesController,
+    EcommercemallSuperadminCategoriesController,
+    EcommercemallProductsController,
     EcommercemallSellerProductsController,
     EcommercemallSellerProductsImagesController,
     EcommercemallSellerProductsVariantsController,
-    EcommercemallSellerSellerProductsVariantsController,
-    EcommercemallSellerProductsVariantsOptionsController,
-    EcommercemallSellerProfileController,
-    EcommercemallSellerProfileSnapshotsController,
-    EcommercemallSellerProductsVariantsInventoryController,
+    EcommercemallSellerProductsVariantsOption_valuesController,
     EcommercemallSellerProductsSnapshotsController,
     EcommercemallAdminProductsSnapshotsController,
-    EcommercemallCategoriesController,
-    EcommercemallCategoriesProductsController,
-    EcommercemallAdminAdminCategoriesController,
-    EcommercemallAdminAdminCategoriesSubcategoriesController,
-    EcommercemallProductsImagesController,
-    EcommercemallProductsVariantsController,
-    EcommercemallProductsReviewsController,
-    EcommercemallCustomerCustomersReviewsController,
-    EcommercemallSellerSellerProfileController,
-    EcommercemallCustomerCustomersCartController,
-    EcommercemallCustomerCustomersCartItemsController,
+    EcommercemallSuperadminProductsSnapshotsController,
+    EcommercemallSellerProductsVariantsInventoryController,
+    EcommercemallSellerProductvariantsInventoryrecordsController,
+    EcommercemallAdminProductvariantsInventoryrecordsController,
+    EcommercemallSuperadminProductvariantsInventoryrecordsController,
     EcommercemallCustomerCartItemsController,
-    EcommercemallCustomerOrdersController,
-    EcommercemallCustomerOrdersItemsController,
-    EcommercemallSellerShipmentsController,
-    EcommercemallSellerShipmentsItemsController,
-    EcommercemallAdminOrdersItemsController,
+    EcommercemallCustomerCustomersCartItemsController,
+    EcommercemallCustomerWishlistController,
+    EcommercemallAdminOrdersController,
+    EcommercemallSellerOrder_itemsController,
+    EcommercemallOrdersItemsController,
+    EcommercemallSellerOrdersShipmentsController,
+    EcommercemallOrdersShipmentsController,
+    EcommercemallShipmentsItemsController,
     EcommercemallCustomerCancellation_requestsController,
-    EcommercemallSellerCancellation_requestsController,
-    EcommercemallAdminCancellation_requestsController,
     EcommercemallCustomerCancellation_requestsSnapshotsController,
-    EcommercemallSellerCancellation_requestsSnapshotsController,
-    EcommercemallAdminCancellation_requestsSnapshotsController,
+    EcommercemallSellerCancellation_requestsController,
     EcommercemallCustomerRefund_requestsController,
-    EcommercemallSellerRefund_requestsController,
-    EcommercemallAdminRefund_requestsController,
     EcommercemallCustomerRefund_requestsSnapshotsController,
-    EcommercemallSellerRefund_requestsSnapshotsController,
-    EcommercemallAdminRefund_requestsSnapshotsController,
+    EcommercemallSellerRefund_requestsController,
+    EcommercemallGuestProductsReviewsController,
+    EcommercemallCustomerProductsReviewsController,
+    EcommercemallSellerProductsReviewsController,
+    EcommercemallAdminProductsReviewsController,
     EcommercemallReviewsController,
-    EcommercemallCustomerCustomersOrdersItemsReviewController,
+    EcommercemallCustomerOrdersItemsReviewController,
     EcommercemallCustomerReviewsController,
     EcommercemallCustomerReviewsSnapshotsController,
-    EcommercemallAdminReviewsSnapshotsController,
-    EcommercemallAdminAdminsController,
-    EcommercemallAdminSeller_approvalsController,
-    EcommercemallAdminSeller_suspensionsController,
-    EcommercemallSuperadminAdmin_promotionsController,
-    EcommercemallAdminCategoriesController,
-    EcommercemallAdminOrder_itemsController,
-    EcommercemallSellerSeller_profile_snapshotsController,
+    EcommercemallAdminAdminRequestsController,
+    EcommercemallSuperadminAdminRequestsController,
+    EcommercemallAdminAdminAudit_logsController,
+    EcommercemallSuperadminAdminAudit_logsController,
+    EcommercemallAdminAdminSeller_approvalsController,
+    EcommercemallAdminAdminSeller_suspensionsController,
+    EcommercemallSuperadminSuperadminAdmin_promotionsController,
+    EcommercemallSuperadminSuperadminAdminsController,
+    EcommercemallSuperadminSuperadminAudit_logsController,
+    EcommercemallCustomerOrdersController,
+    EcommercemallCustomerEcommercemallOrdersController,
+    EcommercemallCustomerEcommercemallOrdersItemsController,
+    EcommercemallCustomerCartController,
+    EcommercemallCustomerEcommercemallCartItemsController,
+    EcommercemallSellerVariantsInventoryController,
+    EcommercemallSellerEcommercemallVariantsInventoryController,
+    EcommercemallCustomerProfileValidateController,
+    EcommercemallCustomerProfile_exportController,
+    EcommercemallAdminCustomersAddressesController,
+    EcommercemallSellerSellersRejection_reasonController,
+    EcommercemallGuestProductsSearchController,
+    EcommercemallCustomerProductsSearchController,
+    EcommercemallSellerInventoriesController,
+    EcommercemallSellerInventoriesLow_stockController,
+    EcommercemallSellerVariantsInventoryHistoryController,
+    EcommercemallAdminInventoryOverviewController,
+    EcommercemallCustomerCustomersCheckoutController,
     EcommercemallSellerDashboardController,
-    EcommercemallSellerDashboardOrder_itemsController,
-    EcommercemallSellerInventory_historyController,
-    EcommercemallProductsController,
-    EcommercemallCustomerCheckoutController,
-    EcommercemallCustomerCheckoutConfirmController,
-    EcommercemallSellerDashboardSummaryController,
-    EcommercemallSellerOrdersItemsController,
-    EcommercemallCustomerOrdersShipmentsTrackingController,
-    EcommercemallCustomerOrdersShipmentsConfirm_deliveryController,
-    EcommercemallSellerProductsVariantsSnapshotsController,
-    EcommercemallAdminProductsVariantsSnapshotsController,
-    EcommercemallAdminAdminDashboardMetricsController,
-    EcommercemallSellerProduct_snapshotsController,
+    EcommercemallGuestProductsRating_statisticsController,
+    EcommercemallSellerProductsRating_statisticsController,
+    EcommercemallAdminProductsRating_statisticsController,
+    EcommercemallSellerReviewsController,
+    EcommercemallCustomerAdminRequestsController,
+    EcommercemallSellerAdminRequestsController,
+    EcommercemallCustomerPaymentsController,
+    EcommercemallPaymentsWebhookController,
+    EcommercemallAdminPaymentsConfigController,
   ],
 })
 export class MyModule {}

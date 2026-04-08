@@ -1,12 +1,13 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCloneCommentSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommentSnapshot";
-import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
+import { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { RedditCloneMemberAtSummaryTransformer } from "./RedditCloneMemberAtSummaryTransformer";
 
 export namespace RedditCloneCommentSnapshotAtSummaryTransformer {
   export type Payload = Prisma.reddit_clone_comment_snapshotsGetPayload<
@@ -17,12 +18,13 @@ export namespace RedditCloneCommentSnapshotAtSummaryTransformer {
       select: {
         id: true,
         content: true,
-        vote_score: true,
+        user_profile_id: true,
+        reddit_clone_post_id: true,
+        created_at: true,
+        updated_at: true,
         snapshot_created_at: true,
-        comment_created_at: true,
-        comment_updated_at: true,
-        comment_deleted_at: true,
-        author: RedditCloneMemberAtSummaryTransformer.select(),
+        parent_comment_id: true,
+        comment: true,
       },
     } satisfies Prisma.reddit_clone_comment_snapshotsFindManyArgs;
   }
@@ -32,14 +34,18 @@ export namespace RedditCloneCommentSnapshotAtSummaryTransformer {
     return {
       id: input.id,
       content: input.content,
-      vote_score: input.vote_score,
+      author: {
+        id: input.user_profile_id,
+        display_name: "",
+        bio: null,
+        avatar: null,
+        karma: 0,
+        created_at: "1970-01-01T00:00:00.000Z",
+      },
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
       snapshot_created_at: input.snapshot_created_at.toISOString(),
-      comment_created_at: input.comment_created_at.toISOString(),
-      comment_updated_at: input.comment_updated_at.toISOString(),
-      comment_deleted_at: input.comment_deleted_at?.toISOString() ?? null,
-      author: await RedditCloneMemberAtSummaryTransformer.transform(
-        input.author,
-      ),
+      parent_comment_id: input.parent_comment_id ?? null,
     };
   }
 }

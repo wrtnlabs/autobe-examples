@@ -33,39 +33,49 @@ export async function postErpHrmTimeAuthMemberLogin(props: {
       password_hash: true,
     },
   });
-  if (!member) throw new HttpException("Invalid credentials", 401);
-  const passwordValid = await PasswordUtil.verify(
+  if (member === null) throw new HttpException("Invalid credentials", 401);
+  const valid: boolean = await PasswordUtil.verify(
     props.body.password,
     member.password_hash,
   );
-  if (!passwordValid) throw new HttpException("Invalid credentials", 401);
-  const issuedAt = new Date();
-  const accessExpiredAt = new Date(issuedAt.getTime() + 60 * 60 * 1000);
-  const refreshExpiredAt = new Date(
-    issuedAt.getTime() + 7 * 24 * 60 * 60 * 1000,
+  if (valid === false) throw new HttpException("Invalid credentials", 401);
+  const issuedAt: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(),
   );
+  const expiredAt: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshableUntil: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+  const sessionId: string & tags.Format<"uuid"> = v4();
   const session = await MyGlobal.prisma.erp_hrm_time_member_sessions.create({
     data: {
-      id: v4(),
+      id: sessionId,
       erp_hrm_time_member_id: member.id,
       ip: props.ip,
       href: "",
       referrer: "",
-      created_at: issuedAt.toISOString(),
-      expired_at: accessExpiredAt.toISOString(),
+      created_at: issuedAt,
+      expired_at: expiredAt,
+    },
+    select: {
+      id: true,
     },
   });
-  const createdAt = issuedAt.toISOString();
   const token: IAuthorizationToken = {
     access: jwt.sign(
       {
         type: "member",
         id: member.id,
         session_id: session.id,
-        created_at: createdAt,
+        created_at: issuedAt,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
+      {
+        expiresIn: "1h",
+        issuer: "autobe",
+      },
     ),
     refresh: jwt.sign(
       {
@@ -73,13 +83,16 @@ export async function postErpHrmTimeAuthMemberLogin(props: {
         id: member.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: createdAt,
+        created_at: issuedAt,
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
+      {
+        expiresIn: "7d",
+        issuer: "autobe",
+      },
     ),
-    expired_at: accessExpiredAt.toISOString(),
-    refreshable_until: refreshExpiredAt.toISOString(),
+    expired_at: expiredAt,
+    refreshable_until: refreshableUntil,
   };
   return {
     id: member.id,

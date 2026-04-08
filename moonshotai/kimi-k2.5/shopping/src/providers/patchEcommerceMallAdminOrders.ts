@@ -1,3 +1,4 @@
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
@@ -22,43 +23,63 @@ export async function patchEcommerceMallAdminOrders(props: {
   const page = props.body.page ?? 1;
   const limit = Math.min(props.body.limit ?? 20, 100);
   const skip = (page - 1) * limit;
-  const dateFilters: {
-    gte?: Date;
-    lte?: Date;
-  } = {};
-  if (
-    props.body.createdAfter !== undefined &&
-    props.body.createdAfter !== null
-  ) {
-    dateFilters.gte = new Date(props.body.createdAfter);
-  }
-  if (
-    props.body.createdBefore !== undefined &&
-    props.body.createdBefore !== null
-  ) {
-    dateFilters.lte = new Date(props.body.createdBefore);
-  }
-  const where = {
+  const whereInput = {
     deleted_at: null,
     ...(props.body.status !== undefined &&
       props.body.status !== null && { status: props.body.status }),
     ...(props.body.customerId !== undefined &&
-      props.body.customerId !== null && { customer_id: props.body.customerId }),
-    ...(Object.keys(dateFilters).length > 0 && { created_at: dateFilters }),
+      props.body.customerId !== null && {
+        customer_id: props.body.customerId,
+      }),
+    ...(props.body.minTotalPrice !== undefined &&
+      props.body.minTotalPrice !== null && {
+        total_price: { gte: props.body.minTotalPrice },
+      }),
+    ...(props.body.maxTotalPrice !== undefined &&
+      props.body.maxTotalPrice !== null && {
+        total_price: {
+          ...(props.body.minTotalPrice !== undefined &&
+            props.body.minTotalPrice !== null && {
+              gte: props.body.minTotalPrice,
+            }),
+          lte: props.body.maxTotalPrice,
+        },
+      }),
+    ...(props.body.createdAfter !== undefined &&
+      props.body.createdAfter !== null && {
+        created_at: { gte: new Date(props.body.createdAfter) },
+      }),
+    ...(props.body.createdBefore !== undefined &&
+      props.body.createdBefore !== null && {
+        created_at: {
+          ...(props.body.createdAfter !== undefined &&
+            props.body.createdAfter !== null && {
+              gte: new Date(props.body.createdAfter),
+            }),
+          lte: new Date(props.body.createdBefore),
+        },
+      }),
+    ...(props.body.orderNumber !== undefined &&
+      props.body.orderNumber !== null && {
+        order_number: {
+          contains: props.body.orderNumber,
+          mode: "insensitive" as const,
+        },
+      }),
   } satisfies Prisma.ecommerce_mall_ordersWhereInput;
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.ecommerce_mall_orders.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { created_at: "desc" },
-      ...EcommerceMallOrderAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.ecommerce_mall_orders.count({ where }),
-  ]);
+  const orders = await MyGlobal.prisma.ecommerce_mall_orders.findMany({
+    where: whereInput,
+    skip,
+    take: limit,
+    orderBy: { created_at: "desc" },
+    ...EcommerceMallOrderAtSummaryTransformer.select(),
+  });
+  const total = await MyGlobal.prisma.ecommerce_mall_orders.count({
+    where: whereInput,
+  });
   return {
     data: await ArrayUtil.asyncMap(
-      data,
+      orders,
       EcommerceMallOrderAtSummaryTransformer.transform,
     ),
     pagination: {

@@ -10,17 +10,41 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallCartItemCollector {
   export async function collect(props: {
     body: IEcommerceMallCartItem.ICreate;
-    ecommerceMallCarts: IEntity;
-    ecommerceMallCustomerSessions: IEntity;
+    cart: IEntity;
   }) {
-    const now = new Date();
     return {
+      // Scalar fields
       id: v4(),
       quantity: props.body.quantity,
-      created_at: now,
-      updated_at: now,
-      cart: { connect: { id: props.ecommerceMallCarts.id } },
-      productVariant: { connect: { id: props.body.variant_id } },
+      created_at: new Date(),
+      updated_at: new Date(),
+      // BelongsTo relations (MUST use connect, relation name NOT table name)
+      cart: { connect: { id: props.cart.id } },
+      productVariant: { connect: { id: props.body.productVariantId } },
     } satisfies Prisma.ecommerce_mall_cart_itemsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallCartItemCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallCartItem.ICreate;
+//           ecommerceMallCustomers: IEntity; // from authorized actor
+// ecommerceMallCustomerSessions: IEntity; // from authorized session
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       quantity: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       cart: ...,
+//       productVariant: ...,
+//           } satisfies Prisma.ecommerce_mall_cart_itemsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

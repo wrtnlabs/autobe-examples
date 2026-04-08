@@ -10,41 +10,36 @@ import { IPageIShoppingMallSeller } from "../../../structures/IPageIShoppingMall
 import { IShoppingMallSeller } from "../../../structures/IShoppingMallSeller";
 
 /**
- * Retrieve a filtered and paginated list of seller accounts on the shopping mall platform.
+ * Search and list seller accounts with filtering and pagination for administrative oversight.
  *
- * This operation provides advanced search capabilities for administrators to manage seller accounts. Administrators can filter sellers by approval status (pending, approved, rejected, suspended) to review registration requests, by account status (active, banned) to manage platform access, or search by shop name and email for quick lookups.
+ * This endpoint allows administrators to browse all registered sellers on the platform with various filtering options. Administrators can search by email address, filter by approval status (pending, approved, rejected), suspension status, or ban status. The results include seller account information along with their shop profile details.
  *
- * The endpoint supports comprehensive pagination with configurable page sizes and multiple sorting options. Results include seller summary information such as shop name, email, approval status, account status, and creation timestamp, optimized for list displays in the admin dashboard.
+ * The response is paginated using cursor-based pagination for efficient handling of large seller bases. Results can be sorted by creation date, approval status, email, or shop name.
  *
- * This operation is essential for platform quality vetting, enabling administrators to review pending seller registrations, monitor approved sellers, handle rejected applications, and manage suspended or banned accounts. It works in conjunction with individual seller management operations such as approving, rejecting, suspending, or unbanning specific sellers.
- *
- * Access is restricted to administrators only. Regular customers and sellers cannot access this endpoint. The operation excludes soft-deleted sellers from results to maintain data integrity while preserving order history.
+ * This operation requires administrator authentication and authorization. Regular customers and sellers cannot access this endpoint.
  *
  * @param props.connection
- * @param props.body Search criteria, filters, and pagination parameters for seller listing
+ * @param props.body Search criteria including email filter, approval status, suspension status, ban status, shop name search, pagination parameters (limit, cursor), and sorting options (field, direction).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the shopping_mall_sellers table with pagination and filtering capabilities.
+ * @x-autobe-specification Query shopping_mall_sellers table with optional joins to shopping_mall_seller_profiles for shop information.
  *
- * Apply search filters on shop_name (partial text matching using trigram index), email (exact or partial match), approval_status (enum: pending, approved, rejected, suspended), and status (enum: active, banned).
+ * Apply search filters:
+ * - Email partial match (case-insensitive)
+ * - Approval status exact match (pending, approved, rejected)
+ * - Suspension status exact match (true/false)
+ * - Ban status exact match (true/false)
+ * - Shop name partial match via join (case-insensitive)
  *
- * Support sorting by created_at (newest first or oldest first), shop_name (alphabetical), and approval_status.
+ * Apply sorting on: created_at (default descending), approval_status, email, shop_name.
  *
- * Implement offset-based pagination with configurable page size (default 20, max 100). Calculate total count for pagination metadata.
+ * Apply cursor-based pagination with limit and cursor parameters.
  *
- * Return seller summary information optimized for list displays, excluding sensitive fields like password_hash. Include: id, email, shop_name, shop_description, logo_image, approval_status, rejection_reason, status, created_at, updated_at.
+ * Return paginated summary records with seller ID, email, approval status, suspension status, ban status, shop name, and created_at.
  *
- * Apply role-based access control: verify the authenticated user has admin role before executing the query.
+ * Exclude deleted sellers (deleted_at IS NOT NULL) from results.
  *
- * Exclude soft-deleted sellers from results by filtering where deleted_at IS NULL.
- *
- * Optionally join with shopping_mall_seller_approval_requests to include approval request status or count for each seller.
- *
- * Validate pagination parameters: page must be positive integer (minimum 1), limit must be between 1 and 100.
- *
- * Handle empty results gracefully by returning empty data array with pagination metadata showing zero total.
- *
- * Apply rate limiting: 500 requests per minute for authenticated admin endpoints.
+ * Only administrators can access this endpoint.
  * @path /shoppingMall/sellers
  * @accessor api.functional.shoppingMall.sellers.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -74,7 +69,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria, filters, and pagination parameters for seller listing
+     * Search criteria including email filter, approval status, suspension status, ban status, shop name search, pagination parameters (limit, cursor), and sorting options (field, direction).
      */
     body: IShoppingMallSeller.IRequest;
   };
@@ -123,39 +118,36 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a seller's public profile by their unique identifier.
+ * Retrieves a single seller's complete profile by their unique identifier.
  *
- * This operation returns comprehensive seller profile information including shop name, description, logo image URL, and current approval status. The seller profile data is stored in the shopping_mall_sellers table, which serves as the canonical identity record for seller accounts in the shopping mall platform.
+ * This endpoint returns comprehensive seller information including authentication status, business profile details, and account state. It is used by administrators to oversee seller accounts and by sellers to view their own profile information. The response includes approval status (pending, approved, rejected), suspension and ban states, shop name, description, logo URL, and relevant timestamps.
  *
- * The response includes the seller's public-facing information that customers can view when browsing products or reviewing order details. Sensitive authentication data such as password hashes are excluded from the response for security purposes. The approval_status field indicates whether the seller is pending approval, approved to list products, rejected, or suspended by administrators.
- *
- * This endpoint is commonly used when customers want to learn more about a seller before purchasing products, or when viewing order details to see seller information. The sellerId parameter must be a valid UUID that corresponds to an existing seller record in the system. If the seller has been soft-deleted or does not exist, a 404 error is returned.
- *
- * Related operations include GET /sellers/me for authenticated sellers to view their own profile, and PATCH /sellers for listing and searching sellers with filters.
+ * Authorization: Accessible to administrators (any seller) and sellers (own profile only). Returns 404 for non-existent or soft-deleted sellers.
  *
  * @param props.connection
- * @param props.sellerId Target seller's unique identifier (global scope)
+ * @param props.sellerId Unique identifier of the seller account (UUID format, global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Retrieve seller profile by UUID from shopping_mall_sellers table.
- *
- * Query the shopping_mall_sellers table using the sellerId parameter as primary key lookup. Return seller profile data excluding sensitive fields (password_hash, deleted_at) from the public response.
+ * @x-autobe-specification Query shopping_mall_sellers table by id (UUID) with LEFT JOIN to shopping_mall_seller_profiles on shopping_mall_seller_id.
  *
  * Validation:
  * - Verify sellerId is a valid UUID format
- * - Check if seller exists in the database
- * - Ensure seller is not soft-deleted (deleted_at is null)
- * - Return 404 if seller not found or deleted
+ * - Check if seller exists (id matches)
+ * - Check if seller is soft-deleted (deleted_at IS NOT NULL) - return 404 if deleted
  *
- * Data transformation:
- * - Map database columns to response DTO fields
- * - Exclude password_hash from response for security
- * - Include shop_name, shop_description, logo_image, approval_status, created_at, updated_at
- * - Handle nullable fields (shop_description, logo_image, rejection_reason) appropriately
+ * Response construction:
+ * - Combine fields from both tables into single IShoppingMallSeller object
+ * - Include: id, email, approval_status, approval_reason, rejection_reason, suspended, banned, created_at, updated_at from sellers table
+ * - Include: shop_name, shop_description, logo_uri from profiles table
+ * - Handle case where seller_profile might be null (new seller without profile)
  *
- * Authorization:
- * - This is a public endpoint accessible to all actors (guest, customer, seller, admin)
- * - No authentication required for viewing public seller profiles
+ * Error handling:
+ * - 404 Not Found: seller doesn't exist or is soft-deleted
+ * - 403 Forbidden: unauthorized access (seller trying to view another seller's profile)
+ *
+ * Authorization check:
+ * - If requester is administrator: allow access to any seller
+ * - If requester is seller: only allow access to own profile (sellerId matches authenticated user)
  * @path /shoppingMall/sellers/:sellerId
  * @accessor api.functional.shoppingMall.sellers.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -184,7 +176,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Target seller's unique identifier (global scope)
+     * Unique identifier of the seller account (UUID format, global scope).
      */
     sellerId: string & tags.Format<"uuid">;
   };

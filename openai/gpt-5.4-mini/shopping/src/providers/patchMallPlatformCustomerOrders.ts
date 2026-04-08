@@ -1,4 +1,5 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformOrder";
@@ -11,6 +12,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
+import { MallPlatformOrderAtSummaryTransformer } from "../transformers/MallPlatformOrderAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,9 +22,15 @@ export async function patchMallPlatformCustomerOrders(props: {
 }): Promise<IPageIMallPlatformOrder.ISummary> {
   const page: number = props.body.page ?? 1;
   const limit: number = props.body.limit ?? 100;
-  const skip: number = (page - 1) * limit;
-  const where = {
-    ...(props.body.search !== undefined && props.body.search !== ""
+  if (page < 1) {
+    throw new HttpException("Invalid page", 400);
+  }
+  if (limit < 1 || limit > 100) {
+    throw new HttpException("Invalid limit", 400);
+  }
+  const where: Prisma.mall_platform_ordersWhereInput = {
+    customer_id: props.customer.id,
+    ...(props.body.search !== undefined
       ? {
           OR: [
             {
@@ -40,58 +48,72 @@ export async function patchMallPlatformCustomerOrders(props: {
           ],
         }
       : {}),
-    ...(props.body.status !== undefined && props.body.status !== ""
-      ? { status: props.body.status }
-      : {}),
-    ...(props.body.createdAtFrom !== undefined
-      ? { created_at: { gte: props.body.createdAtFrom } }
-      : {}),
-    ...(props.body.createdAtTo !== undefined
-      ? { created_at: { lte: props.body.createdAtTo } }
-      : {}),
-  } satisfies Prisma.mall_platform_ordersWhereInput;
-  const orderBy =
-    props.body.sort === undefined || props.body.sort === "newest"
-      ? ({
-          created_at: "desc",
-        } satisfies Prisma.mall_platform_ordersOrderByWithRelationInput)
-      : props.body.sort === "oldest"
-        ? ({
-            created_at: "asc",
-          } satisfies Prisma.mall_platform_ordersOrderByWithRelationInput)
-        : (() => {
-            throw new HttpException("Invalid sort option", 400);
-          })();
+    ...(props.body.status !== undefined ? { status: props.body.status } : {}),
+  };
   const records = await MyGlobal.prisma.mall_platform_orders.findMany({
     where,
-    orderBy,
-    skip,
+    orderBy: { created_at: "desc" },
+    skip: (page - 1) * limit,
     take: limit,
-    select: {
-      id: true,
-      order_number: true,
-      status: true,
-      total_amount: true,
-      created_at: true,
-    },
+    ...MallPlatformOrderAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.mall_platform_orders.count({ where });
   return {
-    data: records.map(
-      (record) =>
-        ({
-          id: record.id,
-          orderNumber: record.order_number,
-          status: record.status,
-          totalAmount: record.total_amount,
-          createdAt: toISOStringSafe(record.created_at),
-        }) satisfies IMallPlatformOrder.ISummary,
-    ),
     pagination: {
       current: page,
       limit,
       records: total,
       pages: Math.ceil(total / limit),
     },
+    data: await ArrayUtil.asyncMap(
+      records,
+      MallPlatformOrderAtSummaryTransformer.transform,
+    ),
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
+// import { IPageIMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformOrder";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchMallPlatformCustomerOrders(props: {
+//   customer: CustomerPayload;
+//   body: IMallPlatformOrder.IRequest;
+// }): Promise<IPageIMallPlatformOrder.ISummary> {
+//   const records = await MyGlobal.prisma.mall_platform_orders.findMany({
+//     ...MallPlatformOrderAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, MallPlatformOrderAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

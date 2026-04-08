@@ -1,18 +1,23 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import type { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
+import type { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
 import type { IShoppingMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCancellationRequest";
+import type { IShoppingMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCartItem";
 import type { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
-import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import type { IShoppingMallCustomerAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerAddress";
 import type { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import type { IShoppingMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallMember";
 import type { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import type { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+import type { IShoppingMallOrderItemSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItemSnapshot";
+import type { IShoppingMallOrderItemSnapshotOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItemSnapshotOption";
 import type { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import type { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
-import type { IShoppingMallProductOptionDefinition } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionDefinition";
-import type { IShoppingMallProductOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionValue";
-import type { IShoppingMallProductRating } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductRating";
 import type { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import type { IShoppingMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallRefundRequest";
+import type { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
 import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import type { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -21,167 +26,178 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_customer_join } from "../../../authorize/authorize_customer_join";
-import { authorize_customer_login } from "../../../authorize/authorize_customer_login";
-import { authorize_customer_refresh } from "../../../authorize/authorize_customer_refresh";
+import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
+import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
+import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
+import { authorize_member_join } from "../../../authorize/authorize_member_join";
+import { authorize_member_login } from "../../../authorize/authorize_member_login";
+import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
 import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
-import { generate_random_shopping_mall_customer_order_items_cancellation_requests_create } from "../../../generate/generate_random_shopping_mall_customer_order_items_cancellation_requests_create";
-import { generate_random_shopping_mall_customer_orders_create } from "../../../generate/generate_random_shopping_mall_customer_orders_create";
+import { generate_random_shopping_mall_admin_categories_create } from "../../../generate/generate_random_shopping_mall_admin_categories_create";
+import { generate_random_shopping_mall_member_addresses_create } from "../../../generate/generate_random_shopping_mall_member_addresses_create";
+import { generate_random_shopping_mall_member_cancellation_requests_create } from "../../../generate/generate_random_shopping_mall_member_cancellation_requests_create";
+import { generate_random_shopping_mall_member_cart_items_create } from "../../../generate/generate_random_shopping_mall_member_cart_items_create";
+import { generate_random_shopping_mall_member_orders_create } from "../../../generate/generate_random_shopping_mall_member_orders_create";
 import { generate_random_shopping_mall_seller_products_create } from "../../../generate/generate_random_shopping_mall_seller_products_create";
+import { generate_random_shopping_mall_seller_variants_create } from "../../../generate/generate_random_shopping_mall_seller_variants_create";
 import { prepare_random_shopping_mall_cancellation_request } from "../../../prepare/prepare_random_shopping_mall_cancellation_request";
+import { prepare_random_shopping_mall_cart_item } from "../../../prepare/prepare_random_shopping_mall_cart_item";
+import { prepare_random_shopping_mall_category } from "../../../prepare/prepare_random_shopping_mall_category";
+import { prepare_random_shopping_mall_customer_address } from "../../../prepare/prepare_random_shopping_mall_customer_address";
 import { prepare_random_shopping_mall_order } from "../../../prepare/prepare_random_shopping_mall_order";
 import { prepare_random_shopping_mall_product } from "../../../prepare/prepare_random_shopping_mall_product";
+import { prepare_random_shopping_mall_product_variant } from "../../../prepare/prepare_random_shopping_mall_product_variant";
 
 /**
- * Test that a customer can successfully retrieve their own cancellation request for an order item.
+ * Test customer cancellation request retrieval by ID.
  *
- * This test validates the following workflow:
- * 1. Customer account creation and authentication
- * 2. Seller account creation and authentication
- * 3. Product creation by seller
- * 4. Order creation by customer (order items start in 'paid' status)
- * 5. Cancellation request creation by customer for the order item
- * 6. Retrieval of the cancellation request using the GET endpoint
+ * Validates the complete cancellation request workflow including administrative category setup, seller product creation, customer order placement, and cancellation request retrieval. Ensures that customers can access their own cancellation requests with full order item context.
  *
- * Validates that the response includes all required fields and the cancellation request
- * belongs to the correct order item and customer.
+ * Special attention is given to verifying that the cancellation request contains accurate order item details, customer information, and correct initial status as 'pending' with null responded_at timestamp.
+ *
+ * 1. Administrator creates a product category for product organization.
+ * 2. Seller registers account and creates a product with a variant in the category.
+ * 3. Customer registers account, creates a shipping address, adds variant to cart, and places an order.
+ * 4. Customer creates a cancellation request for an order item with 'paid' status.
+ * 5. Customer retrieves the cancellation request by ID and validates the response structure.
  */
 export async function test_api_cancellation_request_retrieval_by_customer(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create and authenticate customer
-  const customerConnection: api.IConnection = { host: connection.host };
-  const customerEmail = typia.random<string & tags.Format<"email">>();
-  const customerJoin = await authorize_customer_join(customerConnection, {
+  // 1. Admin creates category
+  const adminConnection: api.IConnection = { host: connection.host };
+  await authorize_admin_join(adminConnection, {
     body: {
-      email: customerEmail,
-      password: "TestPassword123!",
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-    } satisfies IShoppingMallCustomer.IJoin,
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
+      grade: "regular" as const,
+    } satisfies IShoppingMallAdmin.IJoin,
   });
-  typia.assert(customerJoin);
-  // 2. Create and authenticate seller
+  const category = await generate_random_shopping_mall_admin_categories_create(
+    adminConnection,
+    {},
+  );
+  typia.assert(category);
+  // 2. Seller registers and creates product with variant
   const sellerConnection: api.IConnection = { host: connection.host };
-  const sellerEmail = typia.random<string & tags.Format<"email">>();
-  const sellerJoin = await authorize_seller_join(sellerConnection, {
+  await authorize_seller_join(sellerConnection, {
     body: {
-      email: sellerEmail,
-      password: "TestPassword123!",
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
+      ip: typia.random<string & tags.Format<"ipv4">>(),
     } satisfies IShoppingMallSeller.IJoin,
   });
-  typia.assert(sellerJoin);
-  // 3. Seller creates a product with required fields
-  const product = await api.functional.shoppingMall.seller.products.create(
+  const product = await generate_random_shopping_mall_seller_products_create(
     sellerConnection,
     {
       body: {
-        name: RandomGenerator.paragraph({ sentences: 2 }),
-        description: RandomGenerator.content({ paragraphs: 2 }),
-        category_id: typia.random<string & tags.Format<"uuid">>(),
-        base_price: typia.random<
-          number & tags.Type<"uint32"> & tags.Minimum<1000>
-        >(),
-      } satisfies IShoppingMallProduct.ICreate,
+        shopping_mall_category_id: category.id,
+      },
     },
   );
   typia.assert(product);
-  // 4. Customer creates an order
-  // Note: Order creation requires addresses and cart items which should be set up
-  // The generation function handles internal setup
-  const order =
-    await generate_random_shopping_mall_customer_orders_create(
-      customerConnection,
-      {
-        body: {
-          shopping_mall_address_id: typia.random<string & tags.Format<"uuid">>(),
-          cart_item_ids: [typia.random<string & tags.Format<"uuid">>()],
-        },
+  const variant = await generate_random_shopping_mall_seller_variants_create(
+    sellerConnection,
+    {
+      body: {
+        shopping_mall_product_id: product.id,
       },
-    );
-  typia.assert(order);
-  // Validate order has items
-  TestValidator.predicate(
-    "order has at least one item",
-    order.orderItems.length > 0,
+    },
   );
+  typia.assert(variant);
+  // 3. Customer registers, creates address, adds to cart, places order
+  const customerConnection: api.IConnection = { host: connection.host };
+  await authorize_member_join(customerConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+      ip: typia.random<string & tags.Format<"ipv4">>(),
+    } satisfies IShoppingMallMember.IJoin,
+  });
+  const address = await generate_random_shopping_mall_member_addresses_create(
+    customerConnection,
+    {},
+  );
+  typia.assert(address);
+  const cartItem = await generate_random_shopping_mall_member_cart_items_create(
+    customerConnection,
+    {
+      body: {
+        product_variant_id: variant.id,
+      },
+    },
+  );
+  typia.assert(cartItem);
+  const order = await generate_random_shopping_mall_member_orders_create(
+    customerConnection,
+    {
+      body: {
+        shopping_mall_customer_address_id: address.id,
+      },
+    },
+  );
+  typia.assert(order);
+  // Get the first order item for cancellation
   const orderItem = order.orderItems[0];
-  // 5. Customer creates a cancellation request for the order item
-  const cancellationReason = RandomGenerator.paragraph({ sentences: 2 });
+  TestValidator.predicate("order item exists", orderItem !== undefined);
+  TestValidator.equals("order item status is paid", orderItem.status, "paid");
+  // 4. Customer creates cancellation request
   const cancellationRequest =
-    await generate_random_shopping_mall_customer_order_items_cancellation_requests_create(
+    await generate_random_shopping_mall_member_cancellation_requests_create(
       customerConnection,
       {
         body: {
-          reason: cancellationReason,
-        } satisfies IShoppingMallCancellationRequest.ICreate,
-        params: {
-          orderItemId: orderItem.id,
+          order_item_id: orderItem.id,
         },
       },
     );
   typia.assert(cancellationRequest);
-  // 6. Customer retrieves the cancellation request
-  const retrievedCancellationRequest =
-    await api.functional.shoppingMall.customer.order_items.cancellation_requests.at(
+  // 5. Customer retrieves cancellation request by ID
+  const retrieved =
+    await api.functional.shoppingMall.member.cancellation_requests.at(
       customerConnection,
       {
-        orderItemId: orderItem.id,
         cancellationRequestId: cancellationRequest.id,
       },
     );
-  typia.assert(retrievedCancellationRequest);
-  // Validate the retrieved cancellation request
+  typia.assert(retrieved);
+  // Validate cancellation request structure
   TestValidator.equals(
     "cancellation request ID matches",
-    retrievedCancellationRequest.id,
+    retrieved.id,
     cancellationRequest.id,
   );
   TestValidator.equals(
     "order item ID matches",
-    retrievedCancellationRequest.orderItem.id,
+    retrieved.orderItem.id,
     orderItem.id,
   );
   TestValidator.equals(
     "customer ID matches",
-    retrievedCancellationRequest.customer.id,
-    customerJoin.id,
+    retrieved.customer.id,
+    (customerConnection.headers?.Authorization as string | undefined)?.split(" ")[1] ?? "",
+  );
+  TestValidator.equals("status is pending", retrieved.status, "pending");
+  TestValidator.equals("responded_at is null", retrieved.respondedAt, null);
+  TestValidator.predicate("reason is not empty", retrieved.reason.length > 0);
+  TestValidator.predicate("created_at exists", retrieved.createdAt !== null);
+  TestValidator.predicate("updated_at exists", retrieved.updatedAt !== null);
+  TestValidator.equals("deleted_at is null", retrieved.deletedAt, null);
+  // Validate order item details in cancellation request
+  TestValidator.equals(
+    "product ID matches",
+    retrieved.orderItem.product.id,
+    product.id,
   );
   TestValidator.equals(
-    "reason matches",
-    retrievedCancellationRequest.reason,
-    cancellationReason,
-  );
-  TestValidator.equals(
-    "status is pending",
-    retrievedCancellationRequest.status,
-    "pending",
-  );
-  TestValidator.predicate(
-    "deletedAt is null",
-    retrievedCancellationRequest.deletedAt === null,
-  );
-  TestValidator.predicate(
-    "createdAt is valid date",
-    retrievedCancellationRequest.createdAt !== null,
-  );
-  TestValidator.predicate(
-    "updatedAt is valid date",
-    retrievedCancellationRequest.updatedAt !== null,
-  );
-  // Validate order item details in the cancellation request
-  TestValidator.equals(
-    "quantity matches",
-    retrievedCancellationRequest.orderItem.quantity,
-    orderItem.quantity,
-  );
-  TestValidator.equals(
-    "price matches",
-    retrievedCancellationRequest.orderItem.price,
-    orderItem.price,
+    "variant ID matches",
+    retrieved.orderItem.productVariant.id,
+    variant.id,
   );
 }

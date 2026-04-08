@@ -20,7 +20,7 @@ export async function memberAuthorize(request: {
   });
 
   if (member === null) {
-    throw new ForbiddenException("You're not authorized");
+    throw new ForbiddenException("You're not enrolled");
   }
 
   return payload;

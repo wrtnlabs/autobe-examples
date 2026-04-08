@@ -8,536 +8,363 @@ Describe what each concept means in the business domain and its key attributes.
 
 ## Organization Concept
 
-An organization represents an independent business entity within the multi-tenant platform. Each organization operates with complete data isolation, maintaining its own employees, projects, and operational records. The organization serves as the primary boundary for access control and data visibility. Key attributes include the organization name, description, and logo image for branding purposes. Financial settings include the currency designation such as USD, EUR, or KRW for monetary calculations. Operational settings include the timezone for date and time calculations and the fiscal start month for financial reporting periods. The organization owner holds full administrative authority over organization settings. Organizations can be deleted when all pending timesheets are resolved and no active employee contracts exist. Upon deletion, all associated employees, projects, tasks, timelogs, and timesheets are permanently removed. The organization concept enables multiple independent businesses to coexist on the same platform while maintaining strict data separation.
+An Organization represents a tenant entity in the multi-tenancy platform, operating independently with its own employees, projects, and data. Each organization has a name that identifies it within the platform. A description provides context about the organization's purpose or business. A logo image serves as visual branding for the organization interface. The currency setting defines the monetary unit used for financial calculations such as pay rates. The timezone configuration ensures consistent time-based operations across all employees. The fiscal start month establishes the organization's financial year beginning for reporting purposes. Organizations are created during user initial sign-up and serve as the primary data isolation boundary. All employees, projects, tasks, timelogs, and timesheets belong to exactly one organization. Data is strictly isolated per organization, preventing cross-organization visibility.
 
-### Organization as Multi-Tenant Entity
+### Multi-Tenancy Organization Entity
 
-The platform supports multiple organizations operating independently on the same system (multi-tenancy). Each organization represents an independent business entity that functions as a self-contained business entity container within the platform. Organizations maintain complete data isolation from one another, establishing a clear data isolation boundary that prevents cross-organizational data access. Employees in one organization cannot view or access data belonging to another organization. Users who belong to multiple organizations can only see data for their currently selected organization context. This organizational data separation ensures that each organization's employees, projects, tasks, timelogs, and timesheets remain strictly isolated. The platform multi-tenancy architecture enables multiple independent businesses to coexist while maintaining privacy and security through enforced data boundaries.
+The platform operates as a multi-tenancy system where each organization functions as an independent tenant entity. An organization represents a complete business unit that operates separately from all other organizations on the platform. Each organization maintains its own set of employees, projects, departments, roles, and all associated data. Organizations are completely isolated from one another, forming a strict data isolation boundary. Employees belonging to one organization cannot access or view data from any other organization. Users who belong to multiple organizations can only see data for their currently selected organization context. All business entities including employees, projects, tasks, timelogs, and timesheets belong to exactly one organization and cannot cross organizational boundaries. An organization is created when a user completes their initial sign-up to the platform, serving as the foundational container for all subsequent business entities.
 
 ### Organization Attributes
 
-Each organization has a name that identifies the business entity. A description provides additional context about the organization. A logo image serves branding purposes and visual identification. The currency designation (such as USD, EUR, or KRW) is used for all monetary calculations and financial reporting within the organization. The timezone setting determines how dates and times are calculated and displayed for all organization members. The fiscal start month defines the beginning of the financial year for reporting periods. These attributes collectively define the organization's identity and operational settings.
-
-### Organization Ownership and Lifecycle
-
-The organization owner holds full administrative authority over organization settings and can edit all organization attributes. Organization deletion is subject to specific conditions: all pending timesheets must be resolved (either approved or rejected), and there must be no active employee contracts. When an organization is deleted, permanent data removal occurs for all associated employees, projects, tasks, timelogs, and timesheets. The owner's user account remains intact but is no longer associated with any organization. This ensures clean removal of business data while preserving the individual's ability to create or join other organizations.
+Each organization has a name that serves as its primary identifier within the platform. The organization name distinguishes it from other organizations and is displayed throughout the interface. A description provides context about the organization's purpose, business type, or operational focus. A logo image serves as visual branding and appears in the organization's interface header and communications. The currency setting defines the monetary unit used for all financial calculations within the organization, including employee pay rates and project budgets. Supported currencies include USD, EUR, KRW, and other standard currency codes. The timezone configuration establishes the organization's primary time reference for all time-based operations, ensuring consistent date and time handling across all employees. The fiscal start month determines when the organization's financial year begins, used for reporting and budget tracking purposes.
 
 ## User Concept
 
-A user represents an individual account holder who can access the platform. Users authenticate with email and password credentials to gain platform access. A single user can belong to multiple organizations simultaneously, enabling cross-organizational access. When accessing the platform, users select which organization context to work within. All user actions are scoped to the currently selected organization. The user maintains a global profile that is shared across all organizations they belong to. Global profile attributes include display name, avatar image, and phone number. Users can edit their global profile information at any time. The user account persists independently of any single organization membership. When a user deletes their account, they must first transfer ownership or delete any organizations where they are the sole owner. Employee records in other organizations are marked as deactivated upon account deletion. The user concept separates individual identity from organizational membership.
+A User represents an individual account holder who can access the platform. Each user has an email address that serves as their unique identifier for authentication. A password secures the user account against unauthorized access. The account status indicates whether the user account is active or deactivated. A single user can belong to multiple organizations simultaneously. When accessing the platform, users select which organization context to work within. All actions performed by a user are scoped to their currently selected organization. Users can switch between organizations without logging out. A user account remains even if their organization is deleted, but loses organization association. User accounts can be deleted only after transferring ownership or deleting associated organizations.
 
-### User Definition and Authentication
+### User
 
-A user represents an individual account holder who can access the platform. Users authenticate with email and password credentials to gain platform access. The user concept separates individual identity from organizational membership, meaning a user's account exists independently of any single organization. This separation enables users to maintain their identity while belonging to multiple organizations simultaneously. Authentication is performed at the user account level, not at the organization level. Once authenticated, users can access any organization they belong to by selecting the appropriate organization context.
+A User represents an individual account holder who can access the platform. Each user is identified by an email address that serves as their unique identifier for authentication purposes. Access to the user account is secured by a password known only to the account holder.
 
-### Organization Membership and Context
+The user account has a status that indicates whether the account is active or deactivated. An active account can access the platform, while a deactivated account cannot.
 
-A single user can belong to multiple organizations simultaneously, enabling cross-organizational access. When logging in, users select which organization context to work within. All user actions are scoped to the currently selected organization, ensuring data isolation between organizations. Users can switch organizations without logging out, allowing seamless transitions between different organizational contexts. The organization context determines which employees, projects, tasks, and timesheets the user can access. Users who belong to multiple organizations only see data for their currently selected organization, maintaining strict data isolation boundaries.
+```mermaid
+flowchart LR
+    A["active"] -->|"Deactivate"| B["deactivated"]
+    B -->|"Reactivate"| A
+```
 
-### User Profile
+A single user can hold membership in multiple organizations simultaneously. When accessing the platform, the user selects which organization context to work within. All actions performed by the user are scoped to their currently selected organization, ensuring data isolation between organizations. The user can switch between organizations without logging out, maintaining their session while changing the organizational context.
 
-The user maintains a global profile that is shared across all organizations they belong to. Global profile attributes include display name, avatar image, and phone number. The display name is used to identify the user across the platform. The avatar image provides visual identification in the user interface. The phone number enables contact information to be associated with the user account. Users can edit their global profile information at any time. Profile changes are reflected immediately across all organizations the user belongs to, ensuring consistent identity presentation.
+The user account persists independently of any organization. If an organization is deleted, the user account remains but is no longer associated with that organization. A user account can be deleted only after addressing ownership constraints: if the user is the sole owner of an organization, they must either transfer ownership to another user or delete the organization before their account can be removed. When a user account is deleted, their employee records in other organizations are marked as deactivated rather than removed, preserving historical data integrity.
 
-### Account Deletion
+Note: User profile attributes (display name, avatar image, phone number) are defined in the UserProfile concept and are shared across all organizations the user belongs to.
 
-Users can delete their account at any time. If a user is the sole owner of an organization, they must transfer ownership or delete the organization first before deleting their account. This constraint prevents organizations from being left without an owner. When a user deletes their account, their employee records in other organizations are marked as deactivated. Deactivated employee records preserve historical data such as timelogs and timesheets while preventing further activity. The user account persists independently of any single organization membership, but account deletion removes the user from all organizations they belong to.
+## UserProfile Concept
 
-## Employee Concept
+A UserProfile represents the global identity information of a user across all organizations. The display name shows how the user appears to others in the platform. An avatar image provides visual representation of the user in interfaces. A phone number enables contact information for the user. The profile is shared across all organizations the user belongs to, ensuring consistent identity. Users can edit their profile information at any time. Profile changes reflect immediately across all organization contexts. The profile exists independently of any single organization membership. Display name appears in activity logs, task assignments, and timesheet reviews. Avatar image displays alongside user actions throughout the platform.
 
-An employee represents a user's membership and role within a specific organization. Each employee record links a user account to an organization with a specific role assignment. Every employee is assigned exactly one role within the organization. The employee record includes department assignment as an optional organizational grouping. Position or title provides additional role context within the department. Employment type categorizes the working relationship as full-time, part-time, contractor, or intern. Employee status indicates whether the record is active or deactivated. Active employees can log time and submit timesheets within the organization. Deactivated employees retain their historical data including timelogs and timesheets. Deactivated employees cannot log new time or submit timesheets. Deactivated employees can be reactivated to restore full access. The employee concept enables users to have different roles and attributes across multiple organizations.
+### UserProfile Definition and Attributes
 
-### Employee as Organizational Membership
+A UserProfile represents the global identity information of a user across all organizations in the platform. Each user has exactly one profile that exists independently of any organization membership.
 
-An employee record represents a user's membership within a specific organization. Each employee record links a user account to one organization, creating an organizational membership record. A user can have multiple employee records across different organizations, enabling cross-organizational role variation where the same user may have different roles and attributes in each organization. The employee concept serves as the user to organization link that scopes all actions to the selected organization context. Each employee record is independent, allowing users to operate with different permissions and attributes depending on which organization they are currently working in.
+The profile contains three core attributes:
+- Display name: The name that shows how the user appears to others throughout the platform
+- Avatar image: A visual representation of the user displayed in interfaces
+- Phone number: Contact information for the user
 
-### Role Assignment
+The display name appears in activity logs, task assignments, timesheet reviews, and all places where user identity is shown. The avatar image displays alongside user actions throughout the platform interfaces. The phone number enables contact with the user.
 
-Each employee is assigned exactly one role within the organization, enforcing single role assignment. The role determines the employee's permissions and access level within the organization. Built-in roles include Owner, Manager, and Employee, each with predefined permission sets. Organization owners can create custom roles and assign them to employees. Role assignment can be changed by users with employee management permission. The assigned role governs what operations the employee can perform, such as managing other employees, viewing projects, approving timesheets, or tracking time.
+Users can edit their profile information at any time. Changes to the profile reflect immediately across all organization contexts the user belongs to.
 
-### Department and Position
+### Cross-Organization Profile Behavior
 
-An employee may be assigned to a department for organizational grouping, enabling department assignment. Department assignment is optional and can be updated by users with employee management permission. Deleting a department sets employees' department to null without removing the employee records. Each employee may have a position or title that provides additional role context within the department or organization. Position or title is optional and can be edited by users with employee management permission. Both department and position are descriptive attributes that help organize and identify employees within the organizational structure.
+The UserProfile is shared across all organizations the user belongs to, ensuring consistent user identity regardless of which organization context the user is working in.
 
-### Employment Type Classification
+The profile exists independently from any single organization membership. When a user joins a new organization or leaves an existing one, their profile remains unchanged. The profile is not tied to or affected by organization-specific data or settings.
 
-Each employee has an employment type classification that categorizes the working relationship. The employment type classification includes four allowed values: full-time employment, part-time employment, contractor employment, and intern employment. Full-time employment indicates a standard full-time working arrangement. Part-time employment indicates a reduced-hour working arrangement. Contractor employment indicates an independent contractor relationship. Intern employment indicates a temporary learning or training position. Employment type can be edited by users with employee management permission and is used for organizational reporting and categorization.
-
-### Employee Status and Reactivation
-
-Each employee has a status that indicates whether the record is active or deactivated. Active employee status means the employee can log time, submit timesheets, and access organization features based on their role. Deactivated employee status means the employee cannot log time or submit timesheets, and cannot access organization features. When an employee is deactivated, historical data preservation ensures all past timelogs, timesheets, and other records remain intact for reporting and audit purposes. Deactivated employees can be reactivated by users with employee management permission, restoring their active employee status and full access. Employee reactivation restores the ability to log time and submit timesheets without affecting historical data.
+This shared profile model ensures that a user's identity remains consistent whether they are viewing data in one organization or switching between multiple organizations. All users in any organization see the same display name and avatar for a given user account.
 
 ## Role Concept
 
-A role represents a collection of permissions within an organization. Each organization maintains its own set of roles independent of other organizations. Three built-in roles exist in every organization and cannot be deleted. The Owner role provides full access to all features including role and member management. The Manager role enables employee management, project oversight, timesheet approval, and report viewing. The Employee role permits time tracking, timesheet submission, and viewing own data. Organization owners can create custom roles with specific permission sets. Each custom role has a name and a defined set of permissions. Available permissions cover organization management, employee management, project management, time management, and report viewing. Custom roles can be edited by organization owners. Custom roles can only be deleted when no employees are assigned to them. The role concept enables flexible access control tailored to organizational needs.
+A Role represents a set of permissions that define what actions an employee can perform within an organization. Each role has a name that identifies its purpose. A permissions set contains the specific capabilities granted to the role. The is built-in flag indicates whether the role is a system-defined role that cannot be deleted. Three built-in roles exist: Owner with full access to all features, Manager with employee and project management capabilities, and Employee with time tracking and self-view permissions. Custom roles can be created by organization owners with specific permission combinations. Each permission corresponds to a specific business capability like managing employees or viewing reports. Roles are assigned to employees to control their access level. The built-in flag protects core roles from accidental deletion.
 
-### Role Definition
+### Role Definition and Attributes
 
-A role represents a collection of permissions within an organization. Each organization maintains its own independent set of roles, separate from other organizations. Roles enable flexible access control tailored to organizational needs.
+A Role represents a set of permissions that define what actions an employee can perform within an organization. Each role has a name that serves as its identifier within the organization. The role name is visible to all organization members and indicates the role's purpose.
 
-Each role has a name that identifies it within the organization. The role name is unique within its organization. A role contains a defined set of permissions that determine what actions employees assigned to that role can perform.
+Each role contains a permission set that specifies the capabilities granted to employees assigned to that role. The permission set determines access to organization features such as managing employees, viewing projects, approving timesheets, and accessing reports.
 
-Roles fall into two categories: built-in roles that exist in every organization and cannot be deleted, and custom roles that organization owners can create to meet specific needs.
+A built-in flag indicates whether the role is a system-defined role that cannot be deleted. Built-in roles are protected from deletion to ensure core organizational functions remain available. Custom roles do not have this protection and can be deleted if no employees are assigned to them.
+
+Roles serve as the primary access control mechanism within an organization. When an employee is assigned a role, they inherit all permissions defined in that role's permission set. Each employee holds exactly one role within an organization.
 
 ### Built-in Roles
 
 Three built-in roles exist in every organization and cannot be deleted:
 
-**Owner Role**: Provides full access to all features within the organization. Owners can manage organization settings, manage all employees, create and manage projects, approve timesheets, view all reports, and manage roles and members.
+**Owner Role**: The Owner role has full access to all features within the organization. Owners can manage organization settings, manage all employees, create and edit custom roles, manage all projects and tasks, edit or delete any employee's timelogs, approve or reject timesheets, view all timelogs and timesheets, and access all organization reports. The Owner role is automatically assigned to the user who creates the organization.
 
-**Manager Role**: Enables employee management, project oversight, timesheet approval, and report viewing. Managers can add and edit employees, manage projects and tasks, approve or reject timesheets, and access organization reports.
+**Manager Role**: The Manager role has capabilities to manage employees, projects, and time tracking operations. Managers can add, edit, and deactivate employees, view the employee list and details, create and edit projects and tasks, approve or reject timesheets, view all employees' timelogs and timesheets, and view organization reports. Managers cannot edit organization settings or manage custom roles.
 
-**Employee Role**: Permits time tracking, timesheet submission, and viewing own data. Employees can log time, submit timesheets for approval, view their own timelogs and timesheets, and access their assigned tasks and projects.
+**Employee Role**: The Employee role has basic access for time tracking and viewing personal data. Employees can track time by creating timelogs, submit timesheets for approval, view their own timelogs and timesheets, view their own contracts, and view projects they are assigned to. Employees cannot manage other employees, projects, or timesheets.
 
-These built-in roles provide a foundation for common organizational structures while ensuring essential capabilities are always available.
+The built-in role protection ensures these three core roles always exist in the organization. Built-in roles cannot be deleted, but their permission sets are fixed and cannot be modified.
 
 ### Custom Roles
 
-Organization owners can create custom roles with specific permission sets to meet unique organizational needs. Each custom role has a name and a defined set of permissions selected from the available permissions.
+Organization owners can create custom roles to define specific permission combinations that do not match the built-in roles. Each custom role has a name chosen by the organization owner and a set of permissions selected from the available permission list.
 
-Custom roles can be edited by organization owners at any time. When a custom role is edited, the permission changes apply to all employees currently assigned to that role.
+Available permissions for custom roles include:
+- Edit organization settings
+- Add, edit, and deactivate employees
+- View employee list and details
+- Create, edit, and delete projects and tasks
+- View projects and tasks
+- Edit or delete any employee's timelogs
+- Approve or reject timesheets
+- View all employees' timelogs and timesheets
+- View organization reports
 
-Custom roles provide flexibility beyond the three built-in roles, allowing organizations to create granular access control configurations that match their specific workflow and security requirements.
+Custom roles allow organization owners to create role permission combinations tailored to their organizational structure. For example, a custom role could have permission to view reports and manage projects without the ability to manage employees.
 
-### Available Permissions
+Organization owners can edit custom roles to change their name or permission set. Custom roles can be deleted only if no employees are currently assigned to them. If employees are assigned to a custom role, the role must be reassigned or the employees removed before deletion.
 
-The following permissions can be assigned to custom roles:
+## Employee Concept
 
-**Organization Management**: Edit organization settings including name, description, logo, currency, timezone, and fiscal start month.
+An Employee represents a person's membership and work relationship within a specific organization. Each employee has a reference to a user account that enables platform access. The role assignment determines what permissions the employee has within the organization. A department categorizes the employee within the organizational structure. A position or title describes the employee's job function. Employment type classifies the working arrangement as full-time, part-time, contractor, or intern. Status indicates whether the employee is active or deactivated. Deactivated employees cannot log time or submit timesheets but retain historical data. Each employee is assigned exactly one role within the organization. Employee records preserve historical timelogs and timesheets even after deactivation.
 
-**Employee Management**: Add new employees, edit employee records, and deactivate employees.
+### Employee Definition and Attributes
 
-**Employee Viewing**: View the employee list and employee details.
+An Employee represents a person's membership and work relationship within a specific organization. Each employee record belongs to exactly one organization and cannot exist independently.
 
-**Project Management**: Create, edit, and delete projects and tasks.
+Each employee has a reference to a user account that enables platform access. The user account provides authentication credentials and global profile information shared across all organizations the user belongs to.
 
-**Project Viewing**: View projects and tasks.
+Each employee is assigned exactly one role within the organization. The role determines what permissions and capabilities the employee has within that organization. Role assignment can be changed by users with employee management permissions.
 
-**Time Management**: Edit or delete any employee's timelogs.
+An employee can be categorized under a department within the organizational structure. Department assignment is optional and can be changed. When a department is deleted, the employee's department assignment is cleared but the employee record remains.
 
-**Time Approval**: Approve or reject submitted timesheets.
+An employee has a position or title that describes their job function within the organization. Position is optional and can be edited by users with employee management permissions.
 
-**Time Viewing All**: View all employees' timelogs and timesheets.
+Each employee has an employment type that classifies their working arrangement. The allowed employment types are: full-time, part-time, contractor, and intern. Employment type can be changed by users with employee management permissions.
 
-**Report Viewing**: View organization reports including time reports, project budget reports, and weekly summary reports.
+### Employee Status and Deactivation
 
-Each permission grants specific capabilities within its domain. Custom roles can combine any subset of these permissions.
+Each employee has a status that indicates their current state within the organization. The status can be either active or deactivated.
 
-### Role Deletion Rules
+Active employees can log time, submit timesheets, and access features based on their role permissions.
 
-Custom roles can be deleted by organization owners only when no employees are currently assigned to that role. This constraint prevents orphaned employee records and ensures every employee always has a valid role assignment.
+Deactivated employees cannot log time or submit timesheets. Deactivated employees cannot access time tracking features. Deactivated employees retain access to view their historical data including past timelogs and timesheets.
 
-If a custom role has one or more employees assigned to it, the role cannot be deleted. Organization owners must first reassign those employees to a different role before deleting the custom role.
+When an employee is deactivated, all historical data is preserved. This includes all past timelogs, timesheets, contracts, task assignments, and project memberships. Historical records remain accessible for reporting and audit purposes.
 
-Built-in roles cannot be deleted under any circumstances. The three built-in roles (Owner, Manager, Employee) are permanent fixtures in every organization.
-
-When a custom role is deleted, the role and its permission configuration are permanently removed from the organization. Employee records that were assigned to the deleted role must have been reassigned prior to deletion.
-
-## Department Concept
-
-A department represents an organizational grouping within a company structure. Each organization can maintain multiple departments for categorizing employees. Departments have a name that identifies the functional area or team. A description provides additional context about the department's purpose or scope. Departments support one level of nesting through an optional parent department relationship. This enables basic hierarchical organization structures such as divisions containing teams. Employees can be assigned to departments as part of their employee record. When a department is deleted, employee department assignments are set to null rather than deleting employee records. All employees within the organization can view the list of departments. The department concept enables organizational structure without complex hierarchy management.
-
-### Department Definition and Attributes
-
-A department represents an organizational grouping within a company structure. Departments serve as functional area categorization mechanisms that enable team structure organization across the enterprise. Each department has a name that identifies the functional area or team, such as Engineering, Marketing, or Human Resources. A description provides additional context about the department's purpose or scope of work.
-
-Departments exist within a single organization and contribute to the overall organizational structure. Each organization can maintain multiple departments to categorize employees by their functional area. The department concept enables basic hierarchy support without complex multi-level management.
-
-**Key Attributes:**
-- Name: identifies the department (required)
-- Description: provides context about the department's purpose (optional)
-- Parent Department: enables hierarchical relationships (optional)
-
-### Department Hierarchy Structure
-
-Departments support a parent department relationship that enables one-level nesting within the organizational hierarchy. This hierarchical organization structure allows departments to be grouped under a parent department, creating a two-tier structure.
-
-The one-level nesting constraint means a department can have a parent department, but cannot have nested children beyond one level. For example, a division can contain teams, but those teams cannot contain sub-teams.
-
-```mermaid
-flowchart LR
-    A["Division (Parent)"] -->|"contains"| B["Team (Child)"]
-    B -.->|"no further nesting"| C["Sub-Team"]
-    style C fill:#ddd,stroke:#999,stroke-dasharray: 5 5
-```
-
-**Hierarchy Rules:**
-- A department may optionally have one parent department
-- A parent department can have multiple child departments
-- Child departments cannot have their own children (one-level nesting only)
-- The parent department relationship creates a basic hierarchy support structure
-- Circular references are not permitted (a department cannot be its own ancestor)
-
-### Employee Assignment and Department Lifecycle
-
-Employees can be assigned to a department as part of their employee record. The employee department assignment links an employee to their functional area within the organization. An employee is assigned to at most one department at a time.
-
-**Department Deletion Behavior:**
-When a department is deleted, the system applies null assignment on deletion to preserve employee records. Employee department assignments are set to null rather than deleting employee records. This ensures employee data remains intact when organizational structures change.
-
-**Department Visibility:**
-All employees within the organization can view the list of departments. Department visibility is organization-scoped, meaning employees only see departments belonging to their current organization context.
-
-```mermaid
-flowchart LR
-    A["Department Deleted"] --> B["Employee Records Preserved"]
-    B --> C["Department Assignment Set to Null"]
-    C --> D["Historical Data Retained"]
-```
-
-**Lifecycle Summary:**
-- Departments can be created, edited, and deleted by authorized users
-- Department deletion does not cascade to employee records
-- Employee department field becomes null when their department is deleted
-- All organization employees maintain visibility of the department list
+Deactivated employees can be reactivated by users with employee management permissions. When reactivated, the employee regains full access to time tracking and timesheet submission features based on their role.
 
 ## Contract Concept
 
-A contract represents an employment agreement record for an employee within an organization. Each employee can have multiple contracts throughout their tenure, creating a historical record. Only one contract can be active at any given time for an employee. The start date marks when the contract terms become effective and is required. The end date is optional, with null indicating an ongoing contract without a defined end. The pay rate specifies the compensation amount as a numeric value. The pay period defines the compensation frequency as hourly, daily, weekly, or monthly. Working hours per week specifies the expected weekly commitment. Optional notes provide additional contract terms or conditions. When a new contract is created, the previous active contract automatically ends. Past contracts become immutable historical records that cannot be edited. The contract concept enables tracking employment terms changes over time.
+A Contract represents the employment terms agreement between an employee and the organization. Each contract has a start date that marks when the terms become effective. An end date indicates when the contract concludes, with null meaning ongoing employment. The pay rate specifies the monetary compensation amount. Pay period defines the compensation frequency as hourly, daily, weekly, or monthly. Working hours per week establishes the expected weekly commitment. Notes provide additional context or special terms for the contract. An employee can have multiple contracts over time as a historical record. Only one contract can be active at any given time. Past contracts remain immutable as historical records of employment terms.
 
-### Contract Definition
+### Contract Definition and Attributes
 
-A contract represents an employment agreement record between an employee and the organization. Each contract captures the terms of employment at a specific point in time, enabling historical contract tracking throughout an employee's tenure.
+A Contract represents the employment terms agreement between an employee and the organization. Each contract defines the compensation and working conditions for an employee.
 
-An employee can have multiple contracts over time, creating a complete history of employment terms changes. However, only one contract can be active at any given time for an employee. This single active contract rule ensures clarity about which terms currently apply.
+The contract start date marks when the employment terms become effective. This date is required for every contract.
 
-When viewing an employee's contracts, the system distinguishes between the active contract and past contracts. The active contract governs current employment terms, while past contracts serve as immutable historical records.
+The contract end date indicates when the contract concludes. When the end date is not specified, it means the employment is ongoing with no predetermined conclusion.
 
-### Contract Terms
+The contract pay rate specifies the monetary compensation amount as a numeric value. This is required for every contract.
 
-Each contract contains the following terms:
+The pay period defines the compensation frequency and must be one of: hourly, daily, weekly, or monthly.
 
-**Dates**
-- The contract start date is required and marks when the contract terms become effective
-- The contract end date is optional
-- When the end date is not specified, this serves as an ongoing contract indicator, meaning the contract continues without a defined end date
+Working hours per week establishes the expected weekly time commitment for the employee. This is required for every contract.
 
-**Compensation**
-- The pay rate specifies the compensation amount as a numeric value
-- The pay period defines how compensation is calculated and must be one of: hourly pay period, daily pay period, weekly pay period, or monthly pay period
-- The combination of pay rate and pay period determines the employee's compensation structure
+Contract notes provide optional additional context or special terms for the employment agreement.
 
-**Work Commitment**
-- Working hours per week specifies the expected weekly time commitment (for example, 40 hours)
-- This value is required for all contracts
+### Contract Lifecycle Rules
 
-**Additional Terms**
-- Contract notes provide space for additional terms, conditions, or special arrangements
-- Notes are optional and may be left empty
+An employee can have multiple contracts over time, creating a historical record of employment terms as they change.
 
-All contract terms are established when the contract is created and define the employment relationship for the contract's active period.
+Only one contract can be active at any given time for an employee. When a new contract is created, the previous active contract automatically ends.
 
-### Contract Lifecycle
+Past contracts remain immutable as historical records. Once a contract is no longer active, its terms cannot be edited or modified.
 
-Contracts follow a defined lifecycle that maintains accurate historical records:
+## Department Concept
 
-**Automatic Contract Termination**
-When a new contract is created for an employee, the previous active contract automatically ends. The system sets the end date of the previous contract to the day before the new contract's start date. This automatic contract termination ensures no overlap between contracts and maintains a clear timeline of employment terms.
+A Department represents an organizational unit for grouping employees within the company structure. Each department has a name that identifies it within the organization. A description provides context about the department's function or purpose. An optional parent department enables one level of hierarchical nesting. Departments help categorize employees for reporting and organizational clarity. Employees can be assigned to departments for structural organization. Deleting a department sets employees' department assignment to null without affecting employee records. Departments exist within a single organization's context. The one-level nesting limitation prevents deep hierarchical complexity. Department assignments appear in employee lists and filters.
 
-**Immutable Historical Record**
-Once a contract is no longer active (either ended automatically or by reaching its end date), it becomes an immutable historical record. Past contracts cannot be edited or modified. This immutability preserves the accuracy of historical employment terms and prevents retroactive changes to past agreements.
+### Department Definition and Attributes
 
-**Employment Terms Evolution**
-The contract system enables tracking employment terms evolution over time. By maintaining multiple contracts per employee with complete historical data, the organization can review how an employee's compensation, working hours, and other terms have changed throughout their tenure. Each contract represents a snapshot of terms at a specific period, and the sequence of contracts shows the progression of the employment relationship.
+A Department represents an organizational unit for grouping employees within the company structure. Each department exists within a single organization's context and cannot span multiple organizations.
+
+The department name serves as the primary identifier that distinguishes it from other departments within the organization. The name must be unique within the organization.
+
+A description provides context about the department's function or purpose, helping users understand the department's role within the organizational structure. The description is optional.
+
+Departments help categorize employees for reporting and organizational clarity. Department assignments appear in employee lists and enable filtering by department in employee browsing views.
+
+### Department Hierarchy
+
+Departments support one level of hierarchical nesting through an optional parent department relationship. A department may have a parent department, enabling basic organizational structure grouping.
+
+The hierarchy is limited to one level only — a department cannot have a grandparent department. This limitation prevents deep hierarchical complexity and maintains structural simplicity.
+
+When viewing the department list, the parent-child relationship is displayed to show the organizational structure. Child departments are grouped under their parent department in the hierarchy view.
+
+### Department Employee Association
+
+Employees can be assigned to one department for structural organization. The department assignment categorizes the employee within the organizational structure and appears in the employee's record.
+
+Department assignments enable reporting categorization, allowing time reports and activity summaries to be grouped by department. Users can filter employee lists by department to view members of specific organizational units.
+
+When a department is deleted, all employees assigned to that department have their department assignment set to null. The deletion does not remove or deactivate employee records — employees remain active with no department association.
+
+Departments exist independently of employee assignments. A department can exist with no employees assigned to it, and employees can exist without any department assignment.
 
 ## Project Concept
 
-A project represents a container for related work and time tracking within an organization. Projects enable grouping of tasks and timelogs for organizational and reporting purposes. The project name is required and identifies the work initiative. An optional description provides context about project goals or scope. A color code is required for visual identification in user interfaces. Project status indicates the current state as active, archived, or completed. Budget hours optionally specify the total estimated hours for the project. Start date and end date optionally define the project timeline. Active projects can receive new timelogs from assigned employees. Archived or completed projects cannot receive new timelogs but preserve existing timelogs. Projects can only be deleted when no timelogs are associated with them. The project concept enables work organization and budget tracking.
+A Project represents a body of work or initiative that employees contribute time toward. Each project has a name that identifies the work initiative. A description provides context about the project's goals or scope. A color code enables visual identification in user interfaces. Status indicates the project state as active, archived, or completed. Budget hours specify the total estimated hours allocated to the project. Start date marks when the project begins. End date indicates the planned project completion. Archived or completed projects preserve existing timelogs but cannot receive new ones. Projects serve as the primary container for tasks and timelog tracking.
 
-### Project Definition and Attributes
+### Project Definition and Identity
 
-A project represents a work container that groups related tasks and timelogs within an organization. Projects enable time tracking grouping for organizational and reporting purposes. Each project represents a work initiative grouping that consolidates associated work items.
+A Project represents a body of work or initiative that employees contribute time toward. Each project serves as a container for organizing related tasks and timelogs within an organization.
 
-The project name is required and identifies the work initiative. An optional description provides context about project goals or scope. A color code is required for visual identification and color code identification in user interfaces.
+Every project has a name that uniquely identifies the work initiative. A description provides context about the project's objectives or scope. A color code enables visual identification in user interfaces, allowing users to quickly recognize projects in lists and reports.
 
-Budget hours optionally specify the total estimated hours for the project, enabling budget tracking enablement. The project start date and project end date optionally define the project timeline. When both dates are provided, they establish the project timeline boundaries.
+A project belongs to one organization and cannot be shared across organizations. Multiple employees can be assigned to the same project.
 
-Projects belong to an organization and can have multiple project members assigned to them. Projects can contain multiple tasks and receive multiple timelogs from assigned employees.
+### Project Status and Timeline
 
-### Project States and Lifecycle
+Each project has a status indicating its lifecycle stage. The available statuses are:
 
-Project status indicates the current state of the project. The available states are active project status, archived project status, and completed project status.
+- Active: The project is ongoing and can receive new timelogs and tasks
+- Archived: The project is preserved for historical reference but cannot receive new timelogs
+- Completed: The project is finished and cannot receive new timelogs
 
-Active projects can receive new timelogs from assigned employees. Archived or completed projects cannot receive new timelogs, enforcing timelog restriction on archived and completed projects. Existing timelogs on archived or completed projects are preserved, ensuring timelog preservation for historical records.
+A project may have a start date marking when the project begins. A project may have an end date indicating the planned completion date. Both dates are optional.
 
-```mermaid
-flowchart LR
-    A["active"] -->|"Archive"| B["archived"]
-    A -->|"Complete"| C["completed"]
-```
+A project may have budget hours specifying the total estimated hours allocated to the project. This represents the planned time investment for the project.
 
-Projects transition from active to archived when work is suspended indefinitely. Projects transition from active to completed when work is finished. Once archived or completed, projects cannot return to active status.
+### Project Timelog and Task Relationship
 
-### Project Deletion Rules
+When a project is archived or completed, all existing timelogs remain accessible and are not deleted. The timelogs retain their association with the project for historical reporting and cannot be added to after the project leaves active status.
 
-Projects can only be deleted when no timelogs are associated with them, enforcing project deletion constraints. This ensures that historical time tracking data is not lost through project deletion.
+Each project serves as a container for tasks. Tasks are created within and belong to a specific project. Tasks cannot exist independently without a parent project. A project can have multiple tasks, and each task belongs to exactly one project.
 
-If a project has one or more timelogs, the deletion request is rejected. The project must first have all timelogs removed or the project must be archived or completed instead of deleted.
-
-Projects without any timelogs can be deleted freely. When a project is deleted, all tasks associated with the project are also deleted, but employee records and other organizational data remain unaffected.
+Timelogs are recorded against a project. Each timelog must reference a project that the employee is assigned to. A project can have many timelogs from multiple employees.
 
 ## ProjectMember Concept
 
-A project member represents an employee's assignment to a specific project. This relationship links an employee to a project with a defined role. An employee can be assigned to multiple projects simultaneously. Each project membership specifies the employee and the project. The assigned role within the project is either member or project-lead. Project leads have additional capabilities to manage tasks within their assigned project. Regular members participate in the project without task management authority. Project membership enables access control for project visibility and task assignment. Employees can view which projects they are assigned to. The project member concept enables granular access control at the project level.
+A ProjectMember represents an employee's assignment to a specific project. Each membership links an employee to a project they can contribute to. The assigned role indicates whether the member is a regular member or project-lead. Project leads can manage tasks within their assigned project. A joined date records when the employee was assigned to the project. An employee can be assigned to multiple projects simultaneously. Membership enables the employee to log time against the project. Project members can view tasks within their assigned projects. The assigned role determines task management capabilities. Membership records persist even after project completion or archiving.
 
-### Project Membership Definition
+### ProjectMember Definition and Assignment
 
-A project member represents an employee's assignment to a specific project within the organization. This membership creates a formal relationship between an employee and a project, establishing the employee's participation in project work.
+A ProjectMember represents an employee's assignment to a specific project within the organization. Each project membership creates a link between an employee and a project they are authorized to contribute to.
 
-Each project membership record links one employee to one project. The membership specifies the role the employee holds within that project. This role determines what actions the employee can perform within the project context.
+When an employee is assigned to a project, the system records the joined date indicating when the assignment occurred. An employee can be assigned to multiple projects simultaneously, allowing them to contribute work across different initiatives.
 
-The project member concept serves as a participation record, documenting which employees are involved in which projects. This record enables the organization to track project staffing and maintain clear boundaries around project access.
+Project membership is a prerequisite for time logging against a project. Only employees who are project members can log time entries for that project. The membership record persists even after the project is archived or completed, preserving the historical association between the employee and the project.
 
-### Multiple Project Assignments
+### ProjectMember Roles and Task Capabilities
 
-An employee can be assigned to multiple projects simultaneously. There is no limit to the number of projects an employee can join within the organization.
+Each project membership has an assigned role that determines the member's capabilities within the project. There are two role types: member and project-lead.
 
-Each project assignment is independent. Being a member of one project does not automatically grant access to other projects. The employee maintains separate membership records for each project they participate in.
+A member is a regular project participant who can view tasks within their assigned projects and log time against the project. Members can see all tasks in projects they are assigned to.
 
-This flexibility allows employees to contribute to multiple initiatives while maintaining clear separation between project work and access rights.
+A project-lead has elevated capabilities within their assigned project. Project leads can manage tasks within their project, including creating new tasks and editing existing tasks. The assigned role determines what task management actions the member can perform.
 
-### Project Role Types
+Task visibility is granted to all project members regardless of role. Any employee assigned to a project can view the tasks within that project. Role-based capabilities only affect task management operations, not task visibility.
 
-Each project membership designates one of two role types for the employee within that project.
+### ProjectMember Lifecycle
 
-The **member** role indicates standard project participation. Members can view project details, view tasks within the project, and log time against the project. Members participate in project work without administrative authority over project structure.
+Project membership enables time logging eligibility for the assigned project. An employee must be a project member to create timelogs against that project. This eligibility is automatically granted when the employee is assigned to the project and revoked when removed from the project.
 
-The **project-lead** role indicates elevated responsibility within the project. Project leads retain all member capabilities and gain additional authority to manage tasks within their assigned project. An employee holds exactly one role type per project membership.
+Membership records persist after project completion or archiving. When a project transitions to archived or completed status, existing project memberships are not deleted. The historical association between employees and the project is preserved for reporting and audit purposes.
 
-The role designation is specific to each project. An employee may be a project-lead in one project and a regular member in another project.
-
-### Project Lead Task Management Authority
-
-Project leads possess task management authority within their assigned project. This authority enables leads to create new tasks, edit existing tasks, and manage task assignments within the project.
-
-Task management authority is scoped to the lead's own project. A project lead cannot manage tasks in projects where they hold only the member role.
-
-This authority delegation allows project leads to organize work within their project without requiring organization-wide project management permissions. The task management capability is inherent to the project-lead role designation.
-
-### Project Access and Visibility
-
-Project membership enables granular project access control within the organization. Only employees who are assigned as project members can view the project and its associated tasks.
-
-Project visibility is scoped to membership. Employees without a membership record for a project cannot see that project in their project list, cannot view its tasks, and cannot log time against it.
-
-This membership-based access model provides fine-grained control over project visibility. Organizations can create projects visible only to specific team members while keeping them hidden from other employees.
-
-The access control operates at the project level, ensuring that sensitive or team-specific projects remain visible only to relevant participants.
-
-### Task Assignment Eligibility
-
-Only employees who are project members can be assigned to tasks within that project. Task assignment eligibility is restricted to the project's membership roster.
-
-When assigning a task to an employee, the system verifies that the employee holds a project membership for the parent project. Employees without membership cannot receive task assignments in that project.
-
-This eligibility rule ensures that task assignments align with project staffing. It prevents scenarios where work is assigned to employees who lack access to the project context.
-
-### Employee Project Overview
-
-Employees can view the list of projects they are assigned to through their project memberships. This employee project list shows all projects where the employee holds a membership record.
-
-For each project in the list, the employee can see their designated role (member or project-lead). The list provides a consolidated view of the employee's project participation across the organization.
-
-This overview enables employees to quickly understand their project commitments and access the projects they are authorized to work on. The list reflects current active memberships and updates when project assignments change.
+Project membership is independent of employee status. If an employee is deactivated, their project memberships remain in the system but they lose time logging eligibility due to their deactivated status, not due to membership removal.
 
 ## Task Concept
 
-A task represents a discrete work item within a project. Tasks enable breaking down projects into manageable units of work. The task title is required and identifies the work to be completed. An optional description provides additional details about the task requirements. Task status indicates progress as open, in-progress, completed, or closed. Priority levels categorize urgency as low, medium, high, or urgent. Estimated hours optionally specify the expected effort required. A due date optionally defines when the task should be completed. An assigned employee optionally designates who should complete the task, and must be a project member. A parent task optionally creates a subtask relationship with one level of nesting only. Tasks belong to a specific project and inherit project membership requirements. The task concept enables detailed work planning and tracking within projects.
+A Task represents a specific unit of work within a project. Each task has a title that describes the work to be done. A description provides additional details about the task requirements. Status tracks the task state as open, in-progress, completed, or closed. Priority indicates importance level as low, medium, high, or urgent. Estimated hours specify the expected effort required. Due date marks when the task should be completed. An assigned employee identifies who is responsible for the task, who must be a project member. A parent task enables one level of subtask nesting. Tasks belong to exactly one project and support time tracking.
 
-### Task Definition and Purpose
+### Task Definition and Attributes
 
-A task represents a discrete work item within a project. Tasks enable project work breakdown by allowing projects to be divided into manageable units of work. Each task serves as a work planning unit that defines specific work to be completed. Tasks belong to a specific project and cannot exist independently. The task concept supports detailed work planning and tracking within projects by providing granular visibility into project progress.
+A Task represents a specific unit of work within a project. Each task has a title that describes the work to be done and an optional description that provides additional requirements details. Status tracks the task state as open, in-progress, completed, or closed. Priority indicates importance level as low, medium, high, or urgent. Estimated hours specify the expected effort required to complete the task. Due date marks when the task should be completed. An assigned employee identifies who is responsible for the task, who must be a project member. Tasks belong to exactly one project.
 
-### Task Attributes
+### Task Subtask Hierarchy
 
-Each task has a task title which is required and identifies the work to be completed. An optional task description provides additional details about the task requirements and expectations. Estimated hours optionally specify the expected effort required to complete the task. A task due date optionally defines when the task should be completed. These attributes collectively define the scope and expectations for each work item.
-
-### Task Status
-
-Task status indicates the current progress state of a task. The available status values are:
-
-- Open task status: The task is ready to be worked on but no work has started
-- In-progress task status: Work on the task has begun and is actively ongoing
-- Completed task status: The work has been finished and marked as done
-- Closed task status: The task is finalized and no further changes are expected
-
-Status changes are recorded in the task history (defined in TaskHistory Concept).
-
-### Task Priority
-
-Priority levels categorize task urgency and importance. The available priority levels are:
-
-- Low priority: The task has minimal urgency and can be addressed when capacity allows
-- Medium priority: The task has standard urgency and should be addressed in normal workflow
-- High priority: The task has significant urgency and should be addressed promptly
-- Urgent priority: The task has critical urgency and requires immediate attention
-
-Priority helps employees and project leads determine work ordering and resource allocation.
-
-### Task Assignment
-
-Task assignment optionally designates which employee should complete the task. An assigned employee must be a project member, meaning they must be assigned to the project that contains the task. This project member requirement ensures that only employees with access to the project can be assigned work within it. Tasks can exist without an assigned employee, allowing for unassigned work items in the project backlog.
-
-### Subtask Structure
-
-A parent task optionally creates a subtask relationship, allowing tasks to be organized hierarchically. Subtasks enable breaking down complex tasks into smaller components. The system enforces one-level nesting only, meaning a task can have subtasks, but those subtasks cannot have their own subtasks. This limitation maintains simplicity in task hierarchy while still supporting work decomposition.
+Tasks support one level of subtask nesting through parent task relationships. A parent task can have multiple subtasks, but subtasks cannot have their own subtasks. This one level subtask hierarchy enables work breakdown while maintaining simplicity. Each subtask references its parent task and inherits project membership requirements.
 
 ## TaskHistory Concept
 
-A task history entry represents a recorded status change for a task. Task history creates an audit trail of all status transitions throughout the task lifecycle. Each history entry captures the timestamp when the change occurred. The old status indicates what the task status was before the change. The new status indicates what the task status became after the change. The entry records which user made the status change. Task history entries are created automatically when task status changes. All status changes are recorded regardless of who made the change. The history provides transparency into task progression and accountability. Task history entries are immutable once created. The task history concept enables tracking task evolution and identifying bottlenecks.
+A TaskHistory represents an audit record of status changes for a task. Each entry has a timestamp marking when the change occurred. The old status records what the task status was before the change. The new status records what the task status became after the change. The user who made the change is recorded for accountability. Task history entries are created automatically when task status changes. The history provides a complete audit trail of task progression. Each task can have multiple history entries over its lifetime. History entries are immutable once created. The audit trail supports tracking task workflow and accountability.
 
-### Task History Entry
+### Task History Purpose and Audit Trail
 
-A task history entry represents a recorded status change for a task. Each entry captures the timestamp when the status change occurred. The old status indicates what the task status was before the change. The new status indicates what the task status became after the change. The entry records which user made the status change. Task history entries contain the change timestamp, old status value, new status value, and the user who performed the change. Each task history entry is associated with exactly one task. The task history entry structure enables complete tracking of all status transitions throughout the task lifecycle.
+Task history provides a complete audit trail of task status changes for workflow tracking and accountability. Each task status change is recorded as a history entry, creating a log of task progression over time. Multiple history entries can exist for a single task, documenting each status transition throughout the task lifetime. History entries are immutable once created, preserving an accurate record of all changes. The audit trail enables tracking how tasks move through their workflow from creation to completion. The complete audit trail supports accountability by maintaining a permanent record of all status changes.
 
-### Task History Audit Trail
+### Task History Record Attributes
 
-Task history creates an audit trail of all status transitions throughout the task lifecycle. All status changes are recorded automatically when task status changes. Every status transition is logged regardless of who made the change. Task history entries are created automatically upon each status change. The system maintains a complete status history for each task. Once created, task history entries are immutable and cannot be modified or deleted. The immutable history entry ensures the audit trail remains accurate and trustworthy. The complete status history provides a full record of task evolution from creation to completion.
-
-### Task Progression Tracking
-
-The task history provides transparency into task progression and enables accountability tracking. Users can view the complete sequence of status changes to understand how a task evolved. The recorded history supports accountability tracking by identifying who made each status change. The task lifecycle tracking enables users to see the full journey of a task through all its states. Organizations can use task history data for bottleneck identification by analyzing where tasks spend the most time or frequently revert to previous states. The task progression transparency helps teams understand workflow patterns and improve task management processes.
+Each task history entry records the timestamp marking when the status change occurred. The old status documents what the task status was before the change. The new status documents what the task status became after the change. The user who made the change is recorded for accountability purposes. History entries are created automatically whenever a task status changes, requiring no manual intervention. Each entry captures the full context of the status transition for audit purposes.
 
 ## Timelog Concept
 
-A timelog represents a single time entry recording work performed. Timelogs capture the date when work was performed. Duration in minutes specifies how long the work took. The project is required and must be a project the employee is assigned to. An optional task can be specified and must belong to the selected project. An optional description explains what work was done. A billable flag indicates whether the time is billable to a client, defaulting to true. Timelogs are owned by the employee who created them. Timelogs can be part of timesheets for approval workflows. The timelog concept enables granular time tracking for reporting and billing purposes.
+A Timelog represents a record of time spent by an employee on specific work. Each timelog has a date indicating when the work was performed. Duration in minutes specifies how long the work took. The project identifies which work initiative the time was spent on. A task optionally specifies which specific unit of work was addressed. A description explains what work was accomplished. The billable flag indicates whether the time can be charged to a client. Timelogs must reference a project the employee is assigned to. Tasks must belong to the selected project if specified. Timelogs serve as the foundation for timesheets and reporting.
 
-### Time Entry Record
+### Timelog Core Attributes
 
-A timelog is a time entry record that captures a single instance of work performed by an employee. Each timelog represents granular time tracking at the individual work session level. Timelogs serve as the fundamental unit of time measurement in the system, enabling detailed tracking of how employees spend their working hours. Multiple timelogs can be created by an employee for different projects or tasks throughout a work day. The time entry record forms the basis for all time-related reporting and analysis within the organization.
+A timelog is a record of time spent by an employee on specific work. Each timelog captures a single work session with the following attributes:
 
-### Work Date and Duration
+The work date indicates when the work was performed. This date is required for every timelog entry.
 
-Each timelog captures the date when the work was performed. The work date is a required field and represents the calendar day on which the time was logged. Duration in minutes specifies the length of time spent on the work activity. The duration is recorded as a numeric value representing total minutes worked. Duration can be entered manually or calculated automatically when using the timer feature. The combination of work date and duration in minutes provides a complete temporal record of when and how long work was performed.
+The duration specifies how long the work took, measured in minutes. This value is required and represents the actual time invested in the work.
 
-### Project and Task Association
+The project identifies which work initiative the time was allocated to. Every timelog must reference a project to provide context for the work performed.
 
-Every timelog must be associated with a project. The project assignment requirement ensures that all tracked time is linked to specific work initiatives. The employee must be assigned to the project as a project member before creating a timelog for it. This project membership validation prevents employees from logging time to projects they are not authorized to work on. An optional task can be associated with the timelog to provide more granular categorization. When specified, the task must belong to the selected project. Task association enables detailed breakdown of time spent on specific work items within a project.
+A task may optionally be specified to identify which specific unit of work within the project was addressed. When a task is specified, it provides finer granularity for tracking and reporting.
 
-### Work Description
+A work description explains what was accomplished during the time period. This description is optional and allows employees to document the nature of their work.
 
-A timelog can include an optional work description field. The description provides context about what work was performed during the logged time. This free-text field allows employees to document specific activities, deliverables, or notes about the work session. The work description supports transparency and helps reviewers understand the nature of the logged time. While optional, descriptions are recommended for clarity in timesheet reviews and client billing scenarios.
+The billable flag indicates whether the time can be charged to a client. This flag defaults to true, meaning time is considered billable unless explicitly marked otherwise. Non-billable time may represent internal work, training, or administrative tasks.
 
-### Billable Time Classification
+### Timelog Project and Task Validation
 
-Each timelog includes a billable time flag that indicates whether the logged time is billable to a client. The billable flag defaults to true, meaning time is considered billable unless explicitly marked otherwise. Non-billable time represents work that is not charged to clients, such as internal meetings, training, or administrative tasks. The billable time classification serves as the billing basis for client invoices and revenue tracking. This classification also functions as a reporting data source, enabling organizations to analyze the ratio of billable versus non-billable hours across employees, projects, and time periods.
+Timelogs must reference valid projects and tasks within the organization context.
 
-### Employee Ownership
+An employee can only log time to projects they are assigned to. This ensures employees cannot record time on projects they are not involved with. The system validates that the employee has project membership before allowing a timelog to be created.
 
-Each timelog is owned by the employee who created it. Employee ownership establishes a clear relationship between the time entry and the individual who performed the work. The owning employee is the person whose time is being tracked and recorded. This ownership model ensures accountability and enables employees to view and manage their own time entries. Employee ownership also determines access rights for editing and deleting timelogs, subject to timesheet approval status constraints.
+When a task is specified on a timelog, the task must belong to the selected project. This validation ensures consistency between the project and task references. A timelog cannot reference a task from a different project than the one specified.
 
-### Timesheet Grouping
+These validation rules maintain data integrity and ensure that time tracking accurately reflects the employee's actual work assignments.
 
-Timelogs can be included in timesheets for approval workflows. Timesheet inclusion groups individual timelogs into weekly collections that are submitted for review and approval. A timelog belongs to a specific week based on its work date. When an employee creates a draft timesheet for a week, all timelogs for that employee within that week are automatically included. Once a timesheet is approved, the included timelogs are locked and cannot be modified. Timesheet grouping transforms individual time entry records into formal, auditable work records that support payroll and client billing processes.
+### Timelog Business Purpose
+
+Timelogs serve as the foundational data for timesheet compilation and organizational reporting.
+
+Timelogs are aggregated into timesheets, which group time entries by week for approval workflows. Each timesheet collects all timelogs for an employee within a specific week period (Monday to Sunday).
+
+Timelogs provide the raw data for all time-based reports in the organization. Reports such as time summaries, project budget tracking, and weekly summaries derive their metrics from timelog data. The billable flag enables separation of client-billable work from internal activities in reporting.
+
+Historical timelogs are preserved even when employees are deactivated, ensuring accurate records for past work periods. This preservation supports auditing, historical reporting, and compliance requirements.
 
 ## Timesheet Concept
 
-A timesheet represents a weekly collection of timelogs submitted for approval. Timesheets group individual timelogs into a single approval unit. The employee owner is the person whose work is recorded. Week start date marks the Monday beginning the timesheet period. Week end date marks the Sunday ending the timesheet period. Status indicates the approval state as draft, submitted, approved, or rejected. Total hours are calculated from all included timelogs. Submitted at records when the timesheet was sent for approval. Reviewed at records when approval or rejection occurred. Reviewed by identifies who made the approval decision. Rejection reason is required text when rejecting a timesheet. Approved timesheets lock all included timelogs from editing. The timesheet concept enables structured time approval workflows.
+A Timesheet represents a weekly collection of timelogs submitted for approval. Each timesheet has an employee who owns the timesheet. Week start date marks the Monday beginning the timesheet period. Week end date marks the Sunday concluding the timesheet period. Status indicates the approval state as draft, submitted, approved, or rejected. Total hours is calculated from all included timelogs. Submitted at records when the employee submitted for approval. Reviewed at records when approval or rejection occurred. Reviewed by identifies who made the approval decision. Rejection reason provides explanation when timesheets are rejected.
 
-### Timesheet as Weekly Collection
+### Timesheet Definition and Weekly Period
 
-A timesheet is a weekly collection of timelogs grouped together as a single approval unit. The timesheet serves as the primary mechanism for organizing individual time entries into structured batches for review and approval. Each timesheet has one employee owner, who is the person whose work is recorded in the timelogs contained within the timesheet. The employee owner relationship establishes accountability and ownership for the submitted time records. The approval unit grouping enables managers to review and approve a complete week's work in a single action rather than processing individual timelogs separately.
+A timesheet represents a weekly collection of timelogs grouped together for approval purposes. Each timesheet has exactly one employee who owns the timesheet as its creator and submitter. The timesheet period follows a fixed weekly boundary where the week start date marks the Monday beginning the timesheet period and the week end date marks the Sunday concluding the timesheet period. All timelogs included in a timesheet must fall within this Monday to Sunday date range. An employee can have only one timesheet per week period.
 
-### Timesheet Week Period
+### Timesheet Status and Approval Tracking
 
-Each timesheet covers a fixed weekly period defined by a week start date and a week end date. The week start date always marks the Monday beginning the timesheet period. The week end date always marks the Sunday ending the timesheet period. This Monday to Sunday structure ensures consistent weekly boundaries across the organization. The week period is determined at timesheet creation and cannot be changed. Each employee can have only one timesheet per week period, preventing duplicate submissions for the same time range.
-
-### Timesheet Status States
-
-A timesheet has a status that indicates its current state in the approval workflow. The draft timesheet status indicates the timesheet is being prepared and has not been sent for approval. The submitted timesheet status indicates the timesheet has been sent for approval and is awaiting review. The approved timesheet status indicates the timesheet has been reviewed and accepted. The rejected timesheet status indicates the timesheet has been reviewed and sent back for correction. Status transitions follow a structured approval workflow from draft to submitted, then to either approved or rejected.
-
-### Timesheet Metadata Attributes
-
-A timesheet contains several metadata attributes that track its lifecycle. Total hours are calculated automatically from all timelogs included in the timesheet. The submission timestamp records when the timesheet was sent for approval. The review timestamp records when the approval or rejection decision was made. Reviewer identification indicates which user with approval permissions made the decision. Rejection reason is required text that must be provided when rejecting a timesheet, explaining why the timesheet was not approved. These metadata fields provide audit trail information for the timesheet approval process.
-
-### Timesheet Approval Locking
-
-When a timesheet reaches the approved timesheet status, all timelogs included in that timesheet are locked from editing. Timelog locking on approval prevents any modifications to time records that have been formally approved. This ensures the integrity of approved time data for payroll and reporting purposes. Locked timelogs cannot be edited or deleted by any user, including the employee owner. The structured approval workflow ensures that timesheets move through defined states with appropriate controls at each stage. Only timesheets in draft or rejected status allow modifications to their included timelogs.
+Each timesheet has a status that indicates its approval state. The available status values are draft, submitted, approved, and rejected. A timesheet in draft status is being prepared by the employee and can be modified. A timesheet in submitted status is awaiting review and approval. A timesheet in approved status has been accepted by an approver. A timesheet in rejected status was declined and returned to the employee for correction. The total hours on a timesheet is calculated automatically from all included timelogs. The submitted at timestamp records when the employee submitted the timesheet for approval. The reviewed at timestamp records when an approver approved or rejected the timesheet. The reviewed by field identifies which user made the approval or rejection decision. When a timesheet is rejected, a rejection reason explanation is required to inform the employee why the timesheet was not approved.
 
 ## Timer Concept
 
-A timer represents an active real-time time tracking session. Each employee can have at most one active timer running at any time. The start timestamp records when the timer began. The project is required when starting a timer. An optional task can be specified for more granular tracking. An optional description explains what work is being tracked. The active status indicates whether the timer is currently running. When stopped, the timer creates a timelog with calculated duration. Duration is rounded to the nearest minute upon timer completion. Timers can be discarded without creating a timelog. Running timers can have their description and project or task edited. The timer concept enables convenient real-time time capture.
+A Timer represents an active real-time time tracking session. Each timer has a start timestamp marking when tracking began. The project identifies which work initiative is being tracked. A task optionally specifies which specific work unit is in progress. A description explains what work is being performed. Each employee can have at most one active timer at a time. The timer continues running until explicitly stopped by the employee. When stopped, the timer creates a timelog with calculated duration. Duration is rounded to the nearest minute upon timer completion. The timer enables live tracking without manual duration entry.
 
-### Timer Definition
+### Timer Definition and Attributes
 
-A timer represents a real-time tracking session that enables convenient time capture for employees. The timer concept allows employees to track work as it happens rather than manually entering time after the fact. Each timer is associated with exactly one employee. The timer serves as a temporary working record that converts to a timelog when stopped. This real-time tracking session provides an intuitive way for employees to capture work duration accurately without needing to remember or estimate time spent.
+A Timer represents an active real-time tracking session initiated by an employee. The timer start timestamp records the exact moment when time tracking began. The active timer project identifies which work initiative is being tracked during the session. An optional timer task may be specified to indicate which specific work unit is in progress. A timer work description explains what work is being performed during the tracking session. These attributes enable employees to track time live without manual duration entry.
 
-### Timer Attributes
+### Timer Lifecycle and Constraints
 
-A timer has the following attributes that define its state and context:
+Each employee can have at most one active timer at a time, enforcing a single active timer per employee constraint. This prevents conflicting time tracking sessions. The timer continues running indefinitely until explicitly stopped by the employee, with no automatic stop mechanism. This timer indefinite running behavior means employees must manually stop their timer when work ends.
 
-The start timestamp records when the timer began running. This value is set when the employee initiates the timer and cannot be modified.
+### Timer Completion Behavior
 
-Project selection is required when starting a timer. The project must be one the employee is assigned to. This ensures time is tracked against valid work containers.
-
-Task selection is optional when starting a timer. If specified, the task must belong to the selected project. This enables granular tracking within project work.
-
-The timer description is optional and explains what work is being tracked. Employees can provide context about the specific activity being performed during the tracking session.
-
-The active status indicator shows whether the timer is currently running. A timer is active from the moment it is started until it is explicitly stopped or discarded. This status determines whether the timer is accumulating time.
-
-### Timer Lifecycle
-
-The timer follows specific lifecycle rules that govern its behavior:
-
-Each employee can have at most one active timer at any time. This single active timer limit prevents conflicting time tracking sessions. An employee must stop or discard their current timer before starting a new one.
-
-When an employee performs a timer stop action, the system calculates the duration from the start timestamp to the stop time. This duration calculation determines the time entry value. The calculated duration undergoes minute rounding to the nearest minute before creating the timelog.
-
-Employees have a timer discard option that stops the timer without creating a timelog. This allows employees to cancel accidental or test timer sessions without leaving time entry records.
-
-Running timer editing is permitted while a timer is active. Employees can modify the timer description to update what work is being tracked. Employees can also change the project or task assignment through project task editing. These modifications update the timer's context without interrupting the tracking session. When the timer is eventually stopped, the timelog reflects the most recent attribute values.
+When an employee stops their timer, the timer stop creates timelog action generates a new timelog record. The duration rounding to minute rule applies, where the calculated duration is rounded to the nearest minute. This timer completion behavior enables live tracking without manual entry, as the system automatically calculates the time spent based on the start timestamp and stop moment.
 
 ## ActivityLog Concept
 
-An activity log entry represents a recorded significant action within the organization. Activity logs create an audit trail of important organizational events. Each entry includes a timestamp of when the action occurred. The user who performed the action is recorded. The action type categorizes what kind of event occurred. The target entity identifies what was affected by the action. Details provide additional context about the action. Logged actions include employee invitations, deactivations, and reactivations. Contract creation and editing are recorded. Project creation, archiving, completion, and deletion are logged. Task status changes are tracked. Timesheet submissions, approvals, and rejections are recorded. Role assignments and changes are logged. The activity log concept enables organizational transparency and compliance.
+An ActivityLog represents an audit record of significant actions within the organization. Each entry has a timestamp marking when the action occurred. The user who performed the action is recorded for accountability. Action type categorizes what kind of action was taken. Target entity identifies what was affected by the action. Details provide additional context about the action. Logged actions include employee invitations, contract changes, project modifications, task status changes, timesheet approvals, and role assignments. The activity log provides a complete organizational audit trail. Entries are created automatically when significant actions occur. The log supports compliance and operational transparency.
 
-### Activity Log Entry Structure
+### ActivityLog Definition
 
-An activity log entry represents a recorded significant action within the organization. Each entry captures the timestamp when the action occurred. The user who performed the action is recorded as the action performer. The action type categorizes what kind of event occurred, such as employee invitation or project creation. The target entity identifies what was affected by the action, such as a specific employee or project. Action details provide additional context about what changed or what the action entailed. The activity log entry structure ensures complete traceability of organizational events.
+An ActivityLog represents an audit record of significant actions within the organization. Each entry captures a timestamp marking when the action occurred. The user who performed the action is recorded for accountability purposes. Action type categorizes what kind of action was taken, such as employee management, contract modifications, or timesheet approvals. Target entity identifies what was affected by the action, such as a specific employee, project, or timesheet. Details provide additional context about the action, including relevant information about what changed. The activity log serves as a complete organizational audit trail, automatically creating entries when significant actions occur. This provides compliance support and operational transparency across the organization.
 
-### Employee Action Logging
+### Logged Actions
 
-Employee invitation actions are logged when a new employee is invited to join the organization. Employee deactivation actions are logged when an employee's status is changed to deactivated. Employee reactivation actions are logged when a deactivated employee is restored to active status. Each logged employee action includes the employee affected, the user who performed the action, and the timestamp of when the action occurred. This logging ensures accountability for employee lifecycle changes.
-
-### Contract Action Logging
-
-Contract creation actions are logged when a new employment contract is created for an employee. Contract editing actions are logged when the current active contract is modified. Each contract action log entry records which employee's contract was affected, what changes were made, who made the changes, and when the changes occurred. Past contracts cannot be edited, so only active contract modifications are logged. This logging maintains a clear record of employment agreement changes.
-
-### Project Lifecycle Logging
-
-Project creation actions are logged when a new project is established. Project archiving actions are logged when a project status changes to archived. Project completion actions are logged when a project status changes to completed. Project deletion actions are logged when a project is permanently removed. Each project lifecycle event records the project affected, the user who performed the action, the timestamp, and relevant details such as the new status. This logging provides visibility into project portfolio changes.
-
-### Task Status Change Logging
-
-Task status change actions are logged whenever a task transitions between statuses such as open, in-progress, completed, or closed. Each task status change log entry records the task affected, the old status, the new status, the user who made the change, and the timestamp of the change. Task status change logging is separate from the task history recorded on the task itself, providing organization-wide visibility into task workflow patterns.
-
-### Timesheet Workflow Logging
-
-Timesheet submission actions are logged when an employee submits a timesheet for approval. Timesheet approval actions are logged when a timesheet is approved by a user with approval permissions. Timesheet rejection actions are logged when a timesheet is rejected, including the rejection reason provided. Each timesheet workflow log entry records the timesheet affected, the employee owner, the user who performed the action, the timestamp, and relevant details. This logging ensures transparency in the time approval process.
-
-### Role Assignment Logging
-
-Role assignment actions are logged when an employee is assigned a role within the organization. Role change actions are logged when an employee's role is modified from one role to another. Each role assignment log entry records the employee affected, the role assigned or changed to, the user who performed the assignment, and the timestamp. This logging maintains accountability for permission and access changes within the organization.
-
-### Audit Trail and Compliance
-
-The activity log creates an organizational audit trail of all significant actions. This audit trail enables organizational transparency by making important events visible to users with appropriate permissions. The activity log supports compliance tracking by maintaining a permanent record of who did what and when. Users with organization management permissions can view the full activity log to review organizational events. The activity log is paginated and can be filtered by action type, user, and date range to facilitate efficient review and auditing.
-
-## Invitation Concept
-
-An invitation represents a pending request to join an organization. Invitations enable adding employees who do not yet have platform accounts. The email address identifies the intended recipient of the invitation. The status indicates the current state of the invitation. If the invited email already has an account, the user is directly added to the organization. If the invited email has no account, a pending invitation is created. When the user signs up with the invited email, they are automatically added to the pending organizations. Invitations bridge the gap between invitation and account creation. The invitation concept enables seamless onboarding for new employees.
-
-### Invitation Definition and Purpose
-
-An invitation represents a pending request for a user to join an organization. The invitation mechanism enables organizations to add employees who do not yet have platform accounts. Invitations are email-based, using the recipient's email address as the identifier. The invitation serves as a bridge between invitation and membership, enabling seamless employee onboarding. When an organization invites a person by email, the system creates an invitation record that tracks the invitation state until the person becomes a member of the organization.
-
-### Invitation Status and Account Handling
-
-Each invitation has a status that indicates its current state. The invited email address identifies the intended recipient of the invitation. If the invited email already has an account on the platform, the user is directly added to the organization without creating a pending invitation. If the invited email has no account, a pending invitation is created. The pending invitation waits for the user to sign up with that email address. This distinction ensures that existing users are immediately added while new users receive a pending invitation that activates upon signup.
-
-### Pending Invitation and Automatic Enrollment
-
-A pending invitation is created when an email without an existing account is invited to an organization. When the user signs up with the invited email address, they are automatically added to the pending organizations. This signup-triggered enrollment ensures that new users gain immediate access to the organizations that invited them. The automatic organization addition eliminates manual steps for both the inviter and the invited user. Once the user completes signup, all pending invitations for that email are resolved, and the user becomes an employee member of those organizations.
+The system records significant actions as activity log entries. Employee invitation logging captures when employees are invited, deactivated, or reactivated. Contract change recording tracks when contracts are created or edited. Timesheet approval tracking records when timesheets are submitted, approved, or rejected. Task status changes are logged with details of the transition. Project modifications including creation, archival, completion, and deletion are recorded. Role assignments and changes are tracked for accountability. All logged actions include the timestamp, the user who performed the action, the action type, the target entity affected, and contextual details. Users with organization management permissions can view the full activity log to maintain oversight of organizational activities.
 
 # Domain Relationships
 
@@ -547,222 +374,153 @@ Describe how concepts relate to each other from a business perspective.
 
 Describe how concepts relate to each other in business terms.
 
-### Organization Relationships
+### Organization Relationship Model
 
-An organization has many employees who work within it. Each employee belongs to exactly one organization.
+The Organization is the central container that establishes multi-tenancy boundaries. Each Organization has many Users as members, has many Employees, has many Projects, has many Departments, and has many Roles.
 
-An organization has many departments for grouping employees by function. Each department belongs to exactly one organization.
+All data belongs-to exactly one Organization. Users can belong-to multiple Organizations simultaneously, but all actions are scoped to one selected Organization at a time.
 
-An organization has many projects for tracking work. Each project belongs to exactly one organization.
+When an Organization is deleted, all entities that belong-to it (Employees, Projects, Departments, Roles, Timelogs, Timesheets, Tasks, Activity Logs) are permanently deleted. User accounts remain but lose their association with the deleted Organization.
 
-An organization has many custom roles in addition to the three built-in roles. Each custom role belongs to exactly one organization.
+### User and Employee Association
 
-An organization has many invitations for pending employee join requests. Each invitation belongs to exactly one organization.
+A User account exists globally across the platform. An Employee record represents a User's membership within a specific Organization.
 
-All data is strictly isolated per organization. Employees in one organization cannot access data from another organization.
+Each Employee belongs-to one Organization and references one User account. A User can have many Employee records across different Organizations.
 
-### User-Employee Association
+The Employee entity serves as the association link between a User and an Organization. Each Employee is assigned exactly one Role within that Organization. The Employee has many Contracts (employment terms) and is assigned to many Projects.
 
-A user account represents an individual person in the system. A user can belong to multiple organizations simultaneously.
+When a User deletes their account, their Employee records in other Organizations are marked as deactivated rather than deleted, preserving historical data.
 
-For each organization a user belongs to, there is exactly one employee record linking the user to that organization. The employee record serves as the association between the user and the organization.
+### Role and Permission Assignment
 
-A user has many employee records across different organizations. Each employee record belongs to exactly one user.
+Each Role belongs-to one Organization and defines a set of permissions. Each Employee is assigned exactly one Role.
 
-When a user logs in, they select which organization context to work in. All actions are scoped to the selected organization through the employee record for that organization.
+Built-in Roles (Owner, Manager, Employee) exist in every Organization and cannot be deleted. Custom Roles can be created by Organization Owners and belong-to the creating Organization.
 
-The user's profile (display name, avatar, phone number) is shared across all organizations. The employee-specific attributes (role, department, position, employment type, status) are unique to each organization.
+Role assignment establishes what actions an Employee can perform. The relationship between Role and Employee is one-to-many: one Role can be assigned to many Employees, but each Employee has exactly one Role at a time.
 
-### Employee Associations
+### Project and Task Hierarchy
 
-An employee has many contracts representing historical employment agreements. Each contract belongs to exactly one employee. Only one contract can be active at a time for an employee.
+Each Project belongs-to one Organization. A Project has many Tasks and has many ProjectMembers.
 
-An employee has many project memberships indicating which projects they are assigned to. Each project membership belongs to exactly one employee and exactly one project.
+Each Task belongs-to one Project. A Task can have one parent Task (subtask relationship), supporting one level of nesting. A Task is optionally assigned to one Employee who must be a ProjectMember of the parent Project.
 
-An employee has many timelogs recording time entries. Each timelog belongs to exactly one employee.
+Each ProjectMember represents an association between one Employee and one Project. The ProjectMember has an assigned role (member or project-lead). An Employee can be a ProjectMember of many Projects.
 
-An employee has many timesheets for weekly approval. Each timesheet belongs to exactly one employee.
+Project leads (Employees with project-lead role) can manage Tasks within their Project. TaskHistory records belong-to one Task and document status changes.
 
-An employee has at most one active timer at any time. Each timer belongs to exactly one employee.
+### Time Tracking Ownership
 
-An employee is assigned exactly one role within the organization. The role determines what permissions the employee has.
+Each Timelog belongs-to one Employee who performed the work. A Timelog references one Project and optionally references one Task that belongs-to that Project.
 
-### Project Relationships
+A Timesheet belongs-to one Employee and includes many Timelogs for a specific week. The Timesheet is owned by the Employee and submitted for review.
 
-A project has many project members who are assigned to work on it. Each project member belongs to exactly one project.
+Each Timer belongs-to one Employee and represents an active time tracking session. An Employee can have at most one active Timer at a time.
 
-A project has many tasks representing discrete work items. Each task belongs to exactly one project.
+Timelogs included in an approved Timesheet become locked and cannot be edited or deleted, establishing an ownership chain from Employee to Timelog to Timesheet.
 
-A project has many timelogs logged against it. Each timelog belongs to exactly one project.
+### Department and Contract Relationships
 
-Employees can only log time to projects they are assigned to as project members. This association ensures employees cannot track time on projects they are not part of.
+Each Department belongs-to one Organization. A Department can have one parent Department, establishing a one-level hierarchy. Many Employees can belong-to the same Department.
 
-Tasks can only be assigned to employees who are project members of the parent project.
+Each Contract belongs-to one Employee and records employment terms. An Employee can have many Contracts over time, but only one Contract can be active at any given time. Creating a new Contract automatically ends the previous active Contract.
 
-### Task Relationships
-
-A task has many task history entries recording status changes. Each task history entry belongs to exactly one task.
-
-A task can have one parent task for creating subtasks. Subtasks belong to exactly one parent task. Only one level of nesting is supported.
-
-A task can be assigned to one employee. The assigned employee must be a project member of the task's parent project.
-
-A task belongs to exactly one project. The task cannot exist independently of its parent project.
-
-### Timesheet-Timelog Ownership
-
-A timesheet owns many timelogs for a specific week. Each timelog can belong to at most one timesheet.
-
-When a draft timesheet is created, it automatically includes all timelogs for that employee in that week. Timelogs can be added to or removed from a draft timesheet.
-
-When a timesheet is approved, all included timelogs are locked and cannot be edited or deleted. The ownership relationship enforces this lock.
-
-When a timesheet is rejected, it returns to draft status and the timelogs become editable again by the employee.
-
-A timesheet is reviewed by one employee (the reviewer). The reviewer must have timesheet approval permission.
-
-### Role-Employee Assignment
-
-A role has many employees assigned to it within an organization. Each employee is assigned exactly one role.
-
-The assignment relationship determines what permissions an employee has. When an employee's role is changed, their permissions change accordingly.
-
-Built-in roles (owner, manager, employee) cannot be deleted. Custom roles can be deleted only if no employees are assigned to them.
-
-Role assignment can be changed by employees with employee management permission. The relationship ensures each employee always has exactly one role at any time.
+Past Contracts are immutable historical records. The relationship between Employee and Contract is one-to-many, with temporal exclusivity for active Contracts.
 
 ## Lifecycle and Retention
 
 Describe concept lifecycle states and transitions only. Detailed retention/recovery policies belong in 05-non-functional. Operation details belong in 03-functional-requirements.
 
-### Employee Lifecycle
+### Entity Lifecycle States
 
-Employees exist in two states: active and deactivated.
+Each business concept follows a lifecycle with defined states and transitions.
 
-An active employee can log time, submit timesheets, and be assigned to projects and tasks.
+**Organization Lifecycle**:
+An organization is created when a user completes initial sign-up. The organization remains active while it has employees and unresolved timesheets. An organization transitions to deleted when the owner deletes it after resolving all pending timesheets and ending all active employee contracts.
 
-A deactivated employee cannot log time or submit timesheets. Deactivated employees remain assigned to their existing projects but cannot be assigned to new tasks. Historical data including timelogs, timesheets, and contracts for deactivated employees is preserved.
+**Employee Lifecycle**:
+An employee record is created when a user is invited to or added to an organization. The employee status transitions between active and deactivated. A deactivated employee cannot log time or submit timesheets but historical data is preserved. A deactivated employee can transition back to active status.
 
-Deactivated employees can be reactivated to active status, restoring their ability to log time and submit timesheets.
+**Contract Lifecycle**:
+A contract becomes active on its start date. Only one contract can be active per employee at any time. When a new contract is created, the previous active contract automatically ends the day before the new contract starts. Past contracts are immutable historical records.
 
-When a user deletes their account, their employee records in organizations where they are not the sole owner are marked as deactivated rather than deleted.
+**Project Lifecycle**:
+A project starts as active when created. A project can transition to archived or completed status. Archived and completed projects cannot receive new timelogs but existing timelogs are preserved.
 
-### Contract Lifecycle
+**Task Lifecycle**:
+A task is created with status open. Task status can transition through in-progress, completed, and closed. Each status change is recorded in task history with timestamp, old status, new status, and the user who made the change.
 
-Each employee can have multiple contracts over time, but only one contract can be active at any time.
+**Timesheet Lifecycle**:
+A timesheet is created as draft for a specific week. An employee can submit a draft timesheet for approval. A submitted timesheet can transition to approved or rejected. Approved timesheets lock all included timelogs. Rejected timesheets return to draft status and can be modified and resubmitted.
 
-A contract becomes active when created. If a previous contract was active, it automatically becomes inactive with its end date set to the day before the new contract starts.
+**Timelog Lifecycle**:
+A timelog is created when an employee logs time or stops a timer. A timelog can be edited or deleted by its owner only if it is not part of an approved timesheet. Timelogs in submitted or approved timesheets cannot be deleted.
 
-Active contracts can be edited by users with employee management permission.
+**Timer Lifecycle**:
+A timer starts when an employee initiates time tracking. A timer can be stopped to create a timelog with calculated duration. A timer can be discarded without creating a timelog record. Each employee can have at most one active timer at a time.
 
-Inactive contracts are immutable historical records and cannot be edited.
+### Data Preservation and Deletion
 
-A contract remains active until either:
-- A new contract is created for the same employee
-- An end date is set and reached
-- The employee is deactivated
+Data preservation ensures historical records remain available for reporting and audit purposes. Deletion permanently removes data under specific business conditions.
 
-The system preserves all historical contracts for each employee, including those from deactivated employees.
+**Retention Through Status Changes**:
+When an employee is deactivated, all historical timelogs, timesheets, and contracts are preserved. The employee record remains in the system and can be reactivated. When a project is archived or completed, all existing timelogs on the project are preserved and remain accessible for reporting. When a contract ends, it becomes an immutable historical record that cannot be edited but remains viewable.
 
-### Project Lifecycle and Archival
+**Timesheet Finalization as Preservation**:
+When a timesheet is approved, all included timelogs are locked and cannot be edited or deleted. This preserves the time records for that week as a finalized business record. Rejected timesheets return to draft status, preserving the timelogs for modification and resubmission.
 
-Projects exist in three states: active, archived, and completed.
+**Task History Preservation**:
+All task status changes are recorded in task history. Task history entries are never deleted and provide a complete audit trail of task progression from creation through closure.
 
-Active projects can receive new timelogs and have tasks created or modified.
+**Activity Log Preservation**:
+Significant actions are recorded as activity log entries. Activity log entries are never deleted and provide a complete audit trail of organizational changes including employee invitations, deactivations, contract changes, project status changes, task status changes, timesheet approvals, and role assignments.
 
-Archived projects cannot receive new timelogs. Existing timelogs and tasks are preserved and remain viewable.
+**Organization Deletion**:
+An organization owner can delete their organization only when all pending timesheets are resolved and there are no active employee contracts. When an organization is deleted, all employees, projects, tasks, timelogs, and timesheets associated with that organization are permanently deleted. The owner's user account remains but is no longer associated with any organization.
 
-Completed projects cannot receive new timelogs. Existing timelogs and tasks are preserved and remain viewable.
+**Project Deletion**:
+Users with project management permission can delete a project only if the project has no timelogs associated with it. Projects with existing timelogs cannot be deleted to preserve time tracking history.
 
-Projects can only be deleted if they have no timelogs associated with them. Deleting a project permanently removes the project, its tasks, task histories, and project memberships.
+**Department Deletion**:
+Users with organization management permission can delete departments. Deleting a department sets all employees' department assignments to null. Employees are not deleted when their department is deleted.
 
-When an organization is deleted, all projects within that organization are permanently deleted along with their associated timelogs, tasks, and memberships.
+**Custom Role Deletion**:
+Organization owners can delete custom roles only if no employees are currently assigned to that role. Built-in roles cannot be deleted.
 
-### Timesheet Lifecycle
+**User Account Deletion**:
+A user can delete their account if they are not the sole owner of any organization. If they are the sole owner, they must transfer ownership or delete the organization first. When a user deletes their account, their employee records in other organizations are marked as deactivated rather than deleted, preserving historical data integrity.
 
-Timesheets exist in four states: draft, submitted, approved, and rejected.
+**Timelog Deletion**:
+Employees can delete their own timelogs only if the timelog is not part of any submitted or approved timesheet. Users with time management permission can delete any employee's timelogs subject to the same timesheet constraints.
 
-A draft timesheet can have timelogs added or removed. The employee can modify the timesheet freely.
+### Restoration Capabilities
 
-A submitted timesheet cannot be modified by the employee. It awaits approval or rejection.
+Restoration allows previously changed data to be returned to a prior state through defined business processes.
 
-An approved timesheet locks all included timelogs. Locked timelogs cannot be edited or deleted by anyone. The timesheet itself cannot be modified.
+**Employee Reactivation**:
+A deactivated employee can be reactivated to active status. When reactivated, the employee regains the ability to log time and submit timesheets. All historical data from when the employee was previously active remains accessible. The employee retains their department, position, and role assignments from before deactivation.
 
-A rejected timesheet returns to draft status. The employee can modify the timelogs and resubmit the timesheet. A rejection reason is recorded.
+**Timesheet Resubmission**:
+A rejected timesheet returns to draft status and can be modified and resubmitted. The employee can add or remove timelogs from the rejected timesheet before resubmission. The timesheet retains its original week period and employee association through the rejection and resubmission process.
 
-State transitions:
-- Draft can transition to submitted (by employee)
-- Submitted can transition to approved (by approver)
-- Submitted can transition to rejected (by approver)
-- Rejected can transition to draft (automatic upon rejection)
-- Draft can transition to draft (when rejected timesheet is modified)
+**Timer Discard and Restart**:
+An employee can discard a running timer without creating a timelog record. The employee can then start a new timer to begin tracking time again. Discarding a timer does not create any permanent record of the abandoned tracking session.
 
-A timesheet cannot be submitted if it contains no timelogs. A timesheet cannot be submitted if another timesheet for the same week is already submitted or approved.
+**Task Status Reversal**:
+Task status can transition forward or backward through the defined states (open, in-progress, completed, closed). Each status change is recorded in task history. A task can be reopened from closed status if needed, with the status change recorded in history.
 
-### Task Lifecycle
+**Contract Continuation**:
+When a contract with an end date reaches that date, a new contract can be created to continue the employment relationship. The new contract starts the day after the previous contract ends, creating a continuous employment record. Multiple sequential contracts for the same employee preserve the complete employment history.
 
-Tasks exist in four states: open, in-progress, completed, and closed.
+**Department Reassignment**:
+When a department is deleted, employees' department assignments are set to null. Employees can be reassigned to a new or existing department through employee record editing. The employee record is not lost when the department is deleted.
 
-Task status changes are recorded in the task history. Each history entry captures the timestamp, the old status, the new status, and who made the change.
+**Role Reassignment**:
+An employee's role assignment can be changed by users with employee management permission. The employee retains all historical data (timelogs, timesheets, contracts) when their role is changed. Role changes are recorded in the activity log.
 
-Tasks can transition between any states. There are no restrictions on status transitions.
-
-When a project is archived or completed, its tasks cannot be modified but remain viewable with their current status.
-
-When a project is deleted, all its tasks and task histories are permanently deleted.
-
-### Timelog Lifecycle
-
-Timelogs can be edited or deleted by their owner under the following conditions:
-
-A timelog can be edited or deleted by its owner only if it is not part of a submitted or approved timesheet.
-
-A timelog that is part of an approved timesheet is locked and cannot be edited or deleted by anyone except users with time management permission.
-
-A timelog that is part of a submitted timesheet cannot be edited or deleted by its owner until the timesheet is rejected and returns to draft status.
-
-When a timer is discarded, no timelog is created. When a timer is stopped, a timelog is created with the calculated duration.
-
-Timelogs are permanently deleted when:
-- The owning employee's organization is deleted
-- The associated project is deleted (and the timelog has no timesheet)
-- The timesheet containing the timelog is deleted (if timesheet deletion is permitted)
-
-### Organization Deletion Policy
-
-An organization can be deleted by its owner only when:
-- All pending timesheets are resolved (approved or rejected)
-- There are no active employee contracts
-
-When an organization is deleted, the following data is permanently deleted:
-- All employee records
-- All departments
-- All projects, tasks, and task histories
-- All timelogs and timesheets
-- All custom roles
-- All invitations
-- All activity log entries for the organization
-
-The organization owner's user account remains but is no longer associated with any organization. If the user belongs to other organizations, those memberships are unaffected.
-
-### User Account Deletion and Employee Record Retention
-
-A user can delete their account under the following conditions:
-- If they are the sole owner of an organization, they must transfer ownership or delete the organization first
-- If they belong to multiple organizations, their employee records in other organizations are marked as deactivated rather than deleted
-
-When a user account is deleted:
-- The user's global profile (display name, avatar, phone number) is permanently deleted
-- Employee records in organizations where the user was a member are deactivated, preserving historical timelogs, timesheets, and contracts
-- The user can no longer log in or access any organization
-
-Deactivated employee records preserve all historical data including:
-- Past timelogs and timesheets
-- Contract history
-- Project memberships
-- Task assignments
-
-This ensures organizational records remain complete even after a user leaves.
+**User Account Recovery**:
+A user who deletes their account cannot recover that account. The user must create a new account if they wish to use the platform again. Employee records associated with the deleted account remain as deactivated records in their respective organizations, preserving organizational data integrity.
 
 # Business Categories and State Flows
 
@@ -772,234 +530,122 @@ Business category classifications and state flow definitions.
 
 Define all business category classifications with their allowed values and descriptions.
 
-### Employment Type Classification
+### Business Category Classification Framework
 
-The system classifies employees by their employment type. This classification determines the nature of the employment relationship.
+The system uses business category classifications to standardize how entities are categorized and tracked across the organization. Each classification type has a fixed set of allowed values that cannot be extended or modified by users.
 
-The allowed employment types are:
-- Full-time: Standard employment with regular working hours
-- Part-time: Employment with reduced working hours
-- Contractor: External worker engaged for specific work or period
-- Intern: Temporary position for learning and training purposes
+**Classification Types**:
 
-Each employee record must have exactly one employment type assigned. The employment type can be changed by users with employee management permission.
+- **Employment Type Classification**: Categorizes employees by work arrangement (full-time, part-time, contractor, intern). Defined in Employee Concept.
 
-### Employee Status Classification
+- **Status Type Classifications**: Track the lifecycle state of entities. Each entity type has its own status type:
+  - Employee Status: active, deactivated (defined in Employee Concept)
+  - Project Status: active, archived, completed (defined in Project Concept)
+  - Task Status: open, in-progress, completed, closed (defined in Task Concept)
+  - Timesheet Status: draft, submitted, approved, rejected (defined in Timesheet Concept)
 
-The system tracks employee status to indicate whether an employee is currently active in the organization.
+- **Priority Classification**: Indicates task urgency or importance levels (low, medium, high, urgent). Defined in Task Concept.
 
-The allowed status values are:
-- Active: Employee is currently working and can log time and submit timesheets
-- Deactivated: Employee is no longer active but historical data is preserved
+- **Pay Period Classification**: Defines how employees are compensated (hourly, daily, weekly, monthly). Defined in Contract Concept.
 
-Deactivated employees cannot log time or submit timesheets. Deactivated employees can be reactivated to active status. When a user deletes their account, their employee records in other organizations are marked as deactivated.
+- **Role Classification**: Defines responsibilities within a project context (member, project-lead). Defined in ProjectMember Concept.
 
-### Project Status Classification
+Each classification serves a specific business purpose. Status types control what actions can be performed on an entity. Priority classifications help users identify work requiring immediate attention. Role classifications determine task management responsibilities.
 
-Projects are classified by their current status to indicate their lifecycle stage.
+### Status Type State Transitions
 
-The allowed project status values are:
-- Active: Project is ongoing and can receive new timelogs
-- Archived: Project is no longer active but preserved for reference; cannot receive new timelogs
-- Completed: Project work is finished; cannot receive new timelogs
-
-Existing timelogs on archived or completed projects are preserved. Projects can be transitioned from active to archived or completed status by users with project management permission.
-
-### Task Status Classification
-
-Tasks are classified by their current status to track work progress.
-
-The allowed task status values are:
-- Open: Task is ready to be worked on
-- In-progress: Task is currently being worked on
-- Completed: Task work is finished
-- Closed: Task is finalized and no further action is needed
-
-Task status changes are recorded in the task history, capturing the timestamp, old status, new status, and who made the change. Tasks can be filtered by status.
-
-### Task Priority Classification
-
-Tasks are assigned a priority level to indicate their importance and urgency.
-
-The allowed priority values are:
-- Low: Task has minimal urgency
-- Medium: Task has standard priority
-- High: Task is important and should be addressed soon
-- Urgent: Task requires immediate attention
-
-Tasks can be sorted by priority. Tasks can be filtered by priority level.
-
-### Timesheet Status Classification
-
-Timesheets are classified by their approval status to track the review workflow.
-
-The allowed timesheet status values are:
-- Draft: Timesheet is being prepared and can be modified
-- Submitted: Timesheet is pending approval
-- Approved: Timesheet has been approved; included timelogs are locked
-- Rejected: Timesheet was rejected with a reason; returns to draft status
-
-A rejection reason is required when rejecting a timesheet. Rejected timesheets can be modified and resubmitted by the employee. Approved timesheets lock all included timelogs, preventing edits or deletion.
-
-### Pay Period Classification
-
-Employee contracts specify the pay period to define how compensation is calculated.
-
-The allowed pay period values are:
-- Hourly: Compensation is based on hours worked
-- Daily: Compensation is based on days worked
-- Weekly: Compensation is based on weeks worked
-- Monthly: Compensation is based on months worked
-
-Each contract must have exactly one pay period assigned. The pay rate is a numeric value that corresponds to the selected pay period.
-
-### Project Membership Role Classification
-
-Employees assigned to projects are given a membership role to define their level of responsibility within the project.
-
-The allowed project membership roles are:
-- Member: Standard project participant
-- Project-lead: Has authority to manage tasks within the project
-
-Project leads can create and edit tasks within their project. An employee can be assigned to multiple projects with potentially different roles in each.
-
-### Permission Classification
-
-The system defines a set of available permissions that can be assigned to roles. Each permission grants access to specific functionality.
-
-The available permissions are:
-- Organization manage: Edit organization settings
-- Employee manage: Add, edit, and deactivate employees
-- Employee view: View employee list and details
-- Project manage: Create, edit, and delete projects and tasks
-- Project view: View projects and tasks
-- Time manage: Edit or delete any employee's timelogs
-- Time approve: Approve or reject timesheets
-- Time view all: View all employees' timelogs and timesheets
-- Report view: View organization reports
-
-Custom roles are created by selecting a set of permissions from this list. Built-in roles (Owner, Manager, Employee) have predefined permission sets.
-
-## State Transitions
-
-Define valid state transition paths for stateful concepts.
-
-### Employee Status Flow
-
-Employee status transitions between active and deactivated states.
-
-An employee starts as active when invited or added to the organization.
-
-Users with employee management permission can deactivate an employee.
-
-Deactivated employees cannot log time or submit timesheets.
-
-Deactivated employees' historical data remains preserved.
-
-Users with employee management permission can reactivate a deactivated employee.
-
-Reactivated employees regain the ability to log time and submit timesheets.
-
-```mermaid
-flowchart LR
-    A["active"] <-->|"Deactivate / Reactivate"| B["deactivated"]
-```
-
-Reactivation restores the employee's previous role and department assignments.
-
-### Project Status Transitions
-
-Projects transition through active, archived, and completed states.
-
-A project starts as active when created.
-
-Users with project management permission can archive an active project.
-
-Users with project management permission can mark an active project as completed.
-
-Archived projects cannot receive new timelogs.
-
-Completed projects cannot receive new timelogs.
-
-Existing timelogs on archived or completed projects are preserved.
-
-Archived projects can be restored to active status by users with project management permission.
-
-Completed projects can be restored to active status by users with project management permission.
-
-```mermaid
-flowchart LR
-    A["active"] -->|"Archive"| B["archived"]
-    A -->|"Complete"| C["completed"]
-    B -->|"Restore"| A
-    C -->|"Restore"| A
-```
-
-Project deletion is only allowed if the project has no timelogs associated with it.
-
-### Timesheet Approval Workflow
-
-Timesheets follow a four-state workflow: draft, submitted, approved, rejected.
-
-An employee creates a draft timesheet for a specific week.
-
-Creating a draft automatically includes all timelogs for that employee in that week.
-
-Employees can add or remove timelogs from a draft timesheet.
-
-Employees can submit a draft timesheet for approval.
-
-A timesheet cannot be submitted if it has no timelogs.
-
-A timesheet cannot be submitted if another timesheet for the same week is already submitted or approved.
-
-Users with time approval permission can approve submitted timesheets.
-
-Approved timesheets lock all included timelogs from editing or deletion.
-
-Users with time approval permission can reject submitted timesheets with a reason.
-
-Rejected timesheets return to draft status.
-
-Employees can modify and resubmit rejected timesheets.
+Status types define valid state transitions for entities throughout their lifecycle. The following diagram illustrates the primary status flows:
 
 ```mermaid
 flowchart LR
     A["draft"] -->|"Submit"| B["submitted"]
     B -->|"Approve"| C["approved"]
     B -->|"Reject"| A
-    C -.->|"Locked"| C
+    D["active"] -->|"Archive"| E["archived"]
+    D -->|"Complete"| F["completed"]
+    G["open"] -->|"Start Work"| H["in-progress"]
+    H -->|"Finish"| I["completed"]
+    I -->|"Close"| J["closed"]
+    K["active"] -->|"Deactivate"| L["deactivated"]
+    L -->|"Reactivate"| K
 ```
 
-Once approved, timesheets cannot return to draft or submitted status.
+**Timesheet Status Flow**: Timesheets progress from draft to submitted, then to either approved or rejected. Rejected timesheets return to draft status for correction. Approved timesheets lock all included timelogs.
 
-### Task Status Change Rules
+**Project Status Flow**: Projects transition from active to either archived or completed. Archived and completed projects cannot receive new timelogs.
 
-Tasks transition through open, in-progress, completed, and closed states.
+**Task Status Flow**: Tasks progress from open through in-progress to completed, and optionally to closed.
 
-A task starts as open when created.
+**Employee Status Flow**: Employees transition between active and deactivated. Deactivated employees cannot log time or submit timesheets but retain historical data.
 
-Project leads or users with project management permission can change task status.
+## State Transitions
 
-Task status changes are recorded in task history.
+Define valid state transition paths for stateful concepts.
 
-Each task history entry records the timestamp, old status, new status, and who made the change.
+### Project Status Transitions
 
-Tasks can move from open to in-progress when work begins.
+A project starts in active status when created.
 
-Tasks can move from in-progress to completed when work finishes.
+An active project can be archived by users with project management permissions.
 
-Tasks can move from completed to closed when finalized.
+An active project can be marked as completed by users with project management permissions.
 
-Tasks can return from in-progress to open if work is paused.
+An archived project cannot receive new timelogs.
 
-Tasks can return from completed to in-progress if revisions are needed.
+A completed project cannot receive new timelogs.
 
-```mermaid
-flowchart LR
-    A["open"] <-->|"Start / Pause"| B["in-progress"]
-    B <-->|"Complete / Revise"| C["completed"]
-    C -->|"Finalize"| D["closed"]
-```
+Existing timelogs on archived or completed projects are preserved.
 
-Closed tasks cannot be reopened without project management permission.
+A project cannot transition directly from archived to completed or from completed to archived.
+
+### Task Status Transitions
+
+A task starts in open status when created.
+
+A task can transition from open to in-progress when work begins.
+
+A task can transition from in-progress to completed when work is finished.
+
+A task can transition from completed to closed when formally closed.
+
+A task can transition from open directly to completed.
+
+A task can transition from in-progress back to open if work is paused.
+
+Each task status change is recorded in the task history with the timestamp, old status, new status, and the user who made the change.
+
+Task status changes can be made by project leads for tasks in their project or by users with project management permissions for any task.
+
+### Timesheet Status Transitions
+
+A timesheet starts in draft status when created for a specific week.
+
+A draft timesheet can be submitted by the employee for approval.
+
+A timesheet cannot be submitted if it has no timelogs.
+
+A timesheet cannot be submitted if another timesheet for the same week is already submitted or approved.
+
+A submitted timesheet can be approved by users with time approval permissions.
+
+A submitted timesheet can be rejected by users with time approval permissions with a rejection reason.
+
+An approved timesheet locks all included timelogs, preventing edits or deletions.
+
+A rejected timesheet returns to draft status, allowing the employee to modify and resubmit.
+
+A timesheet cannot transition directly from draft to approved or from draft to rejected without submission.
+
+### Employee Status Transitions
+
+An employee starts in active status when added to an organization.
+
+An active employee can be deactivated by users with employee management permissions.
+
+A deactivated employee cannot log time or submit timesheets.
+
+A deactivated employee's historical data including timelogs and timesheets is preserved.
+
+A deactivated employee can be reactivated by users with employee management permissions.
+
+A reactivated employee returns to active status and can log time and submit timesheets again.

@@ -2,7 +2,6 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
 import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
-import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIHrmPlatformEmployee";
@@ -23,57 +22,59 @@ export async function patchHrmPlatformMemberEmployees(props: {
   member: MemberPayload;
   body: IHrmPlatformEmployee.IRequest;
 }): Promise<IPageIHrmPlatformEmployee.ISummary> {
+  const membership =
+    await MyGlobal.prisma.hrm_platform_organization_memberships.findFirst({
+      where: {
+        hrm_platform_member_id: props.member.id,
+        deleted_at: null,
+      },
+      orderBy: { created_at: "desc" },
+    });
+  if (!membership) {
+    throw new HttpException("Organization context not found", 400);
+  }
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 100, 100);
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
   const whereInput: Prisma.hrm_platform_employeesWhereInput = {
+    organization_id: membership.hrm_platform_organization_id,
     deleted_at: null,
-    user_id: props.member.id,
+    ...(props.body.department_id !== undefined &&
+      props.body.department_id !== null && {
+        department_id: props.body.department_id,
+      }),
+    ...(props.body.employment_type && {
+      employment_type: props.body.employment_type,
+    }),
+    ...(props.body.status && {
+      status: props.body.status,
+    }),
+    ...(props.body.search && {
+      position: {
+        contains: props.body.search,
+        mode: "insensitive" as const,
+      },
+    }),
   };
-  if (props.body.search) {
-    whereInput.user = {
-      display_name: { contains: props.body.search },
-    };
-  }
-  if (props.body.department_id !== undefined) {
-    whereInput.department_id = props.body.department_id ?? undefined;
-  }
-  if (props.body.employment_type) {
-    whereInput.employment_type = props.body.employment_type;
-  }
-  if (props.body.status) {
-    whereInput.status = props.body.status;
-  }
-  const orderByInput: Prisma.hrm_platform_employeesOrderByWithRelationInput =
-    props.body.sort === "name"
-      ? { user: { display_name: "asc" } }
-      : props.body.sort === "employment_type"
-        ? { employment_type: "asc" }
-        : props.body.sort === "status"
-          ? { status: "asc" }
-          : { created_at: "desc" };
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.hrm_platform_employees.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: orderByInput,
-      ...HrmPlatformEmployeeAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.hrm_platform_employees.count({
-      where: whereInput,
-    }),
-  ]);
+  const data = await MyGlobal.prisma.hrm_platform_employees.findMany({
+    where: whereInput,
+    skip,
+    take: limit,
+    ...HrmPlatformEmployeeAtSummaryTransformer.select(),
+  });
+  const total = await MyGlobal.prisma.hrm_platform_employees.count({
+    where: whereInput,
+  });
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      HrmPlatformEmployeeAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  };
+    data: await ArrayUtil.asyncMap(
+      data,
+      HrmPlatformEmployeeAtSummaryTransformer.transform,
+    ),
+  } satisfies IPageIHrmPlatformEmployee.ISummary;
 }

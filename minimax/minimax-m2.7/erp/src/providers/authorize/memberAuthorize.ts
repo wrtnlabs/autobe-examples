@@ -9,7 +9,7 @@ export async function memberAuthorize(request: {
   const payload: MemberPayload = jwtAuthorize({ request }) as MemberPayload;
 
   if (payload.type !== "member") {
-    throw new ForbiddenException(`You're not ${payload.type}`);
+    throw new ForbiddenException(`You're not a member`);
   }
 
   const member = await MyGlobal.prisma.erp_hrm_members.findFirst({
@@ -20,7 +20,7 @@ export async function memberAuthorize(request: {
   });
 
   if (member === null) {
-    throw new ForbiddenException("You're not enrolled");
+    throw new ForbiddenException("Member not found or has been deleted");
   }
 
   return payload;

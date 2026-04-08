@@ -9,59 +9,42 @@ import typia from "typia";
 import { IEcommerceMallSellerRegistration } from "../../../../structures/IEcommerceMallSellerRegistration";
 import { IPageIEcommerceMallSellerRegistration } from "../../../../structures/IPageIEcommerceMallSellerRegistration";
 
+export * as snapshots from "./snapshots/index";
+
 /**
- * Retrieve a filtered and paginated list of seller registration applications.
+ * Retrieves a paginated, filtered list of seller registration applications across the platform.
  *
- * This operation provides administrators with visibility into the seller registration pipeline, displaying all submitted registration applications with their current approval status. Administrators can filter registrations by status (pending, approved, rejected), submission date range, reviewer, and seller identity.
+ * This endpoint serves dual purposes. Administrators can search through all registrations to identify pending approvals requiring review. Sellers can view their own registration history, tracking transitions from initial submission through approval or rejection states.
  *
- * The registration flows through three states: pending (awaiting administrator review), approved (seller gains selling privileges), or rejected (with a provided reason). Rejected sellers may submit new registration requests, creating additional records.
+ * The search functionality supports sophisticated filtering by registration status (pending, approved, rejected), submission date ranges, and reviewer assignments. Pagination ensures efficient handling of potentially large registration datasets.
  *
- * Only administrators and super administrators can access this endpoint. The response includes summary information optimized for list views, showing registration ID, submission timestamp, current status, associated seller information, reviewer details (when applicable), and rejection reasons (for rejected applications).
+ * Access control is enforced through underlying permission layers:
+ * - Administrators can view all registrations
+ * - Sellers can only access their own registration records
  *
- * Pagination uses cursor-based mechanisms for efficient handling of registration volumes. Filters support multiple criteria combinations for targeted searches, such as retrieving all pending registrations from a specific date range or finding applications reviewed by a particular administrator.
+ * Response includes summary information optimized for list displays, with efficient truncation of potentially nested historical data.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for seller registrations
+ * @param props.body Search and filter criteria for registration queries
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the ecommerce_mall_seller_registrations table with support for complex filtering and pagination.
+ * @x-autobe-specification Query the ecommerce_mall_seller_registrations table with advanced filtering capabilities. Implement robust permission checks to restrict results based on the requesting actor's role:
+ * - Administrators receive a comprehensive view of all registration records
+ * - Sellers are limited to their own registration history entries
  *
- * Implement search filters:
- * - status: Filter by registration status (PENDING, APPROVED, REJECTED)
- * - requesterId: Filter by the user who submitted the registration
- * - submittedAt range: Filter by submission timestamp
- * - businessName: Partial match search on business name
- * - taxId: Exact match on tax identification number
- * - flaggedForReview: Boolean filter for registrations requiring manual review
+ * Support sophisticated filtering mechanisms:
+ * - Status filtering: capture pending, approved, and rejected registrations
+ * - Temporal filtering: query by submission date, review date, or modification timestamps
+ * - Search by seller identifier or reviewer identifier
  *
- * Join with ecommerce_mall_sellers table to get requester information.
- * Join with ecommerce_mall_seller_profile_snapshots for the latest profile data if available.
+ * Implement pagination using cursor-based strategies to handle large dataset volumes efficiently. Default result limit is 20 registrations per request, with flexible page size configuration available.
  *
- * Authorization:
- * - Requires admin or superAdmin role
- * - Regular admins can view all registrations
- * - No additional access restrictions needed
+ * Include computed fields for enhanced usability:
+ * - Calculated registration duration
+ * - Associated seller profile metadata
+ * - Last action timestamp
  *
- * Sorting:
- * - Default sort by submittedAt descending (newest first)
- * - Support sorting by status, businessName
- *
- * Pagination:
- * - Cursor-based pagination
- * - Default limit: 20 items
- * - Maximum limit: 100 items
- *
- * Return summary fields:
- * - registration id, status, submittedAt, reviewedAt
- * - requester basic info (id, email)
- * - rejectionReason (if rejected)
- * - reviewer info (if reviewed)
- * - business name from associated profile
- *
- * Performance considerations:
- * - Index on status and submittedAt for efficient filtering
- * - Index on requester_id for user-specific lookups
- * - Consider materialized view for high-volume registration queries
+ * Ordering defaults to reverse chronological submission sequence, prioritizing newest registrations for administrative review workflows.
  * @path /ecommerceMall/admin/registrations
  * @accessor api.functional.ecommerceMall.admin.registrations.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -91,7 +74,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for seller registrations
+     * Search and filter criteria for registration queries
      */
     body: IEcommerceMallSellerRegistration.IRequest;
   };
@@ -140,41 +123,30 @@ export namespace index {
 }
 
 /**
- * Retrieves detailed information about a specific seller registration by its unique identifier.
+ * Retrieve detailed information about a specific seller registration application.
  *
- * This operation returns the complete registration details including submission timestamp, current approval status (pending, approved, or rejected), and rejection reason if applicable. The registration information allows both the submitting seller and administrators to track the approval workflow state.
+ * This endpoint allows administrators to view the complete details of a seller registration submission, including the applicant's information, current approval status, submission timestamp, and if previously reviewed, the reviewer details and rejection reason.
  *
- * For sellers, this endpoint provides visibility into their registration application's current status, allowing them to know when they gain selling privileges or understand why their application was rejected. Per section 177, sellers who are rejected can view the rejection reason and submit a new registration request addressing the cited issues.
+ * Registrations flow through three statuses: 'pending' (awaiting review), 'approved' (seller can now list products), and 'rejected' (administrator denied with provided reason). Rejected sellers may submit new registration requests after addressing the cited issues.
  *
- * For administrators, this endpoint supports the review workflow described in section 187, providing all necessary information to assess whether an applicant meets platform standards and requirements for selling.
- *
- * The response includes the full EcommerceMallSellerRegistration entity with its associated snapshots if requested, maintaining the audit trail principle described in the Snapshot Principle section.
+ * The response includes the seller entity reference, reviewer information (if reviewed), status, rejection reason (if applicable), and timestamp fields tracking submission and review times.
  *
  * @param props.connection
- * @param props.registrationId Target seller registration's unique identifier (global scope)
+ * @param props.registrationId The unique identifier of the seller registration (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query the ecommerce_mall_seller_registrations table by the provided registrationId parameter.
+ * @x-autobe-specification Query the ecommerce_mall_seller_registrations table by primary key (id).
  *
- * Join with ecommerce_mall_seller_registration_snapshots if historical data is needed, ordered by created_at DESC for most recent first.
+ * Join with ecommerce_mall_sellers to include applicant seller information.
+ * Join with ecommerce_mall_admins to include reviewer information if reviewer_id is present.
  *
- * Include the related seller entity to provide applicant information (email, user details) for administrator review context per section 187.
+ * Validate that the registration ID exists; return 404 if not found.
  *
- * Authorization checks:
- * - If caller is a seller: verify registration.sellerId matches caller's seller ID
- * - If caller is admin or superAdmin: allow access to any registration
- * - Otherwise: return 403 Forbidden
+ * Return all fields: id, seller_id, reviewer_id, status, rejection_reason, created_at, updated_at, reviewed_at.
+ * Include the related seller entity (seller_id → ecommerce_mall_sellers).
+ * Include the related reviewer admin entity if reviewer_id is not null.
  *
- * The registration entity includes fields:
- * - id: UUID primary key
- * - sellerId: Foreign key to the seller account
- * - status: Enum PENDING/APPPOVED/REJECTED
- * - rejectionReason: Text (null unless status is REJECTED)
- * - submittedAt: Timestamp of submission
- * - reviewedAt: Timestamp of approval/rejection (null if pending)
- * - reviewerId: Administrator who processed the request (null if pending)
- *
- * Return the complete registration object with associated snapshots array if history tracking is requested.
+ * Authorization: Restricted to administrator and superAdministrator actors only.
  * @path /ecommerceMall/admin/registrations/:registrationId
  * @accessor api.functional.ecommerceMall.admin.registrations.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -203,7 +175,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Target seller registration's unique identifier (global scope)
+     * The unique identifier of the seller registration (UUID format)
      */
     registrationId: string;
   };
@@ -235,6 +207,124 @@ export namespace at {
     });
     try {
       assert.param("registrationId")(() => typia.assert(props.registrationId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Review and process a pending seller registration application.
+ *
+ * Administrators use this endpoint to approve or reject seller registration requests. Upon approval, the seller can immediately begin listing products and selling on the platform. Upon rejection, the seller sees the provided reason and may submit a corrected registration.
+ *
+ * When reviewing, the system records the reviewing administrator's identity and the review timestamp for audit purposes. Rejected registrations require a rejection reason which must clearly explain why the application did not meet platform standards.
+ *
+ * After approval, sellers gain full access to product management, inventory, and order fulfillment features. The registration status becomes part of the seller's account history and is retained for platform governance purposes.
+ *
+ * @param props.connection
+ * @param props.registrationId UUID of the seller registration to review
+ * @param props.body Review decision including status and rejection reason
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor admin
+ * @x-autobe-specification Validate administrator authentication and authorization.
+ * Fetch the seller registration by registrationId.
+ * Verify the registration status is 'pending' - reject if already approved or rejected.
+ * Validate request body:
+ *   - status: must be 'approved' or 'rejected'
+ *   - rejection_reason: required if status is 'rejected', must be non-empty string
+ *   - rejection_reason: must be null if status is 'approved'
+ * Set reviewer_id to current administrator ID.
+ * Set reviewed_at to current timestamp.
+ * Set updated_at to current timestamp.
+ * Update status field.
+ * Update rejection_reason field (set to value if rejected, null if approved).
+ * If approving:
+ *   - Update associated seller account status to active/approved
+ *   - Seller immediately gains product management permissions
+ * If rejecting:
+ *   - Seller remains in rejected state
+ *   - Seller can view rejection reason and submit new registration
+ * Return complete registration record with reviewer details.
+ * Create seller_registration_snapshot for audit trail.
+ * @path /ecommerceMall/admin/registrations/:registrationId
+ * @accessor api.functional.ecommerceMall.admin.registrations.update
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function update(
+  connection: IConnection,
+  props: update.Props,
+): Promise<update.Response> {
+  return true === connection.simulate
+    ? update.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...update.METADATA,
+          path: update.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace update {
+  export type Props = {
+    /**
+     * UUID of the seller registration to review
+     */
+    registrationId: string;
+
+    /**
+     * Review decision including status and rejection reason
+     */
+    body: IEcommerceMallSellerRegistration.IUpdate;
+  };
+  export type Body = IEcommerceMallSellerRegistration.IUpdate;
+  export type Response = IEcommerceMallSellerRegistration;
+
+  export const METADATA = {
+    method: "PUT",
+    path: "/ecommerceMall/admin/registrations/:registrationId",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/ecommerceMall/admin/registrations/${encodeURIComponent(props.registrationId ?? "null")}`;
+  export const random = (): IEcommerceMallSellerRegistration =>
+    typia.random<IEcommerceMallSellerRegistration>();
+  export const simulate = (
+    connection: IConnection,
+    props: update.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: update.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("registrationId")(() => typia.assert(props.registrationId));
+      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

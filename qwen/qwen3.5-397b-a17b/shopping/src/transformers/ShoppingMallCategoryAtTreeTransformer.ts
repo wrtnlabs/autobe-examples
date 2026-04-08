@@ -9,118 +9,51 @@ import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace ShoppingMallCategoryAtTreeTransformer {
+  export type Payload = Prisma.shopping_mall_categoriesGetPayload<
+    ReturnType<typeof select>
+  >;
   export function select() {
     return {
       select: {
         id: true,
         name: true,
         description: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        parent: {
-          select: {
-            id: true,
-          },
-        },
-        children: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
-            parent: {
-              select: {
-                id: true,
-              },
-            },
-            children: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
-                created_at: true,
-                updated_at: true,
-                deleted_at: true,
-                parent: {
-                  select: {
-                    id: true,
-                  },
-                },
-                children: {
-                  select: {
-                    id: true,
-                  },
-                },
-                snapshots: {
-                  select: {
-                    id: true,
-                  },
-                },
-                products: {
-                  select: {
-                    id: true,
-                  },
-                },
-                productSnapshots: {
-                  select: {
-                    id: true,
-                  },
-                },
-              },
-            },
-            snapshots: {
-              select: {
-                id: true,
-              },
-            },
-            products: {
-              select: {
-                id: true,
-              },
-            },
-            productSnapshots: {
-              select: {
-                id: true,
-              },
-            },
-          },
-        },
-        snapshots: {
-          select: {
-            id: true,
-          },
-        },
-        products: {
-          select: {
-            id: true,
-          },
-        },
-        productSnapshots: {
-          select: {
-            id: true,
-          },
-        },
+        children: undefined,
       },
     } satisfies Prisma.shopping_mall_categoriesFindManyArgs;
   }
-  export type Payload = Prisma.shopping_mall_categoriesGetPayload<
-    ReturnType<typeof select>
-  >;
   export async function transform(
     input: Payload,
+    cache: VariadicSingleton<
+      Promise<IShoppingMallCategory.ITree[]>,
+      [string]
+    > = createChildrenCache(),
   ): Promise<IShoppingMallCategory.ITree> {
     return {
       id: input.id,
-      parent_id: input.parent?.id ?? null,
       name: input.name,
-      description: input.description,
-      children: await ArrayUtil.asyncMap(
-        input.children,
-        ShoppingMallCategoryAtTreeTransformer.transform,
-      ),
-    };
+      description: input.description ?? null,
+      children: await cache.get(input.id),
+    } satisfies IShoppingMallCategory.ITree;
+  }
+  export async function transformAll(
+    inputs: Payload[],
+  ): Promise<IShoppingMallCategory.ITree[]> {
+    const cache = createChildrenCache();
+    return await ArrayUtil.asyncMap(inputs, (x) => transform(x, cache));
+  }
+  function createChildrenCache() {
+    const cache = new VariadicSingleton(
+      async (parentId: string): Promise<IShoppingMallCategory.ITree[]> => {
+        const records = await MyGlobal.prisma.shopping_mall_categories.findMany(
+          {
+            ...select(),
+            where: { parent_id: parentId },
+          },
+        );
+        return await ArrayUtil.asyncMap(records, (r) => transform(r, cache));
+      },
+    );
+    return cache;
   }
 }

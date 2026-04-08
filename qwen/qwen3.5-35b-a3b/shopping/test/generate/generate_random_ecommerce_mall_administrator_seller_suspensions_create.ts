@@ -1,0 +1,30 @@
+import api from "@ORGANIZATION/PROJECT-api";
+import type { IEcommerceMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdministrator";
+import type { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+import type { IEcommerceMallSellerSuspension } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerSuspension";
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
+import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
+import { IConnection } from "@nestia/fetcher";
+import { randint } from "tstl";
+import typia, { tags } from "typia";
+
+import { prepare_random_ecommerce_mall_seller_suspension } from "../prepare/prepare_random_ecommerce_mall_seller_suspension";
+
+export async function generate_random_ecommerce_mall_administrator_seller_suspensions_create(
+  connection: api.IConnection,
+  props: {
+    body?: DeepPartial<IEcommerceMallSellerSuspension.ICreate> | undefined;
+  },
+): Promise<IEcommerceMallSellerSuspension> {
+  const prepared: IEcommerceMallSellerSuspension.ICreate =
+    prepare_random_ecommerce_mall_seller_suspension(props.body);
+  const result: IEcommerceMallSellerSuspension =
+    await api.functional.ecommerceMall.administrator.seller_suspensions.create(
+      connection,
+      {
+        body: prepared,
+      },
+    );
+  return result;
+}

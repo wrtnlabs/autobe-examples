@@ -1,5 +1,5 @@
-import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
-import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+import { IEcommerceMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallMember";
+import { IEcommerceMallWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlist";
 import { IEcommerceMallWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlistItem";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -9,7 +9,7 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallProductAtSummaryTransformer } from "./EcommerceMallProductAtSummaryTransformer";
+import { EcommerceMallWishlistAtSummaryTransformer } from "./EcommerceMallWishlistAtSummaryTransformer";
 
 export namespace EcommerceMallWishlistItemAtSummaryTransformer {
   export type Payload = Prisma.ecommerce_mall_wishlist_itemsGetPayload<
@@ -22,24 +22,69 @@ export namespace EcommerceMallWishlistItemAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        customer: true,
-        product: EcommerceMallProductAtSummaryTransformer.select(),
+        wishlist: EcommerceMallWishlistAtSummaryTransformer.select(),
+        product: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     } satisfies Prisma.ecommerce_mall_wishlist_itemsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallWishlistItem.ISummary> {
+    const mainImage = "";
+    const priceMin = 0;
+    const priceMax = 0;
+    const inStock = false;
+    const availabilityStatus = inStock ? "in_stock" : "out_of_stock";
     return {
       id: input.id,
-      customer_id: input.customer.id,
-      product_id: input.product.id,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
-      product: await EcommerceMallProductAtSummaryTransformer.transform(
-        input.product,
-      ),
+      ecommerceMallWishlist:
+        await EcommerceMallWishlistAtSummaryTransformer.transform(
+          input.wishlist,
+        ),
+      product: {
+        name: input.product.name,
+        mainImage,
+        priceRange: {
+          min: priceMin,
+          max: priceMax,
+        },
+        availabilityStatus,
+      },
+      createdAt: toISOStringSafe(input.created_at),
     };
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallWishlistItemAtSummaryTransformer {
+//       export type Payload = Prisma.ecommerce_mall_wishlist_itemsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             createdAt: true,
+//             ...
+//           },
+//         } satisfies Prisma.ecommerce_mall_wishlist_itemsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallWishlistItem.ISummary> {
+//         return {
+//   id: {string},
+//   ecommerceMallWishlist: {IEcommerceMallWishlist.ISummary},
+//   product: {object},
+//   createdAt: {string},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

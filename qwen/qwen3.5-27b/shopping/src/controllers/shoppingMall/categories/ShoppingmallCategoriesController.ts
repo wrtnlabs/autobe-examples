@@ -10,50 +10,36 @@ import { patchShoppingMallCategories } from "../../../providers/patchShoppingMal
 @Controller("/shoppingMall/categories")
 export class ShoppingmallCategoriesController {
   /**
-   * Retrieve a filtered and paginated list of shopping mall categories for product organization and browsing.
+   * Search and list product categories with filtering, pagination, and sorting capabilities.
    *
-   * This operation provides comprehensive category listing capabilities with advanced filtering options. Categories are hierarchical structures that organize products into logical groups, supporting one level of nesting (parent categories and subcategories). The endpoint supports searching by category name, filtering by parent category relationship, and controlling whether to include subcategories in the results.
+   * This endpoint returns a paginated list of categories available on the platform. Categories are organized hierarchically with one level of nesting - parent categories can have subcategories, but subcategories cannot have their own subcategories. The search supports filtering by category name, description, parent category relationship, and sorting by various fields.
    *
-   * Categories are managed exclusively by platform administrators and are accessible to authenticated customers for product discovery. Customer authentication is required to access category browsing functionality. The system maintains category structure independently of product inventory status, ensuring consistent organization even when products are out of stock or deleted. Soft-deleted categories are excluded from standard queries to maintain a clean browsing experience.
+   * Categories are visible to all users (guests, customers, sellers, and administrators). Only non-deleted categories are returned. When a category is deleted, it is soft-deleted and excluded from search results. Products in deleted categories become uncategorized but remain on the platform.
    *
-   * The response includes category summaries optimized for list displays, containing essential information such as category ID, name, description, creation timestamp, and hierarchical relationship data. For customers browsing products, this endpoint enables navigation through the category taxonomy to discover relevant product groupings.
-   *
-   * Related operations include GET /categories/{categoryId} for retrieving detailed information about a specific category, and POST /admin/categories for administrators to create new categories. When browsing a specific category, use GET /products with category filter to view products within that category.
+   * Administrators can use this endpoint to browse all categories for management purposes. Customers and sellers can browse categories to discover products organized by category.
    *
    * @param connection
-   * @param body Search criteria, filtering options, and pagination parameters
+   * @param body Search criteria for categories including name and description filters, parent category filtering, pagination parameters, and sorting options.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query shopping_mall_categories table with pagination, filtering, and sorting.
+   * @x-autobe-specification Query shopping_mall_categories table with the following logic:
    *
-   * Apply search filters:
-   * - name: Partial text match on category name using trigram similarity
-   * - parentId: Filter by specific parent category ID (null for top-level categories)
-   * - includeSubcategories: Boolean flag to include subcategories in results
+   * 1. Apply soft-delete filter: WHERE deleted_at IS NULL
+   * 2. Apply search filters from request body:
+   *    - name: partial match using ILIKE
+   *    - description: partial match using ILIKE
+   *    - hasParent: filter by parent_category_id IS NOT NULL (true) or IS NULL (false)
+   *    - parentId: exact match on parent_category_id
+   * 3. Apply pagination: LIMIT and OFFSET based on cursor or page parameters
+   * 4. Apply sorting: ORDER BY specified field and direction (default: name ASC)
+   * 5. Join with parent category to include parent name in response if needed
+   * 6. Return paginated result with metadata (total count, hasMore, cursor)
    *
-   * Pagination:
-   * - page: Current page number (default: 1)
-   * - limit: Items per page (default: 20, max: 100)
-   *
-   * Sorting:
-   * - sortBy: Field to sort by (name, createdAt, updatedAt)
-   * - sortOrder: Direction (asc, desc, default: asc)
-   *
-   * Business logic:
-   * - Exclude soft-deleted categories (deleted_at IS NULL) unless explicitly requested by admin
-   * - For customer requests, only return active categories
-   * - For admin requests, optionally include deleted categories with flag
-   * - When includeSubcategories is true, return both parent and child categories
-   * - Order results by hierarchy: parent categories first, then subcategories
-   *
-   * Join considerations:
-   * - No joins needed for basic category listing
-   * - Product count can be computed via subquery if requested in response
-   *
-   * Error handling:
-   * - Return 400 for invalid pagination parameters
-   * - Return 400 for invalid sort fields
-   * - Return 200 with empty array if no categories match
+   * Edge cases:
+   * - Empty search criteria returns all non-deleted categories
+   * - Invalid parentId returns empty result set
+   * - Sorting on non-existent field uses default (name ASC)
+   * - Pagination cursor beyond total count returns empty array with hasMore: false
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -72,32 +58,17 @@ export class ShoppingmallCategoriesController {
   }
 
   /**
-   * Retrieve detailed information about a specific product category by its unique identifier.
+   * Retrieve a single category by its unique identifier, including its subcategories for hierarchical browsing.
    *
-   * This operation returns comprehensive category data including the category name, description, creation and modification timestamps, and hierarchical relationships. The response includes the parent category (if this is a subcategory) and all direct subcategories belonging to this category.
+   * This endpoint returns the complete category details including name, description, and any subcategories that belong to it. Categories are used to organize products on the platform and enable customers to browse and discover products by classification. The response includes up to one level of subcategory nesting as per the platform's category structure rules.
    *
-   * Categories are organized in a two-level hierarchy: top-level categories and subcategories. Top-level categories have no parent (parent_id is null), while subcategories reference their parent category. This structure enables customers to browse products by category and navigate through the product taxonomy.
-   *
-   * Only active categories (not soft deleted) are returned. Deleted categories are excluded from all responses to maintain data integrity and user experience.
-   *
-   * This endpoint is accessible to authenticated customers for browsing purposes and to administrators for category management workflows. It is commonly used after listing categories via GET /categories to retrieve full details of a selected category.
-   *
-   * Related operations include GET /categories for listing all categories, and POST/PUT/DELETE /admin/categories for administrator category management.
+   * All users (guests, customers, sellers, and administrators) can access this endpoint to browse category information. Only administrators can create, edit, or delete categories through separate administrative endpoints.
    *
    * @param connection
-   * @param categoryId Unique identifier of the target category (UUID format)
+   * @param categoryId Unique identifier of the category to retrieve (global scope)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the shopping_mall_categories table for a single category record by UUID primary key.
-   *
-   * 1. Validate the categoryId parameter is a valid UUID format.
-   * 2. Execute SELECT query on shopping_mall_categories WHERE id = categoryId AND deleted_at IS NULL.
-   * 3. Include parent category data by joining with the same table on parent_id (self-referencing relation).
-   * 4. Include subcategories array by querying shopping_mall_categories WHERE parent_id = categoryId AND deleted_at IS NULL.
-   * 5. Return 404 Not Found if category doesn't exist or is soft deleted.
-   * 6. Return category object with all fields: id, parent_id, name, description, created_at, updated_at, and nested parent/subcategories.
-   *
-   * Authorization: Allow access to authenticated customers and administrators. Customers can view active categories for browsing. Administrators can view all categories including management operations.
+   * @x-autobe-specification Query shopping_mall_categories table by id (UUID). Include subcategories in the response by joining with the same table on parent_category_id. Filter out soft-deleted categories (deleted_at IS NULL) from results. Return the category with its direct subcategories (one level only). If the category does not exist or is soft-deleted, return 404 Not Found. Do not include parent category in response to avoid circular references.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":categoryId")

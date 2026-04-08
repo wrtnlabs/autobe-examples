@@ -9,26 +9,29 @@ import typia, { tags } from "typia";
 import { IMallPlatformShipment } from "../../../../structures/IMallPlatformShipment";
 import { IPageIMallPlatformShipment } from "../../../../structures/IPageIMallPlatformShipment";
 
-export * as items from "./items/index";
+export * as shipmentItems from "./shipmentItems/index";
+export * as eligible_order_items from "./eligible_order_items/index";
+export * as pending from "./pending/index";
+export * as tracking from "./tracking/index";
 
 /**
- * Create a shipment for one seller's order items that still need shipping.
+ * Create a seller-specific shipment for one set of eligible order items.
  *
- * This operation records a seller-specific delivery package, captures the carrier and tracking number, and links the selected order items to that shipment. It supports the marketplace rule that items from different sellers must never be combined in the same package, while allowing one shipment to contain one or more eligible items from the same seller and order.
+ * This endpoint lets a seller group one or more of their order items into a single shipment and register shared tracking information for that package. All included items must belong to the same seller and must still require shipping; items from different sellers cannot be mixed in one shipment.
  *
- * When the shipment is created, the system marks every included order item as shipped and preserves the shared tracking information for customer order history and delivery confirmation. The operation must reject items that already belong to another shipment, items that are no longer eligible for shipping, or item sets that mix multiple sellers or orders. Completed or unavailable shipment targets must not be recreated.
+ * After successful creation, the shipment is linked to the selected order items and those items are marked as shipped. The shipment becomes visible in order details so customers can track the package and later confirm delivery for the shipment as a whole.
+ *
+ * Validation errors are returned when the selected items are not eligible for shipping, when items already belong to another active shipment, when the shipment would mix sellers, or when the target order items cannot be found. The server must also reject attempts to create a shipment for a completed or otherwise unavailable shipping set.
  *
  * @param props.connection
- * @param props.body Shipment creation details including the selected order items and shared tracking information.
+ * @param props.body Shipment creation payload containing the eligible order items to bundle together and the shared tracking information for the package.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Insert one new row into mall_platform_shipments and related rows into mall_platform_shipment_items within a single transaction.
+ * @x-autobe-specification Load the target order items, verify that every item exists, belongs to the authenticated seller, and is in a shippable state (paid/waiting for shipment). Enforce that all items belong to the same seller and that each item is not already assigned to another active shipment. Reject completed or otherwise unavailable shipment attempts.
  *
- * Validate that all requested order items exist, belong to the same seller account as the authenticated seller, belong to the same order when required by the business workflow, and are currently eligible for shipping. Reject the request if any item is already assigned to another active shipment, if any item is not in a shippable state, or if the selected items span multiple sellers. Use the order-item and shipment relationships to enforce seller grouping.
+ * Create the shipment and shipment-item association records in a single transaction. Persist the carrier name and tracking number from the request body, then update each included order item's status to shipped. Ensure the shipment inherits the common seller context from the selected items and that no cross-seller grouping is possible.
  *
- * Persist the carrier name and tracking number on the shipment row. Create shipment-item associations for every included order item, then transition each order item status to shipped in the same transaction. If any validation or persistence step fails, roll back the entire shipment creation so no partial shipment or partial status update remains.
- *
- * Return a full shipment entity with its linked items, and surface standard not-found, conflict, and validation errors when the order, items, or seller scope are invalid. Do not allow recreation of a shipment that has already been completed or any duplicate assignment of the same eligible item to another shipment.
+ * If any item validation fails, abort the transaction and return a domain-appropriate error. Do not partially create shipments. Return the full shipment entity with its included shipment items and tracking fields after commit.
  * @path /mallPlatform/seller/shipments
  * @accessor api.functional.mallPlatform.seller.shipments.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -58,7 +61,7 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Shipment creation details including the selected order items and shared tracking information.
+     * Shipment creation payload containing the eligible order items to bundle together and the shared tracking information for the package.
      */
     body: IMallPlatformShipment.ICreate;
   };
@@ -107,23 +110,23 @@ export namespace create {
 }
 
 /**
- * Retrieve a paginated list of shipments with filtering and sorting options.
+ * Search and browse shipments in a paginated list.
  *
- * This operation is used to browse shipment records that package one or more order items from the same seller. Each shipment belongs to a single order and a single seller, and its shipment items represent the order-item assignments included in that package.
+ * Shipments are seller-specific delivery packages that contain one or more order items from the same seller and share the same tracking information. This endpoint supports shipment management and order history screens where callers need to inspect shipment status, carrier data, and shipping progress without loading the full shipment detail payload.
  *
- * The returned list is intended for shipment tracking, order history grouping, and seller fulfillment workflows. Consumers can search by shipment status, order, seller, and time range to locate specific packages and follow their tracking progress.
+ * Access is restricted by ownership and role. Customers may only see shipments belonging to their own orders, and sellers may only see shipments that contain their own order items. The service must validate pagination, filtering, and sorting inputs, return empty pages when nothing matches, and reject unauthorized access consistently with the platform’s authorization rules.
  *
- * When no matching shipments are found, the response returns an empty page. Invalid filters or pagination values must be rejected with a validation error.
+ * This endpoint does not modify shipment state. Completed shipments remain visible in browse results, but shipping creation, delivery confirmation, and other state changes are handled by separate operations.
  *
  * @param props.connection
- * @param props.body Search, filtering, pagination, and sorting criteria for shipment browsing.
+ * @param props.body Shipment search criteria including pagination, filters, and sorting options.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query mall_platform_shipments as the base table and join mall_platform_orders, mall_platform_sellers, and mall_platform_shipment_items as needed for filtering and summary composition.
- * Support pagination, keyword-like filtering on tracking-related identifiers, and sorting by created_at or shipped_at in descending or ascending order as appropriate.
- * Respect seller-grouping rules by never mixing shipment items from different sellers in the same shipment summary. If a shipment has no shipment items yet, still return the shipment itself if it matches filters.
- * Ensure deleted_at records are excluded from normal browsing unless an explicit administrative recovery scenario is supported elsewhere. For customer-facing usage, scope results to shipments belonging to the authenticated customer through the related order.customer_id. For seller-facing usage, scope to the authenticated seller through mall_platform_seller_id.
- * Return a page of shipment summaries optimized for list display, including tracking metadata and the linked order number. Handle empty result sets cleanly and reject invalid page, size, or sort values.
+ * @x-autobe-specification Query mall_platform_shipments as a paginated collection.
+ *
+ * Apply request-body filters for shipment status, seller scope, customer order scope, carrier name, tracking number, and date range if the corresponding fields are present in the request DTO. When the caller is a seller, constrain results to shipments containing the seller’s own order items. When the caller is a customer, constrain results to shipments related to the customer’s own orders. If the caller is an administrator, allow platform-wide access only if the surrounding authorization layer permits it.
+ *
+ * Return summary rows only, sorted according to the requested sort mode and defaulting to newest first when unspecified. Do not fetch or embed the full nested shipment item graph unless needed for authorization checks. Validate pagination bounds, reject unsupported filters or sort keys, and return a standard empty page when no records match. If a shipment is inaccessible, treat it according to the platform’s existing not-found or forbidden conventions rather than leaking cross-account data.
  * @path /mallPlatform/seller/shipments
  * @accessor api.functional.mallPlatform.seller.shipments.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -153,12 +156,12 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search, filtering, pagination, and sorting criteria for shipment browsing.
+     * Shipment search criteria including pagination, filters, and sorting options.
      */
     body: IMallPlatformShipment.IRequest;
   };
   export type Body = IMallPlatformShipment.IRequest;
-  export type Response = IPageIMallPlatformShipment;
+  export type Response = IPageIMallPlatformShipment.ISummary;
 
   export const METADATA = {
     method: "PATCH",
@@ -174,8 +177,8 @@ export namespace index {
   } as const;
 
   export const path = () => "/mallPlatform/seller/shipments";
-  export const random = (): IPageIMallPlatformShipment =>
-    typia.random<IPageIMallPlatformShipment>();
+  export const random = (): IPageIMallPlatformShipment.ISummary =>
+    typia.random<IPageIMallPlatformShipment.ISummary>();
   export const simulate = (
     connection: IConnection,
     props: index.Props,
@@ -202,23 +205,23 @@ export namespace index {
 }
 
 /**
- * Retrieve the full details of a single shipment.
+ * Retrieve a single shipment with its tracking information and included order items.
  *
- * A shipment represents one seller-specific delivery package, including its carrier name, tracking number, optional tracking URL, shipping status, and shipment timestamps. The response is intended to support order history and fulfillment views where customers need to see how items were grouped for delivery and how to follow the package.
+ * This endpoint returns the shipment detail view for one seller-specific package, including the shared carrier and tracking data, the shipment status, and the order items assigned to that shipment. The response is intended for both customers viewing order history and sellers reviewing fulfillment progress.
  *
- * The shipment is linked to one order and one seller, and it contains one or more order items through shipment-item assignments. Consumers can use this operation to inspect the shipment header together with the items included in the package, while preserving the seller separation rule that items from different sellers are never combined into the same shipment.
- *
- * If the shipment does not exist or is not accessible to the current actor, the service should return a not-found or forbidden response according to platform authorization rules. Deleted or unavailable shipment records must not be exposed in this detail view.
+ * The shipment groups only order items from the same seller, so the returned item list should reflect that seller boundary and preserve the order context needed to show which purchased lines travel together. If the shipment does not exist, or the caller is not allowed to view it, the service should return the appropriate not-found or authorization error.
  *
  * @param props.connection
- * @param props.shipmentId Shipment identifier (UUID primary key).
+ * @param props.shipmentId The shipment identifier (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Load the shipment by its UUID primary key with its related seller, order, and shipmentItems/orderItem graph.
- * Return a single shipment detail DTO that includes carrier_name, tracking_number, tracking_url, status, shipped_at, delivered_at, created_at, updated_at, plus the linked order and the list of included order items.
- * Use the shipment_items junction table to enumerate membership and ensure the items belong to the same shipment. Preserve the order-item relational fields needed by downstream consumers, including product variant and seller references when composing the response.
- * Authorize access so customers can only read shipments belonging to their own order history, while sellers can only read shipments for orders containing their items. Administrators may read any shipment.
- * Reject missing records with not found. If the shipment has been removed or is otherwise unavailable, return not found rather than a partial payload.
+ * @x-autobe-specification Load the shipment by shipment_id and return the full shipment record with its related shipment items and each associated order item needed for display.
+ *
+ * Join shipment_items to order_items, and for customer-facing views also include the order context necessary to verify that the shipment belongs to the caller’s order history. If the implementation needs to show item grouping, load the linked order item snapshots or summary fields already persisted on the order item as available in the schema.
+ *
+ * Validate that the shipment exists before any relationship traversal. If the shipment is missing, return 404. If the caller is a customer, ensure the shipment belongs to one of that customer’s orders. If the caller is a seller, ensure the shipment belongs to items from that seller’s fulfillment scope. If access cannot be confirmed, return 403 or 404 according to the platform’s access-control convention.
+ *
+ * Do not mutate shipment state in this operation. This endpoint is read-only and must not change delivery status, tracking fields, or item statuses. Preserve the shipment’s current state exactly as stored, including completed shipments that are no longer available for shipping actions.
  * @path /mallPlatform/seller/shipments/:shipmentId
  * @accessor api.functional.mallPlatform.seller.shipments.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -247,7 +250,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Shipment identifier (UUID primary key).
+     * The shipment identifier (global scope).
      */
     shipmentId: string & tags.Format<"uuid">;
   };
@@ -293,24 +296,24 @@ export namespace at {
 }
 
 /**
- * Update an existing shipment's tracking and status information.
+ * Updates the tracking details for a shipment.
  *
- * This operation lets an authorized seller revise the shipment header used to group order items from the same seller. The shipment record stores the shared carrier name, tracking number, optional tracking URL, and current shipment status, so updates here affect every order item assigned to that shipment.
+ * A shipment represents one seller's delivery package for one or more order items, and all items in the package must belong to the same seller. This operation is intended for seller fulfillment workflows where the shipping carrier or tracking number needs to be corrected or revised after the shipment has been created.
  *
- * Shipment updates are part of the seller fulfillment workflow and customer delivery flow. When the shipment reaches a delivered state, the system should record the delivery timestamp and keep the shipment-item grouping intact for order history and dispute review. If the shipment is already completed or otherwise unavailable for further shipping actions, the request must be rejected without altering the existing shipment data.
+ * The system must reject updates for shipments that are no longer available for shipping actions, including completed shipments. It must also preserve the seller grouping rule so that shipment contents remain internally consistent and cannot be changed to include items from another seller through this endpoint.
  *
- * Validation should ensure the shipment exists, belongs to the caller's allowed scope, and remains eligible for update. Invalid carrier or tracking information, status transitions that conflict with the current shipment state, and attempts to modify unavailable shipments must return appropriate errors.
+ * If the shipment does not exist, the request must fail with a not-found error. If the shipment is immutable because it has already been completed, the request must fail with a conflict or unavailable-state error. Validation errors should report invalid tracking information or any attempt to violate shipment consistency rules.
  *
  * @param props.connection
- * @param props.shipmentId Shipment identifier (UUID).
- * @param props.body Shipment tracking and status fields to update.
+ * @param props.shipmentId The shipment identifier (UUID).
+ * @param props.body Shipment fields to update, such as carrier information and tracking number.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Load the shipment by id and verify access permissions for the caller. Update only shipment header fields that are allowed by the update DTO: carrier_name, tracking_number, tracking_url, and status. Do not modify shipment-item memberships in this endpoint; shipment contents are managed through the shipment-item relation separately.
+ * @x-autobe-specification Load the shipment by shipment_id and lock it for update. Verify the shipment exists and belongs to the current seller or an administrator with shipment intervention authority. Reject the request if the shipment is completed or otherwise marked unavailable for shipping actions.
  *
- * Enforce business constraints from fulfillment rules. A shipment belongs to one seller and one order, so ensure the caller is permitted to manage that seller's shipment. Reject updates to shipments that are already completed or otherwise unavailable for shipping actions. If the new status represents delivery completion, set delivered_at accordingly; if the shipment transitions to shipped, set shipped_at if not already present. Preserve existing timestamps when the state does not require them.
+ * Update only mutable shipment fields such as carrier name and tracking number, and do not allow the request to move shipment items across sellers or to introduce items that do not belong to the shipment's seller. If the implementation permits shipment item adjustment in this endpoint, revalidate that every included order item belongs to the same seller and that none of the items are already assigned to another active shipment.
  *
- * Validate that tracking_number remains unique within the seller scope if the database constraint applies, and return a conflict-style error on duplicate tracking data. Keep the operation transactional so partial updates do not occur. If any validation fails, no fields should be persisted.
+ * Persist changes in a transaction. Keep the existing shipment-item associations intact unless the schema explicitly supports controlled reassignment. Return the updated shipment together with its item set and tracking details. Surface validation failures for malformed tracking data, missing shipment, unauthorized access, or attempts to edit completed shipments.
  * @path /mallPlatform/seller/shipments/:shipmentId
  * @accessor api.functional.mallPlatform.seller.shipments.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -340,12 +343,12 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * Shipment identifier (UUID).
+     * The shipment identifier (UUID).
      */
     shipmentId: string & tags.Format<"uuid">;
 
     /**
-     * Shipment tracking and status fields to update.
+     * Shipment fields to update, such as carrier information and tracking number.
      */
     body: IMallPlatformShipment.IUpdate;
   };
@@ -396,23 +399,19 @@ export namespace update {
 }
 
 /**
- * Remove a shipment from an order fulfillment record.
+ * Delete a shipment record.
  *
- * A shipment represents one seller's delivery package and groups one or more order items that belong to the same seller. This operation lets the responsible seller remove a shipment record while keeping the associated order items and order history intact for customer service, tracking, and dispute review.
+ * This operation removes a seller-specific shipment from active use. A shipment belongs to one seller and one order, and it groups order items that travel together with shared carrier and tracking information.
  *
- * The service must validate that the shipment exists, that the requester is allowed to manage it, and that deleting the shipment will not violate shipment lifecycle rules. If the shipment is linked to order items that have already progressed beyond a removable state, the request must fail. When the shipment is removed, the underlying order items remain part of the order and continue to be visible in order history with their existing statuses and preserved snapshots where applicable.
+ * The shipment is identified by its UUID path parameter. The implementation must verify that the caller is allowed to manage the shipment, then mark the shipment as deleted in a way that keeps historical fulfillment data available for authorized views and dispute handling. Shipment-item assignments linked to the shipment are removed by the database relationship behavior, so the shipment no longer appears in active shipment lists or order views after deletion.
  *
- * If the shipment cannot be found, is not owned by the caller, or is in a state that prevents removal, the API must return an appropriate error without altering the order or item records.
+ * If the shipment does not exist, return a not-found error. If the caller is not authorized to delete the shipment, return an authorization error. The operation must not partially modify tracking fields or shipment-item membership when deletion fails.
  *
  * @param props.connection
- * @param props.shipmentId The shipment identifier to remove.
+ * @param props.shipmentId The UUID of the shipment to delete.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Load the shipment by shipmentId and verify it exists. Confirm the caller has permission to manage the shipment, typically the owning seller or an administrator, according to the authorization middleware.
- *
- * Before deleting, validate the shipment is still removable under shipment workflow rules. Because shipments group order items from the same seller, the implementation must not modify order items, order status calculations, or preserved snapshots. Only the shipment header and its linkage rows should be removed. If the schema stores shipment-item association rows separately, delete those association rows first or use a transaction with cascading behavior to keep referential integrity.
- *
- * Do not touch inventory, order item statuses, cancellation/refund records, or order snapshots. Return the deleted shipment record as confirmation so the client can update shipment grouping in order detail views. If the shipment does not exist, return not found. If the caller is not permitted or the shipment is not deletable, return a validation or conflict error without partial changes.
+ * @x-autobe-specification Load mall_platform_shipments by UUID and verify it exists before writing. Confirm the caller has permission to manage the shipment in the owning seller or administrator scope. Perform a logical deletion by setting deleted_at on the shipment row; do not change carrier_name, tracking_number, tracking_url, status, shipped_at, or delivered_at. Ensure read paths exclude deleted shipments from active shipment views, order detail shipment groupings, and seller shipment lists. Because mall_platform_shipment_items is a dependent junction table with onDelete: Cascade, shipment-item rows should be removed consistently when the shipment is erased according to the persistence strategy. Reject repeated deletion attempts with a not-found style response.
  * @path /mallPlatform/seller/shipments/:shipmentId
  * @accessor api.functional.mallPlatform.seller.shipments.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -441,7 +440,7 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * The shipment identifier to remove.
+     * The UUID of the shipment to delete.
      */
     shipmentId: string & tags.Format<"uuid">;
   };

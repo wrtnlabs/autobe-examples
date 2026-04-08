@@ -9,7 +9,7 @@ export function prepare_random_ecommerce_mall_seller_suspension(
   input?: DeepPartial<IEcommerceMallSellerSuspension.ICreate>,
 ): IEcommerceMallSellerSuspension.ICreate {
   return {
-    reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 2 }),
-    seller_id: input?.seller_id ?? typia.random<string & tags.Format<"uuid">>(),
+    reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 3 }),
+    sellerId: input?.sellerId ?? typia.random<string & tags.Format<"uuid">>(),
   };
 }

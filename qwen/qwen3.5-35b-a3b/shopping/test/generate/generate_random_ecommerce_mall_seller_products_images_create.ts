@@ -12,7 +12,7 @@ import { prepare_random_ecommerce_mall_product_image } from "../prepare/prepare_
 export async function generate_random_ecommerce_mall_seller_products_images_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IEcommerceMallProductImage.ICreate> | undefined;
+    body?: DeepPartial<IEcommerceMallProductImage.ICreate>;
     params: {
       productId: string;
     };

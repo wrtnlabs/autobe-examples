@@ -6,7 +6,7 @@ import type { IRedditCloneCommentSnapshot } from "@ORGANIZATION/PROJECT-api/lib/
 import type { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
 import type { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import type { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
-import type { IRedditClonePostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostImage";
+import type { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -16,103 +16,122 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_reddit_clone_member_communities_create } from "../../../generate/generate_random_reddit_clone_member_communities_create";
 import { generate_random_reddit_clone_member_posts_comments_create } from "../../../generate/generate_random_reddit_clone_member_posts_comments_create";
 import { generate_random_reddit_clone_member_posts_create } from "../../../generate/generate_random_reddit_clone_member_posts_create";
 import { prepare_random_reddit_clone_comment } from "../../../prepare/prepare_random_reddit_clone_comment";
-import { prepare_random_reddit_clone_community } from "../../../prepare/prepare_random_reddit_clone_community";
 import { prepare_random_reddit_clone_post } from "../../../prepare/prepare_random_reddit_clone_post";
 
 /**
- * Test successful retrieval of a comment snapshot after a comment has been edited.
+ * Test successful retrieval of a comment snapshot with complete denormalized data.
  *
- * This test validates the comment snapshot retrieval functionality by:
- * 1. Creating a member account and authenticating
- * 2. Creating a community as prerequisite for post creation
- * 3. Creating a post in the community
- * 4. Creating a comment on the post
- * 5. Retrieving the comment snapshot and validating its structure
+ * Validates the complete comment snapshot lifecycle including member authentication, post creation, comment creation, snapshot generation, and snapshot retrieval. Ensures that the snapshot preserves all comment data at the point-in-time it was created, including denormalized user profile, post reference, and content.
+ *
+ * Special attention is given to verifying data integrity of the snapshot, ensuring all foreign key references are correctly denormalized and that timestamps accurately reflect the comment's state at snapshot creation time.
+ *
+ * 1. Member registers and authenticates with email, password, and username.
+ * 2. Member creates a text post in a subscribed community.
+ * 3. Member creates a top-level comment on the post.
+ * 4. A snapshot is created for the comment capturing its current state.
+ * 5. The snapshot is retrieved using post ID, comment ID, and snapshot ID.
+ * 6. Validates snapshot contains correct denormalized data and timestamps.
  */
 export async function test_api_comment_snapshot_retrieval_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Authenticate member
+  // 1. Member authentication
   const memberConnection: api.IConnection = { host: connection.host };
   await authorize_member_join(memberConnection, {
-    body: undefined,
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
+      username: RandomGenerator.name(1),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+    } satisfies IRedditCloneMember.IJoin,
   });
-  // 2. Create community
-  const community =
-    await generate_random_reddit_clone_member_communities_create(
-      memberConnection,
-      {
-        body: undefined,
-      },
-    );
-  typia.assert(community);
-  // 3. Create post in community
-  const post = await generate_random_reddit_clone_member_posts_create(
-    memberConnection,
-    {
+  // 2. Create a post
+  const post: IRedditClonePost =
+    await generate_random_reddit_clone_member_posts_create(memberConnection, {
       body: {
-        communityId: community.id,
+        post_type: "text",
       },
-    },
-  );
+    });
   typia.assert(post);
-  // 4. Create comment on post
-  const comment =
+  // 3. Create a comment on the post
+  const comment: IRedditCloneComment =
     await generate_random_reddit_clone_member_posts_comments_create(
       memberConnection,
       {
         params: {
           postId: post.id,
         },
-        body: undefined,
+        body: {
+          content: RandomGenerator.paragraph({ sentences: 3 }),
+        } satisfies IRedditCloneComment.ICreate,
       },
     );
   typia.assert(comment);
-  // 5. Retrieve comment snapshot
-  // Note: In a real scenario, the comment would be edited first to create a snapshot.
-  // For this test, we use the comment ID as the snapshot ID to test the retrieval endpoint.
-  const snapshot = await api.functional.redditClone.posts.comments.snapshots.at(
-    memberConnection,
-    {
-      postId: post.id,
-      commentId: comment.id,
-      snapshotId: comment.id,
-    },
-  );
+  // 4. Create a snapshot of the comment
+  const snapshot: IRedditCloneCommentSnapshot =
+    await api.functional.redditClone.posts.comments.snapshots.create(
+      memberConnection,
+      {
+        postId: post.id,
+        commentId: comment.id,
+      },
+    );
   typia.assert(snapshot);
+  // 5. Retrieve the snapshot
+  const retrievedSnapshot: IRedditCloneCommentSnapshot =
+    await api.functional.redditClone.posts.comments.snapshots.at(
+      memberConnection,
+      {
+        postId: post.id,
+        commentId: comment.id,
+        snapshotId: snapshot.id,
+      },
+    );
+  typia.assert(retrievedSnapshot);
   // 6. Validate snapshot data integrity
-  TestValidator.equals("snapshot id matches", snapshot.id, comment.id);
-  TestValidator.equals("content preserved", snapshot.content, comment.content);
   TestValidator.equals(
-    "vote score preserved",
-    snapshot.vote_score,
-    comment.score,
+    "snapshot ID matches",
+    retrievedSnapshot.id,
+    snapshot.id,
   );
   TestValidator.equals(
-    "author id matches",
-    snapshot.author.id,
+    "comment ID reference",
+    retrievedSnapshot.reddit_clone_comment_id,
+    comment.id,
+  );
+  TestValidator.equals(
+    "user profile ID",
+    retrievedSnapshot.userProfile.id,
     comment.author.id,
   );
-  TestValidator.equals("post id matches", snapshot.post.id, comment.post.id);
-  TestValidator.predicate(
-    "snapshot created at is valid",
-    snapshot.snapshot_created_at != null,
-  );
-  TestValidator.predicate(
-    "comment created at is valid",
-    snapshot.comment_created_at != null,
-  );
-  TestValidator.predicate(
-    "comment updated at is valid",
-    snapshot.comment_updated_at != null,
+  TestValidator.equals("post ID reference", retrievedSnapshot.post.id, post.id);
+  TestValidator.equals(
+    "content preserved",
+    retrievedSnapshot.content,
+    comment.content,
   );
   TestValidator.equals(
-    "comment deleted at is null",
-    snapshot.comment_deleted_at,
+    "created_at preserved",
+    retrievedSnapshot.created_at,
+    comment.created_at,
+  );
+  TestValidator.equals(
+    "updated_at preserved",
+    retrievedSnapshot.updated_at,
+    comment.updated_at,
+  );
+  TestValidator.predicate(
+    "snapshot_created_at exists",
+    retrievedSnapshot.snapshot_created_at !== null &&
+      retrievedSnapshot.snapshot_created_at !== undefined,
+  );
+  TestValidator.equals(
+    "parent comment is null for top-level",
+    retrievedSnapshot.parentComment,
     null,
   );
 }

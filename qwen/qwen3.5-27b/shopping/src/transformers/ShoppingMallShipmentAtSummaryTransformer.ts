@@ -1,13 +1,18 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCustomerAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerAddress";
+import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
 import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { ShoppingMallOrderAtSummaryTransformer } from "./ShoppingMallOrderAtSummaryTransformer";
 import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
 
 export namespace ShoppingMallShipmentAtSummaryTransformer {
@@ -18,18 +23,14 @@ export namespace ShoppingMallShipmentAtSummaryTransformer {
     return {
       select: {
         id: true,
-        tracking_carrier: true,
+        carrier_name: true,
         tracking_number: true,
-        shipped_at: true,
-        delivered_at: true,
-        delivery_confirmed: true,
         created_at: true,
         updated_at: true,
+        delivered_at: true,
         deleted_at: true,
+        order: ShoppingMallOrderAtSummaryTransformer.select(),
         seller: ShoppingMallSellerAtSummaryTransformer.select(),
-        shipmentItems: {
-          select: { id: true },
-        } satisfies Prisma.shopping_mall_shipment_itemsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_shipmentsFindManyArgs;
   }
@@ -38,16 +39,52 @@ export namespace ShoppingMallShipmentAtSummaryTransformer {
   ): Promise<IShoppingMallShipment.ISummary> {
     return {
       id: input.id,
-      tracking_carrier: input.tracking_carrier,
+      carrier_name: input.carrier_name,
       tracking_number: input.tracking_number,
-      shipped_at: input.shipped_at.toISOString(),
-      delivered_at: input.delivered_at?.toISOString() ?? null,
-      delivery_confirmed: input.delivery_confirmed,
-      item_count: input.shipmentItems.length,
-      created_at: input.created_at.toISOString(),
+      order: await ShoppingMallOrderAtSummaryTransformer.transform(input.order),
       seller: await ShoppingMallSellerAtSummaryTransformer.transform(
         input.seller,
       ),
+      created_at: input.created_at.toISOString(),
+      delivered_at: input.delivered_at?.toISOString() ?? null,
     };
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace ShoppingMallShipmentAtSummaryTransformer {
+//       export type Payload = Prisma.shopping_mall_shipmentsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             carrier_name: true,
+//             tracking_number: true,
+//             created_at: true,
+//             updated_at: true,
+//             delivered_at: true,
+//             deleted_at: true,
+//             order: ShoppingMallOrderAtSummaryTransformer.select(),
+//             seller: ShoppingMallSellerAtSummaryTransformer.select(),
+//           },
+//         } satisfies Prisma.shopping_mall_shipmentsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IShoppingMallShipment.ISummary> {
+//         return {
+//   id: {string},
+//   carrier_name: {string},
+//   tracking_number: {string},
+//   order: await ShoppingMallOrderAtSummaryTransformer.transform(input.order),
+//   seller: await ShoppingMallSellerAtSummaryTransformer.transform(input.seller),
+//   created_at: {string},
+//   delivered_at: {string | null},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

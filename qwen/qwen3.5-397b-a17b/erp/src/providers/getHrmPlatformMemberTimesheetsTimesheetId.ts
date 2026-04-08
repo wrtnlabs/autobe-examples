@@ -25,31 +25,42 @@ export async function getHrmPlatformMemberTimesheetsTimesheetId(props: {
   member: MemberPayload;
   timesheetId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformTimesheet> {
-  const timesheet =
-    await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
-      where: { id: props.timesheetId },
-      ...HrmPlatformTimesheetTransformer.select(),
-    });
-  if (timesheet.deleted_at !== null) {
-    throw new HttpException("Timesheet has been deleted", 400);
-  }
-  const isOwner = timesheet.employee.user.id === props.member.id;
-  if (!isOwner) {
-    const employeeWithPermission =
-      await MyGlobal.prisma.hrm_platform_employees.findFirst({
-        where: {
-          user_id: props.member.id,
-          role: {
+  const employee =
+    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
+      where: {
+        member_id: props.member.id,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        role: {
+          select: {
             rolePermissions: {
-              some: {
-                permission: "time:approve",
+              select: {
+                permission: {
+                  select: {
+                    code: true,
+                  },
+                },
               },
             },
           },
         },
-        select: { id: true },
-      });
-    if (!employeeWithPermission) {
+      },
+    });
+  const hasTimeApprovePermission = employee.role.rolePermissions.some(
+    (rp) => rp.permission.code === "time:approve",
+  );
+  const timesheet =
+    await MyGlobal.prisma.hrm_platform_timesheets.findFirstOrThrow({
+      where: {
+        id: props.timesheetId,
+        deleted_at: null,
+      },
+      ...HrmPlatformTimesheetTransformer.select(),
+    });
+  if (timesheet.employee.id !== employee.id) {
+    if (!hasTimeApprovePermission || timesheet.status !== "submitted") {
       throw new HttpException("Forbidden", 403);
     }
   }

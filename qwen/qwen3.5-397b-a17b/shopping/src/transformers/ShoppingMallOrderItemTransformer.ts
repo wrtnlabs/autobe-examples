@@ -1,8 +1,18 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCancellationRequest";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import { IShoppingMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallMember";
+import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+import { IShoppingMallOrderItemSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItemSnapshot";
+import { IShoppingMallOrderItemSnapshotOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItemSnapshotOption";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import { IShoppingMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallRefundRequest";
+import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
@@ -10,8 +20,15 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { ShoppingMallCancellationRequestAtSummaryTransformer } from "./ShoppingMallCancellationRequestAtSummaryTransformer";
+import { ShoppingMallOrderAtSummaryTransformer } from "./ShoppingMallOrderAtSummaryTransformer";
+import { ShoppingMallOrderItemSnapshotTransformer } from "./ShoppingMallOrderItemSnapshotTransformer";
+import { ShoppingMallProductAtSummaryTransformer } from "./ShoppingMallProductAtSummaryTransformer";
 import { ShoppingMallProductVariantAtSummaryTransformer } from "./ShoppingMallProductVariantAtSummaryTransformer";
+import { ShoppingMallRefundRequestAtSummaryTransformer } from "./ShoppingMallRefundRequestAtSummaryTransformer";
+import { ShoppingMallReviewAtSummaryTransformer } from "./ShoppingMallReviewAtSummaryTransformer";
 import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
+import { ShoppingMallShipmentAtSummaryTransformer } from "./ShoppingMallShipmentAtSummaryTransformer";
 
 export namespace ShoppingMallOrderItemTransformer {
   export type Payload = Prisma.shopping_mall_order_itemsGetPayload<
@@ -26,55 +43,31 @@ export namespace ShoppingMallOrderItemTransformer {
         status: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
-        order: { select: { id: true } },
-        product: {
-          select: {
-            id: true,
-            base_price: true,
-            variants: {
-              select: {
-                price_override: true,
-              },
-            } satisfies Prisma.shopping_mall_product_variantsFindManyArgs,
-          },
-        },
+        order: ShoppingMallOrderAtSummaryTransformer.select(),
+        product: ShoppingMallProductAtSummaryTransformer.select(),
         productVariant: ShoppingMallProductVariantAtSummaryTransformer.select(),
         seller: ShoppingMallSellerAtSummaryTransformer.select(),
-        snapshot: { select: { id: true } },
-        shipmentItem: { select: { id: true } },
-        cancellationRequests: {
-          select: { id: true },
-        } satisfies Prisma.shopping_mall_cancellation_requestsFindManyArgs,
-        refundRequests: {
-          select: { id: true },
-        } satisfies Prisma.shopping_mall_refund_requestsFindManyArgs,
+        shipment: ShoppingMallShipmentAtSummaryTransformer.select(),
+        snapshot: ShoppingMallOrderItemSnapshotTransformer.select(),
+        refundRequest: ShoppingMallRefundRequestAtSummaryTransformer.select(),
+        cancellationRequest:
+          ShoppingMallCancellationRequestAtSummaryTransformer.select(),
+        review: ShoppingMallReviewAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_order_itemsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallOrderItem> {
-    const variantPrices = input.product.variants
-      .map((v) => v.price_override)
-      .filter((p): p is number => p !== null);
-    const minPrice =
-      variantPrices.length > 0
-        ? Math.min(...variantPrices)
-        : input.product.base_price;
-    const maxPrice =
-      variantPrices.length > 0
-        ? Math.max(...variantPrices)
-        : input.product.base_price;
     return {
       id: input.id,
       quantity: input.quantity,
       price: input.price,
       status: input.status,
-      product: {
-        min: minPrice,
-        max: maxPrice,
-      } satisfies IShoppingMallProduct.ISummary,
+      order: await ShoppingMallOrderAtSummaryTransformer.transform(input.order),
+      product: await ShoppingMallProductAtSummaryTransformer.transform(
+        input.product,
+      ),
       productVariant:
         await ShoppingMallProductVariantAtSummaryTransformer.transform(
           input.productVariant,
@@ -82,9 +75,29 @@ export namespace ShoppingMallOrderItemTransformer {
       seller: await ShoppingMallSellerAtSummaryTransformer.transform(
         input.seller,
       ),
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
-    };
+      shipment: input.shipment
+        ? await ShoppingMallShipmentAtSummaryTransformer.transform(
+            input.shipment,
+          )
+        : null,
+      snapshot: await ShoppingMallOrderItemSnapshotTransformer.transform(
+        input.snapshot!,
+      ),
+      cancellationRequest: input.cancellationRequest
+        ? await ShoppingMallCancellationRequestAtSummaryTransformer.transform(
+            input.cancellationRequest,
+          )
+        : null,
+      refundRequest: input.refundRequest
+        ? await ShoppingMallRefundRequestAtSummaryTransformer.transform(
+            input.refundRequest,
+          )
+        : null,
+      review: input.review
+        ? await ShoppingMallReviewAtSummaryTransformer.transform(input.review)
+        : null,
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
+    } satisfies IShoppingMallOrderItem;
   }
 }

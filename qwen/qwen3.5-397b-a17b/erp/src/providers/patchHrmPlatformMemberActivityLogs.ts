@@ -1,6 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformActivityLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformActivityLog";
 import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIHrmPlatformActivityLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIHrmPlatformActivityLog";
 import { ArrayUtil } from "@nestia/e2e";
@@ -23,41 +24,53 @@ export async function patchHrmPlatformMemberActivityLogs(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      user_id: props.member.id,
-      deleted_at: null,
-    },
-    select: {
-      organization_id: true,
-    },
-  });
-  if (!employee) {
-    throw new HttpException("Member not found in any organization", 404);
+  const membership =
+    await MyGlobal.prisma.hrm_platform_organization_memberships.findFirst({
+      where: {
+        hrm_platform_member_id: props.member.id,
+      },
+      select: {
+        hrm_platform_organization_id: true,
+      },
+    });
+  if (!membership) {
+    throw new HttpException("Member has no organization membership", 403);
   }
-  if (props.body.dateFrom && props.body.dateTo) {
-    const from = new Date(props.body.dateFrom);
-    const to = new Date(props.body.dateTo);
-    if (from > to) {
-      throw new HttpException(
-        "Invalid date range: dateFrom must be before dateTo",
-        400,
-      );
-    }
+  const organizationId = membership.hrm_platform_organization_id;
+  const dateFilters: {
+    created_at?: {
+      gte?: Date;
+      lte?: Date;
+    };
+  } = {};
+  if (props.body.dateFrom) {
+    dateFilters.created_at = {
+      ...dateFilters.created_at,
+      gte: new Date(`${props.body.dateFrom}T00:00:00Z`),
+    };
   }
-  const whereInput = {
-    organization_id: employee.organization_id,
-    deleted_at: null,
+  if (props.body.dateTo) {
+    dateFilters.created_at = {
+      ...dateFilters.created_at,
+      lte: new Date(`${props.body.dateTo}T23:59:59.999Z`),
+    };
+  }
+  const whereInput: Prisma.hrm_platform_activity_logsWhereInput = {
+    hrm_platform_organization_id: organizationId,
     ...(props.body.actionType && { action_type: props.body.actionType }),
-    ...(props.body.userId && { member_id: props.body.userId }),
-    ...(props.body.dateFrom && {
-      created_at: { gte: new Date(props.body.dateFrom) },
-    }),
-    ...(props.body.dateTo && {
-      created_at: { lte: new Date(props.body.dateTo) },
-    }),
-    ...(props.body.targetEntityType && {
-      target_entity_type: props.body.targetEntityType,
+    ...(props.body.userId && { hrm_platform_member_id: props.body.userId }),
+    ...(dateFilters.created_at && { created_at: dateFilters.created_at }),
+    ...(props.body.search && {
+      OR: [
+        { action_type: { contains: props.body.search, mode: "insensitive" } },
+        {
+          target_entity_type: {
+            contains: props.body.search,
+            mode: "insensitive",
+          },
+        },
+        { details: { contains: props.body.search, mode: "insensitive" } },
+      ],
     }),
   } satisfies Prisma.hrm_platform_activity_logsWhereInput;
   const data = await MyGlobal.prisma.hrm_platform_activity_logs.findMany({
@@ -71,15 +84,15 @@ export async function patchHrmPlatformMemberActivityLogs(props: {
     where: whereInput,
   });
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      HrmPlatformActivityLogAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  };
+    data: await ArrayUtil.asyncMap(
+      data,
+      HrmPlatformActivityLogAtSummaryTransformer.transform,
+    ),
+  } satisfies IPageIHrmPlatformActivityLog.ISummary;
 }

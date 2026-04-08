@@ -5,35 +5,35 @@ import { ArrayUtil, RandomGenerator } from "@nestia/e2e";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-const PERMISSION_CODES = [
-  "org:manage",
-  "employee:manage",
-  "employee:view",
-  "project:manage",
-  "project:view",
-  "time:manage",
-  "time:approve",
-  "time:view_all",
-  "report:view",
-] as const;
+/**
+ * Prepare random HRM platform role creation data for E2E testing.
+ *
+ * Generates a complete IHrmPlatformRole.ICreate with randomized values for
+ * creating custom roles within an organization. All properties support
+ * DeepPartial input override for test customization.
+ *
+ * The generated role includes a valid organization reference, unique role name,
+ * optional description, and optional permission assignments. This function is
+ * designed for testing role creation endpoints and role management workflows.
+ */
 export function prepare_random_hrm_platform_role(
   input?: DeepPartial<IHrmPlatformRole.ICreate>,
 ): IHrmPlatformRole.ICreate {
   return {
-    name:
-      input?.name ??
-      RandomGenerator.paragraph({ sentences: 1, wordMin: 2, wordMax: 3 }),
+    organization_id:
+      input?.organization_id ?? typia.random<string & tags.Format<"uuid">>(),
+    name: input?.name ?? RandomGenerator.paragraph({ sentences: 2 }),
     description:
-      input?.description ?? RandomGenerator.paragraph({ sentences: 2 }),
-    permissions: input?.permissions
-      ? input.permissions.map(
-          (permission) => permission ?? RandomGenerator.pick(PERMISSION_CODES),
+      input?.description ?? RandomGenerator.paragraph({ sentences: 3 }) ?? null,
+    permission_ids: input?.permission_ids
+      ? input.permission_ids.map(
+          (id) => id ?? typia.random<string & tags.Format<"uuid">>(),
         )
-      : RandomGenerator.sample(
-          [...PERMISSION_CODES],
+      : ArrayUtil.repeat(
           typia.random<
             number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<5>
           >(),
+          () => typia.random<string & tags.Format<"uuid">>(),
         ),
   };
 }

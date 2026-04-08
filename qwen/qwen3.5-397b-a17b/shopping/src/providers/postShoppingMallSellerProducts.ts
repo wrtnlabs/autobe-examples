@@ -2,9 +2,6 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
-import { IShoppingMallProductOptionDefinition } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionDefinition";
-import { IShoppingMallProductOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionValue";
-import { IShoppingMallProductRating } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductRating";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
@@ -25,12 +22,25 @@ export async function postShoppingMallSellerProducts(props: {
   seller: SellerPayload;
   body: IShoppingMallProduct.ICreate;
 }): Promise<IShoppingMallProduct> {
-  const created = await MyGlobal.prisma.shopping_mall_products.create({
+  // Validate seller is approved (not suspended)
+  const seller = await MyGlobal.prisma.shopping_mall_sellers.findUniqueOrThrow({
+    where: { id: props.seller.id },
+    select: { id: true, approval_status: true },
+  });
+  if (seller.approval_status !== "approved") {
+    throw new HttpException("Seller account is suspended", 403);
+  }
+  // Validate category exists
+  await MyGlobal.prisma.shopping_mall_categories.findUniqueOrThrow({
+    where: { id: props.body.shopping_mall_category_id },
+  });
+  // Create product using collector and transformer
+  const record = await MyGlobal.prisma.shopping_mall_products.create({
     data: await ShoppingMallProductCollector.collect({
       body: props.body,
-      shoppingMallSellers: props.seller,
+      shoppingMallSellers: { id: props.seller.id },
     }),
     ...ShoppingMallProductTransformer.select(),
   });
-  return await ShoppingMallProductTransformer.transform(created);
+  return await ShoppingMallProductTransformer.transform(record);
 }

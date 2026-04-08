@@ -2,52 +2,60 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IShoppingMallAdminPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdminPromotionRequest";
-import type { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import type { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
 import type { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
-import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import type { IShoppingMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallMember";
+import type { IShoppingMallSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSuperAdmin";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_customer_join } from "../../../authorize/authorize_customer_join";
-import { authorize_customer_login } from "../../../authorize/authorize_customer_login";
-import { authorize_customer_refresh } from "../../../authorize/authorize_customer_refresh";
-import { generate_random_shopping_mall_customer_admin_promotion_requests_create } from "../../../generate/generate_random_shopping_mall_customer_admin_promotion_requests_create";
+import { authorize_member_join } from "../../../authorize/authorize_member_join";
+import { authorize_member_login } from "../../../authorize/authorize_member_login";
+import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
+import { generate_random_shopping_mall_member_admin_promotion_requests_create } from "../../../generate/generate_random_shopping_mall_member_admin_promotion_requests_create";
 import { prepare_random_shopping_mall_admin_promotion_request } from "../../../prepare/prepare_random_shopping_mall_admin_promotion_request";
 
 /**
- * Test that an authenticated customer can successfully retrieve their pending
- * administrator promotion request. The customer first joins the platform, then
- * submits an administrator promotion request with a reason text. After
- * submission, the customer retrieves their promotion request using the GET
- * endpoint. The response should include the request ID, actor_type as
- * 'customer', the reason text provided during submission, status as 'pending',
- * null rejection_reason, submitter information with customer profile, and
- * timestamps. This validates the primary success path where a customer checks
- * the status of their submitted promotion request while it awaits super
- * administrator review.
+ * Test retrieving admin promotion request when a pending request exists.
+ *
+ * After member registration, submit an admin promotion request with a reason text. Then call the endpoint to retrieve the request. Validate the response contains the request details with status 'pending', the submitted reason, and null rejection_note. This validates the happy path for members awaiting super administrator review.
+ *
+ * 1. Register a new member account with unique email and credentials.
+ * 2. Create member-specific connection with authentication token.
+ * 3. Submit an admin promotion request with a reason text explaining why the member wants administrator privileges.
+ * 4. Retrieve the pending promotion request using the mine.at endpoint.
+ * 5. Validate the response contains correct status 'pending', the submitted reason, and null rejection_note.
+ * 6. Validate all response fields using typia.assert() for complete type validation.
  */
 export async function test_api_admin_promotion_request_retrieve_pending(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Customer joins the platform
-  const customerConnection: api.IConnection = { host: connection.host };
-  const customer = await authorize_customer_join(customerConnection, {
+  // 1. Register a new member
+  const memberAuth = await authorize_member_join(connection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
-    } satisfies IShoppingMallCustomer.IJoin,
+      ip: typia.random<string & tags.Format<"ipv4">>(),
+    } satisfies IShoppingMallMember.IJoin,
   });
-  typia.assert(customer);
-  // 2. Customer submits administrator promotion request
-  const reason = RandomGenerator.paragraph({ sentences: 2 });
+  typia.assert(memberAuth);
+  // 2. Create member-specific connection with auth token
+  const memberConnection: api.IConnection = {
+    host: connection.host,
+    headers: {
+      Authorization: `Bearer ${memberAuth.token.access}`,
+    },
+  };
+  // 3. Submit an admin promotion request
+  const reason = RandomGenerator.paragraph({ sentences: 3 });
   const promotionRequest =
-    await generate_random_shopping_mall_customer_admin_promotion_requests_create(
-      customerConnection,
+    await generate_random_shopping_mall_member_admin_promotion_requests_create(
+      memberConnection,
       {
         body: {
           reason: reason,
@@ -55,38 +63,37 @@ export async function test_api_admin_promotion_request_retrieve_pending(
       },
     );
   typia.assert(promotionRequest);
-  // 3. Customer retrieves their promotion request
+  // 4. Retrieve the pending promotion request
   const retrievedRequest =
-    await api.functional.shoppingMall.customer.admin_promotion_requests.me.at(
-      customerConnection,
+    await api.functional.shoppingMall.member.admin_promotion_requests.mine.at(
+      memberConnection,
     );
   typia.assert(retrievedRequest);
-  // 4. Validate the response
+  // 5. Validate the response
   TestValidator.equals(
-    "request ID matches",
+    "request id matches",
     retrievedRequest.id,
     promotionRequest.id,
   );
-  TestValidator.equals(
-    "actor type is customer",
-    retrievedRequest.actor_type,
-    "customer",
-  );
-  TestValidator.equals("reason matches", retrievedRequest.reason, reason);
   TestValidator.equals("status is pending", retrievedRequest.status, "pending");
   TestValidator.equals(
-    "rejection reason is null",
-    retrievedRequest.rejection_reason,
-    null,
+    "reason matches submitted",
+    retrievedRequest.reason,
+    reason,
+  );
+  TestValidator.predicate(
+    "rejection_note is null or undefined for pending",
+    retrievedRequest.rejection_note === null ||
+      retrievedRequest.rejection_note === undefined,
   );
   TestValidator.equals(
-    "submitter ID matches customer ID",
-    retrievedRequest.submitter.id,
-    customer.id,
+    "actor_type is member",
+    retrievedRequest.actor_type,
+    "member",
   );
-  TestValidator.equals(
-    "submitter email matches",
-    retrievedRequest.submitter.email,
-    customer.email,
+  TestValidator.predicate(
+    "reviewer is null or undefined for pending request",
+    retrievedRequest.reviewer === null ||
+      retrievedRequest.reviewer === undefined,
   );
 }

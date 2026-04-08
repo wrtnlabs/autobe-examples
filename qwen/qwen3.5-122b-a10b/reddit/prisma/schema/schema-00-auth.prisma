@@ -1,0 +1,470 @@
+/// Temporary guest accounts identified by device for anonymous browsing of
+/// public content.
+///
+/// Guest accounts enable unauthenticated users to browse communities, posts,
+/// and comments without registration. Each device/browser session creates a
+/// unique guest identity tracked by device fingerprint.
+///
+/// **Identity Management**
+/// Guest accounts are temporary and device-based. When a user registers,
+/// their guest account can be merged or abandoned. Soft deletion via {@link
+/// reddit_like_guests.deleted_at} allows cleanup of inactive guests.
+///
+/// **Relationship to Sessions**
+/// Each guest account can have multiple {@link reddit_like_guest_sessions}
+/// over time. The session table references this table via foreign key,
+/// following the child→parent relationship pattern.
+///
+/// @namespace reddit_like_auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying each guest account.
+  id String @id
+  
+  /// Unique device/browser fingerprint identifying the guest.
+  ///
+  /// Generated from device characteristics (user agent, screen resolution,
+  /// timezone, etc.) to persist guest identity across sessions. Used to link
+  /// multiple guest sessions to the same guest account.
+  device_fingerprint String
+  
+  /// Timestamp when the guest account was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the guest account was soft deleted. Null for active guests.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions reddit_like_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([device_fingerprint])
+  @@index([created_at])
+}
+
+/// Temporary session tokens for guest access to public feeds and communities.
+///
+/// Session records track authenticated guest sessions for anonymous
+/// browsing. Each session is tied to a temporary guest account and stores
+/// connection metadata for audit and security purposes.
+///
+/// **Session Lifecycle**
+///
+/// Sessions are created upon guest login and expire after a configured
+/// duration. The `expired_at` field enforces automatic session invalidation
+/// for security.
+///
+/// **Connection Tracking**
+///
+/// Stores client IP address, current page URL, and referrer information for
+/// analytics and security monitoring.
+///
+/// @namespace reddit_like_auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the session record.
+  id String @id
+  
+  /// References the guest account this session belongs to.
+  ///
+  /// Each session is associated with exactly one {@link reddit_like_guests}
+  /// account. Multiple sessions may exist for the same guest across different
+  /// devices or browsers.
+  reddit_like_guest_id String
+  
+  /// Client IP address that created the session.
+  ///
+  /// Used for security monitoring and session validation.
+  ip String
+  
+  /// Current page URL when session was created.
+  ///
+  /// Tracks the landing page for analytics purposes.
+  href String?
+  
+  /// Referring page URL.
+  ///
+  /// Captures the source page that led to session creation.
+  referrer String?
+  
+  /// Session creation timestamp.
+  ///
+  /// Records when the session was initially established.
+  created_at DateTime
+  
+  /// Last update timestamp.
+  ///
+  /// Updated on session activity or refresh.
+  updated_at DateTime
+  
+  /// Session expiration timestamp.
+  ///
+  /// Sessions are automatically invalidated after this time for security.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  redditLikeGuest reddit_like_guests @relation(fields: [reddit_like_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_like_guest_id, created_at])
+}
+
+/// Registered member accounts with email/password authentication and profile
+/// information.
+///
+/// This table stores the core authentication credentials and identity for
+/// authenticated users. Profile information including display name, bio, and
+/// avatar are stored in {@link reddit_like_user_profiles}. Session tokens
+/// and password reset tokens are managed in separate tables ({@link
+/// reddit_like_member_sessions}, {@link
+/// reddit_like_member_password_resets}).
+///
+/// **Authentication**: Members log in using their email address and
+/// password. The email serves as the primary login credential, while the
+/// username provides public identification.
+///
+/// **Account Lifecycle**: Accounts support soft deletion via the deleted_at
+/// field, allowing for account recovery within retention policies. When an
+/// account is deleted, all associated content (posts, comments) is also
+/// removed per cascade deletion policies.
+///
+/// @namespace reddit_like_auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the member account.
+  id String @id
+  
+  /// Email address used for login and account recovery.
+  ///
+  /// Must be unique across all member accounts. Used as the primary credential
+  /// for authentication during login flows. Also used for password reset and
+  /// email verification communications.
+  email String
+  
+  /// Unique username chosen by the member during registration.
+  ///
+  /// Used for public identification on posts, comments, and profile pages.
+  /// Must be unique across all member accounts. Forms part of the member's
+  /// public identity and profile URL.
+  username String
+  
+  /// Bcrypt hash of the member's password.
+  ///
+  /// Stored as a secure hash to protect credentials. Never stored or
+  /// transmitted in plain text. Updated when the member changes their
+  /// password.
+  password_hash String
+  
+  /// Timestamp when the member account was created.
+  ///
+  /// Set automatically during account registration. Used for account age
+  /// calculations and audit trails.
+  created_at DateTime
+  
+  /// Timestamp when the member account was last updated.
+  ///
+  /// Updated whenever any field in this record changes. Used for tracking
+  /// account modifications and sync purposes.
+  updated_at DateTime
+  
+  /// Timestamp when the member account was soft-deleted.
+  ///
+  /// When set, the account is considered deleted but data is retained for
+  /// recovery purposes per retention policies. NULL for active accounts.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  memberSessions reddit_like_member_sessions[]
+  passwordResets reddit_like_member_password_resets[]
+  emailVerifications reddit_like_member_email_verifications[]
+  userProfile reddit_like_user_profiles?
+  ownedCommunities reddit_like_communities[]
+  communitySubscriptions reddit_like_community_subscriptions[]
+  communityModeratorAssignments reddit_like_community_moderators[]
+  communityBans reddit_like_community_bans[] @relation("reddit_like_community_bans_of_member_id")
+  bansIssueds reddit_like_community_bans[] @relation("reddit_like_community_bans_of_banned_by_id")
+  posts reddit_like_posts[]
+  comments reddit_like_comments[]
+  votes reddit_like_votes[]
+  reports reddit_like_reports[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@unique([username])
+  @@index([created_at])
+}
+
+/// JWT session tokens with access and refresh support for member authentication
+///
+/// This table tracks authenticated member sessions as an append-only audit
+/// trail. Each session belongs to exactly one {@link reddit_like_members}
+/// member and contains metadata about the login request including client IP,
+/// referrer, and href for security tracking.
+///
+/// Session Lifecycle
+///
+/// Sessions are created upon successful login and expire based on the
+/// expired_at timestamp. The session management system handles token
+/// validation, refresh, and cleanup of expired sessions. Members can view
+/// and terminate their active sessions through account security features.
+///
+/// Security Considerations
+///
+/// The ip, href, and referrer fields enable detection of suspicious session
+/// activity by tracking the origin of authentication requests. Sessions are
+/// managed exclusively through authentication flows and should not be
+/// directly manipulated by application business logic.
+///
+/// @namespace reddit_like_auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the session record.
+  id String @id
+  
+  /// References the member account that owns this session.
+  ///
+  /// This foreign key establishes the one-to-many relationship between {@link
+  /// reddit_like_members} and their sessions. Each session belongs to exactly
+  /// one member, and a member can have multiple active sessions across
+  /// different devices or browsers.
+  ///
+  /// The relationship is mandatory - every session must be associated with a
+  /// valid member account.
+  reddit_like_member_id String
+  
+  /// Client IP address from the login request.
+  ///
+  /// Captures the IPv4 or IPv6 address of the client that initiated the
+  /// authentication. This field supports security auditing and detection of
+  /// suspicious login patterns from unusual locations.
+  ip String
+  
+  /// Current page URL at the time of login.
+  ///
+  /// Records the full URL of the page where the member initiated the login
+  /// process. This provides context for the authentication event and supports
+  /// user experience features like redirect after login.
+  href String
+  
+  /// Referrer header from the login request.
+  ///
+  /// Captures the HTTP referrer indicating the page that linked to the login
+  /// page. This field is nullable as some clients may not send referrer
+  /// information for privacy or technical reasons.
+  referrer String?
+  
+  /// Timestamp when the session was created.
+  ///
+  /// Records the exact moment the session was established during successful
+  /// authentication. Used for session ordering, expiration calculations, and
+  /// audit trail purposes.
+  created_at DateTime
+  
+  /// Timestamp when the session expires.
+  ///
+  /// Defines the absolute expiration time for this session. Sessions are
+  /// considered invalid after this timestamp and must be refreshed or
+  /// re-authenticated. This field is mandatory for security to ensure sessions
+  /// have a defined lifetime.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  redditLikeMember reddit_like_members @relation(fields: [reddit_like_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_member_id, created_at], map: "reddit_like_member_sessions_reddit_like_member_id_crea_f11fb11f")
+}
+
+/// Password reset tokens with expiration for member account recovery.
+///
+/// This table stores one-time use tokens that allow members to reset their
+/// passwords securely. Each token is associated with a specific member
+/// account and has an expiration time for security purposes.
+///
+/// **Token Lifecycle**
+///
+/// Tokens are generated when a member requests password reset via email. The
+/// token is included in a reset link sent to the member's registered email
+/// address. Once used or expired, the token becomes invalid.
+///
+/// **Security Considerations**
+///
+/// Tokens are cryptographically random strings that cannot be guessed. The
+/// expiration timestamp limits the window of opportunity for token misuse.
+/// After successful password reset or expiration, tokens are soft-deleted
+/// for audit purposes.
+///
+/// @namespace reddit_like_auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the password reset record.
+  id String @id
+  
+  /// Reference to the member account requesting password reset.
+  ///
+  /// This foreign key establishes the relationship to the {@link
+  /// reddit_like_members} table, linking each reset token to a specific user
+  /// account.
+  reddit_like_member_id String
+  
+  /// Unique password reset token string.
+  ///
+  /// This token is generated when a member requests a password reset and must
+  /// be included in the reset URL. Tokens are single-use and expire after a
+  /// configured time period.
+  token String
+  
+  /// Token expiration timestamp.
+  ///
+  /// Tokens become invalid after this time and cannot be used for password
+  /// reset. This is a security measure to limit the window of opportunity for
+  /// token misuse.
+  expires_at DateTime
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for record archival.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  redditLikeMember reddit_like_members @relation(fields: [reddit_like_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_member_id, created_at], map: "reddit_like_member_password_resets_reddit_like_member__140f77a9")
+  @@index([expires_at])
+}
+
+/// Email verification tokens for member account registration.
+///
+/// This table stores temporary verification tokens sent to users during
+/// account registration. Each token is valid for a limited time and must be
+/// verified before the account becomes fully active.
+///
+/// Token Lifecycle
+///
+/// Tokens are created when a user registers and must be verified within the
+/// expiration window. Once verified, the token is soft-deleted. Expired
+/// tokens are also cleaned up.
+///
+/// Security Considerations
+///
+/// Tokens are single-use and expire automatically. The token field is unique
+/// to prevent collisions and ensure each verification attempt is tracked
+/// separately.
+///
+/// @namespace reddit_like_auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_like_member_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the email verification token record.
+  id String @id
+  
+  /// Reference to the member account being verified.
+  ///
+  /// This foreign key links the verification token to the {@link
+  /// reddit_like_members} table. The member account exists but is not fully
+  /// activated until email verification is completed.
+  reddit_like_member_id String
+  
+  /// Unique verification token string.
+  ///
+  /// This is the actual token value sent to the user's email address. It must
+  /// be unique across all verification records to prevent collisions and
+  /// ensure security.
+  token String
+  
+  /// Email address being verified.
+  ///
+  /// Stores the email address that this token is intended to verify. This
+  /// allows verification even if the member record is updated before
+  /// verification completes.
+  email String
+  
+  /// Token expiration timestamp.
+  ///
+  /// The datetime when this verification token becomes invalid. Tokens should
+  /// be validated against this field to reject expired verification attempts.
+  expires_at DateTime
+  
+  /// Record creation timestamp.
+  ///
+  /// When this verification token was generated and sent to the user.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  ///
+  /// Tracks when this record was last modified, such as when verification
+  /// status changes.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  ///
+  /// When this verification token was invalidated (either through successful
+  /// verification or manual cancellation).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_like_members @relation(fields: [reddit_like_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([reddit_like_member_id, created_at], map: "reddit_like_member_email_verifications_reddit_like_mem_7a4744c0")
+}

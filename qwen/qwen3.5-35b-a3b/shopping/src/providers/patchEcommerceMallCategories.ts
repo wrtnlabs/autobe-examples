@@ -18,77 +18,92 @@ export async function patchEcommerceMallCategories(props: {
   body: IEcommerceMallCategory.IRequest;
 }): Promise<IPageIEcommerceMallCategory.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = Math.min(Math.max(props.body.page_size ?? 100, 1), 100);
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Valid sort fields whitelist
-  const validSortFields: Array<
-    keyof Prisma.ecommerce_mall_categoriesOrderByWithRelationInput
-  > = ["display_order", "name", "created_at"];
-  // Build WHERE conditions
-  const whereConditions: Prisma.ecommerce_mall_categoriesWhereInput = {
+  const whereInput: Prisma.ecommerce_mall_categoriesWhereInput = {
     deleted_at: null,
-  };
-  // Apply search filter
-  if (props.body.search_term) {
-    whereConditions.OR = [
-      {
-        name: {
-          contains: props.body.search_term,
-          mode: "insensitive",
-        },
-      },
-      {
-        slug: props.body.search_term,
-      },
-    ] as Prisma.ecommerce_mall_categoriesWhereInput[];
-  }
-  // Apply parent_id filter (exclude if explicitly null/undefined)
-  if (props.body.parent_id !== undefined) {
-    if (props.body.parent_id === null) {
-      whereConditions.parent_id = null;
-    } else {
-      whereConditions.parent_id = props.body.parent_id;
-    }
-  }
-  // Apply is_active filter
-  if (props.body.is_active !== undefined) {
-    whereConditions.is_active = props.body.is_active;
-  }
-  // Build ORDER BY with validation
-  const orderByKey = props.body.sort_by ?? "display_order";
-  const orderByDirection = props.body.sort_order === "desc" ? "desc" : "asc";
-  if (!validSortFields.includes(orderByKey as never)) {
-    throw new HttpException("Invalid sort field", 400);
-  }
-  const orderByInput = {
-    [orderByKey]: orderByDirection,
-  } satisfies Prisma.ecommerce_mall_categoriesOrderByWithRelationInput as
-    | Prisma.ecommerce_mall_categoriesOrderByWithRelationInput
-    | Prisma.ecommerce_mall_categoriesOrderByWithRelationInput[];
-  // Fetch paginated data
-  const data = await MyGlobal.prisma.ecommerce_mall_categories.findMany({
-    where: whereConditions,
-    skip,
-    take: limit,
-    orderBy: Array.isArray(orderByInput) ? orderByInput : [orderByInput],
-    ...EcommerceMallCategoryAtSummaryTransformer.select(),
-  });
-  // Fetch total count
-  const total = await MyGlobal.prisma.ecommerce_mall_categories.count({
-    where: whereConditions,
-  });
-  // Transform results
-  const transformedData =
-    await EcommerceMallCategoryAtSummaryTransformer.transformAll(data);
-  // Build pagination metadata
-  const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+    ...(props.body.name !== undefined && {
+      name: { contains: `%${props.body.name}%`, mode: "insensitive" as const },
+    }),
+    ...(props.body.parent_id !== undefined &&
+      props.body.parent_id !== null && {
+        parent_id: props.body.parent_id,
+      }),
+    ...(props.body.sort_order !== undefined &&
+      props.body.sort_order !== null && {
+        sort_order: props.body.sort_order,
+      }),
+  } satisfies Prisma.ecommerce_mall_categoriesWhereInput;
+  const orderByInput = (
+    props.body.sort === "name"
+      ? { name: (props.body.order ?? "asc") as "asc" | "desc" }
+      : props.body.sort === "created_at"
+        ? { created_at: (props.body.order ?? "asc") as "asc" | "desc" }
+        : props.body.sort === "updated_at"
+          ? { updated_at: (props.body.order ?? "asc") as "asc" | "desc" }
+          : { sort_order: (props.body.order ?? "asc") as "asc" | "desc" }
+  ) satisfies Prisma.ecommerce_mall_categoriesOrderByWithRelationInput;
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.ecommerce_mall_categories.findMany({
+      where: whereInput,
+      orderBy: orderByInput,
+      skip,
+      take: limit,
+      ...EcommerceMallCategoryAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.ecommerce_mall_categories.count({ where: whereInput }),
+  ]);
   return {
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
-      pages: totalPages,
-    },
-    data: transformedData,
-  };
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
+    data: await EcommerceMallCategoryAtSummaryTransformer.transformAll(data),
+  } satisfies IPageIEcommerceMallCategory.ISummary;
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+// import { IPageIEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallCategory";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallCategories(props: {
+//   body: IEcommerceMallCategory.IRequest;
+// }): Promise<IPageIEcommerceMallCategory.ISummary> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_categories.findMany({
+//     ...EcommerceMallCategoryAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await EcommerceMallCategoryAtSummaryTransformer.transformAll(records),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

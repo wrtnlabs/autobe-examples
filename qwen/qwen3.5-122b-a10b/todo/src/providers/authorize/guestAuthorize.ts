@@ -12,7 +12,7 @@ export async function guestAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const guest = await MyGlobal.prisma.multi_user_todo_guests.findFirst({
+  const guest = await MyGlobal.prisma.todo_app_guests.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,
@@ -21,6 +21,18 @@ export async function guestAuthorize(request: {
 
   if (guest === null) {
     throw new ForbiddenException("You're not enrolled");
+  }
+
+  const session = await MyGlobal.prisma.todo_app_guest_sessions.findFirst({
+    where: {
+      id: payload.session_id,
+      todo_app_guest_id: payload.id,
+      expired_at: { gt: new Date() },
+    },
+  });
+
+  if (session === null) {
+    throw new ForbiddenException("Session expired");
   }
 
   return payload;

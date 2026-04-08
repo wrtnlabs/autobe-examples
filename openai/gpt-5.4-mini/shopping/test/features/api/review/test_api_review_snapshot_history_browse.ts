@@ -7,11 +7,11 @@ import type { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/struct
 import type { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 import type { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import type { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
+import type { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import type { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import type { IMallPlatformReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformReview";
 import type { IMallPlatformReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformReviewSnapshot";
 import type { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
-import type { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import type { IPageIMallPlatformReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformReviewSnapshot";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -24,6 +24,20 @@ import { authorize_administrator_join } from "../../../authorize/authorize_admin
 import { authorize_administrator_login } from "../../../authorize/authorize_administrator_login";
 import { authorize_administrator_refresh } from "../../../authorize/authorize_administrator_refresh";
 
+/**
+ * Browse immutable snapshot history for a review as an administrator.
+ *
+ * Validates that the administrator review snapshot history endpoint returns a
+ * paginated, immutable record set ordered by newest first. The test focuses on
+ * the historical browsing contract, ensuring that preserved review and customer
+ * references remain available alongside snapshot metadata such as action,
+ * rating, content, deletion state, and created-at timestamps.
+ *
+ * 1. Authenticate as an administrator using an isolated connection.
+ * 2. Browse review snapshot history for a review identifier.
+ * 3. Validate pagination metadata and newest-first ordering.
+ * 4. Confirm each snapshot preserves the related review and customer summaries.
+ */
 export async function test_api_review_snapshot_history_browse(
   connection: api.IConnection,
 ): Promise<void> {
@@ -31,160 +45,96 @@ export async function test_api_review_snapshot_history_browse(
   const authorized = await authorize_administrator_join(adminConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
+      password: typia.random<string & tags.Format<"password">>(),
     } satisfies IMallPlatformAdministrator.IJoin,
   });
   typia.assert(authorized);
-  const request = {
+  const reviewId = typia.random<string & tags.Format<"uuid">>();
+  const request: IMallPlatformReviewSnapshot.IRequest = {
     page: 1,
-    limit: 20,
-    sort: "createdAt",
-    order: "desc",
-  } satisfies IMallPlatformReviewSnapshot.IRequest;
+    limit: 2,
+    sort: "-createdAt",
+  };
   const firstPage =
-    await api.functional.mallPlatform.administrator.reviewSnapshots.index(
+    await api.functional.mallPlatform.administrator.reviews.snapshots.index(
       adminConnection,
-      { body: request },
+      {
+        reviewId,
+        body: request,
+      },
     );
   typia.assert(firstPage);
   TestValidator.equals(
-    "pagination current page should match request",
+    "pagination current page",
     firstPage.pagination.current,
-    request.page,
+    1,
   );
-  TestValidator.equals(
-    "pagination limit should match request",
-    firstPage.pagination.limit,
-    request.limit,
+  TestValidator.equals("pagination limit", firstPage.pagination.limit, 2);
+  TestValidator.predicate(
+    "pagination counts are non-negative",
+    firstPage.pagination.records >= 0 && firstPage.pagination.pages >= 0,
   );
   TestValidator.predicate(
-    "pagination records should be non-negative",
-    firstPage.pagination.records >= 0,
+    "page size does not exceed limit",
+    firstPage.data.length <= firstPage.pagination.limit,
   );
   TestValidator.predicate(
-    "pagination pages should be non-negative",
-    firstPage.pagination.pages >= 0,
-  );
-  TestValidator.predicate(
-    "page size should not exceed the requested limit",
-    firstPage.data.length <= request.limit,
+    "first page is ordered newest first",
+    firstPage.data.every(
+      (snapshot, index, array) =>
+        index === 0 ||
+        new Date(array[index - 1].createdAt).getTime() >=
+          new Date(snapshot.createdAt).getTime(),
+    ),
   );
   for (const snapshot of firstPage.data) {
-    typia.assert(snapshot);
     TestValidator.predicate(
-      "snapshot should preserve a review reference",
+      "snapshot contains a preserved review reference",
       snapshot.review.id.length > 0,
     );
     TestValidator.predicate(
-      "snapshot should preserve a customer reference",
+      "snapshot contains a preserved customer reference",
       snapshot.customer.id.length > 0,
     );
     TestValidator.predicate(
-      "snapshot timestamp should exist",
-      snapshot.createdAt.length > 0,
-    );
-    TestValidator.predicate(
-      "snapshot action should exist",
+      "snapshot action is recorded",
       snapshot.snapshotAction.length > 0,
     );
+    TestValidator.predicate(
+      "snapshot rating is within the valid review range",
+      snapshot.rating >= 1 && snapshot.rating <= 5,
+    );
+    TestValidator.predicate(
+      "snapshot createdAt is populated",
+      snapshot.createdAt.length > 0,
+    );
   }
-  for (let i = 1; i < firstPage.data.length; i += 1) {
-    const prev = firstPage.data[i - 1];
-    const next = firstPage.data[i];
-    TestValidator.predicate(
-      "snapshots should be ordered newest first by createdAt",
-      prev.createdAt >= next.createdAt,
-    );
-  }
-  if (firstPage.data.length > 0) {
-    const targetReviewId = firstPage.data[0].review.id;
-    const targetCustomerId = firstPage.data[0].customer.id;
-    const targetCreatedAt = firstPage.data[0].createdAt;
-    const byReview =
-      await api.functional.mallPlatform.administrator.reviewSnapshots.index(
+  if (firstPage.pagination.pages > 1) {
+    const secondPage =
+      await api.functional.mallPlatform.administrator.reviews.snapshots.index(
         adminConnection,
         {
+          reviewId,
           body: {
-            reviewId: targetReviewId,
-            page: 1,
-            limit: 100,
-            sort: "createdAt",
-            order: "desc",
-          } satisfies IMallPlatformReviewSnapshot.IRequest,
+            ...request,
+            page: 2,
+          },
         },
       );
-    typia.assert(byReview);
-    TestValidator.predicate(
-      "reviewId filter should return only matching review snapshots",
-      byReview.data.every((snapshot) => snapshot.review.id === targetReviewId),
+    typia.assert(secondPage);
+    TestValidator.equals(
+      "second page current page",
+      secondPage.pagination.current,
+      2,
     );
     TestValidator.predicate(
-      "reviewId filter should preserve pagination consistency",
-      byReview.pagination.current === 1 && byReview.pagination.limit === 100,
-    );
-    const byCustomer =
-      await api.functional.mallPlatform.administrator.reviewSnapshots.index(
-        adminConnection,
-        {
-          body: {
-            customerId: targetCustomerId,
-            page: 1,
-            limit: 100,
-            sort: "createdAt",
-            order: "desc",
-          } satisfies IMallPlatformReviewSnapshot.IRequest,
-        },
-      );
-    typia.assert(byCustomer);
-    TestValidator.predicate(
-      "customerId filter should return only matching customer snapshots",
-      byCustomer.data.every(
-        (snapshot) => snapshot.customer.id === targetCustomerId,
+      "second page is ordered newest first",
+      secondPage.data.every(
+        (snapshot, index, array) =>
+          index === 0 ||
+          new Date(array[index - 1].createdAt).getTime() >=
+            new Date(snapshot.createdAt).getTime(),
       ),
-    );
-    const byCreatedAt =
-      await api.functional.mallPlatform.administrator.reviewSnapshots.index(
-        adminConnection,
-        {
-          body: {
-            createdAtTo: targetCreatedAt,
-            page: 1,
-            limit: 100,
-            sort: "createdAt",
-            order: "desc",
-          } satisfies IMallPlatformReviewSnapshot.IRequest,
-        },
-      );
-    typia.assert(byCreatedAt);
-    TestValidator.predicate(
-      "createdAt range filter should not include later snapshots",
-      byCreatedAt.data.every(
-        (snapshot) => snapshot.createdAt <= targetCreatedAt,
-      ),
-    );
-    if (byReview.data.length > 1) {
-      for (let i = 1; i < byReview.data.length; i += 1) {
-        TestValidator.predicate(
-          "review-scoped snapshots should remain ordered newest first",
-          byReview.data[i - 1].createdAt >= byReview.data[i].createdAt,
-        );
-      }
-    }
-  } else {
-    TestValidator.equals(
-      "empty snapshot list should report zero records",
-      firstPage.pagination.records,
-      0,
-    );
-    TestValidator.equals(
-      "empty snapshot list should report zero pages",
-      firstPage.pagination.pages,
-      0,
-    );
-    TestValidator.equals(
-      "empty snapshot list should have no data",
-      firstPage.data.length,
-      0,
     );
   }
 }

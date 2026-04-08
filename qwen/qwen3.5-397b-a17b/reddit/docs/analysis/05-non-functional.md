@@ -12,125 +12,73 @@ Define who owns what data, who can access it, and privacy boundaries between use
 
 ### Data Ownership
 
-Users own all content they create, including their profile information, posts, and comments.
+Users own their account, profile information, posts, and comments.
 
-The user who creates a community owns that community and has the highest authority over it.
+The user who creates a community becomes its owner.
 
-When a user deletes their account, all content they created is also deleted, including their posts and comments.
+The platform retains ownership of aggregate data and platform-wide analytics.
 
-Users retain ownership of their content even when it appears in communities they do not own.
+When a user deletes their account, all their posts and comments are deleted.
 
-Community owners cannot claim ownership of posts or comments created by other users in their community.
+Users cannot claim ownership of content created by other users.
 
-### Data Access Control
+Community owners retain ownership of their community unless they transfer ownership to another user.
 
-All users, including those not logged in, can view posts in the popular feed and community feeds.
+### User Data Privacy
 
-Only logged-in users can view the home feed showing posts from their subscribed communities.
+User profiles are publicly visible to all users including guests.
 
-Banned users in a community can still view all content in that community but cannot create posts or comments.
+Profile information including display name, bio, avatar, and karma score is visible to anyone.
 
-All users can view any other user's profile page.
+A user's posts and comments are visible to anyone who can access the community where they were created.
 
-Moderators can view the list of banned users in their community.
+Email addresses are private and never displayed publicly.
 
-Moderators can view all reports filed for their community, including the reporter identity and reason.
+User passwords are private and never displayed or shared.
 
-Users can only edit or delete their own posts and comments.
+Votes are anonymous; the identity of users who voted on content is not displayed.
 
-### User Privacy Boundaries
+A user's subscription list is private and only visible to the user.
 
-User profiles are publicly visible to all users, including guests.
+Report reasons are visible only to moderators of the community where the content was posted.
 
-A user's profile displays their display name, bio text, avatar image, total karma score, list of posts, and list of comments.
+Reporters remain anonymous; their identity is not displayed to the content author or other users.
 
-The user's chosen username is displayed on all their posts and comments.
+### Data Visibility Boundaries
 
-Email addresses used for registration are not displayed publicly.
+Content in public communities is visible to all users including guests.
 
-Passwords are never displayed or accessible to any user.
+Banned users can view content in the community where they are banned but cannot interact.
 
-The system does not provide private messaging between users.
+Deleted posts and comments are no longer visible to any user.
 
-Users cannot hide their profile from public view.
+When a user deletes their account, their username no longer appears on their past posts and comments.
 
-Users cannot post anonymously; all posts and comments show the author's username.
+Moderators can view all reports filed for their community.
 
-### Data Isolation
-
-Each user's content is clearly attributed to their username across the platform.
-
-Posts and comments are isolated by community; each post belongs to exactly one community.
-
-Users can only create posts in communities where they have an active subscription.
-
-Banned users are isolated from participating in the specific community where they are banned but can participate in other communities.
-
-Each user has a single karma score that aggregates votes across all their posts and comments platform-wide.
-
-Community subscriber counts are visible to all users but the list of individual subscribers is not exposed.
-
-Reports filed by users are only visible to moderators of the relevant community, not to other users.
+Report details including the reporter identity are visible only to moderators, not to the reported user or the public.
 
 ## Data Retention and Recovery
 
 Define what happens to deleted data, how long it is retained, and how users can recover it.
 
-### Account and Content Deletion
+### Deletion Behavior
 
-When a user deletes their account, all posts and comments created by that user are also deleted.
+All content deletion on the platform is permanent deletion, not soft-delete.
+When a user deletes their account, all posts and comments created by that user are removed from the platform.
+When a user deletes their own post, the post and all associated comments are removed from the platform.
+When a user deletes their own comment, the comment and all reply comments are removed from the platform.
+When a moderator deletes content in their community, the content is removed from the platform.
+Permanently deleted content is no longer visible in any feed, profile page, or community view.
+Permanently deleted content is no longer included in any counts such as vote scores, comment counts, or karma scores.
 
-When a user deletes their own post, the post is removed from public view but retained in the system for a defined retention period.
+### Retention and Recovery Policy
 
-When a user deletes their own comment, the comment is removed from public view but retained in the system for a defined retention period.
-
-When a moderator deletes a post in their community, the post is removed from public view but retained in the system for a defined retention period.
-
-When a moderator deletes a comment in their community, the comment is removed from public view but retained in the system for a defined retention period.
-
-When a moderator approves a report, the reported content (post or comment) is deleted and removed from public view.
-
-Deleted posts no longer appear in any feed (home, popular, or community).
-
-Deleted comments no longer appear in the comment thread.
-
-Deleted content is soft-deleted, meaning it is hidden from users but retained in the system during the retention period.
-
-### Data Retention Period
-
-Deleted user accounts are retained in the system for a defined retention period before permanent deletion.
-
-Deleted posts are retained in the system for a defined retention period before permanent deletion.
-
-Deleted comments are retained in the system for a defined retention period before permanent deletion.
-
-During the retention period, deleted content is not visible to any user, including the original author.
-
-During the retention period, deleted content is not included in any user's karma calculation.
-
-During the retention period, deleted content is not searchable or browsable.
-
-After the retention period expires, data is permanently deleted and cannot be recovered.
-
-The retention period applies uniformly to all deleted accounts, posts, and comments.
-
-### Data Recovery
-
-Users cannot recover their deleted posts after deletion.
-
-Users cannot recover their deleted comments after deletion.
-
-Users cannot recover their deleted account after deletion.
-
-Moderators cannot recover posts they have deleted.
-
-Moderators cannot recover comments they have deleted.
-
-Once the retention period expires and data is permanently deleted, no recovery is possible.
-
-Dismissed reports are removed from the report list and cannot be recovered.
-
-There is no user-facing mechanism to restore deleted content during the retention period.
+The platform does not retain deleted content for user access after deletion is completed.
+The platform does not provide any data recovery service for deleted posts, comments, or accounts.
+Once deletion is completed, users cannot recover their deleted content through the platform.
+Moderators cannot recover content they have deleted.
+Users should consider deletion as a final action with no option to restore deleted content.
 
 # Storage Capacity
 
@@ -140,19 +88,21 @@ Storage capacity planning and CDN requirements.
 
 Define storage requirements and capacity planning for file storage.
 
-### Image Storage Capacity
+### Image Storage
 
-The system stores three types of images: user avatars, community icons, and images uploaded in image posts.
+The platform stores images uploaded by users for the following purposes:
+- Avatar images for user profiles
+- Icon images for communities
+- Images attached to image posts
 
-Storage capacity must accommodate avatar images for all user accounts.
-Storage capacity must accommodate icon images for all communities.
-Storage capacity must accommodate images uploaded in image posts.
+Each user can upload one avatar image for their profile.
+Each community can have one icon image.
+Each image post contains one uploaded image.
 
-The system generates thumbnail versions of images for display in post lists.
-Storage capacity must account for both original images and their generated thumbnails.
+When a user deletes their account, all images they uploaded are permanently deleted from storage.
 
-When a user deletes their account, all their uploaded images are deleted.
-When a community is deleted, all images associated with that community are deleted.
-When a post is deleted, any images attached to that post are deleted.
+When a community is deleted by its owner, the community icon is removed from storage.
 
-Storage capacity planning should consider the cumulative size of all images across the platform.
+When a post is deleted by its author or a moderator, any image attached to the post is removed from storage.
+
+Storage capacity supports the expected volume of user-generated image content across avatars, community icons, and image posts.

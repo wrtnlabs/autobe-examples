@@ -1,0 +1,205 @@
+/// Customer reviews and ratings for purchased products with rating (1-5
+/// stars) and optional text content.
+///
+/// Reviews are written by customers for products they have purchased. Each
+/// review links to the customer who wrote it, the product being reviewed,
+/// and the specific order item that was delivered. This ensures only
+/// customers who have actually purchased and received a product can review
+/// it.
+///
+/// Reviews can be edited by their authors, with all changes tracked in
+/// shopping_mall_review_snapshots for audit purposes. Reviews can be
+/// soft-deleted by setting deleted_at, but snapshots are preserved for
+/// dispute resolution.
+///
+/// @namespace review
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_reviews {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for review records.
+  id String @id
+  
+  /// Reference to the customer who wrote this review.
+  ///
+  /// Each review is owned by exactly one customer. The customer can view,
+  /// edit, and delete their own reviews. This foreign key enables filtering
+  /// reviews by customer and enforcing ownership-based access control.
+  shopping_mall_customer_id String
+  
+  /// Reference to the product being reviewed.
+  ///
+  /// Reviews are associated with specific products. This foreign key enables
+  /// displaying all reviews for a product on its detail page and calculating
+  /// aggregate statistics like average rating.
+  shopping_mall_product_id String
+  
+  /// Reference to the order item that was delivered and is being reviewed.
+  ///
+  /// This ensures customers can only review products they have actually
+  /// purchased and received. The order item must have status 'delivered'
+  /// before a review can be written. This foreign key prevents fake reviews
+  /// from customers who haven't purchased the product.
+  shopping_mall_order_item_id String
+  
+  /// Star rating from 1 to 5 indicating customer satisfaction with the product.
+  ///
+  /// This is a required field that captures the numerical rating component of
+  /// the review. Values are constrained to the range 1-5 stars. The average of
+  /// all non-deleted reviews for a product is displayed on the product detail
+  /// page.
+  rating Int
+  
+  /// Optional text content providing detailed feedback about the product.
+  ///
+  /// Customers can write additional comments explaining their rating. This
+  /// field is nullable to allow rating-only reviews. Content can be edited by
+  /// the customer, with changes tracked in snapshots.
+  content String?
+  
+  /// Timestamp when the review was initially created.
+  ///
+  /// This field records when the customer first submitted their review. It is
+  /// used for sorting reviews by newest first on product pages and for audit
+  /// purposes.
+  created_at DateTime
+  
+  /// Timestamp when the review was last modified.
+  ///
+  /// This field is updated whenever the customer edits their review content or
+  /// rating. It helps identify recently modified reviews and is used to
+  /// trigger snapshot creation.
+  updated_at DateTime
+  
+  /// Timestamp when the review was soft-deleted by the customer.
+  ///
+  /// When set, the review is hidden from public display but preserved in the
+  /// database. Deleted reviews are not included in average rating
+  /// calculations. Snapshots are preserved even after deletion for dispute
+  /// resolution.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_review_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([shopping_mall_order_item_id])
+  @@index([shopping_mall_product_id, created_at])
+  @@index([shopping_mall_customer_id, created_at])
+}
+
+/// Immutable audit trail preserving all review state changes including edits
+/// and deletions for dispute resolution.
+///
+/// This table captures every modification made to reviews, storing before
+/// and after values for all mutable fields. Each snapshot records what
+/// changed, when it changed, who made the change, and the session used.
+/// Snapshots are created when customers edit their reviews' rating or text
+/// content, and when reviews are deleted.
+///
+/// Snapshots enable dispute resolution by providing complete history of
+/// review modifications. They preserve the original state of reviews even
+/// after deletion, ensuring platform accountability and transparency.
+///
+/// @namespace review
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_review_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for the review snapshot record.
+  id String @id
+  
+  /// References the review that was modified.
+  ///
+  /// This foreign key links the snapshot to the specific review record that
+  /// underwent a state change. Multiple snapshots can exist for a single
+  /// review, creating a complete modification history.
+  shopping_mall_review_id String
+  
+  /// References the customer who made the modification.
+  ///
+  /// This foreign key identifies which customer performed the edit or deletion
+  /// action that triggered this snapshot.
+  shopping_mall_customer_id String
+  
+  /// References the customer session used when making the modification.
+  ///
+  /// This foreign key provides audit trail information about the
+  /// authentication context during the review change.
+  shopping_mall_customer_session_id String
+  
+  /// The rating value before the modification.
+  ///
+  /// Stores the previous rating (1-5 stars) that existed before the edit
+  /// operation. This field is nullable if the review was being created for the
+  /// first time.
+  rating_before Int?
+  
+  /// The rating value after the modification.
+  ///
+  /// Stores the new rating (1-5 stars) that was set by the edit operation.
+  /// This field is nullable if the review was deleted.
+  rating_after Int?
+  
+  /// The text content before the modification.
+  ///
+  /// Stores the previous review text that existed before the edit operation.
+  /// This field is nullable if no text content existed previously.
+  text_content_before String?
+  
+  /// The text content after the modification.
+  ///
+  /// Stores the new review text that was set by the edit operation. This field
+  /// is nullable if the review was deleted or text was removed.
+  text_content_after String?
+  
+  /// The deleted_at timestamp before the modification.
+  ///
+  /// Stores whether the review was previously deleted (has timestamp) or
+  /// active (null). Used to track undeletion operations.
+  deleted_at_before DateTime?
+  
+  /// The deleted_at timestamp after the modification.
+  ///
+  /// Stores whether the review is now deleted (has timestamp) or active
+  /// (null). Used to track deletion operations.
+  deleted_at_after DateTime?
+  
+  /// Timestamp when this snapshot was created.
+  ///
+  /// Records the exact moment when the review modification occurred. This is
+  /// the only timestamp on snapshot records, as snapshots are immutable and
+  /// never updated.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  review shopping_mall_reviews @relation(fields: [shopping_mall_review_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_review_snapshots_shopping_mall_customer__6109c58d")
+  @@index([shopping_mall_review_id])
+  @@index([shopping_mall_customer_id])
+}

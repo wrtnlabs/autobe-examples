@@ -3,7 +3,7 @@ import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structur
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
 import type { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import type { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import type { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -20,47 +20,35 @@ export async function test_api_department_create_top_level_department(
   connection: api.IConnection,
 ): Promise<void> {
   const memberConnection: api.IConnection = { host: connection.host };
-  const authorized = await authorize_member_join(memberConnection, {
+  const authorization = await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: "P@ssw0rd1234!",
-      name: RandomGenerator.name(),
+      password: typia.random<string & tags.Format<"password">>(),
+      displayName: RandomGenerator.name(),
       href: "https://example.com/register",
       referrer: "https://example.com/landing",
-      ip: typia.random<string & tags.Format<"ipv4">>(),
     } satisfies IErpHrmTimeMember.IJoin,
   });
-  typia.assert(authorized);
-  const departmentConnection: api.IConnection = {
-    host: connection.host,
-    headers: {
-      Authorization: authorized.token.access,
-    },
-  };
-  const name = `dept-${RandomGenerator.alphabets(8)}`;
-  const description = RandomGenerator.paragraph({ sentences: 2 });
-  const created = await generate_random_erp_hrm_time_member_departments_create(
-    departmentConnection,
-    {
-      body: {
-        name,
-        description,
-      } satisfies IErpHrmTimeDepartment.ICreate,
-    },
-  );
-  typia.assert(created);
-  TestValidator.equals("created department name", created.name, name);
+  typia.assert(authorization);
+  const body = {
+    name: RandomGenerator.name(),
+    description: RandomGenerator.paragraph({ sentences: 2 }),
+  } satisfies IErpHrmTimeDepartment.ICreate;
+  const department =
+    await generate_random_erp_hrm_time_member_departments_create(
+      memberConnection,
+      { body },
+    );
+  typia.assert(department);
+  TestValidator.equals("department name", department.name, body.name);
   TestValidator.equals(
-    "created department description",
-    created.description,
-    description,
+    "department description",
+    department.description,
+    body.description ?? null,
   );
-  TestValidator.predicate(
-    "created department has no parent department",
-    created.parentDepartment === null,
-  );
-  TestValidator.predicate(
-    "created department has organization scope",
-    created.organization !== null,
+  TestValidator.equals(
+    "top-level parent department",
+    department.parentDepartment,
+    null,
   );
 }

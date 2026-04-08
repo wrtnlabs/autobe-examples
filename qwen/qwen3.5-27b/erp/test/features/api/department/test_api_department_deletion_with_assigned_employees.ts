@@ -1,76 +1,78 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IHrmPlatformAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformAdmin";
-import type { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
-import type { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
-import type { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
-import type { IHrmPlatformOrganizationLogo } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganizationLogo";
-import type { IHrmPlatformOrganizationSetting } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganizationSetting";
+import type { IHrmTimeTrackDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackDepartment";
+import type { IHrmTimeTrackMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackMember";
+import type { IHrmTimeTrackOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackOrganization";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
-import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
-import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
-import { generate_random_hrm_platform_admin_departments_create } from "../../../generate/generate_random_hrm_platform_admin_departments_create";
-import { prepare_random_hrm_platform_department } from "../../../prepare/prepare_random_hrm_platform_department";
+import { authorize_member_join } from "../../../authorize/authorize_member_join";
+import { authorize_member_login } from "../../../authorize/authorize_member_login";
+import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
+import { generate_random_hrm_time_track_member_departments_create } from "../../../generate/generate_random_hrm_time_track_member_departments_create";
+import { generate_random_hrm_time_track_member_organizations_create } from "../../../generate/generate_random_hrm_time_track_member_organizations_create";
+import { prepare_random_hrm_time_track_department } from "../../../prepare/prepare_random_hrm_time_track_department";
+import { prepare_random_hrm_time_track_organization } from "../../../prepare/prepare_random_hrm_time_track_organization";
 
 /**
- * Test department deletion with assigned employees.
+ * Test deleting a department that has employees assigned to it.
  *
- * Validates that deleting a department properly handles employee reassignment
- * by setting their department_id to null, and that the department is marked
- * as deleted (soft delete) while preserving all associated data.
+ * Validates the department deletion workflow including member authentication, organization setup, department creation, and deletion operation. The test ensures that the department can be successfully deleted via the API endpoint.
+ *
+ * Note: Employee assignment validation is not included in this test as employee-related DTOs and API functions are not available in the current API specification.
+ *
+ * 1. Register and authenticate a new member account.
+ * 2. Create an organization as the parent context for department operations.
+ * 3. Create a department within the organization.
+ * 4. Delete the department using the erase endpoint.
+ * 5. Verify successful deletion (void response, no error thrown).
  */
 export async function test_api_department_deletion_with_assigned_employees(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Setup: Create admin connection and authenticate
-  const adminConnection: api.IConnection = { host: connection.host };
-  await authorize_admin_join(adminConnection, {
+  // 1. Register and authenticate as member
+  const memberConnection: api.IConnection = { host: connection.host };
+  await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
       ip: typia.random<string & tags.Format<"ipv4">>(),
-    } satisfies IHrmPlatformAdmin.IJoin,
+    } satisfies IHrmTimeTrackMember.IJoin,
   });
-  // 2. Create a department to delete
-  const department =
-    await generate_random_hrm_platform_admin_departments_create(
-      adminConnection,
+  // 2. Create organization
+  const organization: IHrmTimeTrackOrganization =
+    await generate_random_hrm_time_track_member_organizations_create(
+      memberConnection,
+      {
+        body: {
+          name: RandomGenerator.paragraph({ sentences: 2 }),
+          currency: "USD",
+          timezone: "Asia/Seoul",
+          fiscal_start_month: 1,
+        } satisfies IHrmTimeTrackOrganization.ICreate,
+      },
+    );
+  typia.assert(organization);
+  // 3. Create department
+  const department: IHrmTimeTrackDepartment =
+    await generate_random_hrm_time_track_member_departments_create(
+      memberConnection,
       {
         body: {
           name: RandomGenerator.paragraph({ sentences: 2 }),
           description: RandomGenerator.paragraph({ sentences: 3 }),
-        } satisfies IHrmPlatformDepartment.ICreate,
+        } satisfies IHrmTimeTrackDepartment.ICreate,
       },
     );
   typia.assert(department);
-  // Store department ID and employee count before deletion
-  const departmentId: string & tags.Format<"uuid"> = department.id;
-  const employeeCountBefore: number & tags.Type<"int32"> & tags.Minimum<0> =
-    department.employee_count;
-  // 3. Execute: Delete the department
-  await api.functional.hrmPlatform.admin.departments.erase(adminConnection, {
-    departmentId,
+  // 4. Delete department
+  await api.functional.hrmTimeTrack.member.departments.erase(memberConnection, {
+    departmentId: department.id,
   });
-  // 4. Validation: Verify deletion succeeded (204 No Content means success)
-  // The successful completion of the erase call confirms the department was deleted
-  TestValidator.predicate(
-    "department deletion operation completed",
-    () => true,
-  );
-  // 5. Validation: Verify department had valid structure before deletion
-  TestValidator.equals("department ID preserved", departmentId, department.id);
-  // 6. Validation: Verify employee count was tracked
-  TestValidator.predicate(
-    "employee count is non-negative",
-    employeeCountBefore >= 0,
-  );
 }

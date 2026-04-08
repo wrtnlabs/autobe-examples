@@ -1,75 +1,96 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
 import { IRedditCloneCommunityBan } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunityBan";
-import { IRedditCloneFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFile";
-import { IRedditCloneFileAssociation } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileAssociation";
-import { IRedditCloneMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMemberSession";
-import { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
+import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { RedditCloneMemberSessionAtSummaryTransformer } from "./RedditCloneMemberSessionAtSummaryTransformer";
+import { RedditCloneCommunityAtSummaryTransformer } from "./RedditCloneCommunityAtSummaryTransformer";
+import { RedditCloneMemberAtSummaryTransformer } from "./RedditCloneMemberAtSummaryTransformer";
 
 export namespace RedditCloneCommunityBanTransformer {
-  export type Payload = Prisma.reddit_clone_communitiesGetPayload<
+  export type Payload = Prisma.reddit_clone_bansGetPayload<
     ReturnType<typeof select>
   >;
   export function select() {
     return {
       select: {
         id: true,
-        name: true,
-        description: true,
-        subscriber_count: true,
+        reason: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        member: RedditCloneMemberSessionAtSummaryTransformer.select(),
-        icon: true,
-        posts: {
-          select: {
-            _count: {
-              select: { comments: true },
-            },
-          },
-        } satisfies Prisma.reddit_clone_postsFindManyArgs,
-        communityModerators: {
-          select: {
-            _count: true,
-          },
-        } satisfies Prisma.reddit_clone_community_moderatorsFindManyArgs,
-        communityBans: true,
-        communityReports: true,
-        subscriptions: true,
-        moderators: true,
-        moderatorSnapshots: true,
-        bans: true,
-        reports: true,
+        expires_at: true,
+        community: RedditCloneCommunityAtSummaryTransformer.select(),
+        bannedUser: RedditCloneMemberAtSummaryTransformer.select(),
+        issuer: RedditCloneMemberAtSummaryTransformer.select(),
       },
-    } satisfies Prisma.reddit_clone_communitiesFindManyArgs;
+    } satisfies Prisma.reddit_clone_bansFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IRedditCloneCommunityBan> {
     return {
       id: input.id,
-      name: input.name,
-      description: input.description,
-      subscriber_count: input.subscriber_count,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at:
-        input.deleted_at != null ? toISOStringSafe(input.deleted_at) : null,
-      owner: await RedditCloneMemberSessionAtSummaryTransformer.transform(
-        input.member,
+      reason: input.reason,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
+      expiresAt: input.expires_at?.toISOString() ?? null,
+      community: await RedditCloneCommunityAtSummaryTransformer.transform(
+        input.community,
       ),
-      posts_count: input.posts.length,
-      comments_count: input.posts.reduce(
-        (sum, p) => sum + (p._count?.comments ?? 0),
-        0,
+      bannedUser: await RedditCloneMemberAtSummaryTransformer.transform(
+        input.bannedUser,
       ),
-      moderators_count: input.communityModerators.length,
-    };
+      issuer: await RedditCloneMemberAtSummaryTransformer.transform(
+        input.issuer,
+      ),
+    } satisfies IRedditCloneCommunityBan;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace RedditCloneCommunityBanTransformer {
+//       export type Payload = Prisma.reddit_clone_bansGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             reason: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//             expires_at: true,
+//             community: RedditCloneCommunityAtSummaryTransformer.select(),
+//             reddit_clone_user_id: true,
+//             issued_by_reddit_clone_user_id: true,
+//             ...
+//           },
+//         } satisfies Prisma.reddit_clone_bansFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IRedditCloneCommunityBan> {
+//         return {
+//   id: {string},
+//   reason: {string},
+//   createdAt: {string},
+//   updatedAt: {string},
+//   deletedAt: {string | null},
+//   expiresAt: {string | null},
+//   community: await RedditCloneCommunityAtSummaryTransformer.transform(input.community),
+//   bannedUser: {IRedditCloneMember.ISummary},
+//   issuer: {IRedditCloneMember.ISummary},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

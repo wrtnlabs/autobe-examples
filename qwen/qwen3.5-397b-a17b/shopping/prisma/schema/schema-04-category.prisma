@@ -1,0 +1,83 @@
+/// Product categories organizing the catalog with optional parent reference
+/// for one-level hierarchy.
+///
+/// Categories are managed exclusively by administrators and provide the
+/// structural organization for products. Each category can optionally have
+/// one parent category, enabling a single level of nesting (category →
+/// subcategory). Products reference categories to establish their placement
+/// in the catalog hierarchy.
+///
+/// The parent_id field establishes the hierarchical relationship. When null,
+/// the category is a top-level category. When populated, it references the
+/// parent category, making this category a subcategory. This design enforces
+/// the one-level nesting constraint specified in requirements.
+///
+/// Related entities: {@link shopping_mall_products} reference categories via
+/// category_id foreign key.
+///
+/// @namespace category
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the parent category for hierarchical organization.
+  ///
+  /// When null, this category is a top-level category with no parent. When
+  /// populated, this category is a subcategory of the referenced parent. This
+  /// self-referential relationship enables exactly one level of nesting as
+  /// specified in requirements - categories can have subcategories, but
+  /// subcategories cannot have their own children.
+  ///
+  /// Related to: {@link shopping_mall_categories} (self-reference)
+  parent_id String?
+  
+  /// Category name for display and identification.
+  ///
+  /// The human-readable name shown to customers when browsing the catalog.
+  /// Must be unique across all categories to prevent ambiguity. Examples
+  /// include 'Electronics', 'Clothing', 'Books', or subcategory names like
+  /// 'Smartphones', 'Men's Shirts'.
+  name String
+  
+  /// Category description providing additional context about the category's
+  /// contents.
+  ///
+  /// Optional detailed text explaining what types of products belong in this
+  /// category. Displayed on category pages to help customers understand the
+  /// category scope. Can be null for simple categories where the name is
+  /// self-explanatory.
+  description String?
+  
+  /// Timestamp when the category was created.
+  created_at DateTime
+  
+  /// Timestamp when the category was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the category was soft deleted (null if active).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  parent shopping_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  children shopping_mall_categories[] @relation("recursive")
+  products shopping_mall_products[]
+  productSnapshots shopping_mall_product_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([parent_id])
+}

@@ -7,8 +7,8 @@ import type { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/s
 import type { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
 import type { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
 import type { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+import type { IEcommerceMallSellerProfileSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfileSnapshot";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -29,49 +29,74 @@ import { prepare_random_ecommerce_mall_product } from "../../../prepare/prepare_
 import { prepare_random_ecommerce_mall_product_image } from "../../../prepare/prepare_random_ecommerce_mall_product_image";
 
 /**
- * Test cross-seller image upload blocking.
- *
- * Verifies that sellers cannot upload images to products owned by other sellers.
- * Creates an owner seller and product, then attempts unauthorized image upload
- * by a different seller, expecting a 403 Forbidden response.
+ * Test cross-seller image upload authorization blocking.
+ * Validates that only product owners can upload images to their products,
+ * and other sellers are blocked with 403 Forbidden.
  */
 export async function test_api_product_image_cross_seller_upload_blocked(
   connection: api.IConnection,
 ): Promise<void> {
-  // Setup admin for category creation
+  // 1. Admin setup - create a category
   const adminConnection: api.IConnection = { host: connection.host };
-  await authorize_admin_join(adminConnection, {});
+  const adminJoinBody = {
+    email: typia.random<string & tags.Format<"email">>(),
+    password: RandomGenerator.alphaNumeric(16),
+    href: typia.random<string & tags.Format<"uri">>(),
+    referrer: typia.random<string & tags.Format<"uri">>(),
+    ip: typia.random<string & tags.Format<"ipv4">>(),
+  } satisfies IEcommerceMallAdmin.IJoin;
+  await authorize_admin_join(adminConnection, { body: adminJoinBody });
   const category = await generate_random_ecommerce_mall_admin_categories_create(
     adminConnection,
     {},
   );
   typia.assert(category);
-  // Setup owner seller and create product
-  const ownerConnection: api.IConnection = { host: connection.host };
-  await authorize_seller_join(ownerConnection, {});
+  // 2. Seller 1 setup - create a product
+  const seller1Connection: api.IConnection = { host: connection.host };
+  const seller1JoinBody = {
+    email: typia.random<string & tags.Format<"email">>(),
+    password: RandomGenerator.alphaNumeric(16),
+    href: typia.random<string & tags.Format<"uri">>(),
+    referrer: typia.random<string & tags.Format<"uri">>(),
+    ip: null,
+  } satisfies IEcommerceMallSeller.IJoin;
+  await authorize_seller_join(seller1Connection, { body: seller1JoinBody });
   const product = await generate_random_ecommerce_mall_seller_products_create(
-    ownerConnection,
+    seller1Connection,
     {
       body: {
+        name: RandomGenerator.name(),
+        description: RandomGenerator.paragraph({ sentences: 3 }),
         categoryId: category.id,
-      },
+        basePrice: typia.random<
+          number & tags.Type<"uint32"> & tags.Minimum<100>
+        >(),
+      } satisfies IEcommerceMallProduct.ICreate,
     },
   );
   typia.assert(product);
-  // Setup attacker seller
-  const attackerConnection: api.IConnection = { host: connection.host };
-  await authorize_seller_join(attackerConnection, {});
-  // Attempt cross-seller upload should fail with 403
-  await TestValidator.httpError(
-    "cross-seller image upload blocked",
-    403,
+  // 3. Seller 2 setup - different seller account
+  const seller2Connection: api.IConnection = { host: connection.host };
+  const seller2JoinBody = {
+    email: typia.random<string & tags.Format<"email">>(),
+    password: RandomGenerator.alphaNumeric(16),
+    href: typia.random<string & tags.Format<"uri">>(),
+    referrer: typia.random<string & tags.Format<"uri">>(),
+    ip: null,
+  } satisfies IEcommerceMallSeller.IJoin;
+  await authorize_seller_join(seller2Connection, { body: seller2JoinBody });
+  // 4. Attempt cross-seller image upload - should be blocked with 403
+  const imageBody = {
+    imageUrl: typia.random<string & tags.Format<"uri">>(),
+  } satisfies IEcommerceMallProductImage.ICreate;
+  await TestValidator.error(
+    "cross-seller image upload should be blocked with 403 Forbidden",
     async () => {
-      await generate_random_ecommerce_mall_seller_products_images_create(
-        attackerConnection,
+      await api.functional.ecommerceMall.seller.products.images.create(
+        seller2Connection,
         {
-          params: {
-            productId: product.id,
-          },
+          productId: product.id,
+          body: imageBody,
         },
       );
     },

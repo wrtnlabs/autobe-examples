@@ -15,65 +15,50 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postMallPlatformAuthAdministratorRefresh(props: {
   body: IMallPlatformAdministrator.IRefresh;
 }): Promise<IMallPlatformAdministrator.IAuthorized> {
-  type DecodedRefreshToken = {
-    type: string;
+  let decoded: {
     id: string;
     session_id: string;
+    type: "administrator";
     created_at: string;
   };
-  const isDecodedRefreshToken = (
-    input: unknown,
-  ): input is DecodedRefreshToken => {
-    if (typeof input !== "object" || input === null) return false;
-    const record = input as Record<string, unknown>;
-    return (
-      typeof record.type === "string" &&
-      typeof record.id === "string" &&
-      typeof record.session_id === "string" &&
-      typeof record.created_at === "string"
-    );
-  };
-  let decodedToken: unknown;
   try {
-    decodedToken = jwt.verify(
-      props.body.refreshToken,
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        issuer: "autobe",
-      },
-    );
+    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
+      issuer: "autobe",
+    }) as {
+      id: string;
+      session_id: string;
+      type: "administrator";
+      created_at: string;
+    };
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  if (!isDecodedRefreshToken(decodedToken)) {
-    throw new HttpException("Invalid or expired refresh token", 401);
+  if (decoded.type !== "administrator") {
+    throw new HttpException("Invalid token type", 403);
   }
-  if (decodedToken.type !== "administrator") {
-    throw new HttpException("Forbidden", 403);
-  }
+  const now = new Date();
+  const accessExpiredAt = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpiredAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const session =
-    await MyGlobal.prisma.mall_platform_administrator_sessions.findFirst({
-      where: {
-        id: decodedToken.session_id,
-        administrator_id: decodedToken.id,
+    await MyGlobal.prisma.mall_platform_administrator_sessions.findFirstOrThrow(
+      {
+        where: {
+          id: decoded.session_id,
+          administrator: {
+            id: decoded.id,
+          },
+          expired_at: {
+            gt: now,
+          },
+        },
+        select: {
+          id: true,
+        },
       },
-      select: {
-        id: true,
-        administrator_id: true,
-        expired_at: true,
-      },
-    });
-  if (session === null) {
-    throw new HttpException("Session expired or revoked", 401);
-  }
-  if (session.expired_at.getTime() <= Date.now()) {
-    throw new HttpException("Session expired or revoked", 401);
-  }
+    );
   const administrator =
     await MyGlobal.prisma.mall_platform_administrators.findUniqueOrThrow({
-      where: {
-        id: decodedToken.id,
-      },
+      where: { id: decoded.id },
       select: {
         id: true,
         email: true,
@@ -93,48 +78,24 @@ export async function postMallPlatformAuthAdministratorRefresh(props: {
       403,
     );
   }
-  const now = Date.now();
-  const accessExpiresAt = new globalThis.Date(now + 60 * 60 * 1000);
-  const refreshExpiresAt = new globalThis.Date(now + 7 * 24 * 60 * 60 * 1000);
-  const createdAt = toISOStringSafe(new globalThis.Date(now));
-  const token: IAuthorizationToken = {
-    access: jwt.sign(
-      {
-        type: "administrator",
-        id: administrator.id,
-        session_id: decodedToken.session_id,
-        created_at: createdAt,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "administrator",
-        id: administrator.id,
-        session_id: decodedToken.session_id,
-        created_at: createdAt,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    ),
-    expired_at: toISOStringSafe(accessExpiresAt) as string &
-      tags.Format<"date-time">,
-    refreshable_until: toISOStringSafe(refreshExpiresAt) as string &
-      tags.Format<"date-time">,
+  const tokenPayload = {
+    id: administrator.id,
+    session_id: session.id,
+    type: "administrator" as const,
+    created_at: now.toISOString(),
   };
+  const access = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    issuer: "autobe",
+    expiresIn: "1h",
+  });
+  const refresh = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    issuer: "autobe",
+    expiresIn: "7d",
+  });
   await MyGlobal.prisma.mall_platform_administrator_sessions.update({
-    where: {
-      id: decodedToken.session_id,
-    },
+    where: { id: session.id },
     data: {
-      expired_at: refreshExpiresAt,
+      expired_at: refreshExpiredAt,
     },
   });
   return {
@@ -142,15 +103,48 @@ export async function postMallPlatformAuthAdministratorRefresh(props: {
     email: administrator.email,
     grade: administrator.grade,
     status: administrator.status,
-    createdAt: toISOStringSafe(administrator.created_at) as string &
-      tags.Format<"date-time">,
-    updatedAt: toISOStringSafe(administrator.updated_at) as string &
-      tags.Format<"date-time">,
-    deletedAt:
-      administrator.deleted_at === null
-        ? null
-        : (toISOStringSafe(administrator.deleted_at) as string &
-            tags.Format<"date-time">),
-    token,
+    createdAt: administrator.created_at.toISOString(),
+    updatedAt: administrator.updated_at.toISOString(),
+    deletedAt: null,
+    token: {
+      access,
+      refresh,
+      expired_at: accessExpiredAt.toISOString(),
+      refreshable_until: refreshExpiredAt.toISOString(),
+    },
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministrator";
+// import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function postMallPlatformAuthAdministratorRefresh(props: {
+//   body: IMallPlatformAdministrator.IRefresh;
+// }): Promise<IMallPlatformAdministrator.IAuthorized> {
+//   // No matching Collector/Transformer found for this operation.
+//     // You MUST call getDatabaseSchemas first to get exact relation property names.
+//     // NEVER guess relation names from table names — always verify against the schema.
+//     ...
+// }
+// ```
+//--------------------------------------------------------------

@@ -1,10 +1,15 @@
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequest";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { EcommerceMallSellerAtSummaryTransformer } from "./EcommerceMallSellerAtSummaryTransformer";
 
 export namespace EcommerceMallRefundRequestAtSummaryTransformer {
   export type Payload = Prisma.ecommerce_mall_refund_requestsGetPayload<
@@ -14,8 +19,8 @@ export namespace EcommerceMallRefundRequestAtSummaryTransformer {
     return {
       select: {
         id: true,
-        status: true,
         reason: true,
+        status: true,
         requested_at: true,
         responded_at: true,
         created_at: true,
@@ -29,15 +34,14 @@ export namespace EcommerceMallRefundRequestAtSummaryTransformer {
         customer: {
           select: {
             id: true,
-            email: true,
           },
         } satisfies Prisma.ecommerce_mall_customersFindManyArgs,
-        seller: {
+        seller: EcommerceMallSellerAtSummaryTransformer.select(),
+        snapshots: {
           select: {
             id: true,
-            email: true,
           },
-        } satisfies Prisma.ecommerce_mall_sellersFindManyArgs,
+        } satisfies Prisma.ecommerce_mall_refund_request_snapshotsFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_refund_requestsFindManyArgs;
   }
@@ -46,17 +50,18 @@ export namespace EcommerceMallRefundRequestAtSummaryTransformer {
   ): Promise<IEcommerceMallRefundRequest.ISummary> {
     return {
       id: input.id,
-      status: input.status,
       reason: input.reason,
-      submittedAt: toISOStringSafe(input.requested_at),
-      respondedAt: input.responded_at
-        ? toISOStringSafe(input.responded_at)
-        : null,
-      hasResponse: input.responded_at !== null,
+      status: input.status as "pending" | "approved" | "rejected",
+      requestedAt: input.requested_at.toISOString(),
+      respondedAt: input.responded_at?.toISOString() ?? null,
+      createdAt: input.created_at.toISOString(),
       orderItemId: input.orderItem.id,
-      productName: "",
-      sellerShopName: input.seller.email,
-      customerDisplayName: input.customer.email,
+      customer: {
+        id: input.customer.id,
+      } as IEcommerceMallCustomer.ISummary,
+      seller: await EcommerceMallSellerAtSummaryTransformer.transform(
+        input.seller,
+      ),
     };
   }
 }

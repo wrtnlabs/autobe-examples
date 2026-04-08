@@ -3,10 +3,8 @@ import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structur
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IRedditCommunityBan } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityBan";
 import type { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
-import type { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
 import type { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import type { IRedditCommunityModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityModerator";
-import type { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -24,27 +22,23 @@ import { prepare_random_reddit_community_community } from "../../../prepare/prep
 import { prepare_random_reddit_community_moderator } from "../../../prepare/prepare_random_reddit_community_moderator";
 
 /**
- * Test that a community moderator (not owner) can ban users from their community.
+ * Test ban creation by a community moderator (not the owner).
  *
- * Test Steps:
- * 1. Create owner account and authenticate
- * 2. Create community with unique name (owner becomes creator)
- * 3. Create moderator account and authenticate
- * 4. Create user account who will be banned
- * 5. Owner adds moderator to community
- * 6. Moderator bans the user from community with a reason
- * 7. Verify ban record is created with correct details including banned_by referencing the moderator (not owner)
+ * Validates that moderators (not just community owners) have the authority to issue bans within their community. The test establishes a complete moderation workflow: community creation, moderator assignment, and ban enforcement by the assigned moderator.
  *
- * Business Validations:
- * - Moderator has authority to ban users in their community
- * - Ban record correctly references the moderator as banned_by
- * - Ban is scoped to the specific community only
- * - Ban takes effect immediately
+ * The test scenario creates three distinct member accounts with different roles: the community owner who establishes the community and assigns moderators, a moderator who exercises ban authority, and a target member who receives the ban. This demonstrates the delegation of moderation powers within the community hierarchy.
+ *
+ * 1. Member A authenticates and creates a new community, becoming the owner.
+ * 2. Member B authenticates as a separate user account.
+ * 3. Member C authenticates as the target user to be banned.
+ * 4. Member A (owner) adds Member B as a moderator to the community.
+ * 5. Member B (moderator) creates a ban against Member C with active status.
+ * 6. Validates the ban record shows Member B as the issuer, confirming moderator ban authority.
  */
 export async function test_api_community_ban_by_moderator(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create owner account
+  // 1. Authenticate as Member A (community owner)
   const ownerConnection: api.IConnection = { host: connection.host };
   const ownerAuth = await authorize_member_join(ownerConnection, {
     body: {
@@ -57,21 +51,20 @@ export async function test_api_community_ban_by_moderator(
     } satisfies IRedditCommunityMember.IJoin,
   });
   typia.assert(ownerAuth);
-  // 2. Create community
-  const communityName = `test-community-${RandomGenerator.alphaNumeric(8)}`;
+  // 2. Create community owned by Member A
   const community =
     await generate_random_reddit_community_member_communities_create(
       ownerConnection,
       {
         body: {
-          name: communityName,
+          name: RandomGenerator.name(1),
           description: RandomGenerator.paragraph({ sentences: 2 }),
+          icon: typia.random<string & tags.Format<"uri">>(),
         } satisfies IRedditCommunityCommunity.ICreate,
       },
     );
   typia.assert(community);
-  TestValidator.equals("community name", community.name, communityName);
-  // 3. Create moderator account
+  // 3. Authenticate as Member B (moderator to be assigned)
   const moderatorConnection: api.IConnection = { host: connection.host };
   const moderatorAuth = await authorize_member_join(moderatorConnection, {
     body: {
@@ -84,9 +77,9 @@ export async function test_api_community_ban_by_moderator(
     } satisfies IRedditCommunityMember.IJoin,
   });
   typia.assert(moderatorAuth);
-  // 4. Create user to be banned
-  const bannedUserConnection: api.IConnection = { host: connection.host };
-  const bannedUserAuth = await authorize_member_join(bannedUserConnection, {
+  // 4. Authenticate as Member C (target to be banned)
+  const targetConnection: api.IConnection = { host: connection.host };
+  const targetAuth = await authorize_member_join(targetConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
@@ -96,73 +89,55 @@ export async function test_api_community_ban_by_moderator(
       ip: typia.random<string & tags.Format<"ipv4">>(),
     } satisfies IRedditCommunityMember.IJoin,
   });
-  typia.assert(bannedUserAuth);
-  // 5. Owner adds moderator to community
-  const moderatorRecord =
+  typia.assert(targetAuth);
+  // 5. As Member A (owner), add Member B as moderator
+  const moderatorAssignment =
     await generate_random_reddit_community_member_communities_moderators_create(
       ownerConnection,
       {
-        params: {
-          communityName: communityName,
-        },
         body: {
-          member_id: moderatorAuth.id,
+          memberId: moderatorAuth.id,
+          role: "moderator",
         } satisfies IRedditCommunityModerator.ICreate,
+        params: {
+          communityId: community.id,
+        },
       },
     );
-  typia.assert(moderatorRecord);
-  TestValidator.equals(
-    "moderator community",
-    moderatorRecord.community.name,
-    communityName,
-  );
-  TestValidator.equals(
-    "moderator member id",
-    moderatorRecord.member.id,
-    moderatorAuth.id,
-  );
-  // 6. Moderator bans the user
-  const banReason = RandomGenerator.paragraph({ sentences: 1 });
-  const banRecord =
+  typia.assert(moderatorAssignment);
+  // 6. As Member B (moderator), create ban against Member C
+  const ban =
     await generate_random_reddit_community_member_communities_bans_create(
       moderatorConnection,
       {
-        params: {
-          communityName: communityName,
-        },
         body: {
-          reddit_community_member_id: bannedUserAuth.id,
-          reason: banReason,
+          reddit_community_member_id: targetAuth.id,
+          reason: RandomGenerator.paragraph({ sentences: 1 }),
+          status: "active",
         } satisfies IRedditCommunityBan.ICreate,
+        params: {
+          communityId: community.id,
+        },
       },
     );
-  typia.assert(banRecord);
-  // 7. Validate ban record
+  typia.assert(ban);
+  // 7. Validate ban record shows Member B as issuer
   TestValidator.equals(
-    "ban community",
-    banRecord.community.name,
-    communityName,
-  );
-  TestValidator.equals(
-    "ban community id",
-    banRecord.community.id,
-    community.id,
-  );
-  TestValidator.equals(
-    "banned member id",
-    banRecord.bannedMember.id,
-    bannedUserAuth.id,
-  );
-  TestValidator.equals(
-    "banned by moderator id",
-    banRecord.bannedBy.id,
+    "ban issuer is moderator",
+    ban.issuer.id,
     moderatorAuth.id,
   );
-  TestValidator.notEquals(
-    "banned by is not owner",
-    banRecord.bannedBy.id,
-    ownerAuth.id,
+  TestValidator.equals(
+    "ban issuer username",
+    ban.issuer.username,
+    moderatorAuth.username,
   );
-  TestValidator.equals("ban reason", banRecord.reason, banReason);
-  TestValidator.predicate("ban is active", banRecord.deleted_at === null);
+  TestValidator.equals("banned member is target", ban.member.id, targetAuth.id);
+  TestValidator.equals("ban status is active", ban.status, "active");
+  TestValidator.equals(
+    "ban applies to correct community",
+    ban.community.id,
+    community.id,
+  );
+  TestValidator.predicate("ban has valid reason", ban.reason.length > 0);
 }

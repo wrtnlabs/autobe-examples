@@ -12,7 +12,7 @@ export async function memberAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const member = await MyGlobal.prisma.multi_user_todo_members.findFirst({
+  const member = await MyGlobal.prisma.todo_app_members.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,
@@ -23,10 +23,10 @@ export async function memberAuthorize(request: {
     throw new ForbiddenException("You're not enrolled");
   }
 
-  const session = await MyGlobal.prisma.multi_user_todo_member_sessions.findFirst({
+  const session = await MyGlobal.prisma.todo_app_member_sessions.findFirst({
     where: {
       id: payload.session_id,
-      multi_user_todo_member_id: payload.id,
+      todo_app_member_id: payload.id,
       expired_at: { gt: new Date() },
     },
   });

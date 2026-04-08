@@ -1,6 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -19,7 +20,7 @@ export async function putErpHrmTimeMemberDepartmentsDepartmentId(props: {
   departmentId: string & tags.Format<"uuid">;
   body: IErpHrmTimeDepartment.IUpdate;
 }): Promise<IErpHrmTimeDepartment> {
-  const current =
+  const currentDepartment =
     await MyGlobal.prisma.erp_hrm_time_departments.findUniqueOrThrow({
       where: { id: props.departmentId },
       select: {
@@ -27,82 +28,69 @@ export async function putErpHrmTimeMemberDepartmentsDepartmentId(props: {
         erp_hrm_time_organization_id: true,
         parent_department_id: true,
         name: true,
-        deleted_at: true,
       },
     });
-  if (current.deleted_at !== null) {
-    throw new HttpException("Department has been deleted", 404);
+  const organizationId = currentDepartment.erp_hrm_time_organization_id;
+  if (
+    props.body.parentDepartmentId !== undefined &&
+    props.body.parentDepartmentId !== null
+  ) {
+    if (props.body.parentDepartmentId === props.departmentId) {
+      throw new HttpException(
+        "Parent department cannot be the department itself",
+        400,
+      );
+    }
+    const parentDepartment =
+      await MyGlobal.prisma.erp_hrm_time_departments.findFirst({
+        where: {
+          id: props.body.parentDepartmentId,
+          erp_hrm_time_organization_id: organizationId,
+        },
+        select: {
+          id: true,
+          parent_department_id: true,
+        },
+      });
+    if (parentDepartment === null) {
+      throw new HttpException("Parent department not found", 400);
+    }
+    if (parentDepartment.parent_department_id !== null) {
+      throw new HttpException(
+        "Parent department hierarchy is limited to one level",
+        400,
+      );
+    }
   }
-  const membership =
-    await MyGlobal.prisma.erp_hrm_time_organization_memberships.findFirst({
+  const duplicateDepartment =
+    await MyGlobal.prisma.erp_hrm_time_departments.findFirst({
       where: {
-        erp_hrm_time_member_id: props.member.id,
-        deleted_at: null,
+        erp_hrm_time_organization_id: organizationId,
+        name: props.body.name,
+        id: { not: props.departmentId },
       },
       select: {
-        erp_hrm_time_organization_id: true,
+        id: true,
       },
     });
-  if (membership === null) {
-    throw new HttpException("Forbidden", 403);
-  }
-  if (
-    membership.erp_hrm_time_organization_id !==
-    current.erp_hrm_time_organization_id
-  ) {
-    throw new HttpException("Forbidden", 403);
-  }
-  if (props.body.parentDepartmentId !== undefined) {
-    if (props.body.parentDepartmentId === current.id) {
-      throw new HttpException("Department cannot be its own parent", 400);
-    }
-    if (props.body.parentDepartmentId !== null) {
-      const parent =
-        await MyGlobal.prisma.erp_hrm_time_departments.findUniqueOrThrow({
-          where: { id: props.body.parentDepartmentId },
-          select: {
-            id: true,
-            erp_hrm_time_organization_id: true,
-            parent_department_id: true,
-            deleted_at: true,
-          },
-        });
-      if (parent.deleted_at !== null) {
-        throw new HttpException("Parent department has been deleted", 404);
-      }
-      if (
-        parent.erp_hrm_time_organization_id !==
-        current.erp_hrm_time_organization_id
-      ) {
-        throw new HttpException(
-          "Parent department must belong to the selected organization",
-          400,
-        );
-      }
-      if (parent.parent_department_id !== null) {
-        throw new HttpException(
-          "Department hierarchy cannot exceed one level",
-          400,
-        );
-      }
-    }
+  if (duplicateDepartment !== null) {
+    throw new HttpException(
+      "Department name already exists in the organization",
+      400,
+    );
   }
   await MyGlobal.prisma.erp_hrm_time_departments.update({
     where: { id: props.departmentId },
     data: {
-      ...(props.body.name !== undefined ? { name: props.body.name } : {}),
-      ...(props.body.description !== undefined
-        ? { description: props.body.description }
-        : {}),
-      ...(props.body.parentDepartmentId !== undefined
-        ? {
-            parentDepartment:
-              props.body.parentDepartmentId === null
-                ? { disconnect: true }
-                : { connect: { id: props.body.parentDepartmentId } },
-          }
-        : {}),
-      updated_at: new Date(),
+      name: props.body.name,
+      description:
+        props.body.description === undefined
+          ? undefined
+          : props.body.description,
+      parent_department_id:
+        props.body.parentDepartmentId === undefined
+          ? undefined
+          : props.body.parentDepartmentId,
     },
   });
   const updated =
@@ -110,5 +98,5 @@ export async function putErpHrmTimeMemberDepartmentsDepartmentId(props: {
       where: { id: props.departmentId },
       ...ErpHrmTimeDepartmentTransformer.select(),
     });
-  return ErpHrmTimeDepartmentTransformer.transform(updated);
+  return await ErpHrmTimeDepartmentTransformer.transform(updated);
 }

@@ -13,94 +13,73 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchEcommerceMallProductsProductIdImages(props: {
-  productId: string & tags.Format<"uuid">;
-  body: IEcommerceMallProductImage.IUpdate;
-}): Promise<IEcommerceMallProductImage.ISummary> {
-  // Verify product exists
-  await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
-    where: { id: props.productId },
-  });
-  // Validate that at least one field is provided for update
-  if (
-    props.body.imageUrl === undefined &&
-    props.body.displayOrder === undefined
-  ) {
-    throw new HttpException(
-      "At least one of imageUrl or displayOrder must be provided",
-      400,
-    );
-  }
-  // Get all active images for the product
+  productId: string;
+  body: IEcommerceMallProductImage.IUpdateOrder;
+}): Promise<IEcommerceMallProductImage.ISummary[]> {
+  const { productId, body } = props;
+  const { imageIds } = body;
   const existingImages =
     await MyGlobal.prisma.ecommerce_mall_product_images.findMany({
       where: {
-        product_id: props.productId,
+        product_id: productId,
         deleted_at: null,
       },
-      orderBy: { display_order: "asc" },
-    });
-  if (existingImages.length === 0) {
-    throw new HttpException("Product has no images to update", 400);
-  }
-  // Without an imageId in the request, we cannot identify which specific image to update
-  // The DTO structure appears incomplete for this operation
-  // We'll interpret this as updating the first image in the sequence
-  const targetImage = existingImages[0];
-  // Handle display order reordering if specified
-  if (props.body.displayOrder !== undefined) {
-    const newDisplayOrder = props.body.displayOrder;
-    const currentDisplayOrder = targetImage.display_order;
-    // Check if the target display order is already occupied
-    const imageAtTargetPosition = existingImages.find(
-      (img) =>
-        img.display_order === newDisplayOrder && img.id !== targetImage.id,
-    );
-    if (imageAtTargetPosition) {
-      // Swap display orders between the two images
-      await MyGlobal.prisma.$transaction([
-        MyGlobal.prisma.ecommerce_mall_product_images.update({
-          where: { id: imageAtTargetPosition.id },
-          data: {
-            display_order: currentDisplayOrder,
-            updated_at: new Date(),
-          },
-        }),
-        MyGlobal.prisma.ecommerce_mall_product_images.update({
-          where: { id: targetImage.id },
-          data: {
-            display_order: newDisplayOrder,
-            updated_at: new Date(),
-          },
-        }),
-      ]);
-    } else {
-      // Simply update the display order
-      await MyGlobal.prisma.ecommerce_mall_product_images.update({
-        where: { id: targetImage.id },
-        data: {
-          display_order: newDisplayOrder,
-          updated_at: new Date(),
-        },
-      });
-    }
-  }
-  // Handle imageUrl update if specified
-  if (props.body.imageUrl !== undefined) {
-    await MyGlobal.prisma.ecommerce_mall_product_images.update({
-      where: { id: targetImage.id },
-      data: {
-        image_url: props.body.imageUrl,
-        updated_at: new Date(),
+      select: {
+        id: true,
+      },
+      orderBy: {
+        display_order: "asc",
       },
     });
+  const existingIds = existingImages.map((img) => img.id);
+  const requestIds = imageIds;
+  if (existingIds.length !== requestIds.length) {
+    throw new HttpException(
+      "Invalid reorder request: number of images does not match",
+      400,
+    );
   }
-  // Fetch and return the updated image
-  const updatedImage =
-    await MyGlobal.prisma.ecommerce_mall_product_images.findUniqueOrThrow({
-      where: { id: targetImage.id },
+  const existingSet = new Set(existingIds);
+  for (const id of requestIds) {
+    if (!existingSet.has(id)) {
+      throw new HttpException(
+        `Invalid reorder request: image ${id} does not belong to this product`,
+        400,
+      );
+    }
+  }
+  if (new Set(requestIds).size !== requestIds.length) {
+    throw new HttpException(
+      "Invalid reorder request: duplicate image IDs found",
+      400,
+    );
+  }
+  await MyGlobal.prisma.$transaction(
+    requestIds.map((id, index) =>
+      MyGlobal.prisma.ecommerce_mall_product_images.update({
+        where: {
+          id,
+        },
+        data: {
+          display_order: index,
+          updated_at: new Date(),
+        },
+      }),
+    ),
+  );
+  const updatedImages =
+    await MyGlobal.prisma.ecommerce_mall_product_images.findMany({
+      where: {
+        product_id: productId,
+        deleted_at: null,
+      },
+      orderBy: {
+        display_order: "asc",
+      },
       ...EcommerceMallProductImageAtSummaryTransformer.select(),
     });
-  return await EcommerceMallProductImageAtSummaryTransformer.transform(
-    updatedImage,
+  return await ArrayUtil.asyncMap(
+    updatedImages,
+    EcommerceMallProductImageAtSummaryTransformer.transform,
   );
 }

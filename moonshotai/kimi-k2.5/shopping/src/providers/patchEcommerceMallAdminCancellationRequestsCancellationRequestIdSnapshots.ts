@@ -17,76 +17,61 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchEcommerceMallAdminCancellationRequestsCancellationRequestIdSnapshots(props: {
   admin: AdminPayload;
-  cancellationRequestId: string & tags.Format<"uuid">;
+  cancellationRequestId: string;
   body: IEcommerceMallCancellationRequestSnapshot.IRequest;
 }): Promise<IPageIEcommerceMallCancellationRequestSnapshot.ISummary> {
-  // Verify cancellation request exists (will throw 404 if not found)
-  await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findUniqueOrThrow({
-    where: { id: props.cancellationRequestId },
-  });
-  const page = (props.body.page ?? 1) satisfies number as number;
-  const limit = (props.body.limit ?? 100) satisfies number as number;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build created_at range filter
-  const createdAtFilter:
-    | Prisma.DateTimeFilter<"ecommerce_mall_cancellation_request_snapshots">
-    | undefined =
-    (props.body.created_at_from !== undefined &&
-      props.body.created_at_from !== null) ||
-    (props.body.created_at_to !== undefined &&
-      props.body.created_at_to !== null)
+  const createdAtConditions: Prisma.DateTimeFilter | undefined =
+    props.body.createdAtFrom !== null || props.body.createdAtTo !== null
       ? {
-          ...(props.body.created_at_from !== undefined &&
-            props.body.created_at_from !== null && {
-              gte: new Date(props.body.created_at_from),
-            }),
-          ...(props.body.created_at_to !== undefined &&
-            props.body.created_at_to !== null && {
-              lte: new Date(props.body.created_at_to),
-            }),
+          ...(props.body.createdAtFrom !== null && {
+            gte: new Date(props.body.createdAtFrom),
+          }),
+          ...(props.body.createdAtTo !== null && {
+            lte: new Date(props.body.createdAtTo),
+          }),
         }
       : undefined;
-  // Build where clause with filters
   const whereInput = {
     cancellation_request_id: props.cancellationRequestId,
-    ...(props.body.status_before !== undefined &&
-      props.body.status_before !== null && {
-        status_before: props.body.status_before,
-      }),
-    ...(props.body.status_after !== undefined &&
-      props.body.status_after !== null && {
-        status_after: props.body.status_after,
-      }),
-    ...(createdAtFilter !== undefined && { created_at: createdAtFilter }),
+    ...(props.body.statusBefore !== null && {
+      status_before: props.body.statusBefore,
+    }),
+    ...(props.body.statusAfter !== null && {
+      status_after: props.body.statusAfter,
+    }),
+    ...(createdAtConditions !== undefined && {
+      created_at: createdAtConditions,
+    }),
   } satisfies Prisma.ecommerce_mall_cancellation_request_snapshotsWhereInput;
-  // Determine sort order
-  const sortDirection = props.body.sort?.endsWith(":asc") ? "asc" : "desc";
-  // Query snapshots with pagination
-  const snapshots =
+  const orderByInput =
+    props.body.sortField === "created_at"
+      ? { created_at: (props.body.sortOrder ?? "desc") as Prisma.SortOrder }
+      : { created_at: "desc" as Prisma.SortOrder };
+  const data =
     await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.findMany(
       {
         where: whereInput,
         skip,
         take: limit,
-        orderBy: { created_at: sortDirection },
+        orderBy: orderByInput,
         ...EcommerceMallCancellationRequestSnapshotAtSummaryTransformer.select(),
       },
     );
-  // Count total records for pagination
   const total =
     await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.count({
       where: whereInput,
     });
-  // Transform results
-  const data = await ArrayUtil.asyncMap(
-    snapshots,
-    EcommerceMallCancellationRequestSnapshotAtSummaryTransformer.transform,
-  );
   return {
-    data,
+    data: await ArrayUtil.asyncMap(
+      data,
+      EcommerceMallCancellationRequestSnapshotAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,

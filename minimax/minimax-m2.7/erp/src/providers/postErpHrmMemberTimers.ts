@@ -3,7 +3,7 @@ import { IErpHrmDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErp
 import { IErpHrmEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmEmployee";
 import { IErpHrmMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmMember";
 import { IErpHrmOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmOrganization";
-import { IErpHrmProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProjectMember";
+import { IErpHrmProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProject";
 import { IErpHrmRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmRole";
 import { IErpHrmTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTask";
 import { IErpHrmTimer } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimer";
@@ -25,108 +25,133 @@ export async function postErpHrmMemberTimers(props: {
   member: MemberPayload;
   body: IErpHrmTimer.ICreate;
 }): Promise<IErpHrmTimer> {
-  // Step 1: Get authenticated employee from session
+  // Step 1: Resolve employee from member session
   const employee = await MyGlobal.prisma.erp_hrm_employees.findFirst({
     where: {
       erp_hrm_member_id: props.member.id,
+      status: "active",
       deleted_at: null,
     },
     select: {
       id: true,
-      status: true,
       erp_hrm_member_id: true,
+      erp_hrm_organization_id: true,
+      status: true,
     },
   });
   if (employee === null) {
-    throw new HttpException("Employee not found", 404);
-  }
-  // Step 2: Validate employee is active
-  if (employee.status === "deactivated") {
     throw new HttpException(
-      "Cannot start timer. Your employee account is deactivated.",
-      403,
+      "No active employee found for this member. Please contact your administrator.",
+      400,
     );
   }
-  // Step 3: Check for existing active timer
-  const existingTimer = await MyGlobal.prisma.erp_hrm_timers.findFirst({
+  // Step 2: Check for existing active timer
+  const existingTimer = await MyGlobal.prisma.erp_hrm_timers.findUnique({
     where: {
       erp_hrm_employee_id: employee.id,
-    },
-    select: {
-      id: true,
     },
   });
   if (existingTimer !== null) {
     throw new HttpException(
-      "An active timer already exists. Stop or discard the existing timer before starting a new one.",
+      "An active timer already exists. Please stop or discard your current timer before starting a new one.",
       409,
     );
   }
-  // Step 4: Validate project assignment
+  // Step 3: Verify project membership
   const projectMembership =
-    await MyGlobal.prisma.erp_hrm_project_members.findFirst({
+    await MyGlobal.prisma.erp_hrm_project_members.findUnique({
       where: {
-        erp_hrm_employee_id: employee.id,
-        erp_hrm_project_id: props.body.erp_hrm_project_id,
-      },
-      select: {
-        id: true,
+        erp_hrm_employee_id_erp_hrm_project_id: {
+          erp_hrm_employee_id: employee.id,
+          erp_hrm_project_id: props.body.erpHrmProjectId,
+        },
       },
     });
   if (projectMembership === null) {
-    throw new HttpException("You are not a member of this project", 403);
+    throw new HttpException(
+      "You are not a member of this project. Please join the project before starting a timer.",
+      400,
+    );
   }
-  // Step 5: Validate task belongs to project if provided
+  // Step 4: Verify task belongs to project (if task provided)
   if (
-    props.body.erp_hrm_task_id !== undefined &&
-    props.body.erp_hrm_task_id !== null
+    props.body.erpHrmTaskId !== undefined &&
+    props.body.erpHrmTaskId !== null
   ) {
-    const task = await MyGlobal.prisma.erp_hrm_tasks.findFirst({
+    const task = await MyGlobal.prisma.erp_hrm_tasks.findUnique({
       where: {
-        id: props.body.erp_hrm_task_id,
-        erp_hrm_project_id: props.body.erp_hrm_project_id,
+        id: props.body.erpHrmTaskId,
       },
       select: {
         id: true,
+        erp_hrm_project_id: true,
       },
     });
     if (task === null) {
+      throw new HttpException("The specified task does not exist.", 400);
+    }
+    if (task.erp_hrm_project_id !== props.body.erpHrmProjectId) {
       throw new HttpException(
-        "Task does not belong to the selected project",
+        "The specified task does not belong to the selected project.",
         400,
       );
     }
   }
-  // Step 6: Get member session for collector
-  const memberSession = await MyGlobal.prisma.erp_hrm_member_sessions.findFirst(
-    {
-      where: {
-        id: props.member.session_id,
-      },
-      select: {
-        id: true,
-      },
-    },
-  );
-  if (memberSession === null) {
-    throw new HttpException("Session not found", 404);
-  }
-  // Create entity objects for collector
-  const employeeEntity: IEntity = {
-    id: employee.id as string & tags.Format<"uuid">,
-  };
-  const sessionEntity: IEntity = {
-    id: memberSession.id as string & tags.Format<"uuid">,
-  };
-  // Step 7: Create timer using collector
+  // Step 5: Create timer with collector
+  const timerEntity: IEntity = {
+    id: employee.id,
+  } satisfies IEntity;
   const created = await MyGlobal.prisma.erp_hrm_timers.create({
     data: await ErpHrmTimerCollector.collect({
       body: props.body,
-      erpHrmEmployees: employeeEntity,
-      erpHrmMemberSessions: sessionEntity,
+      employee: timerEntity,
     }),
     ...ErpHrmTimerTransformer.select(),
   });
-  // Step 8: Return transformed response
   return await ErpHrmTimerTransformer.transform(created);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IErpHrmTimer } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimer";
+// import { IErpHrmEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmEmployee";
+// import { IErpHrmMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmMember";
+// import { IErpHrmRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmRole";
+// import { IErpHrmOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmOrganization";
+// import { IErpHrmDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmDepartment";
+// import { IErpHrmProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProject";
+// import { IErpHrmTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTask";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function postErpHrmMemberTimers(props: {
+//   member: MemberPayload;
+//   body: IErpHrmTimer.ICreate;
+// }): Promise<IErpHrmTimer> {
+//   const record = await MyGlobal.prisma.erp_hrm_timers.create({
+//     data: await ErpHrmTimerCollector.collect({
+//       body: props.body,
+//       ...
+//     }),
+//     ...ErpHrmTimerTransformer.select(),
+//   });
+//   return await ErpHrmTimerTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

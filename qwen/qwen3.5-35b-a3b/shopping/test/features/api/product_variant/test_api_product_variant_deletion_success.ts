@@ -3,6 +3,7 @@ import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structur
 import type { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import type { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import type { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
+import type { IEcommerceMallProductReviewStat } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductReviewStat";
 import type { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
 import type { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
@@ -23,20 +24,30 @@ import { prepare_random_ecommerce_mall_product_variant } from "../../../prepare/
 export async function test_api_product_variant_deletion_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Setup seller account using utility function
+  // 1. Register and authenticate seller
   const sellerConnection: api.IConnection = { host: connection.host };
-  const seller = await api.functional.ecommerceMall.auth.seller.join(
-    sellerConnection,
-    {
-      body: typia.random<IEcommerceMallSeller.IJoin>(),
+  const sellerAuth = await authorize_seller_join(sellerConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
+      display_name: RandomGenerator.name(2),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
     },
-  );
-  typia.assert(seller);
-  // 2. Create product under seller's catalog
+  });
+  typia.assert(sellerAuth);
+  // 2. Create product owned by seller
   const product = await api.functional.ecommerceMall.seller.products.create(
     sellerConnection,
     {
-      body: typia.random<IEcommerceMallProduct.ICreate>(),
+      body: {
+        name: RandomGenerator.paragraph({ sentences: 2 }),
+        description: RandomGenerator.paragraph({ sentences: 3 }),
+        category_id: typia.random<string & tags.Format<"uuid">>(),
+        base_price: typia.random<
+          number & tags.Type<"uint32"> & tags.Minimum<1000>
+        >(),
+      } satisfies IEcommerceMallProduct.ICreate,
     },
   );
   typia.assert(product);
@@ -46,16 +57,20 @@ export async function test_api_product_variant_deletion_success(
       sellerConnection,
       {
         productId: product.id,
-        body: typia.random<IEcommerceMallProductVariant.ICreate>(),
+        body: {
+          sku_code: RandomGenerator.alphaNumeric(8),
+          option_values: JSON.stringify({ color: "red", size: "L" }),
+          stock_quantity: typia.random<
+            number & tags.Type<"int32"> & tags.Minimum<10>
+          >(),
+          price: typia.random<
+            number & tags.Type<"uint32"> & tags.Minimum<500>
+          >(),
+        } satisfies IEcommerceMallProductVariant.ICreate,
       },
     );
   typia.assert(variant);
-  // 4. Verify variant has no pending transactions (by successful creation, we know it has none)
-  TestValidator.predicate(
-    "variant created without blocking transactions",
-    variant.stockQuantity >= 0 && variant.reservedQuantity === 0,
-  );
-  // 5. Execute delete operation on the variant
+  // 4. Delete the variant - verify 204 No Content response (void return)
   await api.functional.ecommerceMall.seller.products.variants.erase(
     sellerConnection,
     {
@@ -63,6 +78,23 @@ export async function test_api_product_variant_deletion_success(
       variantId: variant.id,
     },
   );
-  // 6. Validate successful deletion (void return means success when no error thrown)
-  TestValidator.predicate("variant deletion completed successfully", true);
+  // 5. Verify product still exists after variant deletion
+  const productAfterDelete =
+    await api.functional.ecommerceMall.seller.products.create(
+      sellerConnection,
+      {
+        body: {
+          name: product.name,
+          description: product.description,
+          category_id: product.category.id,
+          base_price: product.base_price,
+        } satisfies IEcommerceMallProduct.ICreate,
+      },
+    );
+  typia.assert(productAfterDelete);
+  TestValidator.equals(
+    "product accessible after variant deletion",
+    productAfterDelete.id,
+    product.id,
+  );
 }

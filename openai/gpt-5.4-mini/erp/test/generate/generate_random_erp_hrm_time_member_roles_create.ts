@@ -1,6 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import type { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
+import type { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import type { IErpHrmTimePermission } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimePermission";
 import type { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -20,9 +21,7 @@ export async function generate_random_erp_hrm_time_member_roles_create(
   const prepared: IErpHrmTimeRole.ICreate = prepare_random_erp_hrm_time_role(
     props.body,
   );
-  const result: IErpHrmTimeRole =
-    await api.functional.erpHrmTime.member.roles.create(connection, {
-      body: prepared,
-    });
-  return result;
+  return await api.functional.erpHrmTime.member.roles.create(connection, {
+    body: prepared,
+  });
 }

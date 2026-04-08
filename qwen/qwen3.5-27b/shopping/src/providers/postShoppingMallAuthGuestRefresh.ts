@@ -15,102 +15,124 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postShoppingMallAuthGuestRefresh(props: {
   body: IShoppingMallGuest.IRefresh;
 }): Promise<IShoppingMallGuest.IAuthorized> {
-  // 1. Verify refresh token
-  let decoded: {
-    id: string;
-    session_id: string;
-    type: string;
-  };
-  try {
-    decoded = jwt.verify(
-      props.body.refresh_token,
-      MyGlobal.env.JWT_SECRET_KEY,
-      { issuer: "autobe" },
-    ) as {
-      id: string;
-      session_id: string;
-      type: string;
-    };
-  } catch {
-    throw new HttpException("Invalid or expired refresh token", 401);
+  const decodedPayload = jwt.verify(
+    props.body.refresh_token,
+    MyGlobal.env.JWT_SECRET_KEY,
+    { issuer: "autobe" },
+  );
+  if (typeof decodedPayload !== "object" || decodedPayload === null) {
+    throw new HttpException("Invalid refresh token format", 401);
   }
-  // 2. Validate type
-  if (decoded.type !== "guest") {
+  const guestId = decodedPayload.id;
+  const sessionId = decodedPayload.session_id;
+  const tokenType = decodedPayload.type;
+  if (
+    typeof guestId !== "string" ||
+    typeof sessionId !== "string" ||
+    typeof tokenType !== "string"
+  ) {
+    throw new HttpException("Invalid refresh token payload", 401);
+  }
+  if (tokenType !== "guest") {
     throw new HttpException("Invalid token type", 403);
   }
-  // 3. Validate session exists
   const session = await MyGlobal.prisma.shopping_mall_guest_sessions.findFirst({
     where: {
-      id: decoded.session_id,
-      shopping_mall_guest_id: decoded.id,
+      id: sessionId,
+      shopping_mall_guests_id: guestId,
     },
   });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate session not expired
   const now = new Date();
-  if (session.expired_at < now) {
-    throw new HttpException("Session expired", 401);
+  if (session.expired_at <= now) {
+    throw new HttpException("Session expired or revoked", 401);
   }
-  // 5. Validate guest not deleted
   const guest = await MyGlobal.prisma.shopping_mall_guests.findUniqueOrThrow({
-    where: { id: decoded.id },
+    where: { id: guestId },
+    select: {
+      id: true,
+      device_fingerprint: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+    },
   });
   if (guest.deleted_at !== null) {
     throw new HttpException("Guest account has been deleted", 403);
   }
-  // 6. Generate new tokens
-  const accessExpires = new Date(Date.now() + 15 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  const token = {
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const token: IAuthorizationToken = {
     access: jwt.sign(
       {
         type: "guest",
-        id: decoded.id,
-        session_id: decoded.session_id,
-        created_at: now.toISOString(),
+        id: guestId,
+        session_id: sessionId,
+        created_at: toISOStringSafe(now),
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "15m", issuer: "autobe" },
+      { expiresIn: "1h", issuer: "autobe" },
     ),
     refresh: jwt.sign(
       {
         type: "guest",
-        id: decoded.id,
-        session_id: decoded.session_id,
+        id: guestId,
+        session_id: sessionId,
         tokenType: "refresh",
-        created_at: now.toISOString(),
+        created_at: toISOStringSafe(now),
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "24h", issuer: "autobe" },
+      { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpires.toISOString(),
-    refreshable_until: refreshExpires.toISOString(),
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
   };
-  // 7. Update session
   await MyGlobal.prisma.shopping_mall_guest_sessions.update({
-    where: { id: decoded.session_id },
-    data: {
-      expired_at: refreshExpires,
-      href: props.body.href,
-      referrer: props.body.referrer,
-      ip: props.body.ip ?? session.ip,
-    },
+    where: { id: sessionId },
+    data: { expired_at: refreshExpires },
   });
-  // 8. Return guest info with tokens
   return {
     id: guest.id,
     device_fingerprint: guest.device_fingerprint,
-    ip: guest.ip,
     created_at: toISOStringSafe(guest.created_at),
     updated_at: toISOStringSafe(guest.updated_at),
     deleted_at: null,
-    token: {
-      access: token.access,
-      refresh: token.refresh,
-      expired_at: token.expired_at,
-      refreshable_until: token.refreshable_until,
-    },
+    token: token,
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IShoppingMallGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallGuest";
+// import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function postShoppingMallAuthGuestRefresh(props: {
+//   body: IShoppingMallGuest.IRefresh;
+// }): Promise<IShoppingMallGuest.IAuthorized> {
+//   // No matching Collector/Transformer found for this operation.
+//     // You MUST call getDatabaseSchemas first to get exact relation property names.
+//     // NEVER guess relation names from table names — always verify against the schema.
+//     ...
+// }
+// ```
+//--------------------------------------------------------------

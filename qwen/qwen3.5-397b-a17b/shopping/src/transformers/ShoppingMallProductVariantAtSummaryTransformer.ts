@@ -1,6 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
@@ -8,6 +10,7 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { ShoppingMallProductAtSummaryTransformer } from "./ShoppingMallProductAtSummaryTransformer";
 
 export namespace ShoppingMallProductVariantAtSummaryTransformer {
   export type Payload = Prisma.shopping_mall_product_variantsGetPayload<
@@ -18,29 +21,38 @@ export namespace ShoppingMallProductVariantAtSummaryTransformer {
       select: {
         id: true,
         sku_code: true,
-        price_override: true,
+        option_values: true,
+        price: true,
         created_at: true,
-        product: {
+        updated_at: true,
+        deleted_at: true,
+        product: ShoppingMallProductAtSummaryTransformer.select(),
+        inventoryRecords: {
           select: {
-            base_price: true,
+            quantity_delta: true,
           },
-        } satisfies Prisma.shopping_mall_productsFindManyArgs,
+        } satisfies Prisma.shopping_mall_inventory_recordsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_product_variantsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallProductVariant.ISummary> {
-    const effectivePrice = input.price_override ?? input.product.base_price;
     return {
       id: input.id,
       sku_code: input.sku_code,
-      price_override: input.price_override,
-      product: {
-        min: effectivePrice,
-        max: effectivePrice,
-      },
-      created_at: toISOStringSafe(input.created_at),
-    };
+      option_values: input.option_values,
+      price: input.price !== null ? input.price : undefined,
+      stock_quantity: input.inventoryRecords.reduce(
+        (sum, record) => sum + record.quantity_delta,
+        0,
+      ),
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+      product: await ShoppingMallProductAtSummaryTransformer.transform(
+        input.product,
+      ),
+    } satisfies IShoppingMallProductVariant.ISummary;
   }
 }

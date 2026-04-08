@@ -2,7 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIRedditCloneCommunity";
 import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
-import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
+import { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -18,34 +18,25 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function patchRedditCloneCommunities(props: {
   body: IRedditCloneCommunity.IRequest;
 }): Promise<IPageIRedditCloneCommunity.ISummary> {
-  // Parse pagination parameters
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? props.body.pageSize ?? 20;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where clause for active communities
   const whereInput: Prisma.reddit_clone_communitiesWhereInput = {
     deleted_at: null,
-  };
-  // Add search filter if provided
-  if (props.body.search && props.body.search.trim() !== "") {
-    whereInput.name = {
-      contains: props.body.search,
-      mode: "insensitive",
-    };
-  }
-  // Build order by clause
-  const sortField = props.body.sort ?? "name";
-  const sortOrder = props.body.order ?? "asc";
+    ...(props.body.search && {
+      name: {
+        contains: props.body.search,
+        mode: "insensitive",
+      },
+    }),
+  } satisfies Prisma.reddit_clone_communitiesWhereInput;
+  const sortField = props.body.sort ?? "created_at";
+  const direction = props.body.direction ?? "DESC";
   const orderByInput: Prisma.reddit_clone_communitiesOrderByWithRelationInput =
     sortField === "name"
-      ? { name: sortOrder as "asc" | "desc" }
-      : sortField === "subscriberCount"
-        ? { subscriber_count: sortOrder as "asc" | "desc" }
-        : sortField === "createdAt"
-          ? { created_at: sortOrder as "asc" | "desc" }
-          : { name: "asc" };
-  // Execute findMany and count queries sequentially
-  const data = await MyGlobal.prisma.reddit_clone_communities.findMany({
+      ? { name: direction.toLowerCase() as "asc" | "desc" }
+      : { created_at: direction.toLowerCase() as "asc" | "desc" };
+  const records = await MyGlobal.prisma.reddit_clone_communities.findMany({
     where: whereInput,
     skip,
     take: limit,
@@ -55,9 +46,8 @@ export async function patchRedditCloneCommunities(props: {
   const total = await MyGlobal.prisma.reddit_clone_communities.count({
     where: whereInput,
   });
-  // Transform results
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
+  const data = await ArrayUtil.asyncMap(
+    records,
     RedditCloneCommunityAtSummaryTransformer.transform,
   );
   return {
@@ -66,7 +56,7 @@ export async function patchRedditCloneCommunities(props: {
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
-    data: transformedData,
+    } satisfies IPage.IPagination,
+    data,
   };
 }

@@ -1,14 +1,14 @@
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
-import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlistItem";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallProductAtSummaryTransformer } from "./EcommerceMallProductAtSummaryTransformer";
 
@@ -20,6 +20,8 @@ export namespace EcommerceMallWishlistItemTransformer {
     return {
       select: {
         id: true,
+        customer_id: true,
+        product_id: true,
         created_at: true,
         updated_at: true,
         product: EcommerceMallProductAtSummaryTransformer.select(),
@@ -29,15 +31,15 @@ export namespace EcommerceMallWishlistItemTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallWishlistItem> {
-    const product = await EcommerceMallProductAtSummaryTransformer.transform(
-      input.product,
-    );
     return {
       id: input.id,
+      customerId: input.customer_id,
+      productId: input.product_id,
+      product: await EcommerceMallProductAtSummaryTransformer.transform(
+        input.product,
+      ),
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
-      product,
-      isAvailable: product.isAvailable,
     };
   }
 }

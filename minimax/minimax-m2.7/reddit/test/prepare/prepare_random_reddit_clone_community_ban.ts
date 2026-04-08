@@ -9,8 +9,15 @@ export function prepare_random_reddit_clone_community_ban(
   input?: DeepPartial<IRedditCloneCommunityBan.ICreate>,
 ): IRedditCloneCommunityBan.ICreate {
   return {
-    name: input?.name ?? RandomGenerator.alphabets(10),
-    description:
-      input?.description ?? RandomGenerator.paragraph({ sentences: 3 }),
+    expiresAt:
+      input?.expiresAt ??
+      (Math.random() > 0.5
+        ? null
+        : (new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000,
+          ).toISOString() as string & tags.Format<"date-time">)),
+    reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 2 }),
+    redditCloneUserId:
+      input?.redditCloneUserId ?? typia.random<string & tags.Format<"uuid">>(),
   };
 }

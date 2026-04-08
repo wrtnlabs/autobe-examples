@@ -2,8 +2,10 @@ import { IEcommerceMallProductSnapshotImage } from "@ORGANIZATION/PROJECT-api/li
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallProductSnapshotImageAtSummaryTransformer {
@@ -16,6 +18,7 @@ export namespace EcommerceMallProductSnapshotImageAtSummaryTransformer {
         id: true,
         url: true,
         display_order: true,
+        created_at: true,
       },
     } satisfies Prisma.ecommerce_mall_product_snapshot_imagesFindManyArgs;
   }
@@ -24,8 +27,9 @@ export namespace EcommerceMallProductSnapshotImageAtSummaryTransformer {
   ): Promise<IEcommerceMallProductSnapshotImage.ISummary> {
     return {
       id: input.id,
-      imageUrl: input.url,
-      displayOrder: input.display_order,
+      url: input.url,
+      display_order: input.display_order,
+      created_at: input.created_at.toISOString(),
     };
   }
 }

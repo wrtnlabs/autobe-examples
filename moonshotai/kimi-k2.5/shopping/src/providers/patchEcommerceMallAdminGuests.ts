@@ -22,32 +22,35 @@ export async function patchEcommerceMallAdminGuests(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const whereInput: Prisma.ecommerce_mall_guestsWhereInput = {
-    ...(props.body.includeDeleted !== true && { deleted_at: null }),
-    ...(props.body.createdAtFrom !== undefined ||
-    props.body.createdAtTo !== undefined
-      ? {
-          created_at: {
-            ...(props.body.createdAtFrom !== undefined && {
-              gte: new Date(props.body.createdAtFrom),
-            }),
-            ...(props.body.createdAtTo !== undefined && {
-              lte: new Date(props.body.createdAtTo),
-            }),
+  const whereInput = {
+    deleted_at: null,
+    ...(props.body.createdAtStart && {
+      created_at: {
+        gte: new Date(props.body.createdAtStart),
+      },
+    }),
+    ...(props.body.createdAtEnd && {
+      created_at: {
+        lte: new Date(props.body.createdAtEnd),
+      },
+    }),
+    ...(props.body.ipPattern && {
+      sessions: {
+        some: {
+          ip: {
+            contains: props.body.ipPattern,
           },
-        }
-      : {}),
-  };
-  const orderByInput = (
-    props.body.orderBy === "updated_at"
-      ? { updated_at: props.body.orderByDirection ?? "desc" }
-      : { created_at: props.body.orderByDirection ?? "desc" }
-  ) satisfies Prisma.ecommerce_mall_guestsOrderByWithRelationInput;
-  const data = await MyGlobal.prisma.ecommerce_mall_guests.findMany({
+        },
+      },
+    }),
+  } satisfies Prisma.ecommerce_mall_guestsWhereInput;
+  const guests = await MyGlobal.prisma.ecommerce_mall_guests.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: orderByInput,
+    orderBy: {
+      created_at: "desc",
+    },
     ...EcommerceMallGuestAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.ecommerce_mall_guests.count({
@@ -55,7 +58,7 @@ export async function patchEcommerceMallAdminGuests(props: {
   });
   return {
     data: await ArrayUtil.asyncMap(
-      data,
+      guests,
       EcommerceMallGuestAtSummaryTransformer.transform,
     ),
     pagination: {

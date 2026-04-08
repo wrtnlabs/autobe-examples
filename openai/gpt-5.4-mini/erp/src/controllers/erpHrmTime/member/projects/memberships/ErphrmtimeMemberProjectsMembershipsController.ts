@@ -10,28 +10,31 @@ import { deleteErpHrmTimeMemberProjectsProjectIdMembershipsMembershipId } from "
 import { getErpHrmTimeMemberProjectsProjectIdMembershipsMembershipId } from "../../../../../providers/getErpHrmTimeMemberProjectsProjectIdMembershipsMembershipId";
 import { patchErpHrmTimeMemberProjectsProjectIdMemberships } from "../../../../../providers/patchErpHrmTimeMemberProjectsProjectIdMemberships";
 import { postErpHrmTimeMemberProjectsProjectIdMemberships } from "../../../../../providers/postErpHrmTimeMemberProjectsProjectIdMemberships";
+import { putErpHrmTimeMemberProjectsProjectIdMembershipsMembershipId } from "../../../../../providers/putErpHrmTimeMemberProjectsProjectIdMembershipsMembershipId";
 
 @Controller("/erpHrmTime/member/projects/:projectId/memberships")
 export class ErphrmtimeMemberProjectsMembershipsController {
   /**
    * Create a project membership for an employee within the selected project.
    *
-   * This operation assigns one employee to one project and records the employee's role within that project team, such as a regular member or project lead. It is used for project staffing and for determining who is eligible to participate in project work and task management within the project scope.
+   * This operation assigns one employee to one project and records the employee's role in that project, such as member or project lead. The project membership becomes the source of truth for who participates on the project team and in what capacity.
    *
-   * The project membership is organization-scoped through the selected organization context. The project identified by `{projectId}` and the employee referenced in the request must both belong to the same organization, and the employee must not already be assigned to the project. If the project or employee cannot be resolved in the current organization, or if the membership already exists, the request must be rejected.
+   * The project is identified by the path parameter, and the request body supplies the employee to assign along with the project-specific role. The system must reject duplicate assignments for the same project and employee combination, and it must verify that both the project and employee exist in the current organization context before creating the membership.
+   *
+   * If the employee is already assigned to the project, the request must fail instead of creating a duplicate record. If either the project or employee is not accessible in the current organization scope, the request must be rejected with an authorization or not-found style error depending on the service's existing conventions.
    *
    * @param connection
-   * @param projectId Identifier of the project within the current organization.
-   * @param body Project membership creation payload. Provide the employee to assign and the role they will hold in the project team.
+   * @param projectId Identifier of the project that will receive the membership.
+   * @param body Membership details for assigning an employee to the project.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the target project by id within the current organization context and verify that it exists. Validate that the request employee belongs to the same organization and that the employee is eligible to be added to the project.
-   *
-   * Check the unique constraint on (erp_hrm_time_project_id, erp_hrm_time_employee_id) before inserting. If a membership already exists for the employee and project pair, return a conflict-style validation error and do not create a duplicate row.
-   *
-   * Persist a new erp_hrm_time_project_memberships row using the path projectId, the requested employee id, and the requested project_role. The service should create the record in a transaction so concurrent duplicate assignments cannot bypass the uniqueness rule. Return the created membership with its linked project and employee context if the API layer uses entity expansion.
-   *
-   * If the organization context is missing, the project is not accessible, the employee does not belong to the same organization, or the provided role value is invalid, reject the request with a clear business error.
+   * @x-autobe-specification Load the target project by projectId within the current organization context and verify the caller has project management permission.
+   * Validate that the employee exists in the same organization and is eligible to be assigned to the project.
+   * Enforce the unique constraint on (erp_hrm_time_project_id, erp_hrm_time_employee_id); if a membership already exists, return a conflict-style error and do not insert a duplicate row.
+   * Persist a new erp_hrm_time_project_memberships record with the provided project_role, and populate created_at/updated_at according to normal persistence behavior.
+   * If the employee or project cannot be resolved in the current organization context, reject the request.
+   * If the project role value is invalid, reject the request before hitting the database.
+   * Do not accept projectId in the body because it is already implied by the route.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -56,25 +59,27 @@ export class ErphrmtimeMemberProjectsMembershipsController {
   }
 
   /**
-   * Retrieve the list of employees assigned to a project.
+   * Retrieve the paginated list of employees assigned to a project.
    *
-   * This operation returns the current project team composition for the specified project, including each employee's membership record and assignment role within that project. It is used to browse who participates in the project and to distinguish between general members and project leads.
+   * This endpoint returns the current project team composition for the specified project, including each membership's employee assignment and project role. It is used to display who participates in the project and whether a person is a regular member or a project lead.
    *
-   * The result is scoped to the selected project and therefore reflects only the memberships belonging to that project. It supports paginated browsing for project staffing screens and should be used together with project detail and membership management operations when viewing or maintaining the team structure.
+   * The result is scoped to the current organization and to the selected project only. If the caller does not have permission to view the project, if the project does not belong to the active organization, or if the project cannot be found, the request must fail with the appropriate authorization or not-found response.
    *
-   * If the project does not exist or the caller is not allowed to view project membership data, the request must be rejected. The response should remain consistent with the project's current memberships and should not include employees from other projects.
+   * Because the project team is built from project memberships, the list always reflects the live staffing state. The response is paginated so large teams can be browsed efficiently, and the search criteria may include paging, sorting, and other list filters supported by the service contract.
    *
    * @param connection
-   * @param projectId Project identifier within the current organization scope.
-   * @param body Pagination, search, and sorting criteria for browsing memberships in a project.
+   * @param projectId The identifier of the project whose memberships will be listed.
+   * @param body Pagination, search, and sorting criteria for the project membership list.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query erp_hrm_time_project_memberships for the given erp_hrm_time_project_id.
-   * Join the employee relation so the list can be presented as project team composition, but keep the primary response focused on membership records. Apply pagination and any supported search/sort filters in the request body according to list browsing conventions.
+   * @x-autobe-specification Resolve the target project by projectId within the current organization context.
+   * Verify the caller has access to view the project team; reuse project:view or project:manage authorization rules as defined by the service layer.
    *
-   * Enforce that the target project exists and belongs to the current organization context before querying. Reject access when the caller lacks project visibility or management rights. Preserve the unique project-employee constraint already enforced by the database; this operation is read-only and must not create or modify memberships.
+   * Query erp_hrm_time_project_memberships filtered by the target project and join the related employee record for display-friendly summary data. Preserve organization isolation by ensuring the project belongs to the current organization before querying memberships.
    *
-   * Use the project_role field as the assignment role for each row. Include employee-linked summary data only if the corresponding summary DTO exists in the component model; otherwise, return the membership entity/summary shape that matches the generated schema. Handle empty results by returning an empty page rather than an error.
+   * Support pagination, search, and sorting in the request body. Return memberships ordered according to the requested sort, with a stable default order for deterministic paging. The list should expose the membership role and the employee identity needed for the project team view, but should not leak memberships from other projects or organizations.
+   *
+   * If the project does not exist in the active organization, return not found. If the caller lacks permission, return forbidden. If pagination parameters are invalid, return validation errors consistent with the API conventions.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -99,20 +104,22 @@ export class ErphrmtimeMemberProjectsMembershipsController {
   }
 
   /**
-   * Retrieve a single project membership for a specific project.
+   * Retrieve a single project membership record for a specific project.
    *
-   * This operation returns the employee assignment record that connects one employee to one project and identifies the employee's role within that project team, such as member or project lead. It is useful for viewing the current composition of a project team and confirming who is assigned to participate in the project.
+   * This operation returns the full assignment record that links one employee to one project, including the employee reference and the role the employee performs within that project. It is used to inspect project staffing and confirm how a particular person participates in the project team.
    *
-   * The membership is always resolved within the selected organization and the specified project. If the project or membership does not exist in the current organization, or if the membership does not belong to the specified project, the request must fail with an appropriate not-found response. Access must also respect the platform's project visibility and management permissions.
+   * The membership is scoped by the parent project, and the request must remain within the currently selected organization. If the project or membership does not exist in that scope, or if the membership does not belong to the specified project, the request must fail with a not-found style error.
    *
    * @param connection
-   * @param projectId The identifier of the project within the current organization.
-   * @param membershipId The identifier of the project membership record within the specified project.
+   * @param projectId The project identifier within the current organization.
+   * @param membershipId The project membership identifier scoped to the parent project.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the project by projectId within the current organization context, then load the project membership by membershipId constrained to that same project. Verify that the membership belongs to the project and that the project itself belongs to the selected organization. Return the full project membership entity including its employee and assigned project role fields as defined by the schema.
+   * @x-autobe-specification Load the project by projectId and verify it belongs to the current organization context. Then load the project membership by membershipId scoped to that project. Use an inner join or equivalent relation check to ensure the membership row belongs to the requested project before returning it.
    *
-   * Do not allow cross-organization access. If either the project or membership is missing, or if the membership is associated with a different project, respond with a 404-style not-found error. This endpoint is read-only and must not modify membership data. Authorization should allow users with project viewing capability and users with project management capability, according to the organization permission model.
+   * Return the full membership entity with its project and employee relations if the API layer normally expands detail responses, or at minimum return the membership record fields defined by the schema: id, erp_hrm_time_project_id, erp_hrm_time_employee_id, project_role, created_at, updated_at, and deleted_at.
+   *
+   * Reject requests when the project is outside the active organization, when the membership does not belong to that project, or when the membership has been removed. Since this is a read operation, no mutation logic, activity logging, or permission-changing side effects should occur. Authorization should require at least project viewing permission, with organization scope enforced by the parent project.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":membershipId")
@@ -137,24 +144,72 @@ export class ErphrmtimeMemberProjectsMembershipsController {
   }
 
   /**
-   * Remove an employee from a project by deleting the project membership record.
+   * Update a project membership within a specific project.
    *
-   * This operation ends the association between one employee and one project inside the currently selected organization. It is intended for project staffing changes, team restructuring, and lead reassignment workflows. Because project memberships are independent, removing one membership does not affect the employee's assignments to other projects.
+   * This operation changes how an employee participates in a project by updating the membership record that links one employee to one project. It is used for project staffing changes and for adjusting the project-specific role, such as switching between a regular member and a project lead.
    *
-   * Only users with project management permission may perform this action. The membership must belong to the project identified in the path, and the project must be accessible in the current organization context. If the membership does not exist, does not belong to the specified project, or the caller lacks permission, the request is rejected. If the removed employee was marked as a project lead for that project, the project leadership capability for that specific project ends immediately.
+   * The membership remains organization-scoped through the linked employee and project records. The system must ensure the membership belongs to the project identified in the path, that the target employee belongs to the same organization, and that the employee-project combination stays unique. If the role is changed, the new role must be one of the allowed project membership roles.
+   *
+   * If validation fails, the request must be rejected when the membership does not exist, does not belong to the specified project, targets an employee outside the current organization, or attempts to create a duplicate employee-project assignment. Access is restricted to users with project management permission.
    *
    * @param connection
-   * @param projectId Identifier of the project that owns the membership (UUID scope within the organization).
-   * @param membershipId Identifier of the project membership to remove (UUID scope within the project).
+   * @param projectId The project identifier within the current organization.
+   * @param membershipId The project membership identifier to update.
+   * @param body Fields that can be changed for an existing project membership.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the target project membership by membershipId, ensuring it belongs to projectId and to the current organization context.
-   * Verify the caller has project management permission in the current organization.
-   * Reject the request with not found if the membership does not exist or is not attached to the specified project.
-   * Delete the membership record only; do not touch any other memberships for the same employee.
-   * After deletion, the employee must no longer be considered assigned to that project, and any project-lead flag for that membership is implicitly revoked by removal.
-   * Do not cascade-delete employee, project, task, or timelog records.
-   * Return the deleted membership representation so the client can refresh local team state. Handle concurrent deletion safely by treating already-removed memberships as not found.
+   * @x-autobe-specification Load the project membership by membershipId and verify that its erp_hrm_time_project_id matches the projectId path parameter. Reject the request if the record is missing or belongs to a different project.
+   *
+   * Authorize the caller with project management permission in the current organization. Derive organization scope from the current authenticated context and ensure the target project belongs to that organization.
+   *
+   * Validate the request body against the persisted schema: allow updating erp_hrm_time_employee_id and project_role only. If erp_hrm_time_employee_id changes, confirm the employee exists, belongs to the same organization as the project, and that no other project membership already exists for the same project and employee pair. If project_role changes, validate it against the allowed project membership role set used by the domain.
+   *
+   * Update the membership in a transaction and preserve created_at. Set updated_at to now. Do not touch deleted_at unless the implementation uses a separate erase flow. Return the updated membership with its linked project and employee references resolved according to the standard full-entity response shape.
+   *
+   * If the employee is moved to another project role or reassigned, do not affect any other memberships for that employee. If the membership update would create a duplicate project/employee pair, fail with a conflict-style validation error.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Put(":membershipId")
+  public async update(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("projectId")
+    projectId: string & tags.Format<"uuid">,
+    @TypedParam("membershipId")
+    membershipId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IErpHrmTimeProjectMembership.IUpdate,
+  ): Promise<IErpHrmTimeProjectMembership> {
+    try {
+      return await putErpHrmTimeMemberProjectsProjectIdMembershipsMembershipId({
+        member,
+        projectId,
+        membershipId,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove an employee from a project.
+   *
+   * This operation permanently ends a single project membership record for the specified project and membership. The membership connects one employee to one project and represents that employee's participation in the project team. Removing it immediately stops the employee from being treated as assigned to that project, while leaving any other project memberships for the same employee unchanged.
+   *
+   * This endpoint is intended for users with project management permission. It should validate that the membership belongs to the project identified by the path, then delete the matching record from `erp_hrm_time_project_memberships`. If the membership does not exist for that project, or the caller lacks permission, the request must fail. Deleting a membership must not modify the employee record, the project record, or memberships in other projects.
+   *
+   * @param connection
+   * @param projectId Project identifier within the current organization scope.
+   * @param membershipId Project membership identifier for the membership to remove from the project.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Load the project membership by `membershipId` and verify that its `erp_hrm_time_project_id` matches the `projectId` path parameter before deleting anything. Reject the request if the record is missing, belongs to a different project, or the caller does not have project management permission in the current organization context.
+   *
+   * Delete only the single matching `erp_hrm_time_project_memberships` row. Do not cascade to other memberships for the same employee and do not alter employee or project rows. If the project membership is referenced by the current UI as the employee's assigned-project list, the deletion should be enough to make it disappear from subsequent reads.
+   *
+   * Because the schema includes `deleted_at`, follow the platform's existing deletion behavior only if the broader implementation layer requires marking records deleted; otherwise perform the actual delete expected by the operation design. In either case, preserve the rule that the membership no longer counts as active immediately after this request succeeds. Return a not-found or forbidden error when appropriate.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":membershipId")

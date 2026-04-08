@@ -1,234 +1,6 @@
-**ecommerceMall — Data isolation, business rules, filtering/sorting/pagination, error catalog**
+**ecommerce — Business rules, validation constraints, data browsing expectations, error scenarios**
 
-Data isolation, business rules, filtering/sorting/pagination, error catalog
-
-# Data Isolation and Ownership
-
-Data ownership rules and tenant/user-level isolation policies.
-
-## Ownership and Isolation Rules
-
-Define data ownership semantics and isolation boundaries for multi-user access.
-
-### Data Ownership Rules
-
-### Customer Data Ownership
-
-THE system SHALL associate all customer-specific data with the authenticated customer account.
-
-WHEN a customer creates an address, THE system SHALL mark that address as owned by that customer.
-
-WHEN a customer adds items to their cart, THE system SHALL associate those cart items with that customer.
-
-WHEN a customer adds products to their wishlist, THE system SHALL associate those wishlist entries with that customer.
-
-WHEN a customer places an order, THE system SHALL mark that order as owned by that customer.
-
-WHEN a customer writes a review, THE system SHALL associate that review with that customer.
-
-IF a customer deletes their account, THE system SHALL remove their profile information but preserve their order history for legal and seller record purposes.
-
-IF a customer deletes their account, THE system SHALL preserve their reviews but display them as authored by a "deleted user".
-
-### Seller Data Ownership
-
-THE system SHALL associate all seller-specific data with the seller account that created it.
-
-WHEN a seller creates a product, THE system SHALL mark that product as owned by that seller.
-
-WHEN a seller creates product variants, THE system SHALL mark those variants as owned by that seller.
-
-WHEN a seller manages inventory for a variant, THE system SHALL associate inventory records with that seller's product.
-
-WHEN a seller edits their shop profile, THE system SHALL create snapshots and associate them with that seller.
-
-IF a seller deletes their account, THE system SHALL delete their products from listings but preserve order history and snapshots.
-
-IF a seller deletes their account, THE system SHALL preserve their shop name in past orders for historical accuracy.
-
-### Administrator Data Ownership
-
-THE system SHALL grant administrators ownership over platform-wide configurations.
-
-WHEN an administrator creates a category, THE system SHALL mark that category as managed by administrators.
-
-WHEN an administrator approves a seller, THE system SHALL record the administrator who performed the approval.
-
-WHEN an administrator suspends a seller account, THE system SHALL record the administrator who performed the suspension.
-
-WHEN an administrator deletes a product for policy violations, THE system SHALL record the administrator who performed the deletion.
-
-### Shared Data Ownership
-
-THE system SHALL treat orders containing items from multiple sellers as shared ownership scenarios.
-
-WHEN an order contains items from multiple sellers, THE system SHALL allow each seller to manage only their own order items.
-
-WHEN an order contains items from multiple sellers, THE system SHALL allow the customer to view the complete order.
-
-WHEN an order is placed, THE system SHALL associate the order with the customer but grant each relevant seller access to their order items.
-
-### Multi-User Data Isolation
-
-### Customer Data Isolation
-
-WHEN a customer accesses their data, THE system SHALL restrict access to only that customer's own records.
-
-WHEN a customer views their addresses, THE system SHALL display only addresses belonging to that customer.
-
-WHEN a customer views their cart, THE system SHALL display only cart items belonging to that customer.
-
-WHEN a customer views their wishlist, THE system SHALL display only wishlist entries belonging to that customer.
-
-WHEN a customer views their order history, THE system SHALL display only orders placed by that customer.
-
-WHEN a customer views their reviews, THE system SHALL display only reviews written by that customer.
-
-IF a customer attempts to access another customer's data, THE system SHALL deny the request.
-
-### Seller Data Isolation
-
-WHEN a seller accesses their data, THE system SHALL restrict access to only that seller's own records.
-
-WHEN a seller views their products, THE system SHALL display only products created by that seller.
-
-WHEN a seller views order items for their products, THE system SHALL display only items related to their products.
-
-WHEN a seller views their shop profile, THE system SHALL display only that seller's profile information.
-
-WHEN a seller views inventory for a variant, THE system SHALL display only inventory records for their variants.
-
-IF a seller attempts to access another seller's products, THE system SHALL deny the request.
-
-IF a seller attempts to modify another seller's product, THE system SHALL deny the request.
-
-### Cross-Seller Order Isolation
-
-WHEN an order contains items from multiple sellers, THE system SHALL isolate each seller's order items from other sellers.
-
-WHEN a seller views order items, THE system SHALL prevent access to order items belonging to other sellers.
-
-WHEN a seller processes a shipment, THE system SHALL restrict shipment creation to only their own order items.
-
-WHEN a seller responds to a cancellation request, THE system SHALL restrict responses to only their own order items.
-
-WHEN a seller responds to a refund request, THE system SHALL restrict responses to only their own order items.
-
-### Administrator Data Access Isolation
-
-WHEN an administrator accesses platform data, THE system SHALL grant access to all customer and seller data for oversight purposes.
-
-WHEN a super administrator manages other administrators, THE system SHALL prevent self-demotion.
-
-IF a regular administrator attempts to promote or demote administrators, THE system SHALL deny the request.
-
-### Data Access Control
-
-### Customer Data Access Permissions
-
-WHEN a customer views a product, THE system SHALL allow access to product details created by any seller.
-
-WHEN a customer views a seller profile, THE system SHALL allow access to any seller's public profile information.
-
-WHEN a customer views category listings, THE system SHALL allow access to all products in the selected category.
-
-WHEN a customer searches products, THE system SHALL return results from all sellers matching the search criteria.
-
-WHEN a customer views reviews on a product, THE system SHALL allow access to all reviews for that product.
-
-IF a customer attempts to modify another customer's data, THE system SHALL deny the request.
-
-IF a customer attempts to cancel another customer's order item, THE system SHALL deny the request.
-
-### Seller Data Access Permissions
-
-WHEN a seller views product listings, THE system SHALL allow access to view other sellers' products for market research.
-
-WHEN a seller views category listings, THE system SHALL allow access to products in categories they do not own.
-
-WHEN a seller views order items, THE system SHALL restrict access to only order items containing their products.
-
-WHEN a seller views product snapshots, THE system SHALL restrict access to only snapshots of their own products.
-
-IF a seller attempts to modify another seller's product, THE system SHALL deny the request.
-
-IF a seller attempts to view another seller's inventory records, THE system SHALL deny the request.
-
-### Administrator Data Access Permissions
-
-WHEN an administrator views products, THE system SHALL allow access to all products on the platform.
-
-WHEN an administrator views product snapshots, THE system SHALL allow access to snapshots of any product.
-
-WHEN an administrator views orders, THE system SHALL allow access to all orders on the platform.
-
-WHEN an administrator views customers, THE system SHALL allow access to all customer accounts.
-
-WHEN an administrator views sellers, THE system SHALL allow access to all seller accounts.
-
-WHEN an administrator views seller approval requests, THE system SHALL allow access to all pending requests.
-
-### Public Data Access
-
-WHEN a customer browses categories, THE system SHALL allow access to all category names and descriptions.
-
-WHEN a customer browses categories, THE system SHALL allow access to products within each category.
-
-WHEN a customer views a product detail page, THE system SHALL allow access to all public product information.
-
-WHEN a customer views a seller profile, THE system SHALL allow access to shop name, description, and logo.
-
-WHEN a customer views product reviews, THE system SHALL allow access to all non-deleted reviews for that product.
-
-### Tenant-Level Isolation
-
-### Platform-Wide Data Separation
-
-THE system SHALL maintain clear separation between customer, seller, and administrator data domains.
-
-WHEN data is created, THE system SHALL record the owner or creator of that data.
-
-WHEN data is accessed, THE system SHALL verify the requesting party has permission to access that data.
-
-WHEN data ownership changes (e.g., product deletion), THE system SHALL preserve historical records for legal compliance.
-
-### Order Item Separation by Seller
-
-WHEN an order is created with items from multiple sellers, THE system SHALL treat each seller's items as separate entities.
-
-WHEN an order item is cancelled, THE system SHALL process the cancellation independently for that seller's item.
-
-WHEN an order item is refunded, THE system SHALL process the refund independently for that seller's item.
-
-WHEN items are shipped, THE system SHALL group items by seller into separate shipments.
-
-### Product Visibility Separation
-
-WHEN a seller account is suspended, THE system SHALL hide their products from search and category listings.
-
-WHEN a seller account is unsuspended, THE system SHALL restore their products to search and category listings.
-
-WHEN a product is deleted by its seller, THE system SHALL remove it from search and category listings.
-
-WHEN a product is deleted by an administrator, THE system SHALL remove it from search and category listings.
-
-### Snapshot Preservation Across Ownership Changes
-
-WHEN a product is deleted, THE system SHALL preserve all product snapshots for administrator oversight.
-
-WHEN a seller deletes their account, THE system SHALL preserve order item snapshots containing their products.
-
-WHEN a customer deletes their account, THE system SHALL preserve review snapshots for dispute resolution.
-
-WHEN any snapshot is created, THE system SHALL mark it as immutable and non-deletable.
-
-### Inventory Record Separation
-
-WHEN inventory is managed for a variant, THE system SHALL record changes only for that specific variant.
-
-WHEN inventory records are viewed, THE system SHALL restrict access to records for the seller's own variants.
-
-WHEN stock is adjusted, THE system SHALL update only the inventory records for the affected variant.
+Business rules, validation constraints, data browsing expectations, error scenarios
 
 # Domain Business Rules
 
@@ -236,4889 +8,1025 @@ Per-concept business rules, validation logic, and domain constraints.
 
 ## Customer Rules
 
-Customers must register with a valid email and password before accessing any platform features. Guest browsing is not permitted on this platform. Each customer account requires a unique email address among active accounts. Passwords must meet security requirements before account creation. Customers can log in using their registered email and password combination. Account holders can update their password at any time through the profile settings. Customers may modify their display name and phone number in their profile. When a customer requests account deletion, their profile information is permanently removed from the system. Order history and purchase records remain preserved for seller and legal compliance purposes. Reviews submitted by deleted customers remain visible but display as from a deleted user. Email verification is required before customers can access full platform features. Registration attempts are rate-limited to prevent automated abuse.
+Customers must register with email and password before accessing any platform features. There is no guest browsing mode available on this platform. Each customer maintains a profile containing a display name and phone number. Customers can change their password at any time through their account settings. When a customer deletes their account, their profile information is permanently removed. However, all order history is preserved for seller records and legal compliance purposes. Customer reviews are also preserved but displayed as coming from a deleted user. The system validates that email addresses are unique during registration. Password changes require the current password to be verified first. Account deletion requires the customer to confirm their identity before processing.
 
-### Customer Registration Flow
+### Customer Registration Requirements
 
-WHEN a customer registers for the platform, THE system SHALL require a valid email address and password.
+Access to the platform requires customer registration. No guest browsing or anonymous access is available. All features are restricted to registered customers only.
 
-WHEN a customer submits registration, THE system SHALL validate the email format is correct.
+Customers must provide an email address and password to create an account. The email address must be unique across the platform. If the email is already registered, the system rejects the registration request.
 
-WHEN a customer submits registration, THE system SHALL check that the email is not already registered.
+Registration creates a customer account with the provided email and password. The account is immediately active and can be used to log in.
 
-WHEN the email is already registered, THE system SHALL reject the registration request.
+### Customer Profile Constraints
 
-WHEN a customer registers, THE system SHALL require the password to meet security requirements.
+Each customer maintains a profile with a display name and phone number. Both fields are required when the profile is first created.
 
-WHEN the password does not meet security requirements, THE system SHALL reject the registration request.
+The display name must be non-empty and contain at least one character. The phone number must be in a valid format that can receive communications.
 
-WHEN registration is successful, THE system SHALL create the customer account with pending verification status.
+Customers can update their display name and phone number at any time. Updates take effect immediately and are visible to other platform users.
 
-WHEN a customer account is created, THE system SHALL send a verification email to the registered email address.
+### Password Change Validation
 
-WHEN a customer submits registration, THE system SHALL rate-limit registration attempts to prevent automated abuse.
+Customers can change their password through their account settings. Password changes require verification of the current password before the new password is accepted.
 
-Registration attempts from the same email address within 5 minutes are limited to 3 attempts.
-Registration attempts from the same IP address within 1 hour are limited to 10 attempts.
+If the current password is incorrect, the password change request is rejected. The customer must provide the correct current password to proceed.
 
-WHEN the rate limit is exceeded, THE system SHALL reject the registration request and display an error message.
+The new password must meet minimum security requirements as defined by the platform. If the new password does not meet requirements, the change is rejected.
 
-### Login Authentication
+### Account Deletion Process
 
-WHEN a customer attempts to log in, THE system SHALL validate the email and password combination.
+Customers can request account deletion through their account settings. The system requires identity verification before processing the deletion.
 
-WHEN the email does not exist, THE system SHALL reject the login request.
+The customer must provide their current password to verify identity. If the password is incorrect, the deletion request is rejected.
 
-WHEN the password is incorrect, THE system SHALL reject the login request.
+When a customer account is deleted:
+- The customer's profile information (display name and phone number) is permanently removed
+- All order history is preserved and remains accessible for seller records and legal compliance
+- All reviews written by the customer are preserved but displayed as coming from a "deleted user" instead of showing the original display name
 
-WHEN the customer account is banned, THE system SHALL reject the login request.
-
-WHEN the customer account is suspended, THE system SHALL reject the login request.
-
-WHEN the customer account is not verified, THE system SHALL reject the login request.
-
-WHEN login is successful, THE system SHALL create an authenticated session for the customer.
-
-WHEN a customer submits login credentials, THE system SHALL rate-limit login attempts to prevent brute force attacks.
-
-Login attempts from the same account within 15 minutes are limited to 5 attempts.
-Login attempts from the same IP address within 1 hour are limited to 20 attempts.
-
-WHEN the rate limit is exceeded, THE system SHALL reject the login request and display an error message.
-
-WHEN a customer changes their password, THE system SHALL invalidate all existing sessions for that customer.
-
-WHEN a customer logs out, THE system SHALL invalidate the current session.
-
-### Profile Information Editing
-
-WHEN a customer updates their display name, THE system SHALL validate the display name is not empty.
-
-WHEN a customer updates their phone number, THE system SHALL validate the phone number format is correct.
-
-WHEN a customer updates their profile, THE system SHALL save the changes immediately.
-
-WHEN a customer changes their password, THE system SHALL require the current password for verification.
-
-WHEN the current password is incorrect, THE system SHALL reject the password change request.
-
-WHEN a customer changes their password, THE system SHALL require the new password to meet security requirements.
-
-WHEN the new password does not meet security requirements, THE system SHALL reject the password change request.
-
-WHEN a customer changes their password, THE system SHALL require the new password to be different from the current password.
-
-WHEN the new password matches the current password, THE system SHALL reject the password change request.
-
-### Account Deletion Policy
-
-WHEN a customer requests account deletion, THE system SHALL permanently remove their profile information.
-
-WHEN a customer requests account deletion, THE system SHALL preserve their order history and purchase records.
-
-WHEN a customer requests account deletion, THE system SHALL preserve their reviews but display them as from a deleted user.
-
-WHEN a customer requests account deletion, THE system SHALL remove the customer from all wishlists.
-
-WHEN a customer requests account deletion, THE system SHALL remove the customer from all shopping carts.
-
-WHEN a customer requests account deletion, THE system SHALL invalidate all active sessions for that customer.
-
-WHEN a customer requests account deletion, THE system SHALL require the customer to confirm the deletion action.
-
-WHEN a customer requests account deletion, THE system SHALL require the customer to enter their password for verification.
-
-WHEN the password is incorrect, THE system SHALL reject the account deletion request.
-
-Order history and purchase records are preserved for seller records and legal compliance purposes.
-
-Reviews from deleted customers remain visible on product pages but display "deleted user" as the author name.
-
-### Order History Preservation
-
-WHEN a customer account is deleted, THE system SHALL preserve all associated orders.
-
-WHEN a customer account is deleted, THE system SHALL preserve all order items associated with the customer.
-
-WHEN a customer account is deleted, THE system SHALL preserve all order snapshots.
-
-WHEN a customer account is deleted, THE system SHALL preserve all shipping addresses used in past orders.
-
-WHEN a customer account is deleted, THE system SHALL update the customer reference in orders to indicate deletion.
-
-Order history is preserved even after customer account deletion for seller records and legal compliance.
-
-Preserved orders remain visible to sellers for their order management and reporting.
-
-Preserved orders remain visible to administrators for platform oversight and dispute resolution.
-
-### Deleted User Review Display
-
-WHEN a customer account is deleted, THE system SHALL preserve all reviews created by the customer.
-
-WHEN a customer account is deleted, THE system SHALL display the review author as "deleted user".
-
-WHEN a customer account is deleted, THE system SHALL preserve the review content and rating.
-
-WHEN a customer account is deleted, THE system SHALL preserve the review timestamp.
-
-WHEN calculating product average rating, THE system SHALL include reviews from deleted users.
-
-WHEN displaying reviews on product pages, THE system SHALL show "deleted user" instead of the original customer name.
-
-Review snapshots are preserved even after customer account deletion.
-
-Deleted user reviews continue to contribute to product rating calculations.
-
-### Email Verification Requirement
-
-WHEN a customer registers, THE system SHALL require email verification before full platform access.
-
-WHEN a customer registers, THE system SHALL send a verification email with a unique verification link.
-
-WHEN a customer clicks the verification link, THE system SHALL mark the account as verified.
-
-WHEN a customer account is not verified, THE system SHALL restrict access to platform features.
-
-WHEN a customer account is not verified, THE system SHALL allow login but display a verification reminder.
-
-WHEN a customer requests a new verification email, THE system SHALL send a fresh verification link.
-
-WHEN a customer requests a new verification email, THE system SHALL invalidate any previous verification links.
-
-WHEN a customer requests a new verification email, THE system SHALL rate-limit verification email requests.
-
-Verification email requests from the same account within 1 hour are limited to 3 attempts.
-
-WHEN the verification link expires, THE system SHALL require the customer to request a new verification email.
+The deletion is irreversible once processed.
 
 ## Seller Rules
 
-Sellers must register with email and password to create a seller account. All seller accounts require administrator approval before they can list products for sale. Sellers can view their current approval status as pending, approved, or rejected. When a seller registration is rejected, the rejection reason is displayed to the seller. Rejected sellers may submit a new registration request after addressing the rejection reason. Sellers can change their password through account settings. Sellers can edit their shop name, description, and logo image in their profile. Every profile edit creates an immutable snapshot for audit purposes. Customers can view seller profiles including shop information and history. Sellers can delete their account only if they have no pending orders in paid or shipped status. Sellers cannot delete accounts with pending cancellation or refund requests. When a seller deletes their account, their products are removed from all listings. Order history and snapshots are preserved even after seller account deletion. Past order records retain the original shop name for historical accuracy.
-
-### Seller Registration and Approval Workflow
-
-WHEN a seller registers for an account, THE system SHALL:
-1. Require email and password as mandatory fields
-2. Validate email format and uniqueness across all user accounts
-3. Hash the password before storage
-4. Set initial approval status to "pending"
-5. Create a seller profile with required shop name
-
-WHEN a seller registration is submitted, THE system SHALL:
-1. Create a seller account with pending approval status
-2. Make the account visible to administrators for review
-3. Allow the seller to view their current approval status
-4. Enable the seller to log in but restrict selling capabilities
-
-WHEN an administrator reviews a pending seller registration, THE system SHALL:
-1. Display the seller's registration information including shop name and email
-2. Allow the administrator to approve or reject the registration
-3. Require a reason when rejecting a registration
-4. Update the seller's approval status to "approved" or "rejected"
-5. Notify the seller of the decision
-
-WHEN a seller registration is rejected, THE system SHALL:
-1. Store the rejection reason provided by the administrator
-2. Display the rejection reason to the seller upon login
-3. Allow the seller to submit a new registration request
-4. Reset the approval status to "pending" for the new request
-
-IF a seller attempts to create products while approval status is "pending", THE system SHALL reject the request.
-IF a seller attempts to edit products while approval status is "rejected", THE system SHALL reject the request.
-IF a seller attempts to view their approval status, THE system SHALL display the current status (pending, approved, or rejected).
-
-### Seller Account Deletion and Data Preservation
-
-WHEN a seller requests to delete their account, THE system SHALL:
-1. Verify the seller has no pending orders in "paid" or "shipped" status
-2. Verify the seller has no pending cancellation requests
-3. Verify the seller has no pending refund requests
-4. If all conditions are met, proceed with account deletion
-5. If any condition fails, reject the deletion request with appropriate error message
-
-WHEN a seller account is deleted, THE system SHALL:
-1. Remove all products from search and category listings
-2. Preserve order history and order snapshots
-3. Preserve all snapshots created during the seller's tenure
-4. Retain the original shop name in past order records
-5. Mark the seller account as deleted but maintain it for historical reference
-
-WHEN a product is associated with a deleted seller account, THE system SHALL:
-1. Remove the product from all visible listings
-2. Preserve the product snapshot for historical order records
-3. Maintain the product reference in order items for order history integrity
-
-IF a seller has pending orders in "paid" status, THE system SHALL reject account deletion and display an error.
-IF a seller has pending orders in "shipped" status, THE system SHALL reject account deletion and display an error.
-IF a seller has pending cancellation requests, THE system SHALL reject account deletion and display an error.
-IF a seller has pending refund requests, THE system SHALL reject account deletion and display an error.
-
-### Seller Profile Snapshot Creation
-
-WHEN a seller edits their shop profile, THE system SHALL:
-1. Capture the current values of shop name, description, and logo before the change
-2. Create an immutable snapshot record with before and after values
-3. Record the timestamp of the change
-4. Record the seller as the actor who made the change
-5. Update the profile with the new values
-
-WHEN a snapshot is created for seller profile changes, THE system SHALL:
-1. Mark the snapshot as immutable (cannot be modified or deleted)
-2. Include all changed fields with their previous and current values
-3. Associate the snapshot with the seller account
-4. Make the snapshot viewable by the seller and administrators
-5. Store the snapshot type as "seller"
-
-WHEN a customer views a seller profile, THE system SHALL:
-1. Display the current shop name, description, and logo
-2. Show the profile as it currently exists (not historical versions)
-3. Allow navigation to view seller's products
-
-IF a seller attempts to modify a snapshot, THE system SHALL reject the request.
-IF a seller attempts to delete a snapshot, THE system SHALL reject the request.
-IF an administrator views seller snapshots, THE system SHALL display all historical profile changes.
-
-### Shop Information Editing
-
-WHEN a seller edits their shop information, THE system SHALL:
-1. Allow editing of shop name, shop description, and logo image
-2. Validate shop name for uniqueness across all seller accounts
-3. Create a snapshot before applying any changes
-4. Apply changes only after successful validation
-5. Update the visible profile immediately after save
-
-WHEN a seller updates their shop logo, THE system SHALL:
-1. Accept image file uploads
-2. Validate image format and size according to platform policies
-3. Store the new logo and update the profile
-4. Include the logo change in the profile snapshot
-5. Make the new logo visible to customers immediately
-
-WHEN a customer views a seller profile, THE system SHALL:
-1. Display the current shop name
-2. Display the current shop description
-3. Display the current shop logo image
-4. Link to the seller's product listings
-
-IF a seller submits a duplicate shop name, THE system SHALL reject the request with an error message.
-IF a seller submits an invalid logo format, THE system SHALL reject the request with an error message.
-IF a seller submits a logo exceeding size limits, THE system SHALL reject the request with an error message.
-
-### Product Listing Removal and Preservation
-
-WHEN a seller deletes a product, THE system SHALL:
-1. Verify no order items for any variant are in "paid" or "shipped" status
-2. Verify no pending cancellation requests exist for any variant
-3. Verify no pending refund requests exist for any variant
-4. If all conditions are met, remove the product from listings
-5. Delete all associated variants and inventory records
-6. Preserve product snapshots for historical order records
-
-WHEN a product is deleted, THE system SHALL:
-1. Remove the product from search results
-2. Remove the product from category listings
-3. Mark the product status as "deleted"
-4. Preserve all product snapshots including variant snapshots
-5. Maintain product references in existing order items
+Sellers must register with email and password to create a seller account. Every seller account requires administrator approval before they can list products for sale. Sellers can view their approval status which shows pending, approved, or rejected states. If a seller registration is rejected, the rejection reason is displayed to the seller. Rejected sellers are allowed to submit a new registration request with updated information. Sellers can change their password through their account settings. A seller can only delete their account if they have no pending orders in paid or shipped status. The seller must also have no pending cancellation or refund requests to delete their account. When a seller deletes their account, their products are removed from all listings. Order history and snapshots are preserved even after seller account deletion. The seller's shop name in past orders remains visible to customers.
 
-WHEN a seller suspends their account (administrative action), THE system SHALL:
-1. Hide all products from search and category listings
-2. Prevent customers from adding products to cart
-3. Allow the seller to process existing orders
-4. Prevent creation of new products
-5. Prevent editing of existing products
+### Seller Registration and Approval Process
 
-IF a product has order items in "paid" status, THE system SHALL reject product deletion and display an error.
-IF a product has order items in "shipped" status, THE system SHALL reject product deletion and display an error.
-IF a product variant has pending cancellation requests, THE system SHALL reject product deletion and display an error.
-IF a product variant has pending refund requests, THE system SHALL reject product deletion and display an error.
+THE system SHALL require administrator approval for all seller registrations before the seller can list products.
 
-## Product Rules
+WHEN a seller submits a registration request, THE system SHALL assign pending approval status to the seller account.
 
-Sellers can create products with a required name, description, category, and base price. Every product must belong to the seller who created it. Sellers can edit their own products but cannot modify products created by other sellers. Each product edit creates an immutable snapshot preserving the previous state. Product snapshots include all fields including images, name, description, category, and base price. Sellers can view snapshots of their own products for audit purposes. Administrators can view snapshots of any product on the platform. Sellers can delete their own products only if no pending order items exist for any variant. Products cannot be deleted if there are pending cancellation or refund requests for their variants. Deleted products are immediately removed from search results and category listings. Deleted products and their snapshots are preserved in the system for historical records. Product images can be uploaded, reordered, and deleted by the product owner. The first image serves as the main thumbnail image for product listings.
+THE system SHALL provide visibility of the approval status to the seller, showing one of three states: pending, approved, or rejected.
 
-### Product Creation Requirements
+WHEN an administrator rejects a seller registration, THE system SHALL display the rejection reason to the seller.
 
-WHEN a seller creates a product, THE system SHALL:
-1. Require a product name
-2. Require a product description
-3. Require a category selection (product or subcategory)
-4. Require a base price value
-5. Associate the product with the creating seller
-6. Set the product status to active
-7. Require at least one product variant for the product to be purchasable
+WHEN a seller registration is rejected, THE system SHALL allow the seller to submit a new registration request with updated information.
 
-IF the product name is missing, THE system SHALL reject the creation request.
-IF the product description is missing, THE system SHALL reject the creation request.
-IF the category is not selected, THE system SHALL reject the creation request.
-IF the base price is missing or invalid, THE system SHALL reject the creation request.
-IF the seller does not have approved status, THE system SHALL reject the product creation request.
+WHILE a seller account has pending status, THE system SHALL prevent the seller from creating products, managing inventory, or processing orders.
 
-### Seller Ownership Validation
+### Seller Account Deletion Rules
 
-THE system SHALL ensure each product is owned by exactly one seller.
-THE system SHALL prevent sellers from viewing or modifying products owned by other sellers.
-THE system SHALL allow sellers to view only their own product list.
-THE system SHALL allow sellers to edit only their own products.
-THE system SHALL allow sellers to delete only their own products.
+WHEN a seller requests account deletion, THE system SHALL verify no pending orders exist for the seller's products.
 
-WHEN a seller attempts to access a product, THE system SHALL validate seller ownership before allowing any operation.
-WHEN a product is created, THE system SHALL permanently associate it with the creating seller.
+THE system SHALL consider an order as pending when any order item has paid or shipped status.
 
-IF a seller is not the owner of a product, THE system SHALL deny access to that product.
-IF a seller attempts to modify another seller's product, THE system SHALL reject the modification request.
+WHEN a seller requests account deletion, THE system SHALL verify no pending cancellation or refund requests exist for the seller's products.
 
-### Product Edit Snapshots
+WHEN a seller account is deleted, THE system SHALL remove all products from search results and category listings.
 
-WHEN a seller edits a product, THE system SHALL create a product snapshot before applying changes.
-THE system SHALL record the timestamp of the product edit in the snapshot.
-THE system SHALL capture all product field values before the change in the snapshot.
-THE system SHALL capture all product field values after the change in the snapshot.
-THE system SHALL include all product images in the snapshot.
-THE system SHALL include the seller's identity who made the change in the snapshot.
+WHEN a seller account is deleted, THE system SHALL preserve order history and snapshots for legal and business purposes.
 
-WHEN a seller edits product images, THE system SHALL include the image changes in the product snapshot.
-WHEN a seller edits product images, THE system SHALL preserve the image order in the snapshot.
+WHEN a seller account is deleted, THE system SHALL preserve the shop name in past orders for customer reference.
 
-IF a product is edited, THE system SHALL ensure at least one snapshot exists documenting the change.
-IF multiple edits occur, THE system SHALL create a separate snapshot for each edit.
+### Seller Identity Verification
 
-### Snapshot Immutability Rules
+THE system SHALL require email and password for seller account registration.
 
-THE system SHALL ensure all product snapshots are immutable once created.
-THE system SHALL prevent deletion of any product snapshot.
-THE system SHALL prevent modification of any product snapshot after creation.
-THE system SHALL preserve all snapshots even after the product is deleted.
-THE system SHALL preserve all snapshots even after the seller account is deleted.
+THE system SHALL validate email format during seller registration.
 
-WHEN a snapshot is created, THE system SHALL mark it as immutable.
-WHEN a user attempts to modify a snapshot, THE system SHALL reject the modification request.
-WHEN a user attempts to delete a snapshot, THE system SHALL reject the deletion request.
+THE system SHALL allow sellers to change their password through account settings.
 
-IF a product is deleted, THE system SHALL preserve all associated snapshots.
-IF a seller is deleted, THE system SHALL preserve all snapshots they created.
+THE system SHALL authenticate sellers using email and password for login.
 
-### Product Deletion Conditions
-
-WHEN a seller requests to delete a product, THE system SHALL verify no pending order items exist for any variant of the product.
-WHEN a seller requests to delete a product, THE system SHALL verify no pending cancellation requests exist for any variant of the product.
-WHEN a seller requests to delete a product, THE system SHALL verify no pending refund requests exist for any variant of the product.
-
-IF any variant of the product has a pending order item with paid or shipped status, THE system SHALL reject the deletion request.
-IF any variant of the product has a pending cancellation request, THE system SHALL reject the deletion request.
-IF any variant of the product has a pending refund request, THE system SHALL reject the deletion request.
-
-WHEN a product is deleted, THE system SHALL remove all product variants.
-WHEN a product is deleted, THE system SHALL remove all inventory records associated with the variants.
-WHEN a product is deleted, THE system SHALL mark the product status as deleted.
-
-IF the deletion conditions are not met, THE system SHALL provide a clear reason for the rejection.
-
-### Search Listing Removal and Historical Preservation
-
-WHEN a product is deleted, THE system SHALL immediately remove it from search results.
-WHEN a product is deleted, THE system SHALL immediately remove it from category listings.
-WHEN a product is deleted, THE system SHALL prevent the product from appearing in any public listing.
-
-WHEN a product is deleted, THE system SHALL preserve the product snapshots for historical records.
-WHEN a product is deleted, THE system SHALL preserve order items that reference the deleted product.
-WHEN a product is deleted, THE system SHALL preserve the product data in order item snapshots.
-
-IF a product is deleted, THE system SHALL ensure it cannot be purchased or added to cart.
-IF a product is deleted, THE system SHALL ensure existing orders referencing the product remain valid.
-
-### Image Management Permissions
-
-Sellers SHALL be able to upload multiple images for each product.
-Sellers SHALL be able to reorder product images (first image is the main thumbnail).
-Sellers SHALL be able to delete images from their products.
-Sellers SHALL be able to view all images for their products.
-
-THE system SHALL allow sellers to set the first image as the main thumbnail image.
-THE system SHALL ensure image changes are included in product snapshots.
-
-IF a seller is not the product owner, THE system SHALL deny image management permissions.
-IF a product is deleted, THE system SHALL preserve all images in the product snapshots.
-
-### Administrator Snapshot Access
-
-Administrators SHALL be able to view all products on the platform regardless of seller ownership.
-Administrators SHALL be able to view snapshots of any product on the platform.
-Administrators SHALL be able to view product images in snapshots.
-Administrators SHALL be able to view the complete edit history of any product.
-
-THE system SHALL provide administrators with access to product snapshots for audit and dispute resolution.
-THE system SHALL allow administrators to view who made each product change and when.
-
-IF an administrator requests to view a product snapshot, THE system SHALL provide full access.
-IF a product is deleted, THE system SHALL still allow administrators to view its snapshots.
-
-### Historical Record Preservation
-
-THE system SHALL preserve all product data even after product deletion.
-THE system SHALL preserve all product snapshots for historical records and audit purposes.
-THE system SHALL preserve product snapshots in order items for purchase history integrity.
-THE system SHALL preserve product snapshots in seller profiles for transaction verification.
-
-WHEN a seller account is deleted, THE system SHALL preserve all product snapshots they created.
-WHEN a product is deleted, THE system SHALL ensure snapshots remain accessible to administrators.
-WHEN an order is placed, THE system SHALL save a snapshot of the product and variant at purchase time.
-
-IF a dispute arises, THE system SHALL provide snapshots to show the product state at any point in time.
-IF legal records are required, THE system SHALL provide complete product history through snapshots.
-
-THE system SHALL ensure snapshots are never lost, deleted, or modified for compliance and audit requirements.
-
-## ProductVariant Rules
-
-Each product can have multiple variants representing different option combinations. Every variant requires a unique SKU code that identifies it across the platform. Variants include option values such as color, size, or other product attributes. Each variant has a price that can override the product base price. Stock quantity is required for each variant and starts at zero when created. Sellers can add new variants to their products at any time. Sellers can edit variant SKU codes, option values, and prices. Every variant edit creates an immutable snapshot for audit purposes. Variants can only be deleted if no pending order items exist for that variant. Variants with pending cancellation or refund requests cannot be deleted. A product must have at least one variant to be purchasable by customers. Products with no variants appear in search but are shown as unavailable. Out of stock variants cannot be added to customer shopping carts.
-
-### Variant Creation and Identification
-
-WHEN a seller creates a product variant, THE system SHALL:
-1. Require a unique SKU code that identifies the variant across the entire platform
-2. Require option values that define the specific combination (e.g., color, size)
-3. Ensure the SKU code does not duplicate any existing variant SKU on the platform
-4. Validate that option values are provided as a structured set of attribute-value pairs
-
-WHEN a seller edits a variant's option values, THE system SHALL:
-1. Allow modification of option values to represent different attribute combinations
-2. Ensure the new option combination is valid for the product type
-3. Create an immutable snapshot recording the before and after option values
-
-IF a duplicate SKU code is detected during creation, THE system SHALL reject the request and inform the seller that the SKU already exists.
-
-IF option values are missing or improperly formatted, THE system SHALL reject the variant creation request.
-
-### Variant Pricing and Stock Management
-
-WHEN a variant is created, THE system SHALL:
-1. Require a stock quantity value that starts at zero
-2. Allow an optional price that can override the product's base price
-3. If no variant price is provided, THE system SHALL use the product's base price
-
-WHEN a seller updates a variant's price, THE system SHALL:
-1. Allow the price to be set higher or lower than the base price
-2. Create an immutable snapshot recording the price change with before and after values
-3. Apply the new price immediately to all future cart additions and orders
-
-WHEN a seller manages variant stock, THE system SHALL:
-1. Require a stock quantity as a non-negative integer
-2. Record each stock change as an inventory record with quantity change, reason, and timestamp
-3. Calculate current stock by summing all inventory records for the variant
-4. Mark the variant as "out of stock" when stock quantity reaches zero
-
-IF the stock quantity is set below zero, THE system SHALL reject the update request.
-
-IF the price is provided as a negative value, THE system SHALL reject the variant creation or update request.
-
-### Variant Modification and Snapshot Requirements
-
-WHEN a seller edits any variant field (SKU code, option values, or price), THE system SHALL:
-1. Create an immutable snapshot before applying the changes
-2. Record the timestamp of when the change was made
-3. Capture all previous values before the modification
-4. Capture all new values after the modification
-5. Record which seller made the change
-
-WHILE a variant snapshot exists, THE system SHALL:
-1. Prevent any deletion or modification of the snapshot
-2. Allow the seller who owns the variant to view all snapshots
-3. Allow administrators to view all snapshots for any variant
-
-IF a variant is edited multiple times, THE system SHALL create a separate snapshot for each edit, maintaining a complete audit trail.
-
-Snapshots serve as the authoritative record for dispute resolution regarding variant pricing or specifications at the time of purchase.
-
-### Variant Deletion and Product Availability
-
-WHEN a seller requests to delete a variant, THE system SHALL:
-1. Check if any order items exist for that variant with "paid" or "shipped" status
-2. Check if any pending cancellation requests exist for that variant
-3. Check if any pending refund requests exist for that variant
-4. Only proceed with deletion if all checks pass
-
-IF a variant has pending order items (paid or shipped status), THE system SHALL reject the deletion request and inform the seller.
-
-IF a variant has pending cancellation or refund requests, THE system SHALL reject the deletion request until requests are resolved.
-
-WHEN a variant is successfully deleted, THE system SHALL:
-1. Remove the variant from the product's variant list
-2. Delete all inventory records associated with the variant
-3. Preserve all snapshots of the variant for audit purposes
-4. Update the product's availability status if it becomes the last variant
-
-WHEN a product has no variants, THE system SHALL:
-1. Keep the product visible in search results and category listings
-2. Display the product as "unavailable" to customers
-3. Prevent customers from adding the product to their cart
-
-WHEN a customer attempts to add an out-of-stock variant to their cart, THE system SHALL:
-1. Reject the add-to-cart request
-2. Display a message indicating the variant is currently unavailable
-
-IF a product's last variant is deleted, THE system SHALL automatically mark the product as unavailable in all customer-facing listings.
+THE system SHALL verify seller identity through approved registration status before allowing product listing.
 
 ## Category Rules
 
-Products are organized into categories for browsing and discovery. Categories can have subcategories with one level of nesting only. Each category requires a name and may include an optional description. Categories and subcategories are created and managed exclusively by administrators. Customers can browse the complete list of all available categories. Customers can view all products within a selected category or subcategory. Products can belong to subcategories and are visible in both the subcategory and parent category listings. When a category is deleted, products within it become uncategorized. Category names and descriptions can be edited by administrators. Category hierarchy changes do not affect existing product associations. Category management does not require snapshot creation for historical tracking.
+Products are organized into categories that can have one level of subcategory nesting. Administrators have exclusive authority to create, edit, and delete categories. Each category requires a name and description when created. Customers can browse the complete list of all available categories. Customers can view all products that belong to a specific category or subcategory. When a category is deleted, all products within it become uncategorized. Products must always be assigned to a category or subcategory when created. Subcategories can only exist under a parent category and cannot have their own children. Category names must be unique within the same parent level. Administrators can edit category names and descriptions at any time.
 
 ### Category Hierarchy Structure
 
-WHEN the system organizes categories, THE system SHALL:
-1. Support a hierarchical structure with parent categories and subcategories
-2. Enforce a one-level nesting limit (categories cannot have sub-subcategories)
-3. Require each category to have a unique name within its level
-4. Allow each category to have an optional description
-5. Require each category to be associated with exactly one parent category or be a root category
-
-WHEN a category is created, THE system SHALL:
-1. Validate that if a parent category is specified, it exists
-2. Validate that the parent category is not a subcategory (to enforce one-level nesting)
-3. Validate that the category name is not a duplicate of any existing category at the same level
-4. Record the creation timestamp
-
-IF a user attempts to create a category with a parent that is already a subcategory, THE system SHALL reject the request with an error indicating one-level nesting limit violation.
-
-IF a user attempts to create a category with a duplicate name at the same level, THE system SHALL reject the request with an error indicating name uniqueness violation.
+Categories support a maximum of one level of nesting. A top-level category cannot have a parent, while a subcategory must have exactly one parent category. Subcategories cannot have their own children; only top-level categories can contain subcategories. This creates a two-tier hierarchy: top-level categories and their subcategories.
 
 ### Category Management Permissions
 
-WHEN an administrator creates a category, THE system SHALL:
-1. Require the administrator to have valid administrator privileges
-2. Require a category name to be provided
-3. Allow an optional description to be provided
-4. Allow selection of a parent category (for subcategories) or creation as root category
-5. Validate parent category existence if specified
-6. Validate one-level nesting constraint
-7. Validate name uniqueness at the same level
+Only administrators have the authority to create, edit, and delete categories. Regular customers and sellers cannot create or modify categories. Administrators can edit category names and descriptions at any time without restrictions. Administrators can delete categories, which affects all products within them.
 
-WHEN an administrator edits a category, THE system SHALL:
-1. Require the administrator to have valid administrator privileges
-2. Allow editing of the category name
-3. Allow editing of the category description
-4. Allow changing the parent category (within one-level nesting constraint)
-5. Validate new parent category existence if changed
-6. Validate one-level nesting constraint after parent change
-7. Validate name uniqueness at the new level if name changed
+### Category Creation and Validation Requirements
 
-IF a non-administrator attempts to create or edit a category, THE system SHALL reject the request with an error indicating insufficient privileges.
+Every category must have a name when created. Every category must have a description when created. Category names must be unique within the same parent level; a parent category cannot have two subcategories with the same name. Top-level category names must also be unique across the system. When a product is created, it must be assigned to either a top-level category or a subcategory; products cannot exist without a category assignment.
 
-IF an administrator attempts to set a subcategory as the parent of a new category, THE system SHALL reject the request with an error indicating one-level nesting violation.
+### Category Browsing and Product Association
 
-IF an administrator attempts to change a category's parent to create a cycle or exceed one level, THE system SHALL reject the request with an error indicating invalid hierarchy change.
+Customers can browse and view the complete list of all categories and subcategories without restriction. Customers can view all products that belong to a specific category or subcategory. Product listings filtered by category show all active products from that category and its subcategories. Categories with no products can still be browsed and displayed.
 
-### Customer Category Browsing
+### Category Deletion Effects
 
-WHEN a customer browses categories, THE system SHALL:
-1. Display all root-level categories in a list
-2. For each root category, display its subcategories if any exist
-3. Show the category name for each category
-4. Optionally display the category description when requested
-5. Paginate the category list if the total exceeds the page limit
+When a category is deleted, all products within that category become uncategorized. Deleted categories are removed from browsing and search results. Products in deleted categories remain visible in the system but are no longer associated with any category. Subcategories are deleted along with their parent category. Products must be reassigned to a different category if the administrator wants them to remain categorized after deletion.
 
-WHEN a customer views products in a category, THE system SHALL:
-1. Display all products directly assigned to the selected category
-2. Display all products assigned to subcategories of the selected category
-3. Show product information including name, main image, base price, seller shop name, and average rating
-4. Paginate the product list if the total exceeds the page limit
-5. Allow sorting by newest, price low-to-high, or price high-to-low
+## Product Rules
 
-WHEN a customer views a subcategory, THE system SHALL:
-1. Display all products directly assigned to the subcategory
-2. Display the subcategory name and its parent category name
-3. Allow navigation to the parent category view
-4. Show product information consistent with category page display
+Every product requires a name, description, category, and base price when created. Products belong exclusively to the seller who created them. Sellers can edit their own products but cannot modify products from other sellers. Each product edit creates a snapshot that preserves the previous state. A seller can only delete their product if no variants have pending order items in paid or shipped status. The product must also have no pending cancellation or refund requests across any variant. When a product is deleted, all its variants and inventory records are removed. Deleted products no longer appear in search results or category listings. Product snapshots remain accessible even after the product itself is deleted. Administrators can view snapshots of any product on the platform. Administrators can delete any product for policy violations regardless of order status.
 
-IF a category has no products (direct or via subcategories), THE system SHALL display an appropriate message indicating no products are available.
+### Product Creation Requirements
 
-IF a category or subcategory does not exist, THE system SHALL reject the request with an error indicating the category was not found.
+THE system SHALL require a product name when a seller creates a product.
+THE system SHALL require a product description when a seller creates a product.
+THE system SHALL require a category assignment when a seller creates a product.
+THE system SHALL require a base price when a seller creates a product.
+If the product name is missing, the system SHALL reject the product creation request.
+If the product description is missing, the system SHALL reject the product creation request.
+If the category is not assigned, the system SHALL reject the product creation request.
+If the base price is not provided, the system SHALL reject the product creation request.
 
-### Category Deletion and Product Handling
+### Product Ownership and Editing
 
-WHEN a category is deleted, THE system SHALL:
-1. Remove the category from the category hierarchy
-2. Associate all products in the deleted category with no category (uncategorized)
-3. Preserve all products that were assigned to the deleted category
-4. Ensure products remain accessible in search results
-5. Preserve all subcategories of the deleted category and reassign them as root categories
+THE system SHALL associate each product exclusively with the seller who created it.
+THE system SHALL allow only the owning seller to edit their own products.
+THE system SHALL reject any attempt by a seller to edit products owned by another seller.
+THE system SHALL allow only the owning seller to delete their own products.
+THE system SHALL reject any attempt by a seller to delete products owned by another seller.
+Administrators MAY delete any product regardless of ownership for policy violations.
 
-WHEN products become uncategorized due to category deletion, THE system SHALL:
-1. Maintain product visibility in search results
-2. Remove products from category-based listings
-3. Allow products to be reassigned to a new category by the seller (if product edit permissions allow)
-4. Preserve all product data including variants, images, and snapshots
+### Product Deletion Constraints
 
-WHEN a category hierarchy is changed (parent reassigned), THE system SHALL:
-1. Update the category's parent association immediately
-2. Not affect existing product-category associations
-3. Update product visibility in category listings based on new hierarchy
-4. Maintain one-level nesting constraint after the change
+THE system SHALL require that no variants of a product have pending order items in paid or shipped status before allowing product deletion.
+THE system SHALL require that no variants of a product have pending cancellation requests before allowing product deletion.
+THE system SHALL require that no variants of a product have pending refund requests before allowing product deletion.
+If any variant has a pending order item in paid or shipped status, the system SHALL reject the product deletion request.
+If any variant has a pending cancellation request, the system SHALL reject the product deletion request.
+If any variant has a pending refund request, the system SHALL reject the product deletion request.
+When a product is deleted, the system SHALL automatically delete all variants associated with that product.
+When a product is deleted, the system SHALL automatically delete all inventory records associated with that product.
 
-IF a category has pending operations (e.g., being used in active product listings), THE system SHALL allow deletion but products will become uncategorized.
+### Product Snapshot and Administrator Oversight
 
-IF an administrator attempts to delete a category that does not exist, THE system SHALL reject the request with an error indicating the category was not found.
+THE system SHALL hide deleted products from search results immediately after deletion.
+THE system SHALL hide deleted products from category listings immediately after deletion.
+THE system SHALL preserve all product snapshots even after the product itself is deleted.
+THE system SHALL preserve all variant snapshots even after the product and variants are deleted.
+THE system SHALL allow sellers to view snapshots of their own products.
+THE system SHALL allow administrators to view snapshots of any product on the platform.
+THE system SHALL allow administrators to delete any product for policy violations regardless of order status or pending requests.
 
-IF a product is in a deleted category and the customer attempts to view it via the old category path, THE system SHALL redirect to search results or display an appropriate error.
+## ProductVariant Rules
 
-## Order Rules
+Each product variant requires a unique SKU code that identifies the specific combination. Variants include option values describing attributes like color and size. A variant price can override the product base price if specified. Stock quantity is required for every variant and starts at zero. Sellers can add or edit variants on their products. Every variant edit creates a snapshot preserving the previous state. A variant can only be deleted if it has no pending order items in paid or shipped status. The variant must also have no pending cancellation or refund requests. A product must have at least one variant to be purchasable by customers. Products with no variants appear in search but are shown as unavailable. Out of stock variants cannot be added to shopping carts.
 
-Orders are created only after payment processing succeeds. Payment failures prevent order creation and allow customers to retry. Each order contains one or more order items from potentially different sellers. Stock quantities are automatically decreased when orders are successfully placed. Items are removed from the customer cart after order completion. Each order item becomes a snapshot preserving product details at purchase time. Each order item also captures a snapshot of the seller profile at purchase time. Shipping addresses cannot be changed after an order is placed. Order numbers are unique and generated at order creation time. Order dates are recorded at the time of successful payment confirmation. Order total price is calculated from all items including any price overrides. Orders remain visible in customer order history regardless of status changes.
+### Variant Identification
 
-### Order Creation Process
+Each product variant requires a unique SKU code that identifies the specific combination of options. The SKU code must be provided when creating a variant and cannot be empty. If a duplicate SKU code is submitted for a different product, the request is rejected.
 
-WHEN a customer proceeds to checkout with items in their cart, THE system SHALL verify that all cart items are available for purchase.
+Option values describe the attributes of the variant, such as color, size, or material. Each option value must be provided when creating or editing a variant. If option values are missing, the request is rejected.
 
-WHEN a customer confirms an order, THE system SHALL verify that payment processing succeeds before creating the order record.
+### Variant Pricing
 
-IF payment processing fails, THE system SHALL NOT create an order and SHALL allow the customer to retry payment.
+A variant price can override the product base price if specified. When a variant price is set, it applies only to that specific variant. If no variant price is provided, the product base price is used.
 
-IF payment processing succeeds, THE system SHALL create the order record with all purchased items.
+If a variant price is set to a negative value, the request is rejected. If the variant price exceeds reasonable limits (if defined by business policy), the request may be rejected.
 
-WHEN an order is created, THE system SHALL record the order date as the timestamp of successful payment confirmation.
+### Stock Quantity Requirements
 
-WHEN an order is created, THE system SHALL remove all purchased items from the customer's shopping cart.
+Stock quantity is required for every variant and must be a non-negative integer. The stock quantity starts at zero when a variant is created.
 
-IF the customer has no items in their cart, THE system SHALL prevent checkout initiation.
+If a stock quantity is set to a negative value, the request is rejected. Sellers can add inventory through restocking (positive quantity change) or subtract inventory through adjustments (negative quantity change), but the resulting stock quantity must remain non-negative.
 
-IF any cart item is unavailable (deleted or out of stock), THE system SHALL prevent that item from being included in the order.
+When stock quantity reaches zero, the variant is shown as out of stock. Out of stock variants cannot be added to shopping carts. If a customer attempts to add an out of stock variant to the cart, the request is rejected with an appropriate message.
 
-### Order Number Uniqueness
+### Variant Edit Validation
 
-WHEN an order is created, THE system SHALL generate a unique order number for that order.
+Every variant edit creates a snapshot preserving the previous state. When a seller edits a variant (SKU code, option values, or price), a snapshot is automatically recorded with the timestamp, changed fields, before values, and after values.
 
-THE system SHALL ensure that no two orders share the same order number across the entire platform.
+If the edit request contains invalid data (such as missing required fields or invalid values), the request is rejected and no snapshot is created.
 
-THE system SHALL generate the order number at the time of order creation, immediately after payment confirmation.
+### Variant Deletion Constraints
 
-THE system SHALL use a format that allows orders to be uniquely identified and referenced in all communications.
+A variant can only be deleted if it has no pending order items in paid or shipped status. If any order item referencing the variant is in paid or shipped status, the deletion request is rejected.
 
-WHEN a customer views their order history, THE system SHALL display the unique order number for each order.
+A variant can only be deleted if it has no pending cancellation or refund requests. If any cancellation request or refund request is pending for order items referencing the variant, the deletion request is rejected.
 
-WHEN a seller views order items, THE system SHALL display the associated order number for reference.
+When a variant is deleted, all its inventory records are preserved for historical reference. The variant no longer appears in product details or can be added to carts.
 
-IF an order number collision is detected during generation, THE system SHALL regenerate until uniqueness is achieved.
+### Product Variant Requirements
 
-### Multi-Seller Order Support
+A product must have at least one variant to be purchasable by customers. If a product has no variants, it cannot be added to shopping carts.
 
-WHEN a customer places an order with items from multiple sellers, THE system SHALL create a single order record containing all items.
+Products with no variants appear in search results and category listings but are shown as unavailable. Customers can view these products but cannot purchase them.
 
-THE system SHALL group order items by their respective sellers within the same order.
+If a seller attempts to delete the last variant of a product, the request is rejected. At least one variant must remain on the product at all times.
 
-WHEN items from different sellers are purchased, THE system SHALL allow each seller to process their items independently.
+## ProductImage Rules
 
-THE system SHALL track the status of each order item separately, regardless of seller.
+Sellers can upload multiple images for each product they create. The first image in the sequence serves as the main thumbnail image. Sellers can reorder images to change which one appears as the thumbnail. Individual images can be deleted from a product. Image changes are included in the product snapshot when the product is edited. There is no limit specified on the number of images per product. All product images must be associated with an existing product. Deleting a product also removes all its associated images. Images are displayed in order on the product detail page. Customers see all images when viewing a product.
 
-WHEN viewing order details, THE system SHALL display which seller each item belongs to.
+### Product Image Association and Deletion
 
-WHEN calculating the order total, THE system SHALL sum all items from all sellers into one total price.
+Every product image must be associated with an existing product. An image cannot exist independently without a product reference.
 
-IF items from different sellers have different shipping requirements, THE system SHALL create separate shipments per seller (see Shipping and Tracking).
+WHEN a product is deleted, THE system SHALL delete all images associated with that product. This deletion is automatic and cannot be prevented.
 
-### Automatic Stock Reduction
+WHEN a product is deleted, THE system SHALL preserve image snapshots that were created as part of product snapshots for historical records.
 
-WHEN an order is successfully created, THE system SHALL automatically decrease the stock quantity for each purchased variant.
+### Image Quantity and Display Order
 
-THE system SHALL create an inventory record for each variant with a negative quantity change indicating the order.
+Each product may have multiple images uploaded by the seller. There is no specified limit on the number of images per product.
 
-WHEN an order item is cancelled, THE system SHALL automatically restore the stock quantity for that variant.
+The first image in the sequence serves as the main thumbnail image displayed in product listings and search results.
 
-WHEN an order item is refunded, THE system SHALL automatically restore the stock quantity for that variant.
+Sellers can reorder images to change which image appears as the thumbnail. The new first image becomes the thumbnail immediately.
 
-THE system SHALL create an inventory record for each stock restoration with a positive quantity change.
+Images are displayed in their defined order on the product detail page. Customers see all images when viewing a product.
 
-IF stock reduction would result in negative inventory, THE system SHALL prevent the order from being created.
+### Image Deletion Rules
 
-WHEN a customer views a variant, THE system SHALL display the current stock quantity calculated from all inventory records.
+Sellers can delete individual images from their products at any time.
 
-IF the stock quantity reaches zero, THE system SHALL mark the variant as out of stock and prevent cart addition.
+WHEN an image is deleted, THE system SHALL remove it from the product's image list.
 
-### Product and Seller Profile Snapshots
+WHEN an image is deleted, THE system SHALL automatically reorder remaining images to maintain sequence.
 
-WHEN an order item is created, THE system SHALL capture a snapshot of the purchased product at that moment.
+WHEN the thumbnail image is deleted, THE system SHALL promote the next image in sequence to become the new thumbnail.
 
-THE product snapshot SHALL include all product fields: name, description, category, base price, and images.
+### Image Changes in Snapshots
 
-THE product snapshot SHALL also include snapshots of all variants at that moment (product-snapshot → product-snapshot-SKU).
+All image changes are captured in product snapshots. When a product is edited, the snapshot includes the complete state of all images at that moment.
 
-WHEN an order item is created, THE system SHALL capture a snapshot of the seller's profile at that moment.
+Snapshot records include:
+- All image URLs in their current order
+- The thumbnail designation (first image)
+- Timestamp of the change
+- Before and after values for image modifications
 
-THE seller snapshot SHALL include the shop name and logo image as they appeared at purchase time.
+Snapshots preserve image history even after images are deleted from the current product.
 
-THE system SHALL preserve all order item snapshots even if the original product or seller profile is later modified.
+### Image Validation and Error Conditions
 
-THE system SHALL allow customers to view the product and seller snapshots associated with their order items.
+WHEN a product has no images, THE system SHALL display the product without a thumbnail in listings.
 
-THE system SHALL allow administrators to view all order item snapshots for dispute resolution purposes.
+WHEN a product has only one image, THE system SHALL use that image as the thumbnail.
 
-THE snapshots SHALL be immutable and cannot be deleted once created.
+WHEN a seller attempts to upload images for a product that does not exist, THE system SHALL reject the request.
 
-### Shipping Address Locking
-
-WHEN a customer places an order, THE system SHALL record the selected shipping address at that time.
-
-THE system SHALL prevent any changes to the shipping address after the order is successfully created.
-
-WHEN viewing order details, THE system SHALL display the locked shipping address that was used at order creation.
-
-IF a customer requests to change the shipping address after order placement, THE system SHALL reject the request.
-
-THE system SHALL allow customers to update their saved addresses for future orders, but not for existing orders.
-
-WHEN an order is cancelled or refunded, THE system SHALL preserve the original shipping address in the order record.
-
-### Order Total Calculation
-
-WHEN calculating the order total, THE system SHALL sum the unit price multiplied by quantity for each order item.
-
-THE system SHALL use the variant price if it overrides the base price, otherwise use the base price.
-
-THE system SHALL include all items from all sellers in the total price calculation.
-
-THE system SHALL record the calculated total price at the time of order creation.
-
-THE system SHALL prevent modification of the total price after order creation.
-
-WHEN viewing order details, THE system SHALL display the itemized breakdown showing each item's price and subtotal.
-
-IF a variant price override exists, THE system SHALL use the override price for that item's calculation.
-
-THE system SHALL display the order total in the currency specified by the platform configuration.
-
-## OrderItem Rules
-
-Each order item represents a purchased product variant with a specific quantity. Multiple units of the same variant become one order item with combined quantity. Order items can have different statuses independently within the same order. Valid order item statuses are paid, shipped, delivered, cancelled, and refunded. Each order item has its own status that can change independently. Order items from different sellers are processed and shipped separately. Individual order items can be cancelled or refunded without affecting other items. Cancelled items restore their stock quantities through inventory records. Refunded items also restore their stock quantities through inventory records. Order item status determines the overall order status calculation. When all items are paid, the order status is paid. When all items are delivered, the order status is delivered. Mixed status items result in a partially completed order status.
-
-### Order Item Independence and Multi-Seller Separation
-
-### Order Item Independence
-
-WHEN an order contains multiple order items, THE system SHALL:
-1. Treat each order item as an independent entity with its own status
-2. Allow each order item to have a different status from other items in the same order
-3. Process status transitions for each order item independently
-4. Preserve the independence of order items even when they belong to the same product variant
-
-### Multi-Seller Item Separation
-
-WHEN an order contains items from multiple sellers, THE system SHALL:
-1. Group order items by seller for shipping purposes
-2. Create separate shipments for items from different sellers
-3. Allow each seller to process their items independently
-4. Track each seller's items with separate tracking information
-5. Ensure cancellation or refund of one seller's items does not affect another seller's items
-
-### Item Independence in Operations
-
-WHEN a customer performs operations on order items, THE system SHALL:
-1. Allow cancellation requests on individual items without affecting other items
-2. Allow refund requests on individual items without affecting other items
-3. Process each item's status transition independently
-4. Maintain separate inventory records for each item's stock changes
-
-### Variant Quantity Combination
-
-### Variant Quantity Combination
-
-WHEN a customer adds a product variant to their cart, THE system SHALL:
-1. Check if the same variant already exists in the cart
-2. If the variant exists, combine the quantities instead of creating a new cart item
-3. Update the combined quantity in the existing cart item
-4. Preserve the variant reference when combining quantities
-
-WHEN an order is created from cart items, THE system SHALL:
-1. Create one order item for each unique variant in the cart
-2. Set the order item quantity to the combined quantity from the cart
-3. Preserve the unit price at the time of order creation
-4. Ensure multiple units of the same variant become a single order item with combined quantity
-
-IF a customer adds the same variant multiple times to cart, THE system SHALL:
-1. Aggregate all quantities into one cart item
-2. Display the total combined quantity to the customer
-3. Calculate subtotal using combined quantity multiplied by unit price
-
-### Order Item Status Transition Rules
-
-### Order Item Status Transition Rules
-
-WHEN an order item is created, THE system SHALL:
-1. Set the initial status to "paid" after successful payment
-2. Record the creation timestamp for the order item
-3. Associate the order item with the purchased product variant
-4. Create a snapshot of the product and variant at purchase time
-
-WHEN a seller ships order items, THE system SHALL:
-1. Allow status transition from "paid" to "shipped"
-2. Require a shipment record with tracking information
-3. Update all items in the same shipment to "shipped" status simultaneously
-4. Record the shipment timestamp
-
-WHEN a customer confirms delivery, THE system SHALL:
-1. Allow status transition from "shipped" to "delivered"
-2. Update all items in the confirmed shipment to "delivered" status
-3. Record the delivery confirmation timestamp
-
-WHEN 14 days pass after shipping without customer confirmation, THE system SHALL:
-1. Automatically transition items from "shipped" to "delivered"
-2. Record the automatic delivery confirmation
-3. Notify the customer of the automatic delivery confirmation
-
-WHEN an order item is cancelled, THE system SHALL:
-1. Allow status transition to "cancelled" only from "paid" status
-2. Block cancellation if the item is already "shipped", "delivered", "cancelled", or "refunded"
-3. Record the cancellation timestamp
-4. Create a snapshot of the cancellation request state
-
-WHEN an order item is refunded, THE system SHALL:
-1. Allow status transition to "refunded" only from "delivered" status
-2. Block refund if the item is not "delivered" or already "cancelled" or "refunded"
-3. Record the refund timestamp
-4. Create a snapshot of the refund request state
-
-### Terminal Status Rules
-
-WHILE an order item has status "cancelled" or "refunded", THE system SHALL:
-1. Prevent any further status transitions
-2. Mark the item as in a terminal state
-3. Exclude the item from active order processing
-4. Preserve the item record for historical and reporting purposes
-
-### Order Item Cancellation Rules
-
-### Cancellation Eligibility
-
-WHEN a customer requests cancellation of an order item, THE system SHALL:
-1. Verify the item status is "paid" (not yet shipped)
-2. Reject cancellation requests for items with status "shipped", "delivered", "cancelled", or "refunded"
-3. Require the customer to provide a cancellation reason
-4. Create a cancellation request record with status "pending"
-5. Create a snapshot of the cancellation request
-
-### Cancellation Approval Workflow
-
-WHEN a seller responds to a cancellation request, THE system SHALL:
-1. Allow the seller to approve or reject the request
-2. Update the cancellation request status to "approved" or "rejected"
-3. Record the response timestamp
-4. Create a snapshot of the updated cancellation request state
-5. Notify the customer of the seller's decision
-
-### Cancellation Processing
-
-WHEN a cancellation request is approved, THE system SHALL:
-1. Transition the order item status from "paid" to "cancelled"
-2. Process the refund for the cancelled item only
-3. Restore the stock quantity for the cancelled variant
-4. Create an inventory record with positive quantity change and reason "cancellation"
-5. Update the order status based on remaining items
-
-### Cancellation Impact on Order
-
-WHEN an order item is cancelled, THE system SHALL:
-1. Affect only the cancelled item, not other items in the order
-2. Continue processing remaining items normally
-3. Update the overall order status based on new item statuses
-4. If all items become cancelled, update order status to "cancelled"
-5. Preserve the cancelled item record for order history
-
-### Order Item Refund Rules
-
-### Refund Eligibility
-
-WHEN a customer requests a refund for an order item, THE system SHALL:
-1. Verify the item status is "delivered"
-2. Reject refund requests for items with status "paid", "shipped", "cancelled", or "refunded"
-3. Verify the request is within 7 days of the item's delivery date
-4. Reject refund requests made after the 7-day window expires
-5. Require the customer to provide a refund reason
-6. Create a refund request record with status "pending"
-7. Record the number of days since delivery
-8. Create a snapshot of the refund request
-
-### Refund Approval Workflow
-
-WHEN a seller responds to a refund request, THE system SHALL:
-1. Allow the seller to approve or reject the request
-2. Update the refund request status to "approved" or "rejected"
-3. Record the response timestamp
-4. Create a snapshot of the updated refund request state
-5. Notify the customer of the seller's decision
-
-### Refund Processing
-
-WHEN a refund request is approved, THE system SHALL:
-1. Transition the order item status from "delivered" to "refunded"
-2. Process the refund for the refunded item only
-3. Restore the stock quantity for the refunded variant
-4. Create an inventory record with positive quantity change and reason "refund"
-5. Update the order status based on remaining items
-
-### Refund Impact on Order
-
-WHEN an order item is refunded, THE system SHALL:
-1. Affect only the refunded item, not other items in the order
-2. Continue processing remaining items normally
-3. Update the overall order status based on new item statuses
-4. If all items become refunded, update order status to "refunded"
-5. Preserve the refunded item record for order history
-
-### Order Status Derivation and Partial Completion
-
-### Order Status Derivation
-
-WHEN calculating the overall order status, THE system SHALL:
-1. Evaluate all order item statuses within the order
-2. Apply the following rules in order of priority:
-   - If all items are "paid", order status is "paid"
-   - If any item is "shipped" (and none are "delivered"), order status is "shipped"
-   - If all items are "delivered", order status is "delivered"
-   - If all items are "cancelled", order status is "cancelled"
-   - If all items are "refunded", order status is "refunded"
-   - If items have mixed statuses, order status is "partiallyCompleted"
-
-### Partial Completion Handling
-
-WHEN an order has items with different statuses, THE system SHALL:
-1. Set the order status to "partiallyCompleted"
-2. Display the order status as "partiallyCompleted" in order history
-3. Allow individual items to continue their status transitions independently
-4. Track which items are in which status for reporting purposes
-
-### Status Transition Examples
-
-WHEN an order transitions from "paid" to "shipped", THE system SHALL:
-1. Change order status to "shipped" when the first item is shipped
-2. Keep order status as "shipped" while remaining items are "paid"
-3. Transition to "delivered" only when all items become "delivered"
-4. Transition to "partiallyCompleted" if some items are cancelled or refunded
-
-WHEN an order has mixed final statuses, THE system SHALL:
-1. Maintain "partiallyCompleted" status until all items reach terminal states
-2. If remaining items are all "cancelled", update to "cancelled"
-3. If remaining items are all "refunded", update to "refunded"
-4. If remaining items are all "delivered", update to "delivered"
-
-### Order Status Display
-
-WHEN displaying order status to customers, THE system SHALL:
-1. Show the derived order status in order history list
-2. Show individual item statuses in order details
-3. Explain partial completion when order status is "partiallyCompleted"
-4. Provide visibility into which items are in which status
+WHEN a seller attempts to delete an image that does not exist, THE system SHALL reject the request.
 
 ## Address Rules
 
-Customers can add multiple shipping addresses to their account profile. Each address requires recipient name, phone number, and complete street address. City, state or province, postal code, and country are required for each address. Customers can edit any field in their saved shipping addresses. Customers can delete shipping addresses that are not currently used in active orders. Customers can designate one address as their default shipping address. The default address is automatically selected during checkout unless changed. When an order is placed, the selected shipping address is locked and cannot be modified. Deleted addresses remain associated with historical orders for record keeping. New addresses must be validated before they can be used for checkout. Address validation ensures all required fields are present and properly formatted.
-
-### Address Storage and Required Fields
-
-WHEN a customer adds a shipping address, THE system SHALL:
-1. Require recipient name as a mandatory field
-2. Require phone number as a mandatory field
-3. Require complete street address as a mandatory field
-4. Require city as a mandatory field
-5. Require state or province as a mandatory field
-6. Require postal code as a mandatory field
-7. Require country as a mandatory field
-8. Allow customers to store multiple shipping addresses in their account
-9. Validate that all required fields are present before saving
+Customers can maintain multiple shipping addresses in their account. Each address requires recipient name, phone number, street address, city, state or province, postal code, and country. All address fields are mandatory when creating a new address. Customers can edit any of their saved addresses at any time. Customers can delete addresses they no longer need. One address can be designated as the default shipping address for checkout. The default address is automatically selected during order placement. Customers can change which address is set as default. Addresses are used for shipping orders but remain in order history after deletion. Deleted addresses cannot be restored but order history preserves the address snapshot.
 
-IF a required field is missing, THE system SHALL reject the address creation request.
+### Address Creation Requirements
 
-WHEN a customer views their saved addresses, THE system SHALL:
-1. Display all stored shipping addresses
-2. Indicate which address is set as the default
-3. Show the total count of saved addresses
+Customers can maintain multiple shipping addresses in their account. There is no specified limit on the number of addresses a customer may save.
 
-THE system SHALL support storing unlimited shipping addresses per customer account.
+When creating a new address, all of the following fields are mandatory:
+- Recipient name
+- Phone number
+- Street address
+- City
+- State or province
+- Postal code
+- Country
 
-### Address Edit and Deletion Permissions
+The system shall reject address creation requests that are missing any of these required fields.
 
-WHEN a customer edits their shipping address, THE system SHALL:
-1. Allow modification of any address field (recipient name, phone number, street address, city, state/province, postal code, country)
-2. Require all fields to remain present after editing
-3. Validate the edited address before saving changes
+Customers can edit any of their saved addresses at any time. All edits are validated to ensure required fields remain populated.
 
-IF the edited address contains invalid data, THE system SHALL reject the update request.
+### Address Deletion Rules
 
-WHEN a customer attempts to delete a shipping address, THE system SHALL:
-1. Check if the address is associated with any active orders (paid or shipped status)
-2. Check if the address is associated with any pending cancellation requests
-3. Check if the address is associated with any pending refund requests
-4. Block deletion if the address is used in any active or pending order
-5. Allow deletion only if the address is not referenced by any order
+Customers can delete addresses they no longer need. Address deletion is permitted at any time, regardless of order history.
 
-IF the address is used in an active order, THE system SHALL reject the deletion request and inform the customer.
+When an address is deleted:
+- The address is removed from the customer's address list
+- The address cannot be restored
+- Any orders previously shipped to that address retain the address information in order history (address snapshot is preserved)
 
-WHEN a customer deletes an unused address, THE system SHALL:
-1. Remove the address from the customer's saved address list
-2. Preserve the address record in historical order data
-3. Complete the deletion immediately
+The system shall not prevent address deletion even if the address has been used for past orders.
 
-THE system SHALL prevent deletion of addresses that are currently referenced by order records.
+### Default Address Selection
 
-### Default Address Selection and Checkout Locking
+Customers can designate one address as the default shipping address. Only one address can be set as default at any time.
 
-WHEN a customer designates a default shipping address, THE system SHALL:
-1. Allow selection of one address as the default from their saved addresses
-2. Automatically select the default address during checkout if no other address is chosen
-3. Update the default address designation immediately upon customer request
-4. Allow customers to change the default address at any time
+When a customer sets a new default address:
+- The previous default address (if any) is no longer the default
+- The new default address becomes the automatically selected address during checkout
 
-WHEN a customer proceeds to checkout, THE system SHALL:
-1. Pre-select the default shipping address if one exists
-2. Allow customers to choose a different saved address for the current order
-3. Allow customers to use a new address for the current order
-4. Lock the selected shipping address once the order is placed
+During order checkout, the system shall automatically select the customer's default address as the shipping address. Customers may manually select a different saved address at checkout if desired.
 
-WHEN an order is successfully placed, THE system SHALL:
-1. Lock the shipping address associated with the order
-2. Prevent any modifications to the shipping address after order placement
-3. Preserve the locked address in the order record permanently
-4. Display the locked shipping address in order history
+If a customer has no saved addresses, the system shall require them to add an address before completing checkout.
 
-WHEN a customer views their order history, THE system SHALL:
-1. Display the shipping address used for each order
-2. Show the address exactly as it was at the time of order placement
-3. Maintain association between deleted addresses and historical orders
-4. Preserve address data even if the customer later deletes it from their saved addresses
+### Address Preservation in Order History
 
-### Address Validation and Format Requirements
+Address information is preserved in order history even after the address is deleted from the customer's address list.
 
-WHEN a customer enters a shipping address, THE system SHALL:
-1. Validate that recipient name contains only alphabetic characters and spaces
-2. Validate that phone number follows a valid format for the selected country
-3. Validate that street address is not empty and contains sufficient detail
-4. Validate that city field is not empty
-5. Validate that state or province field matches the selected country's requirements
-6. Validate that postal code matches the format required by the selected country
-7. Validate that country is selected from the supported country list
+When viewing order details:
+- The shipping address used for that order is displayed as it appeared at the time of purchase
+- Deleted addresses remain visible in historical order records
+- The address displayed in order history cannot be modified
 
-IF any field fails validation, THE system SHALL:
-1. Reject the address creation or update request
-2. Display a specific error message indicating which field failed validation
-3. Highlight the invalid field for correction
+This ensures that order records remain complete and accurate for both customers and sellers, regardless of address management actions taken after the order was placed.
 
-WHEN a customer selects a country, THE system SHALL:
-1. Show only countries supported by the platform
-2. Adjust required fields based on country-specific address formats
-3. Apply country-specific postal code validation rules
+## Cart Rules
 
-WHEN an address is submitted for checkout, THE system SHALL:
-1. Perform all validation rules before allowing order placement
-2. Block order submission if any address field is invalid
-3. Require correction of all validation errors before proceeding
+Customers can add product variants to their shopping cart. Each cart item requires a specific variant selection, not just a product. When adding to cart, customers must specify the quantity desired. If the same variant already exists in the cart, quantities are combined rather than creating a new line item. The cart displays the total price of all items combined. Customers can modify the quantity of any item in their cart. Customers can remove items from their cart individually. A warning is shown when cart quantity exceeds available stock for a variant. Variants that are deleted or out of stock are marked as unavailable in the cart. Unavailable items cannot be included in checkout. Cart items persist until removed or purchased.
 
-THE system SHALL enforce address format requirements consistently across all address operations.
+### Cart Variant Selection and Quantity Rules
 
-## Review Rules
+Customers must select a specific product variant when adding an item to the cart. A product alone cannot be added without choosing a variant.
 
-Customers can write reviews only for products they have purchased and received. A review can only be written after the order item status becomes delivered. Each customer can write one review per product per order. Reviews require a rating between one and five stars. Review text content is optional and can be left blank. Reviews are displayed on the product detail page sorted by newest first. Customers can edit their own reviews after submission. Every review edit creates an immutable snapshot preserving the previous state. Customers can delete their own reviews but snapshots remain preserved. Product average ratings are calculated from all non-deleted reviews only. Deleted reviews are excluded from average rating calculations. Review snapshots are visible to administrators for dispute resolution.
+When adding a variant to the cart, the customer must specify a quantity. The quantity must be a positive number greater than zero.
 
-### Review Eligibility Requirements
+If the same variant already exists in the cart, the system combines the new quantity with the existing quantity rather than creating a duplicate line item. The cart displays a single line item with the combined total quantity.
 
-WHEN a customer attempts to write a review, THE system SHALL verify that the customer has purchased the product.
+### Cart Total Calculation Rules
 
-WHEN a customer attempts to write a review, THE system SHALL verify that the order item status is "delivered" for that product.
+The cart displays a total price calculated by summing all cart item subtotals.
 
-IF the order item status is not "delivered", THE system SHALL reject the review submission.
+Each cart item subtotal is calculated by multiplying the unit price of the variant by the quantity in the cart.
 
-IF the customer has not purchased the product, THE system SHALL reject the review submission.
+The total price updates automatically when items are added, removed, or when quantities are modified.
 
-WHEN a customer attempts to write a review for a product, THE system SHALL verify that no existing review exists for that product in the same order.
+### Cart Stock Warning Rules
 
-IF a review already exists for the product in the same order, THE system SHALL reject the new review submission.
+When the quantity of a variant in the cart exceeds the available stock quantity, the system displays a warning message to the customer.
 
-WHEN a customer purchases the same product in multiple orders, THE system SHALL allow one review per order.
+The item remains in the cart even when the quantity exceeds available stock. The warning informs the customer that the requested quantity may not be fulfillable.
 
-WHEN a customer attempts to write a review, THE system SHALL verify that the customer account is active and not banned.
+Customers can proceed to checkout with items that have stock warnings, but unavailable items will be blocked during checkout validation.
 
-IF the customer account is banned, THE system SHALL reject the review submission.
+### Unavailable Variant Handling Rules
 
-WHEN a customer attempts to write a review, THE system SHALL verify that the product is not deleted.
+When a product variant is deleted by the seller, all cart items referencing that variant are marked as unavailable. The item remains visible in the cart display but cannot be included in checkout.
 
-IF the product is deleted, THE system SHALL reject the review submission.
+When a variant's stock quantity reaches zero, the variant is marked as out of stock. Out of stock variants are marked as unavailable in the cart.
 
-### Review Submission Rules
+Unavailable items (deleted or out of stock) are visually distinguished from available items in the cart display.
 
-WHEN a customer submits a review, THE system SHALL require a rating value.
+### Checkout Availability Validation Rules
 
-WHEN a customer submits a review, THE system SHALL validate that the rating is between 1 and 5 stars.
+During checkout, the system validates that all cart items are available for purchase.
 
-IF the rating is less than 1, THE system SHALL reject the review submission.
+Items marked as unavailable (due to variant deletion or out of stock status) cannot be included in the order.
 
-IF the rating is greater than 5, THE system SHALL reject the review submission.
-
-WHEN a customer submits a review, THE system SHALL allow optional text content.
-
-IF the review text content is empty, THE system SHALL accept the review with only the rating.
-
-WHEN a customer submits a review, THE system SHALL record the submission timestamp.
-
-WHEN a customer submits a review, THE system SHALL associate the review with the customer account.
-
-WHEN a customer submits a review, THE system SHALL associate the review with the specific product.
-
-WHEN a customer submits a review, THE system SHALL associate the review with the specific order.
-
-WHEN a review is submitted, THE system SHALL mark the review as non-deleted.
-
-WHEN a review is submitted, THE system SHALL make the review visible on the product detail page.
-
-### Review Modification and Deletion
-
-WHEN a customer edits their review, THE system SHALL create an immutable snapshot of the previous review state.
-
-WHEN a review snapshot is created, THE system SHALL record the timestamp of the change.
-
-WHEN a review snapshot is created, THE system SHALL capture the rating value before the edit.
-
-WHEN a review snapshot is created, THE system SHALL capture the text content before the edit.
-
-WHEN a customer deletes their review, THE system SHALL mark the review as deleted.
-
-WHEN a customer deletes their review, THE system SHALL preserve all review snapshots.
-
-WHEN a customer deletes their review, THE system SHALL prevent deletion of snapshots.
-
-WHEN a customer attempts to edit a review, THE system SHALL verify that the review belongs to the customer.
-
-IF the review does not belong to the customer, THE system SHALL reject the edit request.
-
-WHEN a customer attempts to delete a review, THE system SHALL verify that the review belongs to the customer.
-
-IF the review does not belong to the customer, THE system SHALL reject the deletion request.
-
-WHEN a review is deleted, THE system SHALL preserve the review metadata for audit purposes.
-
-### Average Rating Calculation Rules
-
-WHEN calculating the average rating for a product, THE system SHALL include only non-deleted reviews.
-
-WHEN calculating the average rating for a product, THE system SHALL exclude all deleted reviews from the calculation.
-
-WHEN a review is deleted, THE system SHALL recalculate the product average rating.
-
-WHEN a new review is submitted, THE system SHALL recalculate the product average rating.
-
-WHEN a review is edited, THE system SHALL recalculate the product average rating using the updated rating value.
-
-WHEN calculating the average rating, THE system SHALL round the result to two decimal places.
-
-IF no non-deleted reviews exist for a product, THE system SHALL display no average rating.
-
-WHEN displaying the average rating, THE system SHALL show the total count of non-deleted reviews.
-
-### Administrator Review Audit Access
-
-WHEN an administrator requests to view review snapshots, THE system SHALL provide access to all snapshots for reviews on the platform.
-
-WHEN an administrator views a review snapshot, THE system SHALL display the previous rating value.
-
-WHEN an administrator views a review snapshot, THE system SHALL display the previous text content.
-
-WHEN an administrator views a review snapshot, THE system SHALL display the timestamp of the change.
-
-WHEN an administrator views a review snapshot, THE system SHALL display the customer who made the change.
-
-WHEN a dispute is filed regarding a review, THE system SHALL make all review snapshots available for investigation.
-
-WHEN an administrator views deleted reviews, THE system SHALL show the deletion status.
-
-WHEN an administrator views deleted reviews, THE system SHALL show all associated snapshots.
-
-## Wishlist Rules
-
-Customers can add products to their personal wishlist for later purchase. The wishlist displays products rather than specific variants. Customers can view their complete wishlist with pagination support. Customers can remove individual products from their wishlist at any time. If a seller deletes a product, it is automatically removed from all wishlists. Products remain in the wishlist even if they become out of stock. Wishlist items do not reserve inventory or guarantee availability. The wishlist is private and visible only to the account owner. Wishlist creation timestamp is recorded for each saved product. Wishlist items can be added to the cart directly from the wishlist view.
-
-### Wishlist Product Selection
-
-WHEN a customer adds a product to their wishlist, THE system SHALL:
-1. Record the product identifier
-2. Record the creation timestamp
-3. Associate the wishlist entry with the customer account
-4. Ensure the product exists and is active
-5. Prevent duplicate entries for the same product
-
-IF the product is deleted by the seller, THE system SHALL automatically remove it from all customer wishlists.
-IF the product is suspended by an administrator, THE system SHALL automatically remove it from all customer wishlists.
-IF the customer attempts to add a product that already exists in their wishlist, THE system SHALL reject the request.
-IF the product does not exist, THE system SHALL reject the request.
-IF the customer is not authenticated, THE system SHALL reject the request.
-
-### Wishlist Pagination
-
-WHEN a customer views their wishlist, THE system SHALL:
-1. Display products in paginated format
-2. Show the creation timestamp for each entry
-3. Display product main image, name, and base price
-4. Indicate stock availability status
-5. Allow sorting by date added
-
-WHEN pagination is applied, THE system SHALL:
-1. Return a consistent page size
-2. Include total count of wishlist items
-3. Provide navigation to next and previous pages
-4. Maintain stable ordering across requests
-
-IF the customer has no wishlist items, THE system SHALL display an empty state.
-IF pagination parameters are invalid, THE system SHALL return an error.
-
-### Product Removal Flexibility
-
-WHEN a customer removes a product from their wishlist, THE system SHALL:
-1. Delete the wishlist entry immediately
-2. Not affect the product's availability in the catalog
-3. Not affect any other customer's wishlist entries
-4. Not restore inventory reservations (none exist)
-
-IF the product is deleted by the seller, THE system SHALL automatically remove it from all wishlists without customer action.
-IF the customer attempts to remove a product not in their wishlist, THE system SHALL reject the request.
-IF the customer does not own the wishlist entry, THE system SHALL reject the request.
-
-### Out of Stock Wishlist Items
-
-WHEN a product in the wishlist becomes out of stock, THE system SHALL:
-1. Keep the product in the wishlist
-2. Display an out of stock indicator
-3. Allow the customer to view the product details
-4. Prevent adding to cart until stock is available
-
-WHEN a product variant has zero stock quantity, THE system SHALL mark it as unavailable in the wishlist view.
-WHEN stock is restored to a previously out of stock product, THE system SHALL update the availability status.
-
-IF a customer attempts to add an out of stock variant to cart from wishlist, THE system SHALL reject the request with an availability warning.
-
-### Inventory Reservation Rules
-
-WHEN a product is added to wishlist, THE system SHALL NOT:
-1. Reserve inventory for the customer
-2. Block other customers from purchasing
-3. Guarantee availability for future purchase
-4. Create any inventory records
-
-WHEN a customer adds a variant to cart from wishlist, THE system SHALL:
-1. Check current stock availability
-2. Create a cart item with the selected variant
-3. Not modify the wishlist entry
-4. Allow the customer to remove from wishlist independently
-
-IF stock is insufficient for the requested cart quantity, THE system SHALL warn the customer.
-IF the product is deleted after being added to wishlist, THE system SHALL remove it from the wishlist before cart addition is attempted.
-
-### Wishlist Privacy Settings
-
-WHEN a customer accesses their wishlist, THE system SHALL:
-1. Verify the customer owns the wishlist entries
-2. Prevent other customers from viewing the wishlist
-3. Prevent unauthenticated users from accessing the wishlist
-4. Allow the customer to view their complete wishlist
-
-WHEN a wishlist entry is created, THE system SHALL:
-1. Record the exact timestamp of creation
-2. Associate the entry with the authenticated customer
-3. Store the product reference at that point in time
-4. Preserve the timestamp even if the product is later deleted
-
-IF another customer attempts to access the wishlist, THE system SHALL reject the request.
-IF an unauthenticated user attempts to access the wishlist, THE system SHALL redirect to login.
-IF the customer account is banned, THE system SHALL deny wishlist access.
-
-### Creation Timestamp Tracking
-
-WHEN a customer adds a product to their wishlist, THE system SHALL:
-1. Record the creation timestamp in UTC
-2. Display the timestamp in the customer's local timezone
-3. Include the timestamp in wishlist list views
-4. Use the timestamp for sorting operations
-
-WHEN a wishlist entry is viewed, THE system SHALL:
-1. Show when the product was added
-2. Display relative time (e.g., "2 days ago") where appropriate
-3. Preserve the original timestamp even if the product is deleted
-
-IF the customer requests sorting by date, THE system SHALL use the creation timestamp as the sort key.
-IF multiple entries have the same timestamp, THE system SHALL use product ID as a secondary sort key.
-
-### Cart Addition from Wishlist
-
-WHEN a customer adds a variant to cart from wishlist, THE system SHALL:
-1. Require the customer to select a specific variant
-2. Validate the variant exists and is active
-3. Check stock availability before adding to cart
-4. Create a cart item with the selected quantity
-5. Not automatically remove the product from wishlist
-
-WHEN the variant is already in the cart, THE system SHALL:
-1. Combine quantities rather than creating duplicate entries
-2. Update the cart item timestamp
-3. Recalculate the cart total
-
-IF the variant is out of stock, THE system SHALL warn the customer and prevent cart addition.
-IF the variant is deleted, THE system SHALL mark the wishlist item as unavailable.
-IF the customer does not select a variant, THE system SHALL prompt for variant selection.
+Customers must resolve unavailable items by removing them from the cart before the checkout process can proceed. The system prevents checkout completion when any unavailable items remain in the cart.
 
 ## CartItem Rules
 
-Customers can add product variants to their shopping cart with specified quantities. Customers must select a specific variant rather than just a product. When adding a variant already in the cart, quantities are combined into one line item. The cart displays product name, variant options, price, quantity, and subtotal for each item. Customers can modify the quantity of items already in their cart. Customers can remove individual items from their cart at any time. The cart shows the total price of all items combined. If a variant stock is less than the cart quantity, a warning is displayed. Variants that are out of stock are marked as unavailable in the cart. Deleted variants are also marked as unavailable in the cart. Unavailable items cannot be included in order checkout. Cart items are removed from the cart when the order is successfully placed.
+Each cart item links to a specific product variant. The quantity for each cart item must be a positive number. The unit price is captured at the time the item is added to cart. Cart items can have their quantity updated before checkout. Cart items can be removed from the cart at any time. The cart item price reflects the variant price at add time, not current price. Cart items are removed from the cart when the order is successfully placed. Cart items with unavailable variants cannot proceed to checkout. Cart items with insufficient stock show a warning but remain in cart. Cart item subtotals are calculated from quantity times unit price.
 
-### Variant Selection Requirement
+### Cart Item and Variant Association
 
-WHEN a customer adds a product to their cart, THE system SHALL require selection of a specific product variant.
+Each cart item must be associated with exactly one product variant. Customers cannot add a product to the cart without selecting a specific variant. If a variant is not selected, the add-to-cart request is rejected. When a variant is added to the cart, the cart item maintains a reference to that specific variant. If the variant is deleted by the seller, the cart item becomes unavailable but remains in the cart until removed by the customer or until checkout is attempted.
 
-WHEN a customer adds a product to their cart, THE system SHALL NOT allow adding just a product without variant selection.
+### Quantity Validation Rules
 
-WHEN a customer views the product detail page, THE system SHALL present all available variants for selection.
+The quantity for each cart item must be a positive whole number. A quantity of zero or negative values is not permitted. When a customer attempts to add a variant to the cart with an invalid quantity, the request is rejected. When updating the quantity of an existing cart item, the new quantity must also be a positive whole number. If the requested quantity update contains an invalid value, the update is rejected.
 
-IF a product has no variants, THE system SHALL display the product as unavailable for cart addition.
+### Price Capture and Calculation
 
-WHEN a customer selects a variant, THE system SHALL validate that the variant exists and is associated with the selected product.
+The unit price for each cart item is captured at the moment the item is added to the cart. This price reflects the variant's price at that specific time, not the current price of the variant. If the seller later changes the variant price, existing cart items retain their original captured price. The subtotal for each cart item is calculated by multiplying the captured unit price by the item quantity. The cart total is the sum of all cart item subtotals. Price changes to variants do not retroactively affect cart items already in the customer's cart.
 
-IF the selected variant does not exist, THE system SHALL reject the add-to-cart request.
+### Cart Item Modifications
 
-IF the selected variant belongs to a different product than specified, THE system SHALL reject the add-to-cart request.
+Customers can update the quantity of any cart item before checkout. The quantity update request must specify a valid positive whole number. If the requested quantity exceeds available stock for the variant, a warning is shown but the update is still accepted. Customers can remove any cart item from the cart at any time before checkout. When a cart item is removed, it is permanently deleted from the cart. Removing a cart item does not affect other items in the cart.
 
-### Quantity Combination Logic
+### Cart Item Behavior on Order Placement
 
-WHEN a customer adds a variant to their cart that already exists in the cart, THE system SHALL combine the quantities into a single cart item.
+When an order is successfully placed, all cart items from that order are automatically removed from the customer's cart. The removal occurs after payment confirmation. If payment fails, cart items remain in the cart and are not removed. Cart items are not reserved or locked during the checkout process until the order is confirmed. Multiple customers can have the same variant in their carts simultaneously until orders are placed.
 
-WHEN quantities are combined, THE system SHALL NOT create a duplicate cart item entry for the same variant.
+### Variant Availability and Stock Warnings
 
-WHEN a customer adds quantity 3 of a variant that already has quantity 2 in the cart, THE system SHALL update the cart item to quantity 5.
+Cart items with unavailable variants cannot proceed to checkout. A variant becomes unavailable if it is deleted by the seller or if its stock quantity is zero. When a customer attempts to checkout with unavailable variants in the cart, those items are blocked from the order and the customer must remove them first. Cart items with variants that have insufficient stock (stock quantity less than cart item quantity) show a warning to the customer. The warning does not prevent the item from remaining in the cart, but the customer is notified that the requested quantity exceeds available stock. Customers may proceed to checkout with insufficient stock items only if the seller has sufficient inventory at checkout time.
 
-WHEN quantities are combined, THE system SHALL retain the original added timestamp of the first cart item entry.
+## Wishlist Rules
 
-WHEN quantities are combined, THE system SHALL update the updatedAt timestamp to the current time.
+Customers can add products to their personal wishlist. The wishlist displays products rather than specific variants. Customers can view their complete wishlist with pagination support. Items can be removed from the wishlist individually. When a seller deletes a product, it is automatically removed from all customer wishlists. The wishlist is associated with a specific customer account. Products in the wishlist remain there until manually removed or deleted by the seller. Wishlist items show product information like name, image, and price. The wishlist helps customers save products for future purchase consideration.
 
-IF the combined quantity exceeds available stock, THE system SHALL display a stock warning but still add the item to the cart.
+### Customer Wishlist Association
 
-### Cart Display Information
+Each customer has one personal wishlist associated with their account. The wishlist is automatically created when the customer registers and exists for the lifetime of the account. Customers cannot create multiple wishlists. The wishlist is private and only visible to the owning customer.
 
-WHEN a customer views their cart, THE system SHALL display the product name for each cart item.
+### Adding Products to Wishlist
 
-WHEN a customer views their cart, THE system SHALL display the variant option values for each cart item.
+Customers can add products to their wishlist. When adding a product, the customer selects the product from search results, category listings, or product detail pages. A product can be added to the wishlist only if it exists and is currently visible in the catalog. If the product is already in the wishlist, the system does not create a duplicate entry. The product is added with a timestamp indicating when it was added.
 
-WHEN a customer views their cart, THE system SHALL display the unit price for each cart item.
+### Wishlist Product Display and Information
 
-WHEN a customer views their cart, THE system SHALL display the quantity for each cart item.
+The wishlist displays products rather than specific variants. Each wishlist item shows the product name, main product image (thumbnail), base price or price range if variants have different prices, and the seller shop name. The wishlist may also show the product category and average rating if reviews exist. The display information helps customers identify products saved for future consideration.
 
-WHEN a customer views their cart, THE system SHALL display the subtotal (unit price multiplied by quantity) for each cart item.
+### Wishlist Pagination
 
-WHEN a customer views their cart, THE system SHALL display the total price of all items combined.
+The wishlist list is paginated to support browsing when many products are saved. Customers navigate through pages to view all saved products. The pagination applies to the list of wishlist items, showing a subset of products per page with navigation controls to move between pages.
 
-WHEN variant prices differ from the product base price, THE system SHALL display the variant-specific price in the cart.
+### Wishlist Item Removal
 
-### Quantity Modification Rules
+Customers can remove individual products from their wishlist. When a product is removed, it is deleted from the wishlist immediately. The product itself remains in the catalog and is unaffected by removal from the wishlist. Customers can remove products they no longer wish to track for future purchase.
 
-WHEN a customer modifies the quantity of a cart item, THE system SHALL update the cart item with the new quantity.
+### Deleted Product Auto Removal
 
-WHEN a customer increases the quantity of a cart item, THE system SHALL validate that the new quantity does not exceed available stock.
+When a seller deletes a product, the product is automatically removed from all customer wishlists. This cleanup happens immediately when the product deletion occurs. Customers do not need to manually remove deleted products from their wishlists. The automatic removal ensures the wishlist only contains valid, purchasable products.
 
-WHEN a customer decreases the quantity of a cart item, THE system SHALL accept the change if the new quantity is at least 1.
+### Wishlist Purpose and Use
 
-IF a customer sets the quantity to 0, THE system SHALL treat this as item removal instead of quantity update.
+The wishlist serves as a tool for customers to save products for future purchase consideration. Products remain in the wishlist until the customer manually removes them or the seller deletes the products. The wishlist does not expire or auto-clear. Customers can use the wishlist to track products they intend to buy later, monitor price changes, or save items for comparison before purchasing.
 
-IF a customer sets a negative quantity, THE system SHALL reject the modification request.
+## WishlistItem Rules
 
-WHEN a customer modifies quantity, THE system SHALL recalculate the item subtotal and cart total.
+Each wishlist item links to a specific product. The product must exist and be available to be added to a wishlist. When a product is deleted by the seller, the wishlist item is automatically removed. Wishlist items record when they were added to the wishlist. Customers can remove wishlist items individually. A customer cannot add the same product multiple times to their wishlist. Wishlist items are displayed on the customer's wishlist page. Wishlist items show current product information when viewed.
 
-WHEN stock changes after an item is in the cart, THE system SHALL display a warning if the cart quantity exceeds available stock.
+### Wishlist Item Product Link
 
-### Item Removal Flexibility
+Each wishlist item links to exactly one product. The product must exist and be available on the platform for the item to be added to the wishlist. If the linked product does not exist or is not available, the wishlist item cannot be created.
 
-WHEN a customer removes an item from their cart, THE system SHALL permanently delete the cart item entry.
+### Product Existence Requirement
 
-WHEN a customer removes an item from their cart, THE system SHALL recalculate the cart total after removal.
+When a customer attempts to add a product to their wishlist, the system validates that the product exists and is available. If the product does not exist, the request is rejected. If the product has been deleted by the seller, the request is rejected. Products that are unavailable or hidden cannot be added to a wishlist.
 
-WHEN a customer removes an item from their cart, THE system SHALL allow removal at any time before checkout.
+### Deleted Product Removal
 
-WHEN a customer removes an item from their cart, THE system SHALL NOT require a reason for removal.
+When a seller deletes a product, all wishlist items referencing that product are automatically removed from customers' wishlists. This removal happens immediately and does not require customer action. The product is removed from the wishlist but the customer's other wishlist items remain unaffected.
 
-WHEN a customer removes an item from their cart, THE system SHALL NOT prevent removal due to order status or other constraints.
+### Wishlist Item Timestamp
 
-### Cart Total Calculation
+Each wishlist item records when it was added to the wishlist. This timestamp is set at the time of addition and cannot be modified. Customers can view when each product was added to their wishlist when viewing their wishlist page.
 
-WHEN calculating the cart total, THE system SHALL sum all item subtotals (unit price multiplied by quantity).
+### Wishlist Item Removal
 
-WHEN calculating the cart total, THE system SHALL include all items in the cart regardless of availability status.
+Customers can remove individual items from their wishlist. When a customer removes a wishlist item, only that specific product is removed from their wishlist. Other products in the wishlist remain unaffected. The removal is immediate and cannot be undone.
 
-WHEN a customer modifies any cart item, THE system SHALL recalculate the cart total immediately.
+### Unique Product Per Wishlist
 
-WHEN an item is added to the cart, THE system SHALL recalculate the cart total to include the new item.
+A customer cannot add the same product multiple times to their wishlist. If a customer attempts to add a product that already exists in their wishlist, the system rejects the request. Each product can appear at most once per customer's wishlist.
 
-WHEN an item is removed from the cart, THE system SHALL recalculate the cart total excluding the removed item.
+### Wishlist Item Display
 
-WHEN a variant price changes while the item is in the cart, THE system SHALL display the current price but preserve the price at time of checkout.
+Wishlist items are displayed on the customer's wishlist page with current product information. The display shows the product name, main image, and current price. If a product's information changes after being added to the wishlist, the wishlist displays the updated information. Wishlist items are paginated when the wishlist contains many products.
 
-### Stock Quantity Warnings
+## Order Rules
 
-WHEN a cart item quantity exceeds the variant's available stock, THE system SHALL display a warning to the customer.
+An order contains one or more order items from potentially different sellers. Each order is created only after payment processing succeeds. If payment fails, no order record is created and the customer can retry. When an order is placed, stock quantities are decreased for each purchased variant. Items are removed from the customer's cart upon successful order creation. The shipping address is locked and cannot be changed after order placement. Order status is derived from the combined statuses of all order items. If all items are paid, the order status is paid. If any item is shipped and none delivered, the order status is shipped. If all items are delivered, the order status is delivered. Mixed states result in a partially completed order status.
 
-WHEN a stock warning is displayed, THE system SHALL indicate the available stock quantity to the customer.
+### Order Creation and Payment
 
-WHEN a stock warning is displayed, THE system SHALL NOT prevent adding the item to the cart.
+An order is created only after payment processing succeeds. If payment fails, no order record is created and the customer can retry the purchase. When an order is successfully placed, stock quantities are decreased for each purchased variant. All items in the customer's cart are removed upon successful order creation. The shipping address is locked immediately after order placement and cannot be changed.
 
-WHEN a stock warning is displayed, THE system SHALL prevent checkout of items exceeding available stock.
+### Order Structure
 
-WHEN stock is updated while items are in the cart, THE system SHALL re-evaluate stock warnings for affected items.
+An order contains one or more order items from potentially different sellers. Each order item represents a purchased product variant with a specific quantity. If a customer purchases three units of the same variant, it becomes one order item with quantity three, not three separate items. Items from different sellers within the same order are processed independently for shipping and fulfillment.
 
-IF a variant's stock reaches 0, THE system SHALL mark the variant as out of stock in the cart.
+### Order Status Derivation
 
-### Out of Stock Marking
+The overall order status is derived from the combined statuses of all order items. If all items in an order have status paid, the order status is paid. If any item has status shipped and none are delivered, the order status is shipped. If all items have status delivered, the order status is delivered. If all items have status cancelled, the order status is cancelled. If all items have status refunded, the order status is refunded. When items have mixed states (for example, some delivered and some refunded), the order status is partially completed.
 
-WHEN a variant's stock quantity reaches 0, THE system SHALL mark the variant as out of stock in the cart.
+## OrderItem Rules
 
-WHEN a variant is marked as out of stock, THE system SHALL display this status clearly to the customer.
+Each order item represents a purchased product variant with a specific quantity. Order items can be from different sellers within the same order. Each order item maintains its own independent status. Item statuses include paid, shipped, delivered, cancelled, and refunded. Order items are grouped into shipments when the seller ships them. Each order item has a snapshot of the product and variant at purchase time. Each order item has a snapshot of the seller profile at purchase time. Individual order items can be cancelled or refunded separately from other items in the order. Cancelled or refunded items restore their stock quantities. The order item price is fixed at the time of purchase.
 
-WHEN a variant is marked as out of stock, THE system SHALL prevent adding new items of that variant to the cart.
+### Order Item Composition
 
-WHEN a variant is marked as out of stock, THE system SHALL allow existing cart items of that variant to remain in the cart.
+Each order item is linked to exactly one product variant at the time of purchase. The variant link is immutable and cannot be changed after order creation.
 
-WHEN a variant is marked as out of stock, THE system SHALL prevent checkout of cart items for that variant.
+Each order item includes a quantity representing the number of units purchased. The quantity must be a positive integer (at least 1).
 
-WHEN stock is restocked for an out of stock variant, THE system SHALL update the availability status in the cart.
+An order can contain order items from different sellers. Items from different sellers are processed independently and may be shipped separately.
 
-### Deleted Variant Handling
+If a variant is deleted by the seller after an order is placed, the order item preserves the variant information through snapshots.
 
-WHEN a product variant is deleted by the seller, THE system SHALL mark the variant as unavailable in all customer carts.
+### Order Item Status
 
-WHEN a variant is marked as unavailable due to deletion, THE system SHALL display this status to the customer.
+Each order item maintains its own independent status, separate from other items in the same order.
 
-WHEN a variant is deleted, THE system SHALL prevent adding new items of that variant to any cart.
+The following item statuses are defined:
+- Paid: payment completed, waiting for seller to ship
+- Shipped: seller has shipped the item
+- Delivered: item has been delivered
+- Cancelled: item was cancelled
+- Refunded: item was refunded
 
-WHEN a variant is deleted, THE system SHALL allow existing cart items of that variant to remain visible but marked as unavailable.
+An order's overall status is derived from its items' statuses:
+- If all items are paid, the order is "paid"
+- If any item is shipped (and none delivered yet), the order is "shipped"
+- If all items are delivered, the order is "delivered"
+- If all items are cancelled, the order is "cancelled"
+- If all items are refunded, the order is "refunded"
+- If items have mixed states (e.g., some delivered, some refunded), the order is "partially completed"
 
-WHEN a variant is deleted, THE system SHALL prevent checkout of cart items for the deleted variant.
+### Order Item Snapshots
 
-WHEN a product is deleted (not just a variant), THE system SHALL mark all variants as unavailable in all customer carts.
+When an order item is created, a snapshot of the product is preserved. This snapshot includes the product name, description, category, base price, and images at the time of purchase.
 
-### Checkout Availability Validation
+When an order item is created, a snapshot of the product variant is preserved. This snapshot includes the SKU code, option values, and price at the time of purchase.
 
-WHEN a customer proceeds to checkout, THE system SHALL validate that all cart items are available for purchase.
+When an order item is created, a snapshot of the seller's profile is preserved. This snapshot includes the shop name and logo at the time of purchase.
 
-WHEN validating checkout availability, THE system SHALL reject checkout if any cart item is out of stock.
+The order item price is fixed at the time of purchase and cannot be changed. This price reflects the variant price (or base price if no variant override) at purchase time.
 
-WHEN validating checkout availability, THE system SHALL reject checkout if any cart item is marked as unavailable.
+All snapshots are immutable and cannot be deleted. They are preserved even if the product, variant, or seller account is later deleted.
 
-WHEN validating checkout availability, THE system SHALL reject checkout if any cart item is for a deleted variant.
+### Individual Item Cancellation and Refund
 
-WHEN checkout is rejected due to unavailable items, THE system SHALL display which items cannot be checked out.
+Individual order items can be cancelled separately from other items in the same order. Cancellation is only allowed for items with status "paid" (not yet shipped).
 
-WHEN checkout is rejected due to unavailable items, THE system SHALL allow the customer to remove unavailable items and retry.
+A cancellation request must include a reason provided by the customer. The seller of that item must approve or reject the cancellation request.
 
-WHEN all cart items are available, THE system SHALL allow the customer to proceed with checkout.
+When a cancellation request is approved, that specific item is cancelled and the order status is updated accordingly. The remaining items in the order continue processing normally.
 
-WHEN a customer proceeds to checkout, THE system SHALL lock the current cart state to prevent modifications during payment processing.
+Individual order items can be refunded separately from other items in the same order. Refund is only allowed for items with status "delivered".
+
+A refund request must include a reason provided by the customer. Refund can only be requested within 7 days of the item being delivered. The seller of that item must approve or reject the refund request.
+
+When a refund request is approved, that specific item is refunded and the order status is updated accordingly. The remaining items in the order are unaffected.
+
+### Stock Restoration on Cancellation and Refund
+
+When an order item is cancelled, the stock quantity for the associated variant is restored. The restoration is recorded as a positive inventory record with the reason "cancellation".
+
+When an order item is refunded, the stock quantity for the associated variant is restored. The restoration is recorded as a positive inventory record with the reason "refund".
+
+Stock restoration only occurs for cancelled or refunded items. Items that are delivered but not refunded do not restore stock.
+
+Administrators can force-cancel or force-refund items. When this occurs, stock is restored in the same manner as customer-initiated cancellations or refunds.
+
+### Order Item and Shipment Grouping
+
+Order items are grouped into shipments when the seller ships them. A shipment is a package sent by a single seller.
+
+A shipment can contain one or more order items, but all items in a shipment must be from the same seller. Items from different sellers are always shipped in separate shipments.
+
+A seller can choose to ship items individually or bundle multiple items into one shipment. The seller selects which items to include in each shipment.
+
+All items in the same shipment share the same tracking information (carrier name and tracking number).
+
+When a shipment is created, all items in that shipment change to status "shipped".
+
+When the customer confirms delivery for a shipment, all items in that shipment change to status "delivered". If the customer does not confirm, items automatically change to "delivered" after 14 days from shipping.
 
 ## Shipment Rules
 
-A shipment represents a physical package sent by a seller to a customer. Each shipment can contain one or more order items from the same seller. Different sellers always ship separately with their own shipments. Sellers can choose to ship items individually or bundle multiple items together. Sellers enter tracking information including carrier name and tracking number. All items within the same shipment share identical tracking information. When a shipment is created, all items in it change to shipped status. Customers can view tracking information for each shipment in their order details. Customers confirm delivery per shipment rather than per individual item. When delivery is confirmed, all items in that shipment change to delivered status. Items automatically change to delivered status after fourteen days from shipping if not confirmed. Shipment creation timestamps are recorded for delivery tracking purposes.
+A shipment is a package sent by a single seller to a customer. A shipment can contain one or more order items from the same seller. Different sellers always ship separately with different shipments. A seller can choose to ship items individually or bundle multiple items together. When shipping, sellers enter tracking information including carrier name and tracking number. All items in the same shipment share the same tracking information. When a shipment is created, all items in it change to shipped status. Customers can view tracking information for each shipment. Customers confirm delivery per shipment, not per individual item. When delivery is confirmed, all items in that shipment change to delivered status. Items automatically change to delivered after 14 days from shipping if not confirmed.
 
-### Shipment Package Definition
+### Shipment Composition Rules
 
-WHEN a seller creates a shipment, THE system SHALL:
-1. Define the shipment as a physical package sent to a customer
-2. Allow the shipment to contain one or more order items from the same seller
-3. Require all items in the shipment to belong to the same seller
-4. Prevent items from different sellers from being grouped in the same shipment
-5. Allow sellers to bundle multiple items into one shipment or ship items individually
-6. Record the shipment creation timestamp for delivery tracking purposes
+Each shipment must be created by a single seller and contain only order items from that seller's products. A shipment can contain one or more order items, allowing sellers to bundle multiple items together or ship them individually.
 
-WHEN an order contains items from multiple sellers, THE system SHALL:
-1. Create separate shipments for each seller
-2. Ensure each shipment only contains items from one seller
-3. Allow each seller to independently manage their shipments
+Different sellers in the same order must always create separate shipments. A customer's order containing items from multiple sellers will result in multiple shipments, one from each seller.
 
-IF a seller attempts to add items from different sellers to one shipment, THE system SHALL reject the request.
+Sellers have the choice to ship items individually or bundle multiple items into a single shipment. This bundling decision is made by the seller when creating the shipment.
 
-IF a seller attempts to create a shipment with no items, THE system SHALL reject the request.
+If a seller attempts to create a shipment containing order items from different sellers, the request is rejected. If a seller attempts to create a shipment with no order items, the request is rejected.
 
-### Tracking Information Management
+### Tracking Information Requirements
 
-WHEN a seller creates a shipment, THE system SHALL:
-1. Require the seller to enter a tracking number
-2. Require the seller to enter a carrier name
-3. Associate the tracking information with all items in the shipment
-4. Ensure all items in the same shipment share identical tracking information
+When creating a shipment, the seller must provide tracking information including carrier name and tracking number. Both fields are required and cannot be empty.
 
-WHEN a seller updates shipment tracking information, THE system SHALL:
-1. Allow the seller to update the tracking number
-2. Allow the seller to update the carrier name
-3. Update the tracking information for all items in the shipment simultaneously
+All order items included in the same shipment share the same tracking information. The carrier name and tracking number apply to all items in that shipment collectively.
 
-IF the tracking number is missing, THE system SHALL reject the shipment creation request.
+If the seller attempts to create a shipment without providing carrier name, the request is rejected. If the seller attempts to create a shipment without providing a tracking number, the request is rejected.
 
-IF the carrier name is missing, THE system SHALL reject the shipment creation request.
-
-WHEN a customer views an order with shipments, THE system SHALL display:
-1. The tracking number for each shipment
-2. The carrier name for each shipment
-3. The shipping date for each shipment
-4. The delivery status for each shipment
+Customers can view the tracking information for each shipment associated with their orders. The tracking information displays the carrier name and tracking number.
 
 ### Shipment Status Transitions
 
-WHEN a seller creates a shipment, THE system SHALL:
-1. Change the status of all items in the shipment to "shipped"
-2. Record the shipped timestamp
-3. Notify the customer that items have been shipped
+When a shipment is created and tracking information is provided, all order items included in that shipment automatically change their status to "shipped".
 
-WHILE an item has status "shipped", THE system SHALL:
-1. Allow the customer to view tracking information
-2. Allow the customer to confirm delivery
-3. Prevent the item from being cancelled
-4. Prevent the item from being refunded
+If a seller attempts to create a shipment for order items that are not in "paid" status, the request is rejected. Only order items with "paid" status can be included in a shipment.
 
-WHEN a customer confirms delivery for a shipment, THE system SHALL:
-1. Change the status of all items in the shipment to "delivered"
-2. Record the delivered timestamp
-3. Enable the customer to write reviews for delivered items
+If a seller attempts to create a shipment for an order item that is already in "shipped", "delivered", "cancelled", or "refunded" status, the request is rejected.
 
-IF a customer does not confirm delivery, THE system SHALL automatically change the item status to "delivered" after fourteen days from the shipping date.
+### Delivery Confirmation Rules
 
-WHEN all items in an order reach "delivered" status, THE system SHALL update the overall order status to "delivered".
+Customers can view tracking information for each shipment in their order details. This includes the carrier name and tracking number provided by the seller.
 
-WHEN some items in an order are delivered and others have different statuses, THE system SHALL update the overall order status to "partially completed".
+Customers can confirm delivery for each shipment individually, not for individual order items. When a customer confirms delivery for a shipment, all order items in that shipment change their status to "delivered".
 
-### Shipment Timestamp Recording
+If the customer does not confirm delivery, all order items in the shipment automatically change to "delivered" status after 14 days from the shipping date.
 
-WHEN a shipment is created, THE system SHALL:
-1. Record the shippedAt timestamp when the shipment is created
-2. Store the shipped timestamp immutably for delivery tracking
-3. Use the shipped timestamp to calculate the fourteen-day auto-delivery period
+If a customer attempts to confirm delivery for a shipment that is already delivered, the request is rejected. If a customer attempts to confirm delivery for a shipment that was cancelled, the request is rejected.
 
-WHEN delivery is confirmed by the customer, THE system SHALL:
-1. Record the deliveredAt timestamp
-2. Store the delivered timestamp immutably
+The 14-day automatic delivery timer starts from when the shipment was created with tracking information. This timer applies per shipment, not per order.
 
-WHEN delivery is automatic after fourteen days, THE system SHALL:
-1. Calculate the delivery date as fourteen days from shippedAt
-2. Record the deliveredAt timestamp at the time of automatic delivery
-3. Distinguish between customer-confirmed and automatic delivery in audit logs
+## Review Rules
 
-WHILE tracking delivery timelines, THE system SHALL:
-1. Use shippedAt as the reference point for the fourteen-day auto-delivery rule
-2. Ensure the fourteen-day period is calculated in calendar days
-3. Apply the fourteen-day rule uniformly across all shipments
+Customers can write reviews only for products they have purchased and received. A review can only be written after the order item status is delivered. Customers can write one review per product per order. Each review requires a rating from 1 to 5 stars. Text content for the review is optional. Reviews are displayed on the product detail page sorted by newest first. Customers can edit their own reviews after submission. Every review edit creates a snapshot preserving the previous state. Customers can delete their own reviews but snapshots are preserved. The product average rating is calculated from all non-deleted reviews. Deleted reviews are excluded from the average rating calculation.
 
-IF the shippedAt timestamp is missing, THE system SHALL reject the shipment creation request.
+### Review Eligibility
 
-## Snapshot Rules
+A customer can write a review for a product only after the corresponding order item has been delivered. Reviews cannot be written for items that are still paid, shipped, cancelled, or refunded.
 
-Snapshots are created whenever editable data is modified in the system. Each snapshot records when the change was made and what was changed. Snapshots capture both the previous values and the new values after modification. All snapshots are immutable and cannot be deleted once created. Snapshots are preserved even when the original data is deleted. Relevant parties including owners and administrators can view snapshots for dispute resolution. Product snapshots include all product fields and their variant snapshots. Order item snapshots preserve product, variant, and seller profile information at purchase time. Review snapshots capture rating and text content changes. Cancellation and refund request snapshots record status changes and reasons. Seller profile snapshots preserve shop name, description, and logo changes. Snapshot access is controlled based on entity ownership and administrator privileges.
+A customer can write at most one review per product per order. If a customer purchases the same product multiple times in different orders, they can write one review for each order.
 
-### Snapshot Creation Triggers
+If a customer attempts to write a review for a product they have not purchased, the request is rejected.
 
-WHEN a customer edits their display name or phone number, THE system SHALL create a snapshot recording the previous and new values.
+If a customer attempts to write a review for a product they have already reviewed in the same order, the request is rejected.
 
-WHEN a seller edits their shop name, shop description, or logo, THE system SHALL create a snapshot recording the previous and new values.
+### Review Content Requirements
 
-WHEN a seller creates a product, THE system SHALL create an initial snapshot recording all product fields.
+Each review must include a rating value between 1 and 5 stars. The rating is mandatory and cannot be omitted.
 
-WHEN a seller edits any product field (name, description, category, base price, or images), THE system SHALL create a snapshot recording all product fields and their variant snapshots.
+The text content of a review is optional. Customers may submit a review with only a rating and no written text.
 
-WHEN a seller adds, edits, or deletes a product variant, THE system SHALL create a snapshot recording the variant's SKU code, option values, price, and stock quantity.
+If the rating is missing or outside the valid range (1-5), the review creation is rejected.
 
-WHEN a customer writes a review, THE system SHALL create an initial snapshot recording the rating and text content.
+### Review Display on Product Page
 
-WHEN a customer edits their review, THE system SHALL create a snapshot recording the previous and new rating and text content.
+Reviews are displayed on the product detail page.
 
-WHEN a customer requests cancellation of an order item, THE system SHALL create a snapshot recording the request reason and initial pending status.
+Reviews are sorted by newest first, with the most recently created reviews appearing at the top.
 
-WHEN a seller approves or rejects a cancellation request, THE system SHALL create a snapshot recording the status change and response.
+The product detail page shows the average rating calculated from all non-deleted reviews for that product.
 
-WHEN a customer requests a refund for an order item, THE system SHALL create a snapshot recording the request reason and initial pending status.
+The product detail page shows the total count of reviews for that product.
 
-WHEN a seller approves or rejects a refund request, THE system SHALL create a snapshot recording the status change and response.
+### Review Editing
 
-WHEN an order is placed with payment success, THE system SHALL create order item snapshots preserving the product name, description, variant options, price, and seller shop name and logo at the time of purchase.
+Customers can edit their own reviews after submission.
 
-### Snapshot Data Integrity Rules
+When a review is edited, a snapshot is created that records the previous rating and text content before the change.
 
-THE system SHALL record the exact timestamp when each snapshot is created.
+The edit must still include a valid rating between 1 and 5 stars.
 
-THE system SHALL capture both the previous values and the new values for all changed fields in each snapshot.
+If the edited rating is outside the valid range, the edit is rejected.
 
-THE system SHALL ensure snapshots are immutable once created.
+### Review Deletion
 
-THE system SHALL NOT allow any modification to existing snapshots.
+Customers can delete their own reviews.
 
-THE system SHALL NOT allow deletion of any snapshot.
+When a review is deleted, the review is marked as deleted but the snapshots are preserved for historical records.
 
-THE system SHALL preserve snapshots even when the original entity is deleted.
+Deleted reviews are no longer visible on the product detail page.
 
-THE system SHALL preserve product snapshots even when the product is deleted by the seller or administrator.
-
-THE system SHALL preserve seller profile snapshots even when the seller account is deleted.
-
-THE system SHALL preserve review snapshots even when the review is deleted by the customer.
-
-THE system SHALL preserve cancellation and refund request snapshots even after the request reaches a terminal status.
-
-THE system SHALL preserve order item snapshots even when the order is cancelled or refunded.
-
-THE system SHALL ensure product snapshots include all product fields and complete variant snapshots at the time of the change.
-
-### Snapshot Access Control
-
-THE owner of an entity SHALL be able to view all snapshots of their own entities.
-
-Customers SHALL be able to view snapshots of their own products.
-
-Customers SHALL be able to view snapshots of their own seller profiles.
-
-Customers SHALL be able to view snapshots of their own reviews.
-
-Customers SHALL be able to view snapshots of their own cancellation and refund requests.
-
-Administrators SHALL be able to view snapshots of any product on the platform.
-
-Administrators SHALL be able to view snapshots of any seller profile.
-
-Administrators SHALL be able to view snapshots of any review.
-
-Administrators SHALL be able to view snapshots of any cancellation or refund request.
-
-Administrators SHALL be able to view snapshots of any order item.
-
-THE system SHALL restrict snapshot access based on entity ownership and administrator privileges.
-
-### Snapshot Dispute Resolution Usage
-
-Snapshots SHALL be used as the authoritative record for dispute resolution between customers and sellers.
-
-THE system SHALL provide snapshot history to administrators for investigating transaction disputes.
-
-THE system SHALL preserve the complete state of products and variants at the time of purchase in order item snapshots.
-
-THE system SHALL preserve the seller profile information at the time of purchase to support seller accountability.
-
-THE system SHALL enable customers to view product snapshots to verify product changes before purchase.
-
-THE system SHALL enable sellers to view product snapshots to track their own product modification history.
-
-THE system SHALL enable administrators to view all snapshots for compliance and audit purposes.
-
-THE system SHALL ensure snapshot data supports resolution of pricing disputes by preserving historical prices.
-
-THE system SHALL ensure snapshot data supports resolution of product description disputes by preserving historical descriptions.
-
-THE system SHALL ensure snapshot data supports resolution of seller identity disputes by preserving historical shop names and logos.
-
-## InventoryRecord Rules
-
-Stock quantities are managed through inventory history records rather than direct updates. Each inventory record contains a quantity change value with positive or negative amounts. Positive quantities represent restocking while negative quantities represent orders or adjustments. Each record includes a reason describing why the inventory change occurred. Recording timestamps are captured for each inventory transaction. Current stock is calculated by summing all inventory records for a variant. Sellers can add inventory through restocking with a quantity and reason. Sellers can subtract inventory for adjustments or loss with a reason. Order placement automatically creates a negative inventory record. Order cancellation automatically creates a positive inventory record to restore stock. Order refund automatically creates a positive inventory record to restore stock. Sellers can view the complete inventory history for each product variant.
-
-### Inventory History Management
-
-WHEN inventory changes occur, THE system SHALL create an inventory history record for each transaction.
-
-WHEN a seller restocks inventory, THE system SHALL:
-1. Create an inventory record with a positive quantity change value
-2. Record the restocking reason provided by the seller
-3. Capture the timestamp of the restocking operation
-4. Update the current stock calculation to reflect the new total
-
-WHEN a seller adjusts inventory for loss or correction, THE system SHALL:
-1. Create an inventory record with a negative quantity change value
-2. Record the adjustment reason provided by the seller
-3. Capture the timestamp of the adjustment operation
-4. Update the current stock calculation to reflect the new total
-
-WHEN an order is placed, THE system SHALL automatically create an inventory record with a negative quantity change for each purchased variant.
-
-WHEN an order item is cancelled, THE system SHALL automatically create an inventory record with a positive quantity change to restore stock.
-
-WHEN an order item is refunded, THE system SHALL automatically create an inventory record with a positive quantity change to restore stock.
-
-THE system SHALL maintain all inventory records in chronological order for each product variant.
-
-THE system SHALL ensure inventory records are immutable once created and cannot be deleted.
-
-WHEN a seller views inventory history, THE system SHALL display all inventory records for the selected variant including quantity changes, reasons, and timestamps.
-
-### Current Stock Calculation
-
-WHEN calculating current stock quantity for a variant, THE system SHALL sum all inventory records for that variant.
-
-WHEN inventory records are summed, THE system SHALL include both positive values (restocking) and negative values (orders, adjustments).
-
-WHEN the calculated stock quantity equals zero, THE system SHALL mark the variant as "out of stock" in all customer-facing displays.
-
-WHEN a variant is marked as out of stock, THE system SHALL prevent customers from adding that variant to their cart.
-
-WHEN a variant's stock quantity is greater than zero, THE system SHALL display the available quantity to customers.
-
-WHEN a customer adds a variant to their cart, THE system SHALL validate that the requested quantity does not exceed available stock.
-
-WHEN stock quantity is less than the cart quantity, THE system SHALL display a warning to the customer.
-
-THE system SHALL ensure current stock calculations are consistent across all customer-facing operations including search, category browsing, and cart operations.
-
-### Seller Inventory Permissions
-
-WHEN a seller wants to add inventory, THE system SHALL allow the seller to specify a positive quantity and reason for restocking.
-
-WHEN a seller wants to adjust inventory downward, THE system SHALL allow the seller to specify a negative quantity and reason for the adjustment.
-
-WHEN a seller submits an inventory change, THE system SHALL validate that the reason field is provided and contains meaningful documentation.
-
-WHEN inventory changes are automatically triggered by order operations, THE system SHALL record the operation type as the reason (e.g., "order placed", "order cancelled", "order refunded").
-
-WHEN a seller views their product variants, THE system SHALL display the current stock quantity calculated from all inventory records.
-
-WHEN a seller views inventory history for a variant, THE system SHALL display the complete list of inventory records with quantity changes, reasons, and timestamps.
-
-WHEN stock reaches zero after an order or adjustment, THE system SHALL update the variant status to "out of stock" immediately.
-
-WHEN stock is restored through cancellation or refund, THE system SHALL update the variant status from "out of stock" to available immediately.
-
-## CancellationRequest Rules
-
-Customers can request cancellation for individual order items with paid status. Items with shipped or delivered status cannot be cancelled. Cancellation requests must include a reason explaining the cancellation. Each cancellation request has a status of pending, approved, or rejected. The seller of the item can approve or reject the cancellation request. When a seller responds, a snapshot of the request state is created. Approved cancellations result in the item being cancelled and refund processed. Cancelled items restore their stock quantities through inventory records. The remaining items in the order continue processing normally. If all items in an order are cancelled, the entire order status becomes cancelled. Cancellation requests are visible to both the customer and the seller.
-
-### Cancellation Eligibility
-
-WHEN a customer requests cancellation for an order item, THE system SHALL verify the item has paid status.
-
-WHEN an order item has shipped status, THE system SHALL reject the cancellation request.
-
-WHEN an order item has delivered status, THE system SHALL reject the cancellation request.
-
-WHEN an order item has cancelled status, THE system SHALL reject the cancellation request.
-
-WHEN an order item has refunded status, THE system SHALL reject the cancellation request.
-
-THE system SHALL allow cancellation requests only for items with paid status.
-
-THE system SHALL prevent cancellation requests for items that have already been shipped to the customer.
-
-THE system SHALL prevent cancellation requests for items that have been delivered to the customer.
-
-THE system SHALL prevent duplicate cancellation requests for items that are already cancelled.
-
-THE system SHALL prevent duplicate cancellation requests for items that have been refunded.
-
-### Cancellation Request Creation
-
-WHEN a customer creates a cancellation request, THE system SHALL require a reason field with text content.
-
-WHEN a customer creates a cancellation request, THE system SHALL set the initial status to pending.
-
-WHEN a customer creates a cancellation request, THE system SHALL record the timestamp when the request was created.
-
-WHEN a customer creates a cancellation request, THE system SHALL associate the request with the specific order item.
-
-WHEN a customer creates a cancellation request, THE system SHALL associate the request with the requesting customer.
-
-THE system SHALL require customers to provide a reason explaining why they want to cancel the order item.
-
-THE system SHALL set all new cancellation requests to pending status until the seller responds.
-
-THE system SHALL record the exact timestamp when each cancellation request is created.
-
-IF the reason field is empty or missing, THE system SHALL reject the cancellation request creation.
-
-IF the order item does not exist, THE system SHALL reject the cancellation request creation.
-
-### Seller Approval Process
-
-WHEN a seller responds to a cancellation request, THE system SHALL create a snapshot of the request state.
-
-WHEN a seller responds to a cancellation request, THE system SHALL allow the seller to approve or reject the request.
-
-WHEN a seller approves a cancellation request, THE system SHALL update the request status to approved.
-
-WHEN a seller rejects a cancellation request, THE system SHALL update the request status to rejected.
-
-WHEN a seller responds to a cancellation request, THE system SHALL record the timestamp when the seller responded.
-
-THE system SHALL allow only the seller of the order item to approve or reject cancellation requests.
-
-THE system SHALL create an immutable snapshot whenever the seller responds to a cancellation request.
-
-THE system SHALL preserve the request state before and after the seller's response in the snapshot.
-
-THE system SHALL prevent customers from modifying or responding to their own cancellation requests.
-
-THE system SHALL prevent other sellers from responding to cancellation requests for items they do not sell.
-
-### Cancellation Effects
-
-WHEN a cancellation request is approved, THE system SHALL update the order item status to cancelled.
-
-WHEN a cancellation request is approved, THE system SHALL restore the stock quantities for the cancelled item.
-
-WHEN a cancellation request is approved, THE system SHALL create an inventory record for the stock restoration.
-
-WHEN a cancellation request is approved, THE system SHALL process the refund for the cancelled item only.
-
-WHEN all items in an order are cancelled, THE system SHALL update the order status to cancelled.
-
-WHEN only some items in an order are cancelled, THE system SHALL preserve the status of remaining items.
-
-THE system SHALL restore stock quantities through inventory records when cancellations are approved.
-
-THE system SHALL process refunds only for the specific cancelled order item, not the entire order.
-
-THE system SHALL update the overall order status based on the remaining items when partial cancellation occurs.
-
-THE system SHALL ensure cancelled items cannot be shipped or delivered after approval.
-
-THE system SHALL prevent further status transitions for cancelled order items.
-
-IF all order items become cancelled, THE system SHALL mark the entire order as cancelled.
-
-### Request Visibility and Access
-
-THE system SHALL make cancellation requests visible to the customer who created them.
-
-THE system SHALL make cancellation requests visible to the seller of the order item.
-
-THE system SHALL make cancellation requests visible to administrators for oversight.
-
-THE system SHALL restrict cancellation request access to authorized parties only.
-
-THE system SHALL prevent other customers from viewing cancellation requests they do not own.
-
-THE system SHALL prevent unauthorized sellers from viewing cancellation requests for items they do not sell.
-
-THE system SHALL display the current status of cancellation requests to both customer and seller.
-
-THE system SHALL display the response timestamp and outcome to both customer and seller when the seller responds.
-
-THE system SHALL allow customers to view the history of their cancellation requests in order details.
-
-THE system SHALL allow sellers to view all pending cancellation requests for their products in the seller dashboard.
-
-## RefundRequest Rules
-
-Customers can request refunds for individual order items with delivered status. Refund requests can only be made within seven days of item delivery. Each refund request must include a reason explaining the refund request. Refund request status can be pending, approved, or rejected. The seller of the item can approve or reject the refund request. When a seller responds, a snapshot of the request state is created. Approved refunds result in the item being refunded to the customer. Refunded items restore their stock quantities through inventory records. Remaining items in the order are unaffected by individual item refunds. If all items in an order are refunded, the entire order status becomes refunded. Refund requests are visible to both the customer and the seller for tracking purposes.
-
-### Refund Eligibility Requirements
-
-WHEN a customer requests a refund for an order item, THE system SHALL verify the item has "delivered" status.
-
-WHEN a customer requests a refund for an order item, THE system SHALL verify the request is made within seven days of the item being delivered.
-
-IF the order item status is not "delivered", THE system SHALL reject the refund request.
-
-IF more than seven days have passed since delivery, THE system SHALL reject the refund request.
-
-IF the order item has already been cancelled or refunded, THE system SHALL reject the refund request.
-
-THE system SHALL allow customers to request refunds for individual order items only.
-
-THE system SHALL NOT allow customers to request refunds for entire orders at once.
-
-THE system SHALL allow customers to view the delivery date when determining refund eligibility.
-
-THE system SHALL calculate the seven day window from the delivery confirmation timestamp or automatic delivery confirmation after 14 days from shipping.
-
-### Refund Request Documentation
-
-WHEN a customer submits a refund request, THE system SHALL require a reason text field to be provided.
-
-THE system SHALL validate that the refund reason is not empty.
-
-THE system SHALL allow customers to provide detailed explanations for their refund requests.
-
-THE system SHALL store the refund reason with the request for seller review.
-
-THE system SHALL allow customers to view their submitted refund reason when tracking request status.
-
-THE system SHALL NOT modify the refund reason after submission.
-
-### Refund Request Status Workflow
-
-WHEN a refund request is created, THE system SHALL set its initial status to "pending".
-
-WHEN a seller approves a refund request, THE system SHALL update the request status to "approved".
-
-WHEN a seller rejects a refund request, THE system SHALL update the request status to "rejected".
-
-WHEN a refund request status changes, THE system SHALL record the timestamp of the status change.
-
-THE system SHALL allow customers to view the current status of their refund requests.
-
-THE system SHALL allow sellers to view the current status of refund requests for their products.
-
-THE system SHALL NOT allow status changes from "approved" or "rejected" back to "pending".
-
-THE system SHALL allow administrators to view all refund request statuses for oversight purposes.
-
-### Seller Review Process
-
-WHEN a refund request enters "pending" status, THE system SHALL notify the seller of the item.
-
-WHEN a seller reviews a refund request, THE system SHALL display the refund reason to the seller.
-
-WHEN a seller approves a refund request, THE system SHALL process the refund for that item only.
-
-WHEN a seller rejects a refund request, THE system SHALL require the seller to provide a rejection reason.
-
-THE system SHALL allow sellers to view all pending refund requests for their products.
-
-THE system SHALL allow sellers to view the order context when reviewing refund requests.
-
-THE system SHALL NOT allow sellers to approve refund requests for items they do not sell.
-
-THE system SHALL allow administrators to intervene and approve or reject refund requests when necessary.
-
-### Response Snapshot Creation
-
-WHEN a seller responds to a refund request (approve or reject), THE system SHALL create a snapshot of the request state.
-
-THE system SHALL record the timestamp when the snapshot was created.
-
-THE system SHALL capture the request status before the response in the snapshot.
-
-THE system SHALL capture the request status after the response in the snapshot.
-
-THE system SHALL capture the seller's decision and any rejection reason in the snapshot.
-
-THE system SHALL mark the snapshot as immutable after creation.
-
-THE system SHALL allow customers to view snapshots of their refund requests.
-
-THE system SHALL allow sellers to view snapshots of refund requests for their products.
-
-THE system SHALL allow administrators to view all refund request snapshots for dispute resolution.
-
-### Stock Restoration on Refund
-
-WHEN a refund request is approved, THE system SHALL restore the stock quantity of the refunded variant.
-
-THE system SHALL create an inventory record with a positive quantity change for the refunded item.
-
-THE system SHALL record "refund" as the reason for the inventory restoration in the inventory record.
-
-THE system SHALL record the timestamp of the inventory restoration.
-
-THE system SHALL calculate the new stock quantity by adding the refunded quantity to the current stock.
-
-THE system SHALL allow sellers to view the inventory restoration record for refunded items.
-
-THE system SHALL NOT restore stock for items that were already cancelled.
-
-### Partial Refund Handling
-
-WHEN a refund request is approved for an order item, THE system SHALL update only that item's status to "refunded".
-
-THE system SHALL allow other items in the same order to continue processing normally.
-
-THE system SHALL allow customers to request refunds for different items in the same order separately.
-
-THE system SHALL allow customers to view which items in their order have been refunded.
-
-THE system SHALL allow customers to view which items in their order are still processing.
-
-THE system SHALL NOT require all items in an order to be refunded together.
-
-### Order Status Finalization
-
-WHEN all items in an order reach "refunded" status, THE system SHALL update the order status to "refunded".
-
-WHEN some items in an order are refunded and others are delivered, THE system SHALL update the order status to "partiallyCompleted".
-
-WHEN some items in an order are refunded and others are cancelled, THE system SHALL update the order status to "partiallyCompleted".
-
-THE system SHALL calculate the order status based on all order item statuses.
-
-THE system SHALL allow customers to view the overall order status in their order history.
-
-THE system SHALL allow administrators to view the overall order status for oversight purposes.
-
-THE system SHALL update the order status immediately when any item status changes to refunded.
-
-# Detailed Validation Rules
-
-Detailed validation rules with boundary values and format requirements.
-
-## Customer Validation Rules
-
-Customer accounts require valid email addresses in standard format with no duplicate emails allowed among active accounts. Passwords must meet minimum security requirements including length and complexity. Display names are optional but when provided must not exceed reasonable length limits. Phone numbers follow standard format requirements for the customer's region. Account deletion requests are processed immediately but preserve order history and reviews for legal compliance. Deleted customer accounts cannot be reactivated with the same email address. Email verification links expire after a defined time period to prevent stale account creation. Login attempts are rate-limited to prevent brute force attacks. Password change requests require current password verification before allowing updates. Account suspension by administrators prevents login but preserves all data for potential reinstatement.
-
-### Email Format and Uniqueness Validation
-
-WHEN a customer registers with an email address, THE system SHALL:
-1. Validate the email follows standard email format (local-part@domain with valid TLD)
-2. Check that no active account exists with the same email address
-3. Reject registration if email format is invalid
-4. Reject registration if email is already associated with an active account
-
-WHEN a customer attempts to change their email address, THE system SHALL:
-1. Validate the new email follows standard email format
-2. Check that no other active account uses the new email address
-3. Reject the change if the new email format is invalid
-4. Reject the change if the new email is already in use by another active account
-
-IF a customer submits an email with invalid format, THE system SHALL reject the request and indicate the format requirement.
-IF a customer submits an email that is already registered, THE system SHALL reject the request and indicate the email is in use.
-
-Email addresses are case-insensitive for uniqueness checks. The system SHALL treat "Customer@Example.com" and "customer@example.com" as the same email.
-
-### Password Security Requirements
-
-WHEN a customer creates an account, THE system SHALL:
-1. Require a password with minimum 8 characters
-2. Require at least one uppercase letter
-3. Require at least one lowercase letter
-4. Require at least one digit
-5. Store the password as a securely hashed value
-
-WHEN a customer changes their password, THE system SHALL:
-1. Require verification of the current password before allowing the change
-2. Validate the new password meets all complexity requirements
-3. Reject the change if current password verification fails
-4. Reject the change if the new password does not meet complexity requirements
-
-WHEN a customer logs in with incorrect credentials, THE system SHALL:
-1. Record the failed login attempt
-2. Apply rate limiting after 5 consecutive failed attempts within 15 minutes
-3. Temporarily lock the account for 30 minutes after rate limit is triggered
-4. Clear the failed attempt counter after successful login
-
-IF a customer enters an incorrect password during registration, THE system SHALL reject the registration and indicate password requirements.
-IF a customer enters an incorrect current password during password change, THE system SHALL reject the change request and indicate verification failed.
-
-### Profile Information Validation
-
-WHEN a customer provides a display name, THE system SHALL:
-1. Accept display names with 1 to 50 characters
-2. Accept empty or null display names (display name is optional)
-3. Reject display names exceeding 50 characters
-4. Allow customers to update their display name at any time
-
-WHEN a customer provides a phone number, THE system SHALL:
-1. Validate phone numbers follow standard international format (+[country code][number])
-2. Accept phone numbers with 10 to 20 digits (excluding country code prefix)
-3. Accept empty or null phone numbers (phone number is optional)
-4. Reject phone numbers that do not match the required format
-
-WHEN a customer updates their profile, THE system SHALL:
-1. Allow partial updates (display name only, phone number only, or both)
-2. Validate only the fields being updated
-3. Preserve existing values for fields not included in the update
-
-IF a customer submits a display name exceeding 50 characters, THE system SHALL reject the update and indicate the length limit.
-IF a customer submits a phone number in invalid format, THE system SHALL reject the update and indicate the format requirement.
-
-### Account Lifecycle and Deletion Rules
-
-WHEN a customer requests account deletion, THE system SHALL:
-1. Process the deletion request immediately
-2. Remove all customer profile information (display name, phone number)
-3. Preserve all order records and order history for legal and seller record purposes
-4. Preserve all reviews but mark them as "deleted user"
-5. Remove the customer from all wishlists (products remain in wishlists of other customers)
-6. Prevent reactivation of deleted accounts with the same email address
-
-WHEN a customer account is suspended by an administrator, THE system SHALL:
-1. Prevent the customer from logging in
-2. Preserve all customer data including orders, reviews, and wishlists
-3. Allow the administrator to unsuspend the account at any time
-4. Restore full account access upon unsuspension
-
-WHEN a customer account is banned by an administrator, THE system SHALL:
-1. Prevent the customer from logging in permanently
-2. Preserve all customer data for administrative review
-3. Allow the administrator to unban the account if circumstances change
-
-IF a customer attempts to log in with a suspended account, THE system SHALL reject the login and indicate the account status.
-IF a customer attempts to log in with a banned account, THE system SHALL reject the login and indicate the account status.
-
-Email verification links expire after 24 hours. THE system SHALL reject verification attempts after the expiration period.
-
-### Login Security and Rate Limiting
-
-WHEN a customer attempts to log in, THE system SHALL:
-1. Accept valid email and password combinations
-2. Reject invalid email and password combinations
-3. Track consecutive failed login attempts per email address
-4. Apply rate limiting after 5 consecutive failed attempts within a 15-minute window
-
-WHEN rate limiting is triggered for an account, THE system SHALL:
-1. Block all login attempts for that account for 30 minutes
-2. Display a message indicating the account is temporarily locked
-3. Clear the failed attempt counter after the lockout period expires
-4. Allow login attempts to resume after the lockout period
-
-WHEN a customer successfully logs in, THE system SHALL:
-1. Reset the failed attempt counter for that account
-2. Create a session token with appropriate expiration
-3. Record the login timestamp and IP address for security auditing
-
-IF a customer exceeds the rate limit threshold, THE system SHALL block login attempts and indicate the temporary lockout.
-IF a customer successfully logs in after a lockout period, THE system SHALL reset the failed attempt counter and allow normal access.
-
-## Seller Validation Rules
-
-Seller accounts require valid email addresses with uniqueness enforced across all user types. Shop names are mandatory and must be unique across the platform to prevent confusion. Password requirements match customer account security standards. Approval status transitions from pending to approved or rejected based on administrator review. Rejected sellers can resubmit registration after addressing rejection reasons. Shop descriptions have length limits to maintain consistent presentation. Logo images must meet size and format requirements before upload. Seller account deletion is blocked when pending orders exist to preserve transaction integrity. Suspended sellers cannot create or edit products but can fulfill existing orders. Administrator approval is required before any seller can list products for purchase.
-
-### Email and Password Validation
-
-WHEN a seller registers with an email address, THE system SHALL verify that the email is unique across all user types (customers and sellers).
-
-WHEN a seller attempts to register with an existing email, THE system SHALL reject the registration and display an error indicating the email is already in use.
-
-WHEN a seller updates their email address, THE system SHALL verify the new email is not already registered by another customer or seller.
-
-THE system SHALL enforce standard email format validation for all seller email addresses.
-
-THE system SHALL hash all seller passwords using industry-standard cryptographic hashing before storage.
-
-### Shop Name Uniqueness and Format
-
-WHEN a seller creates or updates their shop name, THE system SHALL verify the shop name is unique across all active seller accounts.
-
-WHEN a seller attempts to use an existing shop name, THE system SHALL reject the request and prompt for a different shop name.
-
-THE system SHALL enforce a minimum shop name length of 3 characters.
-
-THE system SHALL enforce a maximum shop name length of 50 characters.
-
-THE system SHALL allow shop names to contain alphanumeric characters, spaces, and basic punctuation marks.
-
-### Shop Description Length and Content
-
-WHEN a seller submits a shop description, THE system SHALL enforce a maximum length of 1000 characters.
-
-THE system SHALL allow empty shop descriptions (optional field).
-
-WHEN a seller submits a shop description, THE system SHALL preserve line breaks and basic formatting.
-
-THE system SHALL sanitize shop description content to prevent script injection.
-
-### Logo Image Requirements
-
-WHEN a seller uploads a shop logo image, THE system SHALL accept only JPEG, PNG, and WebP formats.
-
-WHEN a seller uploads a shop logo image, THE system SHALL enforce a maximum file size of 5MB.
-
-WHEN a seller uploads a shop logo image, THE system SHALL enforce a minimum resolution of 200x200 pixels.
-
-WHEN a seller uploads a shop logo image, THE system SHALL enforce a maximum resolution of 2000x2000 pixels.
-
-WHEN a seller uploads a shop logo image, THE system SHALL automatically generate a thumbnail version at 100x100 pixels.
-
-THE system SHALL validate image content to ensure it does not contain prohibited material.
-
-### Approval Status Transitions
-
-WHEN a seller account is created, THE system SHALL set the approval status to "pending".
-
-WHEN an administrator approves a seller registration, THE system SHALL update the approval status from "pending" to "approved".
-
-WHEN an administrator rejects a seller registration, THE system SHALL update the approval status from "pending" to "rejected" and record the rejection reason.
-
-WHEN a seller account status is "approved", THE system SHALL allow the seller to create and manage products.
-
-WHEN a seller account status is "rejected", THE system SHALL prevent the seller from creating products until reapproval.
-
-WHEN a rejected seller submits a new registration request, THE system SHALL reset the approval status to "pending".
-
-### Rejection Reason Documentation
-
-WHEN an administrator rejects a seller registration, THE system SHALL require a rejection reason to be documented.
-
-THE system SHALL enforce a minimum rejection reason length of 10 characters.
-
-THE system SHALL enforce a maximum rejection reason length of 500 characters.
-
-WHEN a seller views their account status, THE system SHALL display the rejection reason if the status is "rejected".
-
-THE system SHALL preserve rejection reasons in the seller account history for audit purposes.
-
-### Account Deletion Blocking Conditions
-
-WHEN a seller attempts to delete their account, THE system SHALL verify there are no pending orders with paid or shipped status for their products.
-
-WHEN a seller attempts to delete their account, THE system SHALL verify there are no pending cancellation requests for their products.
-
-WHEN a seller attempts to delete their account, THE system SHALL verify there are no pending refund requests for their products.
-
-IF any blocking condition exists, THE system SHALL reject the account deletion and display which conditions prevent deletion.
-
-WHEN all blocking conditions are resolved, THE system SHALL allow the seller to proceed with account deletion.
-
-### Suspension Restrictions
-
-WHEN a seller account is suspended by an administrator, THE system SHALL hide all their products from search results.
-
-WHEN a seller account is suspended by an administrator, THE system SHALL hide all their products from category listings.
-
-WHEN a seller account is suspended by an administrator, THE system SHALL prevent customers from adding their products to cart.
-
-WHEN a seller account is suspended by an administrator, THE system SHALL prevent the seller from creating new products.
-
-WHEN a seller account is suspended by an administrator, THE system SHALL prevent the seller from editing existing products.
-
-WHEN a seller account is suspended by an administrator, THE system SHALL allow the seller to continue processing existing orders (shipping, responding to cancellation and refund requests).
-
-WHEN a seller account is unsuspended by an administrator, THE system SHALL restore product visibility in search and category listings.
-
-### Administrator Approval Requirement
-
-WHEN a seller attempts to create a product, THE system SHALL verify the seller's approval status is "approved".
-
-WHEN a seller's approval status is "pending", THE system SHALL prevent product creation and display a message indicating pending administrator approval.
-
-WHEN a seller's approval status is "rejected", THE system SHALL prevent product creation and display the rejection reason.
-
-THE system SHALL enforce administrator approval before any seller can list products for purchase on the platform.
-
-## Product Validation Rules
-
-Product names are required fields with minimum and maximum character limits for display consistency. Descriptions must be provided and support rich text formatting within size constraints. Category selection is mandatory and must reference valid existing categories. Base prices require positive decimal values with currency precision. Product images must meet resolution and file size requirements before acceptance. Sellers can only edit their own products and each edit creates an immutable snapshot. Product deletion is blocked when order items exist in paid or shipped status. Deleted products are removed from all search and category listings immediately. Product name changes create snapshots preserving the original name for order history. Base price updates affect only new purchases and do not modify existing order items.
-
-### Product Field Validation Rules
-
-WHEN a seller creates a product, THE system SHALL require a product name.
-WHEN a seller creates a product, THE system SHALL require a product description.
-WHEN a seller creates a product, THE system SHALL require a category selection.
-WHEN a seller creates a product, THE system SHALL require a base price.
-
-### Product Name Validation
-
-THE system SHALL enforce a minimum product name length of 3 characters.
-THE system SHALL enforce a maximum product name length of 200 characters.
-THE system SHALL trim leading and trailing whitespace from product names before validation.
-
-### Product Description Validation
-
-THE system SHALL enforce a minimum product description length of 10 characters.
-THE system SHALL enforce a maximum product description length of 5000 characters.
-THE system SHALL accept rich text formatting in product descriptions.
-THE system SHALL strip any HTML script tags from product descriptions for security.
-
-### Category Reference Validation
-
-WHEN a seller selects a category, THE system SHALL validate that the category exists.
-WHEN a seller selects a subcategory, THE system SHALL validate that the parent category exists.
-WHEN a seller selects a category, THE system SHALL prevent selection of deleted categories.
-
-### Base Price Format Validation
-
-THE system SHALL require base price to be a positive decimal value greater than zero.
-THE system SHALL enforce exactly 2 decimal places for base price values.
-THE system SHALL reject base prices that exceed 999999.99.
-THE system SHALL display base prices with the appropriate currency symbol based on platform settings.
-
-### Product Image Validation Rules
-
-### Product Image Requirements
-
-WHEN a seller uploads product images, THE system SHALL require images to be in JPEG, PNG, or WebP format.
-WHEN a seller uploads product images, THE system SHALL enforce a maximum file size of 10MB per image.
-WHEN a seller uploads product images, THE system SHALL require minimum image resolution of 800x800 pixels.
-WHEN a seller uploads product images, THE system SHALL accept maximum image resolution of 4000x4000 pixels.
-WHEN a seller uploads product images, THE system SHALL require at least one image for product creation.
-THE system SHALL allow a maximum of 10 images per product.
-THE system SHALL designate the first uploaded image as the main thumbnail image.
-WHEN a seller reorders images, THE system SHALL update the thumbnail designation accordingly.
-
-### Image Processing Rules
-
-WHEN an image is uploaded, THE system SHALL create a thumbnail version at 200x200 pixels.
-WHEN an image is uploaded, THE system SHALL validate that the image does not contain malicious content.
-WHEN an image is uploaded, THE system SHALL store the original upload timestamp.
-THE system SHALL preserve all uploaded images even when the product is deleted.
-
-### Product Ownership and Access Rules
-
-### Seller Ownership Validation
-
-WHEN a seller creates a product, THE system SHALL associate the product with the seller's account.
-WHEN a seller edits a product, THE system SHALL verify that the seller owns the product.
-WHEN a seller deletes a product, THE system SHALL verify that the seller owns the product.
-WHEN a seller views product snapshots, THE system SHALL only show snapshots for products they own.
-
-### Seller Status Validation
-
-WHEN a seller creates a product, THE system SHALL verify that the seller has approved status.
-WHEN a seller edits a product, THE system SHALL verify that the seller has approved status.
-WHEN a seller is suspended, THE system SHALL prevent them from creating new products.
-WHEN a seller is suspended, THE system SHALL prevent them from editing existing products.
-WHEN a seller is banned, THE system SHALL prevent them from accessing product management.
-
-### Administrator Override
-
-WHEN an administrator views a product, THE system SHALL allow access to all products on the platform.
-WHEN an administrator views product snapshots, THE system SHALL allow access to snapshots of any product.
-WHEN an administrator deletes a product, THE system SHALL allow deletion regardless of order status.
-
-### Product Deletion Validation Rules
-
-### Product Deletion Blocking Conditions
-
-WHEN a seller requests product deletion, THE system SHALL check for pending order items.
-THE system SHALL block product deletion if any variant has order items with paid status.
-THE system SHALL block product deletion if any variant has order items with shipped status.
-THE system SHALL block product deletion if any variant has pending cancellation requests.
-THE system SHALL block product deletion if any variant has pending refund requests.
-
-### Variant-Level Deletion Validation
-
-WHEN a seller requests variant deletion, THE system SHALL check for pending order items on that variant.
-THE system SHALL block variant deletion if the variant has order items with paid status.
-THE system SHALL block variant deletion if the variant has order items with shipped status.
-THE system SHALL block variant deletion if the variant has pending cancellation requests.
-THE system SHALL block variant deletion if the variant has pending refund requests.
-
-### Deletion Consequences
-
-WHEN a product is deleted, THE system SHALL delete all associated variants.
-WHEN a product is deleted, THE system SHALL delete all inventory records for its variants.
-WHEN a product is deleted, THE system SHALL preserve all snapshots of the product and variants.
-WHEN a product is deleted, THE system SHALL preserve order items that reference the product.
-
-### Product Visibility and Listing Rules
-
-### Search and Listing Removal
-
-WHEN a product is deleted, THE system SHALL immediately remove it from search results.
-WHEN a product is deleted, THE system SHALL immediately remove it from category listings.
-WHEN a product is deleted, THE system SHALL mark it as unavailable in customer wishlists.
-WHEN a product is deleted, THE system SHALL automatically remove it from all customer wishlists.
-WHEN a product is deleted, THE system SHALL mark it as unavailable in all shopping carts.
-
-### Seller Suspension Effects
-
-WHEN a seller is suspended, THE system SHALL hide their products from search results.
-WHEN a seller is suspended, THE system SHALL hide their products from category listings.
-WHEN a seller is suspended, THE system SHALL prevent customers from adding their products to cart.
-WHEN a seller is unsuspended, THE system SHALL restore their products to search and category listings.
-
-### Product Status Visibility
-
-WHEN a product has status deleted, THE system SHALL not display it to customers.
-WHEN a product has status suspended, THE system SHALL not display it to customers.
-WHEN a product has status active, THE system SHALL display it in search and category listings.
-
-### Product Snapshot Rules
-
-### Product Edit Snapshots
-
-WHEN a product is created, THE system SHALL create an initial snapshot.
-WHEN a product is edited, THE system SHALL create a new snapshot before applying changes.
-WHEN a product name is changed, THE system SHALL record the previous name in the snapshot.
-WHEN a product description is changed, THE system SHALL record the previous description in the snapshot.
-WHEN a product category is changed, THE system SHALL record the previous category in the snapshot.
-WHEN a product base price is changed, THE system SHALL record the previous price in the snapshot.
-WHEN product images are modified, THE system SHALL record the previous image set in the snapshot.
-
-### Snapshot Content Requirements
-
-THE system SHALL record the timestamp of each product snapshot.
-THE system SHALL record which seller made each change in the snapshot.
-THE system SHALL preserve all product fields in each snapshot.
-THE system SHALL preserve all variant snapshots when a product is edited.
-
-### Snapshot Immutability
-
-THE system SHALL prevent modification of any product snapshot after creation.
-THE system SHALL prevent deletion of any product snapshot.
-THE system SHALL preserve product snapshots even after the product is deleted.
-THE system SHALL preserve product snapshots even after the seller account is deleted.
-
-### Product Price Update Rules
-
-### Base Price Update Scope
-
-WHEN a product base price is updated, THE system SHALL apply the new price only to new purchases.
-WHEN a product base price is updated, THE system SHALL NOT modify existing order items.
-WHEN a product base price is updated, THE system SHALL NOT modify existing cart items.
-
-### Variant Price Override Rules
-
-WHEN a variant has a custom price, THE system SHALL use the variant price instead of base price.
-WHEN a variant price is updated, THE system SHALL apply the new price only to new purchases.
-WHEN a variant price is updated, THE system SHALL NOT modify existing order items.
-
-### Price Display Rules
-
-WHEN a product has multiple variants with different prices, THE system SHALL display a price range.
-WHEN a product has only one variant, THE system SHALL display the variant price or base price.
-WHEN a product has no variants, THE system SHALL display the base price.
-
-### Price Change History
-
-WHEN a product price is changed, THE system SHALL create a snapshot recording the change.
-WHEN a variant price is changed, THE system SHALL create a snapshot recording the change.
-THE system SHALL preserve all price change snapshots for dispute resolution.
-
-## ProductVariant Validation Rules
-
-SKU codes are required unique identifiers within each seller's product catalog. Option values must be provided as structured data representing variant characteristics. Variant prices can override the base price but must be positive decimal values. Stock quantities require non-negative integer values starting at zero. Variant deletion is blocked when order items exist in paid or shipped status. Each variant edit creates a snapshot preserving the previous state for dispute resolution. Stock quantity updates must reference valid inventory history records. Out of stock variants cannot be added to shopping carts by customers. Variant price changes do not affect existing order items already purchased. Multiple variants per product must have distinct SKU codes to prevent conflicts.
-
-### SKU Code Uniqueness Rules
-
-### SKU Code Uniqueness
-
-THE system SHALL require every product variant to have a SKU code.
-
-THE system SHALL enforce SKU code uniqueness within each seller's product catalog.
-
-THE system SHALL reject variant creation when the SKU code already exists for another variant under the same seller.
-
-THE system SHALL reject variant SKU code changes when the new SKU code conflicts with an existing variant under the same seller.
-
-THE system SHALL allow the same SKU code to be used across different sellers without conflict.
-
-THE system SHALL allow the same SKU code to be reused after a variant is permanently deleted and all related order items are in terminal states.
-
-### Distinct SKU Requirement
-
-WHEN a product has multiple variants, THE system SHALL ensure each variant has a distinct SKU code.
-
-IF a seller attempts to create a variant with a duplicate SKU code within the same product, THE system SHALL reject the request.
-
-IF a seller attempts to modify a variant's SKU code to match another variant in the same product, THE system SHALL reject the request.
-
-THE system SHALL display a clear error message indicating which existing variant conflicts with the attempted SKU code.
-
-### Option Values Structure Rules
-
-### Option Values Structure
-
-WHEN a seller creates a product variant, THE system SHALL require option values to be provided.
-
-THE system SHALL store option values as structured data representing variant characteristics (e.g., color, size, material).
-
-THE system SHALL allow option values to contain multiple key-value pairs for complex variant combinations.
-
-THE system SHALL validate that option values are not empty when a variant is created or updated.
-
-WHEN displaying variants to customers, THE system SHALL present option values in a human-readable format.
-
-IF option values are malformed or missing required keys, THE system SHALL reject the variant creation or update request.
-
-THE system SHALL preserve option values in snapshots when variants are edited for dispute resolution purposes.
-
-### Variant Price Rules
-
-### Variant Price Override Rules
-
-WHEN a variant is created, THE system SHALL allow the variant price to be optional.
-
-IF a variant price is provided, THE system SHALL use it instead of the product's base price for that variant.
-
-IF a variant price is not provided, THE system SHALL use the product's base price as the variant price.
-
-THE system SHALL require variant prices to be positive decimal values when specified.
-
-THE system SHALL reject variant creation or updates when the variant price is zero or negative.
-
-THE system SHALL display the variant price (or base price if no override) on product detail pages and shopping cart.
-
-### Price Change Scope
-
-WHEN a variant price is changed, THE system SHALL apply the new price only to future purchases.
-
-THE system SHALL preserve the original unit price in existing order items even after variant price changes.
-
-THE system SHALL create a snapshot when variant prices are modified to record the before and after values.
-
-IF a customer adds a variant to their cart before a price change, THE system SHALL update the cart item price to reflect the current variant price.
-
-THE system SHALL NOT retroactively adjust prices of orders that have already been placed.
-
-### Stock Quantity and Inventory Rules
-
-### Stock Quantity Format
-
-THE system SHALL require stock quantity to be a non-negative integer value.
-
-THE system SHALL initialize new variant stock quantities to zero.
-
-THE system SHALL reject variant creation or updates when stock quantity is negative.
-
-THE system SHALL reject stock quantity updates with non-integer values.
-
-THE system SHALL calculate current stock by summing all inventory history records for the variant.
-
-THE system SHALL display stock quantity to sellers in the seller dashboard.
-
-THE system SHALL display stock status (in stock, out of stock) to customers based on current stock quantity.
-
-### Inventory History Reference
-
-WHEN stock quantity changes, THE system SHALL create an inventory history record.
-
-THE system SHALL record the quantity change value (positive for restocking, negative for orders or adjustments).
-
-THE system SHALL require a reason field for each inventory history record.
-
-THE system SHALL record the timestamp for each inventory change.
-
-THE system SHALL allow sellers to view the complete inventory history for each variant.
-
-THE system SHALL NOT allow direct modification of stock quantity without creating corresponding inventory records.
-
-### Out of Stock Cart Blocking
-
-WHEN a variant's stock quantity reaches zero, THE system SHALL mark the variant as out of stock.
-
-IF a variant is out of stock, THE system SHALL prevent customers from adding it to their shopping cart.
-
-IF a variant becomes out of stock while in a customer's cart, THE system SHALL mark the cart item as unavailable.
-
-THE system SHALL display a warning to customers when their cart quantity exceeds available stock.
-
-THE system SHALL block checkout when any cart item is marked as unavailable.
-
-### Variant Lifecycle Rules
-
-### Variant Deletion Blocking Conditions
-
-THE system SHALL allow sellers to delete variants only when no blocking conditions exist.
-
-IF any order item for the variant has status "paid" or "shipped", THE system SHALL block variant deletion.
-
-IF any cancellation request exists for the variant with status "pending", THE system SHALL block variant deletion.
-
-IF any refund request exists for the variant with status "pending", THE system SHALL block variant deletion.
-
-THE system SHALL display a clear message to sellers explaining why variant deletion is blocked.
-
-THE system SHALL allow variant deletion when all related order items are in terminal states (delivered, cancelled, or refunded).
-
-### Variant Edit Snapshots
-
-WHEN a variant is edited, THE system SHALL create a snapshot of the previous state.
-
-THE system SHALL capture all variant fields in the snapshot (SKU code, option values, price, stock quantity).
-
-THE system SHALL record the timestamp when the variant was edited.
-
-THE system SHALL record which seller made the variant edit.
-
-THE system SHALL preserve snapshots even after the variant is deleted.
-
-THE system SHALL allow sellers to view snapshots of their own product variants.
-
-THE system SHALL allow administrators to view snapshots of any product variant.
-
-THE system SHALL make snapshots immutable and prevent deletion.
-
-## Category Validation Rules
-
-Category names are required and must be unique within their parent category level. Descriptions are optional but when provided must not exceed maximum length limits. Parent categories must exist before subcategories can reference them. Only one level of nesting is allowed so subcategories cannot have their own children. Category deletion is permitted but products in deleted categories become uncategorized. Administrators exclusively create and manage all categories on the platform. Category name changes update all product listings referencing that category. Subcategory reassignment requires valid target category selection. Category browsing by customers shows only active non-deleted categories. Category sorting displays parent categories before their subcategories.
-
-### Category Name Uniqueness
-
-### Category Name Uniqueness
-
-THE system SHALL require a category name for every category creation.
-
-WHEN a category is created, THE system SHALL ensure the name is unique within its parent category level.
-
-WHEN creating a top-level category (no parent), THE system SHALL ensure the name is unique among all top-level categories.
-
-WHEN creating a subcategory, THE system SHALL ensure the name is unique among all siblings sharing the same parent category.
-
-IF a category name already exists at the same level, THE system SHALL reject the creation request.
-
-IF the category name contains only whitespace, THE system SHALL reject the creation request.
-
-WHEN a category name is updated, THE system SHALL validate uniqueness against the same level as the current parent.
-
-IF the updated name conflicts with another category at the same level, THE system SHALL reject the update request.
-
-Category names are case-sensitive for uniqueness validation.
-
-THE system SHALL allow category names with special characters and spaces.
-
-THE system SHALL enforce a minimum category name length of 1 character.
-
-THE system SHALL enforce a maximum category name length of 100 characters.
-
-### Category Description Validation
-
-### Category Description Validation
-
-THE system SHALL allow category descriptions to be optional during creation.
-
-WHEN a category description is provided, THE system SHALL validate it does not exceed 500 characters.
-
-WHEN a category description is updated, THE system SHALL validate the new description does not exceed 500 characters.
-
-IF the description exceeds 500 characters, THE system SHALL reject the request.
-
-THE system SHALL allow empty descriptions (zero length).
-
-THE system SHALL allow descriptions with special characters and formatting.
-
-WHEN displaying category descriptions, THE system SHALL preserve the original formatting.
-
-THE system SHALL validate description length before saving any category changes.
-
-### Parent Category Existence
-
-### Parent Category Existence
-
-WHEN creating a subcategory, THE system SHALL require a valid parent category ID.
-
-IF the referenced parent category does not exist, THE system SHALL reject the subcategory creation request.
-
-IF the referenced parent category is deleted, THE system SHALL reject the subcategory creation request.
-
-WHEN updating a subcategory's parent, THE system SHALL validate the new parent exists and is not deleted.
-
-IF the new parent category does not exist, THE system SHALL reject the parent change request.
-
-THE system SHALL prevent assigning a category as its own parent.
-
-THE system SHALL prevent creating circular parent-child relationships.
-
-WHEN a parent category is deleted, THE system SHALL allow subcategories to remain with their parent reference intact (products become uncategorized).
-
-### Single Level Nesting Structure
-
-### Single Level Nesting Structure
-
-THE system SHALL enforce a maximum of one level of category nesting.
-
-WHEN creating a subcategory, THE system SHALL prevent assigning a parent that is already a subcategory.
-
-IF the selected parent category has its own parent, THE system SHALL reject the creation request.
-
-WHEN updating a category's parent, THE system SHALL validate the new parent is a top-level category.
-
-IF the new parent is a subcategory, THE system SHALL reject the update request.
-
-THE system SHALL display categories in a two-level hierarchy only (parent and subcategory).
-
-THE system SHALL prevent subcategories from having their own children.
-
-Category depth shall never exceed 2 levels (parent category → subcategory).
-
-### Category Deletion Cascade Handling
-
-### Category Deletion Cascade Handling
-
-WHEN an administrator deletes a category, THE system SHALL preserve all products in that category.
-
-WHEN a category is deleted, THE system SHALL set products in that category to uncategorized status.
-
-THE system SHALL NOT delete products when their category is deleted.
-
-THE system SHALL NOT delete subcategories when their parent category is deleted.
-
-WHEN a category is deleted, THE system SHALL preserve the category record for historical reference.
-
-Deleted categories shall remain visible in product snapshots for order history integrity.
-
-THE system SHALL prevent deletion of categories that are referenced in active product listings without first reassigning products.
-
-WHEN a category is deleted, THE system SHALL remove it from customer browsing views.
-
-THE system SHALL preserve category deletion records in the audit log.
-
-### Administrator-Only Category Management
-
-### Administrator-Only Category Management
-
-THE system SHALL restrict category creation to administrators only.
-
-THE system SHALL restrict category updates to administrators only.
-
-THE system SHALL restrict category deletion to administrators only.
-
-WHEN a non-administrator attempts to create a category, THE system SHALL reject the request with an authorization error.
-
-WHEN a non-administrator attempts to update a category, THE system SHALL reject the request with an authorization error.
-
-WHEN a non-administrator attempts to delete a category, THE system SHALL reject the request with an authorization error.
-
-Customers SHALL be able to view all categories but SHALL NOT modify them.
-
-Sellers SHALL be able to view all categories but SHALL NOT modify them.
-
-THE system SHALL validate administrator permissions before executing any category management operation.
-
-### Category Name Change Propagation
-
-### Category Name Change Propagation
-
-WHEN a category name is updated, THE system SHALL immediately reflect the change in all product listings.
-
-WHEN a category name is updated, THE system SHALL update the category reference in all associated products.
-
-WHEN a category name is updated, THE system SHALL create a snapshot of the category before the change.
-
-THE system SHALL preserve the old category name in product snapshots for order history.
-
-WHEN a customer views past orders, THE system SHALL display the category name as it appeared at the time of purchase.
-
-Category name changes SHALL NOT affect product categorization or search functionality.
-
-THE system SHALL log all category name changes with timestamp and administrator identity.
-
-### Subcategory Reassignment Rules
-
-### Subcategory Reassignment Rules
-
-WHEN reassigning a subcategory to a different parent, THE system SHALL validate the new parent is a top-level category.
-
-IF the new parent category does not exist, THE system SHALL reject the reassignment request.
-
-IF the new parent category is deleted, THE system SHALL reject the reassignment request.
-
-WHEN reassigning a subcategory, THE system SHALL preserve all products under that subcategory.
-
-THE system SHALL allow reassignment of subcategories between different top-level parents.
-
-THE system SHALL prevent reassigning a subcategory to become a top-level category.
-
-THE system SHALL prevent reassigning a category to become a subcategory of itself.
-
-WHEN a subcategory is reassigned, THE system SHALL create a snapshot of the category before the change.
-
-### Active Category Filtering
-
-### Active Category Filtering
-
-WHEN customers browse categories, THE system SHALL display only active (non-deleted) categories.
-
-WHEN customers view products by category, THE system SHALL filter to show only active categories.
-
-THE system SHALL exclude deleted categories from all customer-facing category listings.
-
-THE system SHALL exclude deleted categories from search results and navigation menus.
-
-Administrators SHALL be able to view all categories including deleted ones.
-
-THE system SHALL provide a filter option for administrators to show/hide deleted categories.
-
-WHEN a category is deleted, THE system SHALL immediately remove it from customer browsing views.
-
-THE system SHALL preserve deleted categories in administrator views for audit purposes.
-
-### Hierarchical Display Ordering
-
-### Hierarchical Display Ordering
-
-WHEN displaying categories, THE system SHALL show parent categories before their subcategories.
-
-WHEN displaying categories, THE system SHALL group subcategories under their respective parent categories.
-
-THE system SHALL sort parent categories alphabetically by name.
-
-THE system SHALL sort subcategories alphabetically by name within each parent group.
-
-WHEN displaying a category list, THE system SHALL visually indent subcategories to indicate hierarchy.
-
-THE system SHALL maintain consistent ordering across all category views (search, navigation, product listings).
-
-Administrators SHALL be able to override default alphabetical ordering when creating categories.
-
-THE system SHALL preserve the display order in category management interfaces.
-
-## Order Validation Rules
-
-Order numbers are auto-generated unique identifiers following a defined format pattern. Order dates record the timestamp when payment was successfully processed. Total prices are calculated from order items and must match payment gateway confirmation. Shipping addresses are mandatory and cannot be modified after order placement. Customer accounts must be active and verified before order creation. Payment gateway responses determine order creation success or failure. Failed payments do not create order records and allow customer retry. Order status transitions follow defined workflows based on item statuses. Multiple order items from different sellers are grouped into a single order. Order creation triggers inventory deduction for all purchased variants.
-
-### Order Number Generation
-
-WHEN an order is successfully created, THE system SHALL generate a unique order number following the format "ORD-YYYYMMDD-NNNNN" where:
-- ORD is a fixed prefix
-- YYYYMMDD is the order date in year-month-day format
-- NNNNN is a sequential 5-digit number starting from 00001 for each day
-
-THE system SHALL ensure order numbers are globally unique across all orders.
-
-THE system SHALL increment the sequential number for each new order created on the same day.
-
-IF the sequential number reaches 99999, THE system SHALL continue with 00000 for the next order on that day.
-
-### Order Date Recording
-
-WHEN payment is successfully processed, THE system SHALL record the order date timestamp at the moment of payment confirmation.
-
-THE system SHALL store the order date in UTC timezone format.
-
-THE system SHALL use the payment gateway confirmation timestamp as the authoritative order creation time.
-
-IF payment fails, THE system SHALL NOT create an order record and SHALL NOT record an order date.
-
-WHEN viewing order history, THE system SHALL display the order date in the customer's local timezone.
-
-### Total Price Calculation
-
-WHEN calculating order total price, THE system SHALL sum the unit price multiplied by quantity for all order items.
-
-THE system SHALL include shipping costs if applicable in the total price calculation.
-
-THE system SHALL exclude taxes from the total price unless explicitly configured.
-
-THE system SHALL round the total price to 2 decimal places using standard rounding rules.
-
-IF the calculated total does not match the payment gateway amount, THE system SHALL reject the order creation.
-
-THE system SHALL store the total price as an immutable value that cannot be modified after order creation.
-
-### Shipping Address Immutability
-
-WHEN an order is placed, THE system SHALL capture and lock the shipping address at that moment.
-
-THE system SHALL NOT allow customers to modify the shipping address after order placement.
-
-THE system SHALL NOT allow sellers to modify the shipping address after order placement.
-
-IF a customer needs to change the shipping address, THE system SHALL require them to cancel the order and place a new one.
-
-THE system SHALL preserve the original shipping address in the order record even if the customer updates their address book later.
-
-### Account Verification Requirements
-
-WHEN a customer attempts to place an order, THE system SHALL verify the customer account status is active.
-
-THE system SHALL reject order creation if the customer account is suspended or banned.
-
-THE system SHALL verify the customer has completed email verification before allowing order placement.
-
-IF the customer account verification is incomplete, THE system SHALL block order creation and prompt the customer to complete verification.
-
-THE system SHALL verify the customer is logged in before allowing order creation.
-
-### Payment Gateway Validation
-
-WHEN a customer confirms an order, THE system SHALL validate the payment gateway response before creating the order record.
-
-THE system SHALL only create an order record after receiving a successful payment confirmation from the gateway.
-
-IF the payment gateway returns a failure response, THE system SHALL NOT create an order record.
-
-IF the payment gateway times out, THE system SHALL retry the payment validation up to 3 times with 5-second intervals.
-
-THE system SHALL log all payment gateway responses for audit purposes.
-
-THE system SHALL display a clear error message to the customer if payment validation fails.
-
-### Failed Payment Handling
-
-WHEN payment fails during order placement, THE system SHALL NOT create an order record.
-
-THE system SHALL allow the customer to retry payment without requiring them to re-enter cart items.
-
-THE system SHALL preserve the cart contents while the customer retries payment.
-
-IF payment fails multiple times, THE system SHALL suggest the customer contact their bank or use a different payment method.
-
-THE system SHALL clear the cart items only after successful payment confirmation.
-
-THE system SHALL display the specific payment failure reason to the customer when available from the payment gateway.
-
-### Order Status Transition Workflow
-
-WHEN an order item status changes, THE system SHALL follow the defined status transition workflow.
-
-Order item status transitions SHALL follow this sequence: paid → shipped → delivered
-
-Order item status transitions SHALL allow: paid → cancelled, paid → refunded (via request workflow)
-
-Order item status SHALL NOT transition from delivered back to shipped or paid.
-
-Order item status SHALL NOT transition from cancelled or refunded to any other status.
-
-WHEN all items in an order are cancelled, THE system SHALL update the order status to "cancelled".
-
-WHEN all items in an order are refunded, THE system SHALL update the order status to "refunded".
-
-WHEN items have mixed statuses (e.g., some delivered, some refunded), THE system SHALL update the order status to "partiallyCompleted".
-
-THE system SHALL prevent any status transition that violates the defined workflow.
-
-### Multi-Seller Order Grouping
-
-WHEN a customer places an order with items from multiple sellers, THE system SHALL group all items into a single order record.
-
-THE system SHALL assign each order item to its respective seller while maintaining the single order structure.
-
-THE system SHALL calculate the total order price across all sellers.
-
-THE system SHALL allow each seller to independently ship their items through separate shipments.
-
-THE system SHALL track each order item's status independently based on its seller's actions.
-
-THE system SHALL display the seller information for each order item in the order details.
-
-WHEN viewing order history, THE system SHALL show the order as a single entity with items grouped by seller.
-
-### Inventory Deduction Trigger
-
-WHEN an order is successfully created with payment confirmation, THE system SHALL automatically deduct inventory for all purchased variants.
-
-THE system SHALL create inventory records with negative quantity changes for each purchased variant.
-
-THE system SHALL record the reason as "order_placed" in the inventory history.
-
-THE system SHALL update the current stock quantity immediately after deduction.
-
-IF inventory deduction would result in negative stock, THE system SHALL reject the order creation.
-
-WHEN an order item is cancelled, THE system SHALL restore the inventory by creating a positive quantity change record.
-
-WHEN an order item is refunded, THE system SHALL restore the inventory by creating a positive quantity change record.
-
-THE system SHALL ensure inventory deduction is atomic with order creation to prevent race conditions.
-
-## OrderItem Validation Rules
-
-Order item quantities must be positive integers representing purchased units. Unit prices capture the variant price at purchase time and cannot be modified. Status transitions follow strict workflows from paid to shipped to delivered. Cancelled and refunded statuses are terminal states for order items. Each order item references a valid product variant that existed at purchase time. Snapshots preserve product and seller profile data at the moment of purchase. Item status changes trigger corresponding shipment or refund workflows. Partial cancellations allow some items to be cancelled while others continue. Refund requests are only valid for delivered items within the seven-day window. Order item totals are calculated from quantity multiplied by unit price.
-
-### Quantity Validation Rules
-
-WHEN a customer adds items to an order, THE system SHALL:
-1. Require quantity to be a positive integer (minimum value of 1)
-2. Validate that quantity does not exceed available stock for the variant
-3. Reject the order if any item has zero or negative quantity
-4. Combine quantities when the same variant is added multiple times
-5. Calculate item total as quantity multiplied by unit price
-
-IF the quantity is zero or negative, THE system SHALL reject the order item.
-IF the quantity exceeds available stock, THE system SHALL warn the customer and prevent checkout.
-IF the same variant appears multiple times in the cart, THE system SHALL combine quantities into a single line item.
-
-WHEN an order is created, THE system SHALL:
-1. Lock the quantity value at the time of purchase
-2. Prevent any future modifications to the quantity after order creation
-3. Record the quantity in the order item for historical accuracy
-
-### Unit Price Immutability Rules
-
-WHEN an order item is created, THE system SHALL:
-1. Capture the unit price from the variant at the moment of purchase
-2. Store the unit price as a fixed value that cannot be modified
-3. Preserve the unit price even if the variant price changes later
-
-IF the variant price is updated after purchase, THE system SHALL NOT affect existing order items.
-IF an administrator attempts to modify the unit price, THE system SHALL reject the modification.
-
-WHEN calculating order totals, THE system SHALL:
-1. Use the captured unit price for all calculations
-2. Apply the unit price consistently across all order item operations
-3. Display the unit price in order history and receipts
-
-THE system SHALL maintain unit price immutability for:
-- Order fulfillment processes
-- Refund calculations
-- Financial reporting
-- Dispute resolution
-
-### Status Transition Workflow
-
-WHEN an order item is created, THE system SHALL set the initial status to "paid".
-WHILE the order item status is "paid", THE system SHALL allow cancellation requests.
-WHEN a seller ships an order item, THE system SHALL transition the status to "shipped".
-WHILE the order item status is "shipped", THE system SHALL prevent cancellation requests.
-WHEN a customer confirms delivery, THE system SHALL transition the status to "delivered".
-WHEN automatic delivery confirmation occurs after 14 days, THE system SHALL transition the status to "delivered".
-
-IF a customer requests cancellation for a "paid" item, THE system SHALL allow the request.
-IF a customer requests cancellation for a "shipped" item, THE system SHALL reject the request.
-IF a customer requests refund for a "delivered" item, THE system SHALL allow the request within 7 days.
-IF a customer requests refund for a non-delivered item, THE system SHALL reject the request.
-
-THE system SHALL enforce the following status transitions:
-- "paid" → "shipped" (seller action)
-- "shipped" → "delivered" (customer confirmation or auto-confirmation)
-- "paid" → "cancelled" (cancellation approval)
-- "delivered" → "refunded" (refund approval)
-- Any status → terminal states via administrator action
-
-### Variant Reference Validation
-
-WHEN an order item is created, THE system SHALL validate that the referenced variant exists.
-WHEN an order item is created, THE system SHALL validate that the variant belongs to an active product.
-WHEN an order item is created, THE system SHALL validate that the product belongs to an approved seller.
-
-IF the referenced variant is deleted before order creation, THE system SHALL reject the order item.
-IF the referenced product is deleted before order creation, THE system SHALL reject the order item.
-IF the seller account is banned before order creation, THE system SHALL reject the order item.
-
-WHILE the order item exists, THE system SHALL preserve the variant reference even if the variant is later deleted.
-WHILE the order item exists, THE system SHALL preserve the product reference even if the product is later deleted.
-
-THE system SHALL prevent order items from referencing:
-- Variants that do not exist
-- Deleted products
-- Products from suspended sellers
-- Products from banned sellers
-
-### Purchase Snapshot Creation
-
-WHEN an order item is created, THE system SHALL create a product snapshot containing:
-1. Product name at time of purchase
-2. Product description at time of purchase
-3. Category information at time of purchase
-4. Base price at time of purchase
-5. All product images at time of purchase
-
-WHEN an order item is created, THE system SHALL create a product variant snapshot containing:
-1. SKU code at time of purchase
-2. Option values at time of purchase
-3. Variant price at time of purchase
-4. Stock quantity at time of purchase
-
-WHEN an order item is created, THE system SHALL create a seller profile snapshot containing:
-1. Shop name at time of purchase
-2. Shop description at time of purchase
-3. Shop logo at time of purchase
-
-THE system SHALL ensure all snapshots are immutable and cannot be deleted.
-THE system SHALL preserve all snapshots even if the product, variant, or seller account is deleted.
-THE system SHALL make snapshots available to relevant parties for dispute resolution.
-
-### Status Change Triggers
-
-WHEN an order item status changes to "shipped", THE system SHALL:
-1. Update the parent order status if applicable
-2. Create a shipment record with tracking information
-3. Notify the customer of the shipment
-
-WHEN an order item status changes to "delivered", THE system SHALL:
-1. Update the parent order status if applicable
-2. Enable review creation for the product
-3. Start the 7-day refund eligibility window
-
-WHEN an order item status changes to "cancelled", THE system SHALL:
-1. Restore the variant stock quantity via inventory record
-2. Process refund for the item amount
-3. Update the parent order status if applicable
-
-WHEN an order item status changes to "refunded", THE system SHALL:
-1. Restore the variant stock quantity via inventory record
-2. Process payment reversal for the item amount
-3. Update the parent order status if applicable
-
-IF an administrator forces a status change, THE system SHALL execute all associated triggers.
-IF a status change affects multiple order items, THE system SHALL process each item independently.
-
-### Partial Cancellation Support
-
-WHEN a customer requests cancellation for an order item, THE system SHALL:
-1. Validate that the item status is "paid"
-2. Require a cancellation reason to be provided
-3. Create a cancellation request record
-4. Notify the seller of the pending request
-
-WHILE a cancellation request is "pending", THE system SHALL:
-1. Prevent the seller from shipping the item
-2. Allow the seller to approve or reject the request
-3. Track the request creation timestamp
-
-IF the seller approves the cancellation request, THE system SHALL:
-1. Change the order item status to "cancelled"
-2. Restore the variant stock quantity
-3. Process refund for the item amount
-
-IF the seller rejects the cancellation request, THE system SHALL:
-1. Change the cancellation request status to "rejected"
-2. Allow the item to proceed to shipping
-3. Record the rejection reason
-
-THE system SHALL support partial cancellation where:
-- Some items in an order can be cancelled while others continue processing
-- The parent order status reflects mixed states as "partially completed"
-- Each cancelled item restores its own stock independently
-
-### Refund Time Window Rules
-
-WHEN a customer requests a refund for an order item, THE system SHALL:
-1. Validate that the item status is "delivered"
-2. Calculate days elapsed since delivery confirmation
-3. Validate that refund is requested within 7 days of delivery
-4. Require a refund reason to be provided
-5. Create a refund request record
-6. Notify the seller of the pending request
-
-IF the refund request exceeds 7 days from delivery, THE system SHALL reject the request.
-IF the refund request is for a non-delivered item, THE system SHALL reject the request.
-
-WHILE a refund request is "pending", THE system SHALL:
-1. Allow the seller to approve or reject the request
-2. Track the request creation timestamp
-3. Record the days elapsed since delivery
-
-IF the seller approves the refund request, THE system SHALL:
-1. Change the order item status to "refunded"
-2. Restore the variant stock quantity
-3. Process payment reversal for the item amount
-
-IF the seller rejects the refund request, THE system SHALL:
-1. Change the refund request status to "rejected"
-2. Record the rejection reason
-3. Maintain the item as "delivered" status
-
-THE system SHALL create snapshots for all refund request status changes.
-
-### Item Total Calculation Rules
-
-WHEN calculating an order item total, THE system SHALL:
-1. Multiply the quantity by the unit price
-2. Use the exact unit price captured at purchase time
-3. Round the result to 2 decimal places
-
-WHEN calculating order totals, THE system SHALL:
-1. Sum all order item totals within the order
-2. Include all items regardless of their status
-3. Display the total in the order summary
-
-IF the unit price has decimals, THE system SHALL preserve full precision during calculation.
-IF the quantity is large, THE system SHALL ensure calculation accuracy without overflow.
-
-THE system SHALL display item totals as:
-- Unit price per item
-- Quantity purchased
-- Total amount (unit price × quantity)
-
-THE system SHALL use item totals for:
-- Order summary display
-- Refund calculations
-- Financial reporting
-- Dispute resolution
-
-## Address Validation Rules
-
-Recipient names are required fields with reasonable length limits for shipping labels. Phone numbers must follow valid format patterns for the shipping destination country. Street addresses require complete information including building numbers and street names. City fields must match the postal code region for accurate delivery. State or province fields are required for countries that use regional divisions. Postal codes must match the format requirements of the destination country. Country fields must reference valid country codes from an approved list. Address validation prevents incomplete or malformed shipping information. Default addresses are marked for quick selection during checkout. Address deletion is permitted but cannot remove the last remaining address.
-
-### Address Field Validation Rules
-
-### Recipient Name Validation
-
-THE system SHALL require a recipient name for every shipping address.
-
-WHEN a customer creates or edits an address, THE system SHALL validate the recipient name field is not empty.
-
-THE system SHALL enforce a maximum length of 100 characters for recipient names to accommodate international name formats.
-
-### Phone Number Format Validation
-
-WHEN a customer creates or edits an address, THE system SHALL require a phone number field.
-
-THE system SHALL validate phone numbers follow a valid format pattern for the shipping destination country.
-
-THE system SHALL enforce a maximum length of 20 characters for phone numbers to accommodate international formats with country codes.
-
-THE system SHALL reject phone numbers containing invalid characters (only digits, spaces, hyphens, parentheses, and plus signs allowed).
-
-### Street Address Completeness
-
-THE system SHALL require a complete street address for every shipping address.
-
-WHEN a customer creates or edits an address, THE system SHALL validate the street address field is not empty.
-
-THE system SHALL enforce a minimum length of 5 characters for street addresses to prevent incomplete entries.
-
-THE system SHALL enforce a maximum length of 200 characters for street addresses to accommodate complex addresses.
-
-THE system SHALL require street addresses to include building numbers and street names for accurate delivery.
-
-### Address Line Validation
-
-THE system SHALL allow an optional second address line for apartment numbers, suite numbers, or additional address details.
-
-WHEN provided, THE system SHALL enforce a maximum length of 100 characters for the second address line.
-
-### Address Location Validation Rules
-
-### City and Region Requirements
-
-THE system SHALL require a city field for every shipping address.
-
-WHEN a customer creates or edits an address, THE system SHALL validate the city field is not empty.
-
-THE system SHALL enforce a maximum length of 100 characters for city names.
-
-THE system SHALL require state or province fields for countries that use regional divisions.
-
-WHEN the selected country requires regional divisions, THE system SHALL validate the state/province field is not empty.
-
-THE system SHALL enforce a maximum length of 100 characters for state or province names.
-
-### Postal Code Format Rules
-
-THE system SHALL require a postal code field for every shipping address.
-
-WHEN a customer creates or edits an address, THE system SHALL validate the postal code field is not empty.
-
-THE system SHALL validate postal codes match the format requirements of the destination country.
-
-THE system SHALL support both numeric and alphanumeric postal code formats depending on the country.
-
-THE system SHALL enforce a maximum length of 20 characters for postal codes to accommodate international formats.
-
-### City and Postal Code Matching
-
-WHEN a customer provides a city and postal code, THE system SHALL validate they match the same geographic region.
-
-THE system SHALL reject addresses where the city does not correspond to the provided postal code.
-
-THE system SHALL provide error feedback when city and postal code mismatch is detected.
-
-### Country Code Validation
-
-THE system SHALL require a country field for every shipping address.
-
-WHEN a customer creates or edits an address, THE system SHALL validate the country references a valid country code from an approved list.
-
-THE system SHALL enforce ISO 3166-1 alpha-2 country codes for all address entries.
-
-THE system SHALL reject addresses with invalid or unsupported country codes.
-
-### Address Management Rules
-
-### Address Completeness Verification
-
-WHEN a customer submits an address for creation or editing, THE system SHALL verify all required fields are present and valid.
-
-THE system SHALL prevent address submission when any required field fails validation.
-
-THE system SHALL provide clear error messages indicating which fields failed validation and why.
-
-THE system SHALL require the following fields for all addresses: recipient name, phone number, street address, city, postal code, and country.
-
-### Default Address Management
-
-THE system SHALL allow customers to mark one address as their default shipping address.
-
-WHEN a customer sets a default address, THE system SHALL automatically remove the default designation from any previously marked default address.
-
-THE system SHALL use the default address for checkout when the customer has not selected a specific address.
-
-THE system SHALL display the default address with a visual indicator in the address list.
-
-### Last Address Protection
-
-WHEN a customer attempts to delete an address, THE system SHALL check if it is their only remaining address.
-
-IF the address to be deleted is the customer's last address, THE system SHALL reject the deletion request.
-
-THE system SHALL require customers to maintain at least one valid shipping address in their account.
-
-THE system SHALL provide error feedback when deletion is blocked due to the last address protection rule.
-
-### Address Deletion Conditions
-
-WHEN a customer deletes an address that is not their last address, THE system SHALL allow the deletion.
-
-IF the deleted address was marked as default, THE system SHALL automatically remove the default designation.
-
-THE system SHALL preserve order history that references deleted addresses for record-keeping purposes.
-
-THE system SHALL not prevent address deletion due to past order references (unlike seller account deletion rules).
-
-## Review Validation Rules
-
-Ratings must be integers between one and five stars inclusive. Text content is optional but when provided must not exceed maximum character limits. Reviews can only be written after the corresponding order item reaches delivered status. One review per product per order is enforced to prevent duplicate submissions. Review edits create snapshots preserving the original content for audit purposes. Deleted reviews are removed from display but snapshots remain in the system. Average ratings are calculated from non-deleted reviews only. Review sorting displays newest reviews first by default. Review text supports basic formatting within defined constraints. Rating changes update the product's average rating immediately.
-
-### Review Content Validation
-
-### Rating Range Validation
-
-THE system SHALL require rating values to be integers between 1 and 5 inclusive.
-
-WHEN a customer submits a review with a rating, THE system SHALL validate the rating is within the 1-5 range.
-
-IF a rating value is less than 1, THE system SHALL reject the review submission.
-
-IF a rating value is greater than 5, THE system SHALL reject the review submission.
-
-IF a rating value is not an integer, THE system SHALL reject the review submission.
-
-THE system SHALL display an error message when rating validation fails.
-
-THE system SHALL not allow partial or decimal rating values (e.g., 3.5 stars).
-
-### Review Eligibility Rules
-
-### Delivery Status Requirement
-
-WHEN a customer attempts to write a review, THE system SHALL verify the corresponding order item has reached "delivered" status.
-
-IF the order item status is not "delivered", THE system SHALL prevent the customer from submitting a review.
-
-IF the order item status is "paid", THE system SHALL inform the customer they must wait for delivery.
-
-IF the order item status is "shipped", THE system SHALL inform the customer they must wait for delivery.
-
-IF the order item status is "cancelled", THE system SHALL prevent the customer from submitting a review.
-
-IF the order item status is "refunded", THE system SHALL prevent the customer from submitting a review.
-
-THE system SHALL display the current order item status when review submission is blocked.
-
-### Duplicate Review Prevention
-
-### Duplicate Review Prevention
-
-WHEN a customer attempts to submit a review, THE system SHALL verify no existing review exists for that product and order combination.
-
-IF a review already exists for the same product and order, THE system SHALL prevent duplicate submission.
-
-THE system SHALL display an error message indicating a review has already been submitted.
-
-THE system SHALL allow customers to edit their existing review instead of creating a new one.
-
-THE system SHALL enforce one review per product per order across all customers.
-
-### Review Modification and Deletion
-
-### Review Edit Snapshots
-
-WHEN a customer edits a review, THE system SHALL create a snapshot of the review before the edit.
-
-THE system SHALL record the timestamp when the review edit occurred.
-
-THE system SHALL capture the previous rating and text content values in the snapshot.
-
-THE system SHALL capture the new rating and text content values in the snapshot.
-
-THE system SHALL record which customer made the edit.
-
-THE system SHALL make review snapshots immutable and cannot be deleted.
-
-THE system SHALL allow customers and administrators to view review snapshots for audit purposes.
-
-THE system SHALL preserve all review snapshots even after the review is deleted.
-
-### Deleted Review Handling
-
-### Deleted Review Handling
-
-WHEN a customer deletes their review, THE system SHALL remove the review from public display.
-
-THE system SHALL mark the deleted review with an "isDeleted" flag.
-
-THE system SHALL preserve the review snapshot for audit and dispute resolution.
-
-THE system SHALL display "deleted user" or "deleted review" placeholder on the product detail page.
-
-THE system SHALL exclude deleted reviews from average rating calculations.
-
-THE system SHALL allow administrators to view deleted reviews and their snapshots.
-
-THE system SHALL not allow undeletion of reviews once deleted.
-
-### Rating Aggregation and Display
+Deleted reviews are excluded from the average rating calculation.
 
 ### Average Rating Calculation
 
-THE system SHALL calculate the average rating for each product from all non-deleted reviews.
+The average rating for a product is calculated from all non-deleted reviews for that product.
 
-THE system SHALL exclude deleted reviews from average rating calculations.
+Deleted reviews are excluded from the average rating calculation.
 
-THE system SHALL round the average rating to one decimal place for display.
+If a product has no non-deleted reviews, no average rating is displayed.
 
-THE system SHALL display zero or no rating when a product has no reviews.
+When a review is edited, the average rating is recalculated using the updated rating value.
 
-THE system SHALL recalculate the average rating whenever a new review is submitted.
+When a review is deleted, the average rating is recalculated excluding that review.
 
-THE system SHALL recalculate the average rating whenever an existing review is edited.
+## InventoryRecord Rules
 
-THE system SHALL recalculate the average rating whenever a review is deleted.
+Current stock quantity is calculated by summing all inventory records for a variant. Each inventory record contains a quantity change value that is positive for restocking or negative for orders and adjustments. Every inventory record requires a reason explaining the quantity change. Each inventory record has a timestamp recording when the change occurred. Sellers can add inventory through restocking with a quantity and reason. Sellers can subtract inventory through adjustments or loss with a quantity and reason. Order placement automatically creates a negative inventory record for each purchased variant. Order cancellation or refund automatically creates a positive inventory record. When stock reaches zero, the variant is shown as out of stock. Out of stock variants cannot be added to shopping carts.
 
-### Rating Update Propagation
+### Stock Quantity Calculation
 
-### Rating Update Propagation
+The current stock quantity for a product variant is calculated by summing all inventory records associated with that variant. Each inventory record contains a quantity change value that contributes to the total. The system maintains a complete history of all stock changes through inventory records rather than storing a single stock value. When calculating current stock, all inventory records from the variant's creation to the present are included in the sum.
 
-WHEN a review is submitted, THE system SHALL immediately update the product's average rating.
+### Quantity Change Requirement
 
-WHEN a review is edited, THE system SHALL immediately update the product's average rating.
+Each inventory record must include a quantity change value that indicates how much stock was added or removed. The quantity change value must be a non-zero number. A positive value indicates stock was added to inventory. A negative value indicates stock was removed from inventory. The quantity change value is required and cannot be omitted when creating an inventory record.
 
-WHEN a review is deleted, THE system SHALL immediately update the product's average rating.
+### Reason Field Requirement
 
-THE system SHALL display the updated average rating on the product detail page.
+Each inventory record must include a reason field that explains why the quantity change occurred. The reason is required and must be provided by the seller when manually adding or subtracting inventory. For automatic inventory changes (such as order placement or cancellation), the system generates an appropriate reason based on the triggering event. The reason field cannot be empty or null.
 
-THE system SHALL display the updated average rating in product listing views.
+### Timestamp Requirement
 
-THE system SHALL display the total review count alongside the average rating.
+Each inventory record must include a timestamp that records when the quantity change occurred. The timestamp is automatically generated by the system at the time the inventory record is created. Sellers cannot manually set or modify the timestamp when creating inventory records. The timestamp is used to maintain the chronological order of inventory changes and for audit purposes.
 
-THE system SHALL update the review count when reviews are added, edited, or deleted.
+### Restocking Inventory
 
-### Review Sort Order
+Sellers can add inventory to a product variant through restocking. When restocking, the seller must provide a positive quantity value and a reason for the restock. The system creates an inventory record with the positive quantity change value. Restocking increases the variant's current stock quantity. Sellers can restock variants regardless of their current stock level.
 
-### Review Sort Order
+### Inventory Adjustment
 
-WHEN displaying reviews on the product detail page, THE system SHALL sort reviews by newest first.
+Sellers can subtract inventory from a product variant through adjustments or loss recording. When adjusting inventory downward, the seller must provide a negative quantity value and a reason for the adjustment. The system creates an inventory record with the negative quantity change value. Adjustments decrease the variant's current stock quantity. Sellers can adjust inventory downward even if it results in zero or negative stock (though negative stock triggers business rule violations).
 
-THE system SHALL use the review creation timestamp for sorting.
+### Order-Induced Inventory Reduction
 
-THE system SHALL display the most recent review at the top of the review list.
+When a customer places an order containing a product variant, the system automatically creates an inventory record with a negative quantity change equal to the ordered quantity. This automatic inventory reduction occurs immediately upon successful payment confirmation. The system generates an appropriate reason indicating the order created the inventory change. No manual action is required from the seller for order-related inventory changes.
 
-THE system SHALL maintain consistent sort order across all product detail page views.
+### Cancellation or Refund-Induced Inventory Restoration
 
-THE system SHALL allow pagination of reviews when the review count exceeds the page limit.
+When an order item is cancelled or refunded, the system automatically creates an inventory record with a positive quantity change equal to the refunded quantity. This automatic inventory restoration occurs when the cancellation or refund is approved. The system generates an appropriate reason indicating the cancellation or refund created the inventory change. Stock quantities are restored to reflect the returned availability of the variant.
 
-THE system SHALL preserve the sort order when customers navigate between pages of reviews.
+### Zero Stock Status
 
-### Text Formatting Rules
+When a product variant's calculated stock quantity reaches zero, the variant is marked as out of stock. The system automatically updates the variant's availability status when stock reaches zero. Out of stock variants are displayed to customers with an "out of stock" indicator on product listing and detail pages. The out of stock status is determined dynamically based on the current sum of inventory records, not a stored status field.
 
-### Text Formatting Rules
+### Out of Stock Cart Restriction
 
-WHEN review text is provided, THE system SHALL accept basic text formatting.
+Product variants that are out of stock cannot be added to shopping carts by customers. The system prevents customers from selecting or adding out of stock variants to their cart. If a variant becomes out of stock while items are already in a customer's cart, those cart items are marked as unavailable. Customers cannot proceed to checkout with unavailable items in their cart. The cart validation checks stock availability before allowing checkout.
 
-THE system SHALL sanitize review text to prevent injection of malicious code.
+## CancellationRequest Rules
 
-THE system SHALL preserve line breaks and paragraph spacing in review text.
+Cancellation requests can only be made for order items with paid status. Items that are already shipped cannot be cancelled through this process. Each cancellation request requires a reason explaining why the customer wants to cancel. The seller of that specific item can approve or reject the cancellation request. When a seller responds to a cancellation request, a snapshot of the request state is created. If the seller approves, the item is cancelled and refund is processed for that item only. Cancelled items restore their stock quantities through inventory records. The remaining items in the order continue processing normally. If all items in an order are cancelled, the entire order status becomes cancelled.
 
-THE system SHALL not allow HTML tags or embedded scripts in review text.
+### Cancellation Eligibility
 
-THE system SHALL encode special characters to prevent display issues.
+A cancellation request can only be submitted for order items with paid status.
 
-### Review Text Length Limits
+WHEN an order item has status shipped, delivered, cancelled, or refunded, THEN the system SHALL reject any cancellation request for that item.
 
-### Review Text Length Limits
-
-WHEN a customer provides review text content, THE system SHALL validate the text does not exceed the maximum character limit.
-
-IF review text exceeds the maximum character limit, THE system SHALL reject the review submission.
-
-THE system SHALL allow empty review text (text is optional).
-
-THE system SHALL display an error message when text length validation fails.
-
-## Wishlist Validation Rules
-
-Wishlist entries reference valid product IDs that exist in the catalog. Products deleted by sellers are automatically removed from all customer wishlists. Wishlist items are paginated to support large collections efficiently. Each wishlist entry records the timestamp when the product was added. Customers can remove items from their wishlist at any time. Duplicate product entries are prevented within the same customer's wishlist. Wishlist visibility is private to the owning customer only. Wishlist items do not reserve inventory or affect product availability. Product price changes are reflected in wishlist display but do not trigger notifications. Wishlist entries persist across customer sessions and devices.
-
-### Product Reference Validation
-
-WHEN a customer adds a product to their wishlist, THE system SHALL validate that the product ID references an existing product in the catalog.
-
-WHEN a product ID is invalid or does not exist, THE system SHALL reject the wishlist addition request.
-
-WHEN a customer views their wishlist, THE system SHALL verify that all referenced products are accessible to the customer.
-
-IF a product has been deleted by its seller, THE system SHALL automatically remove it from all customer wishlists without requiring customer action.
-
-IF a product's status changes to suspended or hidden, THE system SHALL automatically remove it from all customer wishlists.
-
-THE system SHALL maintain referential integrity between wishlist entries and products at all times.
-
-### Deleted Product Auto-Removal
-
-WHEN a seller deletes a product, THE system SHALL automatically remove that product from all customer wishlists within the same transaction.
-
-WHEN a product is deleted, THE system SHALL preserve the deletion event for audit purposes but remove the visible wishlist entry.
-
-IF a customer attempts to view a wishlist item that has been deleted, THE system SHALL not display the item in the wishlist listing.
-
-THE system SHALL handle product deletion cascades to wishlists atomically to prevent orphaned references.
-
-WHEN a product is restored after deletion, THE system SHALL NOT automatically re-add it to previous customer wishlists.
-
-Deleted product removal from wishlists SHALL NOT trigger notifications to customers.
-
-### Wishlist Pagination
-
-WHEN a customer views their wishlist, THE system SHALL paginate the results to support efficient loading of large collections.
-
-THE system SHALL support configurable page sizes for wishlist pagination.
-
-WHEN paginating wishlist results, THE system SHALL maintain consistent ordering across page requests.
-
-IF a customer requests a page number beyond available data, THE system SHALL return an empty result set or appropriate boundary indication.
-
-THE system SHALL provide navigation metadata including total count, current page, and available pages in wishlist responses.
-
-Pagination SHALL apply to both active and historical wishlist views.
-
-### Entry Management Rules
-
-WHEN a product is added to a customer's wishlist, THE system SHALL record the timestamp of when the addition occurred.
-
-THE system SHALL maintain the entry timestamp immutably once recorded.
-
-WHEN a customer removes an item from their wishlist, THE system SHALL verify that the customer owns the wishlist entry.
-
-IF a customer attempts to remove an item from another customer's wishlist, THE system SHALL reject the removal request.
-
-WHEN a customer adds a product that already exists in their wishlist, THE system SHALL prevent duplicate entries for the same product.
-
-THE system SHALL check for existing product entries before allowing new additions to the wishlist.
-
-Duplicate prevention SHALL be enforced at the customer-product level, allowing the same product in different customers' wishlists.
-
-### Wishlist Privacy Rules
-
-WHEN a customer views their wishlist, THE system SHALL restrict visibility to only that customer's own wishlist entries.
-
-IF another customer attempts to view someone else's wishlist, THE system SHALL deny access and not reveal the existence of the wishlist.
-
-THE system SHALL NOT expose wishlist contents through public product pages or search results.
-
-WHEN a customer is logged out, THE system SHALL NOT display any wishlist information.
-
-Wishlist privacy SHALL be enforced at the API level for all wishlist operations.
-
-Administrators MAY view customer wishlists for support and dispute resolution purposes only.
-
-### Inventory and Pricing Behavior
-
-WHEN a product is added to a wishlist, THE system SHALL NOT reserve or decrement inventory for that product variant.
-
-THE system SHALL treat wishlist items as non-binding expressions of interest only.
-
-WHEN displaying wishlist items, THE system SHALL show current product prices, not prices at the time of wishlist addition.
-
-IF a product's price changes after being added to a wishlist, THE system SHALL reflect the updated price in the wishlist display.
-
-Price changes to wishlist items SHALL NOT trigger automatic notifications to customers.
-
-THE system SHALL NOT block product purchases based on wishlist additions by other customers.
-
-Inventory availability checks for wishlist display SHALL use real-time stock data.
-
-### Session and Persistence Rules
-
-WHEN a customer adds a product to their wishlist, THE system SHALL persist the entry across all customer sessions and devices.
-
-THE system SHALL maintain wishlist entries independently of session lifecycle.
-
-WHEN a customer logs in from a new device, THE system SHALL display their complete wishlist from previous sessions.
-
-IF a customer's session expires, THE system SHALL preserve all wishlist data for subsequent login.
-
-THE system SHALL sync wishlist changes across multiple concurrent sessions in real-time.
-
-Wishlist persistence SHALL survive customer account inactivity periods.
-
-THE system SHALL provide consistent wishlist state regardless of access method (web, mobile, API).
-
-## CartItem Validation Rules
-
-Cart items reference specific product variants rather than products alone. Quantities must be positive integers with upper limits to prevent abuse. When adding duplicate variants, quantities are combined rather than creating new entries. Stock availability is validated before allowing cart additions. Out of stock variants are marked unavailable but not automatically removed. Cart item prices reflect current variant prices at the time of viewing. Cart totals are calculated from all item subtotals including taxes. Cart items persist across customer sessions until checkout or removal. Variant deletion by sellers marks the cart item as unavailable. Cart validation during checkout ensures all items are purchasable.
-
-### Variant Reference Requirements
-
-WHEN a customer adds an item to their cart, THE system SHALL require selection of a specific product variant identified by its SKU code.
-
-WHEN a customer views their cart, THE system SHALL display the product name, variant option values, price, quantity, and subtotal for each cart item.
-
-THE system SHALL NOT allow cart items to reference products without a specific variant selection.
-
-THE system SHALL validate that the referenced variant exists and is active before adding to cart.
-
-IF the variant does not exist, THE system SHALL reject the cart addition request.
-
-IF the variant has been deleted by the seller, THE system SHALL mark the cart item as unavailable rather than removing it.
-
-IF the variant is suspended due to seller suspension, THE system SHALL mark the cart item as unavailable.
-
-WHEN a variant becomes unavailable after being added to cart, THE system SHALL preserve the cart item but prevent checkout with that item.
-
-### Quantity Validation Rules
-
-WHEN a customer adds a variant to their cart, THE system SHALL require the quantity to be a positive integer greater than zero.
-
-WHEN a customer adds a variant to their cart, THE system SHALL reject quantities of zero or negative values.
-
-WHEN a customer adds a variant to their cart, THE system SHALL enforce a maximum quantity limit to prevent abuse.
-
-WHEN a customer adds a variant that already exists in their cart, THE system SHALL combine the new quantity with the existing quantity.
-
-WHEN quantities are combined, THE system SHALL NOT create a duplicate cart item entry.
-
-WHEN the combined quantity exceeds the maximum limit, THE system SHALL reject the addition and display an error.
-
-WHEN a customer modifies the quantity of an existing cart item, THE system SHALL validate the new quantity is a positive integer.
-
-WHEN a customer modifies the quantity of an existing cart item, THE system SHALL validate the new quantity does not exceed the maximum limit.
-
-WHEN a customer modifies the quantity of an existing cart item, THE system SHALL validate the new quantity does not exceed available stock.
-
-IF the requested quantity exceeds available stock, THE system SHALL show a warning but allow the cart item to remain with the requested quantity marked as exceeding stock.
-
-### Stock Availability Validation
-
-WHEN a customer attempts to add a variant to their cart, THE system SHALL validate that the variant has available stock greater than zero.
-
-WHEN a variant's stock quantity reaches zero, THE system SHALL mark the variant as out of stock.
-
-WHEN a variant is out of stock, THE system SHALL prevent customers from adding it to their cart.
-
-WHEN a customer views their cart, THE system SHALL display a warning for items where the cart quantity exceeds available stock.
-
-WHEN a variant becomes out of stock after being added to cart, THE system SHALL mark the cart item as unavailable.
-
-WHEN a variant becomes unavailable due to stock, THE system SHALL NOT automatically remove the item from the cart.
-
-WHEN a customer views the product detail page, THE system SHALL display the current stock status for each variant.
-
-IF a variant is out of stock, THE system SHALL show it as unavailable on the product detail page.
-
-### Price and Total Calculation
-
-WHEN a customer views their cart, THE system SHALL display the current price of each variant at the time of viewing.
-
-WHEN variant prices change after being added to cart, THE system SHALL reflect the updated price in the cart display.
-
-WHEN a cart item references a variant with an overridden price, THE system SHALL display the variant price rather than the base product price.
-
-WHEN a cart item references a variant without an overridden price, THE system SHALL display the product base price.
-
-WHEN a customer views their cart, THE system SHALL calculate the subtotal for each item as quantity multiplied by current unit price.
-
-WHEN a customer views their cart, THE system SHALL calculate the cart total as the sum of all item subtotals.
-
-WHEN calculating the cart total, THE system SHALL include applicable taxes if configured.
-
-WHEN calculating the cart total, THE system SHALL display the total price before checkout confirmation.
-
-IF a cart item becomes unavailable, THE system SHALL exclude it from the cart total calculation.
-
-### Session Persistence and Deletion Handling
-
-WHEN a customer adds items to their cart, THE system SHALL persist the cart items across customer sessions.
-
-WHEN a customer logs out and logs back in, THE system SHALL restore their cart items from persistent storage.
-
-WHEN a customer deletes a variant from their cart, THE system SHALL remove the cart item immediately.
-
-WHEN a seller deletes a product, THE system SHALL automatically remove that product from all customer wishlists and mark related cart items as unavailable.
-
-WHEN a seller deletes a variant, THE system SHALL mark the corresponding cart item as unavailable.
-
-WHEN a seller suspends their account, THE system SHALL mark all cart items from their products as unavailable.
-
-WHEN a cart item is marked as unavailable due to seller actions, THE system SHALL preserve it in the cart but prevent checkout.
-
-WHEN a customer has unavailable items in their cart, THE system SHALL display a message explaining why the items cannot be purchased.
-
-### Checkout Validation
-
-WHEN a customer proceeds to checkout, THE system SHALL validate that all cart items are available for purchase.
-
-WHEN a cart item is unavailable, THE system SHALL prevent checkout and display which items cannot be purchased.
-
-WHEN a cart item exceeds available stock, THE system SHALL show a warning but allow checkout if the customer confirms.
-
-WHEN a cart item references a deleted variant, THE system SHALL prevent checkout with that item.
-
-WHEN a cart item references a suspended seller's product, THE system SHALL prevent checkout with that item.
-
-WHEN checkout validation passes, THE system SHALL proceed to shipping address selection.
-
-WHEN checkout validation passes, THE system SHALL capture the current prices of all variants for the order.
-
-WHEN an order is successfully created, THE system SHALL remove all purchased items from the customer's cart.
-
-IF payment fails during checkout, THE system SHALL preserve the cart items for future checkout attempts.
-
-## Shipment Validation Rules
-
-Tracking numbers must be provided in valid format for the selected carrier. Carrier names must reference approved shipping carriers in the system. Shipped dates record when the package was handed to the carrier. Shipments can contain multiple order items from the same seller only. Items in the same shipment share identical tracking information. Shipment creation updates all included items to shipped status. Tracking information is visible to customers for delivery monitoring. Shipment dates cannot be in the future relative to order creation. Carrier name changes update all associated tracking records. Delivery confirmation applies to all items within a single shipment.
-
-### Tracking Number and Carrier Validation
-
-### Tracking Number Format
-
-WHEN a seller creates a shipment, THE system SHALL:
-1. Require a tracking number for the shipment
-2. Validate the tracking number follows the format expected by the selected carrier
-3. Ensure the tracking number is not empty or whitespace-only
-4. Reject tracking numbers that do not match the carrier's expected pattern
-
-IF the tracking number is missing, THE system SHALL reject the shipment creation request.
-IF the tracking number format is invalid for the selected carrier, THE system SHALL reject the shipment creation request.
-
-### Carrier Name Validation
-
-WHEN a seller creates a shipment, THE system SHALL:
-1. Require a carrier name for the shipment
-2. Validate the carrier name references an approved shipping carrier in the system
-3. Only allow carrier names from the system's approved carrier list
-4. Reject shipments with carrier names not in the approved list
-
-IF the carrier name is missing, THE system SHALL reject the shipment creation request.
-IF the carrier name is not in the approved carrier list, THE system SHALL reject the shipment creation request.
-
-### Shipped Date Recording
-
-WHEN a seller creates a shipment, THE system SHALL:
-1. Record the shipped date when the package is handed to the carrier
-2. Require the shipped date to be a valid datetime value
-3. Store the shipped date immutably once recorded
-4. Use the shipped date for delivery timeline calculations
-
-WHILE the shipment exists, THE system SHALL preserve the shipped date without modification.
-
-### Shipment Creation and Item Grouping
-
-### Same-Seller Item Grouping
-
-WHEN a seller creates a shipment, THE system SHALL:
-1. Only allow order items from the same seller to be included in a single shipment
-2. Prevent order items from different sellers from being grouped into one shipment
-3. Validate all selected items belong to the requesting seller
-4. Reject shipment creation if any item belongs to a different seller
-
-IF an order item belongs to a different seller, THE system SHALL reject the shipment creation request.
-
-### Shared Tracking Information
-
-WHEN a shipment is created, THE system SHALL:
-1. Assign the same tracking number to all items in the shipment
-2. Assign the same carrier name to all items in the shipment
-3. Ensure all items in the shipment share identical tracking information
-4. Display the same tracking information for all items when viewed by customers
-
-WHEN a shipment's tracking information is updated, THE system SHALL update all items in that shipment with the new tracking information.
-
-### Shipment Status Update
-
-WHEN a seller creates a shipment, THE system SHALL:
-1. Change the status of all included order items to "shipped"
-2. Update item statuses immediately upon shipment creation
-3. Prevent items with non-paid status from being included in shipments
-4. Record the shipment creation timestamp for all included items
-
-IF an order item has status other than "paid", THE system SHALL reject including it in the shipment.
-
-### Shipment Status and Date Validation
-
-### Date Validity Checks
-
-WHEN a seller creates a shipment, THE system SHALL:
-1. Validate the shipped date is not in the future relative to the current time
-2. Validate the shipped date is not before the order creation date
-3. Reject shipped dates that violate temporal constraints
-4. Use the system timezone (Asia/Seoul) for date validation
-
-IF the shipped date is in the future, THE system SHALL reject the shipment creation request.
-IF the shipped date is before the order creation date, THE system SHALL reject the shipment creation request.
-
-### Carrier Name Updates
-
-WHEN a seller updates a shipment's carrier name, THE system SHALL:
-1. Validate the new carrier name is in the approved carrier list
-2. Update all associated tracking records with the new carrier name
-3. Create a snapshot of the carrier name change for audit purposes
-4. Notify customers of tracking information changes
-
-IF the new carrier name is not in the approved list, THE system SHALL reject the update request.
-
-### Shipment Status Transition
-
-WHILE a shipment exists, THE system SHALL:
-1. Allow status transitions only from "created" to "shipped" to "delivered"
-2. Prevent status changes from delivered back to shipped or created
-3. Record the timestamp of each status transition
-4. Create snapshots for all status changes
-
-WHEN a shipment status changes, THE system SHALL update all included order items to reflect the new status.
-
-### Customer Tracking and Delivery
-
-### Customer Tracking Visibility
-
-WHEN a shipment is created, THE system SHALL:
-1. Make tracking information visible to customers who purchased items in the shipment
-2. Display the carrier name and tracking number on the order details page
-3. Allow customers to view tracking information for each shipment in their order
-4. Update tracking visibility immediately when shipment is created
-
-WHEN a customer views their order, THE system SHALL display all shipments with their tracking information.
-
-### Delivery Confirmation Scope
-
-WHEN a customer confirms delivery, THE system SHALL:
-1. Change the status of all items in the shipment to "delivered"
-2. Apply delivery confirmation to the entire shipment, not individual items
-3. Record the delivery confirmation timestamp for the shipment
-4. Update all order items in the shipment simultaneously
-
-WHEN the customer does not confirm delivery, THE system SHALL automatically change all items in the shipment to "delivered" after 14 days from the shipped date.
-
-### Automatic Delivery Confirmation
-
-WHILE 14 days have passed since the shipped date without customer confirmation, THE system SHALL:
-1. Automatically change all items in the shipment to "delivered" status
-2. Record the automatic delivery confirmation timestamp
-3. Notify the customer of the automatic delivery confirmation
-4. Allow customers to dispute the automatic confirmation within a reasonable period
-
-IF a customer disputes automatic delivery confirmation, THE system SHALL require administrator review before changing the status.
-
-### Shipment Modification and Lifecycle
-
-### Shipment Modification Rules
-
-WHEN a shipment is created, THE system SHALL:
-1. Prevent removal of items from the shipment after creation
-2. Prevent addition of new items to an existing shipment
-3. Require creation of a new shipment for additional items
-4. Preserve the original shipment record even if items are cancelled
-
-IF a seller attempts to modify an existing shipment's items, THE system SHALL reject the modification request.
-
-### Multi-Item Shipment Validation
-
-WHEN a seller creates a shipment with multiple items, THE system SHALL:
-1. Validate all items are from the same seller (defined in Same-Seller Item Grouping)
-2. Validate all items have status "paid" before inclusion
-3. Validate no items are already in another active shipment
-4. Reject shipment creation if any validation fails
-
-IF any item is already in another shipment, THE system SHALL reject the shipment creation request.
-
-### Shipment Deletion and Cancellation
-
-WHEN an order item in a shipment is cancelled, THE system SHALL:
-1. Preserve the shipment record for audit purposes
-2. Mark the cancelled item as "cancelled" within the shipment
-3. Update the shipment to reflect the cancelled item status
-4. Maintain tracking information for delivered items in the same shipment
-
-WHEN all items in a shipment are cancelled, THE system SHALL mark the shipment as cancelled while preserving the record.
-
-## Snapshot Validation Rules
-
-Snapshot types must match one of the predefined entity categories. Creation timestamps record when each snapshot was generated. Previous values capture the complete state before the modification occurred. Snapshots are immutable and cannot be edited or deleted after creation. Snapshot types include product, variant, seller, order item, review, cancellation, and refund. Each snapshot references the entity type it preserves for audit purposes. Snapshot data supports dispute resolution by showing historical states. Snapshot queries are filtered by entity type and creation date ranges. Snapshot visibility is restricted to owners and administrators only. Snapshot preservation continues even after the original entity is deleted.
-
-### Snapshot Type Enumeration
-
-WHEN a snapshot is created, THE system SHALL assign a snapshot type from the following enumeration:
-1. product - for product modifications
-2. variant - for product variant modifications
-3. seller - for seller profile modifications
-4. orderItem - for order item snapshots at purchase time
-5. review - for review modifications
-6. cancellation - for cancellation request state changes
-7. refund - for refund request state changes
-
-THE system SHALL validate that the snapshot type matches one of the seven predefined categories.
-THE system SHALL reject snapshot creation requests with invalid or unknown snapshot types.
-
-WHEN a product snapshot is created, THE system SHALL include all product fields (name, description, category, base price, images).
-WHEN a variant snapshot is created, THE system SHALL include all variant fields (SKU code, option values, price).
-WHEN a seller snapshot is created, THE system SHALL include all seller profile fields (shop name, description, logo).
-WHEN an order item snapshot is created, THE system SHALL include product name, description, variant options, price, and seller profile snapshot.
-WHEN a review snapshot is created, THE system SHALL include rating and text content.
-WHEN a cancellation snapshot is created, THE system SHALL include reason and status.
-WHEN a refund snapshot is created, THE system SHALL include reason and status.
-
-### Creation Timestamp and Value Completeness
-
-WHEN a snapshot is created, THE system SHALL record the creation timestamp with millisecond precision.
-THE system SHALL use the server timestamp for all snapshot creation records.
-THE system SHALL ensure the creation timestamp is immutable and cannot be modified after snapshot creation.
-
-WHEN a snapshot is created, THE system SHALL capture the complete state of the entity before modification.
-THE system SHALL record all entity fields in the previous values, not only the changed fields.
-THE system SHALL ensure previous values represent the exact state at the moment before modification.
-
-WHEN a snapshot is created, THE system SHALL capture the complete state of the entity after modification.
-THE system SHALL record all entity fields in the current values, not only the changed fields.
-THE system SHALL ensure current values represent the exact state at the moment after modification.
-
-THE system SHALL validate that both previous values and current values are complete and non-null.
-THE system SHALL reject snapshot creation if previous values or current values are missing or incomplete.
-
-### Snapshot Immutability
-
-THE system SHALL ensure all snapshots are immutable after creation.
-THE system SHALL prevent any modification to snapshot fields after the snapshot is created.
-THE system SHALL prevent any deletion of snapshots after creation.
-
-WHEN an attempt is made to modify a snapshot, THE system SHALL reject the modification request.
-WHEN an attempt is made to delete a snapshot, THE system SHALL reject the deletion request.
-
-THE system SHALL store snapshots in an immutable storage mechanism.
-THE system SHALL validate snapshot integrity on read operations to detect any unauthorized modifications.
-
-WHILE a snapshot exists, THE system SHALL maintain its original values unchanged.
-THE system SHALL log all access attempts to snapshots for audit purposes.
-
-### Entity Reference Validation
-
-WHEN a snapshot is created for an entity, THE system SHALL validate that the entity reference exists.
-WHEN a product snapshot is created, THE system SHALL validate the product ID references an existing product.
-WHEN a variant snapshot is created, THE system SHALL validate the variant ID references an existing variant.
-WHEN a seller snapshot is created, THE system SHALL validate the seller ID references an existing seller.
-WHEN an order item snapshot is created, THE system SHALL validate the order item ID references an existing order item.
-WHEN a review snapshot is created, THE system SHALL validate the review ID references an existing review.
-WHEN a cancellation snapshot is created, THE system SHALL validate the cancellation request ID references an existing request.
-WHEN a refund snapshot is created, THE system SHALL validate the refund request ID references an existing request.
-
-IF the entity reference does not exist, THE system SHALL reject the snapshot creation request.
-IF the entity reference is invalid or malformed, THE system SHALL reject the snapshot creation request.
-
-THE system SHALL validate that the snapshot type matches the entity type being snapshotted.
-THE system SHALL reject product snapshots for non-product entities and vice versa.
-
-### Query Filtering and Visibility Restrictions
-
-WHEN querying snapshots, THE system SHALL support filtering by snapshot type.
-WHEN querying snapshots, THE system SHALL support filtering by creation date range.
-WHEN querying snapshots, THE system SHALL support filtering by entity ID.
-WHEN querying snapshots, THE system SHALL support filtering by the user who made the change.
-
-THE system SHALL require at least one filter criterion for snapshot queries to prevent full table scans.
-THE system SHALL paginate snapshot query results with a maximum page size of 100 records.
-
-WHEN viewing snapshots, THE system SHALL restrict visibility to:
-1. Entity owners (for products, variants, sellers, reviews)
-2. Administrators (for all snapshots)
-3. Relevant parties in dispute resolution (for order items, cancellations, refunds)
-
-WHEN a customer is not the owner and not an administrator, THE system SHALL deny access to entity snapshots.
-WHEN a seller is not the owner of a product, THE system SHALL deny access to that product's snapshots.
-
-THE system SHALL log all snapshot access attempts for audit and security monitoring.
-
-### Deletion Preservation and Dispute Resolution
-
-THE system SHALL preserve all snapshots even after the original entity is deleted.
-WHEN a product is deleted, THE system SHALL retain all product snapshots for audit and dispute resolution.
-WHEN a variant is deleted, THE system SHALL retain all variant snapshots for audit and dispute resolution.
-WHEN a review is deleted, THE system SHALL retain all review snapshots for audit and dispute resolution.
-WHEN a seller account is deleted, THE system SHALL retain all seller snapshots for audit and dispute resolution.
-
-THE system SHALL make preserved snapshots accessible to administrators for dispute resolution purposes.
-THE system SHALL make preserved snapshots accessible to relevant parties during active disputes.
-
-WHEN a dispute is filed, THE system SHALL provide access to all relevant snapshots for the disputed entity.
-THE system SHALL display snapshot history showing all changes made to an entity over time.
-
-THE system SHALL ensure snapshots support legal compliance requirements for transaction records.
-THE system SHALL retain snapshots for the duration required by applicable laws and regulations.
-
-THE system SHALL provide snapshot comparison functionality to show differences between any two snapshots.
-THE system SHALL display the user who made each change captured in a snapshot.
-
-## InventoryRecord Validation Rules
-
-Inventory records capture quantity changes as positive or negative integers. Positive values represent restocking while negative values represent orders or adjustments. Reasons must be provided to document why each inventory change occurred. Recorded timestamps track when each inventory modification was made. Current stock is calculated by summing all inventory records for a variant. Inventory adjustments require valid reasons explaining the quantity change. Order placement creates automatic negative inventory records. Order cancellation creates automatic positive inventory records to restore stock. Inventory history is visible to sellers for their product variants. Stock quantity displays zero when all records sum to zero.
-
-### Inventory Change Sign Rules
-
-WHEN an inventory record is created, THE system SHALL require a quantity change value.
-
-WHEN restocking inventory, THE system SHALL record a positive quantity change value.
-
-WHEN adjusting inventory downward (loss, damage, correction), THE system SHALL record a negative quantity change value.
-
-WHEN an order is placed, THE system SHALL automatically create a negative inventory record for each purchased variant.
-
-WHEN an order is cancelled, THE system SHALL automatically create a positive inventory record to restore the stock quantity.
-
-WHEN an order is refunded, THE system SHALL automatically create a positive inventory record to restore the stock quantity.
-
-IF the quantity change value is zero, THE system SHALL reject the inventory record creation.
-
-IF the quantity change sign does not match the operation type (positive for restock, negative for adjustment), THE system SHALL reject the record.
-
-THE system SHALL store the quantity change as an integer value.
-
-THE system SHALL preserve the sign of the quantity change for audit purposes.
-
-### Inventory Documentation Requirements
-
-WHEN an inventory record is created, THE system SHALL require a reason field documenting the change.
-
-WHEN restocking inventory, THE system SHALL require a reason describing the restock source or method.
-
-WHEN adjusting inventory downward, THE system SHALL require a reason explaining the adjustment cause (loss, damage, correction, etc.).
-
-WHEN an order placement creates an automatic inventory record, THE system SHALL record "order placement" as the reason.
-
-WHEN an order cancellation creates an automatic inventory record, THE system SHALL record "order cancellation" as the reason.
-
-WHEN an order refund creates an automatic inventory record, THE system SHALL record "order refund" as the reason.
-
-IF the reason field is empty or contains only whitespace, THE system SHALL reject the inventory record creation.
-
-THE system SHALL record the timestamp when each inventory change is made.
-
-THE system SHALL use the server timezone for all inventory record timestamps.
-
-Inventory record timestamps SHALL be immutable once created.
-
-### Current Stock Calculation
-
-WHEN calculating current stock for a variant, THE system SHALL sum all inventory records for that variant.
-
-WHEN the sum of all inventory records equals zero, THE system SHALL display the variant stock as zero.
-
-WHEN inventory records are added, THE system SHALL recalculate the current stock immediately.
-
-WHEN inventory records are modified (not permitted), THE system SHALL prevent the modification.
-
-THE current stock value SHALL be derived solely from inventory record summation, not stored separately.
-
-WHEN a seller views a variant's stock, THE system SHALL calculate and display the current sum of all inventory records.
-
-IF inventory records contain errors, THE system SHALL provide adjustment records to correct the total rather than modifying existing records.
-
-### Adjustment Reason Validation
-
-WHEN a seller submits an inventory adjustment, THE system SHALL validate the reason field contains meaningful content.
-
-WHEN a seller submits a negative inventory adjustment, THE system SHALL require a reason that explains the reduction cause.
-
-WHEN a seller submits a restocking record, THE system SHALL require a reason that identifies the restock source.
-
-IF the adjustment reason does not match the quantity change direction (e.g., positive reason for negative change), THE system SHALL reject the record.
-
-THE system SHALL prevent deletion of inventory records.
-
-THE system SHALL prevent modification of existing inventory record values.
-
-WHEN a seller views inventory history, THE system SHALL display all records in chronological order.
-
-### Automated Inventory Operations
-
-WHEN a customer places an order, THE system SHALL automatically create inventory records for each purchased variant.
-
-WHEN an order item status changes to "paid", THE system SHALL create a negative inventory record with the purchased quantity.
-
-WHEN a customer cancels an order item with "paid" status, THE system SHALL automatically create a positive inventory record.
-
-WHEN a customer requests a refund for a delivered item, THE system SHALL automatically create a positive inventory record upon approval.
-
-THE automated inventory records SHALL include the reason field populated with the triggering event description.
-
-THE automated inventory records SHALL be created within the same transaction as the order status change.
-
-IF the automated inventory record creation fails, THE system SHALL rollback the order status change.
-
-### Seller Inventory Visibility
-
-WHEN a seller views their product variants, THE system SHALL display the inventory history for each variant.
-
-WHEN a seller views inventory history, THE system SHALL show all inventory records including automated ones.
-
-WHEN a seller views inventory history, THE system SHALL display the quantity change, reason, and timestamp for each record.
-
-THE system SHALL restrict inventory history visibility to sellers who own the product variant.
-
-Administrators SHALL be able to view inventory history for all product variants on the platform.
-
-Customers SHALL NOT have access to inventory history records.
-
-WHEN displaying inventory history, THE system SHALL show the calculated current stock at the time of viewing.
-
-## CancellationRequest Validation Rules
-
-Cancellation request reasons are required text fields explaining the customer's decision. Requests can only be submitted for order items with paid status. Items already shipped cannot be cancelled through the standard workflow. Request status transitions from pending to approved or rejected by sellers. Approved cancellations trigger refund processing and stock restoration. Rejected cancellations remain in the order with items continuing to ship. Cancellation snapshots preserve the request state at each status change. Time limits exist for cancellation requests before items ship. Seller responses to cancellation requests are recorded with timestamps. Partial order cancellations allow remaining items to proceed normally.
+WHEN an order item has status paid, THEN the system SHALL allow the customer to submit a cancellation request for that item.
 
 ### Cancellation Reason Requirement
 
-WHEN a customer requests cancellation of an order item, THE system SHALL:
-1. Require a cancellation reason as mandatory text input
-2. Validate the reason contains meaningful explanation (minimum 10 characters)
-3. Accept cancellation reasons up to 500 characters in length
-4. Store the reason with the cancellation request record
-
-IF the cancellation reason is missing or empty, THE system SHALL reject the cancellation request.
-IF the cancellation reason is shorter than 10 characters, THE system SHALL reject the cancellation request.
-IF the cancellation reason exceeds 500 characters, THE system SHALL reject the cancellation request.
-
-### Paid Status Restriction
-
-WHEN a customer submits a cancellation request, THE system SHALL:
-1. Verify the order item status is "paid" (payment completed, not yet shipped)
-2. Block cancellation requests for items with "shipped" status
-3. Block cancellation requests for items with "delivered" status
-4. Block cancellation requests for items with "cancelled" status
-5. Block cancellation requests for items with "refunded" status
-
-IF the order item status is "shipped", THE system SHALL reject the cancellation request and inform the customer to contact the seller.
-IF the order item status is "delivered", THE system SHALL reject the cancellation request and suggest a refund request instead.
-IF the order item status is "cancelled" or "refunded", THE system SHALL reject the cancellation request as the item has already been processed.
-
-### Shipped Item Blocking
-
-WHEN a shipment is created for an order item, THE system SHALL:
-1. Change all items in the shipment to "shipped" status
-2. Block any pending cancellation requests for those items
-3. Mark the items as ineligible for standard cancellation workflow
-4. Notify the customer that the item is now in transit
-
-WHILE an item has "shipped" status, THE system SHALL prevent cancellation request submission.
-IF a cancellation request was submitted before shipment but not yet responded to, THE system SHALL notify the seller that the item has been shipped and the cancellation cannot be approved.
-
-### Status Transition Workflow
-
-WHEN a cancellation request is created, THE system SHALL set its status to "pending".
-WHEN a seller approves a cancellation request, THE system SHALL:
-1. Change the request status to "approved"
-2. Change the order item status to "cancelled"
-3. Process refund for the cancelled item
-4. Restore stock quantity via inventory record
-5. Update the parent order status based on remaining items
-
-WHEN a seller rejects a cancellation request, THE system SHALL:
-1. Change the request status to "rejected"
-2. Keep the order item status as "paid"
-3. Continue normal order processing for the item
-4. Notify the customer of the rejection
-
-IF all items in an order are cancelled, THE system SHALL update the parent order status to "cancelled".
-IF some items are cancelled and others remain in "paid" or "shipped" status, THE system SHALL update the parent order status to "partiallyCompleted".
-
-### Approval Refund Trigger
-
-WHEN a cancellation request status changes to "approved", THE system SHALL:
-1. Trigger automatic refund processing for the item amount
-2. Create an inventory record to restore stock quantity
-3. Mark the order item as "cancelled"
-4. Record the refund transaction reference
-5. Notify the customer of successful cancellation and refund
-
-IF the refund processing fails, THE system SHALL:
-1. Keep the cancellation request status as "approved"
-2. Flag the order item for manual refund review
-3. Notify the administrator of the refund failure
-4. Allow the administrator to manually process the refund
-
-### Rejection Continuation
-
-WHEN a seller rejects a cancellation request, THE system SHALL:
-1. Keep the order item status as "paid"
-2. Allow the item to continue through normal shipping workflow
-3. Record the rejection reason provided by the seller
-4. Notify the customer of the rejection with the seller's reason
-5. Allow the customer to contact the seller for further discussion
-
-IF the item was already in the shipping process when rejected, THE system SHALL proceed with shipment creation as normal.
-WHILE the item status is "paid" after rejection, THE system SHALL allow the seller to ship the item normally.
-
-### Request State Snapshots
-
-WHEN a cancellation request status changes, THE system SHALL:
-1. Create a snapshot record with the previous state
-2. Record the timestamp of the status change
-3. Capture the user who made the change
-4. Store both previous and current request values
-5. Make the snapshot immutable and non-deletable
-
-WHEN a cancellation request is approved or rejected, THE system SHALL:
-1. Create a snapshot with the reason for approval/rejection
-2. Record the response timestamp
-3. Include seller notes if provided
-4. Preserve the snapshot even if the request is later deleted
-
-Snapshots SHALL be viewable by:
-- The customer who requested the cancellation
-- The seller who processed the request
-- Administrators for dispute resolution
-
-### Time Limit Enforcement
-
-WHEN an order item reaches "shipped" status, THE system SHALL:
-1. Calculate the time elapsed since the item was paid
-2. Block cancellation requests after 24 hours from payment
-3. Allow cancellation requests only within the 24-hour window if item not shipped
-4. Notify customers of the cancellation time limit during checkout
-
-IF a customer attempts to submit a cancellation request after the time limit, THE system SHALL:
-1. Reject the request with an appropriate error message
-2. Inform the customer to contact the seller directly
-3. Suggest alternative options (refund after delivery, return process)
-
-WHILE an item is in "paid" status, THE system SHALL track the time elapsed since payment for cancellation eligibility.
-
-### Seller Response Recording
-
-WHEN a seller responds to a cancellation request, THE system SHALL:
-1. Record the response timestamp
-2. Capture the approval or rejection decision
-3. Store any seller notes or reasons provided
-4. Update the request status accordingly
-5. Create a snapshot of the request state
-
-IF the seller approves the cancellation, THE system SHALL:
-1. Record the approval timestamp
-2. Store the approval confirmation
-3. Trigger refund processing workflow
-4. Notify the customer of approval
-
-IF the seller rejects the cancellation, THE system SHALL:
-1. Record the rejection timestamp
-2. Store the rejection reason
-3. Notify the customer of rejection
-4. Allow the item to continue shipping
-
-### Partial Cancellation Support
-
-WHEN a customer submits a cancellation request for one item in a multi-item order, THE system SHALL:
-1. Process the cancellation independently from other items
-2. Keep other items in the order in their current status
-3. Allow remaining items to continue through normal workflow
-4. Update the parent order status to "partiallyCompleted" if mixed states exist
-
-IF all items in an order are cancelled, THE system SHALL:
-1. Update the parent order status to "cancelled"
-2. Process refunds for all cancelled items
-3. Restore stock for all cancelled items
-
-IF some items are cancelled and others are delivered, THE system SHALL:
-1. Mark the order as "partiallyCompleted"
-2. Maintain separate status tracking for each item
-3. Allow independent refund requests for delivered items
-
-WHEN an order item is cancelled, THE system SHALL:
-1. Remove the item from the shipment if not yet shipped
-2. Adjust the order total accordingly
-3. Notify the customer of the partial cancellation
-
-## RefundRequest Validation Rules
-
-Refund request reasons are required text fields explaining the return justification. Requests can only be submitted for order items with delivered status. The seven-day window from delivery date limits refund eligibility. Request status transitions from pending to approved or rejected by sellers. Approved refunds trigger payment reversal and stock restoration. Rejected refunds remain in the order with items considered final. Refund snapshots preserve the request state at each status change. Time validation ensures requests fall within the seven-day eligibility window. Seller responses to refund requests include timestamps and decision records. Partial order refunds allow remaining items to stay in delivered status.
-
-### Refund Request Eligibility
-
-WHEN a customer requests a refund for an order item, THE system SHALL:
-1. Verify the order item has "delivered" status
-2. Calculate the number of days elapsed since the item was delivered
-3. Allow the request only if 7 or fewer days have passed since delivery
-4. Require a refund reason explaining the return justification
-5. Create a refund request record with "pending" status
-
-IF the order item status is not "delivered", THE system SHALL reject the refund request.
-IF more than 7 days have passed since delivery, THE system SHALL reject the refund request.
-IF the refund reason is missing or empty, THE system SHALL reject the refund request.
-IF the order item has already been cancelled or refunded, THE system SHALL reject the refund request.
-IF the customer has already submitted a pending refund request for this order item, THE system SHALL reject the duplicate request.
-
-WHEN calculating eligibility, THE system SHALL:
-1. Use the shipment delivery confirmation timestamp or the automatic 14-day delivery confirmation
-2. Count calendar days from the delivery date to the current date
-3. Include the delivery date as day 0 in the calculation
-
-A customer may submit refund requests for multiple items within the same order independently, as each order item has its own delivery date and eligibility window.
-
-### Refund Request Submission
-
-WHEN a customer submits a refund request, THE system SHALL:
-1. Record the refund reason as required text content
-2. Capture the current timestamp as the request submission time
-3. Store the number of days elapsed since delivery for audit purposes
-4. Associate the request with the specific order item
-5. Set the initial request status to "pending"
-
-WHEN the refund reason is validated, THE system SHALL:
-1. Accept text content of any reasonable length
-2. Require at least one non-whitespace character
-3. Allow the customer to review the reason before submission
-
-WHEN the time window is validated, THE system SHALL:
-1. Compare the delivery date against the current system time
-2. Reject requests where the 7-day window has expired
-3. Display the remaining eligible days to the customer before submission
-4. Block submission when zero or negative days remain
-
-IF the order item belongs to a different seller, THE system SHALL route the request to that seller for review.
-IF the order item is part of a multi-seller order, THE system SHALL process the refund request independently from other items in the order.
-
-### Refund Request Processing Workflow
-
-WHEN a refund request is in "pending" status, THE system SHALL:
-1. Notify the seller of the product about the pending refund request
-2. Display the refund reason to the seller for review
-3. Allow the seller to approve or reject the request
-4. Track the time elapsed since the request was submitted
-
-WHEN a seller responds to a refund request, THE system SHALL:
-1. Record the response timestamp
-2. Capture the seller's decision (approved or rejected)
-3. Update the request status accordingly
-4. Create a snapshot of the request state at the time of response
-5. Notify the customer of the seller's decision
-
-WHEN the status transitions to "approved", THE system SHALL:
-1. Change the order item status to "refunded"
-2. Trigger payment reversal for the refunded amount
-3. Restore the stock quantity via an inventory record
-4. Update the overall order status based on remaining items
-
-WHEN the status transitions to "rejected", THE system SHALL:
-1. Change the order item status to "delivered" (maintaining current status)
-2. Mark the refund request as final with no further action
-3. Record the rejection reason if provided by the seller
-4. Notify the customer that the refund was denied
-
-IF the seller does not respond within a reasonable timeframe, THE system SHALL allow the customer to escalate to an administrator.
-
-A refund request status follows this transition workflow:
-- "pending" → "approved" (seller approves)
-- "pending" → "rejected" (seller rejects)
-- No transitions allowed from "approved" or "rejected" states
-
-### Refund Request Outcomes
-
-WHEN a refund request is approved, THE system SHALL:
-1. Process payment reversal through the payment gateway
-2. Credit the refund amount to the customer's original payment method
-3. Create an inventory record to restore the variant stock quantity
-4. Update the order item status to "refunded"
-5. Recalculate the overall order status based on all item statuses
-
-WHEN a refund request is rejected, THE system SHALL:
-1. Maintain the order item in "delivered" status
-2. Mark the refund request as final and unchangeable
-3. Record the rejection in the order history
-4. Consider the transaction as complete for that item
-
-WHEN partial refunds occur within an order, THE system SHALL:
-1. Process each refunded item independently
-2. Maintain other items in their current status (delivered, shipped, or paid)
-3. Update the overall order status to "partiallyCompleted" when some items are refunded
-4. Allow remaining items to continue normal processing (shipping, delivery, etc.)
-
-IF all items in an order are refunded, THE system SHALL update the overall order status to "refunded".
-IF some items are refunded while others are delivered, THE system SHALL update the overall order status to "partiallyCompleted".
-
-WHEN payment reversal is processed, THE system SHALL:
-1. Use the original payment transaction reference
-2. Refund the exact amount paid for that order item (unit price × quantity)
-3. Handle payment gateway failures by marking the refund as pending retry
-4. Log all payment reversal attempts for audit purposes
-
-### Refund Request Snapshots
-
-WHEN a refund request is created, THE system SHALL:
-1. Create an initial snapshot recording the request details
-2. Capture the refund reason, delivery days elapsed, and initial "pending" status
-3. Record the customer who submitted the request
-4. Store the snapshot with immutable timestamps
-
-WHEN a refund request status changes, THE system SHALL:
-1. Create a new snapshot capturing the state before the change
-2. Record the new status value and response timestamp
-3. Capture the seller's decision and any rejection reason
-4. Store the snapshot with the changedBy reference
-
-WHEN snapshots are viewed, THE system SHALL:
-1. Display all snapshots in chronological order
-2. Show the before and after values for each state change
-3. Include timestamps and the user who made each change
-4. Allow administrators to view all snapshots for dispute resolution
-
-Snapshots are immutable and cannot be deleted, even if:
-- The refund request is approved or rejected
-- The order item status changes
-- The customer account is deleted
-- The seller account is deleted
-
-WHEN a dispute arises, THE system SHALL:
-1. Provide access to all refund request snapshots to administrators
-2. Preserve the complete history of the request lifecycle
-3. Maintain snapshots for legal and audit compliance purposes
-4. Allow administrators to override refund decisions using snapshots as reference
-
-## File Validation Rules
-
-File uploads for product images must meet resolution and file size requirements. Accepted image formats are limited to standard web-compatible types. Image dimensions must fall within minimum and maximum pixel ranges. File sizes cannot exceed the platform's upload limits. Image reordering is permitted with the first image as the thumbnail. Image deletion removes the file from storage and updates product displays. Logo images for seller profiles have separate size requirements. All file uploads are scanned for malicious content before acceptance. File metadata records upload timestamp and original filename. Deleted images are removed from snapshots but file references remain for audit.
-
-### Product Image Upload Validation
-
-WHEN a customer uploads a product image, THE system SHALL:
-1. Accept only JPEG, PNG, and WebP image formats
-2. Require minimum image resolution of 800x600 pixels
-3. Enforce maximum image resolution of 4000x4000 pixels
-4. Limit individual file size to 5MB
-5. Validate image dimensions fall within the acceptable range before upload
-
-IF the image format is not supported, THE system SHALL reject the upload with an appropriate error message.
-IF the image resolution is below the minimum threshold, THE system SHALL reject the upload.
-IF the image resolution exceeds the maximum threshold, THE system SHALL reject the upload.
-IF the file size exceeds 5MB, THE system SHALL reject the upload.
-
-WHEN a seller uploads product images, THE system SHALL:
-1. Allow up to 10 images per product
-2. Accept the same formats as customer uploads (JPEG, PNG, WebP)
-3. Apply the same resolution and size constraints
-4. Record the upload order for display sequence
-
-### Thumbnail Designation Rules
-
-WHEN multiple images are uploaded for a product, THE system SHALL:
-1. Designate the first uploaded image as the main thumbnail by default
-2. Allow sellers to reorder images to change the thumbnail designation
-3. Update the thumbnail immediately when reordering occurs
-4. Display the thumbnail in search results and category listings
-
-WHEN a product has no images, THE system SHALL:
-1. Display a placeholder image in place of the thumbnail
-2. Allow the product to remain visible in listings
-
-IF a seller deletes the current thumbnail image, THE system SHALL:
-1. Automatically promote the next available image to thumbnail status
-2. If no images remain, display the placeholder image
-
-### Seller Logo Upload Validation
-
-WHEN a seller uploads a shop logo image, THE system SHALL:
-1. Accept only JPEG, PNG, and WebP formats
-2. Require minimum resolution of 200x200 pixels
-3. Enforce maximum resolution of 1000x1000 pixels
-4. Limit file size to 2MB
-5. Accept square aspect ratios preferentially
-
-IF the logo resolution is below 200x200 pixels, THE system SHALL reject the upload.
-IF the logo resolution exceeds 1000x1000 pixels, THE system SHALL reject the upload.
-IF the logo file size exceeds 2MB, THE system SHALL reject the upload.
-
-WHEN a logo is uploaded, THE system SHALL:
-1. Create a snapshot of the previous logo (if one exists)
-2. Update the seller profile with the new logo
-3. Propagate the logo change to all customer-facing displays
-
-### Image Deletion Handling
-
-WHEN a seller deletes a product image, THE system SHALL:
-1. Remove the image file from storage
-2. Update the product display to reflect the deletion
-3. Preserve the image reference in existing product snapshots
-4. If the deleted image was the thumbnail, promote the next image
-
-WHEN a product is deleted, THE system SHALL:
-1. Remove all associated image files from storage
-2. Preserve image references in order item snapshots
-3. Maintain audit trail of deleted images for administrative review
-
-IF an image is referenced in an order snapshot, THE system SHALL:
-1. Preserve the image reference in the snapshot record
-2. Note that the original file may no longer exist in storage
-3. Allow administrators to view snapshot metadata including deleted image references
-
-### Malware Scanning Requirements
-
-WHEN any file is uploaded to the platform, THE system SHALL:
-1. Scan the file for malware and viruses before acceptance
-2. Reject files that contain malicious content
-3. Log all scan results for security audit purposes
-4. Quarantine suspicious files for administrator review
+A cancellation request must include a reason explaining why the customer wants to cancel the item.
 
-IF a file fails the malware scan, THE system SHALL:
-1. Reject the upload immediately
-2. Notify the uploader of the rejection
-3. Record the scan failure in security logs
-4. Prevent the file from being stored on the platform
+WHEN a customer submits a cancellation request without providing a reason, THEN the system SHALL reject the request.
 
-WHEN a file passes the malware scan, THE system SHALL:
-1. Accept the file for storage
-2. Record the scan timestamp and result
-3. Allow the file to be associated with its intended entity
+WHEN a customer submits a cancellation request with a reason, THEN the system SHALL accept the request for seller review.
 
-### Upload Metadata Recording
+### Seller Approval Process
 
-WHEN a file is uploaded, THE system SHALL record the following metadata:
-1. Upload timestamp (date and time of upload)
-2. Original filename provided by the uploader
-3. File size in bytes
-4. Content type (MIME type) of the file
-5. Uploaded by (user ID of the uploader)
-6. Associated entity (product ID, seller ID, etc.)
+The seller of the specific order item must approve or reject the cancellation request.
 
-WHEN a file is modified or reordered, THE system SHALL:
-1. Record the modification timestamp
-2. Record which user made the change
-3. Update the snapshot with the new metadata
+WHEN a cancellation request is submitted, THEN the system SHALL notify the seller of that item.
 
-IF a file is deleted, THE system SHALL:
-1. Preserve the metadata record for audit purposes
-2. Mark the file status as deleted
-3. Retain metadata for at least 90 days after deletion
+WHEN a seller receives a cancellation request, THEN the system SHALL allow the seller to approve or reject the request.
 
-### Snapshot Reference Preservation
+WHEN a seller has not yet responded to a cancellation request, THEN the system SHALL keep the request in pending status.
 
-WHEN a product snapshot is created, THE system SHALL:
-1. Include references to all product images at the time of the snapshot
-2. Store image metadata (filename, size, upload timestamp) in the snapshot
-3. Preserve image order sequence in the snapshot
+### Cancellation Request Snapshots
 
-WHEN a product is deleted, THE system SHALL:
-1. Preserve all product snapshots including image references
-2. Maintain image references even if original files are deleted
-3. Allow administrators to view snapshot image references for dispute resolution
+When a seller responds to a cancellation request, a snapshot of the request state is created.
 
-WHEN an order item snapshot is created, THE system SHALL:
-1. Include the product image references at the time of purchase
-2. Store the image metadata for customer reference
-3. Preserve images in snapshots even after product deletion
+WHEN a seller approves or rejects a cancellation request, THEN the system SHALL create a snapshot recording the request state at that moment.
 
-IF a customer disputes a product, THE system SHALL:
-1. Provide access to the relevant product snapshot
-2. Display the images as they appeared at the time of purchase
-3. Show the complete image history from all snapshots
+The snapshot includes the timestamp of the response, the decision made, and the values before and after the status change.
 
-## Integration Error Handling
+This snapshot is immutable and cannot be deleted.
 
-External payment gateway integration requires valid transaction identifiers. Payment success or failure responses determine order creation outcomes. Failed payments allow customer retry without creating duplicate orders. Payment gateway timeouts trigger automatic retry logic with exponential backoff. Transaction identifiers are logged for audit and dispute resolution. Payment currency must match the platform's supported currency list. Refund processing through the gateway requires original transaction reference. Payment gateway errors are categorized for appropriate customer messaging. Integration health is monitored with alert thresholds for failures. Payment data is encrypted and never stored in plain text.
+### Approved Cancellation Effects
 
-### Transaction Identifier Validation
+When a cancellation request is approved, the corresponding item is cancelled and a refund is processed for that item only.
 
-WHEN a payment transaction is processed, THE system SHALL validate the transaction identifier format before submission to the payment gateway.
+WHEN a seller approves a cancellation request, THEN the system SHALL change the order item status to cancelled.
 
-WHEN the transaction identifier is invalid, THE system SHALL reject the payment request and log the validation failure.
+WHEN an order item is cancelled, THEN the system SHALL process a refund for that item only.
 
-WHEN a payment response is received, THE system SHALL validate the transaction identifier matches the original request.
+WHEN an order item is cancelled, THEN the system SHALL restore the stock quantity for that variant through an inventory record.
 
-IF the transaction identifier does not match, THE system SHALL reject the response and trigger an alert for investigation.
+The remaining items in the order continue processing normally without being affected by the cancellation.
 
-THE system SHALL log all transaction identifiers with timestamp, gateway reference, and validation result for audit purposes.
+WHEN all items in an order are cancelled, THEN the system SHALL update the overall order status to cancelled.
 
-THE system SHALL maintain transaction identifier logs for a minimum of 7 years for legal and dispute resolution purposes.
+## RefundRequest Rules
 
-WHEN a transaction identifier is generated, THE system SHALL ensure uniqueness across all payment transactions.
+Refund requests can only be made for order items with delivered status. Items that are not yet delivered cannot be refunded through this process. Each refund request must be submitted within 7 days of the item being delivered. Each refund request requires a reason explaining why the customer wants a refund. The seller of that specific item can approve or reject the refund request. When a seller responds to a refund request, a snapshot of the request state is created. If the seller approves, that item is refunded and stock is restored. Refunded items restore their stock quantities through inventory records. The remaining items in the order are unaffected by the refund. If all items in an order are refunded, the entire order status becomes refunded.
 
-IF the payment gateway returns an unknown transaction identifier, THE system SHALL flag the transaction for manual review.
+### Refund Eligibility - Delivered Status Required
 
-### Payment Response Handling
+Refund requests can only be submitted for order items that have reached the delivered status. Items that are still in paid or shipped status cannot be refunded through the refund request process. If a customer attempts to request a refund for an item that is not delivered, the request is rejected.
 
-WHEN a payment gateway responds with success, THE system SHALL create the order record and proceed with stock reduction.
+### Refund Time Window - 7 Day Limit
 
-WHEN a payment gateway responds with failure, THE system SHALL NOT create the order and allow the customer to retry payment.
+A refund request must be submitted within 7 days of the order item being delivered. If the customer attempts to submit a refund request after this 7-day window has passed, the request is rejected and cannot be processed.
 
-WHEN a payment response is received, THE system SHALL categorize the response as success, failure, or timeout.
+### Refund Reason - Required Field
 
-IF the payment fails due to insufficient funds, THE system SHALL display a specific error message to the customer.
+Every refund request must include a reason that explains why the customer is requesting the refund. The reason is a required text field that the customer must provide when submitting the request. If no reason is provided, the refund request is rejected.
 
-IF the payment fails due to card validation error, THE system SHALL prompt the customer to verify card details.
+### Seller Approval - Response and Snapshot
 
-WHEN a customer retries a failed payment, THE system SHALL generate a new transaction identifier and do NOT reuse the failed one.
+Only the seller of the specific order item can approve or reject a refund request. Other sellers or customers cannot respond to refund requests. When the seller responds to a refund request, a snapshot of the request state is created, recording the timestamp, changed fields, and values before and after the response.
 
-THE system SHALL limit payment retries to 5 attempts within 24 hours to prevent abuse.
+### Approved Refund - Stock Restoration and Order Impact
 
-IF all payment retries are exhausted, THE system SHALL require the customer to contact support for assistance.
+When a seller approves a refund request, the stock quantity for that order item's variant is restored through an inventory record. The approved refund is processed for that specific item only. The remaining items in the same order continue processing normally and are unaffected by this refund.
 
-WHEN a payment timeout occurs, THE system SHALL initiate automatic retry logic with exponential backoff starting at 30 seconds, doubling up to a maximum of 10 minutes.
+### Order Status - All Items Refunded
 
-IF the payment gateway is unreachable after 3 consecutive timeout retries, THE system SHALL mark the payment as pending and notify the customer to retry later.
+If all order items in an order have been refunded, the overall order status becomes refunded. If only some items are refunded while others remain in different statuses, the order status reflects the mixed state (e.g., partially completed). Each refund request operates independently on its specific order item.
 
-THE system SHALL log all payment response handling events including response codes, timestamps, and gateway identifiers.
+## Snapshot Rules
 
-### Failed Payment Retry Logic
+Snapshots are created whenever editable data is modified in the system. Each snapshot records the timestamp when the change was made. Snapshots capture which fields were changed and the values before and after. Snapshots are immutable and cannot be deleted once created. Relevant parties including owners and administrators can view snapshots for dispute resolution. Product snapshots include all product fields and all variant snapshots at that moment. Seller profile snapshots preserve shop name and logo at the time of order. Order item snapshots preserve product, variant, and seller profile at purchase time. Review snapshots preserve rating and text content at the time of edit. Cancellation and refund request snapshots preserve reason and status changes. Snapshots are preserved even after the original data is deleted.
 
-WHEN a payment timeout occurs during checkout, THE system SHALL implement retry logic with exponential backoff.
+### Snapshot Creation Triggers
 
-THE retry intervals SHALL start at 30 seconds and double with each attempt (30s, 60s, 120s, 240s, 480s, 600s).
+WHEN a customer edits their display name or phone number, THE system SHALL create a snapshot of the profile change.
 
-THE system SHALL perform a maximum of 6 retry attempts for timeout scenarios.
+WHEN a seller edits their shop name, shop description, or logo, THE system SHALL create a snapshot of the seller profile change.
 
-IF all timeout retries fail, THE system SHALL mark the order as pending and notify the customer to complete payment manually.
+WHEN a seller creates or edits a product, THE system SHALL create a snapshot of the product including all fields (name, description, category, base price, and images).
 
-THE system SHALL log each retry attempt with timestamp, attempt number, and response status.
+WHEN a seller creates or edits a product variant, THE system SHALL create a snapshot of the variant including SKU code, option values, price, and stock quantity.
 
-WHEN a timeout occurs, THE system SHALL NOT create duplicate orders for the same cart contents.
+WHEN a seller adds or removes product images, THE system SHALL create a snapshot of the product that includes the image changes.
 
-IF the customer abandons the checkout during timeout retries, THE system SHALL cancel the pending order and restore inventory after 24 hours.
+WHEN a customer writes or edits a review, THE system SHALL create a snapshot of the review including rating and text content.
 
-### Currency and Refund Transaction Rules
+WHEN a customer requests cancellation of an order item, THE system SHALL create a snapshot of the cancellation request including reason and status.
 
-WHEN currency conversion is required, THE system SHALL validate that the payment currency matches the platform's supported currency list.
+WHEN a customer requests a refund for an order item, THE system SHALL create a snapshot of the refund request including reason and status.
 
-IF the payment currency does not match, THE system SHALL reject the transaction and display an error message listing supported currencies.
+WHEN a seller approves or rejects a cancellation or refund request, THE system SHALL create a snapshot of the request status change.
 
-THE system SHALL support USD, EUR, GBP, and KRW as the primary currencies for all transactions.
+### Snapshot Data Structure
 
-WHEN processing a refund, THE system SHALL require the original transaction reference to be provided to the payment gateway.
+THE system SHALL record the timestamp when each snapshot is created.
 
-IF the original transaction reference is missing or invalid, THE system SHALL reject the refund request and display an error to the seller.
+THE system SHALL capture which fields were changed in each snapshot.
 
-THE system SHALL validate that the refund amount does not exceed the original transaction amount.
+THE system SHALL record the values before the change in each snapshot.
 
-IF a partial refund is requested, THE system SHALL track cumulative refund amounts against the original transaction.
+THE system SHALL record the values after the change in each snapshot.
 
-THE system SHALL prevent duplicate refunds for the same transaction reference.
+WHEN a product is edited, THE system SHALL include snapshots of all variants at that moment in the product snapshot (product snapshot contains product-snapshot-SKU records).
 
-### Error Categorization
+### Snapshot Immutability
 
-WHEN a payment gateway error occurs, THE system SHALL categorize the error into one of the following categories: authentication, validation, timeout, network, or gateway-internal.
+THE system SHALL make all snapshots immutable once created.
 
-IF the error is categorized as authentication, THE system SHALL alert the system administrator immediately.
+THE system SHALL NOT allow any user to modify a snapshot after it is created.
 
-IF the error is categorized as validation, THE system SHALL display a customer-friendly error message without exposing technical details.
+THE system SHALL NOT allow any user to delete a snapshot once it is created.
 
-IF the error is categorized as timeout or network, THE system SHALL trigger the automatic retry logic.
+THE system SHALL preserve all snapshots even after the original data is deleted.
 
-IF the error is categorized as gateway-internal, THE system SHALL log the error and notify the customer to retry later.
+### Snapshot Access Rules
 
-THE system SHALL maintain an error catalog mapping gateway error codes to internal categories and customer messages.
+THE system SHALL allow product owners to view snapshots of their own products.
 
-WHEN a new error code is encountered, THE system SHALL flag it for manual review and catalog expansion.
+THE system SHALL allow administrators to view snapshots of any product on the platform.
 
-### Integration Health Monitoring
+THE system SHALL allow relevant parties to view snapshots for dispute resolution purposes.
 
-THE system SHALL monitor payment gateway integration health with a failure rate threshold of 5% over a 5-minute window.
+THE system SHALL allow sellers to view snapshots of their own seller profile changes.
 
-IF the failure rate exceeds the threshold, THE system SHALL trigger a circuit breaker and route new transactions to a backup gateway if available.
+THE system SHALL allow customers to view snapshots of their own reviews.
 
-THE system SHALL generate alerts when circuit breaker is activated, including failure rate, affected transactions, and duration.
+### Order Item Snapshots
 
-THE system SHALL automatically attempt to resume normal operation after 10 minutes of successful transactions following a circuit breaker activation.
+WHEN an order item is created, THE system SHALL save a snapshot of the purchased product including name, description, category, and base price.
 
-THE system SHALL log all health monitoring events including failure rates, circuit breaker states, and recovery attempts.
+WHEN an order item is created, THE system SHALL save a snapshot of the purchased variant including SKU code, option values, and price.
 
-IF no backup gateway is available and the circuit breaker is active, THE system SHALL display a maintenance message to customers and suspend new checkout attempts.
+WHEN an order item is created, THE system SHALL save a snapshot of the seller profile including shop name and logo at the time of purchase.
 
-### Payment Data Encryption
+THE system SHALL preserve all order item snapshots even if the original product, variant, or seller profile is later modified or deleted.
 
-THE system SHALL encrypt all payment data at rest using AES-256 encryption.
+### Request Status Snapshots
 
-THE system SHALL encrypt all payment data in transit using TLS 1.3 or higher.
+WHEN a cancellation request is created or its status changes, THE system SHALL create a snapshot recording the reason and status at that moment.
 
-THE system SHALL NEVER store credit card numbers, CVV codes, or full track data in any database or log.
+WHEN a refund request is created or its status changes, THE system SHALL create a snapshot recording the reason and status at that moment.
 
-WHEN payment data is transmitted to the gateway, THE system SHALL use tokenization to avoid handling raw card data.
+THE system SHALL preserve cancellation and refund request snapshots even after the request is resolved or the order item is deleted.
 
-THE system SHALL rotate encryption keys every 90 days and maintain a key rotation audit log.
+### Snapshot Preservation After Deletion
 
-IF encryption key rotation fails, THE system SHALL alert the security team and prevent new payment processing until resolved.
+WHEN a product is deleted by a seller or administrator, THE system SHALL preserve all snapshots of that product.
 
-THE system SHALL ensure all transaction logs exclude sensitive payment information and only store masked or tokenized references.
+WHEN a product variant is deleted, THE system SHALL preserve all snapshots of that variant.
 
-THE system SHALL conduct quarterly security audits to verify encryption compliance and data handling practices.
+WHEN a seller deletes their account, THE system SHALL preserve snapshots of their seller profile and order items.
 
-# Filtering, Sorting, and Pagination
+WHEN a customer deletes their account, THE system SHALL preserve snapshots of their reviews.
 
-List query specifications for filtering, sorting, and pagination.
+THE system SHALL make deleted product and variant snapshots viewable by administrators for dispute resolution and audit purposes.
 
-## List Query Specifications
+## SellerApproval Rules
 
-Define filtering, sorting, and pagination rules for list operations.
+Seller approval status must be pending, approved, or rejected. Administrator approval is required before a seller can create products or list items. Sellers can view their current approval status at any time. If a seller registration is rejected, the rejection reason is displayed to the seller. Rejected sellers can submit a new registration request after addressing the rejection reason. Pending sellers cannot create new products or edit existing products. Approved sellers can create products and manage their shop. Administrators can approve or reject seller registration requests. Administrators must provide a reason when rejecting a seller registration. Sellers remain in pending status until an administrator takes action.
+
+### Approval Status Values
+
+THE system SHALL assign one of three status values to each seller registration request: pending, approved, or rejected.
+
+WHEN a seller submits a registration request, THE system SHALL set the status to pending.
+
+THE system SHALL NOT assign any status value other than pending, approved, or rejected to a seller registration request.
+
+### Administrator Approval Required
+
+WHILE a seller registration request has pending status, THE system SHALL prevent the seller from creating products, editing products, managing inventory, or processing orders.
+
+WHILE a seller registration request has rejected status, THE system SHALL prevent the seller from creating products, editing products, managing inventory, or processing orders.
+
+ONLY WHEN a seller registration request has approved status, THE system SHALL allow the seller to perform selling activities.
+
+### Approval Status Visibility
+
+THE system SHALL display the current approval status of a seller registration request to the seller at all times.
+
+THE system SHALL make the approval status visible from the seller's account dashboard.
+
+### Rejection Reason Display
+
+WHEN a seller registration request has rejected status, THE system SHALL display the rejection reason provided by the administrator to the seller.
+
+THE system SHALL ensure the rejection reason is clearly visible to help the seller understand the denial and address issues before reapplying.
+
+### Reapplication After Rejection
+
+WHEN a seller registration request has rejected status, THE system SHALL allow the seller to submit a new registration request.
+
+THE system SHALL process the new registration request through the same approval process as the initial request.
+
+THE system SHALL NOT limit the number of times a seller can submit registration requests after rejection.
+
+### Pending Seller Restrictions
+
+WHILE a seller registration request has pending status, THE system SHALL prevent the seller from creating new products.
+
+WHILE a seller registration request has pending status, THE system SHALL prevent the seller from editing existing products.
+
+WHILE a seller registration request has pending status, THE system SHALL prevent the seller from managing inventory, processing orders, or handling cancellation and refund requests.
+
+### Approved Seller Permissions
+
+WHEN a seller registration request has approved status, THE system SHALL allow the seller to create products.
+
+WHEN a seller registration request has approved status, THE system SHALL allow the seller to edit products.
+
+WHEN a seller registration request has approved status, THE system SHALL allow the seller to manage inventory, process orders, and handle cancellation and refund requests.
+
+### Administrator Approval Action
+
+THE system SHALL allow administrators to approve seller registration requests.
+
+THE system SHALL allow administrators to reject seller registration requests.
+
+WHEN an administrator approves a seller registration request, THE system SHALL change the status to approved and grant selling privileges.
+
+WHEN an administrator rejects a seller registration request, THE system SHALL change the status to rejected and require a reason to be provided.
+
+### Rejection Reason Required
+
+WHEN an administrator rejects a seller registration request, THE system SHALL require the administrator to provide a reason for the rejection.
+
+THE system SHALL NOT allow a seller registration request to be rejected without a reason being provided.
+
+THE system SHALL store the rejection reason and display it to the seller.
+
+### Pending Until Action
+
+WHILE a seller registration request has pending status, THE system SHALL maintain the pending status until an administrator takes action.
+
+THE system SHALL NOT automatically change the status of a pending seller registration request without administrator intervention.
+
+THE system SHALL NOT expire or remove a pending seller registration request without administrator action.
+
+## Administrator Rules
+
+There are two administrator grades: regular administrator and super administrator. Any user including customers or sellers can submit a request to become an administrator. The request includes a reason explaining why the user wants administrator access. Super administrators can view and manage pending administrator requests. Super administrators can approve or reject administrator requests. Super administrators can promote regular administrators to super administrator status. Super administrators can demote other super administrators to regular administrator. Super administrators cannot demote themselves from super administrator status. Regular administrators can manage seller approvals, categories, products, and orders. Regular administrators cannot manage other administrators or change administrator grades.
+
+### Administrator Grades
+
+THE system SHALL define two administrator grades: regular administrator and super administrator. EACH administrator SHALL have exactly one grade at any time. THE administrator grade SHALL determine what administrative actions the administrator can perform.
+
+### Administrator Request Submission
+
+ANY user, including customers or sellers, SHALL be able to submit a request to become an administrator. THE request SHALL include a reason explaining why the user wants administrator access. THE reason SHALL be required text. EMPTY or MISSING reasons SHALL be rejected.
+
+### Super Administrator Request Management
+
+SUPER administrators SHALL be able to view all pending administrator requests. SUPER administrators SHALL be able to approve pending administrator requests. WHEN a request is approved, THE system SHALL assign the user regular administrator grade. SUPER administrators SHALL be able to reject pending administrator requests. WHEN a request is rejected, THE user SHALL remain in their current role.
+
+### Administrator Grade Promotion
+
+SUPER administrators SHALL be able to promote regular administrators to super administrator status. THIS action SHALL require explicit approval from a super administrator. WHEN promoted, THE administrator SHALL gain super administrator permissions.
+
+### Administrator Grade Demotion
+
+SUPER administrators SHALL be able to demote other super administrators to regular administrator status. A SUPER administrator SHALL NOT be able to demote themselves from super administrator status. SELF-demotion SHALL be rejected by the system.
+
+### Regular Administrator Permissions and Restrictions
+
+Regular administrators SHALL be able to view the list of pending seller approvals. Regular administrators SHALL be able to approve or reject seller registrations. WHEN rejecting a seller, a reason SHALL be provided. Regular administrators SHALL be able to suspend seller accounts. Regular administrators SHALL be able to unsuspend seller accounts. Regular administrators SHALL be able to create categories and subcategories. Regular administrators SHALL be able to edit category names and descriptions. Regular administrators SHALL be able to delete categories. Regular administrators SHALL be able to view all products on the platform. Regular administrators SHALL be able to view product snapshots. Regular administrators SHALL be able to delete products for policy violations. Regular administrators SHALL be able to view all orders on the platform. Regular administrators SHALL be able to force-cancel individual order items or entire orders. Regular administrators SHALL be able to force-refund individual order items or entire orders. Regular administrators SHALL be able to view all customer accounts. Regular administrators SHALL be able to ban customer accounts. Regular administrators SHALL be able to unban customer accounts. Regular administrators SHALL be able to view all seller accounts. Regular administrators SHALL be able to ban seller accounts. Regular administrators SHALL NOT be able to manage other administrators. Regular administrators SHALL NOT be able to approve or reject administrator requests. Regular administrators SHALL NOT be able to promote or demote administrators. Regular administrators SHALL NOT be able to change administrator grades. Regular administrators SHALL NOT be able to promote themselves to super administrator status.
+
+# Data Browsing Expectations
+
+Business expectations for how users browse, find, and navigate through lists of data.
+
+## List Browsing Expectations
+
+Define business expectations for how users find, filter, and browse lists.
 
 ### Product Search Filtering
 
-WHEN a customer searches for products, THE system SHALL support the following filters:
+Customers can filter product search results using the following criteria:
 
-1. Category Filter
-   - Customers can filter products by selecting a specific category
-   - When a category is selected, products from that category and its subcategory (if any) are included
-   - THE system SHALL display products from all sellers when filtering by category
+**Category Filter**: Customers can select a category or subcategory to view only products within that category. When a subcategory is selected, products from that subcategory are shown.
 
-2. Price Range Filter
-   - Customers can specify a minimum price for filtering
-   - Customers can specify a maximum price for filtering
-   - WHEN a minimum price is specified, THE system SHALL exclude products with base price below the minimum
-   - WHEN a maximum price is specified, THE system SHALL exclude products with all variants priced above the maximum
-   - WHEN both minimum and maximum are specified, THE system SHALL include products within the range
+**Price Range Filter**: Customers can specify a minimum price and/or maximum price. Products outside the specified range are excluded from results. If only a minimum is specified, products below that price are excluded. If only a maximum is specified, products above that price are excluded.
 
-3. Stock Status Filter
-   - Customers can filter to show only in-stock products
-   - WHEN "in-stock only" filter is applied, THE system SHALL exclude products where all variants have zero stock
-   - WHEN "in-stock only" filter is applied, THE system SHALL include products with at least one variant having stock greater than zero
+**In-Stock Filter**: Customers can choose to show only products with available variants (stock quantity greater than zero). When enabled, products where all variants are out of stock are excluded from results.
 
-4. Search Keyword Filter
-   - Customers can search products by name using text keywords
-   - THE system SHALL perform case-insensitive matching on product names
-   - THE system SHALL include products where the name contains the search keyword
-
-5. Filter Combination
-   - Customers can combine multiple filters in a single query
-   - THE system SHALL apply all specified filters using AND logic
-   - WHEN no filters are specified, THE system SHALL return all active products
+Multiple filters can be applied simultaneously. The system combines all active filters using AND logic, showing only products that match all selected criteria.
 
 ### Product Search Sorting
 
-WHEN a customer views product search results or category listings, THE system SHALL support the following sorting options:
+Customers can sort product search results using the following options:
 
-1. Newest First
-   - Customers can sort products by creation date, newest first
-   - THE system SHALL order products by creation timestamp in descending order
-   - WHEN two products have the same creation date, THE system SHALL use product ID as secondary sort key
+**Newest First**: Products are ordered by creation date, with the most recently created products appearing first.
 
-2. Price Low to High
-   - Customers can sort products by price, ascending order
-   - THE system SHALL use the lowest variant price for products with multiple variants
-   - THE system SHALL use the base price for products without variants
-   - WHEN two products have the same price, THE system SHALL use creation date as secondary sort key
+**Price Low to High**: Products are ordered by base price from lowest to highest. When variants have different prices, the lowest variant price is used for sorting.
 
-3. Price High to Low
-   - Customers can sort products by price, descending order
-   - THE system SHALL use the lowest variant price for products with multiple variants
-   - THE system SHALL use the base price for products without variants
-   - WHEN two products have the same price, THE system SHALL use creation date as secondary sort key
+**Price High to Low**: Products are ordered by base price from highest to lowest. When variants have different prices, the lowest variant price is used for sorting.
 
-4. Default Sorting
-   - WHEN no sort option is specified, THE system SHALL default to "newest first"
-   - THE system SHALL preserve the selected sort option across pagination
+Sorting applies to the filtered result set. When no sort option is explicitly selected, the default sorting is newest first.
 
-5. Sorting with Filters
-   - THE system SHALL apply sorting after filtering is complete
-   - WHEN filters reduce the result set, THE system SHALL sort the filtered results
+### List Pagination
 
-### Product Search Pagination
+List views that contain multiple items use pagination to limit the number of items displayed per page:
 
-WHEN a customer views product search results or category listings, THE system SHALL implement pagination as follows:
+**Search Results**: Product search results are paginated. Customers navigate through pages using pagination controls. The system returns a consistent set of products per page based on the current filters and sort order.
 
-1. Page Size
-   - THE system SHALL support configurable page sizes for product listings
-   - THE system SHALL use a default page size of 20 products per page
-   - THE system SHALL enforce a maximum page size of 100 products per page
+**Wishlist**: The customer's wishlist is paginated. Products are shown in pages, with pagination controls available for navigation.
 
-2. Page Number Navigation
-   - Customers can navigate to specific pages using page numbers
-   - THE system SHALL validate page numbers are positive integers
-   - WHEN an invalid page number is requested, THE system SHALL return the first page
-   - THE system SHALL return an empty result set when requesting a page beyond available results
+**Order History**: The customer's order list is paginated and sorted by newest first by default. Each page shows order summaries including order number, date, total price, and overall order status.
 
-3. Cursor-Based Pagination
-   - THE system SHALL support cursor-based pagination for improved performance
-   - THE system SHALL generate a cursor token representing the current position in results
-   - Customers can use the cursor to fetch the next page of results
-   - WHEN a cursor is expired or invalid, THE system SHALL return an error with instructions to restart pagination
+**Seller Order Items**: Sellers can view their order items in paginated lists. Sellers can filter by status before pagination is applied.
 
-4. Result Metadata
-   - THE system SHALL return total result count in pagination metadata
-   - THE system SHALL return current page number in pagination metadata
-   - THE system SHALL return total page count in pagination metadata
-   - THE system SHALL indicate whether more results are available
-
-5. Pagination State
-   - THE system SHALL preserve filter and sort parameters across pagination requests
-   - WHEN filters or sort options change, THE system SHALL reset to page 1
-
-### Order History Pagination
-
-WHEN a customer views their order history, THE system SHALL implement pagination as follows:
-
-1. Default Sorting
-   - THE system SHALL sort orders by creation date, newest first
-   - THE system SHALL not allow customers to change the sort order
-
-2. Page Size
-   - THE system SHALL use a default page size of 20 orders per page
-   - THE system SHALL enforce a maximum page size of 50 orders per page
-
-3. Pagination Navigation
-   - Customers can navigate between pages using page numbers
-   - THE system SHALL validate page numbers are positive integers
-   - THE system SHALL return an empty result set when requesting a page beyond available results
-
-4. Result Metadata
-   - THE system SHALL return total order count in pagination metadata
-   - THE system SHALL return current page number in pagination metadata
-   - THE system SHALL return total page count in pagination metadata
-
-5. Order List Display
-   - THE system SHALL display order number, date, total price, and overall status for each order in the list
-   - THE system SHALL provide a link to view full order details
-
-### Wishlist Pagination
-
-WHEN a customer views their wishlist, THE system SHALL implement pagination as follows:
-
-1. Default Sorting
-   - THE system SHALL sort wishlist items by addition date, newest first
-   - THE system SHALL not allow customers to change the sort order
-
-2. Page Size
-   - THE system SHALL use a default page size of 20 products per page
-   - THE system SHALL enforce a maximum page size of 50 products per page
-
-3. Pagination Navigation
-   - Customers can navigate between pages using page numbers
-   - THE system SHALL validate page numbers are positive integers
-   - THE system SHALL return an empty result set when requesting a page beyond available results
-
-4. Result Metadata
-   - THE system SHALL return total wishlist item count in pagination metadata
-   - THE system SHALL return current page number in pagination metadata
-   - THE system SHALL return total page count in pagination metadata
-
-5. Deleted Product Handling
-   - WHEN a product in the wishlist is deleted by the seller, THE system SHALL automatically remove it from the wishlist
-   - THE system SHALL NOT display deleted products in wishlist results
-   - THE system SHALL recalculate pagination when deleted products are removed
-
-### Seller Order Items Query
-
-WHEN a seller views order items for their products, THE system SHALL support the following query capabilities:
-
-1. Status Filtering
-   - Sellers can filter order items by status (paid, shipped, delivered, cancelled, refunded)
-   - THE system SHALL support filtering by multiple statuses simultaneously
-   - WHEN no status filter is specified, THE system SHALL return order items with all statuses
-
-2. Default Sorting
-   - THE system SHALL sort order items by creation date, newest first
-   - THE system SHALL not allow sellers to change the sort order
-
-3. Pagination
-   - THE system SHALL use a default page size of 50 order items per page
-   - THE system SHALL enforce a maximum page size of 100 order items per page
-   - THE system SHALL preserve filter parameters across pagination requests
-
-4. Result Metadata
-   - THE system SHALL return total order item count in pagination metadata
-   - THE system SHALL return current page number in pagination metadata
-   - THE system SHALL return total page count in pagination metadata
-
-5. Data Isolation
-   - THE system SHALL return only order items for products owned by the seller
-   - THE system SHALL NOT return order items for products owned by other sellers
-
-### Inventory History Query
-
-WHEN a seller views the inventory history for a product variant, THE system SHALL implement the following query rules:
-
-1. Default Sorting
-   - THE system SHALL sort inventory records by timestamp, newest first
-   - THE system SHALL not allow sellers to change the sort order
-
-2. Pagination
-   - THE system SHALL use a default page size of 50 inventory records per page
-   - THE system SHALL enforce a maximum page size of 200 inventory records per page
-   - THE system SHALL preserve the variant context across pagination requests
-
-3. Result Metadata
-   - THE system SHALL return total inventory record count in pagination metadata
-   - THE system SHALL return current page number in pagination metadata
-   - THE system SHALL return the current calculated stock quantity
-
-4. Data Isolation
-   - THE system SHALL return only inventory records for variants owned by the seller
-   - THE system SHALL NOT return inventory records for variants owned by other sellers
-
-5. Record Display
-   - THE system SHALL display quantity change, reason, recorded timestamp, and resulting stock for each record
-   - THE system SHALL indicate whether the change was positive (restocking) or negative (order/adjustment)
-
-### Snapshot Query
-
-WHEN a user queries snapshots for an entity, THE system SHALL implement the following query rules:
-
-1. Entity-Based Filtering
-   - Customers can view snapshots for products they have purchased (order items)
-   - Customers can view snapshots for their own reviews
-   - Sellers can view snapshots for their own products and variants
-   - Sellers can view snapshots for their own profile edits
-   - Administrators can view snapshots for any product, variant, or order item
-   - THE system SHALL enforce data isolation based on user role and ownership
-
-2. Default Sorting
-   - THE system SHALL sort snapshots by creation timestamp, newest first
-   - THE system SHALL not allow users to change the sort order
-
-3. Pagination
-   - THE system SHALL use a default page size of 20 snapshots per page
-   - THE system SHALL enforce a maximum page size of 100 snapshots per page
-   - THE system SHALL preserve the entity context across pagination requests
-
-4. Result Metadata
-   - THE system SHALL return total snapshot count in pagination metadata
-   - THE system SHALL return current page number in pagination metadata
-   - THE system SHALL return total page count in pagination metadata
-
-5. Snapshot Content
-   - THE system SHALL display creation timestamp, changed-by user, previous values, and current values for each snapshot
-   - THE system SHALL NOT allow modification or deletion of snapshots through any query operation
-   - THE system SHALL preserve snapshots even when the associated entity is deleted
-
-6. Cancellation and Refund Request Snapshots
-   - Customers can view snapshots for their own cancellation and refund requests
-   - Sellers can view snapshots for cancellation and refund requests on their order items
-   - Administrators can view snapshots for any cancellation or refund request
+Pagination ensures consistent performance when browsing large result sets. The specific number of items per page is determined by the system implementation.
 
 # Error Conditions
 
@@ -5128,332 +1036,53 @@ Business error scenarios and how the system should respond.
 
 Describe error conditions and expected system responses in natural language.
 
-### Account Registration and Access Errors
+### Account Registration and Login Errors
 
-WHEN a customer attempts to register with an email that already exists, THE system SHALL reject the registration request.
-WHEN a seller attempts to register with an email that already exists, THE system SHALL reject the registration request.
-WHEN a customer attempts to log in with incorrect credentials, THE system SHALL reject the login attempt.
-WHEN a seller attempts to log in with incorrect credentials, THE system SHALL reject the login attempt.
-WHEN a banned customer attempts to log in, THE system SHALL deny access.
-WHEN a banned seller attempts to log in, THE system SHALL deny access.
+When a customer attempts to register with an email that is already in use, the registration request is rejected. When a customer attempts to log in with incorrect email or password, the login request is rejected. When a customer attempts to change their password with an incorrect current password, the password change request is rejected. When a customer attempts to register with a missing or invalid email format, the registration request is rejected. When a customer attempts to register with a missing or weak password, the registration request is rejected.
 
-### Account Deletion Errors
+### Account and Resource Deletion Restrictions
 
-WHEN a customer attempts to delete their account, THE system SHALL preserve their order history and reviews.
-WHEN a seller attempts to delete their account with pending orders (paid or shipped status), THE system SHALL reject the deletion request.
-WHEN a seller attempts to delete their account with pending cancellation or refund requests, THE system SHALL reject the deletion request.
+When a customer attempts to delete their account, the deletion is rejected if they have active orders (items with paid, shipped, or delivered status). When a seller attempts to delete their account, the deletion is rejected if they have pending orders (paid or shipped status). When a seller attempts to delete their account, the deletion is rejected if they have pending cancellation or refund requests. When a seller attempts to delete a product, the deletion is rejected if any variant has pending order items (paid or shipped status). When a seller attempts to delete a product, the deletion is rejected if any variant has pending cancellation or refund requests. When a seller attempts to delete a variant, the deletion is rejected if that variant has pending order items (paid or shipped status). When a seller attempts to delete a variant, the deletion is rejected if that variant has pending cancellation or refund requests. When a seller attempts to delete their account, the deletion is rejected if they are currently suspended by an administrator.
 
-### Seller Approval Errors
+### Product and Variant Validation Errors
 
-WHEN a seller registration is rejected by an administrator, THE system SHALL record and display the rejection reason.
-WHEN a rejected seller submits a new registration request, THE system SHALL allow the submission.
-WHEN an administrator rejects a seller without providing a reason, THE system SHALL require the reason field before submission.
+When a customer attempts to create a product without a name, the product creation is rejected. When a customer attempts to create a product without a description, the product creation is rejected. When a customer attempts to create a product without assigning a category, the product creation is rejected. When a customer attempts to create a product without a base price, the product creation is rejected. When a seller attempts to create a product variant without a SKU code, the variant creation is rejected. When a seller attempts to create a product variant without a stock quantity, the variant creation is rejected. When a seller attempts to create a product variant with a duplicate SKU code, the variant creation is rejected. When a seller attempts to edit a product variant's SKU code to a duplicate value, the edit is rejected. When a seller attempts to delete a product that has no variants, the deletion is rejected.
 
-### Product and Category Management Errors
+### Order and Payment Errors
 
-WHEN a customer attempts to create a product, THE system SHALL require a product name, description, category, and base price.
-WHEN a customer attempts to create a product without a category, THE system SHALL reject the request.
-WHEN a customer attempts to create a product with a deleted category, THE system SHALL reject the request.
+When a customer attempts to place an order with a variant that is out of stock, the order placement is rejected for that variant. When a customer attempts to place an order with a variant that has insufficient stock for the requested quantity, the order placement is rejected for that variant. When a customer attempts to place an order and payment fails, the order is not created and the customer may retry. When a customer attempts to checkout with unavailable items (deleted or out of stock), those items cannot be included in the checkout. When a customer attempts to modify their shipping address after order placement, the modification is rejected.
 
-### Product Variant Errors
+### Cancellation and Refund Request Errors
 
-WHEN a seller attempts to create a product variant without a SKU code, THE system SHALL reject the request.
-WHEN a seller attempts to create a product variant with a duplicate SKU code, THE system SHALL reject the request.
-WHEN a seller attempts to create a product variant without stock quantity, THE system SHALL reject the request.
-WHEN a seller attempts to edit a variant's SKU code to a duplicate value, THE system SHALL reject the request.
-WHEN a seller attempts to delete a variant with pending order items (paid or shipped status), THE system SHALL reject the deletion.
-WHEN a seller attempts to delete a variant with pending cancellation or refund requests, THE system SHALL reject the deletion.
+When a customer attempts to request cancellation for an order item with status other than paid, the cancellation request is rejected. When a customer attempts to request cancellation for an order item that has already been shipped, the cancellation request is rejected. When a customer attempts to request refund for an order item with status other than delivered, the refund request is rejected. When a customer attempts to request refund for an order item that was delivered more than 7 days ago, the refund request is rejected. When a seller attempts to approve a cancellation or refund request for an item that no longer exists, the approval is rejected. When a seller attempts to approve a cancellation or refund request for an item that has already been processed, the approval is rejected.
 
-### Product Deletion Errors
+### Cart and Wishlist Errors
 
-WHEN a seller attempts to delete a product with pending order items for any variant, THE system SHALL reject the deletion.
-WHEN a seller attempts to delete a product with pending cancellation or refund requests for any variant, THE system SHALL reject the deletion.
-WHEN a seller attempts to delete a product that does not belong to them, THE system SHALL reject the request.
+When a customer attempts to add a variant to their cart that is out of stock, the add-to-cart action is rejected. When a customer attempts to modify a cart item quantity to exceed available stock, a warning is shown but the modification may proceed. When a customer attempts to checkout with cart items that have become unavailable (deleted or out of stock), those items are marked as unavailable and cannot be included in checkout. When a customer attempts to add a deleted product to their wishlist, the action is rejected. When a product is deleted by the seller, it is automatically removed from all customer wishlists without error.
 
-### Category Errors
+### Review Submission Errors
 
-WHEN a customer attempts to create a category, THE system SHALL reject the request (only administrators can create categories).
-WHEN a customer attempts to edit a category, THE system SHALL reject the request (only administrators can edit categories).
-WHEN an administrator attempts to delete a category, THE system SHALL move products to uncategorized status.
-WHEN an administrator attempts to create a subcategory under a non-existent parent, THE system SHALL reject the request.
-WHEN an administrator attempts to create a category with more than one level of nesting, THE system SHALL reject the request.
+When a customer attempts to write a review for a product they have not purchased, the review submission is rejected. When a customer attempts to write a review for an order item with status other than delivered, the review submission is rejected. When a customer attempts to write a review for a product they have already reviewed in the same order, the review submission is rejected. When a customer attempts to submit a review without a rating, the review submission is rejected. When a customer attempts to submit a review with a rating outside the 1 to 5 star range, the review submission is rejected.
 
-### Order and Payment Processing Errors
+### Inventory Management Errors
 
-WHEN a customer attempts to add a variant to their cart that is out of stock, THE system SHALL reject the addition.
-WHEN a customer attempts to add a variant that has been deleted by the seller, THE system SHALL reject the addition.
-WHEN a customer attempts to checkout with unavailable items in their cart, THE system SHALL prevent checkout.
-WHEN a customer attempts to checkout without selecting a shipping address, THE system SHALL require address selection.
+When a seller attempts to subtract inventory with a quantity that would result in negative stock, the inventory adjustment is rejected. When a system attempts to create an inventory record with a missing quantity change value, the record creation is rejected. When a system attempts to create an inventory record with a missing reason, the record creation is rejected. When a seller attempts to restock a variant with a negative quantity, the restock action is rejected.
 
-### Payment Errors
+### Shipping and Administrative Action Errors
 
-WHEN a payment gateway returns a failure response, THE system SHALL not create the order.
-WHEN a payment fails, THE system SHALL allow the customer to retry payment.
-WHEN a payment times out, THE system SHALL allow the customer to retry payment.
-WHEN a payment succeeds but order creation fails, THE system SHALL rollback the payment transaction.
+When a seller attempts to include order items from different sellers in the same shipment, the shipment creation is rejected. When a seller attempts to ship order items with status other than paid, the shipment action is rejected. When a customer attempts to confirm delivery for a shipment that has not been shipped, the delivery confirmation is rejected. When an administrator attempts to force-cancel an order item that has already been cancelled, the action is rejected. When an administrator attempts to force-refund an order item that has already been refunded, the action is rejected.
 
-### Order Creation Errors
+### Seller and Administrator Management Errors
 
-WHEN a customer attempts to place an order with a deleted product, THE system SHALL reject the order.
-WHEN a customer attempts to place an order with a suspended seller's product, THE system SHALL reject the order.
-WHEN a customer attempts to place an order with insufficient stock for any variant, THE system SHALL reject the order.
-WHEN order creation succeeds but stock reduction fails, THE system SHALL rollback the order creation.
+When an administrator attempts to approve a seller registration, the approval is rejected if the seller account no longer exists. When an administrator attempts to reject a seller registration without providing a reason, the rejection is rejected. When an administrator attempts to delete a category that contains products, the products become uncategorized but the deletion proceeds. When an administrator attempts to suspend a seller who has already been suspended, the action is rejected. When an administrator attempts to ban a customer who has already been banned, the action is rejected. When a super administrator attempts to demote themselves, the action is rejected.
 
-### Shipping Errors
+### Snapshot Integrity Errors
 
-WHEN a seller attempts to ship items from different sellers in one shipment, THE system SHALL reject the shipment.
-WHEN a seller attempts to create a shipment without tracking information, THE system SHALL reject the request.
-WHEN a seller attempts to ship items that are not in "paid" status, THE system SHALL reject the shipment.
-WHEN a customer attempts to confirm delivery for a shipment that has not been shipped, THE system SHALL reject the confirmation.
+When a system attempts to create a snapshot for a modification, the snapshot creation cannot be reversed or deleted. When a system attempts to modify a snapshot after creation, the modification is rejected. When a system attempts to delete a snapshot, the deletion is rejected. When a customer attempts to delete their review, the review content is removed but the snapshot is preserved. When a seller deletes their product, all associated product snapshots are preserved and remain accessible to administrators.
 
-### Request and Review Errors
+### External Service Integration Errors
 
-WHEN a customer attempts to request cancellation for an item with status other than "paid", THE system SHALL reject the request.
-WHEN a customer attempts to request cancellation for an item that has been shipped, THE system SHALL reject the request.
-WHEN a customer attempts to request cancellation without providing a reason, THE system SHALL reject the request.
-WHEN a seller attempts to respond to a cancellation request that does not exist, THE system SHALL reject the response.
-WHEN a seller attempts to approve a cancellation request for an item with status other than "paid", THE system SHALL reject the approval.
-
-### Refund Request Errors
-
-WHEN a customer attempts to request a refund for an item with status other than "delivered", THE system SHALL reject the request.
-WHEN a customer attempts to request a refund more than 7 days after delivery, THE system SHALL reject the request.
-WHEN a customer attempts to request a refund without providing a reason, THE system SHALL reject the request.
-WHEN a seller attempts to respond to a refund request that does not exist, THE system SHALL reject the response.
-WHEN a seller attempts to approve a refund request for an item with status other than "delivered", THE system SHALL reject the approval.
-
-### Review Errors
-
-WHEN a customer attempts to write a review for a product they have not purchased, THE system SHALL reject the review.
-WHEN a customer attempts to write a review for an order item that is not in "delivered" status, THE system SHALL reject the review.
-WHEN a customer attempts to write multiple reviews for the same product in the same order, THE system SHALL reject the duplicate review.
-WHEN a customer attempts to write a review with a rating outside the 1-5 range, THE system SHALL reject the review.
-WHEN a customer attempts to edit a review that does not belong to them, THE system SHALL reject the edit.
-WHEN a customer attempts to delete a review that does not belong to them, THE system SHALL reject the deletion.
-
-### Access Control and Ownership Errors
-
-WHEN a customer attempts to view an order that does not belong to them, THE system SHALL deny access.
-WHEN a customer attempts to modify an order that does not belong to them, THE system SHALL deny access.
-WHEN a seller attempts to view order items for products they do not sell, THE system SHALL deny access.
-WHEN a seller attempts to ship order items for products they do not sell, THE system SHALL deny access.
-WHEN a seller attempts to respond to cancellation/refund requests for products they do not sell, THE system SHALL deny access.
-
-### Account Ownership Errors
-
-WHEN a customer attempts to edit another customer's profile, THE system SHALL deny access.
-WHEN a customer attempts to delete another customer's address, THE system SHALL deny access.
-WHEN a seller attempts to edit another seller's product, THE system SHALL deny access.
-WHEN a seller attempts to delete another seller's product, THE system SHALL deny access.
-WHEN a seller attempts to edit another seller's variant, THE system SHALL deny access.
-
-### Administrator Access Errors
-
-WHEN a regular administrator attempts to demote themselves, THE system SHALL deny the action.
-WHEN a regular administrator attempts to approve another administrator's promotion, THE system SHALL deny the action.
-WHEN a non-administrator attempts to approve seller registrations, THE system SHALL deny the action.
-WHEN a non-administrator attempts to manage categories, THE system SHALL deny the action.
-WHEN a non-administrator attempts to view all platform orders, THE system SHALL deny the action.
-
-### System and Integration Errors
-
-WHEN a snapshot creation fails during product edit, THE system SHALL rollback the product edit.
-WHEN a snapshot creation fails during order creation, THE system SHALL rollback the order creation.
-WHEN an inventory record update fails during order placement, THE system SHALL rollback the order.
-WHEN a transaction fails due to database constraint violation, THE system SHALL return a validation error to the user.
-WHEN a transaction fails due to deadlock, THE system SHALL retry the transaction up to 3 times.
-WHEN a transaction fails after maximum retries, THE system SHALL return a service unavailable error.
-
-### External Service Errors
-
-WHEN the payment gateway is unavailable, THE system SHALL display a service temporarily unavailable message.
-WHEN the payment gateway times out, THE system SHALL allow the customer to retry.
-WHEN the shipping carrier API is unavailable during shipment creation, THE system SHALL queue the tracking information for later processing.
-WHEN an external service returns invalid data, THE system SHALL log the error and notify administrators.
-
-### Data Integrity Errors
-
-WHEN a product snapshot is requested but does not exist, THE system SHALL return an error.
-WHEN an inventory record calculation results in negative stock, THE system SHALL flag the discrepancy for administrator review.
-WHEN a deleted product is referenced in a wishlist, THE system SHALL automatically remove it from the wishlist.
-WHEN a deleted variant is referenced in a cart, THE system SHALL mark it as unavailable in the cart.
-
-# File Validation Rules
-
-Validation rules and policies for file uploads and storage.
-
-## File Validation and Policies
-
-Define file type restrictions, virus scanning requirements, content validation, and retention policies for uploaded files.
-
-### File Upload Validation
-
-### Allowed File Types
-
-THE system SHALL only accept image files for product uploads.
-
-THE system SHALL accept the following image formats:
-- JPEG
-- PNG
-- WebP
-
-WHEN a customer uploads a file with an unsupported format, THE system SHALL reject the upload and display an error message indicating the allowed formats.
-
-### File Size Limits
-
-WHEN a customer uploads a product image, THE system SHALL validate that the file size does not exceed 10MB.
-
-IF the file size exceeds 10MB, THE system SHALL reject the upload and inform the customer of the size limit.
-
-### Image Resolution Requirements
-
-WHEN a customer uploads a product image, THE system SHALL validate that the image dimensions are at least 200 pixels in both width and height.
-
-WHEN a customer uploads a product image, THE system SHALL validate that the image dimensions do not exceed 4000 pixels in either width or height.
-
-IF the image dimensions are below the minimum or above the maximum, THE system SHALL reject the upload and display an error message with the valid dimension range.
-
-### Thumbnail Designation
-
-WHEN a seller uploads multiple images for a product, THE system SHALL designate the first uploaded image as the main thumbnail image.
-
-WHEN a seller reorders product images, THE system SHALL update the thumbnail designation to reflect the new first image.
-
-### Content-Type Validation
-
-WHEN a file is uploaded, THE system SHALL validate that the MIME type matches the file extension.
-
-IF the MIME type does not match the file extension, THE system SHALL reject the upload and display a security error message.
-
-### Virus Scanning Requirements
-
-### Automatic Virus Scanning
-
-WHEN a file is uploaded to the platform, THE system SHALL automatically scan the file for malware and viruses before storing it.
-
-WHEN a file is uploaded, THE system SHALL quarantine the file until the virus scan completes.
-
-### Scan Results Handling
-
-WHEN a virus scan detects malware in an uploaded file, THE system SHALL reject the file and prevent it from being stored.
-
-WHEN a virus scan detects malware, THE system SHALL log the incident with the file metadata and upload timestamp.
-
-WHEN a virus scan detects malware, THE system SHALL display a generic error message to the customer without revealing security details.
-
-### Scan Failure Handling
-
-WHEN the virus scanning service is unavailable, THE system SHALL queue the file for scanning and temporarily hold it in a pending state.
-
-IF the virus scan fails due to service error after three retry attempts, THE system SHALL reject the file and notify the administrator.
-
-### Post-Upload Monitoring
-
-THE system SHALL periodically re-scan stored product images for newly discovered malware signatures.
-
-WHEN a stored file is identified as malicious during re-scanning, THE system SHALL remove it from public access and notify the product owner.
-
-### File Retention Policies
-
-### Product Image Retention
-
-WHEN a product is deleted by the seller, THE system SHALL retain all product images for 90 days before permanent deletion.
-
-WHEN a product is deleted by an administrator for policy violations, THE system SHALL retain all product images for 180 days for audit purposes.
-
-### Snapshot Image Retention
-
-WHEN a product snapshot is created, THE system SHALL retain all images referenced in the snapshot indefinitely.
-
-THE system SHALL NOT delete images referenced in any snapshot, even if the original product is deleted.
-
-### Order Item Snapshot Retention
-
-WHEN an order is completed, THE system SHALL retain all product images referenced in order item snapshots indefinitely for dispute resolution.
-
-### Seller Profile Image Retention
-
-WHEN a seller deletes their account, THE system SHALL retain their shop logo for 180 days in order snapshots.
-
-WHEN a seller profile is updated, THE system SHALL retain previous logo images in snapshots for 180 days.
-
-### Retention Period Summary
-
-| Scenario | Retention Period | Purpose |
-|----------|-----------------|----------|
-| Deleted product (seller) | 90 days | Recovery window |
-| Deleted product (admin) | 180 days | Audit trail |
-| Snapshot images | Indefinite | Dispute resolution |
-| Order item images | Indefinite | Legal compliance |
-| Seller logo in orders | 180 days | Order history |
-
-### Data Purging Process
-
-THE system SHALL automatically purge files that have exceeded their retention period.
-
-THE system SHALL log all purged files with timestamp and reason before deletion.
-
-THE system SHALL notify administrators of bulk purging operations on a monthly basis.
-
-### File Upload Error Conditions
-
-### Upload Rejection Scenarios
-
-THE system SHALL reject file uploads when the file format is not in the allowed list.
-
-THE system SHALL reject file uploads when the file size exceeds the 10MB limit.
-
-THE system SHALL reject file uploads when the image dimensions are outside the 200-4000 pixel range.
-
-THE system SHALL reject file uploads when the MIME type does not match the file extension.
-
-THE system SHALL reject file uploads when the virus scan detects malware.
-
-### Storage Capacity Errors
-
-WHEN the storage quota for a seller is exceeded, THE system SHALL reject new file uploads and display a storage limit error.
-
-WHEN the platform storage capacity reaches 90% utilization, THE system SHALL notify administrators to expand capacity.
-
-### Network and Timeout Errors
-
-WHEN a file upload times out, THE system SHALL allow the customer to retry the upload.
-
-WHEN the upload service is temporarily unavailable, THE system SHALL display a maintenance message and queue the upload for later processing.
-
-### Permission Errors
-
-THE system SHALL reject file upload requests from sellers whose accounts are suspended or banned.
-
-THE system SHALL reject file modification requests for products the seller does not own.
-
-### File Access and Display Rules
-
-### Product Image Visibility
-
-WHEN a product is active, THE system SHALL display all uploaded images on the product detail page.
-
-WHEN a product is deleted, THE system SHALL hide all images from public views.
-
-WHEN a product is suspended by an administrator, THE system SHALL hide all images from search and category listings.
-
-### Thumbnail Display Rules
-
-WHEN displaying product listings, THE system SHALL show only the thumbnail image for each product.
-
-WHEN displaying product details, THE system SHALL show all images with the thumbnail as the default view.
-
-### Image Loading Performance
-
-THE system SHALL serve optimized thumbnail images for product listings to improve page load times.
-
-THE system SHALL serve full-resolution images only when requested on the product detail page.
-
-### Broken Image Handling
-
-WHEN an image fails to load, THE system SHALL display a placeholder image instead of breaking the layout.
-
-WHEN multiple images fail to load, THE system SHALL log the errors for administrator review.
+When the external payment gateway is unavailable, the payment processing fails and the order is not created. When the external payment gateway returns an error, the customer may retry the payment. When an external service integration fails during order processing, the system handles the failure without corrupting order data. When a circuit-breaker is triggered for an external service, subsequent requests are blocked until the service recovers. When a fallback mechanism is activated for an external service, the system uses the fallback to complete the operation or fails gracefully.
 
 # Integration Error Handling
 
@@ -5463,270 +1092,38 @@ Error handling and retry policies for external integrations.
 
 Define retry strategies, circuit breaker policies, fallback behavior, and error escalation for external service failures.
 
-### Retry Policies
+### Payment Failure Handling
 
-WHEN an external payment gateway integration fails, THE system SHALL:
-1. Log the failure with the transaction identifier
-2. Retry the payment request up to 3 times with exponential backoff
-3. Wait 5 seconds before the first retry, 15 seconds before the second retry, and 30 seconds before the third retry
-4. Record each retry attempt with timestamp and response status
+When payment processing fails, the order is not created and the customer is notified of the payment failure.
 
-WHEN the retry limit is reached and all attempts fail, THE system SHALL:
-1. Mark the payment as failed
-2. Not create the order
-3. Notify the customer that payment processing failed
-4. Allow the customer to retry payment with a new transaction
+The customer may retry the payment process after a payment failure.
 
-WHEN an integration timeout occurs, THE system SHALL:
-1. Treat it as a retryable failure
-2. Apply the same retry policy as other integration failures
-3. Log the timeout with the operation that timed out
+Cart items are preserved when payment fails, allowing the customer to retry checkout with the same items.
 
-### Circuit-Breaker Pattern
+No order record is created when payment fails, so failed payment attempts do not appear in the customer's order history.
 
-WHEN an external service experiences consecutive failures, THE system SHALL:
-1. Open the circuit-breaker after 5 consecutive failures within a 1-minute window
-2. When the circuit is open, THE system SHALL immediately fail all integration requests without attempting the external call
-3. The circuit shall remain open for 60 seconds before transitioning to half-open state
-4. In half-open state, THE system SHALL allow one test request to the external service
+### Payment Retry
 
-WHEN the test request in half-open state succeeds, THE system SHALL:
-1. Close the circuit and resume normal operation
-2. Reset the consecutive failure counter
+Customers may retry payment after a payment failure without restriction on the number of retry attempts.
 
-WHEN the test request in half-open state fails, THE system SHALL:
-1. Reopen the circuit
-2. Reset the 60-second timer
-3. Continue rejecting all integration requests
+Each payment retry processes the full payment amount for all items in the order.
 
-WHILE the circuit is open, THE system SHALL:
-1. Return a fallback response to the user
-2. Log each blocked request with the circuit-breaker state
+The customer's cart is not cleared between retry attempts, allowing multiple payment attempts with the same items.
 
-### Fallback Behavior
+### Payment Gateway Integration Errors
 
-WHEN an external integration fails and the circuit is open, THE system SHALL provide the following fallback behaviors:
+When the payment gateway integration encounters an error, the system prevents order creation and notifies the customer.
 
-For payment processing:
-1. Inform the customer that payment processing is temporarily unavailable
-2. Allow the customer to save their cart and retry later
-3. Preserve cart items for 24 hours
-4. Do not proceed with order creation until payment succeeds
+Integration errors with the payment gateway do not affect the customer's account or cart contents.
 
-For inventory updates:
-1. Queue the inventory change request locally
-2. Process queued requests when the external service becomes available
-3. Notify the seller if inventory updates fail after 3 attempts
+The customer may attempt payment again when the payment gateway becomes available.
 
-For shipping carrier integration:
-1. Allow sellers to enter tracking information manually
-2. Mark shipments as "pending carrier confirmation"
-3. Sync tracking status when carrier integration is restored
+### Order Creation on Payment Success
 
-WHEN fallback mode is active, THE system SHALL:
-1. Display appropriate user-facing messages about temporary unavailability
-2. Log all fallback activations for monitoring
-3. Notify administrators when fallback persists for more than 10 minutes
+When payment succeeds, the order is created with all cart items.
 
-### Integration Error Handling
+Order creation triggers automatic stock reduction for each purchased variant.
 
-WHEN an integration error occurs, THE system SHALL:
-1. Log the error with the following information:
-   - External service name
-   - Operation attempted
-   - Error code from external service
-   - Timestamp
-   - Transaction identifier (if applicable)
-   - Request and response payloads (excluding sensitive data)
+Cart items are removed from the customer's cart after successful order creation.
 
-WHEN a payment integration error occurs, THE system SHALL:
-1. Validate the transaction identifier format before processing
-2. Reject requests with invalid transaction identifiers
-3. Log all payment response codes received from the gateway
-4. Map external error codes to internal error categories
-
-WHEN an integration error affects customer-facing operations, THE system SHALL:
-1. Display a user-friendly error message
-2. Do not expose internal error details or stack traces
-3. Provide guidance on retry options or alternative actions
-
-WHEN an integration error affects seller operations, THE system SHALL:
-1. Notify the seller of the failure
-2. Provide the error category and recommended action
-3. Allow sellers to retry the operation after a cooldown period
-
-THE system SHALL maintain an error catalog that documents:
-1. All known integration error codes
-2. Their meaning and severity
-3. Recommended handling procedures
-4. Whether they are retryable or require manual intervention
-
-# Job Failure Policies
-
-Failure handling and dead-letter queue policies for background jobs.
-
-## Job Failure and Recovery
-
-Define failure handling, recovery procedures, and notification requirements for background jobs.
-
-### Job Failure Recording
-
-WHEN a background job fails to complete, THE system SHALL:
-1. Record the failure with timestamp and error details
-2. Preserve the job state for recovery analysis
-3. Increment the retry counter
-4. Determine the next action based on failure type
-
-IF a job exceeds the maximum retry limit, THE system SHALL:
-1. Mark the job as permanently failed
-2. Move the job to the dead-letter queue
-3. Notify administrators of the critical failure
-4. Preserve all job data for manual investigation
-
-WHILE a job is in retry state, THE system SHALL:
-1. Prevent duplicate job execution
-2. Maintain the original job parameters
-3. Track cumulative retry attempts
-4. Log each retry attempt with timing information
-
-### Retry Mechanism
-
-WHEN a job fails temporarily, THE system SHALL:
-1. Schedule a retry after the configured delay period
-2. Use exponential backoff for consecutive failures
-3. Preserve original job parameters for retry execution
-4. Log the retry attempt with previous failure context
-
-IF the retry succeeds, THE system SHALL:
-1. Mark the job as completed successfully
-2. Clear the failure state
-3. Reset the retry counter to zero
-4. Execute any completion callbacks
-
-IF the retry fails, THE system SHALL:
-1. Increment the retry counter
-2. Calculate the next retry delay using backoff formula
-3. Re-schedule the job for the next attempt
-4. Continue until maximum retries are reached
-
-WHEN the maximum retry limit is reached, THE system SHALL:
-1. Stop automatic retry attempts
-2. Mark the job as requiring manual intervention
-3. Transfer the job to the dead-letter queue
-4. Generate an alert for administrative review
-
-### Dead-Letter Queue Recovery
-
-WHEN a job enters the dead-letter queue, THE system SHALL:
-1. Preserve all job data including parameters and failure history
-2. Make the job visible to administrators for manual review
-3. Prevent automatic reprocessing without administrative action
-4. Maintain audit trail of all failure events
-
-WHEN an administrator reviews a dead-letter job, THE system SHALL:
-1. Display complete failure history and error details
-2. Show the original job parameters and execution context
-3. Provide options to retry, modify, or discard the job
-4. Log the administrative action taken
-
-IF an administrator retries a dead-letter job, THE system SHALL:
-1. Reset the retry counter
-2. Execute the job with original or modified parameters
-3. Track the retry as an administrative action
-4. Return to normal retry logic if the job fails again
-
-IF an administrator discards a dead-letter job, THE system SHALL:
-1. Archive the job data for compliance purposes
-2. Remove the job from the dead-letter queue
-3. Record the discard action with administrator identity
-4. Update any dependent processes accordingly
-
-### Failure Notification
-
-WHEN a job fails and requires notification, THE system SHALL:
-1. Determine the appropriate recipient based on job type
-2. Include job identifier and failure details in the notification
-3. Send notification through the configured channel
-4. Record the notification delivery status
-
-IF a critical job fails (payment processing, order creation), THE system SHALL:
-1. Immediately notify the operations team
-2. Escalate to senior administrators if unacknowledged
-3. Provide direct access to job recovery tools
-4. Continue retry attempts while notifications are sent
-
-IF a non-critical job fails (report generation, analytics), THE system SHALL:
-1. Notify the responsible team during business hours
-2. Aggregate multiple failures into a single notification
-3. Provide summary of affected jobs and impact assessment
-4. Allow batch recovery actions from the notification
-
-WHEN a job successfully recovers after failure, THE system SHALL:
-1. Notify relevant stakeholders of the recovery
-2. Include the number of retry attempts made
-3. Provide link to job execution details
-4. Clear any pending alerts related to the job
-
-IF a notification fails to deliver, THE system SHALL:
-1. Queue the notification for retry
-2. Use alternative notification channels if configured
-3. Escalate to administrators if all channels fail
-4. Log the notification failure for investigation
-
-### Business Process Recovery
-
-WHEN a payment processing job fails, THE system SHALL:
-1. Preserve the transaction state for reconciliation
-2. Notify the customer of the payment issue
-3. Allow the customer to retry payment without re-ordering
-4. Log the failure for financial audit purposes
-
-IF a payment job exceeds maximum retries, THE system SHALL:
-1. Mark the order as payment failed
-2. Notify the customer to update payment method
-3. Hold the order for a configurable period
-4. Cancel the order automatically if payment is not received
-
-WHEN an inventory update job fails, THE system SHALL:
-1. Preserve the inventory change request
-2. Block further inventory modifications for the affected variant
-3. Notify the seller of the inventory discrepancy
-4. Trigger manual inventory reconciliation process
-
-IF a shipment notification job fails, THE system SHALL:
-1. Retry delivery of tracking information
-2. Mark the shipment as pending notification
-3. Allow the customer to view tracking from the order page
-4. Log the notification failure for carrier integration review
-
-WHEN a review processing job fails, THE system SHALL:
-1. Preserve the review content and rating
-2. Queue the review for manual publication
-3. Notify the customer that their review is pending
-4. Display the review status in the customer account
-
-### Cross-Job Recovery Coordination
-
-WHEN a background job fails during order processing, THE system SHALL:
-1. Maintain order consistency across all related entities
-2. Prevent partial order state updates
-3. Provide recovery options that preserve transaction integrity
-4. Log all recovery actions for audit compliance
-
-IF a job failure affects multiple customers, THE system SHALL:
-1. Identify all affected customers and orders
-2. Prioritize recovery based on business impact
-3. Notify affected customers of the issue and resolution
-4. Provide compensation options for significant delays
-
-WHEN recovery requires manual intervention, THE system SHALL:
-1. Create a ticket with complete failure context
-2. Assign the ticket to the appropriate team
-3. Track resolution time and success rate
-4. Update the job configuration to prevent recurrence
-
-IF a job failure indicates a systemic issue, THE system SHALL:
-1. Analyze failure patterns across multiple jobs
-2. Generate a report for technical review
-3. Recommend configuration changes or code fixes
-4. Track the implementation of preventive measures
+A snapshot of each purchased product, variant, and seller profile is saved with the order item.

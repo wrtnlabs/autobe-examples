@@ -10,8 +10,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ErpHrmTimerCollector {
   export async function collect(props: {
     body: IErpHrmTimer.ICreate;
-    erpHrmEmployees: IEntity;
-    erpHrmMemberSessions: IEntity;
+    employee: IEntity;
   }) {
     return {
       id: v4(),
@@ -19,11 +18,36 @@ export namespace ErpHrmTimerCollector {
       description: props.body.description ?? null,
       created_at: new Date(),
       updated_at: new Date(),
-      employee: { connect: { id: props.erpHrmEmployees.id } },
-      project: { connect: { id: props.body.erp_hrm_project_id } },
-      task: props.body.erp_hrm_task_id
-        ? { connect: { id: props.body.erp_hrm_task_id } }
+      employee: { connect: { id: props.employee.id } },
+      project: { connect: { id: props.body.erpHrmProjectId } },
+      task: props.body.erpHrmTaskId
+        ? { connect: { id: props.body.erpHrmTaskId } }
         : undefined,
     } satisfies Prisma.erp_hrm_timersCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace ErpHrmTimerCollector {
+//         export async function collect(props: {
+//           body: IErpHrmTimer.ICreate;
+//           erpHrmEmployees: IEntity; // from authorized session
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       started_at: ...,
+//       description: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       employee: ...,
+//       project: ...,
+//       task: ...,
+//           } satisfies Prisma.erp_hrm_timersCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

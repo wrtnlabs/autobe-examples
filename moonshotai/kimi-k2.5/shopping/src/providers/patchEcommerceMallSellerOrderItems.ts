@@ -1,14 +1,12 @@
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
-import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
 import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
 import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallOrderItem";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -29,65 +27,41 @@ export async function patchEcommerceMallSellerOrderItems(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const orderByInput:
-    | Prisma.ecommerce_mall_order_itemsOrderByWithRelationInput
-    | undefined =
-    props.body.sort === "status"
-      ? { status: props.body.order ?? "asc" }
-      : props.body.sort === "seller_id"
-        ? { seller_id: props.body.order ?? "asc" }
-        : props.body.sort === "price_at_purchase"
-          ? { price_at_purchase: props.body.order ?? "asc" }
-          : props.body.sort === "quantity"
-            ? { quantity: props.body.order ?? "asc" }
-            : { created_at: props.body.order ?? "desc" };
   const whereInput = {
     seller_id: props.seller.id,
     deleted_at: null,
-    ...(props.body.orderId !== undefined && { order_id: props.body.orderId }),
-    ...(props.body.status !== undefined && { status: props.body.status }),
-    ...(props.body.productId !== undefined && {
-      product_id: props.body.productId,
-    }),
-    ...(props.body.variantId !== undefined && {
-      variant_id: props.body.variantId,
-    }),
-    ...((props.body.createdAtFrom !== undefined ||
-      props.body.createdAtTo !== undefined) && {
-      created_at: {
-        ...(props.body.createdAtFrom !== undefined && {
-          gte: new Date(props.body.createdAtFrom),
-        }),
-        ...(props.body.createdAtTo !== undefined && {
-          lte: new Date(props.body.createdAtTo),
-        }),
-      },
-    }),
-    ...(props.body.search !== undefined && {
-      product: {
-        name: {
-          contains: props.body.search,
-          mode: Prisma.QueryMode.insensitive,
-        },
-      },
-    }),
+    ...(props.body.orderId && { order_id: props.body.orderId }),
+    ...(props.body.productId && { product_id: props.body.productId }),
+    ...(props.body.variantId && { variant_id: props.body.variantId }),
+    ...(props.body.status && { status: props.body.status }),
+    ...(props.body.createdAtFrom || props.body.createdAtTo
+      ? {
+          created_at: {
+            ...(props.body.createdAtFrom && {
+              gte: new Date(props.body.createdAtFrom),
+            }),
+            ...(props.body.createdAtTo && {
+              lte: new Date(props.body.createdAtTo),
+            }),
+          },
+        }
+      : {}),
   } satisfies Prisma.ecommerce_mall_order_itemsWhereInput;
-  const [items, total] = await Promise.all([
-    MyGlobal.prisma.ecommerce_mall_order_items.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: orderByInput,
-      ...EcommerceMallOrderItemAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.ecommerce_mall_order_items.count({ where: whereInput }),
-  ]);
-  const data = await ArrayUtil.asyncMap(
-    items,
-    EcommerceMallOrderItemAtSummaryTransformer.transform,
-  );
+  const data = await MyGlobal.prisma.ecommerce_mall_order_items.findMany({
+    where: whereInput,
+    skip,
+    take: limit,
+    orderBy: { created_at: "desc" },
+    ...EcommerceMallOrderItemAtSummaryTransformer.select(),
+  });
+  const total = await MyGlobal.prisma.ecommerce_mall_order_items.count({
+    where: whereInput,
+  });
   return {
-    data,
+    data: await ArrayUtil.asyncMap(
+      data,
+      EcommerceMallOrderItemAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,

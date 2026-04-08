@@ -19,12 +19,21 @@ export namespace ShoppingMallSellerProfileTransformer {
       select: {
         id: true,
         shop_name: true,
-        description: true,
-        logo_image_uri: true,
+        shop_description: true,
+        logo_image_url: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
         seller: ShoppingMallSellerAtSummaryTransformer.select(),
+        snapshots: {
+          select: {
+            id: true,
+            shop_name: true,
+            shop_description: true,
+            logo_image_url: true,
+            created_at: true,
+          },
+        } satisfies Prisma.shopping_mall_seller_profile_snapshotsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_seller_profilesFindManyArgs;
   }
@@ -37,11 +46,10 @@ export namespace ShoppingMallSellerProfileTransformer {
         input.seller,
       ),
       shop_name: input.shop_name,
-      description: input.description,
-      logo_image_uri: input.logo_image_uri,
+      shop_description: input.shop_description,
+      logo_image_url: input.logo_image_url ?? null,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
-    };
+    } satisfies IShoppingMallSellerProfile;
   }
 }

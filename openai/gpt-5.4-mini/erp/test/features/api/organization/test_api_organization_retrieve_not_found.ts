@@ -2,7 +2,7 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import type { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import type { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -17,18 +17,17 @@ export async function test_api_organization_retrieve_not_found(
   connection: api.IConnection,
 ): Promise<void> {
   const memberConnection: api.IConnection = { host: connection.host };
-  const authorized = await authorize_member_join(memberConnection, {
+  await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: "password123" satisfies string & tags.Format<"password">,
-      name: RandomGenerator.name(),
-      href: "https://example.com/register",
+      password: "Password123!",
+      displayName: RandomGenerator.name(),
+      href: "https://example.com/onboarding",
       referrer: "https://example.com/landing",
     } satisfies IErpHrmTimeMember.IJoin,
   });
-  typia.assert(authorized);
   await TestValidator.httpError(
-    "organization retrieval should fail with not found for missing organization",
+    "organization retrieval should fail with not found for a missing organization id",
     404,
     async () => {
       await api.functional.erpHrmTime.member.organizations.at(

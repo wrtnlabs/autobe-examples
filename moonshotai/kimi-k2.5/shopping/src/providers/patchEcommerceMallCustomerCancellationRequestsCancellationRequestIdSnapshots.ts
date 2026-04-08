@@ -17,116 +17,74 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchEcommerceMallCustomerCancellationRequestsCancellationRequestIdSnapshots(props: {
   customer: CustomerPayload;
-  cancellationRequestId: string & tags.Format<"uuid">;
+  cancellationRequestId: string;
   body: IEcommerceMallCancellationRequestSnapshot.IRequest;
 }): Promise<IPageIEcommerceMallCancellationRequestSnapshot.ISummary> {
-  // Authorization check - verify cancellation request exists and customer owns it
+  // Verify customer owns this cancellation request
   const cancellationRequest =
-    await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findUniqueOrThrow(
-      {
-        where: { id: props.cancellationRequestId },
-        select: {
-          id: true,
-          orderItem: {
-            select: {
-              order: {
-                select: {
-                  customer_id: true,
-                },
-              },
-            },
-          },
-        },
+    await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findFirst({
+      where: {
+        id: props.cancellationRequestId,
+        customer_id: props.customer.id,
+        deleted_at: null,
       },
-    );
-  // Verify ownership - customer must own the order
-  if (cancellationRequest.orderItem.order.customer_id !== props.customer.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Parse pagination parameters with proper type casting for typia tags
-  const page = (props.body.page ?? 1) as number &
-    tags.Type<"int32"> &
-    tags.Minimum<0>;
-  const limit = (props.body.limit ?? 100) as number &
-    tags.Type<"int32"> &
-    tags.Minimum<0>;
-  const skip = (page - 1) * limit;
-  // Build date range filter
-  const dateFilter: {
-    gte?: Date;
-    lte?: Date;
-  } = {};
-  if (
-    props.body.created_at_from !== undefined &&
-    props.body.created_at_from !== null
-  ) {
-    dateFilter.gte = new Date(props.body.created_at_from);
-  }
-  if (
-    props.body.created_at_to !== undefined &&
-    props.body.created_at_to !== null
-  ) {
-    dateFilter.lte = new Date(props.body.created_at_to);
-  }
-  // Build where clause
-  const whereInput: Prisma.ecommerce_mall_cancellation_request_snapshotsWhereInput =
-    {
-      cancellation_request_id: props.cancellationRequestId,
-      ...(props.body.status_before !== undefined &&
-        props.body.status_before !== null && {
-          status_before: props.body.status_before,
-        }),
-      ...(props.body.status_after !== undefined &&
-        props.body.status_after !== null && {
-          status_after: props.body.status_after,
-        }),
-      ...(Object.keys(dateFilter).length > 0 && { created_at: dateFilter }),
-    };
-  // Handle sort - validate fields
-  const allowedSortFields = [
-    "created_at",
-    "id",
-    "status_before",
-    "status_after",
-  ];
-  const sortParts = props.body.sort?.split(":") ?? ["created_at", "desc"];
-  const sortField = allowedSortFields.includes(sortParts[0] ?? "")
-    ? sortParts[0]
-    : "created_at";
-  const sortDirection = sortParts[1] === "asc" ? "asc" : "desc";
-  const orderByInput: Prisma.ecommerce_mall_cancellation_request_snapshotsOrderByWithRelationInput =
-    {
-      [sortField]: sortDirection,
-    };
-  // Query count and data
-  const total =
-    await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.count({
-      where: whereInput,
     });
-  const data =
+  if (cancellationRequest === null) {
+    throw new HttpException("Cancellation request not found", 404);
+  }
+  // Build where clause with filters
+  const whereInput = {
+    cancellation_request_id: props.cancellationRequestId,
+    ...(props.body.statusBefore !== null && {
+      status_before: props.body.statusBefore,
+    }),
+    ...(props.body.statusAfter !== null && {
+      status_after: props.body.statusAfter,
+    }),
+    ...(props.body.createdAtFrom !== null && {
+      created_at: { gte: new Date(props.body.createdAtFrom) },
+    }),
+    ...(props.body.createdAtTo !== null && {
+      created_at: { lte: new Date(props.body.createdAtTo) },
+    }),
+  } satisfies Prisma.ecommerce_mall_cancellation_request_snapshotsWhereInput;
+  // Pagination calculation
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const skip = (page - 1) * limit;
+  // Sorting
+  const sortField = props.body.sortField ?? "created_at";
+  const sortOrder = props.body.sortOrder ?? "desc";
+  const orderBy = {
+    [sortField]: sortOrder,
+  } satisfies Prisma.ecommerce_mall_cancellation_request_snapshotsOrderByWithRelationInput;
+  // Query snapshots
+  const snapshots =
     await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.findMany(
       {
         where: whereInput,
         skip,
         take: limit,
-        orderBy: orderByInput,
+        orderBy,
         ...EcommerceMallCancellationRequestSnapshotAtSummaryTransformer.select(),
       },
     );
-  // Transform results
-  const transformed = await ArrayUtil.asyncMap(
-    data,
-    EcommerceMallCancellationRequestSnapshotAtSummaryTransformer.transform,
-  );
-  // Build pagination
-  const pages = Math.ceil(total / limit);
+  // Count total
+  const total =
+    await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.count({
+      where: whereInput,
+    });
+  // Transform and return
   return {
-    data: transformed,
+    data: await ArrayUtil.asyncMap(
+      snapshots,
+      EcommerceMallCancellationRequestSnapshotAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: pages,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
   };
 }

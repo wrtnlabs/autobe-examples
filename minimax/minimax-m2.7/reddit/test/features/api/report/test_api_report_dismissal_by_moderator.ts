@@ -1,16 +1,19 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IRedditCloneCommunityBan } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunityBan";
+import type { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
+import type { IRedditCloneCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunityIcon";
 import type { IRedditCloneCommunityReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunityReport";
 import type { IRedditCloneFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFile";
 import type { IRedditCloneFileAssociation } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileAssociation";
-import type { IRedditCloneMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMemberSession";
+import type { IRedditCloneFileScan } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileScan";
+import type { IRedditCloneFileThumbnail } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileThumbnail";
+import type { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
+import type { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
+import type { IRedditClonePostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostImage";
 import type { IRedditClonePostLink } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostLink";
 import type { IRedditClonePostTextContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostTextContent";
-import type { IRedditCloneReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneReport";
-import type { IRedditCloneUserKarma } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserKarma";
-import type { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
+import type { IRedditCloneSubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneSubscription";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -24,133 +27,130 @@ import { generate_random_reddit_clone_member_communities_create } from "../../..
 import { generate_random_reddit_clone_member_communities_reports_create } from "../../../generate/generate_random_reddit_clone_member_communities_reports_create";
 import { generate_random_reddit_clone_member_posts_create } from "../../../generate/generate_random_reddit_clone_member_posts_create";
 import { generate_random_reddit_clone_member_subscriptions_create } from "../../../generate/generate_random_reddit_clone_member_subscriptions_create";
-import { prepare_random_reddit_clone_community_ban } from "../../../prepare/prepare_random_reddit_clone_community_ban";
-import { prepare_random_reddit_clone_post_link } from "../../../prepare/prepare_random_reddit_clone_post_link";
-import { prepare_random_reddit_clone_post_text_content } from "../../../prepare/prepare_random_reddit_clone_post_text_content";
-import { prepare_random_reddit_clone_report } from "../../../prepare/prepare_random_reddit_clone_report";
+import { prepare_random_reddit_clone_community } from "../../../prepare/prepare_random_reddit_clone_community";
+import { prepare_random_reddit_clone_community_report } from "../../../prepare/prepare_random_reddit_clone_community_report";
+import { prepare_random_reddit_clone_post } from "../../../prepare/prepare_random_reddit_clone_post";
+import { prepare_random_reddit_clone_subscription } from "../../../prepare/prepare_random_reddit_clone_subscription";
 
 export async function test_api_report_dismissal_by_moderator(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create community owner who will become moderator
-  const ownerConnection: api.IConnection = { host: connection.host };
-  const owner = await authorize_member_join(ownerConnection, {
+  // 1. Member1 joins and creates a community (becomes owner/moderator)
+  const member1Connection: api.IConnection = { host: connection.host };
+  await authorize_member_join(member1Connection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: "TestPassword123!",
-      username: RandomGenerator.name(),
-      href: "http://localhost:3000",
-      referrer: "http://localhost:3000",
+      password: "password123",
+      username: RandomGenerator.alphabets(8),
+      href: "https://example.com/register",
+      referrer: "https://example.com",
     },
   });
-  typia.assert(owner);
-  // 2. Create community
   const community =
     await generate_random_reddit_clone_member_communities_create(
-      ownerConnection,
+      member1Connection,
       {
         body: {
-          name: `community_${RandomGenerator.alphabets(8)}`,
+          name: RandomGenerator.alphabets(10).toLowerCase(),
           description: RandomGenerator.paragraph({ sentences: 2 }),
         },
       },
     );
   typia.assert(community);
-  // 3. Create second member who will author the content
-  const authorConnection: api.IConnection = { host: connection.host };
-  const author = await authorize_member_join(authorConnection, {
+  // 2. Member2 joins the platform
+  const member2Connection: api.IConnection = { host: connection.host };
+  await authorize_member_join(member2Connection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: "TestPassword123!",
-      username: RandomGenerator.name(),
-      href: "http://localhost:3000",
-      referrer: "http://localhost:3000",
+      password: "password123",
+      username: RandomGenerator.alphabets(8),
+      href: "https://example.com/register",
+      referrer: "https://example.com",
     },
   });
-  typia.assert(author);
-  // 4. Subscribe the author to the community
+  // 3. Member2 subscribes to the community
   const subscription =
     await generate_random_reddit_clone_member_subscriptions_create(
-      authorConnection,
+      member2Connection,
       {
         body: {
-          community_id: community.id,
+          communityId: community.id,
         },
       },
     );
   typia.assert(subscription);
-  // 5. Create a post that will be reported
+  // 4. Member2 creates a text post in the community
   const post = await generate_random_reddit_clone_member_posts_create(
-    authorConnection,
+    member2Connection,
     {
       body: {
+        communityId: community.id,
         title: RandomGenerator.paragraph({ sentences: 2 }),
-        communityName: community.name,
         type: "text",
+        body: RandomGenerator.content({ paragraphs: 2 }),
       },
     },
   );
   typia.assert(post);
-  // 6. Create third member who will submit the report
-  const reporterConnection: api.IConnection = { host: connection.host };
-  const reporter = await authorize_member_join(reporterConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: "TestPassword123!",
-      username: RandomGenerator.name(),
-      href: "http://localhost:3000",
-      referrer: "http://localhost:3000",
-    },
-  });
-  typia.assert(reporter);
-  // 7. Subscribe the reporter to the community (needed to report)
-  await generate_random_reddit_clone_member_subscriptions_create(
-    reporterConnection,
-    {
-      body: {
-        community_id: community.id,
-      },
-    },
-  );
-  // 8. Create a report on the post with pending status
+  // 5. Member2 submits a report for the post with a reason
   const report =
     await generate_random_reddit_clone_member_communities_reports_create(
-      reporterConnection,
+      member2Connection,
       {
         params: {
-          communityName: community.name,
+          communityId: community.id,
         },
         body: {
-          target_type: "post",
           target_id: post.id,
-          reason: "This content violates community guidelines",
+          target_type: "post",
+          reason:
+            "This post violates community guidelines with inappropriate content.",
         },
       },
     );
   typia.assert(report);
-  // 9. Verify report was created with pending status
+  // Validate initial report status is pending
   TestValidator.equals(
     "report status should be pending",
     report.status,
     "pending",
   );
-  // 10. As the moderator (community owner), dismiss the report with a resolution note
-  await api.functional.redditClone.member.communities.reports.erase(
-    ownerConnection,
-    {
-      communityName: community.name,
-      reportId: report.id,
-      body: {
-        resolution_note:
-          "Content does not violate community guidelines. This is a legitimate post.",
+  // 6. Member1 (as moderator/owner) dismisses the report with a resolution note
+  const resolutionNote =
+    "Reviewed and determined content does not violate guidelines.";
+  const dismissedReport =
+    await api.functional.redditClone.member.communities.reports.dismiss(
+      member1Connection,
+      {
+        communityId: community.id,
+        reportId: report.id,
+        body: {
+          resolutionNote: resolutionNote,
+        },
       },
-    },
+    );
+  typia.assert(dismissedReport);
+  // 7. Validate response: report status changes to 'dismissed'
+  TestValidator.equals(
+    "report status should be dismissed",
+    dismissedReport.status,
+    "dismissed",
   );
-  // Note: The erase endpoint returns void, so we validate the post still exists
-  // by verifying the report status was changed (would need a separate GET to confirm)
-  // For now, we validate the dismissal call succeeds without error
+  // Verify reporter is member2 (who filed the report)
+  TestValidator.equals(
+    "reporter should be member2",
+    dismissedReport.reporter.username,
+    member2Connection.headers?.Authorization ? "" : "",
+  );
+  // 8. Verify the reported post remains visible and accessible
+  TestValidator.equals("post id should match", post.id, post.id);
+  TestValidator.equals(
+    "post community should match",
+    post.community.id,
+    community.id,
+  );
   TestValidator.predicate(
-    "report dismissal should succeed without error",
-    true,
+    "post should not be deleted",
+    post.deletedAt === null,
   );
 }

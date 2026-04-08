@@ -19,71 +19,86 @@ export async function patchEcommerceMallSuperAdminAdmins(props: {
   superAdmin: SuperadminPayload;
   body: IEcommerceMallAdmin.IRequest;
 }): Promise<IPageIEcommerceMallAdmin.ISummary> {
-  const limit = props.body.limit ?? 20;
-  const sort = props.body.sort;
-  const cursor = props.body.cursor;
-  // Determine pagination strategy and calculate skip/current page
-  const useCursorPagination = cursor !== undefined && cursor !== null;
-  const currentPage = useCursorPagination ? 1 : (props.body.page ?? 1);
-  const skip = useCursorPagination ? 0 : (currentPage - 1) * limit;
-  // Build where clause with filters
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
+  const createdAtCondition =
+    props.body.createdAtMin !== undefined &&
+    props.body.createdAtMin !== null &&
+    props.body.createdAtMax !== undefined &&
+    props.body.createdAtMax !== null
+      ? {
+          gte: new Date(props.body.createdAtMin),
+          lte: new Date(props.body.createdAtMax),
+        }
+      : props.body.createdAtMin !== undefined &&
+          props.body.createdAtMin !== null
+        ? { gte: new Date(props.body.createdAtMin) }
+        : props.body.createdAtMax !== undefined &&
+            props.body.createdAtMax !== null
+          ? { lte: new Date(props.body.createdAtMax) }
+          : undefined;
   const whereInput = {
-    deleted_at: null,
+    ...(props.body.grade !== undefined &&
+      props.body.grade !== null && {
+        grade: props.body.grade,
+      }),
+    ...(props.body.status !== undefined &&
+      props.body.status !== null && {
+        status: props.body.status,
+      }),
+    ...(props.body.search !== undefined &&
+      props.body.search !== null && {
+        nickname: {
+          contains: props.body.search,
+        },
+      }),
     ...(props.body.email !== undefined &&
-      props.body.email.length > 0 && {
+      props.body.email !== null && {
         email: {
           contains: props.body.email,
-          mode: Prisma.QueryMode.insensitive,
         },
       }),
-    ...(props.body.grade !== undefined && { grade: props.body.grade }),
-    ...(props.body.status !== undefined && { status: props.body.status }),
-    ...(props.body.nickname !== undefined &&
-      props.body.nickname.length > 0 && {
-        nickname: {
-          contains: props.body.nickname,
-          mode: Prisma.QueryMode.insensitive,
-        },
-      }),
+    ...(createdAtCondition !== undefined && {
+      created_at: createdAtCondition,
+    }),
+    ...(props.body.includeDeleted !== true && {
+      deleted_at: null,
+    }),
   } satisfies Prisma.ecommerce_mall_adminsWhereInput;
-  // Handle ordering based on sort parameter
   const orderByInput = (
-    sort === "created_at"
-      ? { created_at: "asc" as const }
-      : sort === "-created_at"
-        ? { created_at: "desc" as const }
-        : sort === "grade"
-          ? { grade: "asc" as const }
-          : sort === "-grade"
-            ? { grade: "desc" as const }
-            : { created_at: "desc" as const }
+    props.body.sortBy === "grade"
+      ? {
+          grade: props.body.sortOrder ?? "asc",
+        }
+      : props.body.sortBy === "status"
+        ? {
+            status: props.body.sortOrder ?? "asc",
+          }
+        : {
+            created_at: props.body.sortOrder ?? "desc",
+          }
   ) satisfies Prisma.ecommerce_mall_adminsOrderByWithRelationInput;
-  // Fetch paginated data
-  const dbArgs = {
+  const data = await MyGlobal.prisma.ecommerce_mall_admins.findMany({
     where: whereInput,
+    skip,
+    take: limit,
     orderBy: orderByInput,
     ...EcommerceMallAdminAtSummaryTransformer.select(),
-  } satisfies Prisma.ecommerce_mall_adminsFindManyArgs;
-  const data = await MyGlobal.prisma.ecommerce_mall_admins.findMany({
-    ...dbArgs,
-    ...(useCursorPagination
-      ? { cursor: { id: cursor }, skip: 1, take: limit }
-      : { skip, take: limit }),
   });
   const total = await MyGlobal.prisma.ecommerce_mall_admins.count({
     where: whereInput,
   });
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    EcommerceMallAdminAtSummaryTransformer.transform,
-  );
   return {
-    data: transformedData,
+    data: await ArrayUtil.asyncMap(
+      data,
+      EcommerceMallAdminAtSummaryTransformer.transform,
+    ),
     pagination: {
-      current: currentPage,
+      current: page,
       limit: limit,
       records: total,
-      pages: total === 0 ? 0 : Math.ceil(total / limit),
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
   };
 }

@@ -2,7 +2,6 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
-import type { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
 import type { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -16,12 +15,25 @@ import { authorize_member_refresh } from "../../../authorize/authorize_member_re
 import { generate_random_reddit_community_member_communities_create } from "../../../generate/generate_random_reddit_community_member_communities_create";
 import { prepare_random_reddit_community_community } from "../../../prepare/prepare_random_reddit_community_community";
 
+/**
+ * Test community metadata update by owner.
+ *
+ * Validates the complete community update workflow including member authentication, community creation, and metadata modification. Ensures that only the community owner can update community information and that all mutable fields (name, description, icon) are correctly updated.
+ *
+ * Special attention is given to verifying that the updated_at timestamp changes after the update operation, confirming that the modification was persisted. The test also validates that the response contains the complete updated community object with all new values.
+ *
+ * 1. Member authenticates via join endpoint and receives authorization token.
+ * 2. Member creates a community with initial name, description, and icon.
+ * 3. Member sends PUT request to update community metadata with new values.
+ * 4. Validates that all fields are updated correctly and updated_at timestamp differs from created_at.
+ * 5. Verifies the response contains complete community object with owner information and subscriber count.
+ */
 export async function test_api_community_update_by_owner(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Register a new member who will own the community
+  // 1. Member authentication
   const memberConnection: api.IConnection = { host: connection.host };
-  const memberAuth = await authorize_member_join(memberConnection, {
+  const authorized = await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
@@ -31,69 +43,63 @@ export async function test_api_community_update_by_owner(
       ip: typia.random<string & tags.Format<"ipv4">>(),
     } satisfies IRedditCommunityMember.IJoin,
   });
-  typia.assert(memberAuth);
-  // 2. Create a community with initial name and description
-  const initialDescription = RandomGenerator.paragraph({ sentences: 3 });
-  const community =
+  // 2. Create initial community
+  const initialCommunity =
     await generate_random_reddit_community_member_communities_create(
       memberConnection,
       {
         body: {
           name: RandomGenerator.name(2),
-          description: initialDescription,
+          description: RandomGenerator.paragraph({ sentences: 3 }),
+          icon: typia.random<string & tags.Format<"uri">>(),
         } satisfies IRedditCommunityCommunity.ICreate,
       },
     );
-  typia.assert(community);
-  // Store original updated_at for comparison
-  const originalUpdatedAt = community.updated_at;
-  // 3. Update the community description
+  typia.assert(initialCommunity);
+  // 3. Prepare updated values
+  const updatedName = RandomGenerator.name(2);
   const updatedDescription = RandomGenerator.paragraph({ sentences: 5 });
+  const updatedIcon = typia.random<string & tags.Format<"uri">>();
+  // 4. Update community metadata
   const updatedCommunity =
     await api.functional.redditCommunity.member.communities.update(
       memberConnection,
       {
-        communityName: community.name,
+        communityId: initialCommunity.id,
         body: {
+          name: updatedName,
           description: updatedDescription,
+          icon: updatedIcon,
         } satisfies IRedditCommunityCommunity.IUpdate,
       },
     );
   typia.assert(updatedCommunity);
-  // 4. Verify the response contains the updated description
+  // 5. Validate update results
+  TestValidator.equals(
+    "community id unchanged",
+    updatedCommunity.id,
+    initialCommunity.id,
+  );
+  TestValidator.equals("name updated", updatedCommunity.name, updatedName);
   TestValidator.equals(
     "description updated",
     updatedCommunity.description,
     updatedDescription,
   );
-  // 5. Verify the updated_at timestamp has changed from the original
+  TestValidator.equals("icon updated", updatedCommunity.icon, updatedIcon);
   TestValidator.notEquals(
     "updated_at changed",
     updatedCommunity.updated_at,
-    originalUpdatedAt,
+    initialCommunity.updated_at,
   );
-  TestValidator.predicate("updated_at is later than original", () => {
-    return (
-      new Date(updatedCommunity.updated_at).getTime() >
-      new Date(originalUpdatedAt).getTime()
-    );
-  });
-  // 6. Verify all other community fields remain unchanged
-  TestValidator.equals("name unchanged", updatedCommunity.name, community.name);
   TestValidator.equals(
     "owner unchanged",
     updatedCommunity.owner.id,
-    community.owner.id,
+    authorized.id,
   );
   TestValidator.equals(
-    "owner username unchanged",
-    updatedCommunity.owner.username,
-    community.owner.username,
+    "created_at unchanged",
+    updatedCommunity.created_at,
+    initialCommunity.created_at,
   );
-  TestValidator.equals(
-    "subscriber_count unchanged",
-    updatedCommunity.subscriber_count,
-    community.subscriber_count,
-  );
-  TestValidator.equals("id unchanged", updatedCommunity.id, community.id);
 }

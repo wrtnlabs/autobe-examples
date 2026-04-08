@@ -10,69 +10,44 @@ import { IEcommerceMallReview } from "../../../structures/IEcommerceMallReview";
 import { IPageIEcommerceMallReview } from "../../../structures/IPageIEcommerceMallReview";
 
 /**
- * Search and retrieve a paginated list of product reviews with filtering capabilities.
+ * Retrieve a filtered and paginated list of product reviews.
  *
- * This operation allows searching reviews through multiple dimensions including customer, product, order association, and rating values. Reviews represent customer feedback with star ratings and optional text content for products purchased through completed orders.
+ * This operation provides search capabilities for product reviews across the platform. Customers can view reviews for specific products to make informed purchasing decisions. Sellers can monitor feedback on their products. Administrators can oversee all review activity for moderation purposes.
  *
- * **Availability and Filtering**
- * Only non-deleted reviews are included in public search results. Deleted reviews are hidden from regular listings but may be accessible through administrative interfaces. When browsing reviews on product pages, only active reviews are displayed and sorted by newest first.
+ * The endpoint supports filtering by product, customer, rating range, and sort order. Only non-deleted reviews are returned in the public search results. Reviews are sorted by newest first by default, with options to sort by rating or oldest first.
  *
- * **Rating Display**
- * Each review includes a star rating from 1 to 5. The average rating displayed on products is calculated from all non-deleted reviews. This calculation automatically updates when reviews are created, edited, or deleted.
- *
- * **Snapshot Preservation**
- * Reviews support edit history through snapshots. When a review is edited or deleted, snapshots preserve previous states. These snapshots maintain complete audit trails for financial and legal purposes related to commercial transactions.
- *
- * **Access Control**
- * Customers can view reviews for products they browse. Sellers can view reviews for their products. Customers can also search their own review history across all their purchased products.
- *
- * **Pagination Support**
- * Results are paginated with configurable page sizes. Sorting options include creation date (newest first) and rating value.
+ * Each review in the response includes the rating, text content, author information, product reference, and creation timestamp. The response is paginated to handle large numbers of reviews efficiently.
  *
  * @param props.connection
  * @param props.body Search criteria and pagination parameters for filtering reviews
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the ecommerce_mall_reviews table with support for complex filtering and pagination.
+ * @x-autobe-specification Query ecommerce_mall_reviews table with pagination and filtering support.
  *
- * **Database Queries**
- * - Primary table: ecommerce_mall_reviews (r)
- * - Join customer info: ecommerce_mall_customers (c) on r.customerId = c.id
- * - Join product info: ecommerce_mall_products (p) on r.productId = p.id
- * - Filter condition: deletedAt must be null for public listings
- *
- * **Search Filters**
- * - customerId: Filter reviews by the customer who wrote them
+ * Apply the following filters when provided in request body:
  * - productId: Filter reviews for a specific product
- * - orderId: Filter reviews associated with a specific order
- * - minRating: Filter reviews with rating >= value (1-5)
- * - maxRating: Filter reviews with rating <= value (1-5)
+ * - customerId: Filter reviews by a specific customer (for admin/seller viewing)
+ * - minRating: Minimum star rating (1-5)
+ * - maxRating: Maximum star rating (1-5)
+ * - includeDeleted: Include soft-deleted reviews (admin only, default false)
  *
- * **Sorting**
- * - createdAt DESC (default): Newest reviews first
- * - rating DESC: Highest ratings first
- * - rating ASC: Lowest ratings first
+ * For public access (customers, non-admin users):
+ * - Always filter where deletedAt is null
+ * - Only show reviews for products that are not deleted
  *
- * **Response Fields**
- * - id: Review unique identifier
- * - customer: Customer info (id, displayName from CustomerProfile)
- * - productId: Associated product
- * - orderId: Associated order
- * - rating: Star rating (1-5)
- * - content: Review text content (may be null)
- * - createdAt: Review creation timestamp
- * - updatedAt: Last edit timestamp
- * - deletedAt: Soft delete timestamp (null for active reviews)
+ * For admin/seller access:
+ * - Allow viewing deleted reviews when includeDeleted is true
+ * - Allow filtering by specific customer
  *
- * **Authorization**
- * - Public access for product reviews (no authentication required)
- * - Customer can filter by own customerId to see personal review history
- * - Include deletedAt only for administrative queries
+ * Sorting options:
+ * - newest: createdAt DESC (default)
+ * - oldest: createdAt ASC
+ * - highestRating: rating DESC
+ * - lowestRating: rating ASC
  *
- * **Pagination**
- * - Cursor-based or offset-based pagination
- * - Default page size: 20
- * - Maximum page size: 100
+ * Join with ecommerce_mall_customers to get reviewer display name.
+ * Join with ecommerce_mall_products to get product name.
+ * Return paginated results using cursor-based pagination.
  * @path /ecommerceMall/reviews
  * @accessor api.functional.ecommerceMall.reviews.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -151,33 +126,40 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific review by its unique identifier.
+ * Retrieve the detailed information of a specific review.
  *
- * This endpoint returns detailed information about a single product review, including the customer who wrote it, the product being reviewed, the associated order, the star rating, text content, and timestamps.
+ * This endpoint returns complete details about a customer review including the star rating, optional text content, creation and update timestamps, and references to related entities. Reviews represent customer feedback for purchased products after delivery.
  *
- * Reviews can only be created for delivered order items and represent authentic customer feedback about purchased products. Each review includes a mandatory 1-5 star rating (where 1 indicates lowest satisfaction and 5 indicates highest satisfaction) and optional text feedback describing the customer's experience.
- *
- * For public display on product pages, reviews are typically filtered to exclude soft-deleted entries. However, administrators may access all review details including soft-deleted reviews for oversight and dispute resolution purposes.
- *
- * The returned review entity includes related customer public identity information, product reference, order reference, and the specific order item that was reviewed, enabling comprehensive display of review context on product detail pages.
+ * The response includes the full review record along with soft-deletion status information. Access control rules determine visibility: authors can view their own reviews (including deleted ones), public consumers see only non-deleted reviews, and administrators have full access including deleted reviews and related snapshots.
  *
  * @param props.connection
- * @param props.reviewId Target review's UUID identifier
+ * @param props.reviewId Unique identifier of the review to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Retrieve a single review from the ecommerce_mall_reviews table by its primary key (id).
+ * @x-autobe-specification Query the ecommerce_mall_reviews table by primary key (id).
  *
- * 1. Query the database for the review record matching the provided reviewId UUID
- * 2. Join with related entities to populate the full IEcommerceMallReview structure:
- *    - Customer (ecommerce_mall_customers) via customer_id
- *    - Product (ecommerce_mall_products) via product_id
- *    - Order (ecommerce_mall_orders) via order_id
- *    - OrderItem (ecommerce_mall_order_items) via order_item_id
- * 3. Return 404 if the reviewId does not exist in the database
- * 4. Include all standard timestamp fields: created_at, updated_at, deleted_at
- * 5. The deleted_at field indicates soft deletion status - when present, the review is considered deleted
- * 6. Authorization: Available to all authenticated actors (customer, seller, admin, superAdmin). Guests cannot access because platform requires registration for all features.
- * 7. Response includes complete nested review data suitable for product detail page display
+ * **Query Requirements:**
+ * - Join with ecommerce_mall_customers to include author information (filtering deleted_at for anonymized display if customer deleted their account)
+ * - Join with ecommerce_mall_products to include product context
+ * - Join with ecommerce_mall_orders to include order context
+ * - Left join with ecommerce_mall_review_snapshots if snapshot history is needed
+ *
+ * **Access Control Logic:**
+ * 1. If caller is the review author (customer_id matches authenticated user): return review regardless of deleted_at status
+ * 2. If caller is administrator/superAdmin: return full review including deleted_at and snapshot history
+ * 3. If public/unauthenticated request: only return if deleted_at is null
+ *
+ * **Verification Rules:**
+ * - Return 404 NOT_FOUND if review doesn't exist
+ * - Return 403 FORBIDDEN if requested by non-owner non-admin and review is soft-deleted
+ *
+ * **Response Fields to Populate:**
+ * - id, customer_id, product_id, order_id, order_item_id, rating, content, created_at, updated_at, deleted_at
+ * - Include customer display name (or 'deleted user' placeholder if customer account deleted)
+ * - Include related product and order summary information
+ *
+ * **Snapshot Consideration:**
+ * Review snapshots are automatically created when reviews are edited. The service layer should handle snapshot creation during update operations, but this endpoint returns current state only.
  * @path /ecommerceMall/reviews/:reviewId
  * @accessor api.functional.ecommerceMall.reviews.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -206,7 +188,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Target review's UUID identifier
+     * Unique identifier of the review to retrieve
      */
     reviewId: string;
   };

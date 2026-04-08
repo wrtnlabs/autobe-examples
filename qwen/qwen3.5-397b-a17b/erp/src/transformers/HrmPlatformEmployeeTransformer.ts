@@ -2,15 +2,17 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
 import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
-import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
+import { IHrmPlatformUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmPlatformDepartmentAtSummaryTransformer } from "./HrmPlatformDepartmentAtSummaryTransformer";
-import { HrmPlatformMemberAtSummaryTransformer } from "./HrmPlatformMemberAtSummaryTransformer";
+import { HrmPlatformMemberTransformer } from "./HrmPlatformMemberTransformer";
 import { HrmPlatformRoleAtSummaryTransformer } from "./HrmPlatformRoleAtSummaryTransformer";
 
 export namespace HrmPlatformEmployeeTransformer {
@@ -27,7 +29,7 @@ export namespace HrmPlatformEmployeeTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        user: HrmPlatformMemberAtSummaryTransformer.select(),
+        member: HrmPlatformMemberTransformer.select(),
         role: HrmPlatformRoleAtSummaryTransformer.select(),
         department: HrmPlatformDepartmentAtSummaryTransformer.select(),
       },
@@ -38,19 +40,19 @@ export namespace HrmPlatformEmployeeTransformer {
   ): Promise<IHrmPlatformEmployee> {
     return {
       id: input.id,
-      user: await HrmPlatformMemberAtSummaryTransformer.transform(input.user),
-      role: await HrmPlatformRoleAtSummaryTransformer.transform(input.role),
-      department: input.department
-        ? await HrmPlatformDepartmentAtSummaryTransformer.transform(
-            input.department,
-          )
-        : null,
-      position: input.position,
+      position: input.position ?? undefined,
       employment_type: input.employment_type,
       status: input.status,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
-    };
+      member: await HrmPlatformMemberTransformer.transform(input.member),
+      role: await HrmPlatformRoleAtSummaryTransformer.transform(input.role),
+      department: input.department
+        ? await HrmPlatformDepartmentAtSummaryTransformer.transform(
+            input.department,
+          )
+        : undefined,
+    } satisfies IHrmPlatformEmployee;
   }
 }

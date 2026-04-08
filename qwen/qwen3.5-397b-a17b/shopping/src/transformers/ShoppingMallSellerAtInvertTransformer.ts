@@ -19,6 +19,8 @@ export namespace ShoppingMallSellerAtInvertTransformer {
       select: {
         id: true,
         email: true,
+        approval_status: true,
+        rejection_reason: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
@@ -29,18 +31,17 @@ export namespace ShoppingMallSellerAtInvertTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallSeller.IInvert> {
-    if (!input.profile) {
-      throw new Error("Profile not found for seller");
-    }
     return {
       id: input.id,
       email: input.email,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
-      profile: await ShoppingMallSellerProfileTransformer.transform(
-        input.profile,
-      ),
-    };
+      approval_status: input.approval_status,
+      rejection_reason: input.rejection_reason,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+      profile: input.profile
+        ? await ShoppingMallSellerProfileTransformer.transform(input.profile)
+        : null,
+    } satisfies IShoppingMallSeller.IInvert;
   }
 }

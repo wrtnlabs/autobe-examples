@@ -1,0 +1,391 @@
+/// Customer profile information including display name and phone number
+/// linked to authorization user account.
+///
+/// This table stores editable profile attributes for registered customers.
+/// Each customer has exactly one profile record that can be updated
+/// throughout their account lifecycle. Profile data is displayed on the
+/// customer's public-facing profile page and used for order shipping
+/// information when no specific address is selected.
+///
+/// Profile modifications are tracked through the
+/// shopping_mall_customer_sessions table for audit purposes. When a customer
+/// deletes their account, profile information is removed but order history
+/// and reviews are preserved per platform data retention policies.
+///
+/// @namespace customer
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for customer profile records.
+  id String @id
+  
+  /// Foreign key reference to the customer authorization account.
+  ///
+  /// Establishes a 1:1 relationship with shopping_mall_customers. Each
+  /// customer has exactly one profile record. This FK ensures profile data is
+  /// always associated with a valid customer account.
+  shopping_mall_customer_id String
+  
+  /// Customer's display name shown on their public profile and in order
+  /// listings.
+  ///
+  /// This is the name visible to sellers and other platform users. Customers
+  /// can edit this field at any time. Used in order confirmations, shipping
+  /// labels, and review author attribution.
+  display_name String
+  
+  /// Customer's contact phone number for order communications and shipping
+  /// notifications.
+  ///
+  /// Optional field that customers can provide for seller communication
+  /// regarding orders. Used by sellers to contact customers about shipping
+  /// issues or order clarifications.
+  phone_number String?
+  
+  /// Timestamp when the customer profile was first created.
+  ///
+  /// Set automatically when the customer account is registered. Used for audit
+  /// trail and account age calculations.
+  created_at DateTime
+  
+  /// Timestamp when the customer profile was last modified.
+  ///
+  /// Updated automatically on any profile field change. Used to track recent
+  /// profile modifications and cache invalidation.
+  updated_at DateTime
+  
+  /// Timestamp when the customer profile was soft deleted.
+  ///
+  /// Set when customer account is deleted. Profile data is preserved for order
+  /// history reference but marked as deleted. Used for soft delete pattern to
+  /// maintain referential integrity with order records.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([shopping_mall_customer_id])
+}
+
+/// Customer shipping addresses with recipient name, phone, street, city,
+/// state, postal code, country, and default flag.
+///
+/// Addresses are used for order shipping destinations. Each customer can
+/// have multiple addresses and designate one as default for quick checkout.
+/// Addresses support soft delete for data retention while allowing removal
+/// from active lists.
+///
+/// @namespace customer
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for customer address records.
+  id String @id
+  
+  /// References the customer who owns this shipping address.
+  ///
+  /// Each address belongs to exactly one customer. When a customer deletes
+  /// their account, their addresses are deleted along with their profile.
+  shopping_mall_customer_id String
+  
+  /// Name of the person receiving the shipment at this address.
+  ///
+  /// Required field used on shipping labels and delivery notifications. Can be
+  /// different from the customer's display name.
+  recipient_name String
+  
+  /// Contact phone number for delivery coordination at this address.
+  ///
+  /// Used by carriers for delivery notifications and issues. Should be a valid
+  /// phone number format for the country.
+  phone_number String
+  
+  /// Street address line including building number, street name,
+  /// apartment/unit number.
+  ///
+  /// Primary location identifier for delivery. Should include all necessary
+  /// details for accurate delivery.
+  street_address String
+  
+  /// City or municipality name for this address.
+  ///
+  /// Used for postal routing and regional identification. Required for all
+  /// addresses regardless of country.
+  city String
+  
+  /// State, province, or regional subdivision for this address.
+  ///
+  /// Optional field as not all countries use state/province divisions. Used
+  /// for addresses in countries with regional subdivisions.
+  state_province String?
+  
+  /// Postal or ZIP code for this address.
+  ///
+  /// Required for postal routing and delivery verification. Format varies by
+  /// country (e.g., ZIP in US, postal code in other countries).
+  postal_code String
+  
+  /// Country name or ISO country code for this address.
+  ///
+  /// Required field for international shipping and tax calculation. Should use
+  /// consistent format (e.g., full country name or ISO 3166-1 alpha-2 code).
+  country String
+  
+  /// Flag indicating if this is the customer's default shipping address.
+  ///
+  /// Only one address per customer can have this flag set to true. Used for
+  /// quick checkout selection. Default value is false.
+  is_default Boolean
+  
+  /// Timestamp when this address was first created.
+  ///
+  /// Used for sorting addresses by creation date and audit trail.
+  created_at DateTime
+  
+  /// Timestamp when this address was last modified.
+  ///
+  /// Updated on every address edit to track changes.
+  updated_at DateTime
+  
+  /// Timestamp when this address was soft deleted.
+  ///
+  /// Nullable field for soft delete support. When set, address is hidden from
+  /// active lists but preserved for historical orders.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orders shopping_mall_orders[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_addresses_shopping_mall_custome_904d37bb")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, is_default], map: "shopping_mall_customer_addresses_shopping_mall_custome_8b3de000")
+}
+
+/// Customer wishlist entries linking customers to products they want to
+/// purchase.
+///
+/// This table stores the relationship between customers and products they
+/// have added to their wishlist. Each entry represents a product that a
+/// customer wants to potentially purchase in the future. Wishlist entries
+/// are paginated when displayed to customers.
+///
+/// When a product is deleted by a seller, all wishlist entries for that
+/// product are automatically removed. Customers can add the same product
+/// only once to their wishlist (enforced by unique constraint).
+///
+/// @namespace customer
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_wishlists {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for the wishlist entry.
+  id String @id
+  
+  /// Foreign key referencing the customer who owns this wishlist entry.
+  ///
+  /// This links the wishlist entry to the {@link shopping_mall_customers}
+  /// table. Each customer can have multiple wishlist entries, but each product
+  /// can only appear once per customer's wishlist.
+  shopping_mall_customer_id String
+  
+  /// Foreign key referencing the product added to the wishlist.
+  ///
+  /// This links to the {@link shopping_mall_products} table. Products (not
+  /// variants) are added to wishlists. When a product is deleted, all
+  /// associated wishlist entries are automatically removed.
+  shopping_mall_product_id String
+  
+  /// Timestamp when the product was added to the customer's wishlist.
+  ///
+  /// This field is set automatically when the wishlist entry is created and is
+  /// used for sorting and pagination of wishlist items.
+  created_at DateTime
+  
+  /// Timestamp when the wishlist entry was last modified.
+  ///
+  /// This field is updated whenever the entry is modified, though wishlist
+  /// entries typically have minimal updates beyond creation and soft deletion.
+  updated_at DateTime
+  
+  /// Timestamp when the wishlist entry was soft deleted.
+  ///
+  /// When a customer removes a product from their wishlist, this field is set
+  /// instead of physically deleting the record. This allows for audit tracking
+  /// and potential restoration if needed.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_mall_product_id])
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id, shopping_mall_product_id], map: "shopping_mall_customer_wishlists_shopping_mall_custome_138128ea")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_wishlists_shopping_mall_custome_8f6e050d")
+}
+
+/// Shopping cart container for each customer with creation and update
+/// timestamps.
+///
+/// Each customer has exactly one shopping cart that persists throughout
+/// their account lifetime. The cart serves as a container for cart items
+/// (stored in shopping_mall_customer_cart_items). Cart total price is
+/// calculated dynamically from its items, not stored here.
+///
+/// The cart is created automatically when a customer registers or on first
+/// add-to-cart action. Cart items can be added, updated, or removed without
+/// affecting the cart container itself.
+///
+/// @namespace customer
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_carts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Unique identifier for each shopping cart.
+  id String @id
+  
+  /// Foreign key to the customer who owns this shopping cart.
+  ///
+  /// Establishes a 1:1 relationship between customer and their shopping cart.
+  /// Each customer has exactly one cart throughout their account lifetime. The
+  /// cart persists even when empty.
+  shopping_mall_customer_id String
+  
+  /// Timestamp when the shopping cart was created.
+  ///
+  /// Set when the customer's first cart is created, typically during customer
+  /// registration or on first add-to-cart action. This timestamp never
+  /// changes.
+  created_at DateTime
+  
+  /// Timestamp when the shopping cart was last modified.
+  ///
+  /// Updated whenever cart items are added, quantities are changed, or items
+  /// are removed from the cart. Tracks the last modification activity on the
+  /// cart.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  cartItems shopping_mall_customer_cart_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([shopping_mall_customer_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_customer_carts_shopping_mall_customer_id_dc4e4b8e")
+}
+
+/// Individual cart items containing product variant references and
+/// quantities for customer shopping carts.
+///
+/// Each cart item represents a specific product variant that a customer has
+/// added to their shopping cart with a specified quantity. When the same
+/// variant is added multiple times, the quantities are combined into a
+/// single cart item rather than creating duplicates.
+///
+/// Cart items are managed through their parent cart and cannot exist
+/// independently. They are automatically removed when the parent cart is
+/// deleted or when items are removed by the customer during checkout.
+///
+/// @namespace customer
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Unique identifier for each cart item.
+  id String @id
+  
+  /// Foreign key reference to the parent shopping cart.
+  ///
+  /// Each cart item belongs to exactly one customer shopping cart. The cart
+  /// item cannot exist without its parent cart. When a cart is deleted, all
+  /// its cart items are also deleted.
+  shopping_mall_customer_cart_id String
+  
+  /// Foreign key reference to the product variant being purchased.
+  ///
+  /// Each cart item references a specific product variant (SKU) that the
+  /// customer wants to purchase. The variant must exist and be available for
+  /// purchase. If the variant is deleted or becomes unavailable, the cart item
+  /// is marked as unavailable.
+  shopping_mall_product_variant_id String
+  
+  /// The number of units of this product variant the customer wants to
+  /// purchase.
+  ///
+  /// This field represents the quantity requested by the customer. When the
+  /// same variant is added to the cart multiple times, the quantities are
+  /// combined into a single cart item. The quantity can be updated by the
+  /// customer before checkout.
+  quantity Int
+  
+  /// Timestamp when this cart item was first added to the shopping cart.
+  created_at DateTime
+  
+  /// Timestamp when this cart item was last modified (quantity change, etc.).
+  updated_at DateTime
+  
+  /// Timestamp when this cart item was soft deleted from the shopping cart.
+  ///
+  /// Used for soft delete to preserve cart history. When deleted_at is null,
+  /// the cart item is active in the cart.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  cart shopping_mall_customer_carts @relation(fields: [shopping_mall_customer_cart_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_product_variant_id], map: "shopping_mall_customer_cart_items_shopping_mall_produc_4daff20b")
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_cart_id, shopping_mall_product_variant_id], map: "shopping_mall_customer_cart_items_shopping_mall_custom_d1aa102c")
+}

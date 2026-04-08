@@ -15,24 +15,12 @@ export async function guestAuthorize(request: {
   const session = await MyGlobal.prisma.ecommerce_mall_guest_sessions.findFirst({
     where: {
       id: payload.session_id,
-      expired_at: {
-        gt: new Date(),
-      },
-    },
-  });
-
-  if (session === null) {
-    throw new ForbiddenException("Session has expired");
-  }
-
-  const guest = await MyGlobal.prisma.ecommerce_mall_guests.findFirst({
-    where: {
-      id: payload.id,
+      expired_at: { gt: new Date() },
       deleted_at: null,
     },
   });
 
-  if (guest === null) {
+  if (session === null) {
     throw new ForbiddenException("You're not enrolled");
   }
 

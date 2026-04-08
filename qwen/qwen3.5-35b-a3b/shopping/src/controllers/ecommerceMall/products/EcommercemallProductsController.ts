@@ -10,43 +10,55 @@ import { patchEcommerceMallProducts } from "../../../providers/patchEcommerceMal
 @Controller("/ecommerceMall/products")
 export class EcommercemallProductsController {
   /**
-   * Retrieve a filtered and paginated list of products from the ecommerce mall product catalog.
+   * Search and list products across the catalog with filtering, pagination, and sorting options.
    *
-   * This operation provides comprehensive search and filtering capabilities for browsing products. Customers can discover products across all sellers, while sellers can view and manage their own product listings. The operation supports multiple filter criteria including category, product status, seller, and name search.
+   * **Search Features**:
+   * - Filter by name, category, seller
+   * - Filter by price range
+   * - Filter by product availability (stock status)
+   * - Filter by product creation date range
+   * - Sort by name, price, or creation date
    *
-   * Supports advanced pagination with configurable page size and cursor-based navigation for efficient large result set handling. Results can be sorted by various fields including product name, creation date, update date, and base price. The response includes product summary information optimized for display in product listing pages.
+   * **Business Rules**:
+   * - Products without variants are shown as "unavailable"
+   * - Soft-deleted products are excluded from results
+   * - Products are filtered by category and seller relationships
    *
-   * Each product returned includes essential information such as product ID, name, base price, category, status, and image reference. Full product details should be retrieved using the GET /products/{productId} endpoint for individual product viewing.
+   * **Response**:
+   * Returns paginated product list with summary information including base price, category, seller, and availability status.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for product listing
+   * @param body Search criteria including name search, category filters, price range, availability filters, date range filters, sort options, and pagination parameters.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_products table with pagination, filtering, and sorting.
+   * @x-autobe-specification Query ecommerce_mall_products table with pagination, filtering, and sorting.
    *
-   * Apply search filters:
-   * - category_id: Filter by product category (exact match)
-   * - status: Filter by product status (active, inactive, out_of_stock)
-   * - seller_id: Filter by owner seller (required for sellers viewing own products, optional for customers viewing all)
-   * - name: Partial name search using trigram index for fuzzy matching
-   * - base_price: Range filter (min, max)
+   * Filters applied:
+   * - Name search: Full-text search on product name using gin_trgm_ops index
+   * - Category filter: Filter by category_id (single or multiple categories)
+   * - Seller filter: Filter by seller_id for seller-specific products
+   * - Price range filter: Filter by base_price >= min and base_price <= max
+   * - Availability filter: Only show products with at least one variant with stock_quantity > 0
+   * - Date range filter: Filter by created_at within date range
+   * - Sort options: By name (ascending/descending), base_price (ascending/descending), created_at (ascending/descending)
    *
-   * Apply sorting:
-   * - sort_by: Field to sort by (name, created_at, updated_at, base_price, display_order)
-   * - sort_order: Direction (asc, desc)
+   * Join operations:
+   * - LEFT JOIN ecommerce_mall_categories for category information
+   * - LEFT JOIN ecommerce_mall_sellers for seller information
+   * - LEFT JOIN ecommerce_mall_product_variants to check product availability
    *
-   * Apply pagination:
-   * - page: Page number (1-based)
-   * - pageSize: Number of items per page (10-100, default 20)
+   * Soft deletion handling:
+   * - WHERE deleted_at IS NULL to exclude soft-deleted products
    *
-   * Return cursor-based pagination for large result sets with next/previous cursor support.
+   * Response aggregation:
+   * - Include product summary with name, base_price, category name, seller display_name
+   * - Include availability_status based on variant stock checks
+   * - Return cursor-based pagination for large result sets
    *
-   * For customer users (customer actor): Return all active products across all sellers, excluding deleted products.
-   * For seller users (seller actor): Return products owned by the authenticated seller, with optional filtering to view specific product status.
-   * Exclude soft-deleted products (deleted_at IS NULL) from results.
-   *
-   * Join with ecommerce_mall_categories for category information when needed.
-   * Join with ecommerce_mall_product_images for primary thumbnail image when included in response projection.
+   * Error handling:
+   * - Return 400 for invalid filter parameters
+   * - Return 404 if no products match filters (empty paginated result)
+   * - Return 422 for invalid date formats or negative values
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -65,40 +77,28 @@ export class EcommercemallProductsController {
   }
 
   /**
-   * Retrieve detailed information for a specific product in the ecommerce_mall product catalog.
+   * Retrieve detailed product information for a specific product by its unique identifier, including all product variants, images, category assignment, seller shop information, and aggregate review statistics.
    *
-   * This operation returns complete product details including the product name, description, base price, and category classification. The response includes the owning seller's information, product status (active/inactive/out_of_stock), and all associated product images with their display order.
-   *
-   * Security and Access Control:
-   * Products are visible to authenticated customers when owned by active seller accounts (seller.deleted_at is null). The product status field indicates whether the item is currently available for purchase. Products from sellers that have been soft-deleted (deleted_at is set) are not visible in customer-facing listings.
-   *
-   * Product Variants and Images:
-   * Each product may have multiple variants (ecommerce_mall_product_variants) representing different option combinations such as size, color, or capacity. The product also supports multiple images (ecommerce_mall_product_images) with the first image by display_order serving as the main thumbnail for catalog displays.
-   *
-   * Business Context:
-   * Products form the core inventory of the marketplace, belonging to exactly one seller (the product owner) and classified under a single category for customer browsing. Historical product state changes are preserved through snapshots (ecommerce_mall_product_snapshots) for audit trails and dispute resolution.
-   *
-   * Related Operations:
-   * Use PATCH /products with IRequest body to search and filter products by category, price range, or seller. Use GET /categories/{categoryId} to browse products by category. View seller details using GET /sellers/{sellerId} to see the shop owner information.
+   * This endpoint provides the complete product detail view displayed on product pages, enabling customers to browse product options, view pricing, check seller identity, and read review ratings before making a purchase decision.
    *
    * @param connection
-   * @param productId Product ID (UUID)
+   * @param productId Unique identifier of the product to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_products table using productId as UUID primary key.
+   * @x-autobe-specification Retrieve the product record from ecommerce_mall_products by ID where deleted_at is NULL.
    *
-   * 1. Load product by id where deleted_at is null (exclude soft-deleted products)
-   * 2. Join ecommerce_mall_sellers to get seller shop name and status
-   * 3. Join ecommerce_mall_categories to get category name and hierarchy
-   * 4. Load product images ordered by display_order ascending
-   * 5. Load product variants with inventory status
-   * 6. Verify seller account is not suspended or rejected (hide if so per 01-actors-and-auth.md)
-   * 7. Return full product detail with nested seller and category data
+   * Join with related tables:
+   * - ecommerce_mall_categories: category assignment
+   * - ecommerce_mall_sellers: seller shop identity
+   * - ecommerce_mall_product_variants: all variants for this product (where deleted_at is NULL)
+   * - ecommerce_mall_product_images: all images for this product ordered by display_order
+   * - ecommerce_mall_product_review_stats: pre-calculated review statistics
    *
-   * Error handling:
-   * - Return 404 if productId not found or product is soft-deleted
-   * - Return 404 if product belongs to suspended/rejected seller (invisible products)
-   * - Validate productId format is valid UUID
+   * Return complete product entity with all nested collections. Ensure variants include their snapshot reference. Ensure images are ordered by display_order ascending. Ensure seller information includes shop profile for display name.
+   *
+   * Handle errors:
+   * - 404 if product not found or deleted_at is set
+   * - Validate productId is valid UUID format
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":productId")

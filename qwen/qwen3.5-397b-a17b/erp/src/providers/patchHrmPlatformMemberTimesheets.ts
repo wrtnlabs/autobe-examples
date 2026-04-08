@@ -2,7 +2,6 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
 import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
-import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IHrmPlatformTimesheet } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTimesheet";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
@@ -27,84 +26,68 @@ export async function patchHrmPlatformMemberTimesheets(props: {
   const employee =
     await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
       where: {
-        user_id: props.member.id,
+        member_id: props.member.id,
         deleted_at: null,
       },
-      select: {
-        id: true,
-        organization_id: true,
-        role_id: true,
-      },
     });
-  const role = await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
-    where: { id: employee.role_id },
-    select: {
-      is_builtin: true,
-      rolePermissions: {
-        select: {
-          permission: true,
+  const rolePermissions =
+    await MyGlobal.prisma.hrm_platform_role_permissions.findMany({
+      where: {
+        hrm_platform_role_id: employee.role_id,
+      },
+      select: {
+        permission: {
+          select: {
+            code: true,
+          },
         },
       },
-    },
-  });
-  const hasViewAll =
-    role.is_builtin ||
-    role.rolePermissions.some(
-      (p: { permission: string }) => p.permission === "time:view_all",
-    );
-  const hasApprove =
-    role.is_builtin ||
-    role.rolePermissions.some(
-      (p: { permission: string }) => p.permission === "time:approve",
-    );
+    });
+  const hasTimeApprove = rolePermissions.some(
+    (rp) => rp.permission.code === "time:approve",
+  );
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
-  const whereInput: Prisma.hrm_platform_timesheetsWhereInput = {
+  const limit = props.body.limit ?? 100;
+  const take = props.body.take ?? limit;
+  const skip = props.body.skip ?? (page - 1) * limit;
+  const weekStartDateFilters: {
+    gte?: Date;
+    lte?: Date;
+  } = {};
+  if (props.body.week_start_date_gte) {
+    weekStartDateFilters.gte = new Date(props.body.week_start_date_gte);
+  }
+  if (props.body.week_start_date_lte) {
+    weekStartDateFilters.lte = new Date(props.body.week_start_date_lte);
+  }
+  const whereInput = {
     deleted_at: null,
-    employee: {
-      organization_id: employee.organization_id,
-      ...(hasViewAll ? {} : { id: employee.id }),
-    },
-    ...(hasApprove || hasViewAll
+    ...(hasTimeApprove
       ? {}
-      : { status: { in: ["draft", "submitted", "approved", "rejected"] } }),
-    ...(props.body.status !== undefined &&
-      props.body.status !== null && { status: props.body.status }),
-    ...(props.body.week_start_date !== undefined &&
-      props.body.week_start_date !== null && {
-        week_start_date: { gte: props.body.week_start_date },
-      }),
-    ...(props.body.week_end_date !== undefined &&
-      props.body.week_end_date !== null && {
-        week_end_date: { lte: props.body.week_end_date },
-      }),
-    ...(props.body.search !== undefined &&
-      props.body.search !== null && {
-        rejection_reason: { contains: props.body.search },
+      : {
+          employee_id: employee.id,
+        }),
+    ...(props.body.status && { status: props.body.status }),
+    ...(Object.keys(weekStartDateFilters).length > 0 && {
+      week_start_date: weekStartDateFilters,
+    }),
+    ...(props.body.employee_id &&
+      hasTimeApprove && {
+        employee_id: props.body.employee_id,
       }),
   } satisfies Prisma.hrm_platform_timesheetsWhereInput;
-  const sortField = props.body.sort?.split(":")[0] ?? "week_start_date";
-  const sortDir = (props.body.sort?.split(":")[1] ?? "desc") as "asc" | "desc";
-  const validSortFields = [
-    "week_start_date",
-    "week_end_date",
-    "status",
-    "created_at",
-    "updated_at",
-    "submitted_at",
-    "reviewed_at",
-  ];
-  const safeSortField = validSortFields.includes(sortField)
-    ? sortField
-    : "week_start_date";
-  const orderByInput: Prisma.hrm_platform_timesheetsOrderByWithRelationInput = {
-    [safeSortField]: sortDir,
-  };
-  const data = await MyGlobal.prisma.hrm_platform_timesheets.findMany({
+  const sortParts = props.body.sort?.split(":");
+  const sortField = sortParts?.[0] ?? "week_start_date";
+  const sortDirectionRaw = sortParts?.[1] ?? "DESC";
+  const sortDirection =
+    sortDirectionRaw.toLowerCase() === "asc" ? "asc" : "desc";
+  const orderByInput = {
+    [sortField]: sortDirection,
+  } satisfies Prisma.hrm_platform_timesheetsOrderByWithRelationInput;
+  const records = await MyGlobal.prisma.hrm_platform_timesheets.findMany({
     where: whereInput,
     skip,
-    take: limit,
+    take,
     orderBy: orderByInput,
     ...HrmPlatformTimesheetAtSummaryTransformer.select(),
   });
@@ -119,7 +102,7 @@ export async function patchHrmPlatformMemberTimesheets(props: {
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
-      data,
+      records,
       HrmPlatformTimesheetAtSummaryTransformer.transform,
     ),
   };

@@ -7,56 +7,44 @@ import {
 import typia, { tags } from "typia";
 
 import { IEcommerceMallProductImage } from "../../../../../structures/IEcommerceMallProductImage";
-import { IPageIEcommerceMallProductImage } from "../../../../../structures/IPageIEcommerceMallProductImage";
 
 /**
- * Add one or more images to a product's image gallery.
+ * Upload a new image for a product.
  *
- * This endpoint allows sellers to upload additional images to showcase their products from different angles and views. Each product can have up to 10 images attached. The first uploaded image automatically becomes the main thumbnail image (display_order=0). Subsequent images are appended to the gallery in the order they are uploaded.
+ * This endpoint allows authenticated sellers to add images to their products. Each product can have up to 10 images. The first uploaded image (display_order=0) automatically becomes the main thumbnail displayed in search results and category listings. Subsequent images are added to the product's image gallery in sequential order.
  *
- * Authorization requires seller authentication. The seller must own the specified product (validated by matching product_id with seller's products). Customers and guests cannot add images to products.
+ * Only the seller who owns the product can upload images. Images are associated with the product using a display order for gallery sequencing. When an image is uploaded, it receives a display_order value based on its position in the upload sequence.
  *
- * The request body accepts an array of image URLs pointing to previously uploaded image files stored in the file storage system. Image validation (format, size) should occur during the file upload process before this endpoint is called.
- *
- * When the first image is added to a product that previously had no images, it becomes the main thumbnail. When adding images to a product with existing images, new images appear after the existing ones based on display_order sequence.
- *
- * The response returns the created image entity(ies) with their assigned IDs and display_order values.
+ * If the upload fails or the product does not exist, an appropriate error response is returned.
  *
  * @param props.connection
- * @param props.productId UUID of the product to add images to
- * @param props.body Array of image URLs to add to the product gallery
+ * @param props.productId Unique identifier of the product to upload image for
+ * @param props.body Image URL and optional display order for the new product image
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Service layer implementation:
+ * @x-autobe-specification Handle product image upload for sellers.
  *
- * 1. **Authentication & Authorization**
- *    - Verify seller session token from Authorization header
- *    - Extract seller_id from session
- *    - Query ecommerce_mall_products to verify product exists and ecommerce_mall_seller_id matches authenticated seller
- *    - Return 403 Forbidden if seller does not own the product
+ * 1. Authentication: Verify seller is authenticated via JWT session token.
  *
- * 2. **Image Limit Validation**
- *    - Query COUNT(*) from ecommerce_mall_product_images WHERE product_id = :productId
- *    - If count >= 10, return 400 Bad Request with message "Maximum 10 images per product"
- *    - Validate that (count + number of images in request) <= 10
+ * 2. Authorization: Query the ecommerce_mall_products table to verify the seller owns the product. Extract seller_id from authenticated session and compare with product's ecommerce_mall_seller_id. Return 403 Forbidden if mismatch.
  *
- * 3. **Image Creation**
- *    - For each image URL in request body:
- *      a. Generate new UUID for image id
- *      b. Query MAX(display_order) for existing images of this product
- *      c. Set display_order = maxDisplayOrder + 1 (or 0 if no existing images)
- *      d. Set created_at and updated_at to current timestamp
- *      e. Insert into ecommerce_mall_product_images
- *    - Use transaction for bulk insert
+ * 3. Product existence: Verify product exists in ecommerce_mall_products table. Return 404 Not Found if product_id does not exist.
  *
- * 4. **Response**
- *    - Return 201 Created with array of created IEcommerceMallProductImage entities
- *    - Each entity includes: id, productId, imageUrl, displayOrder, createdAt, updatedAt
+ * 4. Image limit check: Count existing images in ecommerce_mall_product_images for this product_id. If count >= 10, return 400 Bad Request with message 'Maximum of 10 images per product exceeded'.
  *
- * Edge cases:
- * - Product not found: Return 404
- * - Invalid imageUrl format: Return 400 (validation handled by schema)
- * - Concurrent uploads reaching limit: Check count inside transaction with row locking
+ * 5. Image validation: Validate image_url is a non-empty valid URL string. Supported formats should be validated (jpeg, png, gif, webp).
+ *
+ * 6. Determine display_order: Query max display_order for this product_id from ecommerce_mall_product_images. If no images exist, display_order = 0. Otherwise, display_order = max + 1.
+ *
+ * 7. Create image record: Insert new row into ecommerce_mall_product_images with:
+ *    - id: generated UUID
+ *    - product_id: from path parameter
+ *    - image_url: from request body
+ *    - display_order: calculated value
+ *    - created_at: current timestamp
+ *    - updated_at: current timestamp
+ *
+ * 8. Return 201 Created with the created image record including generated id, image_url, display_order, and timestamps.
  * @path /ecommerceMall/seller/products/:productId/images
  * @accessor api.functional.ecommerceMall.seller.products.images.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -86,12 +74,12 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * UUID of the product to add images to
+     * Unique identifier of the product to upload image for
      */
     productId: string & tags.Format<"uuid">;
 
     /**
-     * Array of image URLs to add to the product gallery
+     * Image URL and optional display order for the new product image
      */
     body: IEcommerceMallProductImage.ICreate;
   };
@@ -142,42 +130,32 @@ export namespace create {
 }
 
 /**
- * Retrieve a filtered and paginated list of images for a specific product.
+ * Reorder product images to change their display sequence in the product gallery.
  *
- * This endpoint returns the image gallery for a product, ordered by display order. The first image in the list (display_order=0) serves as the main thumbnail image shown in product listings and search results.
+ * This operation allows sellers to modify the display order of their product images. The first image in the new order becomes the main thumbnail shown in product listings and search results.
  *
- * The operation supports pagination with configurable page sizes and sorting by display order. Each image in the response includes its URL, display order, and timestamps for when it was uploaded.
+ * The request body contains an array of image objects with their new display_order values. All images must belong to the specified product. The display_order values must form a continuous sequence starting from 0 without gaps.
  *
- * Products can have zero or more images attached. When a product has no images, a placeholder image is automatically displayed in the storefront. This endpoint provides read-only access to product images.
- *
- * The image gallery forms the visual foundation of product presentation, showing customers different views, angles, and details of the product before they add it to their cart or place an order.
+ * If the reorder operation fails, no changes are applied and the previous display order is preserved. The response returns the complete updated image collection with their new display_order values.
  *
  * @param props.connection
- * @param props.productId Unique identifier of the product whose images to retrieve
- * @param props.body Search and pagination parameters for filtering product images
+ * @param props.productId Unique identifier of the product whose images are being reordered (global scope)
+ * @param props.body New display order configuration containing an array of image IDs with their new positions
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_mall_product_images table filtering by product_id from path parameter.
+ * @x-autobe-specification Validate that the product exists and belongs to the authenticated seller. Validate that all image IDs in the request body belong to the specified product. Validate that display_order values form a continuous sequence starting from 0.
  *
- * Join with ecommerce_mall_products to verify the product exists (return 404 if not found).
- *
- * Apply sorting by display_order ascending (images appear in gallery order).
- *
- * Implement pagination with configurable page size (default 20, max 100).
- *
- * Return image records including: id, image_url, display_order, created_at.
- *
- * If product has no images, return empty data array with pagination metadata.
+ * If any image ID does not belong to the product, return a 400 error with appropriate message. If validation passes, update all display_order values in a single transaction. Return the complete updated image list ordered by display_order.
  * @path /ecommerceMall/seller/products/:productId/images
- * @accessor api.functional.ecommerceMall.seller.products.images.index
+ * @accessor api.functional.ecommerceMall.seller.products.images.reorder
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function index(
+export async function reorder(
   connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
+  props: reorder.Props,
+): Promise<reorder.Response> {
   return true === connection.simulate
-    ? index.simulate(connection, props)
+    ? reorder.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -187,27 +165,27 @@ export async function index(
           },
         },
         {
-          ...index.METADATA,
-          path: index.path(props),
+          ...reorder.METADATA,
+          path: reorder.path(props),
           status: null,
         },
         props.body,
       );
 }
-export namespace index {
+export namespace reorder {
   export type Props = {
     /**
-     * Unique identifier of the product whose images to retrieve
+     * Unique identifier of the product whose images are being reordered (global scope)
      */
     productId: string & tags.Format<"uuid">;
 
     /**
-     * Search and pagination parameters for filtering product images
+     * New display order configuration containing an array of image IDs with their new positions
      */
-    body: IEcommerceMallProductImage.IRequest;
+    body: IEcommerceMallProductImage.IReorder;
   };
-  export type Body = IEcommerceMallProductImage.IRequest;
-  export type Response = IPageIEcommerceMallProductImage.ISummary;
+  export type Body = IEcommerceMallProductImage.IReorder;
+  export type Response = IEcommerceMallProductImage.IReorderResponse;
 
   export const METADATA = {
     method: "PATCH",
@@ -224,16 +202,16 @@ export namespace index {
 
   export const path = (props: Omit<Props, "body">) =>
     `/ecommerceMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/images`;
-  export const random = (): IPageIEcommerceMallProductImage.ISummary =>
-    typia.random<IPageIEcommerceMallProductImage.ISummary>();
+  export const random = (): IEcommerceMallProductImage.IReorderResponse =>
+    typia.random<IEcommerceMallProductImage.IReorderResponse>();
   export const simulate = (
     connection: IConnection,
-    props: index.Props,
+    props: reorder.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: index.path(props),
+      path: reorder.path(props),
       contentType: "application/json",
     });
     try {
@@ -253,133 +231,36 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific product image by its unique identifier.
+ * Update an existing product image for reordering purposes.
  *
- * This endpoint fetches a single image record from the product image gallery. The image must belong to the specified product; if the imageId does not correspond to an image associated with productId, the operation returns a not found error.
+ * This endpoint allows sellers to modify the display order of a product image within the product's image gallery. The display order determines the sequence in which images appear in the product carousel, with lower order values displayed first.
  *
- * The returned image record includes the image URL that points to the stored file, the display order index for gallery positioning, and the creation and update timestamps. The display_order field determines the image's position in the product's image gallery where lower values appear first. The first image (display_order=0) is used as the main thumbnail image in product listings and search results.
+ * When updating an image's display order, the system automatically adjusts other image orders to prevent duplicate order values. For example, if moving an image from order 2 to order 0, the previous order 0 image shifts to order 1, and order 1 shifts to order 2.
  *
- * This operation is primarily used by the product detail page to display the full-size image when customers click on gallery thumbnails, or by sellers reviewing their product images in the seller dashboard.
+ * The operation validates that the image belongs to the specified product before applying any changes. Only sellers who own the product can update its images. Each product supports up to 10 images total.
  *
- * For retrieving the complete image gallery of a product, use the product detail endpoint GET /products/{productId} which returns all images sorted by display_order.
- *
- * @param props.connection
- * @param props.productId Unique identifier of the parent product (global scope)
- * @param props.imageId Unique identifier of the product image (global scope)
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor seller
- * @x-autobe-specification Retrieve a single product image record from ecommerce_mall_product_images table by matching both product_id and id fields. Validate that the image belongs to the specified product. Return the image record including image_url, display_order, created_at, and updated_at fields. If no matching record exists, return 404 error.
- * @path /ecommerceMall/seller/products/:productId/images/:imageId
- * @accessor api.functional.ecommerceMall.seller.products.images.at
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function at(
-  connection: IConnection,
-  props: at.Props,
-): Promise<at.Response> {
-  return true === connection.simulate
-    ? at.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...at.METADATA,
-          path: at.path(props),
-          status: null,
-        },
-      );
-}
-export namespace at {
-  export type Props = {
-    /**
-     * Unique identifier of the parent product (global scope)
-     */
-    productId: string & tags.Format<"uuid">;
-
-    /**
-     * Unique identifier of the product image (global scope)
-     */
-    imageId: string & tags.Format<"uuid">;
-  };
-  export type Response = IEcommerceMallProductImage;
-
-  export const METADATA = {
-    method: "GET",
-    path: "/ecommerceMall/seller/products/:productId/images/:imageId",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Props) =>
-    `/ecommerceMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/images/${encodeURIComponent(props.imageId ?? "null")}`;
-  export const random = (): IEcommerceMallProductImage =>
-    typia.random<IEcommerceMallProductImage>();
-  export const simulate = (
-    connection: IConnection,
-    props: at.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: at.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("productId")(() => typia.assert(props.productId));
-      assert.param("imageId")(() => typia.assert(props.imageId));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Update an existing product image for a specific product.
- *
- * This endpoint allows sellers to modify an existing product image by updating its URL. The image_url field stores the URI pointing to the image file in storage. When an image is replaced, the system maintains the existing display_order unless specified otherwise.
- *
- * The product must belong to the authenticated seller making the request. Only the product owner can modify their product images. If the image does not exist or belongs to another seller's product, the operation returns an error.
- *
- * Image changes are captured in product snapshots when the product is edited, preserving the complete visual history of the product. The first image in display order (order=0) serves as the main thumbnail image displayed in product listings and search results.
- *
- * The system enforces a maximum of 10 images per product. Sellers can update images freely but should not exceed this limit when adding new images.
+ * If the product has no images, the system displays a placeholder image instead. This operation does not affect placeholder images.
  *
  * @param props.connection
- * @param props.productId Unique identifier of the product that owns the image
- * @param props.imageId Unique identifier of the image to update
- * @param props.body Fields to update for the product image
+ * @param props.productId Unique identifier of the product that owns the image (global scope)
+ * @param props.imageId Unique identifier of the product image to update (scoped to product)
+ * @param props.body New display order for the image within the product's gallery
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Validate seller authentication via session token.
- * 2. Extract seller ID from authenticated session.
- * 3. Validate productId is a valid UUID format.
- * 4. Validate imageId is a valid UUID format.
- * 5. Look up the product by productId and verify it exists.
- * 6. Verify the product belongs to the authenticated seller (product.seller_id == session.seller_id).
- * 7. Look up the image by imageId and verify it exists.
- * 8. Verify the image belongs to the specified product (image.product_id == productId).
- * 9. Validate the request body:
- *    - If image_url is provided, validate it is a valid URI string
- *    - If display_order is provided, validate it is a non-negative integer
- *    - At least one field must be provided for update
- * 10. If updating display_order, verify the new order does not conflict with existing images (no duplicate orders for the product).
- * 11. Update the image record with provided fields, setting updated_at to current timestamp.
- * 12. Return the updated image record including all fields.
+ * @x-autobe-specification Update the display_order of an existing product image.
+ *
+ * 1. Validate that the authenticated user is the owner of the product (seller who created it).
+ * 2. Verify the product exists and is not soft-deleted.
+ * 3. Verify the image exists and belongs to the specified product.
+ * 4. Validate that the new display_order is within valid range (0 to current image count - 1).
+ * 5. If the new display_order equals the current display_order, return success without changes.
+ * 6. If the new display_order is different:
+ *    - Shift other images' display_order values to make room
+ *    - If moving to a lower order (e.g., 5 to 2): increment display_order of images between new and old position
+ *    - If moving to a higher order (e.g., 2 to 5): decrement display_order of images between new and old position
+ *    - Update the target image's display_order
+ * 7. Update the image's updated_at timestamp.
+ * 8. Return the updated image record with the new display_order.
  * @path /ecommerceMall/seller/products/:productId/images/:imageId
  * @accessor api.functional.ecommerceMall.seller.products.images.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -409,17 +290,17 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * Unique identifier of the product that owns the image
+     * Unique identifier of the product that owns the image (global scope)
      */
     productId: string & tags.Format<"uuid">;
 
     /**
-     * Unique identifier of the image to update
+     * Unique identifier of the product image to update (scoped to product)
      */
     imageId: string & tags.Format<"uuid">;
 
     /**
-     * Fields to update for the product image
+     * New display order for the image within the product's gallery
      */
     body: IEcommerceMallProductImage.IUpdate;
   };
@@ -471,41 +352,26 @@ export namespace update {
 }
 
 /**
- * Delete a specific image from a product.
+ * Permanently deletes a product image from the product gallery.
  *
- * This operation permanently removes an image from the product's image gallery. The seller must be authenticated and must own the product to delete its images.
+ * This operation removes the specified image from the product's image collection. The deletion is permanent and cannot be undone. If the deleted image was the main thumbnail (first image in display order), the next available image in the gallery automatically becomes the new main thumbnail. If this was the last remaining image, the product will display a placeholder image.
  *
- * When the main thumbnail image (the first image with display_order=0) is deleted, the system automatically promotes the next image in display order to become the new main thumbnail. If the deleted image was the only image on the product, the product will have no images and will display a placeholder image instead.
+ * The deleted image is immediately removed from the product listing and will no longer be visible to customers browsing or viewing the product. This deletion is recorded and will be included in the next product snapshot if the product is edited afterward.
  *
- * Deleted images are immediately removed from the product listing and are no longer visible to customers viewing that product. The image deletion is permanent and cannot be undone. If the product is edited afterward, this deletion will be included in the next product snapshot for audit trail purposes.
- *
- * The image file remains stored in the platform's media storage system but is no longer linked to any product. Administrators manage orphaned image cleanup separately.
- *
- * This operation is related to:
- * - POST /seller/products/{productId}/images - Upload new images
- * - PUT /seller/products/{productId}/images/reorder - Reorder existing images
- * - GET /products/{productId} - View product with updated images
+ * Only the product owner (seller) or administrators can delete product images. The image must belong to the specified product.
  *
  * @param props.connection
- * @param props.productId Unique identifier of the product (UUID format)
- * @param props.imageId Unique identifier of the image to delete (UUID format)
+ * @param props.productId Unique identifier of the product owning the image (global scope)
+ * @param props.imageId Unique identifier of the image to delete (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Authentication: Verify seller is authenticated via session token.
- * 2. Authorization: Verify seller owns the product by checking ecommerce_mall_products.ecommerce_mall_seller_id matches authenticated seller.
- * 3. Validation: Verify product image exists by checking ecommerce_mall_product_images.id and ecommerce_mall_product_images.product_id match.
- * 4. Business Logic:
- *    a. Query the image to be deleted to get its display_order
- *    b. Delete the image record from ecommerce_mall_product_images table
- *    c. If deleted image had display_order=0 (main thumbnail):
- *       - Find the image with the next lowest display_order (if any)
- *       - Update that image's display_order to 0 to promote it as new main thumbnail
- *    d. Re-index remaining display_order values to ensure sequential ordering
- * 5. Response: Return the deleted image object with all its properties.
- * 6. Error Cases:
- *    - 401: Seller not authenticated
- *    - 403: Seller does not own the product
- *    - 404: Product or image not found
+ * @x-autobe-specification Validate that the image with imageId exists in the database. Verify that the image belongs to the specified productId - return 404 if image not found or does not belong to product. Check authorization: only the product owner (authenticated seller who owns the product) or administrators can delete images.
+ *
+ * Retrieve the image's display_order value before deletion. Execute the delete operation on the ecommerce_mall_product_images table using the imageId as the primary key.
+ *
+ * After deletion, if the deleted image had display_order of 0 (main thumbnail), update the remaining images: set display_order = 0 for the image with the lowest display_order among remaining images for this product to promote it as the new main thumbnail.
+ *
+ * Handle the cascade behavior: product continues to exist with remaining images or placeholder if all images deleted.
  * @path /ecommerceMall/seller/products/:productId/images/:imageId
  * @accessor api.functional.ecommerceMall.seller.products.images.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -534,12 +400,12 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Unique identifier of the product (UUID format)
+     * Unique identifier of the product owning the image (global scope)
      */
     productId: string & tags.Format<"uuid">;
 
     /**
-     * Unique identifier of the image to delete (UUID format)
+     * Unique identifier of the image to delete (global scope)
      */
     imageId: string & tags.Format<"uuid">;
   };
@@ -570,127 +436,6 @@ export namespace erase {
     try {
       assert.param("productId")(() => typia.assert(props.productId));
       assert.param("imageId")(() => typia.assert(props.imageId));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Reorder product images to change their display sequence.
- *
- * This endpoint allows sellers to change the display order of images for their products. The first image in display order becomes the main thumbnail shown in product listings and search results.
- *
- * The operation accepts a mapping of image IDs to their new target positions. The system automatically recalculates display orders for all affected images to maintain a contiguous sequence without gaps. When the former main image (lowest display order) is moved, the image that takes position 0 becomes the new main thumbnail.
- *
- * Sellers can only reorder images for their own products. If a seller attempts to reorder images belonging to another seller, the operation is rejected with a 403 Forbidden response. Similarly, if the product does not exist, a 404 Not Found response is returned.
- *
- * The reorder operation validates that all target positions are valid positive integers within the acceptable range. Duplicate target positions in a single request are rejected to prevent conflicts. Invalid image IDs are also rejected.
- *
- * This operation does not create a product snapshot as it only affects display order, not product content. Image reordering is immediate and reflected in all product listings without additional confirmation.
- *
- * @param props.connection
- * @param props.productId Unique identifier of the product whose images are being reordered
- * @param props.body Image reorder request containing mappings of image IDs to their new display positions
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Extract productId from path parameter
- * 2. Validate seller authentication and extract seller ID from session
- * 3. Query ecommerce_mall_products table to verify product exists and seller owns it
- * 4. Validate request body contains valid imageId-to-position mappings
- * 5. Verify all imageId values belong to the specified product
- * 6. Verify no duplicate target positions in the request
- * 7. Verify all target positions are positive integers
- * 8. Execute atomic transaction:
- *    - Calculate new display_order values for all affected images
- *    - Shift existing images as needed to prevent gaps
- *    - Update display_order for each image in the mapping
- * 9. Return updated image list with new display orders
- *
- * Edge cases:
- * - If any imageId does not belong to product: reject with 400 Bad Request
- * - If duplicate positions in request: reject with 400 Bad Request
- * - If product not found: reject with 404 Not Found
- * - If seller not owner: reject with 403 Forbidden
- * - If any target position is invalid (negative or non-integer): reject with 400 Bad Request
- * @path /ecommerceMall/seller/products/:productId/images/reorder
- * @accessor api.functional.ecommerceMall.seller.products.images.reorder
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function reorder(
-  connection: IConnection,
-  props: reorder.Props,
-): Promise<reorder.Response> {
-  return true === connection.simulate
-    ? reorder.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...reorder.METADATA,
-          path: reorder.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace reorder {
-  export type Props = {
-    /**
-     * Unique identifier of the product whose images are being reordered
-     */
-    productId: string & tags.Format<"uuid">;
-
-    /**
-     * Image reorder request containing mappings of image IDs to their new display positions
-     */
-    body: IEcommerceMallProductImage.IReorder;
-  };
-  export type Body = IEcommerceMallProductImage.IReorder;
-  export type Response = IEcommerceMallProductImage.IInvert;
-
-  export const METADATA = {
-    method: "PUT",
-    path: "/ecommerceMall/seller/products/:productId/images/reorder",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/ecommerceMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/images/reorder`;
-  export const random = (): IEcommerceMallProductImage.IInvert =>
-    typia.random<IEcommerceMallProductImage.IInvert>();
-  export const simulate = (
-    connection: IConnection,
-    props: reorder.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: reorder.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("productId")(() => typia.assert(props.productId));
-      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

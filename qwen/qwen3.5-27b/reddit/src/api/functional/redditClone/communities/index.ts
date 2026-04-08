@@ -9,49 +9,32 @@ import typia, { tags } from "typia";
 import { IPageIRedditCloneCommunity } from "../../../structures/IPageIRedditCloneCommunity";
 import { IRedditCloneCommunity } from "../../../structures/IRedditCloneCommunity";
 
-export * as bans from "./bans/index";
+export * as subscriptions from "./subscriptions/index";
+export * as feeds from "./feeds/index";
 
 /**
- * Retrieve a filtered and paginated list of communities on the platform.
+ * List and search communities across the platform with pagination and filtering options.
  *
- * This operation provides comprehensive search and filtering capabilities for discovering communities. Users can search by community name using case-insensitive partial matching, filter by various criteria, and browse results with flexible pagination and sorting options.
+ * This endpoint returns a paginated list of all communities available on the platform. Each community in the list displays its unique name, description text, icon image, and current subscriber count. The subscriber count is calculated in real-time by counting active subscriptions.
  *
- * The endpoint is accessible to all users including guests (unauthenticated users), enabling content discovery without requiring registration. Search results include essential community information such as name, description, icon URL, and subscriber count to help users identify communities of interest.
+ * Search functionality allows users to find communities by name using partial matching. The search is case-insensitive and returns communities whose names contain the search terms. If no communities match the search criteria, an empty result set is returned.
  *
- * Communities are soft-deleted rather than permanently removed from the database. This operation only returns active communities (where deleted_at is null), ensuring users only see available communities. The subscriber_count field is denormalized for query performance and is maintained through application logic when subscriptions are created or deleted.
- *
- * Related operations include GET /communities/{community} for detailed community information, POST /communities for creating new communities, and GET /communities/{community}/members for listing community subscribers.
+ * All community content is visible to everyone, including unauthenticated guests. This endpoint supports various sorting options including by creation date, name, and subscriber count. Pagination is cursor-based for efficient navigation through large result sets.
  *
  * @param props.connection
- * @param props.body Search criteria, pagination, and sorting parameters for community listing
+ * @param props.body Search criteria including name filter, pagination parameters (cursor, limit), and sorting options (field and direction).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_clone_communities table to retrieve a paginated list of active communities.
+ * @x-autobe-specification Query reddit_clone_communities table with pagination and filtering.
  *
- * Query Logic:
- * 1. Base query: SELECT * FROM reddit_clone_communities WHERE deleted_at IS NULL
- * 2. Apply name search filter: If search term provided, use LIKE with ILIKE for case-insensitive partial matching on the name column
- * 3. Apply pagination: Use OFFSET and LIMIT based on page and pageSize parameters
- * 4. Apply sorting: Default to alphabetical by name, support sorting by subscriber_count (descending), created_at (descending), or name (ascending/descending)
- * 5. Return community summaries with id, name, description, icon, subscriber_count, and created_at
- *
- * Validation Rules:
- * - Search term: Optional, if empty return all communities
- * - Page: Minimum 1, default 1
- * - PageSize: Minimum 1, maximum 100, default 20
- * - Sort: Valid options are 'name', 'subscriberCount', 'createdAt'
- * - Order: Valid options are 'asc', 'desc'
- *
- * Performance Considerations:
- * - Use the @@index([name]) for efficient name-based searches
- * - The @@index([owner_id, created_at]) supports owner-based queries but not needed for this operation
- * - Denormalized subscriber_count avoids JOIN with subscriptions table
- *
- * Edge Cases:
- * - Empty search term returns all active communities
- * - No results returns empty data array with pagination metadata
- * - Special characters in search term handled safely through parameterized queries
- * - Soft-deleted communities excluded from all results
+ * 1. Apply soft-delete filter: WHERE deleted_at IS NULL
+ * 2. Apply name search filter if provided: WHERE name ILIKE '%searchTerm%'
+ * 3. Join with reddit_clone_community_subscriptions to calculate subscriber count: COUNT of subscriptions WHERE deleted_at IS NULL
+ * 4. Apply pagination: LIMIT and OFFSET based on cursor or page number from request
+ * 5. Apply sorting: default by created_at DESC, support sorting by name, subscriber_count, created_at
+ * 6. Return community summary fields: id, name, description, icon, subscriber_count, created_at
+ * 7. Handle empty result set: return empty page with total count of 0
+ * 8. Performance: Use index on [name] for search, index on [created_at] for sorting
  * @path /redditClone/communities
  * @accessor api.functional.redditClone.communities.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -81,7 +64,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria, pagination, and sorting parameters for community listing
+     * Search criteria including name filter, pagination parameters (cursor, limit), and sorting options (field and direction).
      */
     body: IRedditCloneCommunity.IRequest;
   };
@@ -132,29 +115,28 @@ export namespace index {
 /**
  * Retrieve detailed information about a specific community by its unique identifier.
  *
- * This operation returns complete community information including the community name, description, icon image URL, subscriber count, creation timestamp, and last update timestamp. The community owner's information is also included in the response, showing the user who created and owns the community.
+ * This endpoint returns complete community information including the community name, description, icon image, owner details, creation and update timestamps, and the current subscriber count. The subscriber count reflects the total number of users who have subscribed to the community and is updated in real time.
  *
- * The endpoint is publicly accessible to all users including guests (unauthenticated visitors), members (registered users), and administrators. Communities serve as the primary organizational structure for posts and comments on the platform, making this information essential for content discovery and navigation.
+ * Access Control: This endpoint is available to all users including guests (unauthenticated users), members, and moderators. Community content is publicly visible to everyone on the platform.
  *
- * The community name is unique across the platform and is used for URL routing. The subscriber count is denormalized for query performance and is maintained through application logic when subscriptions are created or deleted. If a community has been soft deleted, it will not be returned and a 404 Not Found error will be raised instead.
- *
- * Related operations include GET /communities to list all communities, POST /communities to create a new community, and GET /communities/{communityId}/members to list community subscribers.
+ * Error Handling: Returns a 404 error if the community does not exist or has been soft-deleted. The community identifier must be a valid UUID format.
  *
  * @param props.connection
- * @param props.communityId Unique identifier of the community to retrieve (UUID format)
+ * @param props.communityId Unique identifier of the community to retrieve (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_clone_communities table by the provided communityId (UUID).
+ * @x-autobe-specification Query the reddit_clone_communities table for a single record matching the provided communityId parameter.
  *
- * 1. Validate that the communityId is a valid UUID format.
- * 2. Execute a SELECT query on reddit_clone_communities where id = communityId AND deleted_at IS NULL.
- * 3. If no record is found, return 404 Not Found.
- * 4. If the community is soft deleted (deleted_at is not null), return 404 Not Found.
- * 5. Join with reddit_clone_members to fetch the owner's information (username, display name, avatar).
- * 6. Return the community object with all fields: id, name, description, icon, subscriber_count, created_at, updated_at, and owner information.
- * 7. Ensure the subscriber_count is accurate (maintained through application logic or triggers).
- * 8. Handle edge cases: missing community, soft-deleted community, or database errors.
- * 9. No authentication required - this endpoint is accessible to guests, members, and admins.
+ * 1. Validate that communityId is a valid UUID format
+ * 2. Query reddit_clone_communities WHERE id = communityId AND deleted_at IS NULL
+ * 3. If no record found, return 404 Not Found
+ * 4. Join with reddit_clone_user_profiles on owner_id to include owner information (display_name, bio, avatar)
+ * 5. Count subscriptions from reddit_clone_community_subscriptions WHERE community_id = communityId to calculate subscriber_count
+ * 6. Return the community entity with all fields including:
+ *    - id, name, description, icon, created_at, updated_at
+ *    - owner object (from reddit_clone_user_profiles)
+ *    - subscriber_count (calculated from subscriptions)
+ * 7. Handle edge case where community has been soft-deleted (deleted_at IS NOT NULL) - return 404
  * @path /redditClone/communities/:communityId
  * @accessor api.functional.redditClone.communities.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -183,7 +165,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the community to retrieve (UUID format)
+     * Unique identifier of the community to retrieve (global scope)
      */
     communityId: string & tags.Format<"uuid">;
   };

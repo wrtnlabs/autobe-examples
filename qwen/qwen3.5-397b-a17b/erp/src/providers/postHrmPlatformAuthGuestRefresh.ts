@@ -15,74 +15,78 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postHrmPlatformAuthGuestRefresh(props: {
   body: IHrmPlatformGuest.IRefresh;
 }): Promise<IHrmPlatformGuest.IAuthorized> {
-  interface IJwtGuestPayload {
-    type: "guest";
-    id: string & tags.Format<"uuid">;
-    session_id: string & tags.Format<"uuid">;
-    created_at: string & tags.Format<"date-time">;
-  }
-  let decoded: IJwtGuestPayload;
+  let payload: jwt.JwtPayload;
   try {
     const verified = jwt.verify(
-      props.body.refreshToken,
+      props.body.refresh_token,
       MyGlobal.env.JWT_SECRET_KEY,
       { issuer: "autobe" },
     );
-    decoded = typia.assert<IJwtGuestPayload>(verified);
+    if (typeof verified === "string") {
+      throw new HttpException("Invalid token format", 401);
+    }
+    payload = verified;
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
+  const guestId = payload.id;
+  const sessionId = payload.session_id;
+  const tokenType = payload.type;
+  if (tokenType !== "guest") {
+    throw new HttpException("Invalid token type", 403);
+  }
   const session = await MyGlobal.prisma.hrm_platform_guest_sessions.findFirst({
     where: {
-      id: decoded.session_id,
-      hrm_platform_guest_id: decoded.id,
+      id: sessionId,
+      hrm_platform_guest_id: guestId,
     },
   });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  const guest = await MyGlobal.prisma.hrm_platform_guests.findUniqueOrThrow({
-    where: { id: decoded.id },
+  const guest = await MyGlobal.prisma.hrm_platform_guests.findUnique({
+    where: { id: guestId },
   });
-  if (guest.deleted_at !== null) {
-    throw new HttpException("Guest account has been deleted", 403);
+  if (!guest || guest.deleted_at !== null) {
+    throw new HttpException("Guest account has been deleted", 401);
   }
   const now = new Date();
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const token: IAuthorizationToken = {
-    access: jwt.sign(
-      {
-        type: "guest",
-        id: decoded.id,
-        session_id: decoded.session_id,
-        created_at: toISOStringSafe(now),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "guest",
-        id: decoded.id,
-        session_id: decoded.session_id,
-        tokenType: "refresh",
-        created_at: toISOStringSafe(now),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-    expired_at: toISOStringSafe(accessExpires),
-    refreshable_until: toISOStringSafe(refreshExpires),
-  };
+  const accessExpiresAt = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const access = jwt.sign(
+    {
+      type: "guest",
+      id: guestId,
+      session_id: sessionId,
+      created_at: now.toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
+  const refresh = jwt.sign(
+    {
+      type: "guest",
+      id: guestId,
+      session_id: sessionId,
+      tokenType: "refresh",
+      created_at: now.toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
   await MyGlobal.prisma.hrm_platform_guest_sessions.update({
-    where: { id: decoded.session_id },
+    where: { id: sessionId },
     data: {
-      expired_at: refreshExpires,
+      expired_at: refreshExpiresAt,
     },
   });
   return {
-    id: decoded.id,
-    token,
+    id: guestId,
+    token: {
+      access: access,
+      refresh: refresh,
+      expired_at: accessExpiresAt.toISOString(),
+      refreshable_until: refreshExpiresAt.toISOString(),
+    },
   };
 }

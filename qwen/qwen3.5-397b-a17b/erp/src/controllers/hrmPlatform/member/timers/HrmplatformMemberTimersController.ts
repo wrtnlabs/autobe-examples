@@ -2,49 +2,32 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IHrmPlatformTimelog } from "../../../../api/structures/IHrmPlatformTimelog";
 import { IHrmPlatformTimer } from "../../../../api/structures/IHrmPlatformTimer";
+import { IPageIHrmPlatformTimer } from "../../../../api/structures/IPageIHrmPlatformTimer";
 import { MemberAuth } from "../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
 import { deleteHrmPlatformMemberTimersTimerId } from "../../../../providers/deleteHrmPlatformMemberTimersTimerId";
 import { getHrmPlatformMemberTimersTimerId } from "../../../../providers/getHrmPlatformMemberTimersTimerId";
 import { patchHrmPlatformMemberTimers } from "../../../../providers/patchHrmPlatformMemberTimers";
 import { postHrmPlatformMemberTimers } from "../../../../providers/postHrmPlatformMemberTimers";
-import { postHrmPlatformMemberTimersDiscard } from "../../../../providers/postHrmPlatformMemberTimersDiscard";
-import { postHrmPlatformMemberTimersStop } from "../../../../providers/postHrmPlatformMemberTimersStop";
 import { putHrmPlatformMemberTimersTimerId } from "../../../../providers/putHrmPlatformMemberTimersTimerId";
 
 @Controller("/hrmPlatform/member/timers")
 export class HrmplatformMemberTimersController {
   /**
-   * Start a new real-time timer for time tracking.
+   * Start a new timer session for real-time time tracking.
    *
-   * This operation creates an active timer session for the authenticated employee. The timer records the start timestamp, selected project, optional task, and optional work description. Each employee can have at most one active timer at a time - attempting to start a new timer while one is already running will be rejected.
+   * This endpoint initiates a timer that tracks work duration in real-time. The employee must select a project to categorize the work being tracked, and can optionally specify a task for more granular tracking. An optional description can be added to document what specific work is being performed.
    *
-   * The project must be one the employee is assigned to as a project member. If a task is specified, it must belong to the selected project. The timer continues running indefinitely until the employee explicitly stops or discards it.
+   * The system enforces that each employee can have at most one active timer at a time. If the employee already has a running timer (where stopped_at is null), the request will be rejected with a conflict error. The timer will continue running indefinitely until the employee explicitly stops or discards it.
    *
-   * When the timer is later stopped, a timelog entry is automatically created with the calculated duration rounded to the nearest minute.
+   * Upon successful creation, the timer is returned with all fields including the automatically recorded start timestamp. The timer can be edited (description, project, task) while running, and when stopped will automatically create a timelog entry with the calculated duration.
    *
    * @param connection
-   * @param body Timer creation parameters including required project and optional task and description
+   * @param body Timer creation details including the project to track, optional task for granular tracking, and optional work description.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a new timer record for the authenticated employee.
-   *
-   * 1. Extract employee_id from authentication context (session token)
-   * 2. Check if employee already has an active timer (query hrm_platform_timers where employee_id equals current employee and deleted_at is null)
-   * 3. If active timer exists, reject with 409 Conflict error
-   * 4. Validate project_id: verify employee is a member of the project (query hrm_platform_project_members where employee_id and project_id match)
-   * 5. If task_id is provided, validate it belongs to the specified project (query hrm_platform_tasks where id equals task_id and project_id equals project_id)
-   * 6. Create timer record with: id (UUID), employee_id, project_id, task_id (nullable), started_at (current timestamp), description (nullable), created_at, updated_at
-   * 7. Return the created timer entity
-   *
-   * Edge cases:
-   * - Employee not assigned to project → 400 Bad Request
-   * - Task does not belong to project → 400 Bad Request
-   * - Active timer already exists → 409 Conflict
-   * - Project does not exist → 404 Not Found
-   * - Task does not exist → 404 Not Found
+   * @x-autobe-specification Create a new timer session for the authenticated employee. First, query hrm_platform_timers table to check if an active timer exists for the employee (WHERE hrm_platform_employee_id = currentEmployeeId AND stopped_at IS NULL). If an active timer exists, reject with 409 Conflict error. Validate that the provided projectId exists and the employee is assigned to that project as a project member. If taskId is provided, validate it belongs to the specified project. Create a new timer record with: id (UUID), hrm_platform_employee_id (from authenticated session), hrm_platform_project_id (from request), hrm_platform_task_id (from request or null), started_at (current timestamp), stopped_at (null), description (from request or null), created_at and updated_at (current timestamp). Return the created timer entity. Ensure transaction safety to prevent race conditions when checking for active timers.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -66,26 +49,40 @@ export class HrmplatformMemberTimersController {
   }
 
   /**
-   * Update the currently running timer for the authenticated employee.
+   * Retrieve a paginated list of timer sessions for the authenticated employee.
    *
-   * This operation allows employees to modify their active timer's description, project, or task selection while the timer continues running. Employees can change the project to any project they are assigned to, and can add, change, or remove the task selection. If a task is specified, it must belong to the selected project.
+   * This endpoint allows employees to view their own timer history, including both active and completed timers. Each employee can have at most one active timer (where stopped_at is null) at a time. The endpoint supports filtering by timer status, date ranges, and associated project or task.
    *
-   * The timer continues running without interruption during updates. All modifications take effect immediately and are reflected in real-time through running timer updates events. This endpoint is commonly used when employees need to adjust their time tracking context during a work session.
+   * Timers are real-time tracking sessions that employees start and stop to record work duration. When a timer is stopped, it automatically creates a timelog entry with the calculated duration. Employees can only access their own timers due to data isolation rules.
    *
    * @param connection
-   * @param body Update criteria for the running timer. All fields are optional; only provided fields will be updated.
+   * @param body Search criteria for filtering timer sessions including status (active or completed), project ID, task ID, date range filters, and pagination parameters.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_timers table filtering by authenticated employee's ID. Validate that a running timer exists for the employee. Validate project_id references a project the employee is assigned to (check hrm_platform_project_members). If task_id is provided, validate it belongs to the specified project. Update the timer record with new description, project_id, and/or task_id values. Emit running timer updates event with modified fields. Return updated timer entity. Handle edge cases: no active timer (404), invalid project assignment (400), task-project mismatch (400).
+   * @x-autobe-specification Query hrm_platform_timers table filtered by the authenticated employee's ID (from session context).
+   *
+   * Apply search filters from request body:
+   * - status: filter by 'active' (stopped_at is null) or 'completed' (stopped_at is not null)
+   * - projectId: filter by specific project
+   * - taskId: filter by specific task
+   * - dateFrom/dateTo: filter by started_at timestamp range
+   *
+   * Support pagination with cursor-based or offset-based approach.
+   *
+   * Join with hrm_platform_projects and hrm_platform_tasks for project/task details in summary response.
+   *
+   * Enforce single active timer constraint: at most one record per employee where stopped_at is null.
+   *
+   * Return IPageIHrmPlatformTimer.ISummary with timer summaries including project name, task title (if any), duration (for completed timers), and elapsed time (for active timers).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
-  public async patch(
+  public async index(
     @MemberAuth()
     member: MemberPayload,
     @TypedBody()
-    body: IHrmPlatformTimer.IUpdate,
-  ): Promise<IHrmPlatformTimer> {
+    body: IHrmPlatformTimer.IRequest,
+  ): Promise<IPageIHrmPlatformTimer.ISummary> {
     try {
       return await patchHrmPlatformMemberTimers({
         member,
@@ -98,31 +95,27 @@ export class HrmplatformMemberTimersController {
   }
 
   /**
-   * Retrieve a specific timer by its unique identifier.
+   * Retrieve a specific timer session by its unique identifier.
    *
-   * This operation returns the complete timer entity including the start timestamp, associated project, optional task, work description, and ownership information. Timers represent real-time tracking sessions that employees use to capture work duration as it happens.
+   * Returns the complete timer record including start timestamp, associated project, optional task, work description, and stop timestamp if the timer has been stopped. This endpoint allows employees to view details of their own timer sessions.
    *
-   * The timer includes references to the employee who owns it, the project being tracked, and optionally the specific task. Elapsed duration is calculated from the started_at timestamp to the current time, not stored as a separate field. When stopped, timers convert to timelog entries with calculated duration.
-   *
-   * Access is restricted to the timer owner or users with appropriate permissions within the organization context. Only one active timer can exist per employee at any time.
+   * Access is restricted to the timer owner - employees can only retrieve timers they created. Attempting to access another employee's timer will result in authorization failure.
    *
    * @param connection
-   * @param timerId Timer UUID identifier (global scope)
+   * @param timerId Unique identifier of the timer session to retrieve (UUID format).
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_timers table by UUID id parameter.
+   * @x-autobe-specification Query hrm_platform_timers table by primary key id.
    *
-   * Retrieve full timer entity including: id, employee_id, project_id, task_id (nullable), started_at, description (nullable), created_at, updated_at, deleted_at.
+   * Validate that the requesting employee owns this timer by checking hrm_platform_employee_id matches the authenticated user's employee record.
    *
-   * Join with hrm_platform_projects to include project details in response.
-   * Join with hrm_platform_tasks if task_id is present to include task details.
+   * Return the full timer entity including all fields: id, employee_id, project_id, task_id (nullable), started_at, stopped_at (nullable), description (nullable), created_at, updated_at.
    *
-   * Validate timer exists and is not soft-deleted (deleted_at is null).
-   * Enforce organization context - timer must belong to the authenticated user's current organization.
-   * Enforce access control - only timer owner or users with time:manage permission can access.
+   * Join with hrm_platform_projects to include project details in response if needed.
    *
-   * Return 404 if timer not found or access denied.
-   * Return 400 if timerId is not valid UUID format.
+   * Join with hrm_platform_tasks if task_id is not null to include task details.
+   *
+   * Return 404 if timer not found or if employee does not own the timer.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":timerId")
@@ -144,24 +137,32 @@ export class HrmplatformMemberTimersController {
   }
 
   /**
-   * Update the configuration of a running timer.
+   * Update a running timer's properties including description, project, or task selection.
    *
-   * This operation allows employees to modify their active timer's project, task, or description while the timer is running. Employees can switch to a different project they are assigned to, change or remove the task selection, or update the work description.
+   * This endpoint allows employees to modify their active timer session. Employees can change the work description, switch to a different project, or update the task assignment while the timer is running. All changes are applied immediately and reflected in the timer record.
    *
-   * The timer must be owned by the requesting employee. Project changes require the employee to be assigned to the new project. Task changes require the task to belong to the currently selected project. The task can be removed entirely or added to a timer that previously had no task.
+   * The timer must be owned by the requesting employee and must still be running (stopped_at is null). Once a timer is stopped, it cannot be modified. When the timer is eventually stopped, the timelog will reflect the most recent project and task selections.
    *
-   * Validation ensures the timer exists, is not deleted, and belongs to the authenticated employee. Project and task assignments are verified against the employee's project memberships.
+   * Only the timer owner can update their timer. Attempts to update another employee's timer will be rejected.
    *
    * @param connection
-   * @param timerId Timer UUID identifier (global scope)
-   * @param body Timer configuration fields to update
+   * @param timerId The UUID of the timer session to update.
+   * @param body Update request containing the new description, project ID, and optional task ID for the running timer.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query hrm_platform_timers table by timerId UUID parameter. Verify timer exists, deleted_at is null, and employee_id matches authenticated user's employee record. For project_id updates: verify employee has project membership in the new project via hrm_platform_project_members. For task_id updates: verify task belongs to the selected project and employee has project membership. Update description, project_id, task_id fields as provided. Set updated_at to current timestamp. Return complete IHrmPlatformTimer entity with all fields including started_at, description, project_id, task_id. Handle edge cases: timer not found (404), timer already deleted (404), employee not owner (403), project assignment invalid (400), task-project mismatch (400).
+   * @x-autobe-specification Validate the timerId exists and belongs to the requesting employee.
+   * Verify the timer is still running (stopped_at is null).
+   * Validate the new project_id references a valid project the employee is assigned to.
+   * If task_id is provided, validate it belongs to the selected project.
+   * Update the description, hrm_platform_project_id, and hrm_platform_task_id fields.
+   * Update the updated_at timestamp.
+   * Return the updated timer record.
+   * Reject with 404 if timer not found or not owned by employee.
+   * Reject with 400 if timer is already stopped.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":timerId")
-  public async putByTimerid(
+  public async update(
     @MemberAuth()
     member: MemberPayload,
     @TypedParam("timerId")
@@ -182,31 +183,29 @@ export class HrmplatformMemberTimersController {
   }
 
   /**
-   * Discard a running timer without creating a timelog entry.
+   * Permanently discard a running timer without creating a timelog entry.
    *
-   * This operation soft deletes an employee's active timer by setting the deleted_at timestamp, without recording any time. Unlike stopping a timer, discarding does not create a timelog entry and the action effectively abandons the current tracking session without logging the elapsed time. This is useful when an employee started a timer by mistake or wants to abandon the current tracking session.
+   * This operation allows employees to discard their active timer session, permanently deleting all timer data without recording the tracked time. The discard operation is irreversible and should be confirmed by the employee to prevent accidental time loss.
    *
-   * Only the timer owner (the employee who started the timer) can discard their own timer. The operation requires the timer to be in running state (deleted_at is null). Once discarded, the timer is marked as deleted and excluded from active timer queries. The soft delete allows for potential audit trail maintenance while removing the timer from active operations.
+   * Employees can only discard their own timers. The timer must be currently running (stopped_at is null). After discarding, the employee can immediately start a new timer session.
    *
    * @param connection
-   * @param timerId UUID of the timer to discard (scoped to the authenticated employee's active timer)
+   * @param timerId UUID of the timer session to discard (must belong to the authenticated employee).
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
    * @x-autobe-specification Delete the timer record from hrm_platform_timers table by timerId.
    *
-   * Validate that the timer exists and is owned by the requesting employee (employee_id matches authenticated user's employee record).
+   * Verify the timer belongs to the authenticated employee by checking hrm_platform_employee_id matches the employee's ID.
    *
-   * Verify the timer has not already been discarded (deleted_at is null).
+   * Verify the timer is currently running (stopped_at is null) before allowing discard.
    *
-   * Perform cascade deletion based on the employee relation constraint.
+   * Perform cascade delete - no timelog is created when discarding.
    *
-   * No timelog entry is created - this operation purely removes the timer.
+   * Return 204 No Content on successful deletion.
    *
-   * Return 204 No Content on success.
+   * Return 404 if timer not found or does not belong to the employee.
    *
-   * Return 404 if timer does not exist or belongs to another employee.
-   *
-   * Return 403 if the authenticated user does not have permission to discard this timer (not the owner).
+   * Return 400 if timer is already stopped (stopped_at is not null).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":timerId")
@@ -220,110 +219,6 @@ export class HrmplatformMemberTimersController {
       return await deleteHrmPlatformMemberTimersTimerId({
         member,
         timerId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Stop the employee's running timer and create a timelog entry.
-   *
-   * This operation stops the currently active timer for the authenticated employee and automatically generates a timelog record. The duration is calculated from the timer's start timestamp to the stop time, rounded to the nearest minute.
-   *
-   * The created timelog inherits the project, task, and description from the stopped timer. The timelog date is set to the date when the timer was stopped. After successful stop, the timer is soft-deleted (marked with deleted_at timestamp) and the employee can start a new timer if needed.
-   *
-   * Employees can only stop their own timer. If no active timer exists, the request is rejected with 404 error. The operation returns the created timelog for immediate verification of the tracked time.
-   *
-   * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Retrieve the authenticated employee's active timer from hrm_platform_timers table.
-   * 2. If no timer exists, return 404 error (employee has no running timer).
-   * 3. Calculate duration: stop_timestamp - started_at (in milliseconds).
-   * 4. Convert duration to minutes and round to nearest minute (Math.round(durationMs / 60000)).
-   * 5. If duration is less than 30 seconds (< 0.5 minutes), set duration to 1 minute.
-   * 6. Create timelog in hrm_platform_timelogs with:
-   *    - employee_id: from timer
-   *    - project_id: from timer
-   *    - task_id: from timer (nullable)
-   *    - date: stop_timestamp date component (YYYY-MM-DD)
-   *    - duration_minutes: calculated rounded duration
-   *    - description: from timer (nullable)
-   *    - billable: true (default)
-   * 7. Delete the timer record from hrm_platform_timers.
-   * 8. Return the created timelog.
-   * 9. Emit timer stop event with duration, project, task, description, billable flag.
-   * 10. Emit timelog created event.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post("stop")
-  public async stop(
-    @MemberAuth()
-    member: MemberPayload,
-  ): Promise<IHrmPlatformTimelog> {
-    try {
-      return await postHrmPlatformMemberTimersStop({
-        member,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Permanently discard the employee's currently running timer without creating a timelog entry.
-   *
-   * This operation permanently removes the active timer session for the authenticated employee. Unlike stopping a timer, discarding does not create any timelog record - the tracked time is abandoned with no entry in the system. This is useful for canceling accidental timer starts or test sessions.
-   *
-   * The operation emits a timer discard notification event to inform real-time dashboards and subscribers that the timer session has been abandoned. After discarding, the employee can start a new timer immediately.
-   *
-   * This operation performs a hard delete on the timer record. The discarded timer data is returned in the response for client confirmation, but no permanent record of the tracked time is retained in the system.
-   *
-   * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implementation guidance for POST /timers/discard:
-   *
-   * 1. Validate the authenticated employee has an active timer running
-   *    - Query hrm_platform_timers table where employee_id matches authenticated user
-   *    - If no active timer found, reject with 404 Not Found or 400 Bad Request
-   *
-   * 2. Verify timer ownership
-   *    - Ensure the timer belongs to the authenticated employee
-   *    - Reject if employee does not own the timer (should not happen with proper auth context)
-   *
-   * 3. Delete the timer record
-   *    - Permanently remove the timer from hrm_platform_timers table
-   *    - Do NOT create any timelog entry (this is the key difference from stop operation)
-   *    - Do NOT record any activity log for discard (per requirements, discard leaves no record)
-   *
-   * 4. Emit timer discard event
-   *    - Publish timer discard notification to real-time event system
-   *    - Event payload includes timer ID, project, optional task, and discard timestamp
-   *    - This allows live dashboards to update timer status in real-time
-   *
-   * 5. Return discarded timer details
-   *    - Response includes the timer data that was discarded
-   *    - Allows client to confirm what was abandoned
-   *    - Include project, task, description, start time, and elapsed duration
-   *
-   * 6. Error handling
-   *    - No active timer: 404 Not Found or 400 Bad Request with clear message
-   *    - Authentication failure: 401 Unauthorized
-   *    - Database error: 500 Internal Server Error
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post("discard")
-  public async discard(
-    @MemberAuth()
-    member: MemberPayload,
-  ): Promise<IHrmPlatformTimer> {
-    try {
-      return await postHrmPlatformMemberTimersDiscard({
-        member,
       });
     } catch (error) {
       console.log(error);

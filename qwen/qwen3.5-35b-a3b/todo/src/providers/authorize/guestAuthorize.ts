@@ -12,14 +12,25 @@ export async function guestAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const guestSession = await MyGlobal.prisma.multi_user_todo_app_guest_sessions.findFirst({
+  const guestSession = await MyGlobal.prisma.multi_user_todo_guest_sessions.findFirst({
+    where: {
+      id: payload.session_id,
+      expired_at: { gt: new Date() },
+    },
+  });
+
+  if (guestSession === null) {
+    throw new ForbiddenException("You're not enrolled");
+  }
+
+  const guest = await MyGlobal.prisma.multi_user_todo_guests.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,
     },
   });
 
-  if (guestSession === null) {
+  if (guest === null) {
     throw new ForbiddenException("You're not enrolled");
   }
 

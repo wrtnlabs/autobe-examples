@@ -6,10 +6,11 @@ import { IEcommerceMallShipmentDelivery } from "@ORGANIZATION/PROJECT-api/lib/st
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
 import { EcommerceMallShipmentAtSummaryTransformer } from "./EcommerceMallShipmentAtSummaryTransformer";
 
 export namespace EcommerceMallShipmentDeliveryTransformer {
@@ -26,7 +27,9 @@ export namespace EcommerceMallShipmentDeliveryTransformer {
         updated_at: true,
         deleted_at: true,
         shipment: EcommerceMallShipmentAtSummaryTransformer.select(),
-        customer: EcommerceMallCustomerAtSummaryTransformer.select(),
+        customer: {
+          select: { id: true },
+        } satisfies Prisma.ecommerce_mall_customersFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_shipment_deliveriesFindManyArgs;
   }
@@ -35,18 +38,14 @@ export namespace EcommerceMallShipmentDeliveryTransformer {
   ): Promise<IEcommerceMallShipmentDelivery> {
     return {
       id: input.id,
+      deliveredAt: input.delivered_at.toISOString(),
+      isAutoDelivered: input.is_auto_delivered,
       shipment: await EcommerceMallShipmentAtSummaryTransformer.transform(
         input.shipment,
       ),
-      customer: input.customer
-        ? await EcommerceMallCustomerAtSummaryTransformer.transform(
-            input.customer,
-          )
-        : null,
-      deliveredAt: input.delivered_at.toISOString(),
-      isAutoDelivered: input.is_auto_delivered,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
+      customer: input.customer ? ({} as IEcommerceMallCustomer.ISummary) : null,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
       deletedAt: input.deleted_at?.toISOString() ?? null,
     };
   }

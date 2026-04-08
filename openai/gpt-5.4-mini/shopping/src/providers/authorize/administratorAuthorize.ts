@@ -6,7 +6,16 @@ import { AdministratorPayload } from "../../decorators/payload/AdministratorPayl
 export async function administratorAuthorize(request: {
   headers: { authorization?: string };
 }): Promise<AdministratorPayload> {
-  const payload: AdministratorPayload = jwtAuthorize({ request }) as AdministratorPayload;
+  let payload: AdministratorPayload;
+
+  try {
+    payload = jwtAuthorize({ request }) as AdministratorPayload;
+  } catch (error) {
+    if (error instanceof UnauthorizedException || error instanceof ForbiddenException) {
+      throw error;
+    }
+    throw new UnauthorizedException();
+  }
 
   if (payload.type !== "administrator") {
     throw new ForbiddenException(`You're not ${payload.type}`);
@@ -19,21 +28,7 @@ export async function administratorAuthorize(request: {
   });
 
   if (administrator === null) {
-    throw new UnauthorizedException("Administrator account not found");
-  }
-
-  const session = await MyGlobal.prisma.mall_platform_administrator_sessions.findFirst({
-    where: {
-      id: payload.session_id,
-      administrator_id: payload.id,
-      expired_at: {
-        gt: new Date(),
-      },
-    },
-  });
-
-  if (session === null) {
-    throw new UnauthorizedException("Administrator session is invalid");
+    throw new ForbiddenException("You're not enrolled");
   }
 
   return payload;

@@ -13,89 +13,25 @@ import { postEcommerceMallSellerShipments } from "../../../../providers/postEcom
 @Controller("/ecommerceMall/seller/shipments")
 export class EcommercemallSellerShipmentsController {
   /**
-   * Create a new shipment for order items that are ready to be shipped.
+   * Create a new shipment containing selected order items from the authenticated seller.
    *
-   * This endpoint allows sellers to group one or more paid order items into a single shipment package. Shipments represent physical packages sent to customers with tracking information.
+   * A shipment represents a physical package dispatched by a seller containing one or more order items. All items in a shipment must belong to the same seller (the authenticated user), belong to the same customer order, and share the same tracking information including carrier name and tracking number.
    *
-   * **Business Rules:**
-   * - All order items in a shipment must belong to the same seller (enforced by the system)
-   * - Only order items with status 'paid' can be included in a shipment
-   * - At least one order item must be selected
-   * - Carrier name and tracking number are required for customer tracking
-   * - Different sellers' items cannot be combined - they must ship separately
+   * Upon successful creation:
+   * - The shipment record is created with carrier and tracking information
+   * - All selected order items are linked to this shipment via the shipment_items junction table
+   * - All included order items simultaneously change status from 'paid' to 'shipped'
+   * - The shipped_at timestamp is recorded
    *
-   * **Process:**
-   * When a shipment is created, the system:
-   * 1. Validates that all selected order items exist and have status 'paid'
-   * 2. Creates the shipment record with carrier and tracking information
-   * 3. Creates shipment_item junction records linking the shipment to each selected order item
-   * 4. Updates all included order items' status from 'paid' to 'shipped'
-   * 5. Records the shipped_at timestamp
+   * Sellers can only include their own order items with status 'paid' that are not yet shipped and have not been soft-deleted. Items from different sellers or different orders cannot be combined into the same shipment. The seller can choose to ship items individually in separate shipments or bundle multiple items together from the same order.
    *
-   * **Authorization:**
-   * Only authenticated sellers can create shipments. The seller is identified from the JWT token. A seller can only create shipments containing their own order items.
-   *
-   * **Related Operations:**
-   * Sellers typically view pending shipments first via a GET/PATCH endpoint filtering order items by status. Customers view shipment tracking through order detail endpoints.
+   * This operation is idempotency-unsafe and should not be retried without checking for existing shipments first.
    *
    * @param connection
-   * @param body Shipment creation data containing order item IDs to include, carrier name, and tracking number
+   * @param body Shipment creation request with selected order items to ship, tracking carrier name, and tracking number
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation logic for creating shipments:
-   *
-   * 1. **Authentication Check**: Verify JWT token identifies an authenticated seller.
-   *
-   * 2. **Validation**:
-   *    - Validate carrierName is non-empty string (max 100 chars)
-   *    - Validate trackingNumber is non-empty string (max 100 chars)
-   *    - Validate orderItemIds array is non-empty (at least one item)
-   *    - Validate all orderItemIds are valid UUIDs
-   *
-   * 3. **Order Item Verification**:
-   *    - Query ecommerce_mall_order_items for provided IDs
-   *    - Verify all items exist
-   *    - Verify all items have status = 'paid'
-   *    - Verify all items belong to the authenticated seller (via seller_id)
-   *    - Verify no item is already assigned to another shipment (check shipmentItem relation is null)
-   *
-   * 4. **Consistency Check**:
-   *    - All items must belong to same order (optional business rule - they can span orders but more complex)
-   *    - Based on requirements, items from same order would share customer/address
-   *
-   * 5. **Database Transaction**:
-   *    - BEGIN TRANSACTION
-   *    - Create shipment record in ecommerce_mall_shipments:
-   *      - id: generate UUID
-   *      - seller_id: from auth context
-   *      - order_id: from first order item's order_id
-   *      - carrier_name: from request
-   *      - tracking_number: from request
-   *      - shipped_at: current timestamp
-   *      - created_at: current timestamp
-   *      - updated_at: current timestamp
-   *    - For each order_item_id:
-   *      - Create ecommerce_mall_shipment_items record
-   *      - Update ecommerce_mall_order_items.status to 'shipped'
-   *      - Update ecommerce_mall_order_items.updated_at
-   *    - COMMIT
-   *
-   * 6. **Order Status Update**:
-   *    - After items are shipped, check if order status needs update
-   *    - If any items shipped → order status becomes 'shipped' (if not already 'delivered')
-   *
-   * 7. **Response**:
-   *    - Return shipment with nested shipmentItems containing order items
-   *    - Include 201 status code
-   *
-   * **Error Cases:**
-   * - 401: Unauthorized (not a seller)
-   * - 400: Invalid order item IDs
-   * - 400: Order items not found
-   * - 400: Order items not in 'paid' status
-   * - 400: Order items belong to different seller
-   * - 400: Empty orderItemIds array
-   * - 400: Missing carrierName or trackingNumber
+   * @x-autobe-specification Validate that the authenticated seller owns all specified order items. Query order items by the provided orderItemIds and verify all have status 'paid' and belong to the authenticated seller. If any item does not belong to the seller or is not in 'paid' status, return validation error. If order items belong to different orders, return error (all items in one shipment should ideally be from one order, though schema allows cross-order shipments via order_id field). Create shipment record with seller_id from session, order_id from first order item (all items should be from same order), carrier_name, tracking_number, shipped_at as current timestamp. Insert shipment_items records linking the shipment to each order item. Update all order item statuses from 'paid' to 'shipped'. Return the created shipment entity. Use database transaction for atomicity.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -117,46 +53,39 @@ export class EcommercemallSellerShipmentsController {
   }
 
   /**
-   * Retrieve a paginated list of shipments with filtering and search capabilities.
+   * Retrieve a filtered and paginated list of shipments.
    *
-   * This operation provides comprehensive shipment tracking visibility for sellers and customers. Sellers can view all shipments they've created to monitor their fulfillment operations. Customers can view shipments associated with their orders to track delivery status.
+   * This operation provides shipment tracking capabilities for sellers, customers, and administrators. Shipments represent physical packages containing one or more order items from the same seller, each with carrier and tracking information.
    *
-   * Shipments represent physical packages containing one or more order items from the same seller. Each shipment includes carrier information and tracking numbers for logistics monitoring. The system supports filtering by order, seller, carrier name, and shipping date ranges.
+   * Sellers can view shipments they've created for their order items. Customers can view shipments for their orders to track delivery status. Administrators can view all shipments on the platform.
    *
-   * Security and access control ensure users only see shipments relevant to them. Sellers see their own shipments (via seller_id). Customers see shipments for orders they placed (via order_id through order relationship). Administrators have full visibility across all shipments.
-   *
-   * This endpoint supports cursor-based pagination for efficient browsing of large result sets. Results can be sorted by shipping date, creation date, or other relevant fields.
+   * Supports filtering by order ID, seller ID, shipment status (in_transit/delivered), and shipping date ranges. Results include tracking information (carrier name, tracking number) and delivery status.
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering shipments
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query the ecommerce_mall_shipments table with pagination and filtering.
+   * @x-autobe-specification Query commerce_shipments with access control based on current actor.
    *
-   * Filter parameters from request body:
-   * - orderId: Filter shipments for a specific customer order (customers use this)
-   * - sellerId: Filter shipments by seller (admins use this, or sellers implicitly)
-   * - carrierName: Partial match on carrier name (e.g., 'FedEx', 'UPS')
-   * - trackingNumber: Exact or partial match on tracking number
-   * - shippedAtFrom/shippedAtTo: Date range filtering on shipped_at
+   * For seller users: Filter by seller_id matching the authenticated seller.
+   * For customer users: Join with commerce_orders and filter by order.customer_id matching the authenticated customer.
+   * For admin users: No additional filtering (view all shipments).
    *
-   * Authorization checks:
-   * - If customer actor: automatically filter by orders belonging to authenticated customer
-   * - If seller actor: automatically filter by seller_id matching authenticated seller
-   * - If admin/superAdmin: no automatic filtering, respect provided filters
+   * Search filters to implement:
+   * - orderId: Filter shipments for a specific order
+   * - sellerId: Filter by seller (admin only, ignored for sellers viewing own shipments)
+   * - carrierName: Partial match on carrier name
+   * - status: Filter by delivery status - 'in_transit' (no delivery record) or 'delivered' (has delivery record)
+   * - shippedAtFrom/shippedAtTo: Date range filter on shipped_at timestamp
    *
-   * Include related data:
-   * - Join with ecommerce_mall_shipment_items to get included order items count
-   * - Join with ecommerce_mall_orders for order_number (if accessible)
-   * - Join with ecommerce_mall_shipment_deliveries to include delivery status
+   * Join with commerce_orders to include order summary information.
+   * Join with commerce_shipment_items to get item count per shipment.
+   * Left join with commerce_shipment_deliveries to determine delivery status.
    *
-   * Return IPageIEcommerceMallShipment.ISummary with:
-   * - id, sellerId, orderId, carrierName, trackingNumber
-   * - shippedAt, createdAt, updatedAt
-   * - delivery status (if delivered), deliveredAt
-   * - item count (number of order items in shipment)
+   * Pagination: Cursor-based or offset pagination with configurable page size.
+   * Sorting: Default by shipped_at descending (newest first), optional by created_at.
    *
-   * Use cursor-based pagination for efficient large dataset handling.
+   * Return paginated list with shipment summary including: id, orderId, sellerId, carrierName, trackingNumber, shippedAt, deliveryStatus, itemCount.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -178,55 +107,42 @@ export class EcommercemallSellerShipmentsController {
   }
 
   /**
-   * Retrieve detailed information for a specific shipment.
+   * Retrieve detailed information for a specific shipment by its unique identifier.
    *
-   * This operation returns comprehensive details about a shipment, including tracking information (carrier name and tracking number), shipping timestamp, and the associated order items bundled in this shipment. Sellers use this endpoint to review their shipments, while customers use it to track package delivery status.
+   * This operation returns complete shipment details including the carrier name, tracking number, shipping timestamp, and all order items included in this physical package. The shipment items show which specific products and variants from the customer's order are contained in this shipment.
    *
-   * The response includes the complete shipment entity with its associated order items through the shipment items junction table. Each order item in the shipment includes product details at the time of purchase through the preserved snapshots. Delivery confirmation information is also included when available.
+   * Shipments represent physical packages dispatched by sellers. Customers use this information to track delivery status using the carrier and tracking number. The response includes the seller information and associated order details for complete context.
    *
-   * Authorization: Sellers can only view shipments they created. Customers can view shipments for their orders. Administrators can view any shipment.
+   * Authorization ensures that only the customer who placed the order or the seller who created the shipment can view the details. Returns 404 if the shipment does not exist or has been deleted.
    *
    * @param connection
-   * @param shipmentId Unique identifier of the shipment to retrieve
+   * @param shipmentId Unique identifier of the shipment to retrieve (UUID format)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implementation Steps:
+   * @x-autobe-specification Query the ecommerce_mall_shipments table by primary key id matching the shipmentId path parameter.
    *
-   * 1. **Path Parameter Validation**
-   *    - shipmentId must be a valid UUID string
-   *    - Return 400 Bad Request if format is invalid
+   * Include the following related data in the response:
+   * - shipmentItems: Join with ecommerce_mall_shipment_items to get all items in this shipment
+   * - For each shipment item, include the associated orderItem with product and variant details
+   * - order: Include the parent order with customer shipping address information
+   * - seller: Include seller profile information for the shipment sender
    *
-   * 2. **Authentication Check**
-   *    - Validate JWT token from Authorization header
-   *    - Extract caller actor type (seller, customer, admin)
+   * Validation rules:
+   * - shipmentId must be a valid UUID format
+   * - Shipment record must exist and not be soft-deleted (deleted_at is null)
+   * - Return 404 NOT_FOUND error if shipment does not exist
    *
-   * 3. **Shipment Retrieval**
-   *    - Query ecommerce_mall_shipments by id = shipmentId
-   *    - Include related entities:
-   *      * seller (ecommerce_mall_sellers)
-   *      * order (ecommerce_mall_orders)
-   *      * shipmentItems → orderItem (ecommerce_mall_order_items with product snapshots)
-   *      * delivery (ecommerce_mall_shipment_deliveries if exists)
+   * Authorization checks:
+   * - Customer must be the owner of the parent order (order.customer_id == current customer id)
+   * - OR current user must be the seller who created the shipment (shipment.seller_id == current seller id)
+   * - Return 403 FORBIDDEN if neither condition is met
    *
-   * 4. **Authorization Checks**
-   *    - If actor is seller: verify shipment.seller_id matches caller's seller ID
-   *    - If actor is customer: verify shipment.order.customer_id matches caller's customer ID
-   *    - Admin/SuperAdmin: unrestricted access
-   *    - Return 403 Forbidden if unauthorized
+   * Delivery status derivation:
+   * - Check ecommerce_mall_shipment_deliveries table for delivery confirmation
+   * - If delivery record exists or shipped_at + 14 days has passed, status is 'delivered'
+   * - Otherwise status is 'in_transit'
    *
-   * 5. **Data Assembly**
-   *    - Map DB fields to IEcommerceMallShipment structure
-   *    - For each shipmentItem, load the orderItem with its productVariantSnapshot and productSnapshot
-   *    - Include delivery record if exists
-   *
-   * 6. **Response Construction**
-   *    - Return complete IEcommerceMallShipment JSON response
-   *    - Status 200 OK
-   *
-   * Edge Cases:
-   * - 404 Not Found: Shipment doesn't exist or has been soft-deleted
-   * - 403 Forbidden: User attempting to view another seller's/customer's shipment
-   * - 401 Unauthorized: Missing or invalid authentication token
+   * Response must include derived 'status' field based on delivery confirmation state.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":shipmentId")

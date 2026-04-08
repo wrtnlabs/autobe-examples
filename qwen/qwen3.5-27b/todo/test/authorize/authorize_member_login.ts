@@ -1,7 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IMultiUserTodoMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IMultiUserTodoMember";
+import type { ITodoAppMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMember";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -11,10 +11,10 @@ import typia, { tags } from "typia";
 export async function authorize_member_login(
   connection: api.IConnection,
   props: {
-    body: IMultiUserTodoMember.ILogin;
+    body: ITodoAppMember.ILogin;
   },
-): Promise<IMultiUserTodoMember.IAuthorized> {
-  return await api.functional.multiUserTodo.auth.member.login(connection, {
+): Promise<ITodoAppMember.IAuthorized> {
+  return await api.functional.todoApp.auth.member.login(connection, {
     body: props.body,
   });
 }

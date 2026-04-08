@@ -1,6 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -19,12 +20,33 @@ export async function getErpHrmTimeMemberDepartmentsDepartmentId(props: {
   departmentId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeDepartment> {
   const department =
-    await MyGlobal.prisma.erp_hrm_time_departments.findFirstOrThrow({
+    await MyGlobal.prisma.erp_hrm_time_departments.findUniqueOrThrow({
       where: {
         id: props.departmentId,
-        deleted_at: null,
+      },
+      select: {
+        organization: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+  if (
+    (
+      props.member as {
+        organization_id?: string;
+      }
+    ).organization_id !== department.organization.id
+  ) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const found =
+    await MyGlobal.prisma.erp_hrm_time_departments.findUniqueOrThrow({
+      where: {
+        id: props.departmentId,
       },
       ...ErpHrmTimeDepartmentTransformer.select(),
     });
-  return await ErpHrmTimeDepartmentTransformer.transform(department);
+  return await ErpHrmTimeDepartmentTransformer.transform(found);
 }

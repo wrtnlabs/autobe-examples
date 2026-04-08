@@ -10,32 +10,53 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ErpHrmRoleCollector {
   export async function collect(props: {
     body: IErpHrmRole.ICreate;
-    organization: IEntity;
+    erpHrmOrganizations: IEntity;
+    erpHrmAdminSessions: IEntity;
   }) {
-    const id: string = v4();
-    const rolePermissionsData = await ArrayUtil.asyncMap(
-      props.body.permissions,
-      async (permissionCode) => ({
-        id: v4(),
-        permission: permissionCode,
-        created_at: new Date(),
-        updated_at: new Date(),
-      }),
-    );
     return {
-      // Scalar fields
-      id,
+      id: v4(),
       name: props.body.name,
       is_builtin: false,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      // BelongsTo relations
-      organization: { connect: { id: props.organization.id } },
-      // HasMany relations - inline nested create for permissions
+      organization: { connect: { id: props.erpHrmOrganizations.id } },
       rolePermissions: {
-        create: rolePermissionsData,
+        create: props.body.permissions.map((permission) => ({
+          id: v4(),
+          permission,
+          created_at: new Date(),
+          updated_at: new Date(),
+        })),
       },
     } satisfies Prisma.erp_hrm_rolesCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace ErpHrmRoleCollector {
+//         export async function collect(props: {
+//           body: IErpHrmRole.ICreate;
+//           erpHrmOrganizations: IEntity; // from authorized session
+// erpHrmAdminSessions: IEntity; // from authorized session
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       name: ...,
+//       is_builtin: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       organization: ...,
+//       employees: ...,
+//       rolePermissions: ...,
+//       invitations: ...,
+//           } satisfies Prisma.erp_hrm_rolesCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

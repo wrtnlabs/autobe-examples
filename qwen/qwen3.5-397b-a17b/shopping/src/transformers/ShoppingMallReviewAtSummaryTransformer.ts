@@ -1,6 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import { IShoppingMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallMember";
 import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -9,7 +9,7 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallCustomerAtSummaryTransformer } from "./ShoppingMallCustomerAtSummaryTransformer";
+import { ShoppingMallMemberAtSummaryTransformer } from "./ShoppingMallMemberAtSummaryTransformer";
 
 export namespace ShoppingMallReviewAtSummaryTransformer {
   export type Payload = Prisma.shopping_mall_reviewsGetPayload<
@@ -24,11 +24,26 @@ export namespace ShoppingMallReviewAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        customer: ShoppingMallCustomerAtSummaryTransformer.select(),
-        product: { select: { id: true } },
-        order: { select: { id: true } },
+        member: ShoppingMallMemberAtSummaryTransformer.select(),
+        product: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.shopping_mall_productsFindManyArgs,
+        order: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.shopping_mall_ordersFindManyArgs,
+        orderItem: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.shopping_mall_order_itemsFindManyArgs,
         snapshots: {
-          select: { id: true },
+          select: {
+            id: true,
+          },
         } satisfies Prisma.shopping_mall_review_snapshotsFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_reviewsFindManyArgs;
@@ -40,11 +55,10 @@ export namespace ShoppingMallReviewAtSummaryTransformer {
       id: input.id,
       rating: input.rating,
       content: input.content ?? undefined,
-      customer: await ShoppingMallCustomerAtSummaryTransformer.transform(
-        input.customer,
+      author: await ShoppingMallMemberAtSummaryTransformer.transform(
+        input.member,
       ),
       created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-    };
+    } satisfies IShoppingMallReview.ISummary;
   }
 }

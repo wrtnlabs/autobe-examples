@@ -1,44 +1,92 @@
-/// Core multi-tenancy entity representing independent organizational
-/// workspaces. Each organization owns its employees, departments, projects,
-/// and all business data. Contains organization settings including name,
-/// description, logo image, currency, timezone, and fiscal year start month
-/// configuration.
+/// Core multi-tenancy entity representing independent business units with
+/// settings and configuration.
 ///
-/// @namespace Organization
+/// Organizations are the foundational isolation boundary in the platform.
+/// Each organization operates independently with its own employees,
+/// projects, departments, roles, and data. Users create an organization
+/// during initial sign-up and can belong to multiple organizations
+/// simultaneously.
+///
+/// Organization settings include business configuration such as currency for
+/// financial tracking, timezone for date/time operations, and fiscal start
+/// month for accounting periods. The logo URL provides branding for the
+/// organization interface.
+///
+/// Organizations support soft deletion via deleted_at field. When an
+/// organization is deleted, all related domain data (employees, projects,
+/// tasks, timelogs, timesheets) is permanently deleted, but user accounts
+/// remain intact and are simply disassociated from the organization.
+///
+/// @namespace organization
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
 model hrm_platform_organizations {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary Key. Uniquely identifies each organization in the multi-tenancy
+  /// platform.
   id String @id
   
-  /// Organization name for display and identification.
+  /// Organization display name shown throughout the platform interface.
+  ///
+  /// This is the primary identifier for the organization visible to users.
+  /// Used in navigation, reports, and organization switching interfaces. Must
+  /// be unique within the platform to avoid confusion when users belong to
+  /// multiple organizations.
   name String
   
-  /// Optional description of the organization's purpose or business.
+  /// Optional detailed description of the organization's purpose or business.
+  ///
+  /// Provides context about what the organization does. Displayed in
+  /// organization settings and onboarding flows. Can be null for organizations
+  /// that prefer not to include a description.
   description String?
   
-  /// URL to the organization's logo image.
-  logo String?
+  /// URL to the organization's logo image for branding purposes.
+  ///
+  /// Displayed in the application header, emails, and reports. Supports
+  /// standard image formats (PNG, JPG, SVG). Can be null if no logo has been
+  /// uploaded.
+  logo_url String?
   
-  /// ISO 4217 currency code (e.g., USD, EUR, KRW) for financial displays.
+  /// ISO 4217 currency code for financial tracking and reporting.
+  ///
+  /// Examples: USD, EUR, KRW, JPY, GBP. Used for displaying pay rates, project
+  /// budgets, and financial reports. Must be a valid 3-letter currency code.
   currency String
   
-  /// IANA timezone identifier (e.g., America/New_York, Asia/Seoul) for
-  /// date/time displays.
+  /// IANA timezone identifier for date/time operations within the organization.
+  ///
+  /// Examples: Asia/Seoul, America/New_York, Europe/London. Used to interpret
+  /// dates and times for timesheets, timelogs, and deadlines. Ensures
+  /// consistent time handling across all organization data.
   timezone String
   
-  /// Fiscal year start month (1-12) for financial reporting periods.
+  /// Month number (1-12) when the organization's fiscal year begins.
+  ///
+  /// Used for financial reporting and accounting periods. January=1,
+  /// December=12. Common values: 1 (calendar year), 4 (Q1 start), 7
+  /// (mid-year). Required for proper fiscal period calculations.
   fiscal_start_month Int
   
   /// Timestamp when the organization was created.
+  ///
+  /// Automatically set on organization creation. Used for audit trails,
+  /// sorting, and determining organization age. Immutable after creation.
   created_at DateTime
   
   /// Timestamp when the organization was last updated.
+  ///
+  /// Automatically updated on any organization modification. Used for change
+  /// tracking and cache invalidation. Helps identify recently modified
+  /// organizations.
   updated_at DateTime
   
-  /// Timestamp when the organization was soft deleted (null if active).
+  /// Timestamp when the organization was soft deleted.
+  ///
+  /// Null for active organizations. When set, marks the organization as
+  /// deleted while preserving the record for audit purposes. All related
+  /// domain data is permanently deleted when this field is set.
   deleted_at DateTime?
   
   //----
@@ -46,21 +94,32 @@ model hrm_platform_organizations {
   //   - format: (propertyKey targetModel)
   //----
   departments hrm_platform_departments[]
-  employees hrm_platform_employees[]
+  organizationMemberships hrm_platform_organization_memberships[]
   roles hrm_platform_roles[]
-  invitations hrm_platform_invitations[]
+  employees hrm_platform_employees[]
+  employeeInvitations hrm_platform_employee_invitations[]
   projects hrm_platform_projects[]
   activityLogs hrm_platform_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([name])
 }
 
-/// Organizational departments providing structural hierarchy within an
-/// organization. Each department has a name, optional description, and
-/// optional parent department for one-level nesting. Departments enable
-/// employee categorization and organizational reporting. All departments
-/// belong to exactly one {@link hrm_platform_organizations} for data
-/// isolation.
+/// Hierarchical organizational units within an organization with one-level
+/// parent-child nesting for employee grouping.
 ///
-/// @namespace Organization
+/// Departments provide structural organization within {@link
+/// hrm_platform_organizations} for grouping employees. Each department
+/// belongs to exactly one organization and can optionally have a parent
+/// department, enabling one level of hierarchy (parent-child relationship).
+///
+/// Department names must be unique within their organization. Deleting a
+/// department sets the department reference to null on associated employees
+/// rather than cascading deletion, preserving employee records.
+///
+/// @namespace organization
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
 model hrm_platform_departments {
   //----
@@ -69,33 +128,49 @@ model hrm_platform_departments {
   /// Primary Key.
   id String @id
   
-  /// Organization's {@link hrm_platform_organizations.id}.
-  organization_id String
+  /// References the {@link hrm_platform_organizations} that this department
+  /// belongs to.
+  ///
+  /// Every department must be associated with exactly one organization. This
+  /// foreign key establishes the organizational scope and ensures data
+  /// isolation between different organizations in the multi-tenant platform.
+  hrm_platform_organization_id String
   
-  /// Parent department's {@link hrm_platform_departments.id} for one-level
-  /// hierarchy. Null for top-level departments.
+  /// References the parent {@link hrm_platform_departments} for hierarchical
+  /// organization structure.
+  ///
+  /// Enables one level of department nesting (parent-child relationship).
+  /// Top-level departments have this field set to null. Child departments
+  /// cannot have their own children, enforcing the one-level hierarchy
+  /// constraint.
   parent_department_id String?
   
-  /// Department name for identification and display.
+  /// Department name for identification within the organization.
+  ///
+  /// Must be unique within the parent organization. Used for display in
+  /// employee listings, filters, and organizational charts.
   name String
   
-  /// Optional department description explaining purpose or scope.
+  /// Optional description of the department's purpose and responsibilities.
+  ///
+  /// Provides context about the department's function within the organization.
+  /// Can be null for departments without detailed descriptions.
   description String?
   
-  /// Timestamp when department was created.
+  /// Timestamp when the department was created.
   created_at DateTime
   
-  /// Timestamp when department was last updated.
+  /// Timestamp when the department was last updated.
   updated_at DateTime
   
-  /// Timestamp when department was soft deleted. Null for active departments.
+  /// Timestamp when the department was soft-deleted, null if active.
   deleted_at DateTime?
   
   //----
   // BELONGED RELATIONS,
   //   - format: (propertyKey targetModel constraint)
   //----
-  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
   parentDepartment hrm_platform_departments? @relation("recursive", fields: [parent_department_id], references: [id], onDelete: Cascade)
   
   //----
@@ -104,12 +179,86 @@ model hrm_platform_departments {
   //----
   childDepartments hrm_platform_departments[] @relation("recursive")
   employees hrm_platform_employees[]
+  employeeInvitations hrm_platform_employee_invitations[]
   
   //----
   // INDEXES
   //----
+  @@unique([hrm_platform_organization_id, name])
+  @@index([hrm_platform_organization_id])
   @@index([parent_department_id])
-  @@unique([organization_id, name])
+}
+
+/// Junction table linking members to organizations, enabling users to belong
+/// to multiple organizations simultaneously.
+///
+/// Tracks the many-to-many relationship between {@link hrm_platform_members}
+/// and {@link hrm_platform_organizations}. Each membership record represents
+/// a user's association with an organization, including ownership status.
+///
+/// Ownership is tracked via the is_owner flag. Each organization must have
+/// exactly one owner at all times. The owner has full access to organization
+/// settings and can manage organization lifecycle including deletion.
+///
+/// @namespace organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_organization_memberships {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member account.
+  ///
+  /// Links this membership to a specific {@link hrm_platform_members} record.
+  /// A single member can have multiple memberships across different
+  /// organizations.
+  hrm_platform_member_id String
+  
+  /// Reference to the organization.
+  ///
+  /// Links this membership to a specific {@link hrm_platform_organizations}
+  /// record. Each organization can have multiple member associations.
+  hrm_platform_organization_id String
+  
+  /// Indicates if this member is the organization owner.
+  ///
+  /// Each organization must have exactly one owner. The owner has full access
+  /// to organization settings and can manage organization lifecycle including
+  /// deletion.
+  is_owner Boolean
+  
+  /// Timestamp when the membership was created.
+  ///
+  /// Records when the user joined or was added to the organization.
+  created_at DateTime
+  
+  /// Timestamp when the membership was last updated.
+  ///
+  /// Updated when membership properties change, such as ownership transfer.
+  updated_at DateTime
+  
+  /// Timestamp when the membership was soft deleted.
+  ///
+  /// Null for active memberships. Set when a user leaves or is removed from
+  /// the organization.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member hrm_platform_members @relation(fields: [hrm_platform_member_id], references: [id], onDelete: Cascade)
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
   // spellchecker: ignore-next-line
-  @@index([organization_id, parent_department_id], map: "hrm_platform_departments_organization_id_parent_depart_3d35fce6")
+  @@unique([hrm_platform_member_id, hrm_platform_organization_id], map: "hrm_platform_organization_memberships_hrm_platform_mem_d0e324b0")
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_organization_id], map: "hrm_platform_organization_memberships_hrm_platform_org_032338c4")
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_member_id], map: "hrm_platform_organization_memberships_hrm_platform_mem_e8e50328")
 }

@@ -12,7 +12,7 @@ export async function memberAuthorize(request: {
     payload = jwtAuthorize({ request }) as MemberPayload;
   } catch (error) {
     if (error instanceof UnauthorizedException) throw error;
-    throw new UnauthorizedException("Invalid authorization token");
+    throw new UnauthorizedException("Invalid authentication token");
   }
 
   if (payload.type !== "member") {
@@ -22,7 +22,6 @@ export async function memberAuthorize(request: {
   const member = await MyGlobal.prisma.erp_hrm_time_members.findFirst({
     where: {
       id: payload.id,
-      deleted_at: null,
     },
   });
 
@@ -39,7 +38,7 @@ export async function memberAuthorize(request: {
   });
 
   if (session === null) {
-    throw new UnauthorizedException("Session expired");
+    throw new UnauthorizedException("Session expired or not found");
   }
 
   return payload;

@@ -18,19 +18,21 @@ export namespace HrmPlatformProjectCollector {
       id,
       name: props.body.name,
       description: props.body.description ?? null,
-      color_code: props.body.color_code,
-      status: props.body.status,
-      budget_hours: props.body.budget_hours ?? null,
-      start_date: props.body.start_date
-        ? new Date(props.body.start_date)
-        : null,
-      end_date: props.body.end_date ? new Date(props.body.end_date) : null,
+      color: props.body.color,
+      status: "active",
+      budget_hours: props.body.budgetHours ?? null,
+      start_date: props.body.startDate ? new Date(props.body.startDate) : null,
+      end_date: props.body.endDate ? new Date(props.body.endDate) : null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
       // BelongsTo relations
       organization: { connect: { id: props.hrmPlatformOrganizations.id } },
-      // HasMany relations - not needed for creation
+      // HasMany relations (reverse relations, not created here)
+      projectMemberships: undefined,
+      tasks: undefined,
+      timelogs: undefined,
+      timers: undefined,
     } satisfies Prisma.hrm_platform_projectsCreateInput;
   }
 }

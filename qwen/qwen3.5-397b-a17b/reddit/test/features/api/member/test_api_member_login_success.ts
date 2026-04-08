@@ -12,66 +12,61 @@ import { authorize_member_join } from "../../../authorize/authorize_member_join"
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
 
+/**
+ * Test successful member login workflow with registration and authentication.
+ *
+ * Validates the complete member authentication flow by first registering a new account and then logging in with the same credentials. Ensures that the login response contains valid JWT tokens and member profile information matching the registered account.
+ *
+ * The test verifies token structure including access_token, refresh_token, expired_at, and refreshable_until fields. Member profile validation includes id, email, username, display_name, bio, avatar, and karma score to ensure data consistency between registration and authentication.
+ *
+ * 1. Register a new member account with randomized credentials (email, password, username).
+ * 2. Create a new connection and attempt login with the registered credentials.
+ * 3. Validate login response contains proper token structure and member profile.
+ * 4. Verify member profile data matches the originally registered account information.
+ */
 export async function test_api_member_login_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create member account with valid credentials
-  const joinCredentials = {
-    email: typia.random<string & tags.Format<"email">>(),
-    password: RandomGenerator.alphaNumeric(16),
-    username: RandomGenerator.name(1),
-    href: typia.random<string & tags.Format<"uri">>(),
-    referrer: typia.random<string & tags.Format<"uri">>(),
-    ip: typia.random<string & tags.Format<"ipv4">>(),
-  } satisfies IRedditCommunityMember.IJoin;
-  const joinConnection: api.IConnection = { host: connection.host };
-  const joinResult = await authorize_member_join(joinConnection, {
-    body: joinCredentials,
-  });
+  // 1. Register a new member account with stored credentials
+  const password = RandomGenerator.alphaNumeric(16);
+  const email = typia.random<string & tags.Format<"email">>();
+  const username = RandomGenerator.name(1);
+  const joinResult: IRedditCommunityMember.IAuthorized =
+    await authorize_member_join(connection, {
+      body: {
+        email: email,
+        password: password,
+        username: username,
+        href: typia.random<string & tags.Format<"uri">>(),
+        referrer: typia.random<string & tags.Format<"uri">>(),
+        ip: typia.random<string & tags.Format<"ipv4">>(),
+      } satisfies IRedditCommunityMember.IJoin,
+    });
   typia.assert(joinResult);
-  // 2. Login with the same credentials
-  const loginCredentials = {
-    email: joinCredentials.email,
-    password: joinCredentials.password,
-  } satisfies IRedditCommunityMember.ILogin;
+  // 2. Create new connection for login and authenticate with same credentials
   const loginConnection: api.IConnection = { host: connection.host };
-  const loginResult = await authorize_member_login(loginConnection, {
-    body: loginCredentials,
-  });
+  const loginResult: IRedditCommunityMember.IAuthorized =
+    await authorize_member_login(loginConnection, {
+      body: {
+        email: email,
+        password: password,
+        href: typia.random<string & tags.Format<"uri">>(),
+        referrer: typia.random<string & tags.Format<"uri">>(),
+        ip: typia.random<string & tags.Format<"ipv4">>(),
+      } satisfies IRedditCommunityMember.ILogin,
+    });
   typia.assert(loginResult);
-  // 3. Verify login response contains required fields
-  TestValidator.equals("member ID matches", loginResult.id, joinResult.id);
-  TestValidator.predicate(
-    "access token exists",
-    loginResult.token.access.length > 0,
-  );
-  TestValidator.predicate(
-    "refresh token exists",
-    loginResult.token.refresh.length > 0,
-  );
-  TestValidator.predicate(
-    "expired_at is valid date",
-    new Date(loginResult.token.expired_at).getTime() > 0,
-  );
-  TestValidator.predicate(
-    "refreshable_until is valid date",
-    new Date(loginResult.token.refreshable_until).getTime() > 0,
-  );
-  TestValidator.predicate(
-    "refreshable_until is after expired_at",
-    new Date(loginResult.token.refreshable_until).getTime() >
-      new Date(loginResult.token.expired_at).getTime(),
-  );
-  // 4. Verify access token can be used for authentication
-  // The authorize_member_login function already sets the Authorization header
-  // on loginConnection, so we can verify the token is properly formatted
-  TestValidator.predicate(
-    "Authorization header is set",
-    loginConnection.headers?.Authorization !== undefined,
-  );
+  // 3. Validate member profile matches registered account
+  TestValidator.equals("email matches", loginResult.email, joinResult.email);
   TestValidator.equals(
-    "Authorization header format",
-    loginConnection.headers?.Authorization,
-    `Bearer ${loginResult.token.access}`,
+    "username matches",
+    loginResult.username,
+    joinResult.username,
   );
+  TestValidator.predicate("has valid member id", loginResult.id.length > 0);
+  TestValidator.predicate(
+    "has display name",
+    loginResult.display_name.length > 0,
+  );
+  TestValidator.predicate("karma is non-negative", loginResult.karma >= 0);
 }

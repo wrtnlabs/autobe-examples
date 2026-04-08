@@ -1,0 +1,165 @@
+/// Core task items owned by members with title, description, optional dates,
+/// completion status, and soft delete support.
+///
+/// Each todo represents a single task item that a member can create, track,
+/// and manage throughout its lifecycle. Todos support completion toggling,
+/// editing with history tracking, and soft deletion with trash
+/// functionality.
+///
+/// Todos are filtered by completion status (all/complete/incomplete) and
+/// sorted by creation date, start date, or due date. All todos are private
+/// to their owning member with no cross-user visibility.
+///
+/// @namespace todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for todo items.
+  id String @id
+  
+  /// References the member who owns this todo.
+  ///
+  /// Each todo belongs to exactly one member. The member has full CRUD access
+  /// to their own todos and cannot access other members' todos. When a member
+  /// deletes their account, all their todos are permanently deleted.
+  todo_app_member_id String
+  
+  /// Required title of the todo item.
+  ///
+  /// The title is the primary identifier for a todo and is required at
+  /// creation. It appears in todo lists and can be edited by the member.
+  title String
+  
+  /// Optional detailed description of the todo item.
+  ///
+  /// Members can provide additional context or details about the task. This
+  /// field can be left empty or updated at any time.
+  description String?
+  
+  /// Optional start date for the todo item.
+  ///
+  /// Members can set when a task should begin. When sorting by start date,
+  /// todos without this value appear at the end.
+  start_date DateTime?
+  
+  /// Optional due date for the todo item.
+  ///
+  /// Members can set a deadline for task completion. When sorting by due date,
+  /// todos without this value appear at the end.
+  due_date DateTime?
+  
+  /// Completion status of the todo item.
+  ///
+  /// Todos are incomplete (false) by default. Members can toggle between
+  /// complete and incomplete states. This field is used for filtering todos by
+  /// completion status.
+  completed Boolean
+  
+  /// Timestamp when the todo was created.
+  ///
+  /// Recorded automatically at todo creation. Used for sorting todos by
+  /// creation date (newest or oldest first).
+  created_at DateTime
+  
+  /// Timestamp when the todo was last modified.
+  ///
+  /// Updated automatically on every edit operation. Each edit also creates an
+  /// entry in todo_app_todo_edit_histories.
+  updated_at DateTime
+  
+  /// Timestamp when the todo was soft deleted.
+  ///
+  /// When set, the todo moves to trash and no longer appears in normal todo
+  /// lists. Members can restore the todo (clear this field) or permanently
+  /// delete it (removes todo and all edit history).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member todo_app_members @relation(fields: [todo_app_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  editHistories todo_app_todo_edit_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_member_id, deleted_at, completed])
+  @@index([todo_app_member_id, created_at])
+  @@index([todo_app_member_id, start_date, deleted_at])
+  @@index([todo_app_member_id, due_date, deleted_at])
+}
+
+/// Immutable audit trail recording all modifications to todos.
+///
+/// Each entry captures when an edit occurred and what field values were
+/// changed to. This table provides a complete history of all changes made to
+/// a todo's title, description, start date, and due date.
+///
+/// When a todo is permanently deleted, all its edit history entries are
+/// cascade-deleted. History entries are sorted from most recent to oldest
+/// when viewed by users.
+///
+/// @namespace todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_edit_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the todo being edited.
+  ///
+  /// Links this edit history entry to its parent todo. All edit histories for
+  /// a todo can be retrieved by filtering on this field.
+  todo_app_todos_id String
+  
+  /// Timestamp when this edit was made.
+  ///
+  /// Records the exact moment the todo modification occurred. Used for sorting
+  /// history entries from most recent to oldest.
+  created_at DateTime
+  
+  /// New title value after the edit.
+  ///
+  /// Contains the title value that the todo was changed to during this edit.
+  /// Null if title was not modified in this edit.
+  title_changed_to String?
+  
+  /// New description value after the edit.
+  ///
+  /// Contains the description value that the todo was changed to during this
+  /// edit. Null if description was not modified in this edit.
+  description_changed_to String?
+  
+  /// New start date value after the edit.
+  ///
+  /// Contains the start date value that the todo was changed to during this
+  /// edit. Null if start date was not modified in this edit.
+  start_date_changed_to DateTime?
+  
+  /// New due date value after the edit.
+  ///
+  /// Contains the due date value that the todo was changed to during this
+  /// edit. Null if due date was not modified in this edit.
+  due_date_changed_to DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todos_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_todos_id, created_at])
+}

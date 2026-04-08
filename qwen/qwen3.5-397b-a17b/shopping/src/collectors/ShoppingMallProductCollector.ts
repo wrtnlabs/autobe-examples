@@ -24,9 +24,10 @@ export namespace ShoppingMallProductCollector {
       deleted_at: null,
       // BelongsTo relations
       seller: { connect: { id: props.shoppingMallSellers.id } },
-      category: { connect: { id: props.body.category_id } },
-      // HasMany relations - omitted (created separately)
-      // variants, optionDefinitions, images, snapshots, wishlistedBies, orderItems, reviews
+      category: { connect: { id: props.body.shopping_mall_category_id } },
+      // HasMany relations - not needed for initial product creation
+      // images, variants, snapshots, wishlistItems, orderItems, reviews
+      // are created through separate flows or system-generated
     } satisfies Prisma.shopping_mall_productsCreateInput;
   }
 }

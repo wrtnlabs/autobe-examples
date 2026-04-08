@@ -8,29 +8,35 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 
 export namespace HrmPlatformRoleCollector {
-  export async function collect(props: {
-    body: IHrmPlatformRole.ICreate;
-    hrmPlatformOrganizations: IEntity;
-  }) {
+  export async function collect(props: { body: IHrmPlatformRole.ICreate }) {
     const id: string = v4();
+    const now = new Date();
     return {
+      // Scalar fields
       id,
       name: props.body.name,
+      is_built_in: false,
       description: props.body.description ?? null,
-      is_builtin: false,
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
-      organization: { connect: { id: props.hrmPlatformOrganizations.id } },
-      rolePermissions: {
-        create: props.body.permissions.map((permission) => ({
-          id: v4(),
-          role: { connect: { id } },
-          permission,
-          created_at: new Date(),
-          updated_at: new Date(),
-        })),
-      },
+      // BelongsTo relations
+      organization: { connect: { id: props.body.organization_id } },
+      // HasMany relations - rolePermissions junction table
+      rolePermissions:
+        props.body.permission_ids && props.body.permission_ids.length
+          ? {
+              create: props.body.permission_ids.map((permissionId) => ({
+                id: v4(),
+                created_at: now,
+                updated_at: now,
+                permission: { connect: { id: permissionId } },
+              })),
+            }
+          : undefined,
+      // Reverse relations - not needed for create
+      employees: undefined,
+      employeeInvitations: undefined,
     } satisfies Prisma.hrm_platform_rolesCreateInput;
   }
 }

@@ -15,43 +15,38 @@ export async function deleteErpHrmTimeMemberRolesRoleId(props: {
   member: MemberPayload;
   roleId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const employee =
-    await MyGlobal.prisma.erp_hrm_time_employees.findFirstOrThrow({
-      where: {
-        erp_hrm_time_member_id: props.member.id,
-        deleted_at: null,
-      },
-      select: {
-        erp_hrm_time_organization_id: true,
-      },
-    });
-  const role = await MyGlobal.prisma.erp_hrm_time_roles.findFirstOrThrow({
+  const role = await MyGlobal.prisma.erp_hrm_time_roles.findFirst({
     where: {
       id: props.roleId,
-      erp_hrm_time_organization_id: employee.erp_hrm_time_organization_id,
-      deleted_at: null,
     },
     select: {
       id: true,
       is_builtin: true,
     },
   });
+  if (role === null) {
+    throw new HttpException("Role not found", 404);
+  }
   if (role.is_builtin) {
-    throw new HttpException("Built-in roles cannot be deleted", 409);
+    throw new HttpException("Built-in roles cannot be deleted", 403);
   }
-  const assigned = await MyGlobal.prisma.erp_hrm_time_employees.count({
-    where: {
-      erp_hrm_time_organization_id: employee.erp_hrm_time_organization_id,
-      erp_hrm_time_role_id: role.id,
-      deleted_at: null,
-    },
-  });
-  if (assigned > 0) {
-    throw new HttpException("Role is still assigned to employees", 409);
+  const assignedEmployee =
+    await MyGlobal.prisma.erp_hrm_time_employees.findFirst({
+      where: {
+        erp_hrm_time_role_id: role.id,
+      },
+      select: {
+        id: true,
+      },
+    });
+  if (assignedEmployee !== null) {
+    throw new HttpException("Role is currently assigned to employees", 409);
   }
-  await MyGlobal.prisma.erp_hrm_time_roles.delete({
-    where: {
-      id: role.id,
-    },
+  await MyGlobal.prisma.$transaction(async (prisma) => {
+    await prisma.erp_hrm_time_roles.delete({
+      where: {
+        id: role.id,
+      },
+    });
   });
 }

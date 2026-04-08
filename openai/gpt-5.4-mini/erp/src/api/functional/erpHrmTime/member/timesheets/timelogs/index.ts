@@ -8,24 +8,31 @@ import typia, { tags } from "typia";
 
 import { IErpHrmTimeTimesheet } from "../../../../../structures/IErpHrmTimeTimesheet";
 import { IErpHrmTimeTimesheetTimelog } from "../../../../../structures/IErpHrmTimeTimesheetTimelog";
+import { IPageIErpHrmTimeTimesheet } from "../../../../../structures/IPageIErpHrmTimeTimesheet";
 
 /**
- * Add a timelog to a draft timesheet for the owning employee.
+ * Attach a timelog to a weekly timesheet for composition of the employee's time submission.
  *
- * This operation updates the weekly timesheet composition by associating an existing timelog with the selected timesheet. It is intended for employee-owned timesheets and must respect the ownership and week boundaries of the parent record. The resulting timesheet reflects the updated set of included timelogs and the derived total hours for that week.
+ * This operation creates a new association between the specified timesheet and an existing timelog. The timesheet must belong to the current organization context and must be owned by the same employee as the timelog. The timesheet-timelog link is stored in the join table, while the timelog record itself remains unchanged.
  *
- * The operation is only valid when the target timesheet belongs to the current employee, is in a modifiable state, and the timelog being attached belongs to the same employee and week context. Timelogs that are already included, locked by approval, or otherwise incompatible with the timesheet state must be rejected with a validation error. If the timesheet is rejected, it may be modified again while in draft status after rejection, but approved timesheets remain locked.
+ * The association is intended for draft timesheets. The service must reject attempts to add timelogs to a timesheet that is already submitted or approved, and it must prevent duplicate links for the same timesheet and timelog pair. When the timelog is already included in the timesheet, the request should fail with a conflict-style validation error rather than creating a duplicate row.
+ *
+ * Because timesheets are employee-owned and weekly scoped, the implementation must verify that the timelog falls within the same employee and week context as the target timesheet. If the timesheet is rejected but has been returned to draft, the employee may recompose it by adding or removing timelogs again.
  *
  * @param props.connection
- * @param props.timesheetId Identifier of the timesheet that will receive the timelog, scoped to the current employee's weekly record.
- * @param props.body Identifies the timelog to add to the selected timesheet.
+ * @param props.timesheetId Identifier of the timesheet that will receive the timelog.
+ * @param props.body Identifies the existing timelog to attach to the timesheet.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the parent timesheet by timesheetId within the current organization context and current authenticated employee scope. Verify the timesheet exists, belongs to the caller, and is not approved. Then validate that the requested timelog exists, belongs to the same employee, is in the same organization, and is not already linked to the target timesheet.
+ * @x-autobe-specification Load the target timesheet by id within the active organization context and confirm it belongs to the authenticated employee unless the caller has elevated time management privileges. Reject if the timesheet does not exist or is outside the organization scope.
  *
- * Insert the link in erp_hrm_time_timesheet_timelogs only after checking that the timelog is allowed to be included in the timesheet state. Recompute the timesheet's derived total hours from the included timelogs after the association is created. If the persistence model stores the total as a derived value, update it in the same transaction so the list/detail views remain consistent.
+ * Validate that the target timesheet is in draft status. Do not allow adding timelogs to submitted or approved timesheets. If the business flow allows rejected timesheets to be returned to draft, treat them as draft for this operation only after they are reopened into draft state.
  *
- * Reject the request when the timelog is already included, when the timesheet is not owned by the current employee, when the timesheet is approved, when the timelog is locked by an approved timesheet, or when the timelog does not belong to the same employee/week context required by the business rules. Use a transaction to prevent duplicate links and race conditions. Return the updated timesheet representation or the updated parent composition view as defined by the response schema.
+ * Load the referenced timelog from the request body and verify it exists, belongs to the same organization, and is owned by the same employee as the timesheet. Also verify the timelog work_date falls within the timesheet week range when the domain rules require weekly consistency.
+ *
+ * Before insert, check the join table for an existing row with the same timesheet id and timelog id. If one exists, return a conflict-style validation error. Insert a new erp_hrm_time_timesheet_timelogs row with a generated UUID and current timestamps. No mutation is required on the timelog row itself.
+ *
+ * After insert, recompute or refresh the timesheet total-hours projection if the implementation maintains one in the service layer or derived response. The total hours should reflect the sum of all included timelogs. Return the created association or the updated timesheet view according to the project DTO conventions. Ensure authorization and org-context checks happen before any data mutation.
  * @path /erpHrmTime/member/timesheets/:timesheetId/timelogs
  * @accessor api.functional.erpHrmTime.member.timesheets.timelogs.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -55,17 +62,17 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Identifier of the timesheet that will receive the timelog, scoped to the current employee's weekly record.
+     * Identifier of the timesheet that will receive the timelog.
      */
     timesheetId: string & tags.Format<"uuid">;
 
     /**
-     * Identifies the timelog to add to the selected timesheet.
+     * Identifies the existing timelog to attach to the timesheet.
      */
     body: IErpHrmTimeTimesheetTimelog.ICreate;
   };
   export type Body = IErpHrmTimeTimesheetTimelog.ICreate;
-  export type Response = IErpHrmTimeTimesheet;
+  export type Response = IErpHrmTimeTimesheetTimelog;
 
   export const METADATA = {
     method: "POST",
@@ -82,8 +89,8 @@ export namespace create {
 
   export const path = (props: Omit<Props, "body">) =>
     `/erpHrmTime/member/timesheets/${encodeURIComponent(props.timesheetId ?? "null")}/timelogs`;
-  export const random = (): IErpHrmTimeTimesheet =>
-    typia.random<IErpHrmTimeTimesheet>();
+  export const random = (): IErpHrmTimeTimesheetTimelog =>
+    typia.random<IErpHrmTimeTimesheetTimelog>();
   export const simulate = (
     connection: IConnection,
     props: create.Props,
@@ -111,34 +118,39 @@ export namespace create {
 }
 
 /**
- * Update the timelogs included in a weekly timesheet.
+ * Update the timelog membership of a weekly timesheet.
  *
- * This operation lets the owning employee manage the timelog set for a draft or rejected timesheet, and it allows permitted organization users to adjust timesheet contents according to their role and organization context. The timesheet remains scoped to a single organization and a single employee, and the final total hours are derived from the timelogs currently linked to it.
+ * This operation lets an employee adjust which timelogs are included in a timesheet for a specific week. It supports the self-service workflow for draft and rejected timesheets, where the owner can add or remove work entries before resubmitting. The total hours for the timesheet are derived from the timelogs currently included in it, so the resulting composition directly affects the recorded summary for that week.
  *
- * The system enforces that only timelogs belonging to the same organization, employee, and target week can be included. Timelogs that are part of an approved timesheet remain locked and cannot be edited through this composition workflow. If the timesheet is not in a mutable state, the request must be rejected. If the resulting timesheet would have no timelogs, or if the selected timelogs violate ownership, organization, or approval-state rules, the operation must fail with a validation error.
+ * The timesheet must belong to the current organization context, and the caller must either own the timesheet or have a higher-privilege role that is allowed to manage timesheet contents. The system must reject changes when the timesheet is not in draft or rejected status, when the timesheet belongs to another employee, or when any selected timelog is locked because it is included in an approved timesheet. Changes must also preserve the weekly scope of the timesheet and avoid introducing timelogs from another organization or from outside the target employee's access scope.
+ *
+ * Validation errors should explain missing or invalid timelog references, attempts to modify a forbidden timesheet status, and conflicts caused by locked timelogs or organization mismatch. After a successful update, the response should return a paginated timesheet summary so clients can refresh the total hours and included-entry state immediately.
  *
  * @param props.connection
- * @param props.timesheetId Identifier of the timesheet to update within the current organization.
- * @param props.body Timelog membership changes to apply to the timesheet.
+ * @param props.timesheetId Timesheet identifier within the current organization context.
+ * @param props.body Timelog add/remove instructions for updating the contents of a weekly timesheet.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the target timesheet by id within the current organization context. Verify that the authenticated member is allowed to modify this timesheet: either the employee owner editing their own draft or rejected timesheet, or a user with the appropriate approval/manage permissions when the business workflow allows it. Reject access across organization boundaries.
+ * @x-autobe-specification Load the target timesheet by timesheetId within the authenticated member's selected organization context.
+ * Verify that the timesheet exists and that the caller is allowed to edit its composition: the timesheet must belong to the caller's own employee record for self-service, or the caller must possess elevated organization permission that explicitly allows timesheet management. Reject access if the timesheet belongs to another organization.
  *
- * Read the requested timelog membership changes from the request body and resolve the timelog ids to actual timelog rows. Ensure every timelog belongs to the same organization and, for self-service flows, to the timesheet owner. Prevent inclusion of timelogs that are locked because they are part of an approved timesheet. Prevent duplicates and ignore or reject ids that do not exist, belong to another employee, or fall outside the timesheet week.
+ * Allow modifications only when the timesheet status is draft or rejected. If the timesheet is submitted or approved, return a business rule violation. If the timesheet is rejected, keep it editable and update its composition in place.
  *
- * Apply the membership changes atomically using the join table for timesheet timelogs. After the link set is updated, recalculate total hours from the linked timelogs so the timesheet summary remains consistent. Preserve approved timesheets as immutable; if the timesheet is approved, reject any change. If the timesheet is submitted and the workflow does not allow edits, reject the request.
+ * Process the request body as a composition diff for included timelogs. For each timelog to add, verify that it belongs to the same organization, belongs to the same employee as the timesheet owner, and falls within the same weekly range as the target timesheet. Prevent adding timelogs that are already locked because they are part of an approved timesheet. For each timelog to remove, verify it is currently attached to the timesheet.
  *
- * Return the refreshed timesheet entity or updated summary so clients can display the new total hours and current status immediately. Surface validation errors for invalid state, inaccessible resources, cross-organization references, locked timelogs, and attempts to edit another employee’s timesheet.
+ * Use a transaction to synchronize the timesheet-timelog join table. Insert new links and delete removed links as needed. Recalculate total hours from the current included timelogs after the change, using the stored duration values from the linked timelogs. Preserve approved-timesheet locks on unrelated timelogs and never mutate locked timelogs through this operation.
+ *
+ * If the request produces an empty timesheet after removing entries, allow it only when the business rules permit an empty draft or rejected timesheet; otherwise reject according to the timesheet submission rules. Return a refreshed paginated timesheet summary with its updated included timelog composition and total hours. Ensure errors are specific for not found, forbidden, invalid state, invalid timelog ownership, and locked timelog conflicts.
  * @path /erpHrmTime/member/timesheets/:timesheetId/timelogs
- * @accessor api.functional.erpHrmTime.member.timesheets.timelogs.update
+ * @accessor api.functional.erpHrmTime.member.timesheets.timelogs.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function update(
+export async function index(
   connection: IConnection,
-  props: update.Props,
-): Promise<update.Response> {
+  props: index.Props,
+): Promise<index.Response> {
   return true === connection.simulate
-    ? update.simulate(connection, props)
+    ? index.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -148,27 +160,27 @@ export async function update(
           },
         },
         {
-          ...update.METADATA,
-          path: update.path(props),
+          ...index.METADATA,
+          path: index.path(props),
           status: null,
         },
         props.body,
       );
 }
-export namespace update {
+export namespace index {
   export type Props = {
     /**
-     * Identifier of the timesheet to update within the current organization.
+     * Timesheet identifier within the current organization context.
      */
     timesheetId: string & tags.Format<"uuid">;
 
     /**
-     * Timelog membership changes to apply to the timesheet.
+     * Timelog add/remove instructions for updating the contents of a weekly timesheet.
      */
-    body: IErpHrmTimeTimesheet.IUpdateTimelog;
+    body: IErpHrmTimeTimesheet.ITimelogUpdate;
   };
-  export type Body = IErpHrmTimeTimesheet.IUpdateTimelog;
-  export type Response = IErpHrmTimeTimesheet;
+  export type Body = IErpHrmTimeTimesheet.ITimelogUpdate;
+  export type Response = IPageIErpHrmTimeTimesheet.ISummary;
 
   export const METADATA = {
     method: "PATCH",
@@ -185,16 +197,16 @@ export namespace update {
 
   export const path = (props: Omit<Props, "body">) =>
     `/erpHrmTime/member/timesheets/${encodeURIComponent(props.timesheetId ?? "null")}/timelogs`;
-  export const random = (): IErpHrmTimeTimesheet =>
-    typia.random<IErpHrmTimeTimesheet>();
+  export const random = (): IPageIErpHrmTimeTimesheet.ISummary =>
+    typia.random<IPageIErpHrmTimeTimesheet.ISummary>();
   export const simulate = (
     connection: IConnection,
-    props: update.Props,
+    props: index.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: update.path(props),
+      path: index.path(props),
       contentType: "application/json",
     });
     try {
@@ -214,33 +226,22 @@ export namespace update {
 }
 
 /**
- * Retrieve a single timelog entry associated with a specific weekly timesheet.
+ * Retrieve a single timelog entry that belongs to a specific weekly timesheet.
  *
- * This operation returns the relationship record that links one timesheet to one timelog, allowing clients to inspect which work logs are included in a given weekly submission. The association belongs to exactly one employee-owned timesheet and exactly one timelog, and it is used to support weekly composition, review, and approval workflows.
+ * This operation returns the association record that links one timesheet to one timelog, allowing clients to inspect which work entry is included in the weekly submission context. The timesheet is owned by exactly one employee, and only that employee or an authorized reviewer should be able to access the record within the selected organization context.
  *
- * Access is constrained by organization context and ownership rules. Employees may read their own timesheet contents, while users with approval permission may read submitted timesheet contents for review. The implementation must verify that the requested association belongs to the specified timesheet, that the timesheet exists in the current organization scope, and that the caller is authorized to view it. If either identifier does not match the stored relationship, the request must be rejected as not found.
+ * The response is intended for timesheet drafting, review, and audit workflows. It preserves the normalized timelog storage model by exposing the join row rather than duplicating the underlying timelog data. If the timesheet or the linked timelog cannot be found, or if the association does not belong to the specified timesheet, the service should return a not-found response.
  *
  * @param props.connection
- * @param props.timesheetId Identifier of the parent timesheet in the current organization scope.
- * @param props.timesheetTimelogId Identifier of the timelog association within the parent timesheet.
+ * @param props.timesheetId Identifier of the parent timesheet.
+ * @param props.timesheetTimelogId Identifier of the timesheet-timelog association row.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the timesheet_timelogs row by id and ensure it belongs to the parent timesheet id from the route. Join the related timesheet and timelog records only as needed to validate organization scope and caller access.
+ * @x-autobe-specification Load the timesheet_timelogs row by its primary key and verify that it belongs to the provided timesheetId path parameter.
  *
- * Authorization rules:
- * - Allow the owning employee to read their own timesheet association.
- * - Allow a user with timesheet approval permission to read associations for submitted timesheets they can review.
- * - Deny access across organization boundaries.
+ * Validate organization scope through the parent timesheet and ensure the requester has permission to view the owning employee's timesheet or has approval access for submitted timesheets. Because the association row is normalized data, do not fetch unrelated timelog collections or attempt to infer the join through the timelog table alone.
  *
- * Validation rules:
- * - Return 404 if the association id does not exist or does not belong to the provided timesheet id.
- * - Return 404 if the parent timesheet does not exist in the current organization scope.
- * - Do not expose unrelated timelog data beyond the association entity unless the response schema requires it.
- *
- * Implementation notes:
- * - Use the join table as the primary source of truth for the relationship.
- * - Preserve referential integrity expectations from the schema, including cascade-linked parents.
- * - If the association row is soft deleted, treat it as not found unless the service layer has an explicit recovery path, which this endpoint does not expose.
+ * If the row does not exist, is deleted, or does not belong to the specified timesheet, return 404. If organization context is missing or the requester lacks access, return the appropriate authorization error. Do not expose cross-organization data.
  * @path /erpHrmTime/member/timesheets/:timesheetId/timelogs/:timesheetTimelogId
  * @accessor api.functional.erpHrmTime.member.timesheets.timelogs.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -269,12 +270,12 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Identifier of the parent timesheet in the current organization scope.
+     * Identifier of the parent timesheet.
      */
     timesheetId: string & tags.Format<"uuid">;
 
     /**
-     * Identifier of the timelog association within the parent timesheet.
+     * Identifier of the timesheet-timelog association row.
      */
     timesheetTimelogId: string & tags.Format<"uuid">;
   };
@@ -323,26 +324,24 @@ export namespace at {
 }
 
 /**
- * Remove a timelog from a specific timesheet.
+ * Remove a timelog from a weekly timesheet.
  *
- * This operation lets an employee adjust the contents of a weekly timesheet by removing one included timelog from the selected timesheet. It is intended for timesheet editing workflows where draft or rejected submissions may be revised before being submitted again.
+ * This operation deletes the association between a specific timesheet and a specific timelog. It does not delete the underlying timelog record; it only removes that timelog from the weekly submission container so the employee can adjust a draft timesheet before submission.
  *
- * The operation only affects the relationship between the timesheet and the timelog. It does not delete the timelog record itself, and it does not modify the underlying time entry data. The timesheet and timelog must both belong to the currently selected organization context, and the timelog must actually be included in the specified timesheet.
+ * The timesheet must belong to the current organization context and the caller must have access to the owning employee's data. The association can be removed only while the timesheet is still editable. If the timesheet has already been approved, or if business rules prevent modification of the included timelog, the request must be rejected.
  *
- * The system should reject the request when the timesheet is already approved or otherwise locked, when the timelog is not associated with the timesheet, or when the caller does not have permission to modify the timesheet. If the relationship is removed successfully, the timesheet remains available for further edits and its totals should be recalculated from the remaining included timelogs.
+ * If the requested association does not exist, or if the timelog does not belong to the given timesheet, the operation must fail with a not-found style error. The implementation should use the timesheet and timelog identifiers together to locate the join row in erp_hrm_time_timesheet_timelogs and remove that row atomically.
  *
  * @param props.connection
- * @param props.timesheetId Identifier of the timesheet that currently includes the timelog.
- * @param props.timesheetTimelogId Identifier of the timesheet-to-timelog association to remove within the specified timesheet.
+ * @param props.timesheetId The timesheet identifier within the current organization context.
+ * @param props.timesheetTimelogId The timelog association identifier within the specified timesheet.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the timesheet by timesheetId within the current organization context and verify that the caller is allowed to modify it. Allow the operation only when the timesheet is in an editable state, such as draft or rejected, and deny removal when the timesheet is approved or otherwise locked.
+ * @x-autobe-specification Load the join row from erp_hrm_time_timesheet_timelogs using the parent timesheet ID and the child timelog association ID from the path. Verify that the join row belongs to the target timesheet and that the timesheet belongs to the caller's current organization scope.
  *
- * Verify that the timelog relationship identified by timesheetTimelogId exists in erp_hrm_time_timesheet_timelogs for the given timesheet. If the link does not exist, return a not-found error. Do not delete the timelog record from erp_hrm_time_timelogs; delete only the join row that associates the timelog to the timesheet.
+ * Before deletion, check the parent timesheet status. Reject the request when the timesheet is approved, because approved timesheets lock included timelogs. Also reject when the association is missing, when the association belongs to a different timesheet, or when the caller lacks permission to edit the timesheet owner’s data.
  *
- * After deleting the join record, recompute any derived timesheet totals or cached summaries that depend on the included timelog set. If the timesheet becomes empty, keep the timesheet record unless another business rule explicitly removes it; this operation only removes one included timelog.
- *
- * Return a conflict or forbidden error when the timesheet is locked, approved, or otherwise not editable. Return not found when either the timesheet or the specific association is not visible in the current organization context. Ensure all checks are scoped to the caller's organization and employee ownership or approval permissions.
+ * Perform the deletion in a transaction. Delete only the join row; do not delete the timelog itself. Return the deleted association representation if the service pattern requires a body on DELETE, otherwise return no content. Preserve referential integrity and let cascading behavior remain limited to the association row only. Ensure the operation is idempotent from the client perspective by returning not-found on repeated removal attempts.
  * @path /erpHrmTime/member/timesheets/:timesheetId/timelogs/:timesheetTimelogId
  * @accessor api.functional.erpHrmTime.member.timesheets.timelogs.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -371,12 +370,12 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Identifier of the timesheet that currently includes the timelog.
+     * The timesheet identifier within the current organization context.
      */
     timesheetId: string & tags.Format<"uuid">;
 
     /**
-     * Identifier of the timesheet-to-timelog association to remove within the specified timesheet.
+     * The timelog association identifier within the specified timesheet.
      */
     timesheetTimelogId: string & tags.Format<"uuid">;
   };

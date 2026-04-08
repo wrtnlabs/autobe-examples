@@ -10,8 +10,10 @@ import { IHrmPlatformTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IH
 import { IHrmPlatformTimesheet } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTimesheet";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmPlatformEmployeeAtSummaryTransformer } from "./HrmPlatformEmployeeAtSummaryTransformer";
 import { HrmPlatformProjectAtSummaryTransformer } from "./HrmPlatformProjectAtSummaryTransformer";
@@ -45,6 +47,10 @@ export namespace HrmPlatformTimelogTransformer {
   ): Promise<IHrmPlatformTimelog> {
     return {
       id: input.id,
+      date: input.date.toISOString(),
+      duration_minutes: input.duration_minutes,
+      description: input.description ?? undefined,
+      billable: input.billable,
       employee: await HrmPlatformEmployeeAtSummaryTransformer.transform(
         input.employee,
       ),
@@ -53,19 +59,15 @@ export namespace HrmPlatformTimelogTransformer {
       ),
       task: input.task
         ? await HrmPlatformTaskAtSummaryTransformer.transform(input.task)
-        : null,
+        : undefined,
       timesheet: input.timesheet
         ? await HrmPlatformTimesheetAtSummaryTransformer.transform(
             input.timesheet,
           )
-        : null,
-      date: input.date.toISOString(),
-      durationMinutes: input.duration_minutes,
-      description: input.description ?? null,
-      billable: input.billable,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-    };
+        : undefined,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+    } satisfies IHrmPlatformTimelog;
   }
 }

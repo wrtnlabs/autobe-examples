@@ -1,3 +1,2 @@
-export * as sessions from "./sessions/index";
-export * as communities from "./communities/index";
-export * as announcements from "./announcements/index";
+export * as guest from "./guest/index";
+export * as posts from "./posts/index";

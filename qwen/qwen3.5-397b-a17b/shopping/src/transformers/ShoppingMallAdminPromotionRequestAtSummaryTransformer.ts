@@ -1,8 +1,9 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallAdminPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdminPromotionRequest";
-import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
 import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import { IShoppingMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallMember";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSuperAdmin";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
@@ -10,8 +11,9 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallCustomerAtSummaryTransformer } from "./ShoppingMallCustomerAtSummaryTransformer";
+import { ShoppingMallMemberAtSummaryTransformer } from "./ShoppingMallMemberAtSummaryTransformer";
 import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
+import { ShoppingMallSuperAdminAtSummaryTransformer } from "./ShoppingMallSuperAdminAtSummaryTransformer";
 
 export namespace ShoppingMallAdminPromotionRequestAtSummaryTransformer {
   export type Payload = Prisma.shopping_mall_admin_promotion_requestsGetPayload<
@@ -24,18 +26,21 @@ export namespace ShoppingMallAdminPromotionRequestAtSummaryTransformer {
         actor_type: true,
         reason: true,
         status: true,
-        rejection_reason: true,
+        rejection_note: true,
         created_at: true,
-        customerRequest: {
+        updated_at: true,
+        deleted_at: true,
+        reviewer: ShoppingMallSuperAdminAtSummaryTransformer.select(),
+        memberApplicant: {
           select: {
-            customer: ShoppingMallCustomerAtSummaryTransformer.select(),
+            member: ShoppingMallMemberAtSummaryTransformer.select(),
           },
-        } satisfies Prisma.shopping_mall_admin_promotion_request_of_customersFindManyArgs,
-        sellerRequest: {
+        },
+        sellerApplicant: {
           select: {
             seller: ShoppingMallSellerAtSummaryTransformer.select(),
           },
-        } satisfies Prisma.shopping_mall_admin_promotion_request_of_sellersFindManyArgs,
+        },
       },
     } satisfies Prisma.shopping_mall_admin_promotion_requestsFindManyArgs;
   }
@@ -44,19 +49,23 @@ export namespace ShoppingMallAdminPromotionRequestAtSummaryTransformer {
   ): Promise<IShoppingMallAdminPromotionRequest.ISummary> {
     return {
       id: input.id,
-      actor_type: typia.assert<"customer" | "seller">(input.actor_type),
-      submitter:
-        input.actor_type === "customer"
-          ? await ShoppingMallCustomerAtSummaryTransformer.transform(
-              input.customerRequest!.customer,
+      actorType: input.actor_type,
+      status: input.status,
+      reason: input.reason,
+      createdAt: input.created_at.toISOString(),
+      applicant:
+        input.actor_type === "member"
+          ? await ShoppingMallMemberAtSummaryTransformer.transform(
+              input.memberApplicant!.member,
             )
           : await ShoppingMallSellerAtSummaryTransformer.transform(
-              input.sellerRequest!.seller,
+              input.sellerApplicant!.seller,
             ),
-      reason: input.reason,
-      status: typia.assert<"pending" | "approved" | "rejected">(input.status),
-      rejection_reason: input.rejection_reason ?? null,
-      created_at: toISOStringSafe(input.created_at),
-    };
+      reviewer: input.reviewer
+        ? await ShoppingMallSuperAdminAtSummaryTransformer.transform(
+            input.reviewer,
+          )
+        : null,
+    } satisfies IShoppingMallAdminPromotionRequest.ISummary;
   }
 }

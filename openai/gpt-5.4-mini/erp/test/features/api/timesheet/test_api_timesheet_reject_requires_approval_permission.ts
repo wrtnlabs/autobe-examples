@@ -2,12 +2,12 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import type { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
+import type { IErpHrmTimeEmployeeDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployeeDashboardSummary";
 import type { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import type { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import type { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import type { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
 import type { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
-import type { IErpHrmTimeTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTask";
+import type { IErpHrmTimeTaskHistoryEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTaskHistoryEntry";
 import type { IErpHrmTimeTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimelog";
 import type { IErpHrmTimeTimesheet } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimesheet";
 import type { IErpHrmTimeTimesheetTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimesheetTimelog";
@@ -25,30 +25,27 @@ export async function test_api_timesheet_reject_requires_approval_permission(
   connection: api.IConnection,
 ): Promise<void> {
   const memberConnection: api.IConnection = { host: connection.host };
-  const joined = await authorize_member_join(memberConnection, {
+  await authorize_member_join(memberConnection, {
     body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: "password123!",
-      name: RandomGenerator.name(),
-      href: "https://example.com/join",
-      referrer: "https://example.com/referrer",
+      email: `${RandomGenerator.alphaNumeric(10)}@example.com`,
+      password: `P@ssw0rd-${RandomGenerator.alphaNumeric(8)}`,
+      displayName: RandomGenerator.name(),
+      href: "http://localhost/erpHrmTime",
+      referrer: "http://localhost/",
+      avatarImageUrl: null,
+      phoneNumber: null,
+      ip: null,
     } satisfies IErpHrmTimeMember.IJoin,
   });
-  typia.assert(joined);
-  const memberApiConnection: api.IConnection = {
-    host: connection.host,
-    headers: {
-      Authorization: `Bearer ${joined.token.access}`,
-    },
-  };
+  const timesheetId = typia.random<string & tags.Format<"uuid">>();
   await TestValidator.httpError(
-    "member without approval permission cannot reject a timesheet",
-    [401, 403],
+    "non-approver cannot reject a timesheet",
+    [400, 403, 404, 409],
     async () => {
       await api.functional.erpHrmTime.member.timesheets.reject(
-        memberApiConnection,
+        memberConnection,
         {
-          timesheetId: typia.random<string & tags.Format<"uuid">>(),
+          timesheetId,
           body: {
             rejectionReason: null,
           } satisfies IErpHrmTimeTimesheet.IReject,

@@ -1,48 +1,78 @@
-import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReview";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
-import { EcommerceMallProductAtSummaryTransformer } from "./EcommerceMallProductAtSummaryTransformer";
 
 export namespace EcommerceMallReviewAtSummaryTransformer {
-  // 1. Payload type first
-  export type Payload = Prisma.ecommerce_mall_reviewsGetPayload<
+  export type Payload = Prisma.ecommerce_mall_review_snapshotsGetPayload<
     ReturnType<typeof select>
   >;
-  // 2. select() function second
   export function select() {
     return {
       select: {
         id: true,
         rating: true,
-        content: true,
+        body: true,
         created_at: true,
-        customer: EcommerceMallCustomerAtSummaryTransformer.select(),
-        product: EcommerceMallProductAtSummaryTransformer.select(),
+        review: {
+          select: {
+            id: true,
+            rating: true,
+            content: true,
+          },
+        },
       },
-    } satisfies Prisma.ecommerce_mall_reviewsFindManyArgs;
+    };
   }
-  // 3. transform() function last
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallReview.ISummary> {
     return {
-      id: input.id,
-      rating: input.rating,
-      content: input.content ?? undefined,
-      created_at: toISOStringSafe(input.created_at),
-      customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
-        input.customer,
-      ),
-      product: await EcommerceMallProductAtSummaryTransformer.transform(
-        input.product,
-      ),
-    };
+      createdAt: toISOStringSafe(input.created_at),
+      newContent: input.review.content,
+      newRating: input.review.rating,
+      previousContent: input.body ?? null,
+      previousRating: input.rating,
+      reviewId: input.review.id,
+    } satisfies IEcommerceMallReview.ISummary;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallReviewAtSummaryTransformer {
+//       export type Payload = Prisma.ecommerce_mall_review_snapshotsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             createdAt: true,
+//             newContent: true,
+//             newRating: true,
+//             previousContent: true,
+//             previousRating: true,
+//             reviewId: true,
+//           },
+//         } satisfies Prisma.ecommerce_mall_review_snapshotsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallReview.ISummary> {
+//         return {
+//   createdAt: {string},
+//   newContent: {string | null},
+//   newRating: {integer},
+//   previousContent: {string | null},
+//   previousRating: {integer},
+//   reviewId: {string},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

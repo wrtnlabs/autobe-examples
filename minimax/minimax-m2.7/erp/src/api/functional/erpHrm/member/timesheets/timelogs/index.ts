@@ -6,55 +6,46 @@ import {
 } from "@nestia/fetcher";
 import typia, { tags } from "typia";
 
+import { IErpHrmTimelog } from "../../../../../structures/IErpHrmTimelog";
 import { IErpHrmTimesheet } from "../../../../../structures/IErpHrmTimesheet";
 import { IErpHrmTimesheetTimelog } from "../../../../../structures/IErpHrmTimesheetTimelog";
 
 /**
- * Add an existing timelog to a draft timesheet for the current week.
+ * Retrieve all timelogs associated with a specific timesheet.
  *
- * This endpoint allows employees to associate timelogs they have created with their draft weekly timesheet. The employee can only add timelogs that belong to them and that fall within the timesheet's week date range (Monday through Sunday).
+ * This endpoint returns the collection of timelog entries that are linked to the specified timesheet through the timesheet-timelog junction. The response includes complete timelog details including date, duration, project association, task (if any), description, and billable status.
  *
- * The timesheet must be in draft status to accept new timelogs. If the timesheet has already been submitted or approved, this operation returns an error. Similarly, timelogs that are already associated with another submitted or approved timesheet cannot be added.
+ * Access is determined by ownership: employees can view timelogs on their own timesheets, while users with time:view_all permission can view timelogs on any employee's timesheet in the organization. The timesheet must exist and belong to the user's organization context.
  *
- * Upon successful addition, the timesheet's total_hours is recalculated to include the newly added timelog's duration.
- *
- * **Business Rules:**
- * - The timesheet must be in draft status
- * - The timelog must belong to the same employee as the timesheet
- * - The timelog date must fall within the timesheet's week_start_date and week_end_date
- * - The timelog must not already be in another submitted or approved timesheet
- *
- * **Related Operations:**
- * - GET /timesheets/{timesheetId}/timelogs to list timelogs in a timesheet
- * - DELETE /timesheets/{timesheetId}/timelogs/{timelogId} to remove a timelog from a draft timesheet
+ * The timelogs are returned in their association order (added_at from the junction table) with the most recently added entries appearing last.
  *
  * @param props.connection
- * @param props.timesheetId Unique identifier of the timesheet to which the timelog will be added (global scope)
- * @param props.body Contains the timelog identifier to add to the timesheet
+ * @param props.timesheetId Unique identifier of the timesheet (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Extract timesheetId from path parameter
- * 2. Extract timelogId from request body
- * 3. Fetch the timesheet from erp_hrm_timesheets where id equals timesheetId
- * 4. Validate timesheet exists and belongs to the authenticated employee's organization
- * 5. Validate timesheet status equals 'draft' - reject if submitted/approved/rejected
- * 6. Fetch the timelog from erp_hrm_timelogs where id equals timelogId
- * 7. Validate timelog exists and belongs to the same employee as the timesheet (erp_hrm_employee_id must match)
- * 8. Validate timelog date falls within timesheet's week_start_date and week_end_date (inclusive)
- * 9. Check that timelog is not already associated with another submitted or approved timesheet by querying erp_hrm_timesheet_timelogs join with erp_hrm_timesheets where timelog_id matches and timesheet status is not 'draft'
- * 10. Create a new record in erp_hrm_timesheet_timelogs with the association
- * 11. Recalculate total_hours on the timesheet by summing duration_minutes from all associated timelogs
- * 12. Return the updated timesheet with its timelogs included
+ * @x-autobe-specification Query the erp_hrm_timesheets table to verify the timesheet exists and belongs to the authenticated user's organization.
+ *
+ * If the timesheet does not exist, return 404 Not Found.
+ *
+ * Query the erp_hrm_timesheet_timelogs junction table joining with erp_hrm_timelogs to retrieve all timelogs linked to this timesheet. Join with erp_hrm_projects table to include project details, and optionally join with erp_hrm_tasks table for task information.
+ *
+ * Authorization check: Allow access if (1) the timesheet's erp_hrm_employee_id matches the authenticated employee's id, OR (2) the authenticated user has time:view_all permission.
+ *
+ * If neither condition is met, return 403 Forbidden.
+ *
+ * Order results by the junction table's added_at field ascending (earliest added first).
+ *
+ * Return the collection of timelogs with their full details including project and task associations.
  * @path /erpHrm/member/timesheets/:timesheetId/timelogs
- * @accessor api.functional.erpHrm.member.timesheets.timelogs.add
+ * @accessor api.functional.erpHrm.member.timesheets.timelogs.invert
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function add(
+export async function invert(
   connection: IConnection,
-  props: add.Props,
-): Promise<add.Response> {
+  props: invert.Props,
+): Promise<invert.Response> {
   return true === connection.simulate
-    ? add.simulate(connection, props)
+    ? invert.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -64,58 +55,47 @@ export async function add(
           },
         },
         {
-          ...add.METADATA,
-          path: add.path(props),
+          ...invert.METADATA,
+          path: invert.path(props),
           status: null,
         },
-        props.body,
       );
 }
-export namespace add {
+export namespace invert {
   export type Props = {
     /**
-     * Unique identifier of the timesheet to which the timelog will be added (global scope)
+     * Unique identifier of the timesheet (global scope)
      */
     timesheetId: string & tags.Format<"uuid">;
-
-    /**
-     * Contains the timelog identifier to add to the timesheet
-     */
-    body: IErpHrmTimesheetTimelog.IAddRequest;
   };
-  export type Body = IErpHrmTimesheetTimelog.IAddRequest;
-  export type Response = IErpHrmTimesheet;
+  export type Response = IErpHrmTimelog.IInvert;
 
   export const METADATA = {
-    method: "POST",
+    method: "GET",
     path: "/erpHrm/member/timesheets/:timesheetId/timelogs",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
+    request: null,
     response: {
       type: "application/json",
       encrypted: false,
     },
   } as const;
 
-  export const path = (props: Omit<Props, "body">) =>
+  export const path = (props: Props) =>
     `/erpHrm/member/timesheets/${encodeURIComponent(props.timesheetId ?? "null")}/timelogs`;
-  export const random = (): IErpHrmTimesheet =>
-    typia.random<IErpHrmTimesheet>();
+  export const random = (): IErpHrmTimelog.IInvert =>
+    typia.random<IErpHrmTimelog.IInvert>();
   export const simulate = (
     connection: IConnection,
-    props: add.Props,
+    props: invert.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: add.path(props),
+      path: invert.path(props),
       contentType: "application/json",
     });
     try {
       assert.param("timesheetId")(() => typia.assert(props.timesheetId));
-      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {
@@ -130,46 +110,38 @@ export namespace add {
 }
 
 /**
- * Manage the timelogs associated with a draft timesheet by adding or removing entries.
+ * Add or remove timelogs from a timesheet for managing timesheet entries.
  *
- * This endpoint allows employees to add or remove timelogs from their draft timesheet before submission. Timelogs can only be added if they belong to the employee and fall within the timesheet week date range (Monday through Sunday). When a timelog is removed, the association is deleted but the original timelog record is preserved.
+ * This operation allows employees to modify which timelogs are associated with their timesheet before submission. Employees can add timelogs that fall within the timesheet's week date range and remove unwanted associations. Timelogs can only be added to or removed from timesheets with draft or rejected status. Submitted or approved timesheets are locked and cannot be modified.
  *
- * Only timesheets with draft status can be modified through this operation. Attempting to modify submitted, approved, or rejected timesheets will result in a validation error. The timesheet total_hours is recalculated based on the included timelogs after each modification.
+ * When adding timelogs, the system validates that each timelog belongs to the requesting employee and falls within the Monday through Sunday date range of the timesheet. When removing timelogs, the original timelog data is preserved in the system. The association is removed but the timelog record itself remains.
  *
- * Security: Only the employee who owns the timesheet (identified by session) can modify it. Users with time:manage permission can modify any employee's draft timesheet.
+ * Users with time:manage permission can modify timelog associations on any timesheet regardless of ownership.
  *
  * @param props.connection
- * @param props.timesheetId Unique identifier of the timesheet to modify
- * @param props.body Timelog IDs to add to or remove from the timesheet
+ * @param props.timesheetId Unique identifier of the timesheet to modify timelog associations for
+ * @param props.body Arrays of timelog IDs to add or remove from the timesheet.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Validate timesheetId is a valid UUID format
- * 2. Query erp_hrm_timesheets table to find the timesheet
- * 3. Verify the timesheet exists and is in 'draft' status
- * 4. Verify the requesting user has permission (employee owns timesheet or has time:manage permission)
- * 5. Validate all timelog IDs in addTimelogIds exist in erp_hrm_timelogs table
- * 6. Validate all timelog IDs in removeTimelogIds exist in erp_hrm_timelogs table
- * 7. For each timelog in addTimelogIds:
- *    - Verify timelog.erp_hrm_employee_id matches the timesheet's erp_hrm_employee_id
- *    - Verify timelog.date falls within timesheet's week_start_date and week_end_date
- *    - Verify timelog not already associated with this timesheet (check erp_hrm_timesheet_timelogs)
- *    - Insert new record into erp_hrm_timesheet_timelogs
- * 8. For each timelog in removeTimelogIds:
- *    - Verify timelog is currently associated with this timesheet
- *    - Delete record from erp_hrm_timesheet_timelogs
- * 9. Recalculate total_hours from all timelogs currently in timesheet
- * 10. Update timesheet's updated_at timestamp
- * 11. Return updated timesheet with associated timelogs and employee information
+ * @x-autobe-specification Implement the following logic for managing timesheet-timelog associations:
+ *
+ * 1. Validate the timesheet exists and retrieve its current status, employee ownership, and week date range.
+ * 2. Verify the requesting user has permission to modify this timesheet's timelogs (either owns it or has time:manage permission).
+ * 3. Reject the request if the timesheet status is submitted or approved (timesheets in these states are locked).
+ * 4. Process addTimelogIds: for each timelog ID, validate that the timelog belongs to the timesheet owner, falls within the week_start_date to week_end_date range, is not already associated with this timesheet, and create the association record.
+ * 5. Process removeTimelogIds: for each timelog ID, validate that the timelog is currently associated with this timesheet and delete the association record.
+ * 6. Recalculate and update the total_hours field on the timesheet after modifications.
+ * 7. Return the updated timesheet with its current timelog associations and total hours.
  * @path /erpHrm/member/timesheets/:timesheetId/timelogs
- * @accessor api.functional.erpHrm.member.timesheets.timelogs.update
+ * @accessor api.functional.erpHrm.member.timesheets.timelogs.manage
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function update(
+export async function manage(
   connection: IConnection,
-  props: update.Props,
-): Promise<update.Response> {
+  props: manage.Props,
+): Promise<manage.Response> {
   return true === connection.simulate
-    ? update.simulate(connection, props)
+    ? manage.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -179,26 +151,26 @@ export async function update(
           },
         },
         {
-          ...update.METADATA,
-          path: update.path(props),
+          ...manage.METADATA,
+          path: manage.path(props),
           status: null,
         },
         props.body,
       );
 }
-export namespace update {
+export namespace manage {
   export type Props = {
     /**
-     * Unique identifier of the timesheet to modify
+     * Unique identifier of the timesheet to modify timelog associations for
      */
     timesheetId: string & tags.Format<"uuid">;
 
     /**
-     * Timelog IDs to add to or remove from the timesheet
+     * Arrays of timelog IDs to add or remove from the timesheet.
      */
-    body: IErpHrmTimesheetTimelog.IUpdate;
+    body: IErpHrmTimesheetTimelog.IRequest;
   };
-  export type Body = IErpHrmTimesheetTimelog.IUpdate;
+  export type Body = IErpHrmTimesheetTimelog.IRequest;
   export type Response = IErpHrmTimesheet;
 
   export const METADATA = {
@@ -220,241 +192,17 @@ export namespace update {
     typia.random<IErpHrmTimesheet>();
   export const simulate = (
     connection: IConnection,
-    props: update.Props,
+    props: manage.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: update.path(props),
+      path: manage.path(props),
       contentType: "application/json",
     });
     try {
       assert.param("timesheetId")(() => typia.assert(props.timesheetId));
       assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Retrieve a specific timelog association from a timesheet.
- *
- * This endpoint retrieves a single timesheet-timelog association record that links a timelog entry to a timesheet container. The association contains metadata about when the timelog was added to the timesheet.
- *
- * The operation returns the complete timesheet-timelog association including the embedded timelog details (date, duration, description, billable flag, project association) but excludes the timesheet itself to prevent circular references.
- *
- * Security: Access requires either the time:view_all permission (managers/admins) or ownership of the parent timesheet. Users without appropriate permissions receive a 403 Forbidden response.
- *
- * Error scenarios: Returns 404 when timesheet or timesheet-timelog association does not exist. Returns 403 when user lacks permission to view the timesheet.
- *
- * @param props.connection
- * @param props.timesheetId Unique identifier of the parent timesheet
- * @param props.timesheetTimelogId Unique identifier of the timesheet-timelog junction record
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the erp_hrm_timesheet_timelogs junction table filtering by id equals timesheetTimelogId and erp_hrm_timesheet_id equals timesheetId.
- *
- * Join with erp_hrm_timesheets to verify timesheet exists and user has access permission.
- *
- * Join with erp_hrm_timelogs to include complete timelog details in response.
- *
- * Join with erp_hrm_projects to include project name in timelog details.
- *
- * Join with erp_hrm_tasks to include task title if task_id is not null.
- *
- * Return 404 if junction record not found or belongs to different timesheet.
- *
- * Return 403 if user lacks time:view_all permission and is not the timesheet owner.
- *
- * Construct IErpHrmTimesheetTimelog.IInvert response with junction record details and embedded timelog with project/task info.
- * @path /erpHrm/member/timesheets/:timesheetId/timelogs/:timesheetTimelogId
- * @accessor api.functional.erpHrm.member.timesheets.timelogs.at
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function at(
-  connection: IConnection,
-  props: at.Props,
-): Promise<at.Response> {
-  return true === connection.simulate
-    ? at.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...at.METADATA,
-          path: at.path(props),
-          status: null,
-        },
-      );
-}
-export namespace at {
-  export type Props = {
-    /**
-     * Unique identifier of the parent timesheet
-     */
-    timesheetId: string & tags.Format<"uuid">;
-
-    /**
-     * Unique identifier of the timesheet-timelog junction record
-     */
-    timesheetTimelogId: string & tags.Format<"uuid">;
-  };
-  export type Response = IErpHrmTimesheetTimelog.IInvert;
-
-  export const METADATA = {
-    method: "GET",
-    path: "/erpHrm/member/timesheets/:timesheetId/timelogs/:timesheetTimelogId",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Props) =>
-    `/erpHrm/member/timesheets/${encodeURIComponent(props.timesheetId ?? "null")}/timelogs/${encodeURIComponent(props.timesheetTimelogId ?? "null")}`;
-  export const random = (): IErpHrmTimesheetTimelog.IInvert =>
-    typia.random<IErpHrmTimesheetTimelog.IInvert>();
-  export const simulate = (
-    connection: IConnection,
-    props: at.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: at.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("timesheetId")(() => typia.assert(props.timesheetId));
-      assert.param("timesheetTimelogId")(() =>
-        typia.assert(props.timesheetTimelogId),
-      );
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Remove a timelog from a timesheet by deleting the association record.
- *
- * This endpoint removes the link between a timesheet and a specific timelog entry by deleting the corresponding record from the erp_hrm_timesheet_timelogs junction table. The actual timelog record in erp_hrm_timelogs is NOT deleted - only its association with the timesheet is removed.
- *
- * The timesheet must be in draft status for this operation to succeed. Employees can only modify their own timesheets. Users with the time:manage permission can remove timelogs from any timesheet regardless of status.
- *
- * When a timelog is removed from a timesheet, the timesheet's total_hours field is recalculated based on remaining timelogs. If the timelog being removed was the only entry, total_hours becomes zero.
- *
- * This operation is typically used during timesheet preparation when employees need to exclude incorrect time entries before submission.
- *
- * @param props.connection
- * @param props.timesheetId Unique identifier of the timesheet from which to remove the timelog.
- * @param props.timesheetTimelogId Unique identifier of the timesheet-timelog junction record to remove.
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Extract timesheetId from path parameter
- * 2. Extract timesheetTimelogId from path parameter
- * 3. Load the erp_hrm_timesheet_timelogs junction record by timesheetTimelogId
- * 4. Verify the junction record belongs to the specified timesheetId
- * 5. Load the associated erp_hrm_timesheets record
- * 6. Check authorization:
- *    a. If caller has time:manage permission → allow operation
- *    b. Otherwise → verify caller is the timesheet owner (erp_hrm_employee_id matches session employee)
- * 7. Check timesheet status:
- *    a. If timesheet status is 'draft' → allow removal
- *    b. If timesheet status is 'submitted' or 'approved' → reject unless caller has time:manage permission
- * 8. Delete the erp_hrm_timesheet_timelogs junction record
- * 9. Recalculate and update timesheet's total_hours field:
- *    a. Query remaining timelogs in this timesheet
- *    b. Sum their duration_minutes and convert to hours
- *    c. Update total_hours field
- * 10. Return 204 No Content on success
- * @path /erpHrm/member/timesheets/:timesheetId/timelogs/:timesheetTimelogId
- * @accessor api.functional.erpHrm.member.timesheets.timelogs.erase
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function erase(
-  connection: IConnection,
-  props: erase.Props,
-): Promise<void> {
-  return true === connection.simulate
-    ? erase.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...erase.METADATA,
-          path: erase.path(props),
-          status: null,
-        },
-      );
-}
-export namespace erase {
-  export type Props = {
-    /**
-     * Unique identifier of the timesheet from which to remove the timelog.
-     */
-    timesheetId: string & tags.Format<"uuid">;
-
-    /**
-     * Unique identifier of the timesheet-timelog junction record to remove.
-     */
-    timesheetTimelogId: string & tags.Format<"uuid">;
-  };
-
-  export const METADATA = {
-    method: "DELETE",
-    path: "/erpHrm/member/timesheets/:timesheetId/timelogs/:timesheetTimelogId",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Props) =>
-    `/erpHrm/member/timesheets/${encodeURIComponent(props.timesheetId ?? "null")}/timelogs/${encodeURIComponent(props.timesheetTimelogId ?? "null")}`;
-  export const random = (): void => typia.random<void>();
-  export const simulate = (
-    connection: IConnection,
-    props: erase.Props,
-  ): void => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: erase.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("timesheetId")(() => typia.assert(props.timesheetId));
-      assert.param("timesheetTimelogId")(() =>
-        typia.assert(props.timesheetTimelogId),
-      );
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

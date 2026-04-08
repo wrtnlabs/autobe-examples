@@ -1,7 +1,7 @@
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
-import { IEcommerceMallShipmentDelivery } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentDelivery";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallShipment";
@@ -22,68 +22,75 @@ export async function patchEcommerceMallCustomerShipments(props: {
   customer: CustomerPayload;
   body: IEcommerceMallShipment.IRequest;
 }): Promise<IPageIEcommerceMallShipment.ISummary> {
-  const body = props.body;
-  const page = body.page ?? 1;
-  const limit = body.limit ?? 20;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where clause - customer can only see shipments for their orders
-  const whereInput: Prisma.ecommerce_mall_shipmentsWhereInput = {
+  const orderBy: Prisma.ecommerce_mall_shipmentsOrderByWithRelationInput =
+    props.body.sort === "carrier_name"
+      ? { carrier_name: props.body.order ?? "desc" }
+      : props.body.sort === "created_at"
+        ? { created_at: props.body.order ?? "desc" }
+        : { shipped_at: props.body.order ?? "desc" };
+  const where: Prisma.ecommerce_mall_shipmentsWhereInput = {
     deleted_at: null,
-    // Customer owns the shipments via order relationship
     order: {
       customer_id: props.customer.id,
     },
-    // Apply filters from request body
-    ...(body.orderId && { order_id: body.orderId }),
-    ...(body.sellerId && { seller_id: body.sellerId }),
-    ...(body.carrierName && {
-      carrier_name: { contains: body.carrierName, mode: "insensitive" },
+    ...(props.body.orderId !== null && { order_id: props.body.orderId }),
+    ...(props.body.sellerId !== null && { seller_id: props.body.sellerId }),
+    ...(props.body.carrierName !== null && {
+      carrier_name: { contains: props.body.carrierName, mode: "insensitive" },
     }),
-    ...(body.trackingNumber && {
-      tracking_number: { contains: body.trackingNumber, mode: "insensitive" },
+    ...(props.body.status !== null && {
+      delivery:
+        props.body.status === "delivered" ? { isNot: null } : { is: null },
     }),
-    ...(body.shippedAtFrom || body.shippedAtTo
-      ? {
-          shipped_at: {
-            ...(body.shippedAtFrom && { gte: new Date(body.shippedAtFrom) }),
-            ...(body.shippedAtTo && { lte: new Date(body.shippedAtTo) }),
+    ...(props.body.shippedAtFrom !== null &&
+      props.body.shippedAtTo !== null && {
+        shipped_at: {
+          gte: props.body.shippedAtFrom,
+          lte: props.body.shippedAtTo,
+        } satisfies Prisma.DateTimeFilter as Prisma.DateTimeFilter,
+      }),
+    ...(props.body.shippedAtFrom !== null &&
+      props.body.shippedAtTo === null && {
+        shipped_at: {
+          gte: props.body.shippedAtFrom,
+        } satisfies Prisma.DateTimeFilter as Prisma.DateTimeFilter,
+      }),
+    ...(props.body.shippedAtFrom === null &&
+      props.body.shippedAtTo !== null && {
+        shipped_at: {
+          lte: props.body.shippedAtTo,
+        } satisfies Prisma.DateTimeFilter as Prisma.DateTimeFilter,
+      }),
+    ...(props.body.search !== null && {
+      OR: [
+        {
+          carrier_name: {
+            contains: props.body.search,
+            mode: "insensitive",
           },
-        }
-      : {}),
-  } satisfies Prisma.ecommerce_mall_shipmentsWhereInput;
-  // Build orderBy from sort array
-  const orderByInput: Prisma.ecommerce_mall_shipmentsOrderByWithRelationInput[] =
-    (() => {
-      if (!body.sort || body.sort.length === 0) {
-        return [{ shipped_at: "desc" }];
-      }
-      return body.sort.map((sortField) => {
-        const direction = sortField.startsWith("-") ? "desc" : "asc";
-        const field = sortField.replace(/^[+-]/, "");
-        const fieldMapping: Record<string, string> = {
-          shippedAt: "shipped_at",
-          createdAt: "created_at",
-          updatedAt: "updated_at",
-        };
-        const dbField = fieldMapping[field] || field;
-        return {
-          [dbField]: direction,
-        } as Prisma.ecommerce_mall_shipmentsOrderByWithRelationInput;
-      });
-    })();
-  // Fetch paginated data
+        },
+        {
+          tracking_number: {
+            contains: props.body.search,
+            mode: "insensitive",
+          },
+        },
+      ],
+    }),
+  };
   const data = await MyGlobal.prisma.ecommerce_mall_shipments.findMany({
-    where: whereInput,
+    where,
     skip,
     take: limit,
-    orderBy: orderByInput,
+    orderBy,
     ...EcommerceMallShipmentAtSummaryTransformer.select(),
   });
-  // Get total count
   const total = await MyGlobal.prisma.ecommerce_mall_shipments.count({
-    where: whereInput,
+    where,
   });
-  // Transform and return paginated response
   return {
     data: await ArrayUtil.asyncMap(
       data,

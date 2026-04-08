@@ -1,74 +1,108 @@
-import { TypedBody, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia from "typia";
 
 import { IEcommerceMallSellerRegistration } from "../../../../api/structures/IEcommerceMallSellerRegistration";
+import { IPageIEcommerceMallSellerRegistration } from "../../../../api/structures/IPageIEcommerceMallSellerRegistration";
 import { SellerAuth } from "../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../decorators/payload/SellerPayload";
-import { postEcommerceMallSellerRegistrations } from "../../../../providers/postEcommerceMallSellerRegistrations";
+import { getEcommerceMallSellerRegistrationsRegistrationId } from "../../../../providers/getEcommerceMallSellerRegistrationsRegistrationId";
+import { patchEcommerceMallSellerRegistrations } from "../../../../providers/patchEcommerceMallSellerRegistrations";
 
 @Controller("/ecommerceMall/seller/registrations")
 export class EcommercemallSellerRegistrationsController {
   /**
-   * Submit a seller registration request to become a platform seller.
+   * Retrieves a paginated, filtered list of seller registration applications across the platform.
    *
-   * This endpoint initiates the seller approval workflow by creating a new registration record with a 'pending' status. The request requires the user's authentication credentials (email and password) and business identification information.
+   * This endpoint serves dual purposes. Administrators can search through all registrations to identify pending approvals requiring review. Sellers can view their own registration history, tracking transitions from initial submission through approval or rejection states.
    *
-   * The registration submission triggers duplicate detection rules that check for:
-   * - Matching tax identification numbers (rejected if matches existing active seller)
-   * - Matching business registration numbers (flagged if pending application exists)
-   * - Business name and address combinations with 90%+ similarity (flagged for manual review)
+   * The search functionality supports sophisticated filtering by registration status (pending, approved, rejected), submission date ranges, and reviewer assignments. Pagination ensures efficient handling of potentially large registration datasets.
    *
-   * Upon successful submission, the registration enters the review queue accessible to platform administrators. The seller account's approval_status field is updated to reflect the pending state. While pending or if rejected, the seller is blocked from performing any selling operations including creating products, managing inventory, or receiving orders.
+   * Access control is enforced through underlying permission layers:
+   * - Administrators can view all registrations
+   * - Sellers can only access their own registration records
    *
-   * Each submission creates a registration snapshot for audit trail purposes. Rejected applicants can view the rejection reason and submit a new registration request after addressing the cited issues.
-   *
-   * Security: Requires authentication. Only customers or non-sellers can submit. Existing approved sellers cannot create duplicate registrations.
+   * Response includes summary information optimized for list displays, with efficient truncation of potentially nested historical data.
    *
    * @param connection
-   * @param body Seller registration creation details including authentication credentials and business identification information
+   * @param body Search and filter criteria for registration queries
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Create a new seller registration record in the ecommerce_mall_seller_registrations table.
+   * @x-autobe-specification Query the ecommerce_mall_seller_registrations table with advanced filtering capabilities. Implement robust permission checks to restrict results based on the requesting actor's role:
+   * - Administrators receive a comprehensive view of all registration records
+   * - Sellers are limited to their own registration history entries
    *
-   * 1. Authentication validation: Verify the requesting user is authenticated (as customer or seller with pending/rejected status).
+   * Support sophisticated filtering mechanisms:
+   * - Status filtering: capture pending, approved, and rejected registrations
+   * - Temporal filtering: query by submission date, review date, or modification timestamps
+   * - Search by seller identifier or reviewer identifier
    *
-   * 2. Duplicate prevention checks (per section 461):
-   *    - Check tax identification number against existing active sellers - reject if duplicate
-   *    - Check business registration number against pending registrations - notify if duplicate
-   *    - Check business name + address similarity (90% threshold) - flag for manual review
+   * Implement pagination using cursor-based strategies to handle large dataset volumes efficiently. Default result limit is 20 registrations per request, with flexible page size configuration available.
    *
-   * 3. Create registration record:
-   *    - Generate UUID for id
-   *    - Set seller_id from authenticated user's seller record or create new seller entry
-   *    - Initialize status as 'pending'
-   *    - Set reviewer_id as null (awaiting assignment)
-   *    - Record submission timestamp in created_at and updated_at
-   *    - Store rejection_reason as null initially
+   * Include computed fields for enhanced usability:
+   * - Calculated registration duration
+   * - Associated seller profile metadata
+   * - Last action timestamp
    *
-   * 4. Create audit snapshot in ecommerce_mall_seller_registration_snapshots for the initial state.
-   *
-   * 5. Update seller's approval_status to 'pending' in ecommerce_mall_sellers if not already set.
-   *
-   * Transaction scope: Wrap in transaction to ensure registration and snapshot are created atomically.
-   *
-   * Error scenarios:
-   * - Duplicate tax ID: Return 409 with suggestion for account recovery
-   * - Duplicate pending application: Return 409 with existing reference number
-   * - Missing required fields: Return 400 validation error
+   * Ordering defaults to reverse chronological submission sequence, prioritizing newest registrations for administrative review workflows.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post()
-  public async create(
+  @TypedRoute.Patch()
+  public async index(
     @SellerAuth()
     seller: SellerPayload,
     @TypedBody()
-    body: IEcommerceMallSellerRegistration.ICreate,
-  ): Promise<IEcommerceMallSellerRegistration> {
+    body: IEcommerceMallSellerRegistration.IRequest,
+  ): Promise<IPageIEcommerceMallSellerRegistration.ISummary> {
     try {
-      return await postEcommerceMallSellerRegistrations({
+      return await patchEcommerceMallSellerRegistrations({
         seller,
         body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve detailed information about a specific seller registration application.
+   *
+   * This endpoint allows administrators to view the complete details of a seller registration submission, including the applicant's information, current approval status, submission timestamp, and if previously reviewed, the reviewer details and rejection reason.
+   *
+   * Registrations flow through three statuses: 'pending' (awaiting review), 'approved' (seller can now list products), and 'rejected' (administrator denied with provided reason). Rejected sellers may submit new registration requests after addressing the cited issues.
+   *
+   * The response includes the seller entity reference, reviewer information (if reviewed), status, rejection reason (if applicable), and timestamp fields tracking submission and review times.
+   *
+   * @param connection
+   * @param registrationId The unique identifier of the seller registration (UUID format)
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification Query the ecommerce_mall_seller_registrations table by primary key (id).
+   *
+   * Join with ecommerce_mall_sellers to include applicant seller information.
+   * Join with ecommerce_mall_admins to include reviewer information if reviewer_id is present.
+   *
+   * Validate that the registration ID exists; return 404 if not found.
+   *
+   * Return all fields: id, seller_id, reviewer_id, status, rejection_reason, created_at, updated_at, reviewed_at.
+   * Include the related seller entity (seller_id → ecommerce_mall_sellers).
+   * Include the related reviewer admin entity if reviewer_id is not null.
+   *
+   * Authorization: Restricted to administrator and superAdministrator actors only.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":registrationId")
+  public async at(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("registrationId")
+    registrationId: string,
+  ): Promise<IEcommerceMallSellerRegistration> {
+    try {
+      return await getEcommerceMallSellerRegistrationsRegistrationId({
+        seller,
+        registrationId,
       });
     } catch (error) {
       console.log(error);

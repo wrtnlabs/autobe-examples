@@ -10,23 +10,20 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallReviewCollector {
   export async function collect(props: {
     body: IShoppingMallReview.ICreate;
-    customer: IEntity;
+    shoppingMallMembers: IEntity;
   }) {
     const id: string = v4();
     return {
-      // Scalar fields
       id,
       rating: props.body.rating,
       content: props.body.content ?? null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      // BelongsTo relations
-      customer: { connect: { id: props.customer.id } },
-      product: { connect: { id: props.body.product_id } },
-      order: { connect: { id: props.body.order_id } },
-      // HasMany relations (reverse relation, cannot create)
-      // snapshots omitted
+      member: { connect: { id: props.shoppingMallMembers.id } },
+      product: { connect: { id: props.body.shopping_mall_product_id } },
+      order: { connect: { id: props.body.shopping_mall_order_id } },
+      orderItem: { connect: { id: props.body.shopping_mall_order_item_id } },
     } satisfies Prisma.shopping_mall_reviewsCreateInput;
   }
 }

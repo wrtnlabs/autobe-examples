@@ -1,13 +1,13 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
-import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmPlatformDepartmentAtSummaryTransformer } from "./HrmPlatformDepartmentAtSummaryTransformer";
-import { HrmPlatformOrganizationAtSummaryTransformer } from "./HrmPlatformOrganizationAtSummaryTransformer";
 
 export namespace HrmPlatformDepartmentTransformer {
   export type Payload = Prisma.hrm_platform_departmentsGetPayload<
@@ -22,8 +22,27 @@ export namespace HrmPlatformDepartmentTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        organization: HrmPlatformOrganizationAtSummaryTransformer.select(),
+        organization: {
+          select: {
+            id: true,
+          },
+        },
         parentDepartment: HrmPlatformDepartmentAtSummaryTransformer.select(),
+        childDepartments: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_departmentsFindManyArgs,
+        employees: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_employeesFindManyArgs,
+        employeeInvitations: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_employee_invitationsFindManyArgs,
       },
     } satisfies Prisma.hrm_platform_departmentsFindManyArgs;
   }
@@ -32,19 +51,16 @@ export namespace HrmPlatformDepartmentTransformer {
   ): Promise<IHrmPlatformDepartment> {
     return {
       id: input.id,
-      organization: await HrmPlatformOrganizationAtSummaryTransformer.transform(
-        input.organization,
-      ),
+      name: input.name,
+      description: input.description ?? null,
       parentDepartment: input.parentDepartment
         ? await HrmPlatformDepartmentAtSummaryTransformer.transform(
             input.parentDepartment,
           )
         : null,
-      name: input.name,
-      description: input.description,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
-    };
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
+    } satisfies IHrmPlatformDepartment;
   }
 }

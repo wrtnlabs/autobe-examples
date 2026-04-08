@@ -2,61 +2,60 @@ import { TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IPageIEcommerceMallProductSnapshot } from "../../../../../api/structures/IPageIEcommerceMallProductSnapshot";
+import { IEcommerceMallProductSnapshot } from "../../../../../api/structures/IEcommerceMallProductSnapshot";
 import { AdminAuth } from "../../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
-import { patchEcommerceMallAdminProductsProductIdSnapshots } from "../../../../../providers/patchEcommerceMallAdminProductsProductIdSnapshots";
+import { getEcommerceMallAdminProductsProductIdSnapshotsSnapshotId } from "../../../../../providers/getEcommerceMallAdminProductsProductIdSnapshotsSnapshotId";
 
-@Controller("/ecommerceMall/admin/products/:productId/snapshots")
+@Controller("/ecommerceMall/admin/products/:productId/snapshots/:snapshotId")
 export class EcommercemallAdminProductsSnapshotsController {
   /**
-   * Retrieve a paginated list of product snapshots for a specific product.
+   * Retrieve a specific product snapshot by its unique identifier.
    *
-   * This endpoint provides access to the historical product state records captured during product edits and order placements. Each snapshot preserves the complete product data including name, description, base price, and category name at the time of capture.
+   * This endpoint returns the complete state of a product at the time the snapshot was created, including the product name, description, base price, category name, and all associated variants with their option values and images.
    *
-   * Access Control:
-   * - Sellers can only view snapshots of their own products. The system validates that the authenticated seller owns the product before returning snapshot data.
-   * - Administrators (admin and superAdmin roles) can view snapshots of any product on the platform for oversight and dispute resolution purposes.
-   * - Unauthorized access attempts return 403 Forbidden.
+   * Access control: Only administrators can access this endpoint. Administrators can view any product snapshot on the platform for oversight and dispute resolution purposes. The system validates viewer authorization before displaying snapshot data.
    *
-   * The response includes pagination metadata with total count, page size, and current page information. Snapshots are returned in reverse chronological order by default, showing the most recent snapshots first.
+   * The snapshot is immutable once created and serves as the authoritative record of product state at that point in time. This is particularly useful when administrators need to verify what was advertised when a customer placed an order, or for policy enforcement investigations.
    *
-   * Related Operations:
-   * - GET /products/{productId}/snapshots/{snapshotId} - Retrieve a specific product snapshot by ID
-   * - GET /seller/products/{productId}/snapshots - Alternative endpoint for sellers to view their own product snapshots
-   * - GET /admin/products/{productId}/snapshots - Admin endpoint for viewing any product snapshot
+   * If the requested snapshot does not exist or the productId does not match the snapshot's product reference, a 404 Not Found response is returned.
    *
    * @param connection
-   * @param productId Unique identifier of the product whose snapshots to retrieve
+   * @param productId Unique identifier of the product (UUID)
+   * @param snapshotId Unique identifier of the product snapshot (UUID)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query ecommerce_mall_product_snapshots table filtering by ecommerce_mall_product_id matching the path parameter. Join with ecommerce_mall_products table to validate product existence. Join with ecommerce_mall_sellers table to verify seller ownership for authorization.
+   * @x-autobe-specification Query ecommerce_mall_product_snapshots table using snapshotId as the primary key.
    *
-   * Authorization Logic:
-   * 1. Extract authenticated actor from request context
-   * 2. If actor is seller: verify the product belongs to the seller (join products table)
-   * 3. If actor is admin or superAdmin: allow unrestricted access
-   * 4. If actor is customer or guest: return 403 Forbidden
+   * Join with ecommerce_mall_product_snapshot_variants using snapshot_id foreign key to retrieve all variant records.
    *
-   * Pagination:
-   * - Apply default pagination (page=1, limit=20)
-   * - Order results by created_at DESC (most recent first)
-   * - Return total count for pagination metadata
+   * For each variant, join with ecommerce_mall_product_snapshot_variant_option_values using variant_id to retrieve option key-value pairs.
    *
-   * Return IPageIEcommerceMallProductSnapshot.ISummary containing snapshot summaries with id, name, description, base_price, category_name, and created_at.
+   * Join with ecommerce_mall_product_snapshot_images using snapshot_id to retrieve all image records.
+   *
+   * Authorization check: If requester is a seller, verify that ecommerce_mall_seller_id matches the authenticated seller's ID. If requester is an admin, allow access to any snapshot. Return 403 Forbidden for unauthorized access.
+   *
+   * Return 404 Not Found if snapshot does not exist or if productId does not match the snapshot's ecommerce_mall_product_id.
+   *
+   * Sort variant option values by created_at to maintain consistent ordering.
+   *
+   * Sort images by display_order for proper presentation.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
-  public async index(
+  @TypedRoute.Get()
+  public async at(
     @AdminAuth()
     admin: AdminPayload,
     @TypedParam("productId")
     productId: string & tags.Format<"uuid">,
-  ): Promise<IPageIEcommerceMallProductSnapshot.ISummary> {
+    @TypedParam("snapshotId")
+    snapshotId: string & tags.Format<"uuid">,
+  ): Promise<IEcommerceMallProductSnapshot> {
     try {
-      return await patchEcommerceMallAdminProductsProductIdSnapshots({
+      return await getEcommerceMallAdminProductsProductIdSnapshotsSnapshotId({
         admin,
         productId,
+        snapshotId,
       });
     } catch (error) {
       console.log(error);

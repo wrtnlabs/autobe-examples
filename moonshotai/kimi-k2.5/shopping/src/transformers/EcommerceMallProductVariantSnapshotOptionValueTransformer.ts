@@ -2,8 +2,10 @@ import { IEcommerceMallProductVariantSnapshotOptionValue } from "@ORGANIZATION/P
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallProductVariantSnapshotOptionValueTransformer {
@@ -15,10 +17,10 @@ export namespace EcommerceMallProductVariantSnapshotOptionValueTransformer {
     return {
       select: {
         id: true,
+        ecommerce_mall_product_variant_snapshot_id: true,
         option_name: true,
         option_value: true,
         created_at: true,
-        // productVariantSnapshot not selected - not needed for this DTO
       },
     } satisfies Prisma.ecommerce_mall_product_variant_snapshot_option_valuesFindManyArgs;
   }
@@ -27,9 +29,11 @@ export namespace EcommerceMallProductVariantSnapshotOptionValueTransformer {
   ): Promise<IEcommerceMallProductVariantSnapshotOptionValue> {
     return {
       id: input.id,
-      optionName: input.option_name,
-      optionValue: input.option_value,
-      createdAt: input.created_at.toISOString(),
+      ecommerce_mall_product_variant_snapshot_id:
+        input.ecommerce_mall_product_variant_snapshot_id,
+      option_name: input.option_name,
+      option_value: input.option_value,
+      created_at: input.created_at.toISOString(),
     };
   }
 }

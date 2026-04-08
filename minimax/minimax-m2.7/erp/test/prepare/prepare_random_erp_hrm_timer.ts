@@ -9,9 +9,14 @@ export function prepare_random_erp_hrm_timer(
   input?: DeepPartial<IErpHrmTimer.ICreate>,
 ): IErpHrmTimer.ICreate {
   return {
-    description: input?.description ?? null,
-    erp_hrm_project_id:
-      input?.erp_hrm_project_id ?? typia.random<string & tags.Format<"uuid">>(),
-    erp_hrm_task_id: input?.erp_hrm_task_id ?? null,
+    description:
+      input?.description ?? RandomGenerator.content({ paragraphs: 1 }),
+    erpHrmProjectId:
+      input?.erpHrmProjectId ?? typia.random<string & tags.Format<"uuid">>(),
+    erpHrmTaskId:
+      input?.erpHrmTaskId ??
+      (Math.random() > 0.5
+        ? typia.random<string & tags.Format<"uuid">>()
+        : null),
   };
 }

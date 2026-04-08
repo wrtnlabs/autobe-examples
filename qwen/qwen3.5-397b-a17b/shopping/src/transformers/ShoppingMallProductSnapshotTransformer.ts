@@ -2,6 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSnapshot";
+import { IShoppingMallProductSnapshotImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSnapshotImage";
+import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import { IShoppingMallProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantSnapshot";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
@@ -10,6 +14,9 @@ import typia, { tags } from "typia";
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallCategoryAtSummaryTransformer } from "./ShoppingMallCategoryAtSummaryTransformer";
+import { ShoppingMallProductAtSummaryTransformer } from "./ShoppingMallProductAtSummaryTransformer";
+import { ShoppingMallProductSnapshotImageTransformer } from "./ShoppingMallProductSnapshotImageTransformer";
+import { ShoppingMallProductVariantSnapshotAtSummaryTransformer } from "./ShoppingMallProductVariantSnapshotAtSummaryTransformer";
 
 export namespace ShoppingMallProductSnapshotTransformer {
   export type Payload = Prisma.shopping_mall_product_snapshotsGetPayload<
@@ -23,52 +30,37 @@ export namespace ShoppingMallProductSnapshotTransformer {
         description: true,
         base_price: true,
         created_at: true,
-        product: {
-          select: {
-            base_price: true,
-            variants: {
-              select: {
-                price_override: true,
-              },
-            } satisfies Prisma.shopping_mall_product_variantsFindManyArgs,
-          },
-        },
+        product: ShoppingMallProductAtSummaryTransformer.select(),
         category: ShoppingMallCategoryAtSummaryTransformer.select(),
-        snapshotVariants: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.shopping_mall_product_snapshot_variantsFindManyArgs,
+        productVariantSnapshots:
+          ShoppingMallProductVariantSnapshotAtSummaryTransformer.select(),
+        images: ShoppingMallProductSnapshotImageTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_product_snapshotsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallProductSnapshot> {
-    const variantPrices = input.product.variants
-      .map((v) => v.price_override)
-      .filter((p): p is number => p !== null);
-    const minPrice =
-      variantPrices.length > 0
-        ? Math.min(...variantPrices)
-        : input.product.base_price;
-    const maxPrice =
-      variantPrices.length > 0
-        ? Math.max(...variantPrices)
-        : input.product.base_price;
     return {
       id: input.id,
+      product: await ShoppingMallProductAtSummaryTransformer.transform(
+        input.product,
+      ),
+      category: await ShoppingMallCategoryAtSummaryTransformer.transform(
+        input.category,
+      ),
       name: input.name,
       description: input.description,
       base_price: input.base_price,
       created_at: input.created_at.toISOString(),
-      product: {
-        min: minPrice,
-        max: maxPrice,
-      } satisfies IShoppingMallProduct.ISummary,
-      category: await ShoppingMallCategoryAtSummaryTransformer.transform(
-        input.category,
+      productVariantSnapshots: await ArrayUtil.asyncMap(
+        input.productVariantSnapshots,
+        ShoppingMallProductVariantSnapshotAtSummaryTransformer.transform,
       ),
-    };
+      images: await ArrayUtil.asyncMap(
+        input.images,
+        ShoppingMallProductSnapshotImageTransformer.transform,
+      ),
+    } satisfies IShoppingMallProductSnapshot;
   }
 }

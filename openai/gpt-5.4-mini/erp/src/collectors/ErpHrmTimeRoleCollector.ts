@@ -23,9 +23,7 @@ export namespace ErpHrmTimeRoleCollector {
       created_at: now,
       updated_at: now,
       deleted_at: null,
-      organization: {
-        connect: { id: props.organization.id },
-      },
+      organization: { connect: { id: props.organization.id } },
     } satisfies Prisma.erp_hrm_time_rolesCreateInput;
   }
 }

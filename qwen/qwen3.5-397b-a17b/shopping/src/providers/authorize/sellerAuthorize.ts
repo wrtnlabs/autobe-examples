@@ -9,7 +9,7 @@ export async function sellerAuthorize(request: {
   const payload: SellerPayload = jwtAuthorize({ request }) as SellerPayload;
 
   if (payload.type !== "seller") {
-    throw new ForbiddenException(`You're not ${payload.type}`);
+    throw new ForbiddenException("You're not seller");
   }
 
   const seller = await MyGlobal.prisma.shopping_mall_sellers.findFirst({
@@ -21,6 +21,20 @@ export async function sellerAuthorize(request: {
 
   if (seller === null) {
     throw new ForbiddenException("You're not enrolled");
+  }
+
+  const session = await MyGlobal.prisma.shopping_mall_seller_sessions.findFirst({
+    where: {
+      shopping_mall_seller_id: payload.id,
+      id: payload.session_id,
+      expired_at: {
+        gt: new Date(),
+      },
+    },
+  });
+
+  if (session === null) {
+    throw new ForbiddenException("Session expired or invalid");
   }
 
   return payload;

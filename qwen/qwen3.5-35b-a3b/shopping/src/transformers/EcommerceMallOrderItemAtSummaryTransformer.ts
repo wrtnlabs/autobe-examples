@@ -1,5 +1,3 @@
-import { IEcommerceMallAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAddress";
-import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -9,7 +7,6 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallOrderAtSummaryTransformer } from "./EcommerceMallOrderAtSummaryTransformer";
 
 export namespace EcommerceMallOrderItemAtSummaryTransformer {
   export type Payload = Prisma.ecommerce_mall_order_itemsGetPayload<
@@ -19,80 +16,92 @@ export namespace EcommerceMallOrderItemAtSummaryTransformer {
     return {
       select: {
         id: true,
-        product_name: true,
-        product_sku: true,
-        variant_name: true,
         quantity: true,
         unit_price: true,
-        total_price: true,
+        subtotal: true,
+        status: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        order: EcommerceMallOrderAtSummaryTransformer.select(),
-        productSnapshot: true,
-        variantSnapshot: true,
-        sellerSnapshot: true,
-        snapshots: true,
-        shipmentItems: true,
-        cancellationRequests: true,
-        refundRequests: true,
+        order: {
+          select: {
+            order_number: true,
+          },
+        },
+        productVariant: {
+          select: {
+            sku_code: true,
+            price: true,
+          },
+        },
+        seller: {
+          select: {
+            display_name: true,
+          },
+        },
       },
     } satisfies Prisma.ecommerce_mall_order_itemsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallOrderItem.ISummary> {
-    const cancellationRequests = input.cancellationRequests || [];
-    const refundRequests = input.refundRequests || [];
-    // Compute status based on cancellation and refund states
-    let status:
-      | "paid"
-      | "shipped"
-      | "delivered"
-      | "cancelled"
-      | "refunded"
-      | "partially_completed";
-    const hasAnyCancellation = cancellationRequests.length > 0;
-    const allCancelled =
-      hasAnyCancellation &&
-      cancellationRequests.every((r) => r.status === "cancelled");
-    const hasAnyRefund = refundRequests.length > 0;
-    const allRefunded =
-      hasAnyRefund && refundRequests.every((r) => r.status === "approved");
-    if (allCancelled) {
-      status = "cancelled";
-    } else if (allRefunded) {
-      status = "refunded";
-    } else if (hasAnyCancellation && !allCancelled) {
-      status = "partially_completed";
-    } else if (hasAnyRefund && !allRefunded) {
-      status = "partially_completed";
-    } else {
-      // Check if order is delivered or shipped based on parent order status
-      const orderStatus = input.order.status;
-      if (orderStatus === "delivered") {
-        status = "delivered";
-      } else if (orderStatus === "shipped") {
-        status = "shipped";
-      } else {
-        status = "paid";
-      }
-    }
     return {
       id: input.id,
-      productName: input.product_name,
-      productSku: input.product_sku,
-      variantName: input.variant_name,
+      order_number: input.order.order_number,
+      seller_display_name: input.seller.display_name,
+      product_variant_name: input.productVariant.sku_code,
+      product_variant_sku_code: input.productVariant.sku_code,
+      product_variant_price: Number(input.productVariant.price),
       quantity: input.quantity,
-      unitPrice: Number(input.unit_price),
-      totalPrice: Number(input.total_price),
-      status,
-      order: await EcommerceMallOrderAtSummaryTransformer.transform(
-        input.order,
-      ),
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-    };
+      unit_price: Number(input.unit_price),
+      subtotal: Number(input.subtotal),
+      status:
+        input.status as any satisfies IEcommerceMallOrderItem.ISummary["status"],
+      created_at: toISOStringSafe(input.created_at),
+    } satisfies IEcommerceMallOrderItem.ISummary;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallOrderItemAtSummaryTransformer {
+//       export type Payload = Prisma.ecommerce_mall_order_itemsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             order_number: true,
+//             seller_display_name: true,
+//             product_variant_name: true,
+//             product_variant_sku_code: true,
+//             product_variant_price: true,
+//             quantity: true,
+//             unit_price: true,
+//             subtotal: true,
+//             status: true,
+//             created_at: true,
+//           },
+//         } satisfies Prisma.ecommerce_mall_order_itemsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallOrderItem.ISummary> {
+//         return {
+//   id: {string},
+//   order_number: {string},
+//   seller_display_name: {string},
+//   product_variant_name: {string},
+//   product_variant_sku_code: {string},
+//   product_variant_price: {number},
+//   quantity: {integer},
+//   unit_price: {number},
+//   subtotal: {number},
+//   status: {"paid" | "shipped" | "delivered" | "cancelled" | "refunded"},
+//   created_at: {string},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

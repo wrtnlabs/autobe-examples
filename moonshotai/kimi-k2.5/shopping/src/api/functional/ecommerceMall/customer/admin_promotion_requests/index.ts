@@ -4,31 +4,65 @@ import {
   NestiaSimulator,
   PlainFetcher,
 } from "@nestia/fetcher";
-import typia from "typia";
+import typia, { tags } from "typia";
 
 import { IEcommerceMallAdminPromotionRequest } from "../../../../structures/IEcommerceMallAdminPromotionRequest";
 import { IPageIEcommerceMallAdminPromotionRequest } from "../../../../structures/IPageIEcommerceMallAdminPromotionRequest";
 
-export * as snapshots from "./snapshots/index";
-
 /**
- * Creates a new administrator promotion request submitted by authenticated users (customers or sellers) seeking elevated privileges to become administrators.
+ * Submit a request to become an administrator.
  *
- * This endpoint allows registered platform users to petition for administrative access. Users must provide a compelling reason explaining their qualifications, experience, and motivation for requesting administrator status. The reason is recorded for future review by super administrators.
+ * This operation allows registered customers and sellers to request elevation to administrator status. The request must include a reason explaining the user's qualifications, relevant experience, or motivation for seeking administrative privileges.
  *
- * Upon creation, the promotion request is initialized with 'pending' status and awaits review by a super administrator. Each user is allowed only one pending promotion request at any given time - attempting to submit while already having a pending request will be rejected.
+ * Upon successful submission, the request is created with 'pending' status and awaits review by a super administrator. Each user may only have one pending promotion request at any given time; attempting to submit a new request while one is already pending will result in a rejection.
  *
- * The request is associated with the authenticated user through the appropriate polymorphic subtype (customer or seller). Once submitted, super administrators can view the pending request list, review the details including the reason, and either approve or reject the request.
- *
- * This operation requires authentication at the customer or seller level. Regular administrators cannot submit promotion requests as they already possess administrative privileges.
- *
- * Related entities include the requester's user account and the reviewer who will ultimately process the request.
+ * The request is associated with the authenticated user (customer or seller) through polymorphic subtype relationships. Only users without current administrator status may submit promotion requests.
  *
  * @param props.connection
- * @param props.body Creation data containing the user's reason for requesting administrator privileges.
+ * @param props.body Promotion request creation data including the reason for seeking administrator privileges
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Verify the authenticated user is a customer or seller (not already an administrator). Check that no pending promotion request already exists for this user (query the appropriate subtype table by customer_id or seller_id joined with admin_promotion_requests where status='pending'). Validate the 'reason' field is provided and meets minimum length requirements (non-empty string). Create a new record in ecommerce_mall_admin_promotion_requests with status='pending', the provided reason, and null reviewer_id/rejection_reason. Create the corresponding subtype record (admin_promotion_request_customers or admin_promotion_request_sellers) linking the request to the user. Return the complete created entity with all fields including system-generated id, timestamps, and initial status.
+ * @x-autobe-specification Implementation requirements:
+ *
+ * 1. **Authentication**: Verify the user is authenticated as either a customer or seller.
+ *
+ * 2. **Authorization Check**:
+ *    - Verify the user does not already have administrator status
+ *    - Query existing promotion requests for this user
+ *    - Reject if any request with 'pending' status exists for this user (error: "You already have a pending promotion request")
+ *
+ * 3. **Request Validation**:
+ *    - Validate reason field is provided and non-empty
+ *    - Reason should have minimum length (e.g., 10 characters) and maximum length (e.g., 1000 characters)
+ *
+ * 4. **Database Transaction**:
+ *    - Create record in ecommerce_mall_admin_promotion_requests with:
+ *      - id: generated UUID
+ *      - status: 'pending'
+ *      - reason: from request body
+ *      - reviewer_id: null
+ *      - rejection_reason: null
+ *      - created_at: current timestamp
+ *      - updated_at: current timestamp
+ *    - Create corresponding subtype record based on user type:
+ *      - If customer: insert into ecommerce_mall_admin_promotion_request_customers
+ *      - If seller: insert into ecommerce_mall_admin_promotion_request_sellers
+ *    - Both inserts must be in the same transaction
+ *
+ * 5. **Response**:
+ *    - Return the created promotion request entity including:
+ *      - id, status, reason, created_at, updated_at
+ *      - Include requester information (customer or seller details)
+ *
+ * 6. **Error Handling**:
+ *    - 401: User not authenticated
+ *    - 403: User already has administrator status
+ *    - 409: User already has a pending promotion request
+ *    - 400: Missing or invalid reason field
+ *
+ * 7. **Side Effects**:
+ *    - No snapshots created on initial submission (snapshots are created on status changes)
+ *    - No notifications sent (administrators query pending requests)
  * @path /ecommerceMall/customer/admin-promotion-requests
  * @accessor api.functional.ecommerceMall.customer.admin_promotion_requests.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -58,7 +92,7 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Creation data containing the user's reason for requesting administrator privileges.
+     * Promotion request creation data including the reason for seeking administrator privileges
      */
     body: IEcommerceMallAdminPromotionRequest.ICreate;
   };
@@ -109,43 +143,35 @@ export namespace create {
 /**
  * Retrieve a filtered and paginated list of administrator promotion requests.
  *
- * This operation allows super administrators to search and view promotion requests submitted by registered users (customers or sellers) seeking elevated privileges to become administrators. The requests progress through a lifecycle from pending to approved or rejected status.
+ * This operation allows authorized administrators (super administrators) to view and filter pending, approved, or rejected promotion requests from users seeking administrative privileges. The search capabilities include filtering by request status (pending, approved, rejected) and requester type (customer or seller).
  *
- * The endpoint supports filtering by request status (pending, approved, rejected) and requester type to help administrators efficiently locate requests requiring review. Each request includes the submitter's reason for seeking administrative access, the current status, and audit timestamps indicating when the request was submitted and when it was reviewed (if processed).
+ * Pagination is fully supported with configurable page sizes and cursor-based navigation for efficient browsing of large result sets. Results can be sorted by submission time, review time, or status.
  *
- * Super administrators use this operation to identify pending requests for approval or rejection actions. The response provides summary information optimized for list display while full details can be retrieved via the GET endpoint for individual requests.
+ * Each promotion request record includes the requester's identity, their stated reason for seeking administrative access, the current status, and review timestamps if processed.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for filtering administrator promotion requests
+ * @param props.body Search criteria and pagination parameters for filtering promotion requests by status, requester type, and review state
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query ecommerce_mall_admin_promotion_requests table with support for complex filtering and pagination.
+ * @x-autobe-specification Query ecommerce_mall_admin_promotion_requests table with pagination and filtering.
  *
- * **Query Logic:**
- * - Base query selects from ecommerce_mall_admin_promotion_requests joined with polymorphic requester tables (customers or sellers) and reviewer (admins) when available.
+ * Apply search filters on:
+ * - Status: pending, approved, or rejected
+ * - Requester type: customer or seller (via polymorphic subtype tables)
+ * - Review status: reviewed only, unreviewed only
  *
- * **Filter Capabilities:**
- * - status: Filter by request lifecycle state "pending", "approved", or "rejected"
- * - requesterType: Filter by typeof requester - "customer" or "seller"
- * - requesterId: Filter by specific requester user ID
- * - reviewerId: Filter by specific reviewer (super admin) who processed the request
- * - submittedAtFrom/submittedAtTo: Date range filtering for request submission
- * - reviewedAtFrom/reviewedAtTo: Date range filtering for review completion
+ * Join with polymorphic subtype tables to resolve requester identity:
+ * - ecommerce_mall_admin_promotion_request_customers for customer requests
+ * - ecommerce_mall_admin_promotion_request_sellers for seller requests
  *
- * **Sorting:**
- * - Default sort by submittedAt desc (newest requests first)
- * - Alternative sorts: status asc/desc, reviewedAt desc, requester name
+ * Pagination: cursor-based for consistent ordering. Default page size: 20, max: 100.
  *
- * **Pagination:**
- * - Cursor-based pagination for efficient large result sets
- * - Configurable page size (default 20, max 100)
+ * Sorting options:
+ * - created_at (default, newest first)
+ * - reviewed_at for approved/rejected requests
+ * - status alphabetically
  *
- * **Authorization:**
- * - Requires super administrator authentication
- * - Regular administrators are denied access to this endpoint
- *
- * **Response Data:**
- * Include summary fields: id, reason (truncated), status, submittedAt, reviewedAt, requester type, requester display name, reviewer display name when available.
+ * Authorization: Only super administrators can access this endpoint. Return 403 for non-super-admin users.
  * @path /ecommerceMall/customer/admin-promotion-requests
  * @accessor api.functional.ecommerceMall.customer.admin_promotion_requests.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -175,7 +201,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for filtering administrator promotion requests
+     * Search criteria and pagination parameters for filtering promotion requests by status, requester type, and review state
      */
     body: IEcommerceMallAdminPromotionRequest.IRequest;
   };
@@ -224,42 +250,32 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific administrator promotion request.
+ * Retrieve a single administrator promotion request by its unique identifier.
  *
- * This endpoint allows super administrators to view a single promotion request by its unique identifier. The response includes the complete request details such as the current status (pending, approved, or rejected), the reason provided by the requester explaining why they seek administrative privileges, any rejection reason recorded by the reviewing super administrator, and timestamps for creation and last update.
+ * This operation provides super administrators with complete visibility into a promotion request's details, including the reason submitted by the requesting user, the current review status (pending, approved, or rejected), the reviewer who processed it (if approved/rejected), and any rejection feedback provided.
  *
- * The requester information is included polymorphically - it can be either a Customer or Seller who submitted the request. This supports the business rule that any registered user (customer or seller) may submit a request to become an administrator.
- *
- * Security Note: Only super administrators are authorized to access this endpoint. Regular administrators cannot view promotion request details or perform review actions. This ensures exclusive review authority at the highest administrative level as required by the platform's security model.
- *
- * The response includes the requester's identity, the reason for the promotion request, the current status in the review workflow, and audit information. If the request has been rejected, the rejection reason is also included.
+ * The promotion request represents a petition by either a customer or seller to become a regular administrator. The request entity captures all information necessary for super administrators to evaluate and act upon these elevation requests. This endpoint is part of the approval workflow that ensures administrative privileges are granted only after appropriate review.
  *
  * @param props.connection
- * @param props.promotionRequestId Unique identifier of the administrator promotion request
+ * @param props.requestId Unique identifier (UUID) of the administrator promotion request to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the ecommerce_mall_admin_promotion_requests table by the provided UUID in promotionRequestId path parameter.
+ * @x-autobe-specification Retrieve the admin promotion request from ecommerce_mall_admin_promotion_requests table using the provided UUID requestId.
  *
- * Include the following fields in the response:
- * - id: UUID of the promotion request
- * - status: Current status ('pending', 'approved', or 'rejected')
- * - reason: Text explanation provided by the requester
- * - rejectionReason: Text explanation if rejected (null otherwise)
- * - createdAt: Timestamp when request was submitted
- * - updatedAt: Timestamp of last status change
+ * Query must include:
+ * 1. Fetch the main request record by primary key
+ * 2. Join with reviewer (admin) if reviewer_id is not null
+ * 3. Join with customerSubtype to determine if request is from a customer
+ * 4. Join with sellerRequest to determine if request is from a seller
+ * 5. Apply soft-delete filter (exclude records where deleted_at is not null)
  *
- * Join with polymorphic requester tables to include requester information:
- * - For customer requests: Join ecommerce_mall_admin_promotion_request_customers and ecommerce_mall_customers to get customer details
- * - For seller requests: Join ecommerce_mall_admin_promotion_request_sellers and ecommerce_mall_sellers to get seller details
+ * Access control:
+ * - Only users with super_admin role can access this endpoint
+ * - Regular administrators cannot view promotion requests per business rules
+ * - 404 response if request not found
  *
- * Join with ecommerce_mall_admins to include reviewer information if the request has been reviewed.
- *
- * Authorization check: Verify that the authenticated user has super administrator privileges. If not, return 403 Forbidden.
- *
- * Validation: If no record exists with the given promotionRequestId, return 404 Not Found. If the record is soft-deleted (deleted_at is not null), it should not be returned.
- *
- * Soft delete is implemented on this table via deleted_at column.
- * @path /ecommerceMall/customer/admin-promotion-requests/:promotionRequestId
+ * Return the full entity with all fields: id, reviewer, status, reason, rejection_reason, created_at, updated_at, and the polymorphic requester relationship (customer or seller).
+ * @path /ecommerceMall/customer/admin-promotion-requests/:requestId
  * @accessor api.functional.ecommerceMall.customer.admin_promotion_requests.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -287,15 +303,15 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the administrator promotion request
+     * Unique identifier (UUID) of the administrator promotion request to retrieve
      */
-    promotionRequestId: string;
+    requestId: string;
   };
   export type Response = IEcommerceMallAdminPromotionRequest;
 
   export const METADATA = {
     method: "GET",
-    path: "/ecommerceMall/customer/admin-promotion-requests/:promotionRequestId",
+    path: "/ecommerceMall/customer/admin-promotion-requests/:requestId",
     request: null,
     response: {
       type: "application/json",
@@ -304,7 +320,7 @@ export namespace at {
   } as const;
 
   export const path = (props: Props) =>
-    `/ecommerceMall/customer/admin-promotion-requests/${encodeURIComponent(props.promotionRequestId ?? "null")}`;
+    `/ecommerceMall/customer/admin-promotion-requests/${encodeURIComponent(props.requestId ?? "null")}`;
   export const random = (): IEcommerceMallAdminPromotionRequest =>
     typia.random<IEcommerceMallAdminPromotionRequest>();
   export const simulate = (
@@ -318,9 +334,101 @@ export namespace at {
       contentType: "application/json",
     });
     try {
-      assert.param("promotionRequestId")(() =>
-        typia.assert(props.promotionRequestId),
+      assert.param("requestId")(() => typia.assert(props.requestId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Permanently deletes (cancels) a pending administrator promotion request from the system.
+ *
+ * This operation allows super administrators to remove promotion requests that are no longer relevant or were submitted in error. Only requests with 'pending' status can be deleted; approved or rejected requests are preserved for audit purposes.
+ *
+ * When a pending request is deleted:
+ * - The request is soft-deleted by setting the deleted_at timestamp
+ * - The requester (customer or seller) can submit a new promotion request if desired
+ * - No notification is sent to the requester (silent removal)
+ *
+ * Approved requests cannot be deleted as the user has already been promoted to administrator status. Rejected requests cannot be deleted as they serve as historical records of the decision with the rejection reason preserved.
+ *
+ * @param props.connection
+ * @param props.requestId UUID identifier of the admin promotion request to delete
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor customer
+ * @x-autobe-specification Validate the request exists and is in 'pending' status. Reject with appropriate error if the request is already approved or rejected.
+ *
+ * Perform soft delete by setting deleted_at to current timestamp. Do not hard delete the record to preserve data integrity and allow potential audit queries.
+ *
+ * No associated snapshots are created for delete operations as this is a cancellation rather than a state change. The request simply transitions to a deleted state.
+ *
+ * Authorization: Only super_admin role can access this endpoint. Regular administrators cannot delete promotion requests.
+ * @path /ecommerceMall/customer/admin-promotion-requests/:requestId
+ * @accessor api.functional.ecommerceMall.customer.admin_promotion_requests.erase
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function erase(
+  connection: IConnection,
+  props: erase.Props,
+): Promise<void> {
+  return true === connection.simulate
+    ? erase.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...erase.METADATA,
+          path: erase.path(props),
+          status: null,
+        },
       );
+}
+export namespace erase {
+  export type Props = {
+    /**
+     * UUID identifier of the admin promotion request to delete
+     */
+    requestId: string & tags.Format<"uuid">;
+  };
+
+  export const METADATA = {
+    method: "DELETE",
+    path: "/ecommerceMall/customer/admin-promotion-requests/:requestId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/ecommerceMall/customer/admin-promotion-requests/${encodeURIComponent(props.requestId ?? "null")}`;
+  export const random = (): void => typia.random<void>();
+  export const simulate = (
+    connection: IConnection,
+    props: erase.Props,
+  ): void => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: erase.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("requestId")(() => typia.assert(props.requestId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

@@ -1,9 +1,7 @@
 export * as profile from "./profile/index";
+export * as member from "./member/index";
+export * as subscriptions from "./subscriptions/index";
 export * as posts from "./posts/index";
-export * as comments from "./comments/index";
 export * as communities from "./communities/index";
 export * as reports from "./reports/index";
-export * as blocks from "./blocks/index";
-export * as me from "./me/index";
-export * as announcements from "./announcements/index";
-export * as feed from "./feed/index";
+export * as feeds from "./feeds/index";

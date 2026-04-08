@@ -20,6 +20,36 @@ export namespace MallPlatformCategoryCollector {
       created_at: now,
       updated_at: now,
       deleted_at: null,
+      parentCategory: props.body.parentCategoryId
+        ? { connect: { id: props.body.parentCategoryId } }
+        : undefined,
+      subcategories: undefined,
     } satisfies Prisma.mall_platform_categoriesCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace MallPlatformCategoryCollector {
+//         export async function collect(props: {
+//           body: IMallPlatformCategory.ICreate;
+//           
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       name: ...,
+//       description: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       parentCategory: ...,
+//       products: ...,
+//       subcategories: ...,
+//           } satisfies Prisma.mall_platform_categoriesCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

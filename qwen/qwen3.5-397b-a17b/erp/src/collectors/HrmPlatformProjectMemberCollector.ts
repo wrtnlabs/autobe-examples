@@ -18,7 +18,6 @@ export namespace HrmPlatformProjectMemberCollector {
       role: props.body.role,
       created_at: new Date(),
       updated_at: new Date(),
-      deleted_at: null,
       employee: { connect: { id: props.body.hrm_platform_employee_id } },
       project: { connect: { id: props.hrmPlatformProjects.id } },
     } satisfies Prisma.hrm_platform_project_membersCreateInput;

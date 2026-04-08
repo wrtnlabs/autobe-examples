@@ -1,12 +1,9 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIRedditClonePostLink } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIRedditClonePostLink";
-import { IRedditCloneCommunityBan } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunityBan";
-import { IRedditCloneFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFile";
-import { IRedditCloneFileAssociation } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileAssociation";
-import { IRedditCloneMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMemberSession";
-import { IRedditClonePostLink } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostLink";
-import { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
+import { IPageIRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIRedditClonePost";
+import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
+import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
+import { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -15,90 +12,243 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditClonePostLinkAtSummaryTransformer } from "../transformers/RedditClonePostLinkAtSummaryTransformer";
+import { RedditClonePostAtSummaryTransformer } from "../transformers/RedditClonePostAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchRedditClonePosts(props: {
-  body: IRedditClonePostLink.IRequest;
-}): Promise<IPageIRedditClonePostLink.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
+  body: IRedditClonePost.IRequest;
+}): Promise<IPageIRedditClonePost.ISummary> {
+  const body = props.body;
+  const page = (body.page ?? 1) as number &
+    tags.Type<"int32"> &
+    tags.Minimum<1>;
+  const limit = Math.min(body.limit ?? 20, 100) as number &
+    tags.Type<"int32"> &
+    tags.Minimum<1> &
+    tags.Maximum<100>;
   const skip = (page - 1) * limit;
-  // Build base where clause - exclude deleted posts
-  const whereInput: Prisma.reddit_clone_postsWhereInput = {
+  const baseWhere: Prisma.reddit_clone_postsWhereInput = {
     deleted_at: null,
+    ...(body.communityId !== undefined
+      ? { reddit_clone_community_id: body.communityId }
+      : {}),
+    ...(body.type !== undefined
+      ? { type: body.type as "text" | "link" | "image" }
+      : {}),
   };
-  // Apply post type filter if specified
-  if (props.body.postType !== undefined) {
-    whereInput.type = props.body.postType;
+  const now = new Date();
+  interface TimeRangeParams {
+    gte?: Date;
+    lt?: Date;
   }
-  // Apply time range filter for top/controversial sorting
-  if (
-    (props.body.sort === "top" || props.body.sort === "controversial") &&
-    props.body.timeRange !== undefined &&
-    props.body.timeRange !== "all"
-  ) {
-    const now = new Date();
-    const cutoff = new Date();
-    switch (props.body.timeRange) {
+  const timeFilter: TimeRangeParams = {};
+  if (body.sort === "top" || body.sort === "controversial") {
+    const range = body.timeRange ?? "all";
+    const msPerDay = 24 * 60 * 60 * 1000;
+    switch (range) {
       case "day":
-        cutoff.setDate(now.getDate() - 1);
+        timeFilter.gte = new Date(now.getTime() - msPerDay);
         break;
       case "week":
-        cutoff.setDate(now.getDate() - 7);
+        timeFilter.gte = new Date(now.getTime() - 7 * msPerDay);
         break;
       case "month":
-        cutoff.setMonth(now.getMonth() - 1);
+        timeFilter.gte = new Date(now.getTime() - 30 * msPerDay);
         break;
       case "year":
-        cutoff.setFullYear(now.getFullYear() - 1);
+        timeFilter.gte = new Date(now.getTime() - 365 * msPerDay);
+        break;
+      case "all":
+      default:
         break;
     }
-    whereInput.created_at = { gte: cutoff };
   }
-  // Build orderBy based on sort type
-  let orderByInput: Prisma.reddit_clone_postsOrderByWithRelationInput;
-  switch (props.body.sort) {
+  if (Object.keys(timeFilter).length > 0) {
+    baseWhere.created_at = timeFilter;
+  }
+  const sort = body.sort ?? "hot";
+  let orderBy: Prisma.reddit_clone_postsOrderByWithRelationInput;
+  switch (sort) {
     case "new":
-      orderByInput = { created_at: "desc" };
+      orderBy = { created_at: "desc" };
       break;
     case "top":
-      orderByInput = { vote_score: "desc" };
+      orderBy = { vote_score: "desc" };
       break;
     case "controversial":
-      // Controversial: posts with similar up/down votes appear first
-      orderByInput = { vote_score: "asc" };
+      orderBy = { vote_score: "asc" };
       break;
     case "hot":
     default:
-      // Hot algorithm approximation: higher score with recent creation
-      orderByInput = { vote_score: "desc", created_at: "desc" };
+      orderBy = { vote_score: "desc" };
       break;
   }
-  // Execute queries sequentially
-  const data = await MyGlobal.prisma.reddit_clone_posts.findMany({
-    where: whereInput satisfies Prisma.reddit_clone_postsWhereInput,
-    skip,
-    take: limit,
-    orderBy: orderByInput,
-    ...RedditClonePostLinkAtSummaryTransformer.select(),
+  const cursor = body.cursor;
+  let take = limit as number &
+    tags.Type<"int32"> &
+    tags.Minimum<1> &
+    tags.Maximum<100>;
+  if (cursor !== undefined) {
+    try {
+      const decoded = Buffer.from(cursor, "base64").toString("utf-8");
+      const pipeIndex = decoded.indexOf("|");
+      if (pipeIndex > 0) {
+        const cursorCreatedAt = decoded.substring(0, pipeIndex);
+        const cursorId = decoded.substring(pipeIndex + 1);
+        const cursorDate = new Date(cursorCreatedAt);
+        take = (limit + 1) as number &
+          tags.Type<"int32"> &
+          tags.Minimum<1> &
+          tags.Maximum<100>;
+        (baseWhere as Record<string, unknown>).AND = [
+          {
+            OR: [
+              { created_at: { lt: cursorDate } },
+              {
+                AND: [{ created_at: cursorDate }, { id: { lt: cursorId } }],
+              },
+            ],
+          },
+        ];
+      }
+    } catch {
+      // Invalid cursor, ignore and use offset pagination
+    }
+  }
+  // Use include only - cannot mix include and select at same level
+  const records = await MyGlobal.prisma.reddit_clone_posts.findMany({
+    where: baseWhere,
+    orderBy: [
+      orderBy,
+      { created_at: "desc" as const },
+      { id: "desc" as const },
+    ],
+    take: take,
+    skip: cursor !== undefined ? undefined : skip,
+    include: {
+      author: {
+        select: {
+          id: true,
+          username: true,
+        },
+      },
+      community: {
+        include: {
+          member: {
+            select: {
+              id: true,
+              username: true,
+            },
+          },
+          icon: true,
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          subscriber_count: true,
+        },
+      },
+      postTextContent: {
+        select: {
+          body: true,
+        },
+      },
+      link: {
+        select: {
+          url: true,
+        },
+      },
+      image: {
+        select: {
+          reddit_clone_file_id: true,
+        },
+      },
+      comments: true,
+      postVotes: true,
+    },
   });
+  const hasMore = records.length > limit;
+  const data = hasMore ? records.slice(0, limit) : records;
+  const countWhere: Prisma.reddit_clone_postsWhereInput = {
+    deleted_at: null,
+    ...(body.communityId !== undefined
+      ? { reddit_clone_community_id: body.communityId }
+      : {}),
+    ...(body.type !== undefined
+      ? { type: body.type as "text" | "link" | "image" }
+      : {}),
+    ...(Object.keys(timeFilter).length > 0
+      ? {
+          created_at: timeFilter,
+        }
+      : {}),
+  };
   const total = await MyGlobal.prisma.reddit_clone_posts.count({
-    where: whereInput satisfies Prisma.reddit_clone_postsWhereInput,
+    where: countWhere,
   });
-  // Transform results
   const transformedData = await ArrayUtil.asyncMap(
-    data,
-    RedditClonePostLinkAtSummaryTransformer.transform,
+    data as Parameters<
+      typeof RedditClonePostAtSummaryTransformer.transform
+    >[0][],
+    RedditClonePostAtSummaryTransformer.transform,
   );
   return {
     pagination: {
       current: page,
       limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
+      records: total as number & tags.Type<"int32"> & tags.Minimum<0>,
+      pages: Math.ceil(total / limit) as number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
     } satisfies IPage.IPagination,
     data: transformedData,
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
+// import { IPageIRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIRedditClonePost";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
+// import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchRedditClonePosts(props: {
+//   body: IRedditClonePost.IRequest;
+// }): Promise<IPageIRedditClonePost.ISummary> {
+//   const records = await MyGlobal.prisma.reddit_clone_posts.findMany({
+//     ...RedditClonePostAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, RedditClonePostAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

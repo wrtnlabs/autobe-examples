@@ -1,8 +1,13 @@
-import { IEcommerceMallAdminRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminRequest";
+import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
+import { IEcommerceMallAdminRequestOfCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminRequestOfCustomer";
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSuperAdmin";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIEcommerceMallAdminRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallAdminRequest";
+import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
+import { IPageIEcommerceMallAdminRequestOfCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallAdminRequestOfCustomer";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -12,100 +17,89 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
+import { EcommerceMallAdminRequestOfCustomerAtSummaryTransformer } from "../transformers/EcommerceMallAdminRequestOfCustomerAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchEcommerceMallAdminAdminRequests(props: {
   admin: AdminPayload;
-  body: IEcommerceMallAdminRequest.IRequest;
-}): Promise<IPageIEcommerceMallAdminRequest.ISummary> {
-  const page = props.body.page ?? 1;
+  body: IEcommerceMallAdminRequestOfCustomer.IRequest;
+}): Promise<IPageIEcommerceMallAdminRequestOfCustomer.ISummary> {
   const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
-  const whereInput: Prisma.ecommerce_mall_admin_requestsWhereInput = {
-    deleted_at: null,
-  };
-  if (props.body.status !== undefined) {
-    whereInput.status = props.body.status;
-  }
-  if (props.body.actor_type !== undefined) {
-    whereInput.actor_type = props.body.actor_type;
-  }
-  if (props.body.requested_grade !== undefined) {
-    whereInput.requested_grade = props.body.requested_grade;
-  }
-  if (props.body.created_at_from !== undefined) {
-    whereInput.created_at = {
-      gte: new Date(props.body.created_at_from),
-    };
-  }
-  if (props.body.created_at_to !== undefined) {
-    whereInput.created_at = {
-      ...(whereInput.created_at as object),
-      lte: new Date(props.body.created_at_to),
-    };
-  }
-  if (props.body.reason !== undefined) {
-    whereInput.reason = {
-      contains: props.body.reason,
-      mode: "insensitive",
-    };
-  }
-  const data = await MyGlobal.prisma.ecommerce_mall_admin_requests.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: { created_at: "desc" },
-    select: {
-      id: true,
-      actor_type: true,
-      requested_grade: true,
-      status: true,
-      created_at: true,
-      reviewer: {
-        select: {
-          id: true,
-          email: true,
-          created_at: true,
-          updated_at: true,
-          deleted_at: true,
-        },
-      },
-    },
-  });
-  const total = await MyGlobal.prisma.ecommerce_mall_admin_requests.count({
-    where: whereInput,
-  });
+  const page = props.body.page ?? 1;
+  const [records, total] = await Promise.all([
+    MyGlobal.prisma.ecommerce_mall_admin_requests.findMany({
+      ...EcommerceMallAdminRequestOfCustomerAtSummaryTransformer.select(),
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { created_at: "desc" },
+    }),
+    MyGlobal.prisma.ecommerce_mall_admin_requests.count({}),
+  ]);
   return {
     pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
-    data: data.map((record) => ({
-      id: record.id as string & tags.Format<"uuid">,
-      actor_type: record.actor_type,
-      requested_grade: record.requested_grade,
-      status: record.status,
-      created_at: record.created_at.toISOString() as string &
-        tags.Format<"date-time">,
-      reviewer:
-        record.reviewer !== null
-          ? {
-              id: record.reviewer.id as string & tags.Format<"uuid">,
-              email: record.reviewer.email as string & tags.Format<"email">,
-              created_at: record.reviewer.created_at.toISOString() as string &
-                tags.Format<"date-time">,
-              updated_at: record.reviewer.updated_at.toISOString() as string &
-                tags.Format<"date-time">,
-              deleted_at:
-                record.reviewer.deleted_at !== null
-                  ? (record.reviewer.deleted_at.toISOString() as string &
-                      tags.Format<"date-time">)
-                  : null,
-            }
-          : null,
-    })),
+      pagination: {
+        current: page,
+        limit: limit,
+        records: total,
+        pages: Math.ceil(total / limit),
+      },
+      data: [],
+    },
+    data: await ArrayUtil.asyncMap(
+      records,
+      EcommerceMallAdminRequestOfCustomerAtSummaryTransformer.transform,
+    ),
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallAdminRequestOfCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminRequestOfCustomer";
+// import { IPageIEcommerceMallAdminRequestOfCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallAdminRequestOfCustomer";
+// import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
+// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+// import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// import { IEcommerceMallSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSuperAdmin";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallAdminAdminRequests(props: {
+//   admin: AdminPayload;
+//   body: IEcommerceMallAdminRequestOfCustomer.IRequest;
+// }): Promise<IPageIEcommerceMallAdminRequestOfCustomer.ISummary> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_admin_requests.findMany({
+//     ...EcommerceMallAdminRequestOfCustomerAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallAdminRequestOfCustomerAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

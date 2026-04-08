@@ -16,51 +16,68 @@ import { authorize_administrator_refresh } from "../../../authorize/authorize_ad
 export async function test_api_administrator_approval_request_approve_pending(
   connection: api.IConnection,
 ): Promise<void> {
+  /**
+   * Approve a pending administrator approval request and verify governance record preservation.
+   *
+   * This test validates the administrator approval workflow for a pending governance request.
+   * It focuses on the finalization behavior of the request record after a super administrator
+   * approves it, ensuring that the request is marked approved, reviewer metadata is populated,
+   * and the record remains available for accountability review.
+   *
+   * 1. Authenticate as an administrator using an isolated connection.
+   * 2. Submit an approval decision against the administrator approval request endpoint.
+   * 3. Verify the resulting request record reflects approval and preserves lifecycle metadata.
+   */
   const administratorConnection: api.IConnection = { host: connection.host };
   await authorize_administrator_join(administratorConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
+      password: RandomGenerator.alphabets(12),
     } satisfies IMallPlatformAdministrator.IJoin,
   });
-  const administratorApprovalRequestId = typia.random<
-    string & tags.Format<"uuid">
-  >();
-  const output =
-    await api.functional.mallPlatform.administrator.administratorApprovalRequests.update(
+  const approvalRequestId = typia.random<string & tags.Format<"uuid">>();
+  const originalReason = RandomGenerator.paragraph({ sentences: 2 });
+  const approvalRequest =
+    await api.functional.mallPlatform.administrator.approvalRequests.update(
       administratorConnection,
       {
-        administratorApprovalRequestId,
+        approvalRequestId,
         body: {
           status: "approved",
+          reviewedAt: new Date().toISOString(),
         } satisfies IMallPlatformAdministratorApprovalRequest.IUpdate,
       },
     );
-  typia.assert(output);
-  TestValidator.equals("approval status", output.status, "approved");
-  TestValidator.notEquals(
-    "reviewer administrator should be recorded",
-    output.reviewerAdministrator,
-    null,
+  typia.assert(approvalRequest);
+  TestValidator.equals(
+    "approval request status",
+    approvalRequest.status,
+    "approved",
   );
-  TestValidator.notEquals(
-    "reviewedAt should be populated",
-    output.reviewedAt,
-    null,
+  TestValidator.predicate(
+    "reviewer administrator populated",
+    approvalRequest.reviewerAdministrator !== null,
   );
-  TestValidator.notEquals(
-    "administrator should be present",
-    output.administrator,
-    null,
-  );
-  TestValidator.notEquals(
-    "createdAt should be present",
-    output.createdAt,
-    null,
+  TestValidator.predicate(
+    "reviewedAt populated",
+    approvalRequest.reviewedAt !== null,
   );
   TestValidator.equals(
-    "rejectionReason should be null when approved",
-    output.rejectionReason,
+    "rejection reason remains null",
+    approvalRequest.rejectionReason,
     null,
+  );
+  TestValidator.predicate(
+    "request remains active",
+    approvalRequest.deletedAt === null,
+  );
+  TestValidator.predicate(
+    "applicant reference exists",
+    approvalRequest.administrator !== null,
+  );
+  TestValidator.equals(
+    "original reason preserved",
+    approvalRequest.reason,
+    originalReason,
   );
 }

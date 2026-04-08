@@ -10,21 +10,20 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace RedditCloneCommentCollector {
   export async function collect(props: {
     body: IRedditCloneComment.ICreate;
-    redditCloneMembers: IEntity;
-    redditClonePosts: IEntity;
+    post: IEntity;
+    userProfile: IEntity;
   }) {
     const id: string = v4();
     return {
       id,
       content: props.body.content,
-      score: 0,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      author: { connect: { id: props.redditCloneMembers.id } },
-      post: { connect: { id: props.redditClonePosts.id } },
-      parent: props.body.parent_id
-        ? { connect: { id: props.body.parent_id } }
+      userProfile: { connect: { id: props.userProfile.id } },
+      post: { connect: { id: props.post.id } },
+      parentComment: props.body.parentCommentId
+        ? { connect: { id: props.body.parentCommentId } }
         : undefined,
     } satisfies Prisma.reddit_clone_commentsCreateInput;
   }

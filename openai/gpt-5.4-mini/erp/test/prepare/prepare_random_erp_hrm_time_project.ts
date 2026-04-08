@@ -13,23 +13,17 @@ export function prepare_random_erp_hrm_time_project(
     description:
       input?.description !== undefined
         ? input.description
-        : RandomGenerator.paragraph({ sentences: 2, wordMin: 4, wordMax: 8 }),
+        : RandomGenerator.paragraph({ sentences: 2 }),
     colorCode:
       input?.colorCode ??
-      `#${RandomGenerator.alphabets(6)
-        .split("")
-        .map((char) => char.charCodeAt(0) % 16)
-        .map((digit) => digit.toString(16))
-        .join("")}`,
+      `#${RandomGenerator.alphabets(6).replace(/[^a-f]/g, "a")}`,
     status:
       input?.status ??
       RandomGenerator.pick(["active", "archived", "completed"] as const),
     budgetHours:
       input?.budgetHours !== undefined
         ? input.budgetHours
-        : typia.random<
-            number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<1000>
-          >(),
+        : typia.random<number & tags.Type<"double"> & tags.Minimum<0>>(),
     startDate:
       input?.startDate !== undefined
         ? input.startDate

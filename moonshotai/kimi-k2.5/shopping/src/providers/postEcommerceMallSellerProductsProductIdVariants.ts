@@ -1,5 +1,8 @@
+import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
 import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -20,26 +23,43 @@ export async function postEcommerceMallSellerProductsProductIdVariants(props: {
   productId: string & tags.Format<"uuid">;
   body: IEcommerceMallProductVariant.ICreate;
 }): Promise<IEcommerceMallProductVariant> {
-  // Verify product exists and seller owns it
-  const product =
-    await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
-      where: { id: props.productId },
-      select: { id: true, seller_id: true },
-    });
-  if (product.seller_id !== props.seller.id) {
-    throw new HttpException(
-      "Forbidden - seller does not own this product",
-      403,
-    );
+  // Verify product exists and belongs to seller
+  const product = await MyGlobal.prisma.ecommerce_mall_products.findFirst({
+    where: {
+      id: props.productId,
+      seller_id: props.seller.id,
+      deleted_at: null,
+    },
+    select: { id: true },
+  });
+  if (product === null) {
+    throw new HttpException("Product not found", 404);
   }
-  // Create variant using collector which handles nested options and initial inventory
+  // Check SKU uniqueness within product (excluding soft-deleted variants)
+  const existingVariant =
+    await MyGlobal.prisma.ecommerce_mall_product_variants.findFirst({
+      where: {
+        product_id: props.productId,
+        sku_code: props.body.skuCode,
+        deleted_at: null,
+      },
+      select: { id: true },
+    });
+  if (existingVariant !== null) {
+    throw new HttpException("SKU code already exists for this product", 409);
+  }
+  // Collect data using collector
+  const createInput = await EcommerceMallProductVariantCollector.collect({
+    body: props.body,
+    ecommerceMallProducts: { id: props.productId },
+    ecommerceMallSellers: { id: props.seller.id },
+    ecommerceMallSellerSessions: { id: props.seller.session_id },
+  });
+  // Create variant with nested options
   const created = await MyGlobal.prisma.ecommerce_mall_product_variants.create({
-    data: await EcommerceMallProductVariantCollector.collect({
-      body: props.body,
-      ecommerceMallProducts: { id: props.productId },
-    }),
+    data: createInput,
     ...EcommerceMallProductVariantTransformer.select(),
   });
-  // Transform to response DTO
+  // Transform and return
   return await EcommerceMallProductVariantTransformer.transform(created);
 }

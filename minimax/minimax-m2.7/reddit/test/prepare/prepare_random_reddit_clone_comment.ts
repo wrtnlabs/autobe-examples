@@ -9,7 +9,7 @@ export function prepare_random_reddit_clone_comment(
   input?: DeepPartial<IRedditCloneComment.ICreate>,
 ): IRedditCloneComment.ICreate {
   return {
-    content: input?.content ?? RandomGenerator.paragraph({ sentences: 5 }),
+    content: input?.content ?? RandomGenerator.paragraph({ sentences: 3 }),
     parentCommentId: input?.parentCommentId,
   };
 }

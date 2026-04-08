@@ -10,7 +10,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { EcommerceMallCustomerAtSummaryTransformer } from "../transformers/EcommerceMallCustomerAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,46 +17,48 @@ export async function patchEcommerceMallCustomers(props: {
   body: IEcommerceMallCustomer.IRequest;
 }): Promise<IPageIEcommerceMallCustomer.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const whereInput = {
-    ...(props.body.search && {
-      email: { contains: props.body.search, mode: "insensitive" as const },
-    }),
-    ...(props.body.email && {
-      email: { contains: props.body.email, mode: "insensitive" as const },
-    }),
-    ...((props.body.createdAtFrom || props.body.createdAtTo) && {
-      created_at: {
-        ...(props.body.createdAtFrom && {
-          gte: new Date(props.body.createdAtFrom),
-        }),
-        ...(props.body.createdAtTo && {
-          lte: new Date(props.body.createdAtTo),
-        }),
-      },
-    }),
-  } satisfies Prisma.ecommerce_mall_customersWhereInput;
-  const orderByInput = (
-    props.body.sort === "email"
-      ? { email: (props.body.order ?? "desc") as "asc" | "desc" }
-      : { created_at: (props.body.order ?? "desc") as "asc" | "desc" }
-  ) satisfies Prisma.ecommerce_mall_customersOrderByWithRelationInput;
+  const whereConditions: Prisma.ecommerce_mall_customersWhereInput = {
+    deleted_at: null,
+  };
+  if (props.body.search) {
+    whereConditions.email = {
+      contains: props.body.search,
+      mode: "insensitive",
+    };
+  }
+  const orderBy: Prisma.ecommerce_mall_customersOrderByWithRelationInput =
+    props.body.sort === "createdAt"
+      ? { created_at: "desc" }
+      : { created_at: "desc" };
   const customers = await MyGlobal.prisma.ecommerce_mall_customers.findMany({
-    where: whereInput,
+    where: whereConditions,
     skip,
     take: limit,
-    orderBy: orderByInput,
-    ...EcommerceMallCustomerAtSummaryTransformer.select(),
+    orderBy,
+    select: {
+      id: true,
+      email: true,
+      created_at: true,
+      _count: {
+        select: {
+          orders: true,
+        },
+      },
+    },
   });
   const total = await MyGlobal.prisma.ecommerce_mall_customers.count({
-    where: whereInput,
+    where: whereConditions,
   });
+  const data = customers.map((customer) => ({
+    id: customer.id,
+    email: customer.email,
+    createdAt: customer.created_at.toISOString(),
+    orderCount: customer._count.orders,
+  }));
   return {
-    data: await ArrayUtil.asyncMap(
-      customers,
-      EcommerceMallCustomerAtSummaryTransformer.transform,
-    ),
+    data,
     pagination: {
       current: page,
       limit: limit,

@@ -12,11 +12,12 @@ export async function sellerAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const seller = await MyGlobal.prisma.ecommerce_mall_sellers.findFirst({
+  const seller = await MyGlobal.prisma.ecommerce_sellers.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,
-      account_status: "active",
+      is_suspended: false,
+      is_banned: false,
       approval_status: "approved",
     },
   });

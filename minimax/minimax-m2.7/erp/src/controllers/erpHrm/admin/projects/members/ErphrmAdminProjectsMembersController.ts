@@ -6,41 +6,49 @@ import { IErpHrmProjectMember } from "../../../../../api/structures/IErpHrmProje
 import { IPageIErpHrmProjectMember } from "../../../../../api/structures/IPageIErpHrmProjectMember";
 import { AdminAuth } from "../../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../../decorators/payload/AdminPayload";
-import { deleteErpHrmAdminProjectsProjectIdMembersMemberId } from "../../../../../providers/deleteErpHrmAdminProjectsProjectIdMembersMemberId";
-import { getErpHrmAdminProjectsProjectIdMembersMemberId } from "../../../../../providers/getErpHrmAdminProjectsProjectIdMembersMemberId";
+import { deleteErpHrmAdminProjectsProjectIdMembersProjectMemberId } from "../../../../../providers/deleteErpHrmAdminProjectsProjectIdMembersProjectMemberId";
+import { getErpHrmAdminProjectsProjectIdMembersProjectMemberId } from "../../../../../providers/getErpHrmAdminProjectsProjectIdMembersProjectMemberId";
 import { patchErpHrmAdminProjectsProjectIdMembers } from "../../../../../providers/patchErpHrmAdminProjectsProjectIdMembers";
 import { postErpHrmAdminProjectsProjectIdMembers } from "../../../../../providers/postErpHrmAdminProjectsProjectIdMembers";
-import { putErpHrmAdminProjectsProjectIdMembersMemberId } from "../../../../../providers/putErpHrmAdminProjectsProjectIdMembersMemberId";
+import { putErpHrmAdminProjectsProjectIdMembersProjectMemberId } from "../../../../../providers/putErpHrmAdminProjectsProjectIdMembersProjectMemberId";
 
 @Controller("/erpHrm/admin/projects/:projectId/members")
 export class ErphrmAdminProjectsMembersController {
   /**
-   * Assign an employee to a project by creating a new project membership.
+   * Assign an employee to a project as a member or project lead.
    *
-   * This operation creates a project membership record that links an employee to a project with a specific role. The employee must exist within the same organization as the project. Once assigned, the employee gains authorized access to log time against the project.
+   * This operation creates a project membership record that links an employee to a project, granting them authorization to log time against the project and, for project leads, to manage tasks within the project.
    *
-   * Project membership roles determine what the employee can do within the project:
-   * - 'member': Can view tasks assigned to them and log time
-   * - 'project_lead': Can create and manage tasks within the project, in addition to member capabilities
+   * The authenticated user must have project:manage permission to perform this operation. The target project must exist and be in active status. The employee must exist, belong to the same organization as the project, have an active status, and not already be a member of the project.
    *
-   * Only users with the project:manage permission can assign employees to projects. The operation does not allow assigning an employee who is already a member of the project, and duplicate assignments will be rejected.
+   * Each employee can be assigned to multiple projects simultaneously, and each project membership can have a different role. An employee may be a regular member on one project and a project lead on another.
    *
-   * The created project membership record is returned in the response body with all its attributes including the assigned role and timestamps.
+   * Project leads can create, edit, and manage tasks within their assigned project but cannot add or remove other members from the project.
    *
    * @param connection
-   * @param projectId The unique identifier of the project to assign the employee to (UUID format)
-   * @param body Employee assignment details including the employee ID and their role in the project
+   * @param projectId Unique identifier of the project to assign the employee to (UUID format).
+   * @param body Employee assignment details containing the employee ID and the role to assign.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Create a new project membership record in erp_hrm_project_members table.
+   * @x-autobe-specification Validate that the authenticated user has project:manage permission for the organization owning the project.
    *
-   * 1. Validate the projectId exists in erp_hrm_projects and belongs to the authenticated user's organization.
-   * 2. Validate the erpHrmEmployeeId exists in erp_hrm_employees and belongs to the same organization as the project.
-   * 3. Verify no existing membership for this employee-project combination (unique constraint check).
-   * 4. Validate assignedRole is either 'member' or 'project_lead'.
-   * 5. Verify the requesting user has project:manage permission for the organization.
-   * 6. Insert the new record with generated UUID, current timestamp for created_at and updated_at.
-   * 7. Return the complete project membership record including linked employee and project details.
+   * Query the erp_hrm_projects table to verify the project exists and belongs to the user's current organization. Return 404 if project not found. Validate project status is 'active' — archived or completed projects cannot accept new members.
+   *
+   * Query the erp_hrm_employees table to verify the employee exists and belongs to the same organization as the project. Return 404 if employee not found. Validate employee status is 'active' — deactivated employees cannot be assigned to projects.
+   *
+   * Query the erp_hrm_project_members table to verify the employee is not already a member of this project. If a membership already exists, return 409 Conflict with an appropriate error message.
+   *
+   * Validate the assigned_role field: must be either 'member' or 'project_lead'. If an invalid role is provided, return 400 Bad Request.
+   *
+   * Create a new erp_hrm_project_members record with:
+   * - id: generated UUID
+   * - erp_hrm_employee_id: from request body
+   * - erp_hrm_project_id: from path parameter
+   * - assigned_role: from request body
+   * - created_at: current timestamp
+   * - updated_at: current timestamp
+   *
+   * Return the created project membership record with 201 Created status, including the full member details with employee information.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -65,33 +73,31 @@ export class ErphrmAdminProjectsMembersController {
   }
 
   /**
-   * Retrieve a paginated list of project members for a specific project.
+   * Retrieve a filtered and paginated list of employees assigned to a project with their role assignments.
    *
-   * This endpoint returns all employees assigned to the specified project, including their assigned role (member or project_lead) within that project. The response includes employee details such as name, position, and employment status for each project member.
+   * This operation lists all project members for a specific project, showing which employees are assigned and their roles (member or project-lead). Results can be filtered by assigned role and employee status. The list is returned in paginated format with configurable page size and sorting.
    *
-   * Project membership serves as the authorization mechanism for project-related activities. Only employees who are project members can log time against the project's tasks and activities. This endpoint supports filtering by assigned role (member or project_lead) and pagination for efficient data retrieval.
-   *
-   * The operation is scoped to the organization context of the authenticated user. Users can only view project members for projects they have access to within their organization.
-   *
-   * Related operations: POST /projects/{projectId}/members to assign employees, DELETE /projects/{projectId}/members/{memberId} to remove members.
+   * Project membership authorization ensures that only members of a project can log time against it. Users with project:view permission can access this endpoint to see team composition and employee assignments.
    *
    * @param connection
-   * @param projectId UUID of the project whose members to retrieve
-   * @param body Search criteria including optional role filter and pagination parameters
+   * @param projectId Unique identifier of the project (global scope)
+   * @param body Search criteria and pagination parameters for filtering project members
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query erp_hrm_project_members table filtered by erp_hrm_project_id matching the projectId path parameter.
+   * @x-autobe-specification Query erp_hrm_project_members table filtering by erp_hrm_project_id equal to the path parameter.
    *
-   * Join with erp_hrm_employees table to retrieve employee details (name, position, employment_type, status). Join with erp_hrm_members table for user account information (name, email, avatar).
+   * Join erp_hrm_project_members with erp_hrm_employees to include employee details (name, email, position).
    *
-   * Apply filters from IErpHrmProjectMember.IRequest:
-   * - Filter by assigned_role if provided ('member' or 'project_lead')
-   * - Support pagination with cursor or offset-based approach
-   * - Sort by created_at descending by default
+   * Apply search filters:
+   * - Filter by assigned_role (exact match: 'member' or 'project_lead')
+   * - Filter by employee status (active/deactivated)
+   * - Filter by employee name or email (partial match)
+   * - Filter by created_at date range
    *
-   * Return paginated results with total count. If project has no members, return empty array with zero total.
+   * Return paginated results with cursor-based pagination.
+   * Include total count for pagination metadata.
    *
-   * Validate that the projectId exists and belongs to the user's organization context before returning members.
+   * Sort by created_at descending by default.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -116,45 +122,49 @@ export class ErphrmAdminProjectsMembersController {
   }
 
   /**
-   * Retrieve a specific project membership record by its unique identifier.
+   * Retrieve detailed information about a specific project member.
    *
-   * This endpoint returns detailed information about a single project member including their assigned role within the project, the employee they represent, and the project they belong to. The response includes the full project member record with related entity data for comprehensive context.
+   * This endpoint returns a single project membership record identified by its unique ID within the context of a specific project. The response includes the complete employee details, project details, and the assigned role for this membership.
    *
-   * Authorization is based on project membership - users must be project members or project leads to access this information. Project leads can view all member assignments within their projects. Users with project:manage permission can view any project member across all projects in the organization.
+   * The project membership establishes an employee's participation in a project with a specific role ('member' or 'project_lead'). Project leads have task management capabilities within that project, while members can view tasks and log time.
    *
-   * The returned data includes the assigned role ('member' or 'project_lead'), the employee reference, project reference, and creation/update timestamps. This operation is scoped to the currently selected organization context through the project relationship.
-   *
-   * Use cases include viewing specific employee assignments in a project, verifying role permissions, and retrieving membership details for administrative purposes. The endpoint provides the complete project member record with nested employee and project information for full context.
+   * Project membership is scoped to the project; a user must have access to the specified project within the organization to retrieve membership details. The endpoint enforces organization-level data isolation.
    *
    * @param connection
-   * @param projectId Unique identifier of the project containing the membership
-   * @param memberId Unique identifier of the project membership record to retrieve
+   * @param projectId Unique identifier of the project containing the member
+   * @param projectMemberId Unique identifier of the project member record
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the erp_hrm_project_members table using the provided memberId (primary key UUID). Join with erp_hrm_employees table to retrieve employee details (name, email, position) and erp_hrm_projects table to retrieve project details (name, status, color).
+   * @x-autobe-specification Query the erp_hrm_project_members table using the provided projectMemberId as the primary key.
    *
-   * Validate that the project exists and belongs to the current organization. Verify that the requesting user is either:
-   * 1. A member of the requested project (can view any member)
-   * 2. A project lead of the requested project (can view any member)
-   * 3. Has project:manage permission (can view any project member)
+   * Validate that the projectMember belongs to the specified projectId - if not, return a 404 error.
    *
-   * Return 404 if project or project member not found. Return 403 if user lacks authorization. Return the full IErpHrmProjectMember with nested IErpHrmEmployee and IErpHrmProject data.
+   * Join with erp_hrm_employees table to retrieve employee details (display name, position, employment_type, status) and erp_hrm_projects table to retrieve project details (name, color, status).
+   *
+   * Verify organization context: the project must belong to the user's current organization.
+   *
+   * Return the complete project member record with embedded employee and project information as IErpHrmProjectMember.IInvert.
+   *
+   * Handle edge cases:
+   * - If projectMemberId does not exist, return 404 Not Found
+   * - If projectMember exists but belongs to a different project, return 404 Not Found
+   * - If project does not exist or belongs to different organization, return 404 Not Found
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":memberId")
+  @TypedRoute.Get(":projectMemberId")
   public async at(
     @AdminAuth()
     admin: AdminPayload,
     @TypedParam("projectId")
     projectId: string & tags.Format<"uuid">,
-    @TypedParam("memberId")
-    memberId: string & tags.Format<"uuid">,
-  ): Promise<IErpHrmProjectMember> {
+    @TypedParam("projectMemberId")
+    projectMemberId: string & tags.Format<"uuid">,
+  ): Promise<IErpHrmProjectMember.IInvert> {
     try {
-      return await getErpHrmAdminProjectsProjectIdMembersMemberId({
+      return await getErpHrmAdminProjectsProjectIdMembersProjectMemberId({
         admin,
         projectId,
-        memberId,
+        projectMemberId,
       });
     } catch (error) {
       console.log(error);
@@ -163,56 +173,37 @@ export class ErphrmAdminProjectsMembersController {
   }
 
   /**
-   * Update an employee's role assignment within a specific project.
+   * Update the role of an existing project member.
    *
-   * This endpoint allows users with project management permission to change the assigned role of an existing project member. The role determines the employee's capabilities within that specific project: 'member' grants basic access to view and log time against assigned tasks, while 'project_lead' additionally enables task creation and management capabilities.
+   * This operation allows users with project:manage permission to modify the assigned role for an employee already enrolled in a project. The role determines the employee's permissions within that specific project: 'member' grants basic access to view tasks and log time, while 'project_lead' additionally enables task creation, editing, and assignment within the project.
    *
-   * The operation requires valid project and membership identifiers. The project must exist and be active. The memberId refers to the project membership record (erp_hrm_project_members.id), not the employee identifier. Only the assigned_role field can be modified through this endpoint.
-   *
-   * Project membership serves as the authorization mechanism for project activities. When the role changes to 'project_lead', the employee gains task management capabilities for that specific project, including creating tasks, editing existing tasks they created or that are assigned to them, and updating task status.
-   *
-   * Related operations: GET /projects/{projectId}/members for listing project members, POST /projects/{projectId}/members for adding new members, DELETE /projects/{projectId}/members/{memberId} for removing members.
+   * Only the role field can be modified through this endpoint. To change which employee is assigned or to remove a member entirely, use the delete endpoint instead. This operation does not affect the employee's membership status in other projects.
    *
    * @param connection
-   * @param projectId Unique identifier of the project containing the member
-   * @param memberId Unique identifier of the project membership record to update
+   * @param projectId Unique identifier of the project containing the membership (global scope)
+   * @param projectMemberId Unique identifier of the project membership record to update (global scope)
    * @param body New role assignment for the project member
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Update project member role within the database.
-   *
-   * Implementation steps:
-   * 1. Validate projectId exists in erp_hrm_projects and belongs to the authenticated user's organization context
-   * 2. Validate memberId exists in erp_hrm_project_members
-   * 3. Verify the membership's erp_hrm_project_id matches the provided projectId
-   * 4. Validate assigned_role is either 'member' or 'project_lead'
-   * 5. Update the assigned_role field and updated_at timestamp in erp_hrm_project_members
-   * 6. Return the updated project member record with related employee and project data
-   *
-   * Edge cases:
-   * - Return 404 if project does not exist or does not belong to organization
-   * - Return 404 if memberId does not exist
-   * - Return 400 if memberId does not belong to the specified project
-   * - Return 400 if assigned_role is not 'member' or 'project_lead'
-   * - Return 403 if user lacks project:manage permission
+   * @x-autobe-specification Validate that the authenticated user has project:manage permission for the organization containing the project. Query the erp_hrm_projects table to verify the projectId belongs to the current organization context. Query erp_hrm_project_members using projectMemberId ensuring it belongs to the specified project. Verify the membership exists and is not deleted. Extract the new assigned_role from request body, validating it is either 'member' or 'project_lead'. Update only the assigned_role field and set updated_at to current timestamp. Return the updated project membership record with employee details joined.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":memberId")
+  @TypedRoute.Put(":projectMemberId")
   public async update(
     @AdminAuth()
     admin: AdminPayload,
     @TypedParam("projectId")
     projectId: string & tags.Format<"uuid">,
-    @TypedParam("memberId")
-    memberId: string & tags.Format<"uuid">,
+    @TypedParam("projectMemberId")
+    projectMemberId: string & tags.Format<"uuid">,
     @TypedBody()
     body: IErpHrmProjectMember.IUpdate,
   ): Promise<IErpHrmProjectMember> {
     try {
-      return await putErpHrmAdminProjectsProjectIdMembersMemberId({
+      return await putErpHrmAdminProjectsProjectIdMembersProjectMemberId({
         admin,
         projectId,
-        memberId,
+        projectMemberId,
         body,
       });
     } catch (error) {
@@ -222,64 +213,55 @@ export class ErphrmAdminProjectsMembersController {
   }
 
   /**
-   * Remove an employee from a project, terminating their project membership.
+   * Remove an employee from a project, ending their project membership.
    *
-   * This endpoint allows users with project management permissions to remove an employee from a specific project. When a member is removed from a project, they immediately lose the ability to create new timelog entries against that project. However, all historical timelogs recorded by that employee on the project are preserved and remain accessible in reports.
+   * This operation removes the specified employee from the project, immediately revoking their ability to log new time entries against that project. The employee's historical timelogs recorded during their membership remain intact and accessible in reports.
    *
-   * The removal operation does not affect the employee's overall employee record within the organization or their membership in other projects. A removed employee can be reassigned to the project at a later time if needed.
+   * Removing a member does not delete the employee's overall employee record or affect their membership in other projects. The removed employee can be reassigned to the project at a later time if needed.
    *
-   * Only users holding the project:manage permission in the current organization can perform this operation. Project lead status within a specific project does not grant permission to remove members; only organization-level project managers can do so.
-   *
-   * Before processing the deletion, the system verifies that the specified member record exists and belongs to the specified project. If the member is not found within the project, an appropriate error is returned.
+   * This operation requires the project:manage permission. Attempting this operation without the appropriate permission returns a permission denied error.
    *
    * @param connection
-   * @param projectId Unique identifier of the project from which the member will be removed
-   * @param memberId Unique identifier of the project membership record to remove (erp_hrm_project_members.id)
+   * @param projectId Unique identifier of the project from which to remove the member (global scope)
+   * @param projectMemberId Unique identifier of the project membership record to remove
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Remove an employee from a project by deleting their project membership record.
+   * @x-autobe-specification Remove a project member from erp_hrm_project_members table.
    *
-   * Authorization:
-   * - Verify the authenticated user holds the project:manage permission in the current organization
-   * - If not authorized, reject with 403 Forbidden
+   * 1. Authorization: Verify the authenticated user holds the project:manage permission in the current organization.
    *
-   * Deletion Process:
-   * 1. Validate the {projectId} and {memberId} are valid UUIDs
-   * 2. Query the erp_hrm_project_members table to find the member record
-   * 3. Verify the member belongs to the specified project by matching both erp_hrm_project_id and id
-   * 4. If the member record does not exist or does not belong to the project, reject with 404 Not Found
-   * 5. Begin a database transaction:
-   *    a. Delete the erp_hrm_project_members record
-   *    b. The cascade delete rules on related tables will handle cleanup of related records
-   *    c. Commit the transaction
-   * 6. Return 204 No Content on success
+   * 2. Validate existence: Confirm both projectId and projectMemberId exist in the database.
    *
-   * Preservation Rules:
-   * - Do NOT delete historical timelogs created by this employee on this project
-   * - Do NOT delete the employee's overall employee record
-   * - Do NOT affect the employee's memberships in other projects
+   * 3. Verify membership: Ensure the projectMemberId record belongs to the specified projectId (erp_hrm_project_members.erp_hrm_project_id must match projectId).
    *
-   * Error Handling:
-   * - 400 Bad Request: Invalid UUID format for projectId or memberId
-   * - 401 Unauthorized: No authenticated session
-   * - 403 Forbidden: User lacks project:manage permission
-   * - 404 Not Found: Member record does not exist or does not belong to the specified project
+   * 4. Delete the project member record from erp_hrm_project_members table.
+   *
+   * 5. Cascade handling: Do NOT delete associated erp_hrm_tasks assigned to this employee in this project - those tasks remain with their current assignments.
+   *
+   * 6. Timelog preservation: Do NOT modify or delete any timelogs in erp_hrm_timelogs associated with this employee and project - these are preserved as historical records.
+   *
+   * 7. Return 204 No Content on successful deletion.
+   *
+   * Error scenarios:
+   * - 403 Forbidden if user lacks project:manage permission
+   * - 404 Not Found if projectId or projectMemberId does not exist
+   * - 400 Bad Request if projectMemberId does not belong to the specified projectId
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Delete(":memberId")
+  @TypedRoute.Delete(":projectMemberId")
   public async erase(
     @AdminAuth()
     admin: AdminPayload,
     @TypedParam("projectId")
     projectId: string & tags.Format<"uuid">,
-    @TypedParam("memberId")
-    memberId: string & tags.Format<"uuid">,
+    @TypedParam("projectMemberId")
+    projectMemberId: string & tags.Format<"uuid">,
   ): Promise<void> {
     try {
-      return await deleteErpHrmAdminProjectsProjectIdMembersMemberId({
+      return await deleteErpHrmAdminProjectsProjectIdMembersProjectMemberId({
         admin,
         projectId,
-        memberId,
+        projectMemberId,
       });
     } catch (error) {
       console.log(error);

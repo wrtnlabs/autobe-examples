@@ -10,50 +10,47 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallAdminPromotionRequestCollector {
   export async function collect(props: {
     body: IShoppingMallAdminPromotionRequest.ICreate;
-    shoppingMallCustomers: IEntity;
-    shoppingMallCustomerSessions: IEntity;
+    shoppingMallMembers: IEntity;
     shoppingMallSellers: IEntity;
+    shoppingMallMemberSessions: IEntity;
     shoppingMallSellerSessions: IEntity;
   }) {
     const id: string = v4();
-    // Determine actor type from authenticated context
-    // Customer takes precedence if both are present (typical auth pattern)
-    const isCustomer = props.shoppingMallCustomers.id !== undefined;
-    const actorType = isCustomer ? "customer" : "seller";
-    const now = new Date();
+    // Determine actor type based on which entity has valid id
+    const isMember = props.shoppingMallMembers.id !== undefined;
+    const actorType: string = isMember ? "member" : "seller";
     return {
       // Scalar fields
       id,
       actor_type: actorType,
       reason: props.body.reason,
       status: "pending",
-      rejection_reason: null,
-      created_at: now,
-      updated_at: now,
+      rejection_note: null,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
-      // HasMany relation - omit (reverse relation)
-      // HasOne relations - conditional based on actor type
-      customerRequest: isCustomer
+      // BelongsTo relations (nullable, not set on create)
+      reviewer: undefined,
+      // HasOne relations - create subtype record based on actor type
+      memberApplicant: isMember
         ? {
             create: {
               id: v4(),
-              customer: { connect: { id: props.shoppingMallCustomers.id } },
-              customerSession: {
-                connect: { id: props.shoppingMallCustomerSessions.id },
-              },
-              created_at: now,
-              updated_at: now,
+              shopping_mall_member_id: props.shoppingMallMembers.id,
+              created_at: new Date(),
+              updated_at: new Date(),
+              deleted_at: null,
             },
           }
         : undefined,
-      sellerRequest: !isCustomer
+      sellerApplicant: !isMember
         ? {
             create: {
               id: v4(),
-              seller: { connect: { id: props.shoppingMallSellers.id } },
-              sellerSession: props.shoppingMallSellerSessions.id
-                ? { connect: { id: props.shoppingMallSellerSessions.id } }
-                : undefined,
+              shopping_mall_seller_id: props.shoppingMallSellers.id,
+              created_at: new Date(),
+              updated_at: new Date(),
+              deleted_at: null,
             },
           }
         : undefined,

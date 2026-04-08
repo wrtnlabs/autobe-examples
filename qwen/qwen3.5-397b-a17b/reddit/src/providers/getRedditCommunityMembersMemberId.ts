@@ -1,7 +1,5 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
-import { IRedditCommunityUserAvatar } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserAvatar";
-import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -10,20 +8,20 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditCommunityUserProfileTransformer } from "../transformers/RedditCommunityUserProfileTransformer";
+import { RedditCommunityMemberAtSummaryTransformer } from "../transformers/RedditCommunityMemberAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getRedditCommunityMembersMemberId(props: {
   memberId: string & tags.Format<"uuid">;
-}): Promise<IRedditCommunityUserProfile> {
-  const profile =
-    await MyGlobal.prisma.reddit_community_user_profiles.findUniqueOrThrow({
+}): Promise<IRedditCommunityMember.ISummary> {
+  const member =
+    await MyGlobal.prisma.reddit_community_members.findUniqueOrThrow({
       where: {
-        reddit_community_member_id: props.memberId,
+        id: props.memberId,
         deleted_at: null,
       },
-      ...RedditCommunityUserProfileTransformer.select(),
+      ...RedditCommunityMemberAtSummaryTransformer.select(),
     });
-  return await RedditCommunityUserProfileTransformer.transform(profile);
+  return await RedditCommunityMemberAtSummaryTransformer.transform(member);
 }

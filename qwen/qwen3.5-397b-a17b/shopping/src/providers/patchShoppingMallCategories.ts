@@ -20,33 +20,21 @@ export async function patchShoppingMallCategories(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const whereInput: Prisma.shopping_mall_categoriesWhereInput = {
+  const whereInput = {
     deleted_at: null,
     ...(props.body.parent_id !== undefined &&
       props.body.parent_id !== null && {
         parent_id: props.body.parent_id,
       }),
-    ...(props.body.parent_id === null && {
-      parent_id: null,
-    }),
-    ...(props.body.search && {
-      name: {
-        contains: props.body.search,
-      },
+    ...(props.body.search !== undefined && {
+      name: { contains: props.body.search },
     }),
   } satisfies Prisma.shopping_mall_categoriesWhereInput;
-  const sortField = props.body.sort?.startsWith("-")
-    ? props.body.sort.substring(1)
-    : (props.body.sort ?? "created_at");
-  const sortDir = props.body.sort?.startsWith("-") ? "desc" : "asc";
-  const orderByInput = {
-    [sortField]: sortDir,
-  } satisfies Prisma.shopping_mall_categoriesOrderByWithRelationInput;
   const data = await MyGlobal.prisma.shopping_mall_categories.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: orderByInput,
+    orderBy: { created_at: "desc" },
     ...ShoppingMallCategoryAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.shopping_mall_categories.count({

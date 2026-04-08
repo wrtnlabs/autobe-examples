@@ -1,9 +1,10 @@
 export * as auth from "./auth/index";
-export * as administrator from "./administrator/index";
-export * as superAdministrator from "./superAdministrator/index";
-export * as customer from "./customer/index";
-export * as sellers from "./sellers/index";
-export * as categories from "./categories/index";
-export * as products from "./products/index";
+export * as admin from "./admin/index";
+export * as guest from "./guest/index";
+export * as superAdmin from "./superAdmin/index";
+export * as member from "./member/index";
+export * as seller_profiles from "./seller_profiles/index";
 export * as seller from "./seller/index";
+export * as categories from "./categories/index";
 export * as reviews from "./reviews/index";
+export * as products from "./products/index";

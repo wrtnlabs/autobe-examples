@@ -16,51 +16,42 @@ export async function getEcommerceMallSellerDashboard(props: {
   seller: SellerPayload;
 }): Promise<IEcommerceMallSellerDashboard> {
   const sellerId = props.seller.id;
-  // Count products owned by this seller (non-deleted)
-  const productCount = await MyGlobal.prisma.ecommerce_mall_products.count({
+  // Count total active products for this seller
+  const totalProducts = await MyGlobal.prisma.ecommerce_mall_products.count({
     where: {
       seller_id: sellerId,
       deleted_at: null,
     },
   });
-  // Count order items for seller's products
-  const orderItemCount = await MyGlobal.prisma.ecommerce_mall_order_items.count(
-    {
+  // Count total order items for this seller's products
+  const totalOrderItems =
+    await MyGlobal.prisma.ecommerce_mall_order_items.count({
       where: {
-        product: {
-          seller_id: sellerId,
-        },
+        seller_id: sellerId,
       },
-    },
-  );
-  // Count pending cancellation requests for seller's products
-  const pendingCancellationRequestCount =
+    });
+  // Count pending cancellation requests for this seller's order items
+  const pendingCancellationRequests =
     await MyGlobal.prisma.ecommerce_mall_cancellation_requests.count({
       where: {
         status: "pending",
         orderItem: {
-          product: {
-            seller_id: sellerId,
-          },
+          seller_id: sellerId,
         },
       },
     });
-  // Count pending refund requests for seller's products
-  const pendingRefundRequestCount =
+  // Count pending refund requests for this seller
+  const pendingRefundRequests =
     await MyGlobal.prisma.ecommerce_mall_refund_requests.count({
       where: {
         status: "pending",
-        orderItem: {
-          product: {
-            seller_id: sellerId,
-          },
-        },
+        seller_id: sellerId,
       },
     });
   return {
-    productCount,
-    orderItemCount,
-    pendingCancellationRequestCount,
-    pendingRefundRequestCount,
+    totalProducts,
+    totalOrderItems,
+    pendingCancellationRequests,
+    pendingRefundRequests,
   };
 }

@@ -3,7 +3,7 @@ import { IErpHrmDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErp
 import { IErpHrmEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmEmployee";
 import { IErpHrmMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmMember";
 import { IErpHrmOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmOrganization";
-import { IErpHrmProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProjectMember";
+import { IErpHrmProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProject";
 import { IErpHrmRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmRole";
 import { IErpHrmTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTask";
 import { IErpHrmTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimelog";
@@ -24,43 +24,75 @@ export async function getErpHrmMemberTimelogsTimelogId(props: {
   member: MemberPayload;
   timelogId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimelog> {
-  // Fetch timelog with all relations using transformer
+  // Get the timelog with eager-loaded relations (employee, project, task)
   const timelog = await MyGlobal.prisma.erp_hrm_timelogs.findUniqueOrThrow({
     where: { id: props.timelogId },
     ...ErpHrmTimelogTransformer.select(),
   });
-  // Look up member's employee record to get organization context and employee ID
-  const memberEmployee = await MyGlobal.prisma.erp_hrm_employees.findFirst({
+  // Get the authenticated member's employee record for authorization
+  const employee = await MyGlobal.prisma.erp_hrm_employees.findFirstOrThrow({
     where: {
       erp_hrm_member_id: props.member.id,
+      deleted_at: null,
     },
     select: {
       id: true,
-      erp_hrm_organization_id: true,
-      role: {
-        select: {
-          id: true,
-          rolePermissions: {
-            select: {
-              permission: true,
-            },
-          },
-        },
-      },
+      erp_hrm_role_id: true,
     },
   });
-  if (!memberEmployee) {
+  // Check if employee has time:view_all permission for organization-wide access
+  const hasTimeViewAll =
+    await MyGlobal.prisma.erp_hrm_role_permissions.findFirst({
+      where: {
+        erp_hrm_role_id: employee.erp_hrm_role_id,
+        permission: "time:view_all",
+      },
+    });
+  // If no time:view_all permission, enforce ownership - employee can only view their own timelogs
+  if (!hasTimeViewAll && timelog.employee.id !== employee.id) {
     throw new HttpException("Forbidden", 403);
-  }
-  // Check time:view_all permission
-  const hasTimeViewAll = memberEmployee.role.rolePermissions.some(
-    (rp) => rp.permission === "time:view_all",
-  );
-  if (!hasTimeViewAll) {
-    // Ownership check: verify timelog belongs to current member's employee
-    if (timelog.employee.id !== memberEmployee.id) {
-      throw new HttpException("Forbidden", 403);
-    }
   }
   return await ErpHrmTimelogTransformer.transform(timelog);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IErpHrmTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimelog";
+// import { IErpHrmEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmEmployee";
+// import { IErpHrmMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmMember";
+// import { IErpHrmRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmRole";
+// import { IErpHrmOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmOrganization";
+// import { IErpHrmDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmDepartment";
+// import { IErpHrmProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProject";
+// import { IErpHrmTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTask";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function getErpHrmMemberTimelogsTimelogId(props: {
+//   member: MemberPayload;
+//   timelogId: string & tags.Format<"uuid">;
+// }): Promise<IErpHrmTimelog> {
+//   const record = await MyGlobal.prisma.erp_hrm_timelogs.findFirstOrThrow({
+//     ...ErpHrmTimelogTransformer.select(),
+//     where: { ... },
+//   });
+//   return await ErpHrmTimelogTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

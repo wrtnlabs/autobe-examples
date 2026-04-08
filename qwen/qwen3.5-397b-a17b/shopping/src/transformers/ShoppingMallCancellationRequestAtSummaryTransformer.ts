@@ -1,11 +1,14 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCancellationRequest";
-import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import { IShoppingMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallMember";
+import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
@@ -13,7 +16,7 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallCustomerAtSummaryTransformer } from "./ShoppingMallCustomerAtSummaryTransformer";
+import { ShoppingMallMemberAtSummaryTransformer } from "./ShoppingMallMemberAtSummaryTransformer";
 import { ShoppingMallOrderItemAtSummaryTransformer } from "./ShoppingMallOrderItemAtSummaryTransformer";
 
 export namespace ShoppingMallCancellationRequestAtSummaryTransformer {
@@ -26,16 +29,12 @@ export namespace ShoppingMallCancellationRequestAtSummaryTransformer {
         id: true,
         reason: true,
         status: true,
+        responded_at: true,
         created_at: true,
-        updated_at: true,
-        deleted_at: true,
         orderItem: ShoppingMallOrderItemAtSummaryTransformer.select(),
-        customer: ShoppingMallCustomerAtSummaryTransformer.select(),
-        snapshots: {
-          select: { id: true },
-        } satisfies Prisma.shopping_mall_cancellation_request_snapshotsFindManyArgs,
+        customer: ShoppingMallMemberAtSummaryTransformer.select(),
       },
-    } satisfies Prisma.shopping_mall_cancellation_requestsFindManyArgs;
+    };
   }
   export async function transform(
     input: Payload,
@@ -44,13 +43,16 @@ export namespace ShoppingMallCancellationRequestAtSummaryTransformer {
       id: input.id,
       reason: input.reason,
       status: input.status,
-      created_at: input.created_at.toISOString(),
-      customer: await ShoppingMallCustomerAtSummaryTransformer.transform(
-        input.customer,
-      ),
+      responded_at: input.responded_at
+        ? toISOStringSafe(input.responded_at)
+        : null,
+      created_at: toISOStringSafe(input.created_at),
       orderItem: await ShoppingMallOrderItemAtSummaryTransformer.transform(
         input.orderItem,
       ),
-    };
+      customer: await ShoppingMallMemberAtSummaryTransformer.transform(
+        input.customer,
+      ),
+    } satisfies IShoppingMallCancellationRequest.ISummary;
   }
 }

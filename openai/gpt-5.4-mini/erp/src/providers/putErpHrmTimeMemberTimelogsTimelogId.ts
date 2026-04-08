@@ -1,10 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
-import { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
 import { IErpHrmTimeTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTask";
 import { IErpHrmTimeTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimelog";
 import { ArrayUtil } from "@nestia/e2e";
@@ -27,7 +24,9 @@ export async function putErpHrmTimeMemberTimelogsTimelogId(props: {
 }): Promise<IErpHrmTimeTimelog> {
   const timelog = await MyGlobal.prisma.erp_hrm_time_timelogs.findUniqueOrThrow(
     {
-      where: { id: props.timelogId },
+      where: {
+        id: props.timelogId,
+      },
       select: {
         id: true,
         erp_hrm_time_member_id: true,
@@ -37,92 +36,103 @@ export async function putErpHrmTimeMemberTimelogsTimelogId(props: {
         duration_minutes: true,
         description: true,
         billable: true,
-        created_at: true,
-        updated_at: true,
         deleted_at: true,
+        project: {
+          select: {
+            id: true,
+            erp_hrm_time_organization_id: true,
+            status: true,
+          },
+        },
       },
     },
   );
   if (timelog.erp_hrm_time_member_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  if (timelog.deleted_at !== null) {
-    throw new HttpException("Timelog is deleted", 400);
-  }
-  const lockedProjectStatuses = new Set<string>([
-    "approved",
-    "completed",
-    "archived",
-  ]);
-  const currentProject =
-    await MyGlobal.prisma.erp_hrm_time_projects.findFirstOrThrow({
+  const lockedTimelog =
+    await MyGlobal.prisma.erp_hrm_time_timesheet_timelogs.findFirst({
       where: {
-        id: timelog.erp_hrm_time_project_id,
-        deleted_at: null,
+        erp_hrm_time_timelog_id: props.timelogId,
+        timesheet: {
+          status: {
+            in: ["submitted", "approved"],
+          },
+        },
       },
       select: {
         id: true,
-        erp_hrm_time_organization_id: true,
-        status: true,
-        deleted_at: true,
       },
     });
-  if (lockedProjectStatuses.has(currentProject.status)) {
-    throw new HttpException("Timelog is locked", 400);
+  if (lockedTimelog !== null) {
+    throw new HttpException(
+      "Timelog is locked by an approved or submitted timesheet",
+      409,
+    );
   }
-  const currentMember = props.member;
-  const projectId =
+  const targetProjectId: string & tags.Format<"uuid"> =
     props.body.erp_hrm_time_project_id ?? timelog.erp_hrm_time_project_id;
-  const taskId =
+  const targetTaskId: (string & tags.Format<"uuid">) | null =
     props.body.erp_hrm_time_task_id === undefined
       ? timelog.erp_hrm_time_task_id
       : props.body.erp_hrm_time_task_id;
-  if (props.body.erp_hrm_time_project_id !== undefined) {
-    await MyGlobal.prisma.erp_hrm_time_projects.findFirstOrThrow({
-      where: {
-        id: props.body.erp_hrm_time_project_id,
-        erp_hrm_time_organization_id:
-          currentProject.erp_hrm_time_organization_id,
-        deleted_at: null,
-      },
-      select: { id: true },
-    });
+  const targetProject =
+    targetProjectId === timelog.erp_hrm_time_project_id
+      ? timelog.project
+      : await MyGlobal.prisma.erp_hrm_time_projects.findUniqueOrThrow({
+          where: {
+            id: targetProjectId,
+          },
+          select: {
+            id: true,
+            erp_hrm_time_organization_id: true,
+            status: true,
+          },
+        });
+  if (
+    targetProject.erp_hrm_time_organization_id !==
+    timelog.project.erp_hrm_time_organization_id
+  ) {
+    throw new HttpException("Project is outside the active organization", 400);
   }
-  if (props.body.erp_hrm_time_task_id !== undefined) {
-    if (props.body.erp_hrm_time_task_id !== null) {
-      await MyGlobal.prisma.erp_hrm_time_tasks.findFirstOrThrow({
+  if (
+    (targetProject.status === "archived" ||
+      targetProject.status === "completed") &&
+    targetProjectId !== timelog.erp_hrm_time_project_id
+  ) {
+    throw new HttpException(
+      "Archived or completed projects do not accept new timelogs",
+      400,
+    );
+  }
+  if (targetTaskId !== null) {
+    const targetTask =
+      await MyGlobal.prisma.erp_hrm_time_tasks.findUniqueOrThrow({
         where: {
-          id: props.body.erp_hrm_time_task_id,
-          erp_hrm_time_project_id: projectId,
-          deleted_at: null,
+          id: targetTaskId,
         },
-        select: { id: true },
+        select: {
+          id: true,
+          erp_hrm_time_project_id: true,
+        },
       });
+    if (targetTask.erp_hrm_time_project_id !== targetProjectId) {
+      throw new HttpException(
+        "Task does not belong to the selected project",
+        400,
+      );
     }
-  } else if (taskId !== null) {
-    await MyGlobal.prisma.erp_hrm_time_tasks.findFirstOrThrow({
-      where: {
-        id: taskId,
-        erp_hrm_time_project_id: projectId,
-        deleted_at: null,
-      },
-      select: { id: true },
-    });
   }
   await MyGlobal.prisma.erp_hrm_time_timelogs.update({
-    where: { id: props.timelogId },
+    where: {
+      id: props.timelogId,
+    },
     data: {
       ...(props.body.work_date !== undefined && {
-        work_date: new Date(props.body.work_date),
+        work_date: toISOStringSafe(props.body.work_date),
       }),
       ...(props.body.duration_minutes !== undefined && {
         duration_minutes: props.body.duration_minutes,
-      }),
-      ...(props.body.description !== undefined && {
-        description: props.body.description,
-      }),
-      ...(props.body.billable !== undefined && {
-        billable: props.body.billable,
       }),
       ...(props.body.erp_hrm_time_project_id !== undefined && {
         erp_hrm_time_project_id: props.body.erp_hrm_time_project_id,
@@ -130,14 +140,22 @@ export async function putErpHrmTimeMemberTimelogsTimelogId(props: {
       ...(props.body.erp_hrm_time_task_id !== undefined && {
         erp_hrm_time_task_id: props.body.erp_hrm_time_task_id,
       }),
-      updated_at: new Date(),
+      ...(props.body.description !== undefined && {
+        description: props.body.description,
+      }),
+      ...(props.body.billable !== undefined && {
+        billable: props.body.billable,
+      }),
+      updated_at: toISOStringSafe(new Date().toISOString()),
     },
   });
   const updated = await MyGlobal.prisma.erp_hrm_time_timelogs.findUniqueOrThrow(
     {
-      where: { id: props.timelogId },
+      where: {
+        id: props.timelogId,
+      },
       ...ErpHrmTimeTimelogTransformer.select(),
     },
   );
-  return await ErpHrmTimeTimelogTransformer.transform(updated);
+  return ErpHrmTimeTimelogTransformer.transform(updated);
 }

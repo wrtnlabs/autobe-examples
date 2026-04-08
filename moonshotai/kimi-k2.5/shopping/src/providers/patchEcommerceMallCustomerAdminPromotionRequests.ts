@@ -1,5 +1,7 @@
 import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
 import { IEcommerceMallAdminPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminPromotionRequest";
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIEcommerceMallAdminPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallAdminPromotionRequest";
@@ -20,78 +22,83 @@ export async function patchEcommerceMallCustomerAdminPromotionRequests(props: {
   customer: CustomerPayload;
   body: IEcommerceMallAdminPromotionRequest.IRequest;
 }): Promise<IPageIEcommerceMallAdminPromotionRequest.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
+  // Verify the customer is a super administrator
+  const admin = await MyGlobal.prisma.ecommerce_mall_admins.findFirst({
+    where: {
+      id: props.customer.id,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      grade: true,
+    },
+  });
+  if (admin === null || admin.grade !== "super_admin") {
+    throw new HttpException(
+      "Forbidden: Only super administrators can access this resource",
+      403,
+    );
+  }
+  const body = props.body;
+  const page = body.page ?? 1;
+  const limit = body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const createdAtCondition: Prisma.DateTimeFilter = {};
-  if (
-    props.body.submittedAtFrom !== undefined &&
-    props.body.submittedAtFrom !== null
-  ) {
-    createdAtCondition.gte = new Date(props.body.submittedAtFrom);
+  // Build where clause based on filters
+  const whereConditions: Prisma.ecommerce_mall_admin_promotion_requestsWhereInput =
+    {
+      deleted_at: null,
+    };
+  if (body.status !== null && body.status !== undefined) {
+    whereConditions.status = body.status;
   }
-  if (
-    props.body.submittedAtTo !== undefined &&
-    props.body.submittedAtTo !== null
-  ) {
-    createdAtCondition.lte = new Date(props.body.submittedAtTo);
+  if (body.reviewed === true) {
+    whereConditions.reviewer_id = { not: null };
+  } else if (body.reviewed === false) {
+    whereConditions.reviewer_id = null;
   }
-  const updatedAtCondition: Prisma.DateTimeFilter = {};
-  if (
-    props.body.reviewedAtFrom !== undefined &&
-    props.body.reviewedAtFrom !== null
-  ) {
-    updatedAtCondition.gte = new Date(props.body.reviewedAtFrom);
+  // Handle requester type filtering through polymorphic relations
+  if (body.requesterType === "customer") {
+    whereConditions.customerSubtype = {
+      isNot: null,
+    };
+  } else if (body.requesterType === "seller") {
+    whereConditions.sellerRequest = {
+      isNot: null,
+    };
   }
-  if (
-    props.body.reviewedAtTo !== undefined &&
-    props.body.reviewedAtTo !== null
-  ) {
-    updatedAtCondition.lte = new Date(props.body.reviewedAtTo);
+  // Build orderBy clause
+  let orderBy: Prisma.ecommerce_mall_admin_promotion_requestsOrderByWithRelationInput;
+  const sortOrder = body.sortOrder === "asc" ? "asc" : "desc";
+  if (body.sortBy === "createdAt") {
+    orderBy = { created_at: sortOrder };
+  } else if (body.sortBy === "reviewedAt") {
+    orderBy = { updated_at: sortOrder };
+  } else if (body.sortBy === "status") {
+    orderBy = { status: sortOrder };
+  } else {
+    // Default sort by created_at desc
+    orderBy = { created_at: "desc" };
   }
-  const whereInput: Prisma.ecommerce_mall_admin_promotion_requestsWhereInput = {
-    deleted_at: null,
-    ...(props.body.status !== undefined &&
-      props.body.status !== null && { status: props.body.status }),
-    ...(props.body.reviewerId !== undefined &&
-      props.body.reviewerId !== null && { reviewer_id: props.body.reviewerId }),
-    ...(Object.keys(createdAtCondition).length > 0 && {
-      created_at: createdAtCondition,
-    }),
-    ...(Object.keys(updatedAtCondition).length > 0 && {
-      updated_at: updatedAtCondition,
-    }),
-  };
-  let orderByInput: Prisma.ecommerce_mall_admin_promotion_requestsOrderByWithRelationInput =
-    { created_at: "desc" };
-  if (props.body.sort !== undefined && props.body.sort !== null) {
-    const [field, direction] = props.body.sort.split(":");
-    const dir: "asc" | "desc" = direction === "asc" ? "asc" : "desc";
-    if (field === "submittedAt") {
-      orderByInput = { created_at: dir };
-    } else if (field === "reviewedAt") {
-      orderByInput = { updated_at: dir };
-    } else if (field === "status") {
-      orderByInput = { status: dir };
-    }
-  }
-  const data =
-    await MyGlobal.prisma.ecommerce_mall_admin_promotion_requests.findMany({
-      where: whereInput,
+  // Execute queries
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.ecommerce_mall_admin_promotion_requests.findMany({
+      where: whereConditions,
       skip,
       take: limit,
-      orderBy: orderByInput,
+      orderBy,
       ...EcommerceMallAdminPromotionRequestAtSummaryTransformer.select(),
-    });
-  const total =
-    await MyGlobal.prisma.ecommerce_mall_admin_promotion_requests.count({
-      where: whereInput,
-    });
+    }),
+    MyGlobal.prisma.ecommerce_mall_admin_promotion_requests.count({
+      where: whereConditions,
+    }),
+  ]);
+  // Transform results
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    EcommerceMallAdminPromotionRequestAtSummaryTransformer.transform,
+  );
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceMallAdminPromotionRequestAtSummaryTransformer.transform,
-    ),
+    data: transformedData,
     pagination: {
       current: page,
       limit: limit,

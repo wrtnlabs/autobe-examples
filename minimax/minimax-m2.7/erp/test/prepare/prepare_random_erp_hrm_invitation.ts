@@ -10,11 +10,21 @@ export function prepare_random_erp_hrm_invitation(
 ): IErpHrmInvitation.ICreate {
   return {
     email: input?.email ?? typia.random<string & tags.Format<"email">>(),
-    position: input?.position ?? RandomGenerator.name(1),
-    note: input?.note ?? RandomGenerator.paragraph({ sentences: 2 }),
-    erpHrmRoleId:
-      input?.erpHrmRoleId ?? typia.random<string & tags.Format<"uuid">>(),
-    erpHrmDepartmentId:
-      input?.erpHrmDepartmentId ?? typia.random<string & tags.Format<"uuid">>(),
+    roleId:
+      input?.roleId === undefined
+        ? null
+        : (input.roleId ?? typia.random<string & tags.Format<"uuid">>()),
+    departmentId:
+      input?.departmentId === undefined
+        ? null
+        : (input.departmentId ?? typia.random<string & tags.Format<"uuid">>()),
+    position:
+      input?.position === undefined
+        ? null
+        : (input.position ?? RandomGenerator.name(1)),
+    note:
+      input?.note === undefined
+        ? null
+        : (input.note ?? RandomGenerator.paragraph({ sentences: 2 })),
   };
 }

@@ -9,51 +9,42 @@ import typia, { tags } from "typia";
 import { IEcommerceMallShipment } from "../../../../structures/IEcommerceMallShipment";
 import { IPageIEcommerceMallShipment } from "../../../../structures/IPageIEcommerceMallShipment";
 
-export * as items from "./items/index";
-export * as deliveries from "./deliveries/index";
 export * as delivery from "./delivery/index";
 
 /**
- * Retrieve a paginated list of shipments with filtering and search capabilities.
+ * Retrieve a filtered and paginated list of shipments.
  *
- * This operation provides comprehensive shipment tracking visibility for sellers and customers. Sellers can view all shipments they've created to monitor their fulfillment operations. Customers can view shipments associated with their orders to track delivery status.
+ * This operation provides shipment tracking capabilities for sellers, customers, and administrators. Shipments represent physical packages containing one or more order items from the same seller, each with carrier and tracking information.
  *
- * Shipments represent physical packages containing one or more order items from the same seller. Each shipment includes carrier information and tracking numbers for logistics monitoring. The system supports filtering by order, seller, carrier name, and shipping date ranges.
+ * Sellers can view shipments they've created for their order items. Customers can view shipments for their orders to track delivery status. Administrators can view all shipments on the platform.
  *
- * Security and access control ensure users only see shipments relevant to them. Sellers see their own shipments (via seller_id). Customers see shipments for orders they placed (via order_id through order relationship). Administrators have full visibility across all shipments.
- *
- * This endpoint supports cursor-based pagination for efficient browsing of large result sets. Results can be sorted by shipping date, creation date, or other relevant fields.
+ * Supports filtering by order ID, seller ID, shipment status (in_transit/delivered), and shipping date ranges. Results include tracking information (carrier name, tracking number) and delivery status. Soft-deleted shipments are automatically excluded from results.
  *
  * @param props.connection
  * @param props.body Search criteria and pagination parameters for filtering shipments
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the ecommerce_mall_shipments table with pagination and filtering.
+ * @x-autobe-specification Query commerce_shipments with access control based on current actor.
  *
- * Filter parameters from request body:
- * - orderId: Filter shipments for a specific customer order (customers use this)
- * - sellerId: Filter shipments by seller (admins use this, or sellers implicitly)
- * - carrierName: Partial match on carrier name (e.g., 'FedEx', 'UPS')
- * - trackingNumber: Exact or partial match on tracking number
- * - shippedAtFrom/shippedAtTo: Date range filtering on shipped_at
+ * For seller users: Filter by seller_id matching the authenticated seller.
+ * For customer users: Join with commerce_orders and filter by order.customer_id matching the authenticated customer.
+ * For admin users: No additional filtering (view all shipments).
  *
- * Authorization checks:
- * - If customer actor: automatically filter by orders belonging to authenticated customer
- * - If seller actor: automatically filter by seller_id matching authenticated seller
- * - If admin/superAdmin: no automatic filtering, respect provided filters
+ * Search filters to implement:
+ * - orderId: Filter shipments for a specific order
+ * - sellerId: Filter by seller (admin only, ignored for sellers viewing own shipments)
+ * - carrierName: Partial match on carrier name
+ * - status: Filter by delivery status - 'in_transit' (no delivery record) or 'delivered' (has delivery record)
+ * - shippedAtFrom/shippedAtTo: Date range filter on shipped_at timestamp
  *
- * Include related data:
- * - Join with ecommerce_mall_shipment_items to get included order items count
- * - Join with ecommerce_mall_orders for order_number (if accessible)
- * - Join with ecommerce_mall_shipment_deliveries to include delivery status
+ * Join with commerce_orders to include order summary information.
+ * Join with commerce_shipment_items to get item count per shipment.
+ * Left join with commerce_shipment_deliveries to determine delivery status.
  *
- * Return IPageIEcommerceMallShipment.ISummary with:
- * - id, sellerId, orderId, carrierName, trackingNumber
- * - shippedAt, createdAt, updatedAt
- * - delivery status (if delivered), deliveredAt
- * - item count (number of order items in shipment)
+ * Pagination: Cursor-based or offset pagination with configurable page size.
+ * Sorting: Default by shipped_at descending (newest first), optional by created_at.
  *
- * Use cursor-based pagination for efficient large dataset handling.
+ * Return paginated list with shipment summary including: id, orderId, sellerId, carrierName, trackingNumber, shippedAt, deliveryStatus, itemCount.
  * @path /ecommerceMall/customer/shipments
  * @accessor api.functional.ecommerceMall.customer.shipments.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -132,55 +123,42 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific shipment.
+ * Retrieve detailed information for a specific shipment by its unique identifier.
  *
- * This operation returns comprehensive details about a shipment, including tracking information (carrier name and tracking number), shipping timestamp, and the associated order items bundled in this shipment. Sellers use this endpoint to review their shipments, while customers use it to track package delivery status.
+ * This operation returns complete shipment details including the carrier name, tracking number, shipping timestamp, and all order items included in this physical package. The shipment items show which specific products and variants from the customer's order are contained in this shipment.
  *
- * The response includes the complete shipment entity with its associated order items through the shipment items junction table. Each order item in the shipment includes product details at the time of purchase through the preserved snapshots. Delivery confirmation information is also included when available.
+ * Shipments represent physical packages dispatched by sellers. Customers use this information to track delivery status using the carrier and tracking number. The response includes the seller information and associated order details for complete context.
  *
- * Authorization: Sellers can only view shipments they created. Customers can view shipments for their orders. Administrators can view any shipment.
+ * Authorization ensures that only the customer who placed the order or the seller who created the shipment can view the details. Returns 404 if the shipment does not exist or has been deleted.
  *
  * @param props.connection
- * @param props.shipmentId Unique identifier of the shipment to retrieve
+ * @param props.shipmentId Unique identifier of the shipment to retrieve (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implementation Steps:
+ * @x-autobe-specification Query the ecommerce_mall_shipments table by primary key id matching the shipmentId path parameter.
  *
- * 1. **Path Parameter Validation**
- *    - shipmentId must be a valid UUID string
- *    - Return 400 Bad Request if format is invalid
+ * Include the following related data in the response:
+ * - shipmentItems: Join with ecommerce_mall_shipment_items to get all items in this shipment
+ * - For each shipment item, include the associated orderItem with product and variant details
+ * - order: Include the parent order with customer shipping address information
+ * - seller: Include seller profile information for the shipment sender
  *
- * 2. **Authentication Check**
- *    - Validate JWT token from Authorization header
- *    - Extract caller actor type (seller, customer, admin)
+ * Validation rules:
+ * - shipmentId must be a valid UUID format
+ * - Shipment record must exist and not be soft-deleted (deleted_at is null)
+ * - Return 404 NOT_FOUND error if shipment does not exist
  *
- * 3. **Shipment Retrieval**
- *    - Query ecommerce_mall_shipments by id = shipmentId
- *    - Include related entities:
- *      * seller (ecommerce_mall_sellers)
- *      * order (ecommerce_mall_orders)
- *      * shipmentItems → orderItem (ecommerce_mall_order_items with product snapshots)
- *      * delivery (ecommerce_mall_shipment_deliveries if exists)
+ * Authorization checks:
+ * - Customer must be the owner of the parent order (order.customer_id == current customer id)
+ * - OR current user must be the seller who created the shipment (shipment.seller_id == current seller id)
+ * - Return 403 FORBIDDEN if neither condition is met
  *
- * 4. **Authorization Checks**
- *    - If actor is seller: verify shipment.seller_id matches caller's seller ID
- *    - If actor is customer: verify shipment.order.customer_id matches caller's customer ID
- *    - Admin/SuperAdmin: unrestricted access
- *    - Return 403 Forbidden if unauthorized
+ * Delivery status derivation:
+ * - Check ecommerce_mall_shipment_deliveries table for delivery confirmation
+ * - If delivery record exists or shipped_at + 14 days has passed, status is 'delivered'
+ * - Otherwise status is 'in_transit'
  *
- * 5. **Data Assembly**
- *    - Map DB fields to IEcommerceMallShipment structure
- *    - For each shipmentItem, load the orderItem with its productVariantSnapshot and productSnapshot
- *    - Include delivery record if exists
- *
- * 6. **Response Construction**
- *    - Return complete IEcommerceMallShipment JSON response
- *    - Status 200 OK
- *
- * Edge Cases:
- * - 404 Not Found: Shipment doesn't exist or has been soft-deleted
- * - 403 Forbidden: User attempting to view another seller's/customer's shipment
- * - 401 Unauthorized: Missing or invalid authentication token
+ * Response must include derived 'status' field based on delivery confirmation state.
  * @path /ecommerceMall/customer/shipments/:shipmentId
  * @accessor api.functional.ecommerceMall.customer.shipments.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -209,7 +187,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the shipment to retrieve
+     * Unique identifier of the shipment to retrieve (UUID format)
      */
     shipmentId: string & tags.Format<"uuid">;
   };

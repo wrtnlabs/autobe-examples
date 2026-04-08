@@ -1,0 +1,191 @@
+/// Stores a user's private profile personalization details. The profile is
+/// owned by exactly one user account, and other users must not be able to
+/// view it.
+///
+/// @namespace multi_user_todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the user profile record.
+  id String @id
+  
+  /// Reference to the owning {@link multi_user_todo_user_profiles.id} account.
+  /// Enforces that each user has at most one profile.
+  multi_user_todo_user_id String
+  
+  /// User-facing display name presented in the app. This is a key profile
+  /// attribute used for personalization.
+  display_name String
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the profile is treated as deleted and is
+  /// no longer visible to the owning user.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user multi_user_todo_user_profiles @relation("recursive", fields: [multi_user_todo_user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  userProfile multi_user_todo_user_profiles? @relation("recursive")
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([multi_user_todo_user_id])
+  @@index([display_name])
+}
+
+/// Private task item owned by exactly one user and visible only to that user
+/// across normal, completed, and trash states. Stores the todo's current
+/// editable attributes plus timestamps for filtering, ordering, and soft
+/// deletion visibility.
+///
+/// @namespace multi_user_todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key of the todo item.
+  id String @id
+  
+  /// Required human-readable title of the todo.
+  title String
+  
+  /// Optional longer description for the todo; can be empty or null.
+  description String?
+  
+  /// Optional datetime indicating when the todo begins.
+  start_date DateTime?
+  
+  /// Optional datetime deadline for the todo.
+  due_date DateTime?
+  
+  /// Completion status of the todo; starts as false (incomplete).
+  is_complete Boolean
+  
+  /// Lifecycle state controlling deletion flow and list visibility (e.g.,
+  /// normal vs trash).
+  lifecycle_state String
+  
+  /// Creation timestamp of the todo record.
+  created_at DateTime
+  
+  /// Last update timestamp of the todo record.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. When non-null, the todo is considered deleted
+  /// (typically moved to trash) and excluded from normal lists.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  editHistoryEntries multi_user_todo_todo_edit_history_entries[] @relation("multi_user_todo_todo_edit_history_entries_of_multi_use_2e58f97c")
+  editHistoryEntriesByOwners multi_user_todo_todo_edit_history_entries[] @relation("multi_user_todo_todo_edit_history_entries_of_multi_use_1e49d0dd")
+  
+  //----
+  // INDEXES
+  //----
+  @@index([lifecycle_state, deleted_at])
+  @@index([is_complete, deleted_at])
+  @@index([created_at])
+}
+
+/// Immutable edit history entry for a specific todo.
+///
+/// Each row represents a single change event and stores both the previous
+/// and new values for tracked todo attributes. This enables audit-style
+/// inspection of how a user's todo changed over time, ordered most-recent to
+/// oldest via edit_made_at and the created_at timestamps.
+///
+/// Entries are soft-deletable, and are permanently removed when the owning
+/// todo is permanently removed per system retention rules.
+///
+/// @namespace multi_user_todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_todo_edit_history_entries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the todo edit history entry.
+  id String @id
+  
+  /// Reference to {@link multi_user_todos.id} for the todo that was edited.
+  multi_user_todo_todo_id String
+  
+  /// Reference to the owning user of the edited todo, copied for efficient
+  /// ownership-scoped filtering.
+  multi_user_todo_owner_id String
+  
+  /// Business time when the edit was made.
+  edit_made_at DateTime
+  
+  /// Previous todo title value before this edit.
+  previous_title String
+  
+  /// New todo title value after this edit.
+  new_title String
+  
+  /// Previous todo description value before this edit; null means it was empty.
+  previous_description String?
+  
+  /// New todo description value after this edit; null means it is empty.
+  new_description String?
+  
+  /// Previous todo start date before this edit; null means it was unset.
+  previous_start_date DateTime?
+  
+  /// New todo start date after this edit; null means it is unset.
+  new_start_date DateTime?
+  
+  /// Previous todo due date before this edit; null means it was unset.
+  previous_due_date DateTime?
+  
+  /// New todo due date after this edit; null means it is unset.
+  new_due_date DateTime?
+  
+  /// Previous completion status before this edit.
+  previous_is_complete Boolean
+  
+  /// New completion status after this edit.
+  new_is_complete Boolean
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for this history entry.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo multi_user_todo_todos @relation("multi_user_todo_todo_edit_history_entries_of_multi_use_2e58f97c", fields: [multi_user_todo_todo_id], references: [id], onDelete: Cascade)
+  owner multi_user_todo_todos @relation("multi_user_todo_todo_edit_history_entries_of_multi_use_1e49d0dd", fields: [multi_user_todo_owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_todo_id, edit_made_at], map: "multi_user_todo_todo_edit_history_entries_multi_user_t_f2503875")
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_owner_id, edit_made_at], map: "multi_user_todo_todo_edit_history_entries_multi_user_t_5a666d85")
+}

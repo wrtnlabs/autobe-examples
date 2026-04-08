@@ -1,8 +1,10 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { IEcommerceMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdministrator";
 import type { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import type { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import type { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
+import type { IEcommerceMallProductReviewStat } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductReviewStat";
 import type { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
 import type { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
@@ -12,54 +14,76 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+import { authorize_administrator_join } from "../../../authorize/authorize_administrator_join";
+import { authorize_administrator_login } from "../../../authorize/authorize_administrator_login";
+import { authorize_administrator_refresh } from "../../../authorize/authorize_administrator_refresh";
 import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
+import { generate_random_ecommerce_mall_administrator_categories_create } from "../../../generate/generate_random_ecommerce_mall_administrator_categories_create";
 import { generate_random_ecommerce_mall_seller_products_create } from "../../../generate/generate_random_ecommerce_mall_seller_products_create";
+import { prepare_random_ecommerce_mall_category } from "../../../prepare/prepare_random_ecommerce_mall_category";
 import { prepare_random_ecommerce_mall_product } from "../../../prepare/prepare_random_ecommerce_mall_product";
 
 export async function test_api_seller_product_update_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Seller registration - create authenticated seller account
+  const sellerCredentials = {
+    email: typia.random<string & tags.Format<"email">>(),
+    password: RandomGenerator.alphaNumeric(16),
+    display_name: RandomGenerator.name(2),
+    href: typia.random<string & tags.Format<"uri">>(),
+    referrer: typia.random<string & tags.Format<"uri">>(),
+    ip: typia.random<string & tags.Format<"ipv4">>(),
+  } satisfies IEcommerceMallSeller.IJoin;
   const sellerConnection: api.IConnection = { host: connection.host };
-  const seller: IEcommerceMallSeller.IAuthorized = await authorize_seller_join(
-    sellerConnection,
-    {
-      body: {
-        email: typia.random<string & tags.Format<"email">>(),
-        password: RandomGenerator.alphaNumeric(16),
-        href: typia.random<string & tags.Format<"uri">>(),
-        referrer: typia.random<string & tags.Format<"uri">>(),
-      },
-    },
-  );
+  const seller = await authorize_seller_join(sellerConnection, {
+    body: sellerCredentials,
+  });
   typia.assert(seller);
-  // 2. Create product through authenticated seller session
-  const product: IEcommerceMallProduct =
-    await generate_random_ecommerce_mall_seller_products_create(
-      sellerConnection,
+  const adminCredentials = {
+    display_name: RandomGenerator.name(2),
+    email: typia.random<string & tags.Format<"email">>(),
+    password: RandomGenerator.alphaNumeric(16),
+    grade: "regular" as const,
+  } satisfies IEcommerceMallAdministrator.IJoin;
+  const adminConnection: api.IConnection = { host: connection.host };
+  const admin = await authorize_administrator_join(adminConnection, {
+    body: adminCredentials,
+  });
+  typia.assert(admin);
+  const category =
+    await generate_random_ecommerce_mall_administrator_categories_create(
+      adminConnection,
       {
         body: {
-          name: RandomGenerator.paragraph({ sentences: 3 }),
-          description: RandomGenerator.content({ paragraphs: 2 }),
-          category_id: typia.random<string & tags.Format<"uuid">>(),
-          base_price: typia.random<
-            number & tags.Type<"uint32"> & tags.Minimum<1000>
-          >(),
+          name: RandomGenerator.name(3),
+          description: RandomGenerator.paragraph({ sentences: 3 }),
         },
       },
     );
+  typia.assert(category);
+  const productInput = {
+    name: RandomGenerator.name(3),
+    description: RandomGenerator.paragraph({ sentences: 5 }),
+    category_id: category.id,
+    base_price: typia.random<
+      number & tags.Type<"uint32"> & tags.Minimum<1000> & tags.Maximum<100000>
+    >(),
+  } satisfies IEcommerceMallProduct.ICreate;
+  const product = await generate_random_ecommerce_mall_seller_products_create(
+    sellerConnection,
+    {
+      body: productInput,
+    },
+  );
   typia.assert(product);
-  // 3. Store original values for validation
-  const originalName: string = product.name;
-  const originalDescription: string = product.description;
-  const originalSellerId: string = product.seller_id;
-  const createdAt: string = product.created_at;
-  // 4. Update product with partial fields (name and description only)
-  const updatedName: string = RandomGenerator.paragraph({ sentences: 3 });
-  const updatedDescription: string = RandomGenerator.content({ paragraphs: 3 });
-  const updatedProduct: IEcommerceMallProduct =
+  const updatedName = RandomGenerator.name(3);
+  const updatedDescription = RandomGenerator.paragraph({ sentences: 5 });
+  const updatedBasePrice = typia.random<
+    number & tags.Type<"uint32"> & tags.Minimum<1000> & tags.Maximum<100000>
+  >();
+  const updatedProduct =
     await api.functional.ecommerceMall.seller.products.update(
       sellerConnection,
       {
@@ -67,44 +91,44 @@ export async function test_api_seller_product_update_success(
         body: {
           name: updatedName,
           description: updatedDescription,
+          base_price: updatedBasePrice,
         } satisfies IEcommerceMallProduct.IUpdate,
       },
     );
   typia.assert(updatedProduct);
-  // 5. Validate name is updated
   TestValidator.equals(
-    "product name should be updated",
+    "product name updated",
     updatedProduct.name,
     updatedName,
   );
-  // 6. Validate description is updated
   TestValidator.equals(
-    "product description should be updated",
+    "product description updated",
     updatedProduct.description,
     updatedDescription,
   );
-  // 7. Validate seller_id remains unchanged
   TestValidator.equals(
-    "seller_id should remain unchanged",
-    updatedProduct.seller_id,
-    originalSellerId,
+    "product base price updated",
+    updatedProduct.base_price,
+    updatedBasePrice,
   );
-  // 8. Validate updated_at timestamp is newer than created_at
-  TestValidator.predicate(
-    "updated_at should be newer than created_at",
-    new Date(updatedProduct.updated_at).getTime() >
-      new Date(createdAt).getTime(),
-  );
-  // 9. Validate product relationship seller matches authenticated seller
   TestValidator.equals(
-    "product seller relationship should match authenticated seller",
-    updatedProduct.seller.id,
-    seller.id,
+    "product category unchanged",
+    updatedProduct.category.id,
+    category.id,
   );
-  // 10. Validate seller email in relationship matches authenticated seller
-  TestValidator.equals(
-    "product seller email should match authenticated seller",
-    updatedProduct.seller.email,
-    seller.email,
+  TestValidator.notEquals(
+    "product name changed",
+    product.name,
+    updatedProduct.name,
+  );
+  TestValidator.notEquals(
+    "product description changed",
+    product.description,
+    updatedProduct.description,
+  );
+  TestValidator.notEquals(
+    "product base price changed",
+    product.base_price,
+    updatedProduct.base_price,
   );
 }

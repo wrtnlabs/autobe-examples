@@ -16,31 +16,37 @@ export async function deleteHrmPlatformMemberRolesRoleId(props: {
   roleId: string & tags.Format<"uuid">;
 }): Promise<void> {
   const role = await MyGlobal.prisma.hrm_platform_roles.findUniqueOrThrow({
-    where: {
-      id: props.roleId,
-      deleted_at: null,
-    },
+    where: { id: props.roleId },
+    select: { id: true, organization_id: true, is_built_in: true },
   });
-  if (role.is_builtin === true) {
-    throw new HttpException("Built-in roles cannot be deleted", 400);
-  }
-  const employeesWithRole =
-    await MyGlobal.prisma.hrm_platform_employees.findFirst({
+  const membership =
+    await MyGlobal.prisma.hrm_platform_organization_memberships.findFirst({
       where: {
-        role_id: props.roleId,
+        member: { id: props.member.id },
+        organization: { id: role.organization_id },
         deleted_at: null,
       },
     });
-  if (employeesWithRole !== null) {
+  if (!membership) {
+    throw new HttpException("Forbidden", 403);
+  }
+  if (role.is_built_in) {
+    throw new HttpException("Built-in roles cannot be deleted", 403);
+  }
+  const assigneeCount = await MyGlobal.prisma.hrm_platform_employees.count({
+    where: {
+      role_id: props.roleId,
+      deleted_at: null,
+    },
+  });
+  if (assigneeCount > 0) {
     throw new HttpException(
-      "Cannot delete role with assigned employees. Reassign employees first.",
+      "Cannot delete role with active assignees. Reassign employees first.",
       409,
     );
   }
   await MyGlobal.prisma.hrm_platform_roles.update({
-    where: {
-      id: props.roleId,
-    },
+    where: { id: props.roleId },
     data: {
       deleted_at: new Date(),
     },

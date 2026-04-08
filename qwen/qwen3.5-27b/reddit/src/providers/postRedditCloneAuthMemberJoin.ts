@@ -9,7 +9,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditCloneMemberTransformer } from "../transformers/RedditCloneMemberTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,7 +16,7 @@ export async function postRedditCloneAuthMemberJoin(props: {
   ip: string;
   body: IRedditCloneMember.IJoin;
 }): Promise<IRedditCloneMember.IAuthorized> {
-  // 1. Check duplicate email
+  // 1. Check if email already exists
   const existingEmail = await MyGlobal.prisma.reddit_clone_members.findFirst({
     where: {
       email: props.body.email,
@@ -27,7 +26,7 @@ export async function postRedditCloneAuthMemberJoin(props: {
   if (existingEmail) {
     throw new HttpException("Email already registered", 409);
   }
-  // 2. Check duplicate username
+  // 2. Check if username already exists
   const existingUsername = await MyGlobal.prisma.reddit_clone_members.findFirst(
     {
       where: {
@@ -41,7 +40,7 @@ export async function postRedditCloneAuthMemberJoin(props: {
   }
   // 3. Hash password
   const passwordHash = await PasswordUtil.hash(props.body.password);
-  // 4. Create member
+  // 4. Create member record
   const now = new Date();
   const member = await MyGlobal.prisma.reddit_clone_members.create({
     data: {
@@ -49,36 +48,44 @@ export async function postRedditCloneAuthMemberJoin(props: {
       email: props.body.email,
       password_hash: passwordHash,
       username: props.body.username,
-      display_name: props.body.display_name ?? props.body.username,
-      bio: props.body.bio ?? null,
-      avatar_uri: props.body.avatar_uri ?? null,
+      created_at: now,
+      updated_at: now,
+      deleted_at: null,
+    },
+  });
+  // 5. Create user profile
+  const profile = await MyGlobal.prisma.reddit_clone_user_profiles.create({
+    data: {
+      id: v4(),
+      reddit_clone_member_id: member.id,
+      display_name: props.body.username,
+      bio: null,
+      avatar: null,
       karma: 0,
       created_at: now,
       updated_at: now,
       deleted_at: null,
     },
-    ...RedditCloneMemberTransformer.select(),
   });
-  // 5. Create session
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  // 6. Calculate expiration dates
+  const accessExpires = new Date(Date.now() + 15 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  // 7. Create session record first to get session ID
   const session = await MyGlobal.prisma.reddit_clone_member_sessions.create({
     data: {
       id: v4(),
       reddit_clone_member_id: member.id,
+      access_token: "placeholder",
+      refresh_token: "placeholder",
       ip: props.ip,
       href: props.body.href,
-      user_agent: null,
       referrer: props.body.referrer,
-      access_token: "",
-      refresh_token: "",
-      access_token_expires_at: accessExpires,
-      refresh_token_expires_at: refreshExpires,
       created_at: now,
       expired_at: refreshExpires,
+      deleted_at: null,
     },
   });
-  // 6. Generate JWT tokens after session creation
+  // 8. Generate JWT tokens with actual session ID
   const accessToken = jwt.sign(
     {
       type: "member",
@@ -87,7 +94,7 @@ export async function postRedditCloneAuthMemberJoin(props: {
       created_at: now.toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
+    { expiresIn: "15m", issuer: "autobe" },
   );
   const refreshToken = jwt.sign(
     {
@@ -100,7 +107,7 @@ export async function postRedditCloneAuthMemberJoin(props: {
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 7. Update session with tokens
+  // 9. Update session with actual tokens
   await MyGlobal.prisma.reddit_clone_member_sessions.update({
     where: { id: session.id },
     data: {
@@ -108,30 +115,23 @@ export async function postRedditCloneAuthMemberJoin(props: {
       refresh_token: refreshToken,
     },
   });
-  // 8. Create email verification
-  const verificationToken = v4();
-  const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  await MyGlobal.prisma.reddit_clone_member_email_verifications.create({
-    data: {
-      id: v4(),
-      member_id: member.id,
-      email: props.body.email,
-      token: verificationToken,
-      created_at: now,
-      expired_at: verificationExpires,
-      used_at: null,
-    },
-  });
-  // 9. Build token response
-  const token: IAuthorizationToken = {
-    access: accessToken,
-    refresh: refreshToken,
-    expired_at: accessExpires.toISOString(),
-    refreshable_until: refreshExpires.toISOString(),
-  };
-  // 10. Return IAuthorized
+  // 10. Return IAuthorized response
   return {
-    ...(await RedditCloneMemberTransformer.transform(member)),
-    token,
-  } satisfies IRedditCloneMember.IAuthorized;
+    id: member.id,
+    email: member.email,
+    username: member.username,
+    created_at: toISOStringSafe(member.created_at),
+    updated_at: toISOStringSafe(member.updated_at),
+    deleted_at: member.deleted_at ? toISOStringSafe(member.deleted_at) : null,
+    display_name: profile.display_name,
+    bio: profile.bio,
+    avatar: profile.avatar,
+    karma: profile.karma,
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: toISOStringSafe(accessExpires),
+      refreshable_until: toISOStringSafe(refreshExpires),
+    },
+  };
 }

@@ -2,7 +2,7 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import type { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import type { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import type { IErpHrmTimePermission } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimePermission";
 import type { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -19,23 +19,24 @@ export async function test_api_role_cross_organization_not_found(
   connection: api.IConnection,
 ): Promise<void> {
   const memberConnection: api.IConnection = { host: connection.host };
-  const member = await authorize_member_join(memberConnection, {
+  const authorized = await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: "Password123!",
-      name: RandomGenerator.name(),
+      password: "Str0ng!Passw0rd#2026",
+      displayName: RandomGenerator.name(),
       href: "https://example.com/signup",
       referrer: "https://example.com/",
+      ip: "127.0.0.1",
     } satisfies IErpHrmTimeMember.IJoin,
   });
-  typia.assert(member);
-  const roleId = typia.random<string & tags.Format<"uuid">>();
+  typia.assert(authorized);
+  const missingRoleId = typia.random<string & tags.Format<"uuid">>();
   await TestValidator.httpError(
-    "cross-organization role lookup should be not found",
-    404,
+    "organization-scoped role lookup should return not found for an inaccessible role id",
+    [404],
     async () => {
       await api.functional.erpHrmTime.member.roles.at(memberConnection, {
-        roleId,
+        roleId: missingRoleId,
       });
     },
   );

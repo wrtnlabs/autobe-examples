@@ -1,12 +1,13 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
-import { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
 import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { IRedditCommunitySubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunitySubscription";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityCommunityAtSummaryTransformer } from "./RedditCommunityCommunityAtSummaryTransformer";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
@@ -20,6 +21,7 @@ export namespace RedditCommunitySubscriptionTransformer {
       select: {
         id: true,
         created_at: true,
+        deleted_at: true,
         member: RedditCommunityMemberAtSummaryTransformer.select(),
         community: RedditCommunityCommunityAtSummaryTransformer.select(),
       },
@@ -36,7 +38,8 @@ export namespace RedditCommunitySubscriptionTransformer {
       community: await RedditCommunityCommunityAtSummaryTransformer.transform(
         input.community,
       ),
-      created_at: input.created_at.toISOString(),
-    };
+      createdAt: input.created_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
+    } satisfies IRedditCommunitySubscription;
   }
 }

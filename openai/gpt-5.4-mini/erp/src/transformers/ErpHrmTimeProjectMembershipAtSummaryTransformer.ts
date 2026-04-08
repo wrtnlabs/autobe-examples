@@ -1,8 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
+import { IErpHrmTimeEmployeeDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployeeDashboardSummary";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
 import { IErpHrmTimeProjectMembership } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProjectMembership";
 import { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
@@ -13,7 +13,7 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ErpHrmTimeEmployeeAtSummaryTransformer } from "./ErpHrmTimeEmployeeAtSummaryTransformer";
+import { ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer } from "./ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer";
 import { ErpHrmTimeProjectAtSummaryTransformer } from "./ErpHrmTimeProjectAtSummaryTransformer";
 
 export namespace ErpHrmTimeProjectMembershipAtSummaryTransformer {
@@ -24,12 +24,13 @@ export namespace ErpHrmTimeProjectMembershipAtSummaryTransformer {
     return {
       select: {
         id: true,
-        project: ErpHrmTimeProjectAtSummaryTransformer.select(),
-        employee: ErpHrmTimeEmployeeAtSummaryTransformer.select(),
         project_role: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        employee:
+          ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer.select(),
+        project: ErpHrmTimeProjectAtSummaryTransformer.select(),
       },
     } satisfies Prisma.erp_hrm_time_project_membershipsFindManyArgs;
   }
@@ -38,16 +39,17 @@ export namespace ErpHrmTimeProjectMembershipAtSummaryTransformer {
   ): Promise<IErpHrmTimeProjectMembership.ISummary> {
     return {
       id: input.id,
+      projectRole: input.project_role,
+      employee:
+        await ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer.transform(
+          input.employee,
+        ),
       project: await ErpHrmTimeProjectAtSummaryTransformer.transform(
         input.project,
       ),
-      employee: await ErpHrmTimeEmployeeAtSummaryTransformer.transform(
-        input.employee,
-      ),
-      projectRole: input.project_role,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

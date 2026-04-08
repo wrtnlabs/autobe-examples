@@ -8,6 +8,13 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+/**
+ * Register and authenticate a new guest for temporary platform access.
+ *
+ * Creates a guest session with randomized session context data (href, referrer, ip) for unauthenticated users. The guest is identified by device fingerprint auto-generated from request headers. Returns JWT tokens for temporary access to public platform features.
+ *
+ * The href field indicates the current page URL where the guest is registering, referrer indicates the source page URL, and ip is the client IP address (optional). These fields are used for security tracking and session management.
+ */
 export async function authorize_guest_join(
   connection: api.IConnection,
   props: {

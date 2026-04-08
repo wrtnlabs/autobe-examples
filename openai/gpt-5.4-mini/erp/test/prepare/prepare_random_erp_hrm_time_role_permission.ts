@@ -9,8 +9,15 @@ export function prepare_random_erp_hrm_time_role_permission(
   input?: DeepPartial<IErpHrmTimeRolePermission.ICreate> | undefined,
 ): IErpHrmTimeRolePermission.ICreate {
   return {
-    erpHrmTimePermissionId:
-      input?.erpHrmTimePermissionId ??
-      typia.random<string & tags.Format<"uuid">>(),
+    permissionKeys: input?.permissionKeys
+      ? input.permissionKeys.map(
+          (item) => item ?? RandomGenerator.alphabets(12),
+        )
+      : ArrayUtil.repeat(
+          typia.random<
+            number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<3>
+          >(),
+          () => RandomGenerator.alphabets(12),
+        ),
   };
 }

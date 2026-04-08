@@ -7,42 +7,46 @@ import {
 import typia, { tags } from "typia";
 
 import { IEcommerceMallInventoryRecord } from "../../../../../../structures/IEcommerceMallInventoryRecord";
+import { IPageIEcommerceMallInventoryRecord } from "../../../../../../structures/IPageIEcommerceMallInventoryRecord";
 
 /**
- * Add inventory (restock or adjustment) to a specific product variant.
+ * Add inventory to a product variant through restock or adjustment operations.
  *
- * This endpoint allows sellers to increase or decrease the stock quantity of their product variants. When adding inventory, the system creates an inventory record that captures the quantity change and the business reason for the change.
+ * This endpoint allows sellers to increase stock (restock) or decrease stock (adjustment) for their product variants. Each operation creates an immutable inventory record capturing the quantity change and business reason.
  *
- * The quantity_change field in the inventory record uses positive values for restocking (adding new stock) and negative values for adjustments (such as damaged goods, expired products, or inventory corrections). The current stock quantity of the variant is calculated by summing all inventory records.
+ * Restock operations add units to inventory (e.g., receiving new shipment). Adjustment operations subtract units for damaged goods, expired products, or inventory corrections.
  *
- * The system verifies that the requesting seller owns the product containing the variant before allowing the inventory operation. Only sellers with approved accounts can manage their product inventory.
+ * The operation verifies that the requesting seller owns the product containing the variant. Only positive quantity changes are allowed for restocking. For adjustments (negative changes), the system validates that the adjustment does not result in negative stock.
  *
- * Restocking is used when sellers receive new inventory from suppliers, while adjustments are used to correct stock discrepancies, account for damaged or expired goods, or handle inventory counts. Each inventory change requires a business reason for audit purposes.
- *
- * The inventory history can be retrieved using GET /products/{productId}/variants/{variantId}/inventory to see all stock changes for a variant.
+ * Inventory changes are immediately reflected in the variant's available stock quantity for customer purchases.
  *
  * @param props.connection
- * @param props.productId Unique identifier of the parent product containing the variant.
- * @param props.variantId Unique identifier of the product variant to add inventory to.
- * @param props.body Inventory addition details including the quantity to add and the business reason for the change.
+ * @param props.productId Unique identifier of the product containing the variant (global scope)
+ * @param props.variantId Unique identifier of the variant to add inventory to (global scope)
+ * @param props.body Inventory change details including quantity and business reason for the change
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
  * @x-autobe-specification 1. Extract productId and variantId from path parameters.
- * 2. Verify the requesting user is an authenticated seller with approved status.
- * 3. Verify the product exists and belongs to the requesting seller (join ecommerce_mall_products to check ecommerce_mall_seller_id).
- * 4. Verify the variant exists and belongs to the specified product (verify ecommerce_mall_product_variant_id matches).
- * 5. Validate the request body:
- *    - quantity must be greater than 0
- *    - reason must be a non-empty string
- *    - For adjustments (reducing stock): verify current stock >= adjustment quantity
- * 6. Create a new inventory record:
- *    - id: generate UUID
- *    - ecommerce_mall_product_variant_id: variantId
- *    - quantity_change: the provided quantity (positive for restock, negative for adjustment)
- *    - reason: the provided reason string
- *    - created_at: current timestamp
- * 7. Update the variant's quantity field by adding the quantity_change value.
- * 8. Return the created inventory record.
+ * 2. Verify the authenticated seller owns the product by checking ecommerce_mall_products.ecommerce_mall_seller_id matches the seller's ID.
+ * 3. Verify the variant belongs to the product by checking ecommerce_mall_product_variants.ecommerce_mall_product_id matches productId.
+ * 4. Validate request body:
+ *    - quantity must be a non-zero integer
+ *    - For positive quantity (restock): accept any value greater than 0
+ *    - For negative quantity (adjustment): validate that abs(quantity) does not exceed current variant quantity
+ *    - reason must be a non-empty string (e.g., 'restock', 'adjustment', 'damaged', 'expired')
+ * 5. Create inventory record in ecommerce_mall_inventory_records:
+ *    - Set id to new UUID
+ *    - Set ecommerce_mall_product_variant_id to variantId
+ *    - Set quantity_change to the provided quantity
+ *    - Set reason to the provided reason
+ *    - Set created_at to current timestamp
+ * 6. Update variant quantity in ecommerce_mall_product_variants:
+ *    - Set quantity = quantity + quantity_change
+ * 7. Return the created inventory record.
+ * 8. Error handling:
+ *    - 403 Forbidden if seller does not own the product
+ *    - 404 Not Found if product or variant does not exist
+ *    - 400 Bad Request if quantity is zero or adjustment would cause negative stock
  * @path /ecommerceMall/seller/products/:productId/variants/:variantId/inventory
  * @accessor api.functional.ecommerceMall.seller.products.variants.inventory.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -72,17 +76,17 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Unique identifier of the parent product containing the variant.
+     * Unique identifier of the product containing the variant (global scope)
      */
     productId: string & tags.Format<"uuid">;
 
     /**
-     * Unique identifier of the product variant to add inventory to.
+     * Unique identifier of the variant to add inventory to (global scope)
      */
     variantId: string & tags.Format<"uuid">;
 
     /**
-     * Inventory addition details including the quantity to add and the business reason for the change.
+     * Inventory change details including quantity and business reason for the change
      */
     body: IEcommerceMallInventoryRecord.ICreate;
   };
@@ -134,45 +138,55 @@ export namespace create {
 }
 
 /**
- * Modify the inventory quantity of a product variant by creating an inventory record.
+ * Retrieve a filtered and paginated list of inventory records for a specific product variant.
  *
- * This endpoint allows sellers to adjust their product variant stock through two types of operations: restock (adding inventory) and adjustment (subtracting inventory for damaged goods, expired products, or corrections).
+ * This operation allows sellers to view the complete history of stock changes for their product variants. Each inventory record captures a specific change event including the quantity changed, the business reason (such as restock, order_placement, order_cancellation, refund, or adjustment), and the timestamp when the change occurred.
  *
- * The endpoint validates that the product belongs to the authenticated seller before allowing any inventory modification. Each inventory change creates an immutable record capturing the quantity change, the reason for the change, and the timestamp.
+ * The current stock quantity is calculated by summing all quantity_change values from inventory records. This provides sellers with a complete audit trail of all inventory movements for each variant.
  *
- * For restock operations, the seller provides a positive quantity and the system creates an inventory record with a positive `quantity_change` value. For adjustment operations, the system verifies the requested quantity does not exceed available stock before creating an inventory record with a negative `quantity_change` value.
- *
- * The sign of the `quantity_change` field determines the operation type: positive values indicate inventory additions (restocking), while negative values indicate inventory removals (order deductions, adjustments). The `reason` field provides context for each change.
- *
- * The response returns the complete inventory record including the new calculated stock quantity, allowing the seller to verify the change was applied correctly.
- *
- * This operation is part of the seller inventory management workflow and should be used for initial restocking or when inventory corrections are needed.
+ * Supports filtering by date range and reason type, with results sorted by timestamp in descending order (most recent first). Sellers can only view inventory records for variants belonging to their own products.
  *
  * @param props.connection
- * @param props.productId Unique identifier of the parent product containing the variant (global scope)
- * @param props.variantId Unique identifier of the product variant to modify inventory for (global scope)
- * @param props.body Inventory modification details including operation type, quantity, and reason
+ * @param props.productId Unique identifier of the parent product (globally unique)
+ * @param props.variantId Unique identifier of the product variant (globally unique)
+ * @param props.body Search criteria including optional date range filter, reason filter, and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the product_variants table to verify the variant exists and retrieve its product_id. Validate that product_id matches the provided productId path parameter. Query the products table to verify the product belongs to the authenticated seller (ownership check). If product ownership validation fails, return 403 Forbidden.
+ * @x-autobe-specification Query ecommerce_mall_inventory_records table filtered by variant ID with pagination and sorting.
  *
- * Validate the request body: operation must be either 'restock' or 'adjust'. Quantity must be a positive integer greater than zero. Reason must be a non-empty string with minimum 1 character.
+ * 1. Ownership Verification:
+ *    - Extract seller ID from authenticated session token
+ *    - Query ecommerce_mall_product_variants to get the variant and verify ecommerce_mall_product_id
+ *    - Query ecommerce_mall_products to verify ecommerce_mall_seller_id matches the authenticated seller
+ *    - Reject with 403 Forbidden if product does not belong to seller
  *
- * For 'restock' operation: Create a new inventory_record with quantity_change equal to the requested quantity, operation set to 'restock', and reason as provided. Calculate new stock_quantity by summing all inventory_records for this variant and adding the new quantity_change.
+ * 2. Build database query:
+ *    - Filter by ecommerce_mall_product_variant_id = variantId
+ *    - Apply date range filter if createdAfter and/or createdBefore provided
+ *    - Apply reason filter if specified (exact match)
  *
- * For 'adjust' operation: First query all inventory_records for this variant and calculate current stock. Verify requested adjustment quantity does not exceed current stock. If exceeded, return 400 Bad Request with error message. If valid, create inventory_record with negative quantity_change (quantity_change = -requested_quantity), operation set to 'adjustment', and reason as provided.
+ * 3. Sort by created_at DESC (most recent first)
  *
- * Return the created inventory_record with its id, variant_id, quantity_change, operation, reason, created_at, and the new calculated stock_quantity.
+ * 4. Return paginated results with:
+ *    - id: record UUID
+ *    - quantityChange: integer value (positive or negative)
+ *    - reason: business reason string
+ *    - createdAt: timestamp of change
+ *    - variantId: included for confirmation
+ *
+ * 5. Error handling:
+ *    - 403 if variant does not belong to seller's product
+ *    - 404 if product or variant not found
  * @path /ecommerceMall/seller/products/:productId/variants/:variantId/inventory
- * @accessor api.functional.ecommerceMall.seller.products.variants.inventory.adjust
+ * @accessor api.functional.ecommerceMall.seller.products.variants.inventory.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function adjust(
+export async function index(
   connection: IConnection,
-  props: adjust.Props,
-): Promise<adjust.Response> {
+  props: index.Props,
+): Promise<index.Response> {
   return true === connection.simulate
-    ? adjust.simulate(connection, props)
+    ? index.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -182,32 +196,32 @@ export async function adjust(
           },
         },
         {
-          ...adjust.METADATA,
-          path: adjust.path(props),
+          ...index.METADATA,
+          path: index.path(props),
           status: null,
         },
         props.body,
       );
 }
-export namespace adjust {
+export namespace index {
   export type Props = {
     /**
-     * Unique identifier of the parent product containing the variant (global scope)
+     * Unique identifier of the parent product (globally unique)
      */
     productId: string & tags.Format<"uuid">;
 
     /**
-     * Unique identifier of the product variant to modify inventory for (global scope)
+     * Unique identifier of the product variant (globally unique)
      */
     variantId: string & tags.Format<"uuid">;
 
     /**
-     * Inventory modification details including operation type, quantity, and reason
+     * Search criteria including optional date range filter, reason filter, and pagination parameters
      */
-    body: IEcommerceMallInventoryRecord.ICreate;
+    body: IEcommerceMallInventoryRecord.IRequest;
   };
-  export type Body = IEcommerceMallInventoryRecord.ICreate;
-  export type Response = IEcommerceMallInventoryRecord;
+  export type Body = IEcommerceMallInventoryRecord.IRequest;
+  export type Response = IPageIEcommerceMallInventoryRecord.ISummary;
 
   export const METADATA = {
     method: "PATCH",
@@ -224,133 +238,22 @@ export namespace adjust {
 
   export const path = (props: Omit<Props, "body">) =>
     `/ecommerceMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/variants/${encodeURIComponent(props.variantId ?? "null")}/inventory`;
-  export const random = (): IEcommerceMallInventoryRecord =>
-    typia.random<IEcommerceMallInventoryRecord>();
+  export const random = (): IPageIEcommerceMallInventoryRecord.ISummary =>
+    typia.random<IPageIEcommerceMallInventoryRecord.ISummary>();
   export const simulate = (
     connection: IConnection,
-    props: adjust.Props,
+    props: index.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: adjust.path(props),
+      path: index.path(props),
       contentType: "application/json",
     });
     try {
       assert.param("productId")(() => typia.assert(props.productId));
       assert.param("variantId")(() => typia.assert(props.variantId));
       assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Retrieve a specific inventory record by its unique identifier.
- *
- * This endpoint allows sellers to view the details of a single inventory change record for their product variants. Each inventory record captures a quantity change event including restocking, order deductions, adjustments, cancellations, or refunds.
- *
- * The inventory record contains the quantity change value (positive for additions, negative for deductions), the business reason for the change, and the timestamp when the change occurred. These records are immutable once created to maintain a complete audit trail.
- *
- * Sellers can use this endpoint to inspect individual inventory transactions when investigating stock discrepancies, verifying order deductions, or reviewing restocking history. The endpoint validates that the specified product and variant belong to the authenticated seller before returning the inventory record.
- *
- * Related operations include listing all inventory records for a variant via the inventory history endpoint, and adding new inventory through restock or adjustment operations.
- *
- * @param props.connection
- * @param props.productId The unique identifier of the parent product that owns the variant.
- * @param props.variantId The unique identifier of the product variant that this inventory record belongs to.
- * @param props.recordId The unique identifier of the inventory record to retrieve.
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Extract productId, variantId, and recordId from path parameters.
- * 2. Validate that the authenticated user is the owner of the product (verify ecommerce_mall_products.seller_id matches authenticated seller).
- * 3. Validate that the variant belongs to the specified product (verify ecommerce_mall_product_variants.ecommerce_mall_product_id matches productId).
- * 4. Validate that the inventory record belongs to the specified variant (verify ecommerce_mall_inventory_records.ecommerce_mall_product_variant_id matches variantId).
- * 5. Query the inventory record by recordId.
- * 6. If any validation fails, return 403 Forbidden or 404 Not Found as appropriate.
- * 7. Return the inventory record with all fields: id, ecommerce_mall_product_variant_id, quantity_change, reason, created_at.
- *
- * Note: The current stock quantity is NOT stored directly in inventory_records; it is calculated by summing all quantity_change values for the variant.
- * @path /ecommerceMall/seller/products/:productId/variants/:variantId/inventory/:recordId
- * @accessor api.functional.ecommerceMall.seller.products.variants.inventory.at
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function at(
-  connection: IConnection,
-  props: at.Props,
-): Promise<at.Response> {
-  return true === connection.simulate
-    ? at.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...at.METADATA,
-          path: at.path(props),
-          status: null,
-        },
-      );
-}
-export namespace at {
-  export type Props = {
-    /**
-     * The unique identifier of the parent product that owns the variant.
-     */
-    productId: string & tags.Format<"uuid">;
-
-    /**
-     * The unique identifier of the product variant that this inventory record belongs to.
-     */
-    variantId: string & tags.Format<"uuid">;
-
-    /**
-     * The unique identifier of the inventory record to retrieve.
-     */
-    recordId: string & tags.Format<"uuid">;
-  };
-  export type Response = IEcommerceMallInventoryRecord;
-
-  export const METADATA = {
-    method: "GET",
-    path: "/ecommerceMall/seller/products/:productId/variants/:variantId/inventory/:recordId",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Props) =>
-    `/ecommerceMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/variants/${encodeURIComponent(props.variantId ?? "null")}/inventory/${encodeURIComponent(props.recordId ?? "null")}`;
-  export const random = (): IEcommerceMallInventoryRecord =>
-    typia.random<IEcommerceMallInventoryRecord>();
-  export const simulate = (
-    connection: IConnection,
-    props: at.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: at.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("productId")(() => typia.assert(props.productId));
-      assert.param("variantId")(() => typia.assert(props.variantId));
-      assert.param("recordId")(() => typia.assert(props.recordId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

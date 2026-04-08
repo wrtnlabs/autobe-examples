@@ -28,12 +28,8 @@ export async function postHrmPlatformMemberTimelogs(props: {
 }): Promise<IHrmPlatformTimelog> {
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
-      user_id: props.member.id,
+      member_id: props.member.id,
       deleted_at: null,
-    },
-    select: {
-      id: true,
-      status: true,
     },
   });
   if (!employee) {
@@ -46,69 +42,38 @@ export async function postHrmPlatformMemberTimelogs(props: {
     await MyGlobal.prisma.hrm_platform_project_members.findFirst({
       where: {
         hrm_platform_employee_id: employee.id,
-        hrm_platform_project_id: props.body.projectId,
+        hrm_platform_project_id: props.body.hrm_platform_project_id,
       },
     });
   if (!projectMember) {
     throw new HttpException("Employee is not assigned to this project", 403);
   }
-  if (props.body.taskId !== undefined && props.body.taskId !== null) {
-    const task = await MyGlobal.prisma.hrm_platform_tasks.findFirst({
+  if (props.body.hrm_platform_task_id) {
+    const task = await MyGlobal.prisma.hrm_platform_tasks.findUnique({
       where: {
-        id: props.body.taskId,
-        hrm_platform_project_id: props.body.projectId,
+        id: props.body.hrm_platform_task_id,
         deleted_at: null,
       },
+      select: {
+        hrm_platform_project_id: true,
+      },
     });
-    if (!task) {
+    if (
+      !task ||
+      task.hrm_platform_project_id !== props.body.hrm_platform_project_id
+    ) {
       throw new HttpException(
         "Task does not belong to the specified project",
         400,
       );
     }
   }
-  const inputDate = new Date(props.body.date);
-  const weekStart = computeWeekStart(inputDate);
-  const weekEnd = computeWeekEnd(inputDate);
-  const weekStartDateStr = weekStart.toISOString().split("T")[0];
-  const weekEndDateStr = weekEnd.toISOString().split("T")[0];
-  const existingTimesheet =
-    await MyGlobal.prisma.hrm_platform_timesheets.findFirst({
-      where: {
-        employee_id: employee.id,
-        week_start_date: weekStartDateStr,
-        week_end_date: weekEndDateStr,
-        status: { in: ["submitted", "approved"] },
-        deleted_at: null,
-      },
-    });
-  if (existingTimesheet) {
-    throw new HttpException(
-      "Cannot create timelog for a week with submitted or approved timesheet",
-      400,
-    );
-  }
-  const created = await MyGlobal.prisma.hrm_platform_timelogs.create({
+  const record = await MyGlobal.prisma.hrm_platform_timelogs.create({
     data: await HrmPlatformTimelogCollector.collect({
       body: props.body,
-      employee: { id: employee.id },
+      hrmPlatformEmployees: employee,
     }),
     ...HrmPlatformTimelogTransformer.select(),
   });
-  return await HrmPlatformTimelogTransformer.transform(created);
-}
-function computeWeekStart(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  d.setDate(diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-function computeWeekEnd(date: Date): Date {
-  const start = computeWeekStart(date);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 6);
-  end.setHours(23, 59, 59, 999);
-  return end;
+  return await HrmPlatformTimelogTransformer.transform(record);
 }

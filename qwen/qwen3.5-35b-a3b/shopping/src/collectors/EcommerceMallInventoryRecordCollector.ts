@@ -10,40 +10,47 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallInventoryRecordCollector {
   export async function collect(props: {
     body: IEcommerceMallInventoryRecord.ICreate;
-    ecommerceMallSellers: IEntity;
+    ecommerceMallProductVariants: IEntity;
   }) {
     const id: string = v4();
-    const created_at: Date = new Date();
-    // Query variant to get current inventory level for remaining_quantity calculation
-    const variant =
-      await MyGlobal.prisma.ecommerce_mall_product_variants.findFirstOrThrow({
-        where: { id: props.body.ecommerce_mall_product_variant_id },
-        select: {
-          stock_quantity: true,
-          reserved_quantity: true,
-        },
-      });
-    const remaining_quantity: number =
-      variant.stock_quantity -
-      variant.reserved_quantity +
-      props.body.quantity_change;
     return {
       id,
       quantity_change: props.body.quantity_change,
-      remaining_quantity,
-      reason: props.body.reason,
-      type: props.body.type,
-      description: props.body.description ?? null,
-      created_at: created_at.toISOString(),
-      updated_at: created_at.toISOString(),
+      operation_type: props.body.operation_type,
+      reference_id: props.body.reference_id ?? null,
+      notes: props.body.notes ?? null,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
-      variant: {
-        connect: { id: props.body.ecommerce_mall_product_variant_id },
+      productVariant: {
+        connect: { id: props.ecommerceMallProductVariants.id },
       },
-      order: undefined,
-      cancellationRequest: undefined,
-      refundRequest: undefined,
-      snapshots: { create: [] },
     } satisfies Prisma.ecommerce_mall_inventory_recordsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallInventoryRecordCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallInventoryRecord.ICreate;
+//           ecommerceMallProductVariants: IEntity; // from path parameter variantId
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       quantity_change: ...,
+//       operation_type: ...,
+//       reference_id: ...,
+//       notes: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       productVariant: ...,
+//           } satisfies Prisma.ecommerce_mall_inventory_recordsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

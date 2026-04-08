@@ -1,6 +1,7 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import { IHrmPlatformUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -9,6 +10,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { HrmPlatformMemberTransformer } from "../transformers/HrmPlatformMemberTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,26 +18,30 @@ export async function postHrmPlatformAuthMemberLogin(props: {
   ip: string;
   body: IHrmPlatformMember.ILogin;
 }): Promise<IHrmPlatformMember.IAuthorized> {
+  // 1. Find member by email with password_hash explicitly selected
   const member = await MyGlobal.prisma.hrm_platform_members.findFirst({
-    where: {
-      email: props.body.email,
-      deleted_at: null,
-    },
+    where: { email: props.body.email },
     select: {
-      id: true,
-      email: true,
-      display_name: true,
-      avatar_image: true,
-      phone_number: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
+      ...HrmPlatformMemberTransformer.select().select,
       password_hash: true,
     },
   });
-  if (!member) {
+  // 2. Check if member exists and is not soft-deleted
+  if (!member || member.deleted_at !== null) {
     throw new HttpException("Invalid credentials", 401);
   }
+  // 3. Verify email is confirmed (check for used verification token)
+  const emailVerification =
+    await MyGlobal.prisma.hrm_platform_member_email_verifications.findFirst({
+      where: {
+        member_id: member.id,
+        used_at: { not: null },
+      },
+    });
+  if (!emailVerification) {
+    throw new HttpException("Email not verified", 403);
+  }
+  // 4. Verify password
   const isValid = await PasswordUtil.verify(
     props.body.password,
     member.password_hash,
@@ -43,69 +49,62 @@ export async function postHrmPlatformAuthMemberLogin(props: {
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  const sessionId = v4();
-  const now = new Date();
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const nowIso = now.toISOString();
-  const accessExpiresIso = accessExpires.toISOString();
-  const refreshExpiresIso = refreshExpires.toISOString();
-  const accessPayload = {
-    type: "member",
-    id: member.id,
-    session_id: sessionId,
-    created_at: nowIso,
-  };
-  const refreshPayload = {
-    type: "member",
-    id: member.id,
-    session_id: sessionId,
-    tokenType: "refresh",
-    created_at: nowIso,
-  };
-  const accessToken = jwt.sign(accessPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "1h",
-    issuer: "autobe",
-  });
-  const refreshToken = jwt.sign(refreshPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    expiresIn: "7d",
-    issuer: "autobe",
-  });
-  const device_info = JSON.stringify({
-    ip: props.body.ip ?? props.ip,
-    href: props.body.href,
-    referrer: props.body.referrer,
-  });
-  const access_token_hash = await PasswordUtil.hash(accessToken);
-  const refresh_token_hash = await PasswordUtil.hash(refreshToken);
+  // 5. Generate session ID and timestamps
+  const session_id: string & tags.Format<"uuid"> = v4();
+  const now: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+  const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+  // 6. Generate JWT tokens
+  const access_token = jwt.sign(
+    {
+      type: "member",
+      id: member.id,
+      session_id,
+      created_at: now,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
+  const refresh_token = jwt.sign(
+    {
+      type: "member",
+      id: member.id,
+      session_id,
+      tokenType: "refresh",
+      created_at: now,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
+  // 7. Create session record
   await MyGlobal.prisma.hrm_platform_member_sessions.create({
     data: {
-      id: sessionId,
-      member: { connect: { id: member.id } },
+      id: v4(),
+      hrm_platform_member_id: member.id,
       ip: props.body.ip ?? props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
+      access_token,
+      refresh_token,
       created_at: now,
-      expired_at: accessExpires,
-      device_info,
-      access_token_hash,
-      refresh_token_hash,
+      updated_at: now,
+      expired_at: refreshExpires,
     },
   });
-  return {
-    id: member.id,
-    email: member.email,
-    display_name: member.display_name,
-    avatar_image: member.avatar_image ?? null,
-    phone_number: member.phone_number ?? null,
-    created_at: member.created_at.toISOString(),
-    updated_at: member.updated_at.toISOString(),
-    deleted_at: member.deleted_at?.toISOString() ?? null,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpiresIso,
-      refreshable_until: refreshExpiresIso,
-    },
+  // 8. Build token response
+  const token: IAuthorizationToken = {
+    access: access_token,
+    refresh: refresh_token,
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
   };
+  // 9. Return IAuthorized response
+  return {
+    ...(await HrmPlatformMemberTransformer.transform(member)),
+    token,
+  } satisfies IHrmPlatformMember.IAuthorized;
 }

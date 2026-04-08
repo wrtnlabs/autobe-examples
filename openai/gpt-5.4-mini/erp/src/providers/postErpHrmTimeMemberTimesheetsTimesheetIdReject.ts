@@ -1,11 +1,11 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
+import { IErpHrmTimeEmployeeDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployeeDashboardSummary";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
 import { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
-import { IErpHrmTimeTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTask";
+import { IErpHrmTimeTaskHistoryEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTaskHistoryEntry";
 import { IErpHrmTimeTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimelog";
 import { IErpHrmTimeTimesheet } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimesheet";
 import { IErpHrmTimeTimesheetTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimesheetTimelog";
@@ -27,53 +27,44 @@ export async function postErpHrmTimeMemberTimesheetsTimesheetIdReject(props: {
   timesheetId: string & tags.Format<"uuid">;
   body: IErpHrmTimeTimesheet.IReject;
 }): Promise<IErpHrmTimeTimesheet> {
-  const rejectionReason: string =
-    typeof props.body.rejectionReason === "string"
-      ? props.body.rejectionReason
-      : "";
-  if (rejectionReason.length === 0) {
-    throw new HttpException("Rejection reason is required", 400);
+  if (props.body.rejectionReason === null) {
+    throw new HttpException("Rejection reason is required.", 400);
   }
-  const current =
+  const timesheet =
     await MyGlobal.prisma.erp_hrm_time_timesheets.findUniqueOrThrow({
-      where: { id: props.timesheetId },
+      where: {
+        id: props.timesheetId,
+      },
       select: {
         id: true,
         status: true,
         deleted_at: true,
-        erp_hrm_time_employee_id: true,
+        reviewed_by_member_id: true,
       },
     });
-  if (current.deleted_at !== null) {
-    throw new HttpException("Timesheet is not eligible for rejection", 400);
+  if (timesheet.deleted_at !== null) {
+    throw new HttpException("Timesheet not found.", 404);
   }
-  if (current.status !== "submitted") {
-    throw new HttpException("Timesheet is not eligible for rejection", 400);
-  }
-  const employee =
-    await MyGlobal.prisma.erp_hrm_time_employees.findUniqueOrThrow({
-      where: { id: current.erp_hrm_time_employee_id },
-      select: {
-        id: true,
-        erp_hrm_time_member_id: true,
-      },
-    });
-  if (employee.erp_hrm_time_member_id !== props.member.id) {
-    throw new HttpException("Forbidden", 403);
+  if (timesheet.status !== "submitted") {
+    throw new HttpException("Only submitted timesheets can be rejected.", 409);
   }
   await MyGlobal.prisma.erp_hrm_time_timesheets.update({
-    where: { id: props.timesheetId },
+    where: {
+      id: props.timesheetId,
+    },
     data: {
       status: "draft",
       reviewed_by_member_id: props.member.id,
-      reviewed_at: undefined,
-      rejection_reason: rejectionReason,
-      updated_at: undefined,
+      reviewed_at: new Date(),
+      rejection_reason: props.body.rejectionReason,
+      updated_at: new Date(),
     },
   });
   const updated =
     await MyGlobal.prisma.erp_hrm_time_timesheets.findUniqueOrThrow({
-      where: { id: props.timesheetId },
+      where: {
+        id: props.timesheetId,
+      },
       ...ErpHrmTimeTimesheetTransformer.select(),
     });
   return await ErpHrmTimeTimesheetTransformer.transform(updated);

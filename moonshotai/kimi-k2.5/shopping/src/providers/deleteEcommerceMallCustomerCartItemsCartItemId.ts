@@ -15,34 +15,19 @@ export async function deleteEcommerceMallCustomerCartItemsCartItemId(props: {
   customer: CustomerPayload;
   cartItemId: string;
 }): Promise<void> {
-  // Find the cart item and verify it exists and is not deleted
-  const cartItem = await MyGlobal.prisma.ecommerce_mall_cart_items.findFirst({
-    where: {
-      id: props.cartItemId,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      customer_id: true,
-    },
-  });
-  // 404 if cart item not found or already deleted
-  if (cartItem === null) {
-    throw new HttpException("Cart item not found", 404);
-  }
-  // 403 if cart item belongs to different customer (Section 367: Cart Access Boundary Enforcement)
+  const cartItem =
+    await MyGlobal.prisma.ecommerce_mall_cart_items.findUniqueOrThrow({
+      where: { id: props.cartItemId },
+      select: { id: true, customer_id: true },
+    });
   if (cartItem.customer_id !== props.customer.id) {
-    throw new HttpException("Forbidden", 403);
+    throw new HttpException(
+      "You do not have permission to delete this cart item",
+      403,
+    );
   }
-  // Perform soft delete by setting deleted_at to current timestamp
-  const now = toISOStringSafe(new Date());
   await MyGlobal.prisma.ecommerce_mall_cart_items.update({
-    where: {
-      id: props.cartItemId,
-    },
-    data: {
-      deleted_at: now,
-      updated_at: now,
-    },
+    where: { id: props.cartItemId },
+    data: { deleted_at: new Date() },
   });
 }

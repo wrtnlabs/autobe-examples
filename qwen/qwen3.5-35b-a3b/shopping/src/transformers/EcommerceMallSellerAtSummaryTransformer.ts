@@ -17,34 +17,71 @@ export namespace EcommerceMallSellerAtSummaryTransformer {
       select: {
         id: true,
         email: true,
+        password_hash: true,
+        display_name: true,
+        approval_status: true,
+        rejection_reason: true,
+        is_suspended: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        approvalRequests: {
-          select: { status: true, created_at: true },
-        } satisfies Prisma.ecommerce_mall_seller_approval_requestsFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_sellersFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallSeller.ISummary> {
-    // Compute status from approval requests: use latest or default to 'pending'
-    const latestRequest =
-      input.approvalRequests.length > 0
-        ? input.approvalRequests.sort(
-            (a, b) => b.created_at.getTime() - a.created_at.getTime(),
-          )[0]
-        : null;
     return {
       id: input.id,
-      email: input.email,
-      createdAt: toISOStringSafe(input.created_at),
-      updatedAt: toISOStringSafe(input.updated_at),
-      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
-      status: typia.assert<"pending" | "approved" | "rejected">(
-        latestRequest?.status ?? "pending",
-      ),
-    };
+      display_name: input.display_name,
+      approval_status: input.approval_status,
+      is_suspended: input.is_suspended,
+      created_at: input.created_at.toISOString(),
+      email: input.email ?? undefined,
+      rejection_reason: input.rejection_reason ?? null,
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+      updated_at: input.updated_at?.toISOString() ?? undefined,
+    } satisfies IEcommerceMallSeller.ISummary;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallSellerAtSummaryTransformer {
+//       export type Payload = Prisma.ecommerce_mall_sellersGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             email: true,
+//             password_hash: true,
+//             display_name: true,
+//             approval_status: true,
+//             rejection_reason: true,
+//             is_suspended: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//           },
+//         } satisfies Prisma.ecommerce_mall_sellersFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallSeller.ISummary> {
+//         return {
+//   id: {string},
+//   display_name: {string},
+//   approval_status: {string},
+//   is_suspended: {boolean},
+//   created_at: {string},
+//   email: {string},
+//   rejection_reason: {string | null},
+//   deleted_at: {string | null},
+//   updated_at: {string},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

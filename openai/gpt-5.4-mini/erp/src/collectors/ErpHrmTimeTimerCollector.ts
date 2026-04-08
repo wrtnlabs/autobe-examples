@@ -14,7 +14,7 @@ export namespace ErpHrmTimeTimerCollector {
     employee: IEntity;
   }) {
     const id: string = v4();
-    const now = new Date();
+    const now: Date = new Date();
     return {
       id,
       started_at: now,

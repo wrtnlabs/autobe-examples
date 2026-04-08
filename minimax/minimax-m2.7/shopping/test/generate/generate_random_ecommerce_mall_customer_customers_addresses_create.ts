@@ -1,5 +1,6 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import type { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import type { IEcommerceMallShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShippingAddress";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -16,14 +17,14 @@ export async function generate_random_ecommerce_mall_customer_customers_addresse
     body?: DeepPartial<IEcommerceMallShippingAddress.ICreate>;
   }
 ): Promise<IEcommerceMallShippingAddress> {
-  const prepared: IEcommerceMallShippingAddress.ICreate =
-    prepare_random_ecommerce_mall_shipping_address(props.body);
-  const result: IEcommerceMallShippingAddress =
-    await api.functional.ecommerceMall.customer.customers.addresses.create(
-      connection,
-      {
-        body: prepared,
-      },
-    );
+  const prepared: IEcommerceMallShippingAddress.ICreate = prepare_random_ecommerce_mall_shipping_address(
+    props.body
+  );
+  const result: IEcommerceMallShippingAddress = await api.functional.ecommerceMall.customer.customers.addresses.create(
+    connection,
+    {
+      body: prepared,
+    }
+  );
   return result;
 }

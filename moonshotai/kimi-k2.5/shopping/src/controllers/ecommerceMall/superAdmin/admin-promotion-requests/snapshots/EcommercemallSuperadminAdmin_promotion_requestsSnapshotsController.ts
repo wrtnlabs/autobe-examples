@@ -6,78 +6,61 @@ import { IEcommerceMallAdminPromotionRequestSnapshot } from "../../../../../api/
 import { IPageIEcommerceMallAdminPromotionRequestSnapshot } from "../../../../../api/structures/IPageIEcommerceMallAdminPromotionRequestSnapshot";
 import { SuperadminAuth } from "../../../../../decorators/SuperadminAuth";
 import { SuperadminPayload } from "../../../../../decorators/payload/SuperadminPayload";
-import { getEcommerceMallSuperAdminAdminPromotionRequestsPromotionRequestIdSnapshotsSnapshotId } from "../../../../../providers/getEcommerceMallSuperAdminAdminPromotionRequestsPromotionRequestIdSnapshotsSnapshotId";
-import { patchEcommerceMallSuperAdminAdminPromotionRequestsPromotionRequestIdSnapshots } from "../../../../../providers/patchEcommerceMallSuperAdminAdminPromotionRequestsPromotionRequestIdSnapshots";
+import { getEcommerceMallSuperAdminAdminPromotionRequestsRequestIdSnapshotsSnapshotId } from "../../../../../providers/getEcommerceMallSuperAdminAdminPromotionRequestsRequestIdSnapshotsSnapshotId";
+import { patchEcommerceMallSuperAdminAdminPromotionRequestsRequestIdSnapshots } from "../../../../../providers/patchEcommerceMallSuperAdminAdminPromotionRequestsRequestIdSnapshots";
 
 @Controller(
-  "/ecommerceMall/superAdmin/admin-promotion-requests/:promotionRequestId/snapshots",
+  "/ecommerceMall/superAdmin/admin-promotion-requests/:requestId/snapshots",
 )
 export class EcommercemallSuperadminAdmin_promotion_requestsSnapshotsController {
   /**
-   * Retrieve a paginated list of immutable snapshots for a specific admin promotion request.
+   * Retrieve a paginated list of snapshots for a specific admin promotion request.
    *
-   * This endpoint returns the complete audit trail of state changes for an admin promotion request, including who reviewed it, what status changed, and when the change occurred. Snapshots are created automatically by the system whenever a promotion request's status changes (e.g., from pending to approved or rejected).
+   * Snapshots capture the complete state history of promotion request transitions. Each snapshot records the before and after states when a request's status changes (e.g., from pending to approved or rejected), including reviewer identities, status values, and associated reasons.
    *
-   * **Access Control:** Only authorized users with appropriate permissions can access these snapshots. Typically, the requesting customer/seller (to view their own request history) and administrators (to review audit trails) have access. The requester's identity is verified against the promotion request's requester_id field.
+   * This operation provides audit trail visibility for:
+   * - Super administrators reviewing promotion request history
+   * - Compliance and security auditing
+   * - Dispute resolution about promotion decisions
    *
-   * **Business Purpose:** These snapshots provide an immutable record of administrative promotion decisions. They are essential for:
-   * - Compliance auditing and security reviews
-   * - Dispute resolution regarding promotion/rejection decisions
-   * - Historical analysis of administrative privilege changes
-   * - Accountability for super administrator decisions
-   *
-   * **Snapshot Contents:** Each snapshot captures:
-   * - The previous and new status values (pending, approved, rejected)
-   * - The administrators who performed the previous and current review actions
-   * - The rejection or approval reasons provided by reviewers
-   * - The exact timestamp when the state change occurred
-   *
-   * **Important:** Snapshots are permanent records that cannot be modified or deleted (sections 409, 410, 319). They remain accessible even if the parent promotion request is eventually deleted.
+   * Snapshots are immutable records that preserve the exact state at each transition point. All fields including previous_review_id, new_reviewer_id, previous_status, new_status, previous_reason, and new_reason are captured for complete traceability.
    *
    * @param connection
-   * @param promotionRequestId The unique identifier of the admin promotion request whose snapshots are being retrieved.
-   * @param body Search criteria and pagination parameters for filtering and retrieving admin promotion request snapshots. Supports filtering by date ranges, reviewer IDs, and status transitions.
+   * @param requestId The admin promotion request ID to retrieve snapshots for (scoped to request)
+   * @param body Search criteria and pagination parameters for filtering snapshots
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification Implementation must query the ecommerce_mall_admin_promotion_request_snapshots table filtered by admin_promotion_request_id = promotionRequestId.
-   *
-   * **Database Query:**
-   * - Join with ecommerce_mall_admins to retrieve administrator details for previousReviewer and newReviewer
-   * - Filter: WHERE admin_promotion_request_id = {promotionRequestId}
-   * - Order: ORDER BY created_at ASC (chronological order to show history progression)
-   * - Pagination: Cursor-based or offset-based with configurable page size
-   *
-   * **Authorization Logic:**
-   * 1. Verify the requesting user has permission to view this promotion request's snapshots
-   * 2. Allow if user is the requester of the promotion request
-   * 3. Allow if user is an administrator (admin or superAdmin role)
-   * 4. Deny access for other users
-   *
-   * **Response Structure:**
-   * - Return paginated results using IPageIEcommerceMallAdminPromotionRequestSnapshot.Summary
-   * - Include snapshot ID, timestamps, previous/new status, reviewer information, and reasons
-   * - Resolve previousReviewer and newReviewer details from the admins table
-   *
-   * **Edge Cases:**
-   * - Empty list if promotion request has no status changes yet (only initial state)
-   * - Handle case where previous_reviewer_id is null (first state change)
-   * - Ensure proper handling of timezone in created_at timestamps
+   * @x-autobe-specification Query ecommerce_mall_admin_promotion_request_snapshots table filtering by admin_promotion_request_id matching the path parameter.
+   * Support pagination with cursor-based or offset pagination.
+   * Default sort order is created_at DESC (newest snapshots first).
+   * Apply optional filters on:
+   * - created_at date range
+   * - previous_status / new_status
+   * - previous_reviewer_id / new_reviewer_id
+   * Join with ecommerce_mall_admins to get reviewer names for display (previousReviewer, newReviewer relations).
+   * Return snapshot summaries including:
+   * - id, created_at
+   * - previous/new status transition
+   * - previous/new reviewer info (id, name if denormalized)
+   * - previous/new reasons
+   * Exclude soft-deleted parent request snapshots only if parent is soft-deleted (though snapshots themselves are never deleted per immutability rules).
+   * Return 404 if the promotion request does not exist or user lacks access.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
   public async index(
     @SuperadminAuth()
     superAdmin: SuperadminPayload,
-    @TypedParam("promotionRequestId")
-    promotionRequestId: string,
+    @TypedParam("requestId")
+    requestId: string,
     @TypedBody()
     body: IEcommerceMallAdminPromotionRequestSnapshot.IRequest,
-  ): Promise<IPageIEcommerceMallAdminPromotionRequestSnapshot> {
+  ): Promise<IPageIEcommerceMallAdminPromotionRequestSnapshot.ISummary> {
     try {
-      return await patchEcommerceMallSuperAdminAdminPromotionRequestsPromotionRequestIdSnapshots(
+      return await patchEcommerceMallSuperAdminAdminPromotionRequestsRequestIdSnapshots(
         {
           superAdmin,
-          promotionRequestId,
+          requestId,
           body,
         },
       );
@@ -88,63 +71,44 @@ export class EcommercemallSuperadminAdmin_promotion_requestsSnapshotsController 
   }
 
   /**
-   * Retrieves a specific admin promotion request snapshot by its unique identifier.
+   * Retrieve a specific immutable snapshot of an administrator promotion request state change.
    *
-   * This operation retrieves a single immutable snapshot record that captures the state of an admin promotion request at a specific point in time. Snapshots record state transitions such as when a promotion request is approved or rejected, preserving both the previous and new state values along with the reviewer identity responsible for the change.
+   * This operation provides access to point-in-time records of promotion request modifications. Snapshots capture the complete state transition when a promotion request is approved or rejected, preserving both the previous and new values for compliance and dispute resolution.
    *
-   * **Authorization**: This operation is restricted to super administrators only. Only super administrators possess exclusive authority to review administrator promotion requests and access their associated snapshots. Regular administrators cannot view promotion request snapshots.
+   * The response includes reviewer identities (before and after), status values, rejection/approval reasons, and the exact timestamp of the state change. Administrators and the original requester can view snapshots for transparency in the promotion process.
    *
-   * **Data Structure**: The snapshot includes the parent promotion request reference, the administrator who reviewed before the change (previous_reviewer_id), the administrator who processed the current state change (new_reviewer_id), the status values before and after the transition (previous_status, new_status), the associated reasons or notes (previous_reason, new_reason), and the timestamp when this snapshot was created.
-   *
-   * **Immutability**: Snapshots are immutable records that serve as the authoritative historical record for dispute resolution and audit trails. No modifications can be made to snapshot data after creation.
-   *
-   * **Related Operations**: To view the list of snapshots for a promotion request, use the index endpoint. The parent promotion request must be identified first before accessing its snapshots.
+   * Snapshots are immutable records that cannot be modified or deleted, ensuring a complete audit trail for all administrative privilege changes on the platform.
    *
    * @param connection
-   * @param promotionRequestId The unique identifier of the parent admin promotion request. This identifies which promotion request the snapshot belongs to.
-   * @param snapshotId The unique identifier of the admin promotion request snapshot to retrieve. This identifies the specific snapshot capturing a state transition within the promotion request.
+   * @param requestId The unique identifier of the parent admin promotion request (UUID format)
+   * @param snapshotId The unique identifier of the specific snapshot to retrieve (UUID format)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor superAdmin
-   * @x-autobe-specification 1. Validate that the requesting user has administrator privileges (admin or superAdmin actor kind).
+   * @x-autobe-specification Query the ecommerce_mall_admin_promotion_request_snapshots table using both admin_promotion_request_id and id fields for precise record retrieval.
    *
-   * 2. Extract path parameters:
-   *    - promotionRequestId: UUID of the parent promotion request
-   *    - snapshotId: UUID of the specific snapshot to retrieve
+   * Join with ecommerce_mall_admins table to resolve previous_reviewer_id and new_reviewer_id to administrator details for the response.
    *
-   * 3. Query the ecommerce_mall_admin_promotion_request_snapshots table:
-   *    SELECT * FROM ecommerce_mall_admin_promotion_request_snapshots
-   *    WHERE id = snapshotId
-   *    AND admin_promotion_request_id = promotionRequestId
+   * Verify access permissions: the requesting user must be either (1) the original promotion requester, (2) an administrator, or (3) a super administrator. Unauthorized access attempts must be rejected.
    *
-   *    Note: The snapshot should exist under the given promotion request; if not found (either snapshot doesn't exist or belongs to different request), return 404.
+   * Return the complete snapshot record including all captured state fields: previous status, new status, previous reason, new reason, reviewer identities, and creation timestamp.
    *
-   * 4. If snapshot not found, return 404 Not Found error.
-   *
-   * 5. Transform database record to IEcommerceMallAdminPromotionRequestSnapshot DTO:
-   *    - Include all fields: id, adminPromotionRequestId, previousReviewerId, newReviewerId,
-   *      previousStatus, newStatus, previousReason, newReason, createdAt
-   *    - Previous and new reviewer IDs can be null if no reviewer was assigned
-   *    - Reasons can be null if no reason was provided
-   *
-   * 6. Return the populated DTO in the response body.
-   *
-   * 7. Authorization check: All valid administrators can view any snapshot (no additional ownership check) per sections 412 and 590.
+   * Handle edge cases: return 404 if either the promotion request or snapshot does not exist; return 403 if the user lacks viewing permissions for this snapshot.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":snapshotId")
   public async at(
     @SuperadminAuth()
     superAdmin: SuperadminPayload,
-    @TypedParam("promotionRequestId")
-    promotionRequestId: string,
+    @TypedParam("requestId")
+    requestId: string,
     @TypedParam("snapshotId")
     snapshotId: string,
   ): Promise<IEcommerceMallAdminPromotionRequestSnapshot> {
     try {
-      return await getEcommerceMallSuperAdminAdminPromotionRequestsPromotionRequestIdSnapshotsSnapshotId(
+      return await getEcommerceMallSuperAdminAdminPromotionRequestsRequestIdSnapshotsSnapshotId(
         {
           superAdmin,
-          promotionRequestId,
+          requestId,
           snapshotId,
         },
       );

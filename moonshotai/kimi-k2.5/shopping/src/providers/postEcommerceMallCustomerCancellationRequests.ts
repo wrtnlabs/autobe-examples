@@ -2,14 +2,13 @@ import { IEcommerceMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib
 import { IEcommerceMallCancellationRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCancellationRequestSnapshot";
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
-import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
 import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
 import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -28,71 +27,56 @@ export async function postEcommerceMallCustomerCancellationRequests(props: {
   customer: CustomerPayload;
   body: IEcommerceMallCancellationRequest.ICreate;
 }): Promise<IEcommerceMallCancellationRequest> {
-  // Fetch order item and verify status
-  const orderItem =
-    await MyGlobal.prisma.ecommerce_mall_order_items.findUniqueOrThrow({
-      where: { id: props.body.orderItemId },
-      select: {
-        id: true,
-        order_id: true,
-        status: true,
-        seller_id: true,
+  // Validate order item exists and belongs to authenticated customer
+  const orderItem = await MyGlobal.prisma.ecommerce_mall_order_items.findFirst({
+    where: {
+      id: props.body.orderItemId,
+      order: {
+        customer: {
+          id: props.customer.id,
+        },
       },
-    });
-  // Fetch the order to verify ownership
-  const order = await MyGlobal.prisma.ecommerce_mall_orders.findUniqueOrThrow({
-    where: { id: orderItem.order_id },
-    select: { id: true, customer_id: true },
+    },
+    select: {
+      id: true,
+      status: true,
+    },
   });
-  // Verify order belongs to authenticated customer
-  if (order.customer_id !== props.customer.id) {
-    throw new HttpException(
-      "Order item does not belong to authenticated customer",
-      403,
-    );
+  if (orderItem === null) {
+    throw new HttpException("Order item not found", 404);
   }
-  // Verify order item status is 'paid' (cancellation only allowed for paid items)
+  // Verify order item status is 'paid' (not yet shipped)
   if (orderItem.status !== "paid") {
     throw new HttpException(
-      "Cancellation requests can only be created for order items with 'paid' status",
-      409,
+      "Order item cannot be cancelled - must be in 'paid' status",
+      422,
     );
   }
-  // Check for existing pending cancellation request for this order item
-  const existingPending =
+  // Check for existing pending cancellation request
+  const existingRequest =
     await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findFirst({
       where: {
         order_item_id: props.body.orderItemId,
+        customer_id: props.customer.id,
         status: "pending",
         deleted_at: null,
       },
-      select: { id: true },
     });
-  if (existingPending !== null) {
+  if (existingRequest !== null) {
     throw new HttpException(
       "A pending cancellation request already exists for this order item",
       409,
     );
   }
-  // Fetch seller to get seller_id for collector
-  const seller = await MyGlobal.prisma.ecommerce_mall_sellers.findUniqueOrThrow(
-    {
-      where: { id: orderItem.seller_id },
-      select: { id: true },
-    },
-  );
-  // Collect data using the collector
-  const createInput = await EcommerceMallCancellationRequestCollector.collect({
-    body: props.body,
-    customer: { id: props.customer.id },
-    seller: { id: seller.id },
-  });
-  // Create cancellation request with transformer select to load relations
+  // Create cancellation request using Collector
   const created =
     await MyGlobal.prisma.ecommerce_mall_cancellation_requests.create({
-      data: createInput,
+      data: await EcommerceMallCancellationRequestCollector.collect({
+        body: props.body,
+        customer: { id: props.customer.id },
+      }),
       ...EcommerceMallCancellationRequestTransformer.select(),
     });
-  // Transform to response DTO
+  // Transform and return
   return await EcommerceMallCancellationRequestTransformer.transform(created);
 }

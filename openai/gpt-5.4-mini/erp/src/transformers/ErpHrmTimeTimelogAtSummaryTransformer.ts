@@ -1,11 +1,11 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
+import { IErpHrmTimeEmployeeDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployeeDashboardSummary";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
 import { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
-import { IErpHrmTimeTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTask";
+import { IErpHrmTimeTaskHistoryEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTaskHistoryEntry";
 import { IErpHrmTimeTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimelog";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -14,14 +14,36 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ErpHrmTimeEmployeeAtSummaryTransformer } from "./ErpHrmTimeEmployeeAtSummaryTransformer";
 import { ErpHrmTimeProjectAtSummaryTransformer } from "./ErpHrmTimeProjectAtSummaryTransformer";
-import { ErpHrmTimeTaskAtSummaryTransformer } from "./ErpHrmTimeTaskAtSummaryTransformer";
+import { ErpHrmTimeTaskHistoryEntryAtSummaryTransformer } from "./ErpHrmTimeTaskHistoryEntryAtSummaryTransformer";
 
 export namespace ErpHrmTimeTimelogAtSummaryTransformer {
   export type Payload = Prisma.erp_hrm_time_timelogsGetPayload<
     ReturnType<typeof select>
   >;
+  export async function transform(
+    input: Payload,
+  ): Promise<IErpHrmTimeTimelog.ISummary> {
+    return {
+      id: input.id,
+      member: {} as IErpHrmTimeMember.ISummary,
+      project: await ErpHrmTimeProjectAtSummaryTransformer.transform(
+        input.project,
+      ),
+      task: input.task
+        ? await ErpHrmTimeTaskHistoryEntryAtSummaryTransformer.transform(
+            input.task,
+          )
+        : null,
+      workDate: input.work_date.toISOString(),
+      durationMinutes: input.duration_minutes,
+      description: input.description ?? null,
+      billable: input.billable,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
+    };
+  }
   export function select() {
     return {
       select: {
@@ -33,34 +55,11 @@ export namespace ErpHrmTimeTimelogAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        member: ErpHrmTimeEmployeeAtSummaryTransformer.select(),
+        member: { select: {} },
         project: ErpHrmTimeProjectAtSummaryTransformer.select(),
-        task: ErpHrmTimeTaskAtSummaryTransformer.select(),
+        task: ErpHrmTimeTaskHistoryEntryAtSummaryTransformer.select(),
         timesheetTimelogs: { select: {} },
       },
     } satisfies Prisma.erp_hrm_time_timelogsFindManyArgs;
-  }
-  export async function transform(
-    input: Payload,
-  ): Promise<IErpHrmTimeTimelog.ISummary> {
-    return {
-      id: input.id,
-      workDate: input.work_date.toISOString(),
-      durationMinutes: input.duration_minutes,
-      description: input.description ?? null,
-      billable: input.billable,
-      member: await ErpHrmTimeEmployeeAtSummaryTransformer.transform(
-        input.member,
-      ),
-      project: await ErpHrmTimeProjectAtSummaryTransformer.transform(
-        input.project,
-      ),
-      task: input.task
-        ? await ErpHrmTimeTaskAtSummaryTransformer.transform(input.task)
-        : null,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-    };
   }
 }

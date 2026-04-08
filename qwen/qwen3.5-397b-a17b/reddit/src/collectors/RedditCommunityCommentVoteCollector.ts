@@ -10,17 +10,17 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace RedditCommunityCommentVoteCollector {
   export async function collect(props: {
     body: IRedditCommunityCommentVote.ICreate;
-    redditCommunityMembers: IEntity;
-    redditCommunityComments: IEntity;
+    member: IEntity;
+    comment: IEntity;
   }) {
-    const id: string = v4();
     return {
-      id,
-      direction: props.body.direction!,
+      id: v4(),
+      value: props.body.value,
       created_at: new Date(),
       updated_at: new Date(),
-      member: { connect: { id: props.redditCommunityMembers.id } },
-      comment: { connect: { id: props.redditCommunityComments.id } },
+      deleted_at: null,
+      member: { connect: { id: props.member.id } },
+      comment: { connect: { id: props.comment.id } },
     } satisfies Prisma.reddit_community_comment_votesCreateInput;
   }
 }

@@ -6,52 +6,42 @@ import { IEcommerceMallProductImage } from "../../../../../api/structures/IEcomm
 import { SellerAuth } from "../../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../../decorators/payload/SellerPayload";
 import { deleteEcommerceMallSellerProductsProductIdImagesImageId } from "../../../../../providers/deleteEcommerceMallSellerProductsProductIdImagesImageId";
+import { getEcommerceMallSellerProductsProductIdImagesImageId } from "../../../../../providers/getEcommerceMallSellerProductsProductIdImagesImageId";
 import { patchEcommerceMallSellerProductsProductIdImages } from "../../../../../providers/patchEcommerceMallSellerProductsProductIdImages";
 import { postEcommerceMallSellerProductsProductIdImages } from "../../../../../providers/postEcommerceMallSellerProductsProductIdImages";
-import { putEcommerceMallSellerProductsProductIdImagesImageId } from "../../../../../providers/putEcommerceMallSellerProductsProductIdImagesImageId";
 
 @Controller("/ecommerceMall/seller/products/:productId/images")
 export class EcommercemallSellerProductsImagesController {
   /**
-   * Upload a new image for a product in the marketplace catalog.
+   * Upload a new image to an existing product.
    *
-   * This operation allows sellers to add image files to products they own and manage in the marketplace. The product must exist and be owned by the authenticated seller before an image can be added.
+   * Creates a new product image record that will be associated with the specified product. The image is assigned a display order position to control its position in the product image carousel. The image with display_order = 1 is shown as the main product thumbnail in search results and category listings.
    *
-   * When uploading an image, the seller provides the image URL (storage location such as S3 bucket or CDN path), display order for the image sequence, and optional alt text for accessibility support and SEO optimization. The system validates seller ownership by checking that the authenticated seller's ID matches the product's owner (seller_id in ecommerce_mall_products table).
-   *
-   * Each image in the product's image set is stored in the ecommerce_mall_product_images table with a unique display_order value. Lower display_order values appear first in the gallery, with the first image serving as the product thumbnail in catalog listings. The alt_text field provides accessibility support for screen readers.
-   *
-   * The product's images are updated immediately upon successful creation, and customers browsing the product detail page will see the new image in the gallery. Image changes are captured in the product's edit snapshots for historical tracking and dispute resolution.
-   *
-   * If the product is soft-deleted, image uploads are rejected as the product is no longer active in the catalog.
-   *
-   * Security: Sellers can only add images to products they own. The system validates the authenticated seller_id against the product's seller_id field before allowing image creation.
+   * Only the seller who owns the product can upload images. At least one image must remain on each product at all times. All image upload operations are recorded in product snapshots to preserve the visual history of the product.
    *
    * @param connection
-   * @param productId UUID of the product to which this image will be attached.
-   * @param body Image upload information including the image storage URL, display order, and optional alt text for accessibility.
-   *
-   *             Required fields:
-   *             - image_url: URL or path to the product image file (max 80000 characters)
-   *             - display_order: Display order for thumbnail selection (non-negative integer, lower values appear first)
-   *
-   *             Optional fields:
-   *             - alt_text: Alternative text for accessibility support and SEO (optional, nullable)
+   * @param productId The unique identifier of the product to add the image to.
+   * @param body Image upload data including the image URL and display order position. The image_url must be a valid storage location (local or external) where the image file has been uploaded. display_order determines the sequence of images, with lower values appearing first.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Validate that productId is a valid UUID format
-   * 2. Query ecommerce_mall_products to verify product exists and is not soft-deleted
-   * 3. Verify product.owner_id (seller_id) matches authenticated seller's ID
-   * 4. Validate display_order is a non-negative integer if provided
-   * 5. Validate image_url is a valid URI format
-   * 6. Insert new record into ecommerce_mall_product_images with generated UUID, provided fields, and current timestamp
-   * 7. Return the created product image object with all fields
+   * @x-autobe-specification Create a new product image record in ecommerce_mall_product_images table.
    *
-   * Edge cases:
-   * - Product not found: return 404
-   * - Seller not product owner: return 403
-   * - Invalid display_order (negative): return 400
-   * - Duplicate display_order for same product: update existing or assign next available
+   * 1. Validate that the product exists and is not soft-deleted.
+   * 2. Verify the authenticated user is the seller who owns the product.
+   * 3. Validate image_url is a properly formatted URI.
+   * 4. Validate display_order is a positive integer.
+   * 5. Ensure the product still has at least one image after this upload (or this is the first image).
+   * 6. Insert the new image record with generated UUID for id, current timestamp for created_at and updated_at.
+   * 7. If this image has display_order = 1, update any existing display_order = 1 images to increment their order.
+   * 8. Create a product snapshot capturing the image addition.
+   * 9. Return the full created image record.
+   *
+   * Error scenarios:
+   * - 404 if product does not exist or is soft-deleted
+   * - 403 if user is not the product owner (seller)
+   * - 400 if image_url format is invalid
+   * - 400 if attempting to upload to a product that has no other images and this would be invalid
+   * - 409 if image_url already exists for this product (duplicate detection)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -76,45 +66,54 @@ export class EcommercemallSellerProductsImagesController {
   }
 
   /**
-   * Update the display order and metadata for product images within a product catalog.
+   * Reorder product images by updating display order.
    *
-   * This operation allows sellers to reorder images in their product's image gallery by specifying new display_order values. The image with the lowest display_order value (typically 0) serves as the main product thumbnail and is displayed in product listings, search results, and promotional areas throughout the platform.
+   * Sellers can reorder the images associated with their products to change which image appears as the main thumbnail. This operation accepts a list of image IDs with their new display_order values and updates all specified images in a single request.
    *
-   * Reordering Logic:
-   * - Images are displayed in ascending order of display_order values
-   * - The image with the lowest display_order (0) becomes the primary thumbnail
-   * - When an image is deleted, the system does not automatically reassign another image as thumbnail - sellers must explicitly manage this
-   * - All display_order values must form a continuous sequence without duplicates
+   * Business rules:
+   * - Only the product owner (seller) can reorder images
+   * - At least one image must remain after any modifications
+   * - All image IDs in the request must belong to the specified product
+   * - Display order values must be sequential integers starting from 1 (1, 2, 3, ... n)
+   * - Image order determines display priority in product listings and search results
    *
-   * Ownership Requirements:
-   * Only the seller who owns the product can modify its images. The system verifies that the requesting seller's account is associated with the product before applying any changes. Sellers can only manage images for products in their own storefront.
-   *
-   * Related Operations:
-   * - Use GET /ecommerceMall/seller/products/{productId} to retrieve product details before updating images
-   * - Use DELETE /ecommerceMall/seller/products/{productId}/images/{imageId} to remove individual product images
-   * - Use PATCH /ecommerceMall/seller/products/{productId} to update product metadata
+   * Error handling:
+   * - 403 Forbidden if seller is not the product owner
+   * - 400 Bad Request if display orders are not sequential
+   * - 400 Bad Request if any image ID does not belong to the product
+   * - 404 Not Found if product or any image ID does not exist
+   * - 409 Conflict if operation would result in zero images remaining
    *
    * @param connection
-   * @param productId Unique identifier of the product whose images are being reordered
-   * @param body Array of image update objects, each containing the image ID and its new display_order value. Display orders must form a continuous sequence starting from 0 with no duplicate values.
+   * @param productId The UUID of the product whose images are being reordered.
+   * @param body Array of image IDs with their new display order values. All IDs must belong to the specified product, and display orders must be sequential integers starting from 1.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Validate productId exists in ecommerce_mall_products table
-   * 2. Verify the requesting seller owns the product (product.owner_id matches authenticated seller_id)
-   * 3. Parse request body containing array of image updates with id and display_order
-   * 4. Validate all provided image IDs belong to the specified product
-   * 5. Validate display_order values form a valid sequence (no duplicates)
-   * 6. Within a transaction:
-   *    - Update display_order for each image in ecommerce_mall_product_images
-   *    - If any image had display_order=0 and is now moved, mark the next lowest as new primary (application-level tracking)
-   * 7. Return updated product images with their new display order
+   * @x-autobe-specification 1. Verify seller authentication token
+   * 2. Load product record and verify seller owns the product
+   * 3. Load all product images from database
+   * 4. Validate all image IDs in request body belong to the specified product
+   * 5. Validate all image IDs exist in the database
+   * 6. Validate display_order values are unique sequential integers starting from 1
+   * 7. Update display_order for each image in a transaction
+   * 8. Update updated_at timestamp on each modified image
+   * 9. Create a product snapshot capturing the new image order (per business rules)
+   * 10. Return the complete updated list of images sorted by display_order ascending
    *
-   * **Edge Cases**:
-   * - If productId doesn't exist: return 404 not found
-   * - If seller doesn't own product: return 403 forbidden
-   * - If image IDs don't belong to product: return 400 bad request
-   * - If display_order has duplicates: return 400 bad request
-   * - Empty request body: return 400 bad request
+   * Edge cases:
+   * - Reject if request would result in zero images (at least one must remain)
+   * - Ensure database @@unique([product_id, display_order]) constraint is satisfied
+   * - Handle concurrent modifications using optimistic locking if updated_at is tracked
+   * - Transaction must be atomic: all updates succeed or all roll back
+   *
+   * Business rules:
+   * - Only seller who owns the product can reorder
+   * - At least one image must remain after all modifications
+   * - Display orders must form a sequence: 1, 2, 3, ... n where n equals total remaining images
+   *
+   * Data structure:
+   * - Request body: Array of {id: UUID, display_order: Integer}
+   * - Response body: Array of images sorted by display_order ascending
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -124,7 +123,7 @@ export class EcommercemallSellerProductsImagesController {
     @TypedParam("productId")
     productId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IEcommerceMallProductImage.IUpdate,
+    body: IEcommerceMallProductImage.IReorder,
   ): Promise<IEcommerceMallProductImage.ISummary> {
     try {
       return await patchEcommerceMallSellerProductsProductIdImages({
@@ -139,60 +138,46 @@ export class EcommercemallSellerProductsImagesController {
   }
 
   /**
-   * Update an existing product image's display properties and metadata for a seller-owned product.
+   * Retrieve a specific product image by its ID within a product.
    *
-   * This operation allows sellers to modify the image URL, display order sequence, and alternative text for images associated with their products. Sellers can only update images belonging to products they own. The display_order field determines the thumbnail image shown in product catalogs, with lower values appearing first and 0 typically being the primary thumbnail.
+   * Returns full image details including image URL, display order position, and timestamps. The image must belong to the specified product and be accessible (not soft deleted).
    *
-   * The operation validates that the seller owns the product containing the target image before allowing updates. Changes to display_order immediately affect the product's visual representation across the platform. The alt_text field provides accessibility support for screen readers and SEO optimization.
-   *
-   * Security considerations: Sellers cannot access or modify images for products they do not own. The operation returns an authorization error if the seller attempts to modify images for a product they do not own.
-   *
-   * Related operations: This operation should be used after GET /products/{productId}/images/index retrieves existing image records. DELETE /products/{productId}/images/{imageId} removes images entirely.
+   * Only the product owner (seller) can access this endpoint. The product must exist and the image must be associated with that product.
    *
    * @param connection
-   * @param productId UUID identifier of the product containing the image to update. The requesting seller must own this product.
-   * @param imageId UUID identifier of the product image record to update. The image must belong to the specified product and be owned by the seller.
-   * @param body Update fields for the product image. Include only the fields you wish to modify; omitted fields retain their current values.
+   * @param productId The unique identifier of the product this image belongs to.
+   * @param imageId The unique identifier of the product image to retrieve.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Update the ecommerce_mall_product_images record matching the imageId path parameter.
-   *
-   * 1. Validate productId and imageId are valid UUID format
-   * 2. Query ecommerce_mall_products table to verify the product exists and the requesting seller owns it
-   * 3. Verify the product_image record exists, belongs to the specified product, and has not been soft-deleted (deleted_at is null)
-   * 4. Validate input fields:
-   *    - image_url: non-empty string, max 80000 characters, valid URI format
-   *    - display_order: non-negative integer (>= 0)
-   *    - alt_text: optional string, max 2000 characters if provided
-   * 5. Update the product image record with provided fields, set updated_at to current timestamp
-   * 6. Return the updated product image entity with all fields
-   *
-   * Edge cases:
-   * - Product does not exist: return 404 Not Found
-   * - Product exists but seller does not own it: return 403 Forbidden
-   * - Image record does not exist: return 404 Not Found
-   * - Image belongs to different product: return 409 Conflict
-   * - Image already soft-deleted: return 410 Gone
-   * - Invalid input format: return 400 Bad Request
+   * @x-autobe-specification 1. Verify the product exists and is accessible by the requesting seller (product owner)
+   * 2. Verify the image_id belongs to the specified product_id
+   * 3. Check that image is not soft deleted (deleted_at is NULL)
+   * 4. Return the full image record with all fields:
+   *    - id: image UUID
+   *    - product_id: parent product UUID
+   *    - image_url: storage URL
+   *    - display_order: integer position
+   *    - created_at: creation timestamp
+   *    - updated_at: last update timestamp
+   * 5. Return 404 if product not found, image not found, or image belongs to different product
+   * 6. Return 403 if requesting seller is not the product owner
+   * 7. Query: SELECT * FROM ecommerce_mall_product_images WHERE id = :imageId AND product_id = :productId AND deleted_at IS NULL
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Put(":imageId")
-  public async update(
+  @TypedRoute.Get(":imageId")
+  public async at(
     @SellerAuth()
     seller: SellerPayload,
     @TypedParam("productId")
     productId: string & tags.Format<"uuid">,
     @TypedParam("imageId")
     imageId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IEcommerceMallProductImage.IUpdate,
   ): Promise<IEcommerceMallProductImage> {
     try {
-      return await putEcommerceMallSellerProductsProductIdImagesImageId({
+      return await getEcommerceMallSellerProductsProductIdImagesImageId({
         seller,
         productId,
         imageId,
-        body,
       });
     } catch (error) {
       console.log(error);
@@ -201,41 +186,62 @@ export class EcommercemallSellerProductsImagesController {
   }
 
   /**
-   * Soft-delete a product image from a seller's product catalog.
+   * Delete a product image from the seller's product catalog.
    *
-   * This operation marks a product image as deleted by setting the deleted_at timestamp. Only the product's owner (seller) can delete images from their products. The soft delete is immediate and the image is no longer visible to customers after the operation completes.
+   * Removes an image from a product by its unique identifier. This operation is restricted to the product owner (seller) and enforces that at least one image must remain associated with each product. When an image is deleted, the system records the change in a product snapshot to preserve the visual history.
    *
-   * When the main thumbnail image is deleted, the next image in the sequence automatically becomes the new main thumbnail. This ensures products always have a display image in listings and search results. If this was the last image, the product will have no images remaining.
+   * Images are soft-deleted rather than permanently removed from the database. The deleted_at timestamp is set to mark the deletion, allowing for potential recovery or audit purposes. The image record remains accessible to administrators for dispute resolution even after deletion.
    *
-   * The image record remains in the database with the deleted_at timestamp set, allowing for potential recovery or audit trail purposes. The image data itself may be marked for archival in the storage system. This soft delete approach maintains data integrity and supports dispute resolution through historical tracking.
+   * If a product has only one image remaining, the operation will be rejected to ensure the product maintains visual representation in search and category listings.
    *
    * @param connection
-   * @param productId Unique identifier of the product
-   * @param imageId Unique identifier of the product image to delete
+   * @param productId Unique identifier of the product (UUID format).
+   * @param imageId Unique identifier of the product image to delete (UUID format).
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Delete the product image record from ecommerce_mall_product_images table.
+   * @x-autobe-specification Delete operation for ecommerce_mall_product_images table with the following implementation steps:
    *
-   * Authorization checks:
-   * 1. Verify the requesting seller owns the product (productId)
-   * 2. Verify the imageId belongs to the specified product
-   * 3. Confirm the seller has permission to modify product images
+   * 1. Authentication & Authorization:
+   *    - Verify user is authenticated (logged-in seller)
+   *    - Verify user owns the product (match seller_id from products table)
+   *    - Return 403 Forbidden if user is not the product owner
    *
-   * Deletion logic:
-   * 1. If the deleted image is the main thumbnail (sequence order 0), update the next image's sequence to become the new main thumbnail
-   * 2. Recalculate sequence numbers for remaining images to maintain continuity
-   * 3. Permanently remove the image file from storage
-   * 4. Delete the database record from ecommerce_mall_product_images
+   * 2. Record Validation:
+   *    - Find product_image record by imageId
+   *    - Verify the image belongs to the specified productId (cross-reference product_id field)
+   *    - Return 404 Not Found if image does not exist
+   *    - Return 409 Conflict if image belongs to different product
    *
-   * Error handling:
-   * - Return 404 if productId does not exist
-   * - Return 404 if imageId does not belong to the product
-   * - Return 403 if the seller does not own the product
-   * - Return 404 if the product has no images (edge case)
+   * 3. Business Rule Validation:
+   *    - Count remaining non-deleted images for this product (WHERE product_id = productId AND deleted_at IS NULL AND id != imageId)
+   *    - If count equals 0, return 400 Bad Request with message: 'At least one image must remain for this product'
    *
-   * Audit: Log the deletion in ecommerce_mall_activity_logs with actor reference to the seller.
+   * 4. Soft Delete Execution:
+   *    - Set deleted_at to current timestamp (NOW())
+   *    - Update updated_at to current timestamp
+   *    - Do NOT physically delete the record (soft delete pattern)
    *
-   * Transaction: Perform the image deletion and sequence recalculation in a single transaction to maintain data consistency.
+   * 5. Snapshot Creation:
+   *    - Create snapshot record in ecommerce_mall_product_snapshots table
+   *    - Capture the complete product state including all images with their display_order
+   *    - Include operation metadata: deletion type, timestamp, user_id
+   *
+   * 6. Response:
+   *    - Return 204 No Content on successful deletion
+   *    - Do NOT return any response body (image is removed from view)
+   *
+   * 7. Error Handling:
+   *    - 401 Unauthorized: No valid authentication token
+   *    - 403 Forbidden: User is not the product owner
+   *    - 404 Not Found: Image does not exist or belongs to different product
+   *    - 409 Conflict: Attempting to delete the last remaining image
+   *    - 500 Internal Server Error: Database error during deletion or snapshot creation
+   *
+   * Edge Cases:
+   * - Image already soft-deleted: Return 409 with 'Image has already been deleted'
+   * - Concurrent modifications: Use optimistic locking or row-level locks
+   * - Product already deleted: Return 404 as product no longer exists
+   * - Display order adjustment: After deletion, no automatic reordering of remaining images is performed (seller must explicitly reorder if needed)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":imageId")

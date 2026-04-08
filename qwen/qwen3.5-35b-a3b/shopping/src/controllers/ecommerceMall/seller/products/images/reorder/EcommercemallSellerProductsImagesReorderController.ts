@@ -2,55 +2,116 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
+import { IEcommerceMallProduct } from "../../../../../../api/structures/IEcommerceMallProduct";
 import { IEcommerceMallProductImage } from "../../../../../../api/structures/IEcommerceMallProductImage";
-import { IPageIEcommerceMallProductImage } from "../../../../../../api/structures/IPageIEcommerceMallProductImage";
 import { SellerAuth } from "../../../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../../../decorators/payload/SellerPayload";
+import { patchEcommerceMallSellerProductsProductIdImagesImageIdReorder } from "../../../../../../providers/patchEcommerceMallSellerProductsProductIdImagesImageIdReorder";
 import { patchEcommerceMallSellerProductsProductIdImagesReorder } from "../../../../../../providers/patchEcommerceMallSellerProductsProductIdImagesReorder";
 
-@Controller("/ecommerceMall/seller/products/:productId/images/reorder")
+@Controller("/ecommerceMall/seller/products/:productId/images")
 export class EcommercemallSellerProductsImagesReorderController {
   /**
-   * Reorder product images to change their display sequence on the product detail page.
+   * Reorder product images by updating their display order.
    *
-   * This operation allows sellers to adjust the display_order values of images associated with their product, which determines the visual sequence customers see when browsing the product. The first image in the reordered sequence becomes the main thumbnail image shown in search results and category listings.
+   * This operation allows sellers to change the display sequence of product images. The image with display_order 1 is shown as the main/thumbnail image in product listings. All image changes are recorded in product snapshots for audit purposes.
    *
-   * Sellers can only reorder images for products they own. The operation requires the seller's authentication token and verifies ownership before applying any changes. All images for the product must be included in the reorder request to ensure a complete and consistent order sequence.
+   * Only the product owner (seller) can reorder images. The operation validates that at least one image remains after reordering. If the product has no images, the operation returns an error.
    *
-   * When images are reordered, the changes take effect immediately and are reflected in all customer-facing views without requiring product republishing. Each successful reorder operation is recorded in the product snapshot table for audit trail purposes.
+   * **Authorization**: Seller must own the product.
+   * **Side Effects**: Creates a product snapshot recording the image order change.
    *
    * @param connection
-   * @param productId The UUID identifier of the product whose images are being reordered
-   * @param body Array of image objects containing the image ID and its new display order value
+   * @param productId UUID of the product whose images are being reordered (owned by the authenticated seller)
+   * @param body The new display order of product images. Provide an array of image IDs in the desired sequence, where the first item will have display_order 1, the second item display_order 2, and so on.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification 1. Validate that the requesting seller owns the product by checking product.seller_id matches the authenticated seller's ID
-   * 2. Verify all image IDs in the reorder array belong to the specified product
-   * 3. Ensure all images for the product are included in the request (no images should be missing)
-   * 4. Validate that display_order values are unique integers starting from 0 (or 1, depending on schema convention)
-   * 5. Update the display_order field for each image record in the ecommerce_mall_product_images table
-   * 6. Create a product snapshot record to preserve the state before the reorder operation for audit trail
-   * 7. Update the search index to reflect any changes to the main thumbnail image (if the first image changed)
-   * 8. Return the complete updated list of product images sorted by the new display_order values
-   * 9. Handle edge case: if the main image was moved, update the product's cached main image reference
-   * 10. Return HTTP 200 with updated image list on success, HTTP 403 if seller doesn't own the product, HTTP 400 if validation fails
+   * @x-autobe-specification 1. Verify seller is authenticated and owns the product (via product.seller_id)
+   * 2. Fetch all product images for the product where deleted_at IS NULL
+   * 3. If no images exist, return 400 error (cannot reorder zero images)
+   * 4. Validate request body contains valid image IDs that belong to this product
+   * 5. Validate each image ID exists and is not already deleted
+   * 6. Update all images with new display_order values (1, 2, 3, ...) based on request order
+   * 7. Update updated_at timestamp for each image
+   * 8. Create a product snapshot capturing the new image order state
+   * 9. Return updated product images list sorted by display_order
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
+  @TypedRoute.Patch("reorder")
   public async patchByProductid(
     @SellerAuth()
     seller: SellerPayload,
     @TypedParam("productId")
     productId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IEcommerceMallProductImage.IReorder,
-  ): Promise<IPageIEcommerceMallProductImage.ISummary> {
+    body: IEcommerceMallProduct.IReorder,
+  ): Promise<IEcommerceMallProductImage.IReorderResponse> {
     try {
       return await patchEcommerceMallSellerProductsProductIdImagesReorder({
         seller,
         productId,
         body,
       });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reorder a product image by updating its display order position.
+   *
+   * This operation allows a product's owner (seller) to change the display position of an image within their product's image gallery. The display order determines the sequence in which images appear in product listings, with lower values displayed first. The image with display_order = 1 serves as the main product thumbnail shown in search results and category browsing.
+   *
+   * When the display order is updated, a product snapshot is automatically created to preserve the visual state of the product at that point in time. This ensures historical records of product appearance remain available for dispute resolution and audit purposes.
+   *
+   * Only the seller who owns the product can reorder its images. Attempting to modify images for a product owned by another seller will result in an unauthorized error.
+   *
+   * @param connection
+   * @param productId The unique identifier of the product that owns this image.
+   * @param imageId The unique identifier of the image to be reordered.
+   * @param body The new display order position for the image. Must be a positive integer. Lower values appear first in the product's image gallery. The image with display_order = 1 is shown as the main thumbnail.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor seller
+   * @x-autobe-specification 1. Validate that the requesting seller is the owner of the product (match product_id from path parameter with seller's product ownership).
+   * 2. Validate that the image with imageId exists and belongs to the specified product.
+   * 3. Validate that display_order value is positive (>= 1).
+   * 4. Validate that the new display_order does not conflict with existing images (enforce unique constraint on [product_id, display_order]).
+   * 5. Update the image record's display_order field in ecommerce_mall_product_images table.
+   * 6. Create a product snapshot (ecommerce_mall_product_snapshots) capturing the image set at this moment, including the updated display_order.
+   * 7. Return the updated image record.
+   *
+   * Error handling:
+   * - Return 404 Not Found if product does not exist or image does not belong to the product.
+   * - Return 403 Forbidden if the requesting user is not the product owner.
+   * - Return 409 Conflict if the new display_order would create a duplicate (another image already has that order).
+   * - Return 422 Unprocessable Entity if display_order is invalid (negative, zero, or exceeds max integer).
+   *
+   * Notes:
+   * - If this is the only image, reorder operations still apply but the image remains as main thumbnail.
+   * - Ensure the unique constraint @@unique([product_id, display_order]) is enforced at database level to prevent conflicts.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Patch(":imageId/reorder")
+  public async patchByProductidAndImageid(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedParam("productId")
+    productId: string & tags.Format<"uuid">,
+    @TypedParam("imageId")
+    imageId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IEcommerceMallProductImage.IReorder,
+  ): Promise<IEcommerceMallProductImage> {
+    try {
+      return await patchEcommerceMallSellerProductsProductIdImagesImageIdReorder(
+        {
+          seller,
+          productId,
+          imageId,
+          body,
+        },
+      );
     } catch (error) {
       console.log(error);
       throw error;

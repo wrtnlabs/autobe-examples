@@ -15,54 +15,65 @@ export async function deleteErpHrmTimeMemberTimelogsTimelogId(props: {
   member: MemberPayload;
   timelogId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  await MyGlobal.prisma.$transaction(async (prisma) => {
-    const timelog = await prisma.erp_hrm_time_timelogs.findFirstOrThrow({
+  const organizationMembership =
+    await MyGlobal.prisma.erp_hrm_time_organization_memberships.findFirst({
       where: {
-        id: props.timelogId,
         erp_hrm_time_member_id: props.member.id,
+        is_selected_context: true,
         deleted_at: null,
+        status: "active",
       },
       select: {
-        id: true,
-        erp_hrm_time_member_id: true,
-        timesheetTimelogs: {
-          where: {
-            deleted_at: null,
-          },
-          select: {
-            timesheet: {
-              select: {
-                status: true,
-              },
+        erp_hrm_time_organization_id: true,
+      },
+    });
+  if (organizationMembership === null) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const timelog = await MyGlobal.prisma.erp_hrm_time_timelogs.findFirst({
+    where: {
+      id: props.timelogId,
+      deleted_at: null,
+      project: {
+        erp_hrm_time_organization_id:
+          organizationMembership.erp_hrm_time_organization_id,
+      },
+    },
+    select: {
+      id: true,
+      erp_hrm_time_member_id: true,
+      timesheetTimelogs: {
+        select: {
+          timesheet: {
+            select: {
+              status: true,
             },
           },
         },
       },
-    });
-    if (timelog.erp_hrm_time_member_id !== props.member.id) {
-      throw new HttpException("Forbidden", 403);
-    }
-    if (
-      timelog.timesheetTimelogs.some(
-        (row: {
-          timesheet: {
-            status: string;
-          };
-        }) => {
-          const status = row.timesheet.status;
-          return status === "submitted" || status === "approved";
-        },
-      )
-    ) {
-      throw new HttpException(
-        "Timelog is locked by submitted or approved timesheet",
-        409,
-      );
-    }
-    await prisma.erp_hrm_time_timelogs.delete({
-      where: {
-        id: timelog.id,
-      },
-    });
+    },
+  });
+  if (timelog === null) {
+    throw new HttpException("Not Found", 404);
+  }
+  if (timelog.erp_hrm_time_member_id !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  if (
+    timelog.timesheetTimelogs.some(
+      (link) =>
+        link.timesheet.status === "submitted" ||
+        link.timesheet.status === "approved",
+    )
+  ) {
+    throw new HttpException(
+      "Timelog is locked by a submitted or approved timesheet",
+      409,
+    );
+  }
+  await MyGlobal.prisma.erp_hrm_time_timelogs.delete({
+    where: {
+      id: timelog.id,
+    },
   });
 }

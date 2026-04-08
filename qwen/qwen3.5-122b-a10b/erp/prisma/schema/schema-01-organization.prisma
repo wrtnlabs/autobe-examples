@@ -1,0 +1,365 @@
+/// Organization entities with multi-tenancy configuration including name,
+/// description, logo, currency, timezone, and fiscal period settings.
+///
+/// Organizations serve as the foundational isolation boundary for all
+/// business data. Each organization operates independently with its own
+/// configuration settings, employees, projects, and time tracking records.
+///
+/// **Configuration Fields**
+/// - Currency: ISO 4217 currency code (e.g., USD, EUR, KRW) for financial
+/// calculations
+/// - Timezone: IANA timezone identifier for date/time formatting
+/// - Fiscal Start Month: Month number (1-12) defining the organization's
+/// fiscal year
+///
+/// **Deletion Constraints**
+/// - Cannot delete if pending timesheets exist (not approved or rejected)
+/// - Cannot delete if active employee contracts exist
+/// - Cascades to all employees, projects, tasks, timelogs, and timesheets
+/// - Owner accounts remain but are disassociated from the deleted organization
+///
+/// @namespace organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_organizations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the organization record.
+  id String @id
+  
+  /// Organization display name.
+  ///
+  /// Required for identification and user-facing references.
+  name String
+  
+  /// Organization description or tagline.
+  ///
+  /// Optional field for additional context about the organization.
+  description String?
+  
+  /// URL to organization logo image.
+  ///
+  /// Used for branding in user interfaces and communications.
+  logo_image_url String?
+  
+  /// ISO 4217 currency code (e.g., USD, EUR, KRW).
+  ///
+  /// Used for all financial calculations including contract pay rates and
+  /// project budgets.
+  currency String
+  
+  /// IANA timezone identifier (e.g., America/New_York, Asia/Seoul).
+  ///
+  /// Used for date/time formatting and timesheet week boundaries.
+  timezone String
+  
+  /// Fiscal year start month (1-12).
+  ///
+  /// January=1, December=12. Used for financial reporting periods.
+  fiscal_start_month Int
+  
+  /// Record creation timestamp.
+  ///
+  /// Automatically set on organization creation.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  ///
+  /// Automatically updated on any field modification.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  ///
+  /// When null, organization is active. When set, organization is marked for
+  /// deletion but retained for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  organizationOwners hrm_organization_owners[]
+  organizationRoles hrm_organization_roles[]
+  departments hrm_departments[]
+  employees hrm_employees[]
+  invitations hrm_employee_invitations[]
+  employeeSnapshots hrm_employee_snapshots[]
+  roles hrm_roles[]
+  projects hrm_projects[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([created_at])
+}
+
+/// Organization ownership tracking with current and historical owner records
+/// to support ownership transfer lifecycle
+///
+/// This table maintains a complete audit trail of organization ownership
+/// changes, enabling ownership transfer workflows and historical analysis.
+/// Each organization can have multiple ownership records over time, but only
+/// one current owner at any given point.
+///
+/// Ownership Lifecycle
+///
+/// When an organization is created, an initial ownership record is created
+/// with is_current=true and ended_at=NULL. When ownership is transferred,
+/// the current record's ended_at is set to the transfer date and
+/// is_current=false, while a new record is created for the new owner. When
+/// an organization is deleted, all ownership records are cascade deleted.
+///
+/// Data Integrity
+///
+/// Application-level enforcement ensures only one current owner per
+/// organization (is_current=true with ended_at=NULL). The unique constraint
+/// on (organization_id, is_current) prevents duplicate current or historical
+/// flags, while business logic ensures single current ownership.
+///
+/// @namespace organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_organization_owners {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying each ownership record.
+  id String @id
+  
+  /// Reference to the organization whose ownership is being tracked.
+  ///
+  /// This foreign key establishes the relationship to {@link
+  /// hrm_organizations}. Ownership records cannot exist without a valid
+  /// organization. When an organization is deleted, all associated ownership
+  /// records are cascade deleted per multi-tenancy data isolation rules.
+  organization_id String
+  
+  /// Reference to the user who owns or owned the organization.
+  ///
+  /// This foreign key establishes the relationship to {@link hrm_members}.
+  /// Users can own multiple organizations over time, creating separate
+  /// ownership records for each. When a user account is deleted, ownership
+  /// records are handled per account deletion constraints (must transfer
+  /// ownership or delete organization first if sole owner).
+  user_id String
+  
+  /// Flag indicating whether this is the current active ownership record.
+  ///
+  /// When true, this record represents the active owner of the organization.
+  /// Only one record per organization should have is_current=true at any time.
+  /// Application logic enforces this constraint during ownership transfers.
+  ///
+  /// Current ownership: is_current=true, ended_at=NULL
+  /// Historical ownership: is_current=false, ended_at=transfer date
+  is_current Boolean
+  
+  /// Timestamp when this ownership record became effective.
+  ///
+  /// For initial ownership, this is the organization creation time. For
+  /// transferred ownership, this is the transfer date. This field is never
+  /// null and establishes the ownership period start.
+  started_at DateTime
+  
+  /// Timestamp when this ownership record became inactive (NULL if currently
+  /// active).
+  ///
+  /// When NULL, indicates this is the current ownership record. When set,
+  /// indicates the ownership ended due to transfer or organization deletion.
+  /// This field enables historical ownership queries and audit trails.
+  ended_at DateTime?
+  
+  /// Timestamp when this record was created in the database.
+  created_at DateTime
+  
+  /// Timestamp when this record was last updated. Updated during ownership
+  /// transfers when ended_at is set.
+  updated_at DateTime
+  
+  /// Timestamp when this record was soft deleted. NULL if the record is
+  /// active. Used for audit trail preservation before cascade deletion.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user hrm_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([user_id])
+  @@unique([organization_id, is_current])
+}
+
+/// Organization-specific roles including built-in roles (Owner, Manager,
+/// Employee) and custom roles defined by organization owners.
+///
+/// Role Types
+///
+/// Built-in roles (is_builtin=true) are system-defined and cannot be
+/// deleted: Owner, Manager, Employee. Custom roles (is_builtin=false) can be
+/// created and deleted by organization owners, subject to assignment
+/// constraints.
+///
+/// Deletion Constraints
+///
+/// Built-in roles cannot be deleted under any circumstances. Custom roles
+/// cannot be deleted if employees are currently assigned to them. This
+/// ensures role assignments remain valid.
+///
+/// Organization Scope
+///
+/// Each role belongs to exactly one {@link HrmOrganizations} and is visible
+/// only within that organization's context. Role names must be unique within
+/// each organization to prevent ambiguity.
+///
+/// @namespace organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_organization_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the role record.
+  id String @id
+  
+  /// References the organization this role belongs to.
+  ///
+  /// Each role is scoped to exactly one organization and inherits the
+  /// organization's data isolation boundaries. Role permissions and
+  /// assignments are valid only within this organization context.
+  organization_id String
+  
+  /// Role name within the organization.
+  ///
+  /// Must be unique within the organization (enforced by unique index).
+  /// Built-in roles use fixed names: Owner, Manager, Employee. Custom roles
+  /// can use any descriptive name chosen by the organization owner.
+  name String
+  
+  /// Indicates whether this is a system-built-in role.
+  ///
+  /// Built-in roles (Owner, Manager, Employee) cannot be deleted and have
+  /// fixed permission sets. Custom roles created by organization owners have
+  /// is_builtin=false and can be modified or deleted if not assigned to
+  /// employees.
+  is_builtin Boolean
+  
+  /// Timestamp when the role was created.
+  created_at DateTime
+  
+  /// Timestamp when the role was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the role was soft-deleted (nullable for active roles).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_id, name])
+  @@index([organization_id])
+}
+
+/// Department structure within organizations supporting one-level nesting
+/// via parent department reference
+///
+/// This table organizes employees into hierarchical department groups within
+/// each organization. Departments support a single level of nesting where a
+/// department can have one parent department but multiple child departments.
+///
+/// Department Lifecycle
+///
+/// Departments are created by organization administrators and can be
+/// deleted. When a department is deleted, all employees assigned to it have
+/// their department_id set to null rather than being deleted themselves.
+/// This preserves employee records while removing the department grouping.
+///
+/// Soft deletion is supported via the deleted_at field, allowing departments
+/// to be hidden without permanent data loss.
+///
+/// Hierarchy Constraints
+///
+/// The parent_department_id field enables one-level nesting only. A
+/// department can reference another department in the same organization as
+/// its parent, but nested hierarchies beyond one level are not supported.
+/// This keeps the department structure flat and manageable.
+///
+/// @namespace organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_departments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying each department record
+  id String @id
+  
+  /// Reference to the organization that owns this department
+  ///
+  /// All departments belong to exactly one organization and are isolated
+  /// within that organization's data scope. The organization_id ensures data
+  /// separation in the multi-tenancy architecture.
+  ///
+  /// {@link hrm_organizations}
+  organization_id String
+  
+  /// Reference to the parent department for one-level hierarchy nesting
+  ///
+  /// This self-referencing foreign key allows a department to have one parent
+  /// department within the same organization. Null value indicates a top-level
+  /// department with no parent.
+  ///
+  /// Only one level of nesting is supported - child departments cannot have
+  /// their own children.
+  ///
+  /// {@link hrm_departments}
+  parent_department_id String?
+  
+  /// Department name displayed to users
+  ///
+  /// Must be unique within the organization. Common examples include
+  /// "Engineering", "Human Resources", "Sales", "Marketing".
+  name String
+  
+  /// Optional detailed description of the department's purpose and
+  /// responsibilities
+  description String?
+  
+  /// Timestamp when the department was created
+  created_at DateTime
+  
+  /// Timestamp when the department was last updated
+  updated_at DateTime
+  
+  /// Timestamp when the department was soft-deleted. Null if the department is
+  /// active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  parentDepartment hrm_departments? @relation("recursive", fields: [parent_department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  childDepartments hrm_departments[] @relation("recursive")
+  employees hrm_employees[]
+  employeeSnapshots hrm_employee_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_id, name])
+  @@index([organization_id])
+  @@index([parent_department_id])
+}

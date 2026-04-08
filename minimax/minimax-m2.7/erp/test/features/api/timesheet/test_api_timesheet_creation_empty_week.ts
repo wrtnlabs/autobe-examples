@@ -5,11 +5,10 @@ import type { IErpHrmDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures
 import type { IErpHrmEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmEmployee";
 import type { IErpHrmMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmMember";
 import type { IErpHrmOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmOrganization";
-import type { IErpHrmProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProjectMember";
+import type { IErpHrmProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProject";
 import type { IErpHrmRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmRole";
 import type { IErpHrmTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTask";
 import type { IErpHrmTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimelog";
-import type { IErpHrmTimer } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimer";
 import type { IErpHrmTimesheet } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimesheet";
 import type { IErpHrmTimesheetTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimesheetTimelog";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -27,71 +26,51 @@ import { prepare_random_erp_hrm_timesheet } from "../../../prepare/prepare_rando
 export async function test_api_timesheet_creation_empty_week(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Authenticate as a member
+  // 1. Authenticate as member via join
   const memberConnection: api.IConnection = { host: connection.host };
-  const authorized = await authorize_member_join(memberConnection, {
+  await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-      displayName: RandomGenerator.name(),
+      password: "Test1234!",
+      display_name: RandomGenerator.name(),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
-    },
+    } satisfies IErpHrmMember.IJoin,
   });
-  typia.assert(authorized);
-  // 2. Calculate current week's Monday and Sunday dates
-  const now = new Date();
-  const dayOfWeek = now.getDay(); // 0 = Sunday
-  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  const sundayOffset = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + mondayOffset);
-  monday.setHours(0, 0, 0, 0);
-  const sunday = new Date(now);
-  sunday.setDate(now.getDate() + sundayOffset);
-  sunday.setHours(23, 59, 59, 999);
-  const weekStartDate = monday.toISOString();
-  const weekEndDate = sunday.toISOString();
-  // 3. Create a draft timesheet for the current week
+  // 2. Calculate a future Monday (ensure no timelogs exist in that week)
+  // Today is April 2, 2026 (Thursday)
+  // Next Monday is April 6, 2026
+  const futureMonday = new Date("2026-04-06T00:00:00.000Z");
+  const weekStartDate = futureMonday.toISOString();
+  // 3. Create draft timesheet for that week (no timelogs will exist)
   const timesheet = await api.functional.erpHrm.member.timesheets.create(
     memberConnection,
     {
       body: {
-        week_start_date: weekStartDate,
-        week_end_date: weekEndDate,
+        weekStartDate: weekStartDate,
       } satisfies IErpHrmTimesheet.ICreate,
     },
   );
   typia.assert(timesheet);
-  // 4. Validate timesheet was created successfully
-  TestValidator.equals("timesheet id exists", !!timesheet.id, true);
+  // 4. Validate business logic (NOT type validation)
   TestValidator.equals("status is draft", timesheet.status, "draft");
-  TestValidator.equals(
-    "week_start_date matches",
-    timesheet.week_start_date,
-    weekStartDate,
-  );
-  TestValidator.equals(
-    "week_end_date matches",
-    timesheet.week_end_date,
-    weekEndDate,
-  );
-  // 5. Validate total_hours is 0 (no timelogs yet)
-  TestValidator.equals("total_hours is 0", timesheet.total_hours, 0);
-  // 6. Validate timesheetTimelogs array is empty
+  TestValidator.equals("totalHours is 0", timesheet.totalHours, 0);
   TestValidator.equals(
     "timesheetTimelogs is empty",
     timesheet.timesheetTimelogs.length,
     0,
   );
-  // 7. Validate employee context is correctly set
-  TestValidator.equals("employee is set", !!timesheet.employee, true);
   TestValidator.equals(
-    "employee id matches",
-    timesheet.employee.id,
-    authorized.id,
+    "weekEndDate is Sunday",
+    new Date(timesheet.weekEndDate).getDay(),
+    0,
   );
-  // 8. Validate timestamps exist
-  TestValidator.equals("created_at exists", !!timesheet.created_at, true);
-  TestValidator.equals("updated_at exists", !!timesheet.updated_at, true);
+  // Verify weekEndDate is correctly calculated as weekStartDate + 6 days
+  const expectedWeekEndDate = new Date(futureMonday);
+  expectedWeekEndDate.setUTCDate(expectedWeekEndDate.getUTCDate() + 6);
+  TestValidator.equals(
+    "weekEndDate equals Monday + 6 days",
+    new Date(timesheet.weekEndDate).toISOString().split("T")[0],
+    expectedWeekEndDate.toISOString().split("T")[0],
+  );
 }

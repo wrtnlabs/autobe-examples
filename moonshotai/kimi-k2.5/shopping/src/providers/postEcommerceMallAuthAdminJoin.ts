@@ -9,7 +9,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { EcommerceMallAdminTransformer } from "../transformers/EcommerceMallAdminTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,36 +16,39 @@ export async function postEcommerceMallAuthAdminJoin(props: {
   ip: string;
   body: IEcommerceMallAdmin.IJoin;
 }): Promise<IEcommerceMallAdmin.IAuthorized> {
-  // Check email uniqueness with case-insensitive comparison
-  const existing = await MyGlobal.prisma.ecommerce_mall_admins.findFirst({
-    where: {
-      email: {
-        equals: props.body.email,
-        mode: "insensitive",
-      },
+  // Find admin by email
+  const admin = await MyGlobal.prisma.ecommerce_mall_admins.findFirstOrThrow({
+    where: { email: props.body.email },
+    select: {
+      id: true,
+      email: true,
+      password_hash: true,
+      grade: true,
+      status: true,
+      nickname: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
     },
   });
-  if (existing) {
-    throw new HttpException("Email already registered", 409);
+  // Verify password
+  const passwordValid = await PasswordUtil.verify(
+    props.body.password,
+    admin.password_hash,
+  );
+  if (!passwordValid) {
+    throw new HttpException("Invalid credentials", 401);
   }
-  // Hash password using BCrypt
-  const passwordHash = await PasswordUtil.hash(props.body.password);
-  // Create administrator with default regular grade and active status
-  const admin = await MyGlobal.prisma.ecommerce_mall_admins.create({
-    data: {
-      id: v4(),
-      email: props.body.email,
-      password_hash: passwordHash,
-      grade: "regular",
-      status: "active",
-      nickname: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      deleted_at: null,
-    },
-    ...EcommerceMallAdminTransformer.select(),
-  });
-  // Create session with connection metadata
+  // Check account status
+  if (admin.status !== "active") {
+    throw new HttpException(
+      `Account is ${admin.status}. Contact administrator.`,
+      403,
+    );
+  }
+  // Create session
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const session = await MyGlobal.prisma.ecommerce_mall_admin_sessions.create({
     data: {
       id: v4(),
@@ -54,48 +56,54 @@ export async function postEcommerceMallAuthAdminJoin(props: {
       ip: props.body.ip ?? props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
-      expired_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-      created_at: new Date().toISOString(),
+      expired_at: refreshExpires,
+      created_at: new Date(),
     },
     select: {
       id: true,
+      expired_at: true,
     },
   });
-  // Generate JWT access and refresh tokens
-  const now = new Date().toISOString();
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-  const refreshExpires = new Date(
-    Date.now() + 7 * 24 * 60 * 60 * 1000,
-  ).toISOString();
-  const token: IAuthorizationToken = {
-    access: jwt.sign(
-      {
-        type: "admin",
-        id: admin.id,
-        session_id: session.id,
-        created_at: now,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "admin",
-        id: admin.id,
-        session_id: session.id,
-        tokenType: "refresh",
-        created_at: now,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-    expired_at: accessExpires,
-    refreshable_until: refreshExpires,
-  };
-  // Transform admin and attach token
-  const transformed = await EcommerceMallAdminTransformer.transform(admin);
+  // Generate JWT tokens
+  const accessToken = jwt.sign(
+    {
+      type: "admin",
+      id: admin.id,
+      session_id: session.id,
+      created_at: new Date().toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
+  const refreshToken = jwt.sign(
+    {
+      type: "admin",
+      id: admin.id,
+      session_id: session.id,
+      tokenType: "refresh",
+      created_at: new Date().toISOString(),
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
+  // Return authorized response
   return {
-    ...transformed,
-    token,
+    id: admin.id,
+    email: admin.email,
+    grade: admin.grade as "regular" | "super_admin",
+    status: admin.status as "active" | "suspended" | "banned",
+    nickname: admin.nickname,
+    createdAt: admin.created_at.toISOString(),
+    updatedAt: admin.updated_at.toISOString(),
+    deletedAt: admin.deleted_at?.toISOString() ?? null,
+    access: accessToken,
+    refresh: refreshToken,
+    expired_at: accessExpires.toISOString(),
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpires.toISOString(),
+      refreshable_until: refreshExpires.toISOString(),
+    },
   };
 }

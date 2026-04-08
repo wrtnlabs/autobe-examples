@@ -1,12 +1,14 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
-import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
 import { IRedditClonePostSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostSnapshot";
+import { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditClonePostAtSummaryTransformer } from "./RedditClonePostAtSummaryTransformer";
 
@@ -19,15 +21,11 @@ export namespace RedditClonePostSnapshotTransformer {
       select: {
         id: true,
         title: true,
-        content: true,
         post_type: true,
+        text_content: true,
         link_url: true,
-        file_url: true,
-        score: true,
-        original_created_at: true,
-        original_updated_at: true,
-        original_deleted_at: true,
-        captured_at: true,
+        image_url: true,
+        snapshot_created_at: true,
         post: RedditClonePostAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_clone_post_snapshotsFindManyArgs;
@@ -37,17 +35,13 @@ export namespace RedditClonePostSnapshotTransformer {
   ): Promise<IRedditClonePostSnapshot> {
     return {
       id: input.id,
-      post: await RedditClonePostAtSummaryTransformer.transform(input.post),
       title: input.title,
-      content: input.content ?? undefined,
       post_type: input.post_type,
-      link_url: input.link_url ?? undefined,
-      file_url: input.file_url ?? undefined,
-      score: input.score,
-      original_created_at: input.original_created_at.toISOString(),
-      original_updated_at: input.original_updated_at.toISOString(),
-      original_deleted_at: input.original_deleted_at?.toISOString() ?? null,
-      captured_at: input.captured_at.toISOString(),
+      text_content: input.text_content,
+      link_url: input.link_url,
+      image_url: input.image_url,
+      snapshot_created_at: input.snapshot_created_at.toISOString(),
+      post: await RedditClonePostAtSummaryTransformer.transform(input.post),
     };
   }
 }

@@ -11,10 +11,8 @@ export namespace EcommerceMallSellerSuspensionCollector {
   export async function collect(props: {
     body: IEcommerceMallSellerSuspension.ICreate;
     ecommerceMallAdmins: IEntity;
-    ecommerceMallAdminSessions: IEntity;
   }) {
     return {
-      // Scalar fields
       id: v4(),
       reason: props.body.reason,
       restored_reason: null,
@@ -22,11 +20,36 @@ export namespace EcommerceMallSellerSuspensionCollector {
       restored_at: null,
       created_at: new Date(),
       updated_at: new Date(),
-      // BelongsTo relations
-      seller: { connect: { id: props.body.seller_id } },
+      seller: { connect: { id: props.body.sellerId } },
       suspendedBy: { connect: { id: props.ecommerceMallAdmins.id } },
-      // Optional belongsTo - use undefined for nullable FK
       restoredBy: undefined,
     } satisfies Prisma.ecommerce_mall_seller_suspensionsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallSellerSuspensionCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallSellerSuspension.ICreate;
+//           ecommerceMallAdmins: IEntity; // from authorized actor
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       reason: ...,
+//       restored_reason: ...,
+//       suspended_at: ...,
+//       restored_at: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       seller: ...,
+//       suspendedBy: ...,
+//       restoredBy: ...,
+//           } satisfies Prisma.ecommerce_mall_seller_suspensionsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

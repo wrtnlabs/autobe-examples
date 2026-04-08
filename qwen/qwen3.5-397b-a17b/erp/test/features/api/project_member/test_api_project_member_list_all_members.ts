@@ -8,6 +8,7 @@ import type { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/str
 import type { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProject";
 import type { IHrmPlatformProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProjectMember";
 import type { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
+import type { IHrmPlatformUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformUserProfile";
 import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import type { IPageIHrmPlatformProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIHrmPlatformProjectMember";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -19,178 +20,131 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_hrm_platform_member_organizations_create } from "../../../generate/generate_random_hrm_platform_member_organizations_create";
 import { generate_random_hrm_platform_member_projects_create } from "../../../generate/generate_random_hrm_platform_member_projects_create";
-import { generate_random_hrm_platform_member_projects_members_create } from "../../../generate/generate_random_hrm_platform_member_projects_members_create";
-import { prepare_random_hrm_platform_organization } from "../../../prepare/prepare_random_hrm_platform_organization";
 import { prepare_random_hrm_platform_project } from "../../../prepare/prepare_random_hrm_platform_project";
-import { prepare_random_hrm_platform_project_member } from "../../../prepare/prepare_random_hrm_platform_project_member";
 
+/**
+ * Test retrieving all project members assigned to a specific project.
+ *
+ * Validates the complete project member retrieval workflow including member authentication, project creation, and member list retrieval. Ensures that the response includes complete member information with employee details (name, position, department, employment type, status), assigned role (member or project-lead), and join date (created_at). Validates pagination metadata is correct showing total member count, current page, limit, and total pages. Confirms members are ordered by created_at descending (newest first) and all members are returned regardless of role type.
+ *
+ * Special attention is given to verifying that the employee summary information is properly nested including member reference, role assignment, and optional department. The pagination metadata must accurately reflect the total count of members and provide correct navigation information.
+ *
+ * 1. Member registers with email and credentials to obtain authentication.
+ * 2. Member creates a project to assign members to.
+ * 3. Member retrieves all project members using the members.index endpoint.
+ * 4. Validates response structure includes data array and pagination metadata.
+ * 5. Validates each member contains employee summary with required fields.
+ * 6. Validates pagination metadata shows correct total count and page information.
+ */
 export async function test_api_project_member_list_all_members(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Authenticate as member (this creates the user account)
+  // 1. Member authentication
   const memberConnection: api.IConnection = { host: connection.host };
-  const auth = await authorize_member_join(memberConnection, {
+  await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-      display_name: RandomGenerator.name(),
+      password: "TestPass123",
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
     } satisfies IHrmPlatformMember.IJoin,
   });
-  typia.assert(auth);
-  // 2. Create organization (this auto-creates an employee record for the member)
-  const organization =
-    await generate_random_hrm_platform_member_organizations_create(
-      memberConnection,
-      {
-        body: {
-          name: RandomGenerator.name(),
-          currency: "USD",
-          timezone: "Asia/Seoul",
-          fiscal_start_month: 1,
-        } satisfies IHrmPlatformOrganization.ICreate,
-      },
-    );
-  typia.assert(organization);
-  // 3. Select organization as active context
-  await api.functional.hrmPlatform.member.organizations.select(
-    memberConnection,
-    {
-      organizationId: organization.id,
-    },
-  );
-  // 4. Create project within the organization
+  // 2. Create a project
   const project = await generate_random_hrm_platform_member_projects_create(
     memberConnection,
     {
       body: {
         name: RandomGenerator.paragraph({ sentences: 2 }),
-        color_code: "#3498db",
-        status: "active",
+        color: "#FF5733",
       } satisfies IHrmPlatformProject.ICreate,
     },
   );
   typia.assert(project);
-  // 5. Note: We cannot create additional employees or project memberships
-  // because the required APIs are not available in the provided function list.
-  // The test validates the list endpoint structure with the available data.
-  // 6. Retrieve all project members (will return empty or existing memberships)
-  const response =
+  // 3. Retrieve all project members
+  const membersResponse =
     await api.functional.hrmPlatform.member.projects.members.index(
       memberConnection,
       {
         projectId: project.id,
         body: {
-          page: 1,
-          limit: 10,
+          take: 100,
+          skip: 0,
         } satisfies IHrmPlatformProjectMember.IRequest,
       },
     );
-  typia.assert(response);
-  // 7. Validate pagination metadata structure
-  TestValidator.equals("current page", response.pagination.current, 1);
-  TestValidator.equals("page limit", response.pagination.limit, 10);
+  typia.assert(membersResponse);
+  // 4. Validate pagination metadata
   TestValidator.predicate(
-    "records is non-negative",
-    response.pagination.records >= 0,
+    "pagination exists",
+    membersResponse.pagination !== undefined,
   );
   TestValidator.predicate(
-    "pages is non-negative",
-    response.pagination.pages >= 0,
+    "current page is 1",
+    membersResponse.pagination.current === 1,
   );
-  // 8. Validate response data array exists
-  TestValidator.predicate("data is array", Array.isArray(response.data));
-  // 9. Validate each membership record structure (if any exist)
-  for (const membership of response.data) {
-    // Validate membership has required fields
-    TestValidator.predicate("membership has id", membership.id !== undefined);
-    TestValidator.predicate(
-      "membership has role",
-      membership.role !== undefined,
-    );
-    TestValidator.predicate(
-      "membership has created_at",
-      membership.created_at !== undefined,
-    );
-    // Validate employee summary structure
-    TestValidator.predicate(
-      "employee exists",
-      membership.employee !== undefined,
-    );
-    TestValidator.predicate(
-      "employee has id",
-      membership.employee.id !== undefined,
-    );
-    TestValidator.predicate(
-      "employee has user",
-      membership.employee.user !== undefined,
-    );
-    TestValidator.predicate(
-      "employee has role",
-      membership.employee.role !== undefined,
-    );
-    TestValidator.predicate(
-      "employee has employment_type",
-      membership.employee.employment_type !== undefined,
-    );
-    TestValidator.predicate(
-      "employee has status",
-      membership.employee.status !== undefined,
-    );
-    TestValidator.predicate(
-      "employee has created_at",
-      membership.employee.created_at !== undefined,
-    );
-    // Validate user profile fields
-    TestValidator.predicate(
-      "user has id",
-      membership.employee.user.id !== undefined,
-    );
-    TestValidator.predicate(
-      "user has display_name",
-      membership.employee.user.display_name !== undefined,
-    );
-    TestValidator.predicate(
-      "user has avatar_image",
-      membership.employee.user.avatar_image !== undefined,
-    );
-    TestValidator.predicate(
-      "user has phone_number",
-      membership.employee.user.phone_number !== undefined,
-    );
-    // Validate role fields
-    TestValidator.predicate(
-      "role has id",
-      membership.employee.role.id !== undefined,
-    );
-    TestValidator.predicate(
-      "role has name",
-      membership.employee.role.name !== undefined,
-    );
-    TestValidator.predicate(
-      "role has is_builtin",
-      membership.employee.role.is_builtin !== undefined,
-    );
-    TestValidator.predicate(
-      "role has organization",
-      membership.employee.role.organization !== undefined,
-    );
-    TestValidator.predicate(
-      "role has created_at",
-      membership.employee.role.created_at !== undefined,
-    );
-    // Validate department (can be null or object)
-    TestValidator.predicate(
-      "employee has department field",
-      "department" in membership.employee,
-    );
-    // Validate position (can be null)
-    TestValidator.predicate(
-      "employee has position field",
-      "position" in membership.employee,
-    );
+  TestValidator.predicate("limit is set", membersResponse.pagination.limit > 0);
+  TestValidator.predicate(
+    "records count is non-negative",
+    membersResponse.pagination.records >= 0,
+  );
+  TestValidator.predicate(
+    "pages count is non-negative",
+    membersResponse.pagination.pages >= 0,
+  );
+  // 5. Validate data array exists
+  TestValidator.predicate(
+    "data array exists",
+    Array.isArray(membersResponse.data),
+  );
+  // 6. Validate each member structure if members exist
+  if (membersResponse.data.length > 0) {
+    for (const member of membersResponse.data) {
+      // Validate employee summary exists with required nested relations
+      TestValidator.predicate("employee exists", member.employee !== undefined);
+      TestValidator.predicate(
+        "employee member exists",
+        member.employee.member !== undefined,
+      );
+      TestValidator.predicate(
+        "employee role exists",
+        member.employee.role !== undefined,
+      );
+      // Validate member role is valid business value
+      TestValidator.predicate(
+        "member role is member or project-lead",
+        member.role === "member" || member.role === "project-lead",
+      );
+      // Validate department structure if present (optional field)
+      if (
+        member.employee.department !== null &&
+        member.employee.department !== undefined
+      ) {
+        TestValidator.predicate(
+          "department has id",
+          member.employee.department.id !== undefined,
+        );
+        TestValidator.predicate(
+          "department has name",
+          member.employee.department.name !== undefined,
+        );
+      }
+    }
+    // 7. Validate ordering by created_at descending (newest first)
+    if (membersResponse.data.length > 1) {
+      for (let i = 0; i < membersResponse.data.length - 1; i++) {
+        const current = new Date(membersResponse.data[i].created_at).getTime();
+        const next = new Date(membersResponse.data[i + 1].created_at).getTime();
+        TestValidator.predicate(
+          `members ordered by created_at descending at index ${i}`,
+          current >= next,
+        );
+      }
+    }
   }
+  // 8. Validate pagination consistency
+  TestValidator.predicate(
+    "data length matches records for single page",
+    membersResponse.data.length <= membersResponse.pagination.records,
+  );
 }

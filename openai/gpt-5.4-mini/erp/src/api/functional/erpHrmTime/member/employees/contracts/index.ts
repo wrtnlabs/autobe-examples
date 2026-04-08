@@ -7,30 +7,29 @@ import {
 import typia, { tags } from "typia";
 
 import { IErpHrmTimeEmployeeContract } from "../../../../../structures/IErpHrmTimeEmployeeContract";
-import { IErpHrmTimeEmployeeContractHistory } from "../../../../../structures/IErpHrmTimeEmployeeContractHistory";
 import { IPageIErpHrmTimeEmployeeContract } from "../../../../../structures/IPageIErpHrmTimeEmployeeContract";
 
 /**
  * Create a new employment contract for an employee.
  *
- * This operation adds a new contract record to the employee's historical employment record within the current organization context. A contract captures the employee's start date, optional end date, compensation terms, weekly working-hour expectation, and optional notes. The employee is identified by the path parameter, and the new contract is always created in the scope of that employee.
+ * This operation adds a historical contract record under the specified employee in the currently selected organization. It is used when an employee's compensation or working arrangement changes and a new contract period must begin while preserving previous contracts as part of the employee's employment history.
  *
- * When a new contract is created, the system must close the previous active contract for the same employee by setting its end date to the day before the new contract starts. This preserves a continuous employment history and ensures that only one active contract exists at a time. Past contracts remain immutable historical records after they are no longer active.
+ * If the employee already has an active contract, the service closes that previous contract automatically by setting its end date to the day before the new contract starts. The new record becomes the current active contract for that employee, and past contracts remain unchanged as historical records.
  *
- * Access is restricted to users who are allowed to manage employee data or view contract records according to organization permissions. The system must reject attempts to create overlapping active contracts, invalid pay periods, or contract data that does not satisfy the required dates and compensation terms. Because contracts belong to employees, all reads and writes must remain isolated to the current organization.
+ * Access is limited to users who are allowed to manage employees or otherwise view the employee's contract records. The employee identifier in the path defines the target scope, and the request body only contains the new contract terms. Errors should be returned when the employee does not exist in the current organization, when the caller lacks permission, when the start date is invalid, or when the new contract would overlap existing contract periods.
  *
  * @param props.connection
- * @param props.employeeId The employee identifier within the current organization scope.
- * @param props.body Contract details to create for the specified employee.
+ * @param props.employeeId The employee identifier within the current organization.
+ * @param props.body The contract terms to create for the employee.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the target employee by employeeId within the current organization context and verify the caller has employee management access for contract creation. Reject the request if the employee does not exist, belongs to another organization, or is inaccessible in the current tenant scope.
+ * @x-autobe-specification Resolve the employee within the current organization context, enforcing that the path employee belongs to the selected organization and is visible to the caller. Verify authorization: users with employee management access may create contracts, and users with employee view access may be allowed if business rules permit self-service or read-only contract context, but creation should generally require manage permission.
  *
- * Validate the payload using the actual contract fields only: startDate, endDate, payRate, payPeriod, workingHoursPerWeek, and notes. Enforce that startDate and payRate are present, payPeriod is one of hourly/daily/weekly/monthly, and workingHoursPerWeek is provided. Reject invalid date ordering where endDate exists and is before startDate. Because the schema exposes deleted_at but business rules treat contracts as historical records, do not expose any manual delete behavior here.
+ * Validate the request body against the actual employee contract schema fields. Create the new contract with the provided start date, pay rate, pay period, working hours per week, and optional end date/notes. Ensure the start date and pay rate are present and that pay period is one of the supported enumerations. Reject negative or invalid numeric values and any contract payload that would violate historical ordering.
  *
- * Before inserting the new row, find the current active contract for the same employee using the existing date-range rules and close it by setting its endDate to the day before the new startDate. Perform this in a transaction so the update of the previous active contract and insertion of the new contract are atomic. If a contract with the same employee and startDate already exists, return a validation conflict based on the unique constraint.
+ * If the employee has an active contract, update that prior contract in the same transaction by setting its end date to the day before the new contract starts, unless the prior contract already ended. Prevent overlapping active periods and ensure only one active contract exists after completion. Preserve all past contracts without mutation except the automatic closure of the previous active contract.
  *
- * Persist the new contract row with the employee foreign key from the path and audit timestamps. Return the created contract entity. If business rules or persistence checks fail, surface a clear domain validation error rather than partially updating the employee's history.
+ * Return the created contract entity after persistence. If the employee is missing, the organization context is invalid, the caller lacks authorization, or business validation fails, return the appropriate 4xx error. Use a transaction so that the prior contract update and the new contract insert are atomic.
  * @path /erpHrmTime/member/employees/:employeeId/contracts
  * @accessor api.functional.erpHrmTime.member.employees.contracts.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -60,12 +59,12 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * The employee identifier within the current organization scope.
+     * The employee identifier within the current organization.
      */
     employeeId: string & tags.Format<"uuid">;
 
     /**
-     * Contract details to create for the specified employee.
+     * The contract terms to create for the employee.
      */
     body: IErpHrmTimeEmployeeContract.ICreate;
   };
@@ -118,22 +117,24 @@ export namespace create {
 /**
  * Retrieve the contract history for a specific employee.
  *
- * This operation returns the employee’s employment contracts in historical order so callers can review how compensation and working arrangements changed over time. It is intended for employee self-service and for users who have employee view permission within the organization.
+ * This operation returns the employee’s historical employment contracts in chronological order so the caller can review how compensation and working terms changed over time. The history is the authoritative record for understanding when each employment period started, when it ended, and which contract is currently active.
  *
- * The contract records are organization-scoped through the employee relationship and represent historical employment terms such as start date, optional end date, pay rate, pay period, working hours per week, and notes. Past contracts remain immutable, while the current active contract is the only contract that may be changed through a separate update operation.
+ * The returned contracts belong to the employee identified in the path and are scoped to the current organization context. Past contracts remain unchanged as historical records, while the active contract may still be included as part of the sequence for review. This endpoint is intended for the employee’s own history and for authorized viewers with employee view permission within the organization.
  *
- * If the employee does not exist, the caller does not have access to the employee, or the organization context does not match, the request must be rejected. The response is paginated to support employees with long contract histories.
+ * Access is restricted by organization context and employee visibility rules. If the caller is not allowed to view the employee, the request must be rejected. If the employee does not exist in the current organization, the request must fail with a not-found error. For long histories, the response should support pagination and stable ordering.
  *
  * @param props.connection
- * @param props.employeeId Employee identifier within the current organization context.
- * @param props.body Pagination and optional search criteria for the employee contract history.
+ * @param props.employeeId The employee identifier whose contract history is being retrieved within the current organization context.
+ * @param props.body Search, sorting, and pagination criteria for the employee contract history.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the target employee by employeeId within the current organization context, then verify the caller can view that employee's contracts. Allow self-access for the authenticated employee and allow cross-employee access only when the caller has employee:view permission.
+ * @x-autobe-specification Resolve the current organization context first and verify that the target employee belongs to that organization. Enforce authorization so that the caller may view their own contracts or must have employee:view permission to view another employee’s contracts.
  *
- * Query erp_hrm_time_employee_contracts filtered by erp_hrm_time_employee_id, ordered chronologically by start_date ascending (and created_at or id as a stable tie-breaker if needed). Return a paginated result set of contract summaries for list display. Include the contract fields needed for history browsing and current-state review, but do not expose any mutation behavior here.
+ * Query erp_hrm_time_employee_contracts filtered by employee_id and the current organization scope. Sort results by start date ascending by default so the history reads in chronological order. Support pagination parameters and any reasonable sort override defined in the request DTO, but keep the default order stable for contract history browsing.
  *
- * Support search/pagination criteria in the request body. If the employee has no contracts, return an empty page. If the employee id is invalid or does not belong to the current organization context, return a not-found or forbidden error according to existing authorization conventions. Do not attempt to modify contracts from this endpoint; past contracts are immutable and active-contract editing is handled elsewhere.
+ * The request body must carry search and pagination controls only; do not include employeeId because it is already supplied in the path. Return a paginated summary collection using a contract summary type suitable for timeline rendering. Include the active contract and all historical contracts for the employee.
+ *
+ * Handle these errors explicitly: employee not found in the selected organization, forbidden access when the caller lacks employee:view permission for another employee, and invalid pagination or sort inputs. No mutation occurs in this endpoint, and no historical contract data should be altered.
  * @path /erpHrmTime/member/employees/:employeeId/contracts
  * @accessor api.functional.erpHrmTime.member.employees.contracts.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -163,12 +164,12 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Employee identifier within the current organization context.
+     * The employee identifier whose contract history is being retrieved within the current organization context.
      */
     employeeId: string & tags.Format<"uuid">;
 
     /**
-     * Pagination and optional search criteria for the employee contract history.
+     * Search, sorting, and pagination criteria for the employee contract history.
      */
     body: IErpHrmTimeEmployeeContract.IRequest;
   };
@@ -219,25 +220,23 @@ export namespace index {
 }
 
 /**
- * Retrieve a single employee contract record for viewing contract history.
+ * Retrieve a single employee contract from an employee’s historical contract record.
  *
- * This operation returns one historical employment contract belonging to a specific employee within the current organization context. The contract contains the employee’s effective date range, compensation terms, working-time expectations, and optional notes, allowing consumers to review how the employee’s employment arrangement was defined at that point in time.
+ * This operation returns one stored employment contract for the requested employee, including the contract period, compensation terms, weekly working-time expectations, and optional notes. It is intended for reviewing how an employee’s employment terms changed over time and for inspecting the employee’s current active contract when needed.
  *
- * The contract is part of an employee’s immutable history. Consumers can use this endpoint to inspect the active or past contract details for the employee, while authorization rules ensure that employees may view their own contracts and users with employee view permission may view any employee’s contracts in the organization. The employee relationship is organization-scoped, so the request must be validated against both the employee and contract identifiers before returning data.
- *
- * If the employee does not exist in the current organization, the contract does not belong to that employee, or the caller lacks permission to view the record, the request must be rejected with the appropriate not-found or authorization error.
+ * Access is limited to the employee’s own contract history or to users who have permission to view employees within the organization. The contract must belong to the specified employee, and the employee must belong to the current organization context. The returned record is read-only and must be shown exactly as stored, preserving historical accuracy.
  *
  * @param props.connection
  * @param props.employeeId The employee identifier within the current organization context.
- * @param props.contractId The contract identifier belonging to the specified employee.
+ * @param props.employeeContractId The employee contract identifier within the employee's contract history.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the employee record by employeeId within the current organization context, then load the contract by contractId constrained to that employeeId. Do not allow cross-employee access: the contract must belong to the same employee referenced in the path. Because both ids are UUID primary keys, validate them as UUID path parameters.
+ * @x-autobe-specification Load the employee by employeeId within the current organization context, then load the employee contract by employeeContractId constrained to that employee. Enforce that the contract row exists, belongs to the employee, and the employee belongs to the caller's current organization.
  *
- * Return the full contract entity with all persisted fields: id, employee reference, start date, end date, pay rate, pay period, working hours per week, notes, created_at, updated_at, and deleted_at if present in the persisted record. Do not fabricate any derived fields.
+ * Authorize access for either the employee viewing their own contracts or a user with employee:view permission in the same organization. Reject cross-organization access. If the employee exists but the contract does not belong to them, return not found rather than exposing contract existence.
  *
- * Enforce authorization using the organization-scoped employee view rule: the caller may read their own contract history, or must have employee:view permission to read another employee’s contracts. Reject requests outside the current organization context. If the employee-contract relation is missing, return not found rather than exposing whether the contract exists globally. Because this is a historical record, no mutation logic is involved.
- * @path /erpHrmTime/member/employees/:employeeId/contracts/:contractId
+ * Return the full employee contract entity with id, employee reference, start/end dates, pay rate, pay period, working hours per week, notes, and timestamps. Do not include related collections. This is a read-only operation and must not alter active/previous contract logic.
+ * @path /erpHrmTime/member/employees/:employeeId/contracts/:employeeContractId
  * @accessor api.functional.erpHrmTime.member.employees.contracts.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -270,15 +269,15 @@ export namespace at {
     employeeId: string & tags.Format<"uuid">;
 
     /**
-     * The contract identifier belonging to the specified employee.
+     * The employee contract identifier within the employee's contract history.
      */
-    contractId: string & tags.Format<"uuid">;
+    employeeContractId: string & tags.Format<"uuid">;
   };
   export type Response = IErpHrmTimeEmployeeContract;
 
   export const METADATA = {
     method: "GET",
-    path: "/erpHrmTime/member/employees/:employeeId/contracts/:contractId",
+    path: "/erpHrmTime/member/employees/:employeeId/contracts/:employeeContractId",
     request: null,
     response: {
       type: "application/json",
@@ -287,7 +286,7 @@ export namespace at {
   } as const;
 
   export const path = (props: Props) =>
-    `/erpHrmTime/member/employees/${encodeURIComponent(props.employeeId ?? "null")}/contracts/${encodeURIComponent(props.contractId ?? "null")}`;
+    `/erpHrmTime/member/employees/${encodeURIComponent(props.employeeId ?? "null")}/contracts/${encodeURIComponent(props.employeeContractId ?? "null")}`;
   export const random = (): IErpHrmTimeEmployeeContract =>
     typia.random<IErpHrmTimeEmployeeContract>();
   export const simulate = (
@@ -302,7 +301,9 @@ export namespace at {
     });
     try {
       assert.param("employeeId")(() => typia.assert(props.employeeId));
-      assert.param("contractId")(() => typia.assert(props.contractId));
+      assert.param("employeeContractId")(() =>
+        typia.assert(props.employeeContractId),
+      );
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {
@@ -317,28 +318,26 @@ export namespace at {
 }
 
 /**
- * Update the current active contract for an employee.
+ * Update an employee's active contract.
  *
- * This operation lets authorized users change the active employment terms for a specific employee within the currently selected organization. The contract record is part of the employee’s historical employment record, so the API must preserve past contracts and only allow editing when the target contract is still the active one.
+ * This operation lets authorized organization members change the current employment terms for a specific employee, including compensation, contract dates, working hours, and notes. The contract belongs to one employee and is part of that employee's historical employment record.
  *
- * The contract stores the employee reference, effective dates, compensation terms, pay period, weekly working hours, and optional notes. When the updated contract affects the active period, the service must validate the date range, ensure the employee belongs to the current organization, and reject attempts to modify past contracts. If the caller does not have employee-view access for the target employee, the request must be denied.
+ * Only the active contract can be edited. Past contracts are immutable and must be rejected if they are no longer active. The update must preserve contract history, keep the employee scoped to the selected organization, and use the employee identifier in the path to ensure the contract belongs to the correct employee.
  *
- * If the update changes the contract start date while preserving it as the active contract, the implementation must ensure the employee still has at most one active contract and must prevent overlaps with other contracts. Validation errors should be returned for invalid dates, unsupported pay periods, missing required contract fields, or attempts to edit an immutable historical contract.
+ * Requests may fail when the caller lacks employee management access, when the contract does not belong to the specified employee, when the contract is not the active contract, or when the updated values violate contract history rules such as overlapping active periods.
  *
  * @param props.connection
- * @param props.employeeId Employee identifier within the current organization.
- * @param props.contractId Contract identifier belonging to the specified employee.
- * @param props.body Fields used to update the active employee contract.
+ * @param props.employeeId The employee identifier in the selected organization scope.
+ * @param props.employeeContractId The employee contract identifier within the employee's contract history.
+ * @param props.body Fields to update on the employee's active contract.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the target employee and contract within the current organization context using both path identifiers. Verify the employee exists, belongs to the selected organization, and the contract belongs to that employee. Enforce authorization: the caller may update their own active contract only if permitted by the business rules, while updating another employee’s contract requires employee manage permission; if access is only through viewing, reject with a permission error.
+ * @x-autobe-specification Load the target employee contract by employeeContractId, verify it belongs to employeeId, and ensure both records are within the caller's selected organization context. Reject the request if the contract is not the employee's current active contract; past contracts must remain immutable.
  *
- * Confirm the contract is the active contract before applying changes. Past contracts must not be modified. Validate all incoming fields against the schema and business rules: start date is required, pay rate is required, pay period must be one of hourly/daily/weekly/monthly, working hours per week are required, notes are optional, and end date may be null. Reject updates that would create overlapping active periods or violate the one-active-contract rule.
+ * Apply the incoming fields to the contract row using only the actual schema columns: start_date, end_date, pay_rate, pay_period, working_hours_per_week, and notes. Preserve created_at, updated_at, deleted_at, and the employee foreign key. Validate pay_period against the allowed contract values used by the business rules. Ensure start_date remains valid and does not create an invalid historical sequence. If the updated contract is the active one, keep it as the latest contract for that employee.
  *
- * Use a transaction when persisting updates so the employee’s contract history remains consistent. If the contract start date or end date changes, re-evaluate whether the contract remains active and whether surrounding contract dates still form a continuous history. Do not auto-edit older contracts unless required by a direct contract-rollover workflow; this endpoint should only update the addressed contract.
- *
- * Return the updated contract entity after persistence. If the contract cannot be found, return a not-found error. If the contract is not active, return a validation or conflict error indicating the record is immutable. If organization context is missing or mismatched, reject the request as unauthorized or forbidden.
- * @path /erpHrmTime/member/employees/:employeeId/contracts/:contractId
+ * If the request changes the active contract's start date or other terms in a way that would conflict with historical continuity, reject the update. Do not update any contract that is no longer active. Return the updated contract entity after persistence. Emit appropriate not-found or forbidden errors when the employee-contract relationship is invalid or when the caller lacks permission.
+ * @path /erpHrmTime/member/employees/:employeeId/contracts/:employeeContractId
  * @accessor api.functional.erpHrmTime.member.employees.contracts.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -367,17 +366,17 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * Employee identifier within the current organization.
+     * The employee identifier in the selected organization scope.
      */
     employeeId: string & tags.Format<"uuid">;
 
     /**
-     * Contract identifier belonging to the specified employee.
+     * The employee contract identifier within the employee's contract history.
      */
-    contractId: string & tags.Format<"uuid">;
+    employeeContractId: string & tags.Format<"uuid">;
 
     /**
-     * Fields used to update the active employee contract.
+     * Fields to update on the employee's active contract.
      */
     body: IErpHrmTimeEmployeeContract.IUpdate;
   };
@@ -386,7 +385,7 @@ export namespace update {
 
   export const METADATA = {
     method: "PUT",
-    path: "/erpHrmTime/member/employees/:employeeId/contracts/:contractId",
+    path: "/erpHrmTime/member/employees/:employeeId/contracts/:employeeContractId",
     request: {
       type: "application/json",
       encrypted: false,
@@ -398,7 +397,7 @@ export namespace update {
   } as const;
 
   export const path = (props: Omit<Props, "body">) =>
-    `/erpHrmTime/member/employees/${encodeURIComponent(props.employeeId ?? "null")}/contracts/${encodeURIComponent(props.contractId ?? "null")}`;
+    `/erpHrmTime/member/employees/${encodeURIComponent(props.employeeId ?? "null")}/contracts/${encodeURIComponent(props.employeeContractId ?? "null")}`;
   export const random = (): IErpHrmTimeEmployeeContract =>
     typia.random<IErpHrmTimeEmployeeContract>();
   export const simulate = (
@@ -413,7 +412,9 @@ export namespace update {
     });
     try {
       assert.param("employeeId")(() => typia.assert(props.employeeId));
-      assert.param("contractId")(() => typia.assert(props.contractId));
+      assert.param("employeeContractId")(() =>
+        typia.assert(props.employeeContractId),
+      );
       assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
@@ -429,33 +430,36 @@ export namespace update {
 }
 
 /**
- * Retrieve the full contract history for an employee.
+ * Delete an employment contract record for a specific employee.
  *
- * This operation returns the employee’s historical employment contracts in chronological order so the caller can review how pay rate, pay period, working hours, and notes changed over time. The history is an authoritative record of the employee’s employment arrangement within the selected organization, and it is scoped to a single employee rather than the global user account.
+ * This operation removes the selected contract from the employee’s contract history within the current organization context. Employment contracts store compensation terms, working-time expectations, and the effective date range for an employee, so the contract being deleted must belong to the employee identified in the path.
  *
- * An employee may view their own contract history, and users with employee view permission may view another employee’s contracts. The returned records include both active and past contracts, preserving the sequence of contract periods without allowing the past records to be rewritten through this endpoint.
+ * The service must verify that the employee exists in the current organization, that the contract belongs to that employee, and that the caller has permission to manage employee records. Because contracts are historical business records, the implementation should apply the organization’s business rules for contract removal and reject attempts to remove a contract that is protected by current employment state or other invariants.
  *
- * If the employee does not exist in the current organization context, or if the caller lacks permission to view the target employee’s contracts, the request must be rejected. The response should preserve the natural contract order so clients can render the timeline directly.
+ * If the contract cannot be deleted because it does not exist, does not belong to the specified employee, or the caller lacks permission, the API should return the appropriate error response from the standard error handling layer. After successful deletion, the contract must no longer be returned by employee contract retrieval or contract history queries.
  *
  * @param props.connection
- * @param props.employeeId Employee identifier within the current organization context.
+ * @param props.employeeId Identifier of the employee who owns the contract, scoped to the current organization.
+ * @param props.employeeContractId Identifier of the employment contract to remove, scoped to the specified employee.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the employee by id within the current organization context, then verify access: allow the employee to view their own history or require employee:view permission for any other employee. Query erp_hrm_time_employee_contracts by erp_hrm_time_employee_id and sort by start_date ascending, using end_date as additional ordering if needed to keep chronology stable. Do not filter out inactive or past contracts; the whole record set is the history.
+ * @x-autobe-specification Resolve the employee within the active organization context, then resolve the contract by employee ID and contract ID.
  *
- * Map each contract using only actual columns from the schema: id, erp_hrm_time_employee_id, start_date, end_date, pay_rate, pay_period, working_hours_per_week, notes, created_at, updated_at, and deleted_at if the downstream DTO includes it. Preserve null end_date for ongoing contracts. Return a history-shaped payload suitable for display as an ordered list; do not allow modifications here.
+ * Enforce that the contract belongs to the employee and that both records are inside the current organization scope. Use the contract table’s relationship to employee and honor the employee-scoped unique history model. Before deletion, apply business validation to ensure the record may be removed under the organization’s HR rules; if the contract is the current active contract or otherwise protected by business policy, reject the request with a conflict-style error.
  *
- * Handle missing employee, cross-organization access, and permission denial as standard not found or forbidden outcomes according to the service conventions. Because contract history is read-only and must remain immutable, this endpoint must never perform writes or derived updates.
- * @path /erpHrmTime/member/employees/:employeeId/contracts/history
- * @accessor api.functional.erpHrmTime.member.employees.contracts.history
+ * If the implementation uses physical deletion, remove the row directly. If the service layer routes contract removal through the model’s deleted_at support, set the deleted marker consistently and exclude the record from normal queries. In either case, keep the employee record intact and do not cascade to other employee data.
+ *
+ * Return no body on success. Ensure audit logging, if enabled by the application layer, records the deletion action with employee and contract identifiers.
+ * @path /erpHrmTime/member/employees/:employeeId/contracts/:employeeContractId
+ * @accessor api.functional.erpHrmTime.member.employees.contracts.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function history(
+export async function erase(
   connection: IConnection,
-  props: history.Props,
-): Promise<history.Response> {
+  props: erase.Props,
+): Promise<void> {
   return true === connection.simulate
-    ? history.simulate(connection, props)
+    ? erase.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -465,24 +469,28 @@ export async function history(
           },
         },
         {
-          ...history.METADATA,
-          path: history.path(props),
+          ...erase.METADATA,
+          path: erase.path(props),
           status: null,
         },
       );
 }
-export namespace history {
+export namespace erase {
   export type Props = {
     /**
-     * Employee identifier within the current organization context.
+     * Identifier of the employee who owns the contract, scoped to the current organization.
      */
     employeeId: string & tags.Format<"uuid">;
+
+    /**
+     * Identifier of the employment contract to remove, scoped to the specified employee.
+     */
+    employeeContractId: string & tags.Format<"uuid">;
   };
-  export type Response = IErpHrmTimeEmployeeContractHistory;
 
   export const METADATA = {
-    method: "GET",
-    path: "/erpHrmTime/member/employees/:employeeId/contracts/history",
+    method: "DELETE",
+    path: "/erpHrmTime/member/employees/:employeeId/contracts/:employeeContractId",
     request: null,
     response: {
       type: "application/json",
@@ -491,21 +499,23 @@ export namespace history {
   } as const;
 
   export const path = (props: Props) =>
-    `/erpHrmTime/member/employees/${encodeURIComponent(props.employeeId ?? "null")}/contracts/history`;
-  export const random = (): IErpHrmTimeEmployeeContractHistory =>
-    typia.random<IErpHrmTimeEmployeeContractHistory>();
+    `/erpHrmTime/member/employees/${encodeURIComponent(props.employeeId ?? "null")}/contracts/${encodeURIComponent(props.employeeContractId ?? "null")}`;
+  export const random = (): void => typia.random<void>();
   export const simulate = (
     connection: IConnection,
-    props: history.Props,
-  ): Response => {
+    props: erase.Props,
+  ): void => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: history.path(props),
+      path: erase.path(props),
       contentType: "application/json",
     });
     try {
       assert.param("employeeId")(() => typia.assert(props.employeeId));
+      assert.param("employeeContractId")(() =>
+        typia.assert(props.employeeContractId),
+      );
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

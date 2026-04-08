@@ -24,7 +24,7 @@ export async function getHrmPlatformMemberProjectsProjectIdTasksTaskId(props: {
   projectId: string & tags.Format<"uuid">;
   taskId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformTask> {
-  const task = await MyGlobal.prisma.hrm_platform_tasks.findFirst({
+  const task = await MyGlobal.prisma.hrm_platform_tasks.findFirstOrThrow({
     where: {
       id: props.taskId,
       hrm_platform_project_id: props.projectId,
@@ -32,23 +32,34 @@ export async function getHrmPlatformMemberProjectsProjectIdTasksTaskId(props: {
     },
     ...HrmPlatformTaskTransformer.select(),
   });
-  if (!task) {
-    throw new HttpException("Task not found", 404);
-  }
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
-      user_id: props.member.id,
+      member_id: props.member.id,
+      organization_id: task.project.organization.id,
       deleted_at: null,
     },
     select: {
       id: true,
       role: {
         select: {
+          id: true,
           rolePermissions: {
             select: {
-              permission: true,
+              permission: {
+                select: {
+                  code: true,
+                },
+              },
             },
           },
+        },
+      },
+      projectMemberships: {
+        where: {
+          hrm_platform_project_id: props.projectId,
+        },
+        select: {
+          id: true,
         },
       },
     },
@@ -56,21 +67,16 @@ export async function getHrmPlatformMemberProjectsProjectIdTasksTaskId(props: {
   if (!employee) {
     throw new HttpException("Forbidden", 403);
   }
-  const projectMember =
-    await MyGlobal.prisma.hrm_platform_project_members.findFirst({
-      where: {
-        hrm_platform_project_id: props.projectId,
-        hrm_platform_employee_id: employee.id,
-        deleted_at: null,
-      },
-    });
-  if (!projectMember) {
-    const hasProjectViewPermission = employee.role.rolePermissions.some(
-      (p: { permission: string }) => p.permission === "project:view",
-    );
-    if (!hasProjectViewPermission) {
-      throw new HttpException("Forbidden", 403);
-    }
+  const isProjectMember = employee.projectMemberships.length > 0;
+  const hasManagePermission = employee.role.rolePermissions.some(
+    (rp: {
+      permission: {
+        code: string;
+      };
+    }) => rp.permission.code === "project:manage",
+  );
+  if (!isProjectMember && !hasManagePermission) {
+    throw new HttpException("Forbidden", 403);
   }
   return await HrmPlatformTaskTransformer.transform(task);
 }

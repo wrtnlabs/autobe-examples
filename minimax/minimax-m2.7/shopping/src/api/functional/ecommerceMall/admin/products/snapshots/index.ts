@@ -6,53 +6,49 @@ import {
 } from "@nestia/fetcher";
 import typia, { tags } from "typia";
 
-import { IPageIEcommerceMallProductSnapshot } from "../../../../../structures/IPageIEcommerceMallProductSnapshot";
+import { IEcommerceMallProductSnapshot } from "../../../../../structures/IEcommerceMallProductSnapshot";
 
 /**
- * Retrieve a paginated list of product snapshots for a specific product.
+ * Retrieve a specific product snapshot by its unique identifier.
  *
- * This endpoint provides access to the historical product state records captured during product edits and order placements. Each snapshot preserves the complete product data including name, description, base price, and category name at the time of capture.
+ * This endpoint returns the complete state of a product at the time the snapshot was created, including the product name, description, base price, category name, and all associated variants with their option values and images.
  *
- * Access Control:
- * - Sellers can only view snapshots of their own products. The system validates that the authenticated seller owns the product before returning snapshot data.
- * - Administrators (admin and superAdmin roles) can view snapshots of any product on the platform for oversight and dispute resolution purposes.
- * - Unauthorized access attempts return 403 Forbidden.
+ * Access control: Only administrators can access this endpoint. Administrators can view any product snapshot on the platform for oversight and dispute resolution purposes. The system validates viewer authorization before displaying snapshot data.
  *
- * The response includes pagination metadata with total count, page size, and current page information. Snapshots are returned in reverse chronological order by default, showing the most recent snapshots first.
+ * The snapshot is immutable once created and serves as the authoritative record of product state at that point in time. This is particularly useful when administrators need to verify what was advertised when a customer placed an order, or for policy enforcement investigations.
  *
- * Related Operations:
- * - GET /products/{productId}/snapshots/{snapshotId} - Retrieve a specific product snapshot by ID
- * - GET /seller/products/{productId}/snapshots - Alternative endpoint for sellers to view their own product snapshots
- * - GET /admin/products/{productId}/snapshots - Admin endpoint for viewing any product snapshot
+ * If the requested snapshot does not exist or the productId does not match the snapshot's product reference, a 404 Not Found response is returned.
  *
  * @param props.connection
- * @param props.productId Unique identifier of the product whose snapshots to retrieve
+ * @param props.productId Unique identifier of the product (UUID)
+ * @param props.snapshotId Unique identifier of the product snapshot (UUID)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor admin
- * @x-autobe-specification Query ecommerce_mall_product_snapshots table filtering by ecommerce_mall_product_id matching the path parameter. Join with ecommerce_mall_products table to validate product existence. Join with ecommerce_mall_sellers table to verify seller ownership for authorization.
+ * @x-autobe-specification Query ecommerce_mall_product_snapshots table using snapshotId as the primary key.
  *
- * Authorization Logic:
- * 1. Extract authenticated actor from request context
- * 2. If actor is seller: verify the product belongs to the seller (join products table)
- * 3. If actor is admin or superAdmin: allow unrestricted access
- * 4. If actor is customer or guest: return 403 Forbidden
+ * Join with ecommerce_mall_product_snapshot_variants using snapshot_id foreign key to retrieve all variant records.
  *
- * Pagination:
- * - Apply default pagination (page=1, limit=20)
- * - Order results by created_at DESC (most recent first)
- * - Return total count for pagination metadata
+ * For each variant, join with ecommerce_mall_product_snapshot_variant_option_values using variant_id to retrieve option key-value pairs.
  *
- * Return IPageIEcommerceMallProductSnapshot.ISummary containing snapshot summaries with id, name, description, base_price, category_name, and created_at.
- * @path /ecommerceMall/admin/products/:productId/snapshots
- * @accessor api.functional.ecommerceMall.admin.products.snapshots.index
+ * Join with ecommerce_mall_product_snapshot_images using snapshot_id to retrieve all image records.
+ *
+ * Authorization check: If requester is a seller, verify that ecommerce_mall_seller_id matches the authenticated seller's ID. If requester is an admin, allow access to any snapshot. Return 403 Forbidden for unauthorized access.
+ *
+ * Return 404 Not Found if snapshot does not exist or if productId does not match the snapshot's ecommerce_mall_product_id.
+ *
+ * Sort variant option values by created_at to maintain consistent ordering.
+ *
+ * Sort images by display_order for proper presentation.
+ * @path /ecommerceMall/admin/products/:productId/snapshots/:snapshotId
+ * @accessor api.functional.ecommerceMall.admin.products.snapshots.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function index(
+export async function at(
   connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
+  props: at.Props,
+): Promise<at.Response> {
   return true === connection.simulate
-    ? index.simulate(connection, props)
+    ? at.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -62,24 +58,29 @@ export async function index(
           },
         },
         {
-          ...index.METADATA,
-          path: index.path(props),
+          ...at.METADATA,
+          path: at.path(props),
           status: null,
         },
       );
 }
-export namespace index {
+export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the product whose snapshots to retrieve
+     * Unique identifier of the product (UUID)
      */
     productId: string & tags.Format<"uuid">;
+
+    /**
+     * Unique identifier of the product snapshot (UUID)
+     */
+    snapshotId: string & tags.Format<"uuid">;
   };
-  export type Response = IPageIEcommerceMallProductSnapshot.ISummary;
+  export type Response = IEcommerceMallProductSnapshot;
 
   export const METADATA = {
-    method: "PATCH",
-    path: "/ecommerceMall/admin/products/:productId/snapshots",
+    method: "GET",
+    path: "/ecommerceMall/admin/products/:productId/snapshots/:snapshotId",
     request: null,
     response: {
       type: "application/json",
@@ -88,21 +89,22 @@ export namespace index {
   } as const;
 
   export const path = (props: Props) =>
-    `/ecommerceMall/admin/products/${encodeURIComponent(props.productId ?? "null")}/snapshots`;
-  export const random = (): IPageIEcommerceMallProductSnapshot.ISummary =>
-    typia.random<IPageIEcommerceMallProductSnapshot.ISummary>();
+    `/ecommerceMall/admin/products/${encodeURIComponent(props.productId ?? "null")}/snapshots/${encodeURIComponent(props.snapshotId ?? "null")}`;
+  export const random = (): IEcommerceMallProductSnapshot =>
+    typia.random<IEcommerceMallProductSnapshot>();
   export const simulate = (
     connection: IConnection,
-    props: index.Props,
+    props: at.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: index.path(props),
+      path: at.path(props),
       contentType: "application/json",
     });
     try {
       assert.param("productId")(() => typia.assert(props.productId));
+      assert.param("snapshotId")(() => typia.assert(props.snapshotId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

@@ -9,11 +9,12 @@ export function prepare_random_ecommerce_mall_inventory_record(
   input?: DeepPartial<IEcommerceMallInventoryRecord.ICreate>,
 ): IEcommerceMallInventoryRecord.ICreate {
   return {
-    operation:
-      input?.operation ?? RandomGenerator.pick(["restock", "adjust"] as const),
     quantity:
       input?.quantity ??
       typia.random<number & tags.Type<"int32"> & tags.Minimum<1>>(),
+    operationType:
+      input?.operationType ??
+      RandomGenerator.pick(["restock", "adjustment"] as const),
     reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 1 }),
   };
 }

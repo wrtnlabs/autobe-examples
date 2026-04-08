@@ -1,16 +1,14 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
-import { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
 import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { IRedditCommunityModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityModerator";
-import { IRedditCommunityUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { RedditCommunityCommunityAtSummaryTransformer } from "./RedditCommunityCommunityAtSummaryTransformer";
-import { RedditCommunityUserProfileAtSummaryTransformer } from "./RedditCommunityUserProfileAtSummaryTransformer";
+import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
 
 export namespace RedditCommunityModeratorTransformer {
   export type Payload = Prisma.reddit_community_moderatorsGetPayload<
@@ -20,12 +18,13 @@ export namespace RedditCommunityModeratorTransformer {
     return {
       select: {
         id: true,
+        role: true,
+        assigned_at: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        community: RedditCommunityCommunityAtSummaryTransformer.select(),
-        member: RedditCommunityUserProfileAtSummaryTransformer.select(),
-        addedBy: RedditCommunityUserProfileAtSummaryTransformer.select(),
+        member: RedditCommunityMemberAtSummaryTransformer.select(),
+        community: true,
       },
     } satisfies Prisma.reddit_community_moderatorsFindManyArgs;
   }
@@ -34,18 +33,14 @@ export namespace RedditCommunityModeratorTransformer {
   ): Promise<IRedditCommunityModerator> {
     return {
       id: input.id,
-      community: await RedditCommunityCommunityAtSummaryTransformer.transform(
-        input.community,
-      ),
-      member: await RedditCommunityUserProfileAtSummaryTransformer.transform(
+      role: input.role,
+      assigned_at: input.assigned_at.toISOString(),
+      member: await RedditCommunityMemberAtSummaryTransformer.transform(
         input.member,
-      ),
-      addedBy: await RedditCommunityUserProfileAtSummaryTransformer.transform(
-        input.addedBy,
       ),
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
-    };
+    } satisfies IRedditCommunityModerator;
   }
 }

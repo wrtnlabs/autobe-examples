@@ -1,29 +1,29 @@
 ### Table of Contents
 
-**hrms** is a backend service with the following actors and domain entities.
+**hrmPlatform** is a backend service with the following actors and domain entities.
 
 **Actors**: guest, member
-**Entities**: User, Organization, OrganizationMember, Role, Employee, EmployeeContract, Department, Project, ProjectMember, Task, Timelog, Timesheet, ActivityLog, Timer, Report
+**Entities**: Organization, User, Role, Employee, Contract, Department, Project, ProjectMembership, Task, TaskHistory, Timelog, Timesheet, Timer, ActivityLog, Permission
 
 ---
 
 **Scope**
 
-- **User** — hasMany OrganizationMembers, hasMany ActivityLogs (performed)
-- **Organization** — belongsTo User (owner), hasMany OrganizationMembers, hasMany Employees, hasMany Departments, hasMany Projects, hasMany Roles, hasMany ActivityLogs, hasMany Reports
-- **OrganizationMember** — belongsTo User, belongsTo Organization, belongsTo Role
-- **Role** — belongsTo Organization, hasMany OrganizationMembers
-- **Employee** — belongsTo OrganizationMember, belongsTo Department, hasMany EmployeeContracts, hasMany Timelogs, hasMany Timesheets
-- **EmployeeContract** — belongsTo Employee
-- **Department** — belongsTo Organization, hasMany Employees, hasMany Departments (parent)
-- **Project** — belongsTo Organization, hasMany ProjectMembers, hasMany Tasks
-- **ProjectMember** — belongsTo Employee, belongsTo Project
-- **Task** — belongsTo Project, belongsTo Employee (assigned), belongsTo Task (parent)
-- **Timelog** — belongsTo Employee, belongsTo Project, belongsTo Task (optional)
-- **Timesheet** — belongsTo Employee, hasMany Timelogs
-- **ActivityLog** — belongsTo Organization, belongsTo User (performed)
-- **Timer** — belongsTo Employee, belongsTo Project, belongsTo Task (optional)
-- **Report** — belongsTo Organization
+- **Organization** — has multiple employees, has multiple projects, has multiple roles, belongs to user as owner
+- **User** — owns organization, belongs to multiple organizations, is employee in organization
+- **Role** — assigned to employees, has multiple permissions
+- **Employee** — belongs to organization, has multiple contracts, assigned to multiple projects, has multiple timelogs
+- **Contract** — belongs to employee
+- **Department** — belongs to organization, has multiple employees, can have nested parent department
+- **Project** — belongs to organization, has multiple tasks, has multiple members
+- **ProjectMembership** — references employee, references project
+- **Task** — belongs to project, references assigned employee, references parent task
+- **TaskHistory** — references task
+- **Timelog** — belongs to employee, references project, references task, included in timesheet
+- **Timesheet** — belongs to employee, contains multiple timelogs
+- **Timer** — belongs to employee, references project, references task
+- **ActivityLog** — records system event
+- **Permission** — belongs to role
 
 - **guest** (guest)
 - **member** (member)
@@ -57,21 +57,21 @@
 
 **[02-domain-model.md](./02-domain-model.md)**
 - [Domain Concepts](./02-domain-model.md#domain-concepts)
-  - [6] [User Concept](./02-domain-model.md#user-concept) — Describe what User represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [7] [Organization Concept](./02-domain-model.md#organization-concept) — Describe what Organization represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [8] [OrganizationMember Concept](./02-domain-model.md#organizationmember-concept) — Describe what OrganizationMember represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [9] [Role Concept](./02-domain-model.md#role-concept) — Describe what Role represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [10] [Employee Concept](./02-domain-model.md#employee-concept) — Describe what Employee represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [11] [EmployeeContract Concept](./02-domain-model.md#employeecontract-concept) — Describe what EmployeeContract represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [12] [Department Concept](./02-domain-model.md#department-concept) — Describe what Department represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [13] [Project Concept](./02-domain-model.md#project-concept) — Describe what Project represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [14] [ProjectMember Concept](./02-domain-model.md#projectmember-concept) — Describe what ProjectMember Concept represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [15] [Task Concept](./02-domain-model.md#task-concept) — Describe what Task represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [6] [Organization Concept](./02-domain-model.md#organization-concept) — Describe what Organization represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [7] [User Concept](./02-domain-model.md#user-concept) — Describe what User represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [8] [Role Concept](./02-domain-model.md#role-concept) — Describe what Role represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [9] [Employee Concept](./02-domain-model.md#employee-concept) — Describe what Employee represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [10] [Contract Concept](./02-domain-model.md#contract-concept) — Describe what Contract represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [11] [Department Concept](./02-domain-model.md#department-concept) — Describe what Department represents in the business domain and its key attributes. Do NOT describe operations and workflows — those belong in 03-functional-requirements.
+  - [12] [Project Concept](./02-domain-model.md#project-concept) — Describe what Project represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [13] [ProjectMembership Concept](./02-domain-model.md#projectmembership-concept) — Describe what ProjectMembership represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [14] [Task Concept](./02-domain-model.md#task-concept) — Describe what Task represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [15] [TaskHistory Concept](./02-domain-model.md#taskhistory-concept) — Describe what TaskHistory represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
   - [16] [Timelog Concept](./02-domain-model.md#timelog-concept) — Describe what Timelog represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
   - [17] [Timesheet Concept](./02-domain-model.md#timesheet-concept) — Describe what Timesheet represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [18] [ActivityLog Concept](./02-domain-model.md#activitylog-concept) — Describe what ActivityLog represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [19] [Timer Concept](./02-domain-model.md#timer-concept) — Describe what Timer Concept represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [20] [Report Concept](./02-domain-model.md#report-concept) — Describe what Report represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [18] [Timer Concept](./02-domain-model.md#timer-concept) — Describe what Timer represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [19] [ActivityLog Concept](./02-domain-model.md#activitylog-concept) — Describe what ActivityLog represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [20] [Permission Concept](./02-domain-model.md#permission-concept) — Describe what Permission represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
 - [Domain Relationships](./02-domain-model.md#domain-relationships)
   - [21] [Conceptual Relationships](./02-domain-model.md#conceptual-relationships) — Describe how concepts relate to each other in business terms.
   - [22] [Lifecycle and Retention](./02-domain-model.md#lifecycle-and-retention) — Describe concept lifecycle states and transitions only. Detailed retention/recovery policies belong in 05-non-functional. Operation details belong in 03-functional-requirements.
@@ -81,60 +81,60 @@
 
 **[03-functional-requirements.md](./03-functional-requirements.md)**
 - [Core Business Operations](./03-functional-requirements.md#core-business-operations)
-  - [25] [User Operations](./03-functional-requirements.md#user-operations) — Define business operations for User: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [26] [Organization Operations](./03-functional-requirements.md#organization-operations) — Define business operations for Organization: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [27] [OrganizationMember Operations](./03-functional-requirements.md#organizationmember-operations) — Define business operations for OrganizationMember: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [28] [Role Operations](./03-functional-requirements.md#role-operations) — Define business operations for Role: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [29] [Employee Operations](./03-functional-requirements.md#employee-operations) — Define business operations for Employee: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [30] [EmployeeContract Operations](./03-functional-requirements.md#employeecontract-operations) — Define business operations for EmployeeContract: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [31] [Department Operations](./03-functional-requirements.md#department-operations) — Define business operations for Department: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [32] [Project Operations](./03-functional-requirements.md#project-operations) — Define business operations for Project: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [33] [ProjectMember Operations](./03-functional-requirements.md#projectmember-operations) — Define business operations for ProjectMember: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [34] [Task Operations](./03-functional-requirements.md#task-operations) — Define business operations for Task: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [25] [Organization Operations](./03-functional-requirements.md#organization-operations) — Define business operations for Organization: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [26] [User Operations](./03-functional-requirements.md#user-operations) — Define business operations for User: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [27] [Role Operations](./03-functional-requirements.md#role-operations) — Define business operations for Role: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [28] [Employee Operations](./03-functional-requirements.md#employee-operations) — Define business operations for Employee: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [29] [Contract Operations](./03-functional-requirements.md#contract-operations) — Define business operations for Contract: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [30] [Department Operations](./03-functional-requirements.md#department-operations) — Define business operations for Department: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [31] [Project Operations](./03-functional-requirements.md#project-operations) — Define business operations for Project: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [32] [ProjectMembership Operations](./03-functional-requirements.md#projectmembership-operations) — Define business operations for ProjectMembership: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [33] [Task Operations](./03-functional-requirements.md#task-operations) — Define business operations for Task: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [34] [TaskHistory Operations](./03-functional-requirements.md#taskhistory-operations) — Define business operations for TaskHistory: what create, read, update, delete, and list operations must accomplish from a business perspective.
   - [35] [Timelog Operations](./03-functional-requirements.md#timelog-operations) — Define business operations for Timelog: what create, read, update, delete, and list operations must accomplish from a business perspective.
   - [36] [Timesheet Operations](./03-functional-requirements.md#timesheet-operations) — Define business operations for Timesheet: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [37] [ActivityLog Operations](./03-functional-requirements.md#activitylog-operations) — Define business operations for ActivityLog: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [38] [Timer Operations](./03-functional-requirements.md#timer-operations) — Define business operations for Timer: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [39] [Report Operations](./03-functional-requirements.md#report-operations) — Define business operations for Report: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [40] [End-to-End User Scenarios](./03-functional-requirements.md#end-to-end-user-scenarios) — Define business operations for End-to-End User Scenarios: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [37] [Timer Operations](./03-functional-requirements.md#timer-operations) — Define business operations for Timer: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [38] [ActivityLog Operations](./03-functional-requirements.md#activitylog-operations) — Define business operations for ActivityLog: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [39] [Permission Operations](./03-functional-requirements.md#permission-operations) — Define business operations for Permission: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [40] [Dashboard Operations](./03-functional-requirements.md#dashboard-operations) — Define business operations for Dashboard: what create, read, update, delete, and list operations must accomplish from a business perspective.
 - [Error Scenarios and Edge Cases](./03-functional-requirements.md#error-scenarios-and-edge-cases)
-  - [41] [User Error Scenarios](./03-functional-requirements.md#user-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all User operations.
-  - [42] [Organization Error Scenarios](./03-functional-requirements.md#organization-error-scenarios) — Define business error conditions, edge cases, and boundary conditions for all Organization operations.
-  - [43] [OrganizationMember Error Scenarios](./03-functional-requirements.md#organizationmember-error-scenarios) — Define business error conditions, edge cases, and boundary conditions for all OrganizationMember operations.
-  - [44] [Role Error Scenarios](./03-functional-requirements.md#role-error-scenarios) — Define business error conditions, edge cases, and boundary conditions for all Role operations.
-  - [45] [Employee Error Scenarios](./03-functional-requirements.md#employee-error-scenarios) — Define business error conditions, edge cases, and boundary conditions for all Employee operations.
-  - [46] [EmployeeContract Error Scenarios](./03-functional-requirements.md#employeecontract-error-scenarios) — Define business error conditions, edge cases, and boundary conditions for all EmployeeContract operations.
-  - [47] [Department Error Scenarios](./03-functional-requirements.md#department-error-scenarios) — Define business error conditions, edge cases, and boundary conditions for all Department operations.
-  - [48] [Project Error Scenarios](./03-functional-requirements.md#project-error-scenarios) — Define business error conditions, edge cases, and boundary conditions for all Project operations.
-  - [49] [ProjectMember Error Scenarios](./03-functional-requirements.md#projectmember-error-scenarios) — Define business error conditions, edge cases, and boundary conditions for all ProjectMember operations.
-  - [50] [Task Error Scenarios](./03-functional-requirements.md#task-error-scenarios) — Define business error conditions, edge cases, and boundary conditions for all Task operations.
-  - [51] [Timelog Error Scenarios](./03-functional-requirements.md#timelog-error-scenarios) — Define business error conditions, edge cases, and boundary conditions for all Timelog operations.
-  - [52] [Timesheet Error Scenarios](./03-functional-requirements.md#timesheet-error-scenarios) — Define business error conditions, edge cases, and boundary conditions for all Timesheet operations.
-  - [53] [ActivityLog Error Scenarios](./03-functional-requirements.md#activitylog-error-scenarios) — Define business error conditions, edge cases, and boundary conditions for all ActivityLog operations.
-  - [54] [Timer Error Scenarios](./03-functional-requirements.md#timer-error-scenarios) — Define business error conditions, edge cases, and boundary conditions for all Timer operations.
-  - [55] [Report Error Scenarios](./03-functional-requirements.md#report-error-scenarios) — Define business error conditions, edge cases, and boundary conditions for all Report operations.
-- [End-to-End User Scenarios](./03-functional-requirements.md#end-to-end-user-scenarios-1)
+  - [41] [Organization Error Scenarios](./03-functional-requirements.md#organization-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Organization operations.
+  - [42] [User Error Scenarios](./03-functional-requirements.md#user-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all User operations.
+  - [43] [Role Error Scenarios](./03-functional-requirements.md#role-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Role operations.
+  - [44] [Employee Error Scenarios](./03-functional-requirements.md#employee-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Employee operations.
+  - [45] [Contract Error Scenarios](./03-functional-requirements.md#contract-error-scenarios) — Definition of business error conditions, edge cases, and expected system behaviors for all Contract operations.
+  - [46] [Department Error Scenarios](./03-functional-requirements.md#department-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Department operations.
+  - [47] [Project Error Scenarios](./03-functional-requirements.md#project-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Project operations.
+  - [48] [ProjectMembership Error Scenarios](./03-functional-requirements.md#projectmembership-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all ProjectMembership operations.
+  - [49] [Task Error Scenarios](./03-functional-requirements.md#task-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Task operations.
+  - [50] [TaskHistory Error Scenarios](./03-functional-requirements.md#taskhistory-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all TaskHistory operations.
+  - [51] [Timelog Error Scenarios](./03-functional-requirements.md#timelog-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Timelog operations.
+  - [52] [Timesheet Error Scenarios](./03-functional-requirements.md#timesheet-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Timesheet operations.
+  - [53] [Timer Error Scenarios](./03-functional-requirements.md#timer-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Timer operations.
+  - [54] [ActivityLog Error Scenarios](./03-functional-requirements.md#activitylog-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all ActivityLog operations.
+  - [55] [Permission Error Scenarios](./03-functional-requirements.md#permission-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Permission operations.
+- [End-to-End User Scenarios](./03-functional-requirements.md#end-to-end-user-scenarios)
   - [56] [Cross-Domain User Scenarios](./03-functional-requirements.md#cross-domain-user-scenarios) — Define end-to-end user scenarios that span multiple concepts, describing complete user journeys from start to finish.
 - [File Storage](./03-functional-requirements.md#file-storage)
   - [57] [File Upload and Management](./03-functional-requirements.md#file-upload-and-management) — Define file upload capabilities, supported formats, processing requirements, and access control for stored files.
 
 **[04-business-rules.md](./04-business-rules.md)**
 - [Domain Business Rules](./04-business-rules.md#domain-business-rules)
-  - [58] [User Rules](./04-business-rules.md#user-rules) — Define validation rules and domain constraints for User. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
-  - [59] [Organization Rules](./04-business-rules.md#organization-rules) — Define validation rules and domain constraints for Organization. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
-  - [60] [OrganizationMember Rules](./04-business-rules.md#organizationmember-rules) — Define validation rules and domain constraints for OrganizationMember. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
-  - [61] [Role Rules](./04-business-rules.md#role-rules) — Define validation rules and domain constraints for Role. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
-  - [62] [Employee Rules](./04-business-rules.md#employee-rules) — Define validation rules and domain constraints for Employee. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
-  - [63] [EmployeeContract Rules](./04-business-rules.md#employeecontract-rules) — Define validation rules and domain constraints for EmployeeContract. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
-  - [64] [Department Rules](./04-business-rules.md#department-rules) — Define validation rules and domain constraints for Department. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
-  - [65] [Project Rules](./04-business-rules.md#project-rules) — Define validation rules and domain constraints for Project. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
-  - [66] [ProjectMember Rules](./04-business-rules.md#projectmember-rules) — Define validation rules and domain constraints for ProjectMember. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
-  - [67] [Task Rules](./04-business-rules.md#task-rules) — Define validation rules and domain constraints for Task. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
-  - [68] [Timelog Rules](./04-business-rules.md#timelog-rules) — Define validation rules and domain constraints for Timelog. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
-  - [69] [Timesheet Rules](./04-business-rules.md#timesheet-rules) — Define validation rules and domain constraints for Timesheet. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
-  - [70] [ActivityLog Rules](./04-business-rules.md#activitylog-rules) — Define validation rules and domain constraints for ActivityLog. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
-  - [71] [Timer Rules](./04-business-rules.md#timer-rules) — Define validation rules and domain constraints for Timer. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
-  - [72] [Report Rules](./04-business-rules.md#report-rules) — Define validation rules and domain constraints for Report. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
+  - [58] [Organization Rules](./04-business-rules.md#organization-rules) — Define validation rules and domain constraints for Organization.
+  - [59] [User Rules](./04-business-rules.md#user-rules) — Define validation rules and domain constraints for User.
+  - [60] [Role Rules](./04-business-rules.md#role-rules) — Define validation rules and domain constraints for Role.
+  - [61] [Employee Rules](./04-business-rules.md#employee-rules) — Define validation rules and domain constraints for Employee.
+  - [62] [Contract Rules](./04-business-rules.md#contract-rules) — Define validation rules and domain constraints for Contract.
+  - [63] [Department Rules](./04-business-rules.md#department-rules) — Define validation rules and domain constraints for Department.
+  - [64] [Project Rules](./04-business-rules.md#project-rules) — Define validation rules and domain constraints for Project.
+  - [65] [ProjectMembership Rules](./04-business-rules.md#projectmembership-rules) — Define validation rules and domain constraints for ProjectMembership.
+  - [66] [Task Rules](./04-business-rules.md#task-rules) — Define validation rules and domain constraints for Task.
+  - [67] [TaskHistory Rules](./04-business-rules.md#taskhistory-rules) — Define validation rules and domain constraints for TaskHistory.
+  - [68] [Timelog Rules](./04-business-rules.md#timelog-rules) — Define validation rules and domain constraints for Timelog.
+  - [69] [Timesheet Rules](./04-business-rules.md#timesheet-rules) — Define validation rules and domain constraints for Timesheet.
+  - [70] [Timer Rules](./04-business-rules.md#timer-rules) — Define validation rules and domain constraints for Timer.
+  - [71] [ActivityLog Rules](./04-business-rules.md#activitylog-rules) — Define validation rules and domain constraints for ActivityLog.
+  - [72] [Permission Rules](./04-business-rules.md#permission-rules) — Define validation rules and domain constraints for Permission.
 - [Data Browsing Expectations](./04-business-rules.md#data-browsing-expectations)
   - [73] [List Browsing Expectations](./04-business-rules.md#list-browsing-expectations) — Define business expectations for how users find, filter, and browse lists.
 - [Error Conditions](./04-business-rules.md#error-conditions)
@@ -168,21 +168,21 @@ Each type of information has one authoritative location. Other files should refe
 
 **Glossary**
 
-- **User** — hasMany OrganizationMembers, hasMany ActivityLogs (performed)
-- **Organization** — belongsTo User (owner), hasMany OrganizationMembers, hasMany Employees, hasMany Departments, hasMany Projects, hasMany Roles, hasMany ActivityLogs, hasMany Reports
-- **OrganizationMember** — belongsTo User, belongsTo Organization, belongsTo Role
-- **Role** — belongsTo Organization, hasMany OrganizationMembers
-- **Employee** — belongsTo OrganizationMember, belongsTo Department, hasMany EmployeeContracts, hasMany Timelogs, hasMany Timesheets
-- **EmployeeContract** — belongsTo Employee
-- **Department** — belongsTo Organization, hasMany Employees, hasMany Departments (parent)
-- **Project** — belongsTo Organization, hasMany ProjectMembers, hasMany Tasks
-- **ProjectMember** — belongsTo Employee, belongsTo Project
-- **Task** — belongsTo Project, belongsTo Employee (assigned), belongsTo Task (parent)
-- **Timelog** — belongsTo Employee, belongsTo Project, belongsTo Task (optional)
-- **Timesheet** — belongsTo Employee, hasMany Timelogs
-- **ActivityLog** — belongsTo Organization, belongsTo User (performed)
-- **Timer** — belongsTo Employee, belongsTo Project, belongsTo Task (optional)
-- **Report** — belongsTo Organization
+- **Organization** — has multiple employees, has multiple projects, has multiple roles, belongs to user as owner
+- **User** — owns organization, belongs to multiple organizations, is employee in organization
+- **Role** — assigned to employees, has multiple permissions
+- **Employee** — belongs to organization, has multiple contracts, assigned to multiple projects, has multiple timelogs
+- **Contract** — belongs to employee
+- **Department** — belongs to organization, has multiple employees, can have nested parent department
+- **Project** — belongs to organization, has multiple tasks, has multiple members
+- **ProjectMembership** — references employee, references project
+- **Task** — belongs to project, references assigned employee, references parent task
+- **TaskHistory** — references task
+- **Timelog** — belongs to employee, references project, references task, included in timesheet
+- **Timesheet** — belongs to employee, contains multiple timelogs
+- **Timer** — belongs to employee, references project, references task
+- **ActivityLog** — records system event
+- **Permission** — belongs to role
 
 ---
 

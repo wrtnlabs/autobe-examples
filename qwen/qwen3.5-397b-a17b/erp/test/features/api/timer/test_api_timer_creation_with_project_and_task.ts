@@ -3,15 +3,15 @@ import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structur
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import type { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
-import type { IHrmPlatformInvitation } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformInvitation";
+import type { IHrmPlatformEmployeeInvitation } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployeeInvitation";
 import type { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
 import type { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import type { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProject";
 import type { IHrmPlatformProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProjectMember";
 import type { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
-import type { IHrmPlatformRolePermission } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRolePermission";
 import type { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTask";
 import type { IHrmPlatformTimer } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTimer";
+import type { IHrmPlatformUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformUserProfile";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -21,166 +21,134 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_hrm_platform_member_invitations_create } from "../../../generate/generate_random_hrm_platform_member_invitations_create";
-import { generate_random_hrm_platform_member_organizations_create } from "../../../generate/generate_random_hrm_platform_member_organizations_create";
+import { generate_random_hrm_platform_member_employee_invitations_create } from "../../../generate/generate_random_hrm_platform_member_employee_invitations_create";
 import { generate_random_hrm_platform_member_projects_create } from "../../../generate/generate_random_hrm_platform_member_projects_create";
 import { generate_random_hrm_platform_member_projects_members_create } from "../../../generate/generate_random_hrm_platform_member_projects_members_create";
 import { generate_random_hrm_platform_member_projects_tasks_create } from "../../../generate/generate_random_hrm_platform_member_projects_tasks_create";
-import { generate_random_hrm_platform_member_roles_create } from "../../../generate/generate_random_hrm_platform_member_roles_create";
 import { generate_random_hrm_platform_member_timers_create } from "../../../generate/generate_random_hrm_platform_member_timers_create";
-import { prepare_random_hrm_platform_invitation } from "../../../prepare/prepare_random_hrm_platform_invitation";
-import { prepare_random_hrm_platform_organization } from "../../../prepare/prepare_random_hrm_platform_organization";
+import { prepare_random_hrm_platform_employee_invitation } from "../../../prepare/prepare_random_hrm_platform_employee_invitation";
 import { prepare_random_hrm_platform_project } from "../../../prepare/prepare_random_hrm_platform_project";
 import { prepare_random_hrm_platform_project_member } from "../../../prepare/prepare_random_hrm_platform_project_member";
-import { prepare_random_hrm_platform_role } from "../../../prepare/prepare_random_hrm_platform_role";
 import { prepare_random_hrm_platform_task } from "../../../prepare/prepare_random_hrm_platform_task";
 import { prepare_random_hrm_platform_timer } from "../../../prepare/prepare_random_hrm_platform_timer";
 
 /**
- * Test timer creation with both project and task assignment.
+ * Test timer creation with granular task-level tracking when an employee wants to track time against a specific task within a project.
  *
- * This test verifies that an employee can start tracking time against a specific
- * task within a project. The workflow includes:
- * 1. Member joins and creates organization (becomes owner)
- * 2. Owner creates a custom role for employee
- * 3. Owner invites second member as employee to organization
- * 4. Employee (second member) joins with invited email
- * 5. Owner creates a project within the organization
- * 6. Owner creates a task within the project
- * 7. Owner assigns employee to the project as a member
- * 8. Employee starts a timer with both project_id and task_id
- * 9. Validate timer has correct project and task references
+ * Validates the complete timer creation flow including member authentication, employee invitation, project setup, project member assignment, task creation, and timer initiation with task-level tracking. Ensures that the timer correctly references both the project and the specific task, with proper timestamp handling and work description.
+ *
+ * Special attention is given to verifying that the task_id reference is correctly maintained (not null), the task belongs to the specified project, and the timer accurately reflects granular work tracking at the task level rather than just project-level tracking.
+ *
+ * 1. Member joins the platform with unique email and password.
+ * 2. Employee invitation is created for the member to join the organization.
+ * 3. Project is created with name and color code.
+ * 4. Employee is assigned to the project as a member with 'member' role.
+ * 5. Task is created within the project with title and priority.
+ * 6. Timer is created with project_id, task_id, and description.
+ * 7. Validate timer has correct project reference, task reference (not null), started_at timestamp, stopped_at as null, and description.
  */
 export async function test_api_timer_creation_with_project_and_task(
   connection: api.IConnection,
 ): Promise<void> {
-  // Step 1: Owner (first member) joins and creates organization
-  const ownerConnection: api.IConnection = { host: connection.host };
-  const owner = await authorize_member_join(ownerConnection, {
+  // 1. Member joins the platform
+  const memberConnection: api.IConnection = { host: connection.host };
+  const member = await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: "TestPassword123!",
-      display_name: RandomGenerator.name(),
-      href: "",
-      referrer: "",
-    } satisfies IHrmPlatformMember.IJoin,
-  });
-  typia.assert(owner);
-  const organization =
-    await generate_random_hrm_platform_member_organizations_create(
-      ownerConnection,
-      {
-        body: {
-          name: RandomGenerator.name(),
-          currency: "USD",
-          timezone: "America/New_York",
-          fiscal_start_month: 1,
-        } satisfies IHrmPlatformOrganization.ICreate,
-      },
-    );
-  typia.assert(organization);
-  // Step 2: Owner creates a custom role for employee
-  const role = await generate_random_hrm_platform_member_roles_create(
-    ownerConnection,
-    {
-      body: {
-        name: RandomGenerator.name(),
-        permissions: ["project:view", "time:manage"],
-      } satisfies IHrmPlatformRole.ICreate,
+      password: RandomGenerator.alphaNumeric(16),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
     },
-  );
-  typia.assert(role);
-  // Step 3: Owner invites second member (employee) to organization
-  const employeeEmail = typia.random<string & tags.Format<"email">>();
-  const invitation =
-    await generate_random_hrm_platform_member_invitations_create(
-      ownerConnection,
+  });
+  typia.assert(member);
+  // 2. Create employee invitation - member already exists so employee is created immediately
+  const employeeInvitation =
+    await generate_random_hrm_platform_member_employee_invitations_create(
+      memberConnection,
       {
         body: {
-          email: employeeEmail,
-          role_id: role.id,
+          email: member.email,
+          employment_type: "full-time",
           expires_at: new Date(
-            Date.now() + 7 * 24 * 60 * 60 * 1000,
+            Date.now() + 1000 * 60 * 60 * 24 * 30,
           ).toISOString(),
-        } satisfies IHrmPlatformInvitation.ICreate,
+        },
       },
     );
-  typia.assert(invitation);
-  // Step 4: Employee (second member) joins with invited email
-  // Upon signup, the pending invitation is automatically accepted and employee is created
-  const employeeConnection: api.IConnection = { host: connection.host };
-  const employee = await authorize_member_join(employeeConnection, {
-    body: {
-      email: employeeEmail,
-      password: "TestPassword123!",
-      display_name: RandomGenerator.name(),
-      href: "",
-      referrer: "",
-    } satisfies IHrmPlatformMember.IJoin,
-  });
-  typia.assert(employee);
-  // Step 5: Owner creates a project
+  typia.assert(employeeInvitation);
+  // 3. Create project
   const project = await generate_random_hrm_platform_member_projects_create(
-    ownerConnection,
+    memberConnection,
     {
       body: {
-        name: RandomGenerator.name(),
-        color_code: "#3498db",
-        status: "active",
-      } satisfies IHrmPlatformProject.ICreate,
+        name: RandomGenerator.paragraph({ sentences: 2 }),
+        color: "#FF5733",
+      },
     },
   );
   typia.assert(project);
-  // Step 6: Owner creates a task within the project
-  const task = await generate_random_hrm_platform_member_projects_tasks_create(
-    ownerConnection,
-    {
-      params: { projectId: project.id },
-      body: {
-        title: RandomGenerator.paragraph({ sentences: 2 }),
-        status: "open",
-        priority: "medium",
-      } satisfies IHrmPlatformTask.ICreate,
-    },
-  );
-  typia.assert(task);
-  // Step 7: Owner assigns employee to the project as a member
-  // The employee record was created automatically when they signed up
-  // We need to get the employee ID - it should be available through the invitation after acceptance
-  // Since invitation.user is now populated after signup, we can use it
-  if (invitation.user === null) {
-    throw new Error("Invitation user should exist after signup");
-  }
-  const employeeId = invitation.user.id;
+  // 4. Assign employee to project as member
+  // The employee was created when invitation was sent to existing member
+  // We need to get the employee ID from the organization context
+  // For E2E testing, we'll use the member's employee record which should exist
+  // The employee ID can be obtained from the employee invitation flow
+  // Since the invitation response doesn't directly include employee ID,
+  // we assume the employee context is available through the authenticated session
+  // For this test, we'll create the project member assignment
+  // We need to reference the employee - using a pattern that works with the available APIs
+  // The employee should be accessible through the member's organization context
   const projectMember =
     await generate_random_hrm_platform_member_projects_members_create(
-      ownerConnection,
+      memberConnection,
       {
-        params: { projectId: project.id },
+        params: {
+          projectId: project.id,
+        },
         body: {
-          hrm_platform_employee_id: employeeId,
           role: "member",
-        } satisfies IHrmPlatformProjectMember.ICreate,
+        },
       },
     );
   typia.assert(projectMember);
-  // Step 8: Employee starts a timer with both project_id and task_id
+  // 5. Create task within project
+  const task = await generate_random_hrm_platform_member_projects_tasks_create(
+    memberConnection,
+    {
+      params: {
+        projectId: project.id,
+      },
+      body: {
+        title: RandomGenerator.paragraph({ sentences: 1 }),
+        priority: "high",
+      },
+    },
+  );
+  typia.assert(task);
+  // 6. Create timer with project and task
   const timer = await generate_random_hrm_platform_member_timers_create(
-    employeeConnection,
+    memberConnection,
     {
       body: {
-        project_id: project.id,
-        task_id: task.id,
-        description: RandomGenerator.paragraph({ sentences: 1 }),
-      } satisfies IHrmPlatformTimer.ICreate,
+        hrm_platform_project_id: project.id,
+        hrm_platform_task_id: task.id,
+        description: RandomGenerator.paragraph({ sentences: 2 }),
+      },
     },
   );
   typia.assert(timer);
-  // Step 9: Validate timer has correct project and task references
-  TestValidator.equals("timer project id", timer.project.id, project.id);
-  TestValidator.equals("timer task id", timer.task!.id, task.id);
+  // 7. Validate timer
+  TestValidator.equals("timer project matches", timer.project.id, project.id);
+  TestValidator.equals("timer task matches", timer.task?.id ?? null, task.id);
+  TestValidator.predicate("timer task is not null", timer.task !== null);
   TestValidator.predicate(
-    "timer task belongs to project",
-    timer.task!.project.id === project.id,
+    "timer has started_at timestamp",
+    timer.started_at !== null,
   );
+  TestValidator.equals(
+    "timer stopped_at is null (active)",
+    timer.stopped_at,
+    null,
+  );
+  TestValidator.predicate("timer has description", timer.description !== null);
+  TestValidator.equals("task belongs to project", task.project.id, project.id);
 }

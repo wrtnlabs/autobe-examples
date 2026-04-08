@@ -9,8 +9,10 @@ import { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmP
 import { IHrmPlatformTimer } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTimer";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmPlatformEmployeeAtSummaryTransformer } from "./HrmPlatformEmployeeAtSummaryTransformer";
 import { HrmPlatformProjectAtSummaryTransformer } from "./HrmPlatformProjectAtSummaryTransformer";
@@ -25,10 +27,10 @@ export namespace HrmPlatformTimerTransformer {
       select: {
         id: true,
         started_at: true,
+        stopped_at: true,
         description: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
         employee: HrmPlatformEmployeeAtSummaryTransformer.select(),
         project: HrmPlatformProjectAtSummaryTransformer.select(),
         task: HrmPlatformTaskAtSummaryTransformer.select(),
@@ -44,15 +46,14 @@ export namespace HrmPlatformTimerTransformer {
       project: await HrmPlatformProjectAtSummaryTransformer.transform(
         input.project,
       ),
-      task:
-        input.task !== null
-          ? await HrmPlatformTaskAtSummaryTransformer.transform(input.task)
-          : null,
+      task: input.task
+        ? await HrmPlatformTaskAtSummaryTransformer.transform(input.task)
+        : null,
       started_at: input.started_at.toISOString(),
+      stopped_at: input.stopped_at?.toISOString() ?? null,
       description: input.description ?? null,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
-    };
+    } satisfies IHrmPlatformTimer;
   }
 }

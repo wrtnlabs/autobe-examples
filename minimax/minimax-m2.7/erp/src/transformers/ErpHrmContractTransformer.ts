@@ -7,8 +7,10 @@ import { IErpHrmOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IE
 import { IErpHrmRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmRole";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ErpHrmEmployeeAtSummaryTransformer } from "./ErpHrmEmployeeAtSummaryTransformer";
 
@@ -26,26 +28,68 @@ export namespace ErpHrmContractTransformer {
         pay_period: true,
         working_hours_per_week: true,
         notes: true,
-        employee: ErpHrmEmployeeAtSummaryTransformer.select(),
         created_at: true,
         updated_at: true,
+        employee: ErpHrmEmployeeAtSummaryTransformer.select(),
       },
     } satisfies Prisma.erp_hrm_contractsFindManyArgs;
   }
   export async function transform(input: Payload): Promise<IErpHrmContract> {
     return {
       id: input.id,
-      start_date: input.start_date.toISOString(),
-      end_date: input.end_date?.toISOString() ?? null,
-      pay_rate: Number(input.pay_rate),
-      pay_period: input.pay_period as "hourly" | "daily" | "weekly" | "monthly",
-      working_hours_per_week: Number(input.working_hours_per_week),
+      startDate: input.start_date.toISOString(),
+      endDate: input.end_date?.toISOString() ?? null,
+      payRate: input.pay_rate,
+      payPeriod: input.pay_period,
+      workingHoursPerWeek: input.working_hours_per_week,
       notes: input.notes ?? undefined,
       employee: await ErpHrmEmployeeAtSummaryTransformer.transform(
         input.employee,
       ),
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-    };
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+    } satisfies IErpHrmContract;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace ErpHrmContractTransformer {
+//       export type Payload = Prisma.erp_hrm_contractsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             start_date: true,
+//             end_date: true,
+//             pay_rate: true,
+//             pay_period: true,
+//             working_hours_per_week: true,
+//             notes: true,
+//             created_at: true,
+//             updated_at: true,
+//             employee: ErpHrmEmployeeAtSummaryTransformer.select(),
+//           },
+//         } satisfies Prisma.erp_hrm_contractsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IErpHrmContract> {
+//         return {
+//   id: {string},
+//   startDate: {string},
+//   endDate: {string | null},
+//   payRate: {number},
+//   payPeriod: {string},
+//   workingHoursPerWeek: {number},
+//   notes: {string | null},
+//   employee: await ErpHrmEmployeeAtSummaryTransformer.transform(input.employee),
+//   createdAt: {string},
+//   updatedAt: {string},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

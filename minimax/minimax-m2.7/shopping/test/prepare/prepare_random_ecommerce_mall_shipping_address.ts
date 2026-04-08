@@ -9,25 +9,14 @@ export function prepare_random_ecommerce_mall_shipping_address(
   input?: DeepPartial<IEcommerceMallShippingAddress.ICreate>,
 ): IEcommerceMallShippingAddress.ICreate {
   return {
-    recipient_name: input?.recipient_name ?? RandomGenerator.name(),
+    recipientName: input?.recipientName ?? RandomGenerator.name(),
     phone: input?.phone ?? RandomGenerator.mobile(),
-    street_address:
-      input?.street_address ?? RandomGenerator.paragraph({ sentences: 1 }),
+    streetAddress:
+      input?.streetAddress ?? RandomGenerator.paragraph({ sentences: 1 }),
     city: input?.city ?? RandomGenerator.name(1),
     state: input?.state ?? RandomGenerator.name(1),
-    postal_code: input?.postal_code ?? RandomGenerator.alphaNumeric(6),
-    country:
-      input?.country ??
-      RandomGenerator.pick([
-        "United States",
-        "Canada",
-        "United Kingdom",
-        "Australia",
-        "Germany",
-        "France",
-        "Japan",
-        "South Korea",
-      ] as const),
-    is_default: input?.is_default ?? typia.random<boolean>(),
+    postalCode: input?.postalCode ?? RandomGenerator.alphaNumeric(6),
+    country: input?.country ?? RandomGenerator.name(1),
+    isDefault: input?.isDefault ?? (Math.random() > 0.5 ? true : false),
   };
 }

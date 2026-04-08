@@ -1,8 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallAdminPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdminPromotionRequest";
-import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
-import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
-import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSuperAdmin";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -11,6 +9,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { ShoppingMallAdminPromotionRequestCollector } from "../collectors/ShoppingMallAdminPromotionRequestCollector";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
 import { ShoppingMallAdminPromotionRequestTransformer } from "../transformers/ShoppingMallAdminPromotionRequestTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
@@ -20,28 +19,31 @@ export async function postShoppingMallSellerAdminPromotionRequests(props: {
   seller: SellerPayload;
   body: IShoppingMallAdminPromotionRequest.ICreate;
 }): Promise<IShoppingMallAdminPromotionRequest> {
-  const now = new Date();
-  const id = v4();
-  const created =
-    await MyGlobal.prisma.shopping_mall_admin_promotion_requests.create({
-      data: {
-        id,
-        actor_type: "seller",
-        reason: props.body.reason,
-        status: "pending",
-        rejection_reason: null,
-        created_at: now,
-        updated_at: now,
+  // Check for existing pending promotion request for this seller
+  const existingPending =
+    await MyGlobal.prisma.shopping_mall_admin_promotion_requests.findFirst({
+      where: {
         deleted_at: null,
-        sellerRequest: {
-          create: {
-            id: v4(),
-            seller: { connect: { id: props.seller.id } },
-            sellerSession: { connect: { id: props.seller.session_id } },
-          },
+        status: "pending",
+        sellerApplicant: {
+          shopping_mall_seller_id: props.seller.id,
+          deleted_at: null,
         },
       },
+    });
+  if (existingPending !== null) {
+    throw new HttpException("A pending promotion request already exists", 400);
+  }
+  const record =
+    await MyGlobal.prisma.shopping_mall_admin_promotion_requests.create({
+      data: await ShoppingMallAdminPromotionRequestCollector.collect({
+        body: props.body,
+        shoppingMallMembers: { id: v4() },
+        shoppingMallSellers: { id: props.seller.id },
+        shoppingMallMemberSessions: { id: v4() },
+        shoppingMallSellerSessions: { id: props.seller.session_id },
+      }),
       ...ShoppingMallAdminPromotionRequestTransformer.select(),
     });
-  return await ShoppingMallAdminPromotionRequestTransformer.transform(created);
+  return await ShoppingMallAdminPromotionRequestTransformer.transform(record);
 }

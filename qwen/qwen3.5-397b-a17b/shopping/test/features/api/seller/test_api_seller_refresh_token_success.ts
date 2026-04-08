@@ -13,21 +13,24 @@ import { authorize_seller_login } from "../../../authorize/authorize_seller_logi
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
 
 /**
- * Test successful seller authentication token refresh using a valid refresh token.
+ * Test successful seller token refresh workflow.
  *
- * This test validates the token refresh workflow for seller accounts:
- * 1. Registers a new seller account to obtain initial authentication tokens
- * 2. Uses the refresh token to obtain a new access/refresh token pair
- * 3. Verifies token rotation (new tokens differ from original)
- * 4. Verifies seller identity is preserved across refresh
- * 5. Validates response structure matches IAuthorizationToken specification
+ * Validates the complete token refresh flow including seller registration, initial token acquisition, and token refresh using the refresh token. Ensures that the refresh operation returns a new valid access/refresh token pair with updated expiration timestamps.
+ *
+ * Special attention is given to verifying that the new tokens are properly formatted, the expiration timestamps are valid ISO 8601 date-time strings, and the seller account information is returned with the correct approval status.
+ *
+ * 1. Seller registers with email and password credentials.
+ * 2. Initial authentication returns access token, refresh token, and expiration metadata.
+ * 3. Seller submits refresh token to obtain new token pair.
+ * 4. Validates new tokens are returned with updated timestamps and seller info.
  */
 export async function test_api_seller_refresh_token_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Step 1: Register a new seller account to obtain initial tokens
+  // 1. Register seller and obtain initial tokens
+  const sellerConnection: api.IConnection = { host: connection.host };
   const joinResult: IShoppingMallSeller.IAuthorized =
-    await authorize_seller_join(connection, {
+    await authorize_seller_join(sellerConnection, {
       body: {
         email: typia.random<string & tags.Format<"email">>(),
         password: RandomGenerator.alphaNumeric(16),
@@ -37,44 +40,33 @@ export async function test_api_seller_refresh_token_success(
       } satisfies IShoppingMallSeller.IJoin,
     });
   typia.assert(joinResult);
-  // Step 2: Capture original tokens and seller ID
-  const originalAccessToken = joinResult.token.access;
-  const originalRefreshToken = joinResult.token.refresh;
-  const sellerId = joinResult.id;
-  // Step 3: Refresh tokens using the refresh token
+  // 2. Refresh tokens using the refresh token
+  const refreshConnection: api.IConnection = { host: connection.host };
   const refreshResult: IShoppingMallSeller.IAuthorized =
-    await authorize_seller_refresh(connection, {
+    await authorize_seller_refresh(refreshConnection, {
       body: {
-        refresh_token: originalRefreshToken,
+        refresh_token: joinResult.token.refresh,
       } satisfies IShoppingMallSeller.IRefresh,
     });
   typia.assert(refreshResult);
-  // Step 4: Capture new tokens
-  const newAccessToken = refreshResult.token.access;
-  const newRefreshToken = refreshResult.token.refresh;
-  const refreshedSellerId = refreshResult.id;
-  // Step 5: Validate token rotation (new tokens must differ from original)
-  TestValidator.notEquals(
-    "access token rotated",
-    originalAccessToken,
-    newAccessToken,
-  );
-  TestValidator.notEquals(
-    "refresh token rotated",
-    originalRefreshToken,
-    newRefreshToken,
-  );
-  // Step 6: Validate seller identity is preserved
+  // 3. Validate seller identity is preserved
+  TestValidator.equals("seller id matches", refreshResult.id, joinResult.id);
   TestValidator.equals(
-    "seller ID preserved after refresh",
-    sellerId,
-    refreshedSellerId,
+    "seller email matches",
+    refreshResult.email,
+    joinResult.email,
   );
-  // Step 7: Validate expiration logic (refreshable_until >= expired_at)
+  // 4. Validate new tokens are issued
+  TestValidator.notEquals(
+    "access token refreshed",
+    joinResult.token.access,
+    refreshResult.token.access,
+  );
+  // 5. Validate timestamps are properly ordered
   const expiredAtDate = new Date(refreshResult.token.expired_at);
   const refreshableUntilDate = new Date(refreshResult.token.refreshable_until);
   TestValidator.predicate(
-    "refreshable_until is after or equal to expired_at",
-    refreshableUntilDate.getTime() >= expiredAtDate.getTime(),
+    "refreshable_until is after expired_at",
+    refreshableUntilDate > expiredAtDate,
   );
 }

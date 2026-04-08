@@ -8,1741 +8,2156 @@ Per-concept business rules, validation logic, and domain constraints.
 
 ## Customer Rules
 
-All customers must register with an email address and password before accessing any platform features. Email addresses must be unique across all registered customers. Customers can change their password at any time through their account settings. Customer accounts can be deleted by the account holder, but this does not delete order history or reviews. When an account is deleted, profile information is removed but orders remain visible to sellers for legal and record-keeping purposes. Deleted user reviews are preserved but displayed with the label deleted user. Registration and login require both email and password credentials.
+Customers must register with email and password before accessing any platform features—guest browsing is not allowed. Customers can update their password when needed. Customer profiles include a display name and phone number, both of which can be edited. When deleting their account, customers' profile information is removed but their orders and order history remain preserved for seller records and legal compliance. Deleted customer accounts appear as 'deleted user' in their reviews, but the reviews themselves are retained.
 
-### Customer Registration
+### No Guest Browsing Requirement
 
-All customers must register with an email address and password before accessing any platform features. Guest browsing is not permitted on this platform. During registration, the customer must provide both an email address and a password. Both fields are required for account creation. The email address must be in a valid email format (contains @ and domain). The password must be entered twice during registration to confirm accuracy. Registration cannot proceed if either field is empty or invalid.
+Access to all platform features requires a registered customer account. Guest users cannot browse products, view categories, search items, or access any part of the shopping experience. Users must complete registration with a valid email address and password before they can perform any action on the platform.
 
-### Email Validation Rules
+### Email and Password Authentication
 
-Email addresses must be unique across all registered customers. When a customer attempts to register with an email address that is already in use, the registration request is rejected with an error message indicating the email is already registered. Email addresses are case-insensitive for uniqueness validation (customer@example.com and CUSTOMER@EXAMPLE.com are considered the same). The system must verify email uniqueness before creating the account. Duplicate registration attempts are rejected regardless of the password provided. Once an email address is associated with a customer account, it cannot be reused for another account.
+Customer authentication uses email and password credentials.
 
-### Password Management
+When logging in, the system validates the email and password combination.
+If the email is not registered, the login request is rejected.
+If the password is incorrect, the login request is rejected.
+If the account has been deleted, the login request is rejected.
+If the account has been banned by an administrator, the login request is rejected.
 
-Customers can change their password at any time through their account settings. When changing a password, the customer must enter both the current password and the new password. The current password must be correct to proceed with the password change. The new password must be confirmed by entering it a second time. Password changes take effect immediately upon successful submission. The system must validate the new password format requirements (minimum length, character types) before allowing the change. If the current password is incorrect, the password change request is rejected with an error message. If the new password confirmations do not match, the request is rejected. Password changes do not affect existing active sessions unless explicitly configured.
+### Password Change Requirement
 
-### Account Deletion Rules
+Customers can update their password at any time after logging in.
 
-Customer accounts can be deleted by the account holder through their account settings. Before deletion, the system must verify the customer's identity by requiring their current password. Account deletion is a permanent action and cannot be undone once completed. When a customer account is deleted, their profile information is immediately removed from the system. This includes display name, phone number, and all saved shipping addresses. The account deletion does not delete order history or reviews. Deleted customer accounts cannot be reactivated or recovered. The email address associated with the deleted account cannot be reused for a new registration for a specified retention period. Customer must have no pending disputes before account deletion can proceed.
+When changing password, customers provide their current password and a new password.
+If the current password is incorrect, the password change request is rejected.
+If the new password matches the current password, the password change request is rejected.
+The system accepts the new password and updates the account credentials.
 
-### Order History and Review Preservation
+### Display Name Management
 
-When a customer account is deleted, all order history is preserved and remains visible to sellers for legal and record-keeping purposes. Order records include order number, date, items purchased, prices, and shipping information. Customer names on historical orders are replaced with a generic label indicating the account was deleted. Reviews written by deleted customers are preserved but displayed with the label deleted user instead of the customer's display name. The review content and ratings remain visible to maintain product review integrity. Deleted customers' reviews cannot be edited or deleted after account deletion. Administrators can still view the full order history including original customer information for compliance purposes. The system must ensure all legal and regulatory requirements for order record retention are met.
+Customer profiles include a display name that identifies the customer to other users.
 
-### Login Requirements
+When creating an account, customers must provide a display name.
+Customers can edit their display name after registration.
+If the display name is empty, the profile update request is rejected.
+If the display name contains prohibited characters or content, the profile update request is rejected.
+When the display name is changed, a snapshot is created recording the previous and new values.
 
-All customers must log in with their email address and password to access any platform features. The email and password are the only required credentials for authentication. Login attempts must include both fields; partial authentication is not permitted. Incorrect email addresses are rejected with a generic error message that does not confirm whether the email exists or not (to protect user privacy). Incorrect passwords are rejected with a generic error message that does not reveal whether the account exists. Multiple failed login attempts may trigger additional security measures such as temporary account lockout. Active login sessions remain valid until the customer logs out or the session expires. The system must verify both email existence and password correctness before granting access to any features. Customers cannot access their orders, wishlist, or cart without being authenticated.
+### Phone Number Management
 
-## CustomerProfile Rules
+Customer profiles include a phone number for contact purposes.
 
-Each customer has a profile containing a display name and phone number that can be viewed and edited. Customers can update their display name and phone number at any time through profile settings. The profile information is used to identify the customer on the platform and appears in order history and seller records. Both display name and phone number are editable fields that customers can modify as needed. Profile information remains accessible even after account deletion for order-related purposes.
+When creating an account, customers may optionally provide a phone number.
+Customers can update their phone number after registration.
+If the phone number format is invalid, the profile update request is rejected.
+When the phone number is changed, a snapshot is created recording the previous and new values.
 
-### Display Name Editing Rules
+### Account Deletion Policy
 
-Customers can set and modify their display name at any time through profile settings. The display name must contain at least one character and cannot be empty. The display name is visible to other users when viewing product reviews, order history, and seller records. The display name can be updated as many times as needed without restriction. An empty display name request is rejected with an error message indicating that a display name is required.
+Customers may delete their personal account from the platform.
 
-### Phone Number Modification Rules
+When deleting an account, the customer's profile information is permanently removed.
+This includes the display name, phone number, and authentication credentials.
+Account deletion can only be requested by the account owner.
+If the request is not from the account owner, the deletion request is rejected.
+If the account does not exist, the deletion request is rejected.
 
-Customers can set and modify their phone number at any time through profile settings. The phone number field is optional and can be left blank. When a phone number is provided, it must follow a valid phone number format recognized in the customer's country. The phone number is visible to sellers on order-related documents for shipping and contact purposes. Phone number updates are saved immediately and reflected across the platform.
+### Order History Preservation After Account Deletion
 
-### Profile Information Visibility
+When a customer deletes their account, order history is preserved.
 
-Customers can view their own profile information at all times. Sellers can view customer display name and phone number when the customer has placed an order. Other customers can view the display name in product reviews and order history comments. Phone numbers are never visible to other customers or sellers without an order relationship. Profile information is redacted after account deletion for non-order-related purposes, but remains visible in order history for legal and business record purposes.
+All past orders remain accessible to sellers for business record purposes.
+All past orders remain accessible to administrators for oversight.
+Order details, including purchased items, prices, and shipping addresses, are retained.
+The customer can no longer access their order history after account deletion.
+Deleted accounts are marked in order records but orders themselves remain intact.
 
-### Editable Profile Fields
+### Review Retention After Account Deletion
 
-The editable profile fields are display name and phone number. Both fields can be modified independently without requiring changes to the other field. Profile information updates take effect immediately across all platform views. There is no limit to the number of times profile information can be updated. Profile changes are not subject to approval workflows or administrator review. Customers must be authenticated to make profile updates.
+When a customer deletes their account, their reviews are retained.
 
-### Profile Data Preservation After Account Deletion
+All written reviews remain on the product pages.
+Each review from a deleted customer is displayed with the label 'deleted user'.
+The review text and rating remain visible to other customers.
+Review snapshots are preserved for dispute resolution purposes.
+The review content cannot be modified after account deletion.
 
-When a customer deletes their account, the display name and phone number are removed from the active profile and cannot be accessed. However, the profile information is preserved in order history records and seller order documents. The original display name used at the time of each order is retained in that order's record. The original phone number used at the time of each order is retained in that order's record. Preserved profile information remains read-only and cannot be modified after account deletion. Profile information preservation is required for legal record-keeping and dispute resolution purposes.
+### Deleted User Display in Reviews
 
-## Address Rules
+When viewing reviews from a deleted customer, the system displays 'deleted user' instead of the customer's name.
 
-Customers can maintain multiple shipping addresses for different delivery needs. Each address must include recipient name, phone number, street address, city, state or province, postal code, and country information. Customers can add new addresses, edit existing ones, or remove addresses they no longer need. One address can be designated as the default shipping address for checkout convenience. Default address selection is important for streamlining the checkout process when placing orders.
-
-### Multiple Shipping Address Management
-
-Customers can maintain multiple shipping addresses for different delivery needs, such as home, work, or other locations.
-
-There is no limit to the number of shipping addresses a customer can store.
-
-Each address is associated with the customer who created it and cannot be shared between customers.
-
-Addresses can be viewed and managed from the customer's account settings page.
-
-### Required Address Fields
-
-Each shipping address must include the following fields:
-
-- Recipient name: The name of the person who will receive the package
-- Phone number: A contact number for the recipient
-- Street address: The complete street address including building number and street name
-- City: The city or municipality
-- State or province: The state, province, or region
-- Postal code: The postal or zip code for the delivery area
-- Country: The country where the delivery will take place
-
-All required fields must be provided when creating or editing an address. If any required field is missing, the address cannot be saved.
-
-The recipient name and phone number are particularly important for delivery coordination and contact purposes.
-
-### Address Editing Capabilities
-
-Customers can edit any of their saved shipping addresses to update recipient information, street address, or other details.
-
-All fields in an address can be modified after the address is created.
-
-Changes to an address take effect immediately and apply to all future orders.
-
-Existing orders are not affected by address changes; they retain the shipping address that was selected at the time of order placement.
-
-If an address is edited, the changes are saved instantly and become the new default for that address entry.
-
-### Address Deletion Options
-
-Customers can delete shipping addresses that they no longer need.
-
-Any address can be deleted by the customer who created it.
-
-A customer cannot delete addresses that are currently in use as the shipping address for a pending or active order.
-
-When an address is deleted, it is permanently removed and cannot be recovered.
-
-If a deleted address was set as the default shipping address, the system will not automatically select a new default; the customer must manually select another address as default.
-
-Customers must have at least one valid shipping address available in their account.
-
-### Default Shipping Address Selection
-
-Customers can designate one shipping address as their default for checkout convenience.
-
-Only one address can be the default at any given time.
-
-The default address is automatically pre-selected when the customer proceeds to checkout.
-
-Customers can change which address is the default at any time from their address management page.
-
-If the default address is deleted or becomes unavailable, the customer must manually select a new default address before checkout can be completed.
-
-A customer without a default address is prompted to select one during checkout.
-
-### Recipient Information Requirements
-
-Each shipping address must include complete recipient information to ensure successful delivery.
-
-The recipient name must be provided and cannot be empty.
-
-The phone number must be provided in a valid format with at least 5 digits.
-
-Both recipient name and phone number are required for delivery coordination and carrier contact.
-
-If the recipient name or phone number is invalid or missing, the address cannot be saved or used for checkout.
-
-The system validates that both recipient name and phone number are present before allowing the address to be used in an order.
+The display name field shows 'deleted user' for all reviews from deleted accounts.
+Ratings and review text remain unchanged from when they were written.
+Review timestamps remain visible.
+The review remains sorted with other reviews based on its original creation date.
+Deleting a customer account does not remove any historical review data.
 
 ## Seller Rules
 
-Sellers must register with an email and password similar to customers, but their accounts require administrator approval before they can sell products. Seller accounts go through a pending, approved, or rejected status during registration review. Rejected sellers can view the specific reason for rejection and submit a new registration request. Sellers can only delete their accounts if they have no pending orders in paid or shipped status and no pending cancellation or refund requests. When deleted, seller products are removed from listings while order history and shop names in past orders remain preserved for records.
+Sellers must register with email and password and require administrator approval before they can begin selling. Sellers can monitor their approval status showing pending, approved, or rejected states. If rejected, sellers can view the rejection reason and submit a new registration request. Sellers can delete their account only when they have no pending orders in paid or shipped status and no pending cancellation or refund requests. When a seller deletes their account, their products are removed from listings but order history and product snapshots are preserved, and their shop name in past orders remains visible.
 
-### Seller Registration Approval
+### Seller Account Approval Requirement
 
-Sellers must register with an email and password before they can access the seller features.
-A seller account remains in pending status until an administrator approves the registration.
-Pending sellers cannot list products, create orders, or access seller dashboard features.
-Administrators review all pending seller registration requests and approve or reject them.
-Sellers with pending status cannot process orders or receive payments from customers.
-The system rejects registration if the email is already registered as another seller or customer.
+All sellers must complete the account approval process before they can begin selling on the platform. A seller account remains in a pending state until an administrator approves the registration request. While in pending status, the seller cannot list products, accept orders, or perform any selling activities.
 
-### Pending Approval Status Viewing
+The approval workflow begins when a seller submits a registration request. An administrator reviews the request and determines whether to approve or reject it. If approved, the seller account becomes active and the seller can begin creating products and fulfilling orders. If rejected, the seller receives a notification with the rejection reason and can submit a new registration request.
 
-Sellers can view their current registration status at any time from their account dashboard.
-The status displays as pending, approved, or rejected.
-Pending sellers cannot add products to the platform while awaiting approval.
-Approved sellers immediately gain access to all seller features upon status change.
+Once approved, seller accounts can be suspended by administrators if policy violations occur. When suspended, the seller's products are hidden from search results but existing orders can still be processed. Reinstated accounts become fully active again with products visible to customers.
 
-### Rejection Reason Access
+The system tracks all approval-related communications and decisions for audit purposes. This includes the original application, approval or rejection decisions, and any re-submissions.
 
-When a seller registration is rejected, the system provides the specific reason for rejection.
-Rejected sellers can view the administrator's rejection reason in their account dashboard.
-The rejection reason is displayed in plain text for clarity.
-Sellers cannot appeal rejected applications through the system; they must submit a new registration request.
+### Admin Approval Workflow
 
-### New Registration After Rejection
+When a seller submits a registration request, it enters a pending approval state. Administrators can view a list of all pending seller registration requests with basic information including the shop name and registration date.
 
-Rejected sellers can submit a new seller registration request after reviewing the rejection reason.
-A previously rejected seller cannot immediately register again while the previous request is still pending.
-The new registration request resets the approval workflow and is queued for administrator review.
-Sellers with approved status cannot submit duplicate registration requests.
+An administrator reviews each request and makes a binary decision: approve or reject. The decision is final and takes effect immediately upon confirmation. Upon approval, the seller's account status changes from pending to active, enabling full selling privileges.
 
-### Account Deletion Conditions
+When rejecting a request, the administrator must provide a detailed reason explaining why the registration was denied. This reason is visible to the seller and explains the specific deficiency or policy violation that caused the rejection.
 
-Sellers can delete their seller account only if they have no orders in paid status.
-Sellers can delete their seller account only if they have no orders in shipped status.
-Sellers can delete their seller account only if they have no pending cancellation requests for their products.
-Sellers can delete their seller account only if they have no pending refund requests for their products.
-If any pending order or request exists, the system prevents account deletion and displays the blocking conditions.
-Sellers must resolve all pending orders and requests before account deletion is allowed.
+The approval workflow maintains a complete audit trail including the date and time of submission, the administrator who made the decision, the decision itself, and the rejection reason (if applicable). This record cannot be modified or deleted.
+
+### Approval Status Viewing
+
+Sellers can view their current approval status at any time from their account dashboard. The status displays as one of three values: pending, approved, or rejected.
+
+While in pending status, sellers see a message indicating their account is awaiting administrator review and can view the submission date. No selling activities are available during this period.
+
+When approved, sellers see their active status and all selling features become available. They can create products, manage inventory, and view orders.
+
+When rejected, sellers see their rejected status along with the specific rejection reason provided by the administrator. The rejected status remains visible even if the seller submits a new registration request.
+
+The approval status is always current and reflects the most recent administrative decision on the seller's account.
+
+### Rejection Reason Visibility
+
+When an administrator rejects a seller registration, the rejection reason is required and must be provided in text format. This reason explains the specific grounds for denial, such as incomplete information, policy violation, or eligibility concerns.
+
+The rejection reason is stored in the system and cannot be modified after submission. It remains permanently associated with the rejection record for audit and dispute resolution purposes.
+
+Sellers can view the full rejection reason in their account dashboard. The reason is displayed prominently when viewing rejected status. This allows sellers to understand what needs to be corrected before submitting a new registration.
+
+The rejection reason is not visible to other sellers or customers. It is confidential between the seller, the approving administrator, and the system audit log.
+
+### Re-Registration After Rejection
+
+Sellers whose registration requests have been rejected may submit a new registration request at any time. The new request initiates a fresh approval workflow with a new pending status.
+
+When submitting a new request, sellers can address the issues that led to the previous rejection. The system retains the previous rejection reason visible to the seller for reference.
+
+Each new registration request is treated independently. A previous rejection does not prevent a new submission, and previous approval decisions do not carry over to new applications.
+
+The system tracks all registration attempts including approved, rejected, and pending submissions. This history is visible to administrators but not to the seller.
+
+### Account Deletion Prerequisites
+
+Sellers can initiate account deletion only when all of the following conditions are met: no pending orders, no pending cancellation requests, and no pending refund requests. The system validates these conditions before allowing the deletion process to proceed.
+
+Pending orders are defined as orders with paid or shipped status. If any such orders exist for the seller, account deletion is blocked until those orders are fully resolved.
+
+Pending cancellation requests include any cancellation requests that have been submitted by customers but not yet approved or rejected by the seller. If such requests exist, account deletion is blocked.
+
+Pending refund requests include any refund requests that have been submitted by customers for delivered items but not yet approved or rejected by the seller. If such requests exist, account deletion is blocked.
+
+All three conditions must be satisfied simultaneously for account deletion to be permitted.
+
+### No Pending Orders Condition
+
+The no pending orders condition requires that all order items for the seller's products have status other than paid or shipped. Orders in delivered, cancelled, or refunded status do not prevent account deletion.
+
+A pending order item with paid status indicates payment has been processed but shipment has not occurred. These items must be completed before account deletion.
+
+A pending order item with shipped status indicates the seller has shipped the items but delivery confirmation has not been received. These items must be completed before account deletion.
+
+Once an order item reaches delivered, cancelled, or refunded status, it is considered complete and does not block account deletion.
+
+### No Pending Cancellation Condition
+
+The no pending cancellation condition requires that all cancellation requests for the seller's order items have been resolved. A cancellation request is resolved when the seller has either approved or rejected it.
+
+A pending cancellation request exists when a customer has submitted a cancellation request for an order item that has not yet received a seller response. This blocks account deletion.
+
+The seller must actively respond to all pending cancellation requests before account deletion can proceed. This includes both approved and rejected responses.
+
+The system automatically checks for unresolved cancellation requests when a seller attempts to delete their account.
+
+### No Pending Refund Condition
+
+The no pending refund condition requires that all refund requests for the seller's order items have been resolved. A refund request is resolved when the seller has either approved or rejected it.
+
+A pending refund request exists when a customer has submitted a refund request for a delivered item that has not yet received a seller response. This blocks account deletion.
+
+The refund window for customers is 7 days from the item delivery date. Pending refund requests within this window block account deletion until the seller responds.
+
+The system automatically checks for unresolved refund requests when a seller attempts to delete their account.
+
+### Product Deletion on Account Closure
+
+When a seller deletes their account, all products they have created are immediately removed from active listings. These products no longer appear in search results or category browsing.
+
+Product removal is permanent at the seller account level. The seller cannot restore deleted products after account deletion is completed.
+
+Product snapshots are preserved even after products are deleted. Administrators can view these snapshots for audit and dispute resolution purposes.
+
+The product deletion includes all associated data such as images, variants, and inventory history. This data becomes inaccessible to the general public but remains available to administrators.
 
 ### Order History Preservation
 
-When a seller account is deleted, all order history remains accessible in the platform.
-Products sold by deleted sellers remain visible in order history for customers.
-The shop name from the deleted seller's profile is preserved in past order records.
-Order items retain the product details and seller information as they existed at the time of purchase.
-Deleted seller products are removed from search and category listings immediately.
+All order history for a seller is preserved when their account is deleted. This includes completed orders, cancelled orders, and refunded orders.
 
-## SellerProfile Rules
+Order snapshots containing product information, variant details, and transaction amounts are preserved as part of the order record.
 
-Each seller maintains a profile containing shop name, shop description, and a logo image that customers can view. Sellers can edit their shop name, description, and logo image through their seller dashboard. Every edit to the shop profile creates a snapshot that preserves the previous state of the profile information. This snapshot history allows tracking of shop changes over time for dispute resolution and transparency. Customers viewing a product can access the seller's current profile information from the product detail page.
+Order history remains accessible to administrators for compliance and audit purposes. Sellers who have previously deleted their accounts cannot regain access to order history.
 
-### Shop Name Editing Rules
+The preservation of order history ensures that legal and compliance requirements are met even after account closure.
 
-Sellers can edit their shop name through the seller dashboard.
+### Shop Name Preservation in Orders
 
-The shop name must be between 3 and 50 characters long.
-If the shop name is shorter than 3 characters, the request is rejected.
-If the shop name exceeds 50 characters, the request is rejected.
+When a seller's account is deleted, their shop name is preserved in all order records associated with their products. This shop name appears in customer order histories and receipts.
 
-The shop name must be unique across all sellers on the platform.
-If another seller already has the requested shop name, the request is rejected.
+The preserved shop name maintains the transaction record integrity. Customers can see which shop they purchased from even after the seller has deleted their account.
 
-The shop name cannot be changed if the seller account is suspended.
-A suspended seller must contact an administrator to resolve their account status before updating their shop name.
+Shop name preservation is permanent and cannot be modified after account deletion. The original shop name from the time of purchase is retained.
 
-The shop name is displayed to customers on all product listings and order confirmations.
-Sellers can view their current shop name in their profile settings.
-
-If a shop name is changed, the new name is immediately visible to customers in search results and category listings.
-Past orders continue to display the shop name that was active at the time of purchase.
-
-### Shop Description Management
-
-Sellers can edit their shop description through the seller dashboard.
-
-The shop description is optional and can be empty.
-If a shop description is provided, it must be between 10 and 500 characters long.
-If the description is shorter than 10 characters, the request is rejected.
-If the description exceeds 500 characters, the request is rejected.
-
-The shop description cannot contain profanity or inappropriate language.
-If inappropriate language is detected, the request is rejected and the seller is notified.
-
-The shop description cannot be changed if the seller account is suspended.
-A suspended seller must contact an administrator to resolve their account status before updating their shop description.
-
-The shop description is displayed to customers on the seller profile page and product detail pages.
-Customers can view the shop description when browsing products or viewing seller information.
-
-If a shop description is changed, the updated description is immediately visible to customers.
-Past orders continue to display the shop description snapshot taken at the time of purchase.
-
-### Logo Image Upload Rules
-
-Sellers can upload a logo image for their shop through the seller dashboard.
-
-The logo image must be in one of the following formats: JPEG, PNG, or WebP.
-If the image is in an unsupported format, the upload is rejected.
-
-The logo image file size must not exceed 5 megabytes.
-If the file exceeds 5 megabytes, the upload is rejected.
-
-Each seller can have only one logo image at a time.
-If a seller uploads a new logo, the previous logo is replaced.
-
-The logo image cannot be changed if the seller account is suspended.
-A suspended seller must contact an administrator to resolve their account status before updating their logo.
-
-The logo image is displayed to customers on the seller profile page and product detail pages.
-Customers can view the shop logo when browsing products or viewing seller information.
-
-If a logo image is removed by the seller, the seller profile shows no logo instead.
-Products and orders that already exist retain the logo that was displayed at the time of purchase.
-
-### Profile Snapshot Requirements
-
-Every edit to a seller profile creates a snapshot that preserves the previous state.
-
-When a seller changes their shop name, a snapshot is created showing the old name, new name, and timestamp of the change.
-When a seller changes their shop description, a snapshot is created showing the old description, new description, and timestamp of the change.
-When a seller changes their logo image, a snapshot is created showing the old logo URL, new logo URL, and timestamp of the change.
-
-All snapshots are immutable and cannot be deleted or modified.
-Snapshots are stored indefinitely for dispute resolution purposes.
-
-Snapshots can be viewed by the seller who owns the profile.
-Snapshots can be viewed by administrators for oversight and dispute resolution.
-
-Each snapshot records: what field was changed, the previous value, the new value, and when the change occurred.
-Snapshots cannot be removed even if the seller deletes their account.
-
-Order items include a snapshot of the seller profile at the time of purchase.
-This snapshot preserves the shop name, description, and logo that were active when the customer made their purchase.
-Order snapshots cannot be modified after the order is placed.
-
-### Seller Profile Customer Visibility Rules
-
-All customers can view the current seller profile information.
-Customers can access seller profiles from the product detail page and from their order history.
-
-On the product detail page, customers can see:
-- The current shop name
-- The current shop description (if provided)
-- The current logo image (if provided)
-- A link to view the full seller profile page
-
-Customers can view seller profile information for products they have not purchased.
-Customers can view seller profile information for products they have already purchased.
-
-The seller profile is visible to customers even if the seller is suspended.
-However, suspended sellers cannot be browsed or purchased from.
-
-When a seller account is banned, the seller profile is no longer accessible to customers.
-Past orders in customer order history continue to display the seller profile snapshot from the time of purchase.
-
-If a seller deletes their account, their shop name is shown as 'Deleted Shop' in past orders.
-The shop name, description, and logo snapshots are preserved for order history records.
-
-### Shop Information History Tracking
-
-Sellers can view the complete history of changes to their shop profile.
-
-The history shows all previous shop names, with dates and timestamps.
-The history shows all previous shop descriptions, with dates and timestamps.
-The history shows all previous logo image URLs, with dates and timestamps.
-
-Administrators can view the complete change history of any seller profile on the platform.
-Administrators can view change history for dispute resolution and compliance purposes.
-
-Change history is used for resolving disputes between customers and sellers.
-Change history is used for investigating policy violations.
-Change history is used for auditing seller account activities.
-
-Shop information history is preserved for at least 7 years from the date of each change.
-History records cannot be deleted by any user, including administrators.
-
-Customers can view shop information that was active at the time of their purchase.
-This information is shown in the order details and includes the snapshot taken when the order was placed.
-
-Shop information snapshots are included in cancellation and refund request records.
-This provides a complete audit trail for dispute resolution.
-
-## Category Rules
-
-Products are organized into categories that can have one level of subcategory nesting. Each category requires a name and description to identify the product grouping. Only administrators can create, edit, or delete categories on the platform. Customers can browse all available categories and view products within each category. When a category is deleted, products previously in that category become uncategorized and may no longer appear in searches or listings.
-
-### Category Structure and Nesting
-
-Categories can be organized with one level of subcategory nesting only.
-A category can have a parent category, but subcategories cannot have their own children.
-The hierarchy must always be: main category → subcategory → no further nesting.
-Each category must have a unique name within its parent category.
-Every category must have a description that explains the product grouping it represents.
-A category without a parent is considered a main category.
-A category with a parent is considered a subcategory.
-Categories cannot be removed from their parent once created.
-Subcategories inherit the parent category's position in the product browsing structure.
-
-### Category Name and Description Requirements
-
-Every category requires a name that uniquely identifies the category within its parent.
-Every category requires a description that explains the type of products in that category.
-The category name must be provided when creating or editing a category.
-The category description must be provided when creating or editing a category.
-Both name and description are required fields for all categories.
-Category names cannot be empty.
-Category descriptions cannot be empty.
-A category cannot be created with missing name or description.
-Existing categories can have their name or description updated.
-
-### Administrator Category Management
-
-Only administrators can create new categories on the platform.
-Only administrators can edit existing categories.
-Only administrators can delete categories.
-Administrators can assign a parent category when creating a subcategory.
-Administrators cannot create a subcategory without specifying a parent main category.
-Administrators can edit category names and descriptions.
-Administrators can delete categories from the system.
-Super administrators have the same category management capabilities as regular administrators.
-Regular administrators cannot promote or demote other administrators.
-Only super administrators can promote regular administrators to super administrator.
-
-### Customer Category Browsing
-
-All customers can view the complete list of categories on the platform.
-Customers can browse categories without logging in to see what categories exist.
-Customers can view the products within any category.
-Customers can view the products within any subcategory.
-Customers can navigate from a main category to its subcategories.
-Customers can see the category name and description when browsing.
-Customers can see the number of products in each category.
-Categories that contain no products are still visible to customers.
-Categories cannot be hidden from customer browsing.
-
-### Category Deletion and Product Impact
-
-When a category is deleted, all products previously in that category become uncategorized.
-Products that become uncategorized no longer appear in category listings.
-Uncategorized products may not appear in search results.
-Administrators can reassign deleted category products to other categories.
-When a main category is deleted, all its subcategories also become inaccessible.
-Products in deleted subcategories are affected by the subcategory deletion.
-A deleted category cannot be restored to its previous state.
-Product deletion does not affect category structure.
-Category deletion is permanent and cannot be undone.
-Customers cannot view products in deleted categories.
-
-### Category-Based Product Filtering
-
-Customers can filter search results by selecting a specific category.
-Customers can filter search results by selecting a specific subcategory.
-Category filtering includes products from the selected category and its subcategories.
-Customers can apply category filters together with other filters.
-Category filter selection is required when filtering by category.
-A selected category filter must have a valid existing category.
-Filtering by category only shows products that belong to the selected category.
-Products in deleted categories are not included in category filter results.
-Category filter results can be combined with price range filters.
-Category filter results can be combined with in-stock-only filters.
+This preservation applies to all historical orders regardless of when they were placed relative to the seller's account deletion.
 
 ## Product Rules
 
-Sellers can create products that must include a name, description, category, and base price, all of which are required fields. Each product belongs to the seller who created it and only that seller can edit or delete their products. Every product edit creates a snapshot preserving the previous state of all product fields. Products can only be deleted if there are no pending order items in paid or shipped status and no pending cancellation or refund requests. Deleting a product removes it from search results and category listings but preserves snapshots for records. Deleted products no longer appear in customer searches or category browsings.
+Sellers can create products that require a name, description, category, and base price. Products must belong to the seller who created them. Every product edit creates a snapshot to preserve the previous state. Sellers can delete their products only when there are no pending order items with paid or shipped status and no pending cancellation or refund requests for any variant. Deleted products disappear from search and category listings but all product snapshots are preserved even after deletion. Products with no variants are visible in search but displayed as unavailable.
 
-### Required Product Fields
+### Product Creation Requirements
 
-Sellers can create products with the following required fields: product name, product description, product category, and base price. All four fields must be provided for product creation to succeed. If the product name is missing, the creation request is rejected. If the product description is missing, the creation request is rejected. If the product category is not selected, the creation request is rejected. If the base price is not provided, the creation request is rejected. The product name cannot be empty or contain only whitespace. The product description cannot be empty or contain only whitespace. The base price must be a positive number greater than zero. A subcategory may be selected instead of a parent category, but the category field must still be populated.
+Sellers can create new products on the platform.
 
-### Product Ownership Rules
+A product must have a name, which is required. The name identifies the product to customers.
 
-Each product belongs exclusively to the seller who created it. Only the owning seller can edit their own products. Only the owning seller can delete their own products. Other sellers cannot edit or delete products they do not own. Administrators can edit or delete any product on the platform regardless of ownership. When a seller edits a product, the system validates that the seller is the owner before applying changes. When a seller deletes a product, the system validates that the seller is the owner before removing it. Products cannot be transferred from one seller to another.
+A product must have a description, which is required. The description provides details about the product to customers.
 
-### Product Edit Snapshots
+A product must be assigned to a category when created. The category can be a subcategory (one level of nesting is supported). Category selection is required.
 
-Every time a seller edits any field of their product, a snapshot is automatically created. The snapshot records the time of the change, the seller who made it, and the previous values of all edited fields. All product fields are included in the snapshot: product name, product description, product category, and base price. When a product is edited, the snapshot captures the complete state of the product at that moment. If the product has images, the image configuration at the time of edit is included in the snapshot. If the product has variants, all variant information at the time of edit is included in the snapshot. Product snapshots are immutable and cannot be modified or deleted. Sellers can view the history of all snapshots for their products. Administrators can view snapshots for any product on the platform.
+A product must have a base price when created. The base price is required and represents the default price before any variant-specific pricing.
+
+Every product is owned by the seller who creates it. A seller cannot create products on behalf of other sellers.
+
+If the product name is missing, the creation request is rejected.
+
+If the product description is missing, the creation request is rejected.
+
+If no category is selected, the creation request is rejected.
+
+If the base price is missing or not provided, the creation request is rejected.
+
+### Product Edit and Snapshot Requirements
+
+Sellers can edit their own products to update information.
+
+Every product edit creates a snapshot that preserves the previous state of the product.
+
+The snapshot records when the change was made, what fields were changed, and the values before and after the change.
+
+The snapshot includes all product fields: name, description, category, base price, and images.
+
+The snapshot also includes snapshots of all variants at the time of the edit, capturing their SKU codes, option values, and prices.
+
+Snapshots are immutable and cannot be deleted.
+
+Only the product owner (the seller) and administrators can view product snapshots.
+
+If a product has no previous state to snapshot (first edit), a snapshot is still created capturing the current values.
+
+The snapshot is created immediately when the edit is submitted, regardless of whether the product is visible to customers.
 
 ### Product Deletion Conditions
 
-A product can only be deleted by its owner if there are no pending order items for any variant of that product. An order item is considered pending if its status is paid or shipped. If any variant of the product has order items in paid or shipped status, the deletion request is rejected. A product can only be deleted if there are no pending cancellation requests for any variant of that product. A product can only be deleted if there are no pending refund requests for any variant of that product. If a pending cancellation request exists for any variant, the deletion request is rejected. If a pending refund request exists for any variant, the deletion request is rejected. Sellers can view which variants have pending orders or requests that prevent deletion. Administrators can delete products regardless of pending orders or requests. When an administrator deletes a product, they may provide a policy violation reason for the deletion.
+Sellers can delete their own products only when specific conditions are met.
 
-### Product Removal from Listings
+A product can be deleted only if there are no pending order items with paid status for any variant of the product.
 
-When a product is deleted, it is immediately removed from all search results. When a product is deleted, it is removed from all category listings. When a product is deleted, it is removed from all search filtering results. Deleted products no longer appear in new searches by customers. Deleted products no longer appear in category browsings by customers. Deleted products no longer appear in product recommendation displays. The product page for a deleted product returns an unavailable status. Deleted products cannot be added to shopping carts. Deleted products cannot be added to wishlists. Product deletion does not affect existing order items, which retain snapshots of the product data.
+A product can be deleted only if there are no pending order items with shipped status for any variant of the product.
 
-### Product Snapshot Preservation
+A product can be deleted only if there are no pending cancellation requests for any variant of the product.
 
-All product snapshots are preserved even after the product is deleted. Snapshot records contain the complete product state at the time of each edit. Snapshots of deleted products remain accessible to the product owner. Snapshots of deleted products remain accessible to administrators. Snapshots cannot be deleted by any user, including the product owner or administrators. Product snapshots serve as immutable records for dispute resolution. Product snapshots can be viewed by the product owner for their own products. Product snapshots can be viewed by administrators for any product. Snapshots preserve the product name, product description, product category, and base price at the time of each edit.
+A product can be deleted only if there are no pending refund requests for any variant of the product.
 
-### Unavailable Product Display
+If any pending order items exist, the deletion request is rejected.
 
-Products with no variants are visible in search results but shown as unavailable for purchase. Products with no variants cannot be added to shopping carts. Products with no variants display a message indicating they are unavailable. A product must have at least one variant to be purchasable. Variants with zero stock quantity are shown as out of stock. Out of stock variants cannot be added to shopping carts. Out of stock variants display a message indicating insufficient stock. A product with some variants in stock and others out of stock shows the stock status per variant. Out of stock variants are excluded from search results when the in-stock-only filter is applied. Unavailable products continue to appear in category listings for browsing purposes.
+If any pending cancellation requests exist, the deletion request is rejected.
+
+If any pending refund requests exist, the deletion request is rejected.
+
+When a product is deleted, all its variants are also deleted.
+
+When a product is deleted, all its inventory records are also deleted.
+
+Deleted products no longer appear in search results or category listings.
+
+### Product Availability and Display Requirements
+
+A product must have at least one variant to be purchasable by customers.
+
+Products with no variants are visible in search results but are displayed as unavailable.
+
+Unavailable products cannot be selected for purchase by customers.
+
+When a product is deleted, it is automatically removed from all customer wishlists.
+
+If a product has no variants with available stock, the product is displayed as unavailable in listings.
+
+The product name, base price, and seller shop name are shown in product listings.
+
+The main image (first image) is shown as the thumbnail in product listings.
+
+If the product has variants with different prices, the price range is shown in listings instead of a single price.
+
+The average rating is shown in listings if the product has reviews.
 
 ## ProductVariant Rules
 
-Products can have multiple variants representing different option combinations like color or size. Each variant requires a unique SKU code, option values, and stock quantity, with price being optional to override the base price. A product must have at least one variant to be purchasable by customers. Sellers can edit variant SKU codes, option values, and prices, with each edit creating a snapshot. Variants can only be deleted if there are no pending order items in paid or shipped status for that specific variant and no pending cancellation or refund requests. Variants with zero stock are shown as out of stock and cannot be added to the shopping cart.
+A product can have multiple variants, each representing a specific combination of options. Every variant requires a unique SKU code, option values, stock quantity, and can optionally override the base price. Stock quantity starts at zero when created. Sellers can edit variant SKU codes, option values, and prices—every edit creates a snapshot. Variants can only be deleted when there are no pending order items with paid or shipped status and no pending cancellation or refund requests. A product must have at least one variant to be purchasable, and out-of-stock variants cannot be added to cart.
 
-### Variant SKU Code Uniqueness
+### Variant Creation
 
-Each product variant requires a unique SKU code within the product to identify specific option combinations.
+Sellers can create product variants when adding products to the platform.
 
-The SKU code must be unique across all variants of the same product.
+A variant must have a unique SKU code, option values, and stock quantity. The stock quantity starts at zero when the variant is created. Sellers can optionally set a price override for the variant.
 
-Sellers cannot assign the same SKU code to multiple variants within a product.
+If the SKU code is missing, the variant creation request is rejected.
+If the option values are missing, the variant creation request is rejected.
+If the stock quantity is missing, the variant creation request is rejected.
 
-When creating a variant, the system validates that the SKU code is available for that product.
+### SKU Code Requirement
 
-If a seller attempts to create a variant with an existing SKU code for that product, the variant creation is rejected.
+Each product variant must have a SKU code that uniquely identifies it within the platform.
 
-The system displays an error message indicating that the SKU code is already in use.
+The SKU code is required when creating a variant and cannot be empty.
 
-Sellers can view their current SKU codes to ensure uniqueness before creating variants.
+Every SKU code must be unique across all products in the platform.
 
-### Option Value Combinations
+If a SKU code is not provided, or if it already exists for another variant, the variant creation request is rejected.
 
-Each product variant represents a specific combination of product options such as color, size, or material.
+### Option Values
 
-Option values must be meaningful combinations that customers can understand (e.g., "Red / Large", "Blue / Small").
+Each product variant represents a specific combination of options (e.g., color, size, material).
 
-The system allows sellers to define multiple options for each product variant.
+Option values are required when creating a variant and must describe the specific characteristics of that variant.
 
-Each option has a name (such as "Color" or "Size") and a value (such as "Red" or "Large").
+The option values must be provided as a set of attribute-value pairs.
 
-Option combinations are stored as structured data that can be displayed to customers.
+If option values are not provided, the variant creation request is rejected.
 
-The same option value combination cannot be duplicated within a single product.
+### Optional Price Override
 
-If a seller attempts to create a variant with duplicate option values, the system rejects the variant creation.
+Sellers can set an optional price for each product variant that may differ from the base product price.
 
-Sellers can view all option combinations for their products to ensure clarity and avoid confusion.
+If no price override is set, the variant uses the base product price.
 
-### Variant Price Override
+If a price override is set, that price is used for that specific variant instead of the base price.
 
-Each product variant has an optional price that can override the product's base price.
+### Variant Edit Snapshot
 
-If a variant does not specify a custom price, the product's base price is used.
+Whenever a seller edits a product variant, a snapshot is created to preserve the previous state.
 
-Sellers can set a different price for specific variants to reflect different value propositions (e.g., premium colors cost more).
+The snapshot records when the change was made, what fields were changed, and the values before and after the edit.
 
-The variant price is stored independently from the base price.
+The following fields create snapshots when edited: SKU code, option values, and price.
 
-When viewing product details, customers see the actual price of each selected variant.
+Snapshots are immutable and cannot be deleted.
 
-Sellers can update variant prices at any time, subject to deletion conditions.
+Sellers can view snapshots of their own variants.
 
-Price changes are reflected immediately in the product listing and detail pages.
-
-### Variant Stock Quantity Requirements
-
-Each product variant requires a stock quantity that represents available inventory.
-
-The stock quantity must be a non-negative integer (zero or greater).
-
-Sellers cannot create a variant without specifying a stock quantity.
-
-The system initializes new variants with the stock quantity specified by the seller.
-
-Variants with stock quantity greater than zero can be added to the shopping cart.
-
-Variants with stock quantity of zero are shown as out of stock and cannot be purchased.
-
-Stock quantity is managed through inventory records that track all changes over time.
-
-The current available stock is calculated by summing all inventory record changes for the variant.
-
-### Product Must Have At Least One Variant
-
-Every product must have at least one variant to be purchasable by customers.
-
-Products without any variants are visible in search and category listings but are marked as unavailable for purchase.
-
-The system prevents the deletion of a product if it would result in zero variants remaining.
-
-Sellers cannot mark a product as purchasable without creating at least one variant.
-
-When viewing a product without variants, customers see a message indicating that the product is unavailable.
-
-Sellers are notified if they attempt to create a product without variants and are guided to add variants before publishing.
+Administrators can view snapshots of any variant.
 
 ### Variant Deletion Conditions
 
-Sellers can delete their own product variants only if certain conditions are met.
+Sellers can delete variants only when certain conditions are met to protect order integrity.
 
-A variant cannot be deleted if it has any pending order items with paid or shipped status.
+A variant cannot be deleted if any of the following conditions exist:
+- There are pending order items with paid or shipped status for that variant
+- There are pending cancellation requests for that variant
+- There are pending refund requests for that variant
 
-A variant cannot be deleted if it has any pending cancellation requests.
+If any of these conditions exist, the deletion request is rejected.
 
-A variant cannot be deleted if it has any pending refund requests.
+The seller must complete all pending orders, cancellations, and refunds before deleting the variant.
 
-The system validates these conditions before allowing variant deletion.
+### Minimum One Variant Rule
 
-If any condition is not met, the deletion request is rejected with an explanation.
+A product must have at least one variant to be purchasable.
 
-Sellers can view which variants have pending orders or requests before attempting deletion.
+Products without any variants are visible in search results but are shown as unavailable.
 
-Pending order items, cancellation requests, and refund requests must be resolved before the variant can be deleted.
+Customers cannot add products without variants to their cart.
 
-### Out of Stock Variant Restrictions
+Sellers can create products without variants, but customers cannot purchase them until at least one variant is added.
 
-Variants with stock quantity of zero are automatically shown as out of stock.
+### Out of Stock Cart Exclusion
 
-Out of stock variants cannot be added to the shopping cart by customers.
+Variants with zero stock quantity cannot be added to the shopping cart.
 
-The system prevents adding variants to cart when the requested quantity exceeds available stock.
+When a customer attempts to add an out of stock variant to their cart, the request is rejected.
 
-If a customer attempts to add an out of stock variant, the system displays a warning message.
+The system shows the variant as "out of stock" when the stock quantity is zero.
 
-Variants with stock quantity less than the requested cart quantity also trigger a warning.
+If a variant's stock reaches zero while in a customer's cart, the variant is marked as unavailable in the cart.
 
-Out of stock variants remain visible in product listings but are clearly marked as unavailable.
+### Cart Stock Validation
 
-Once stock is replenished, the variant becomes available for purchase immediately.
+When a customer has variants in their cart, the system validates stock availability.
 
-Stock levels are checked in real-time when customers attempt to add variants to cart.
+If a variant's current stock is less than the quantity in the cart, a warning is shown to the customer.
 
-### Variant Edit Snapshot Creation
+Customers are prevented from completing checkout if unavailable items are present in the cart.
 
-Every modification to a product variant creates a snapshot to preserve the previous state.
+Unavailable items must be removed from the cart before checkout can proceed.
 
-Snapshots include all edited fields: SKU code, option values, price, and stock quantity.
+## Category Rules
 
-The snapshot records the timestamp of the change and the values before and after modification.
+Products are organized into categories with a single level of subcategory nesting. Each category requires a name and description. Only administrators can create and manage categories including editing names and descriptions. Customers can browse the full list of categories and view products within any category. Categories can be deleted by administrators, in which case products in deleted categories become uncategorized.
 
-Sellers can view the snapshot history of their own variants for auditing purposes.
+### Category Hierarchy Structure
 
-Administrators can view snapshots of any variant across the platform.
+Categories can be organized in a hierarchical structure with parent and child relationships.
 
-Snapshots are immutable and cannot be deleted or modified.
+Each category can have one parent category, which makes it a subcategory. A category without a parent is a top-level category.
 
-Snapshot creation occurs immediately upon saving variant changes.
+Subcategories can only belong to one parent category at a time. A category cannot be a child of multiple categories simultaneously.
 
-Customers cannot view variant edit snapshots; snapshots are available only to owners and administrators.
+Categories can have zero or more child categories (subcategories), forming a tree structure.
 
-## ProductImage Rules
+The hierarchy allows customers to browse categories from any level, from top-level categories down to subcategories.
 
-Sellers can upload multiple images for each product they create. Images can be reordered by sellers with the first image serving as the main or thumbnail image for listings. Sellers can delete images from their products when they no longer wish to display them. All image changes including additions, deletions, and reordering are included in product snapshots. This ensures that the visual presentation of a product is preserved in its historical state for dispute resolution.
+There is no limit to the number of top-level categories that can be created.
 
-### Multiple Product Images
+There is no limit to the number of subcategories under any single parent category.
 
-Sellers can upload multiple images for each product they create. There is no limit to the number of images that can be uploaded for a single product. Each image is stored with the product and is accessible to customers viewing the product detail page. All images uploaded for a product are considered equal until reordering is performed.
+### Subcategory Nesting Limit
 
-### Image Reordering
+Categories support exactly one level of nesting.
 
-Sellers can reorder the sequence of images for their products. The order of images determines which image appears first in product listings and the product detail page. Sellers can change the display order of images at any time before the product is published or while it is listed. Reordering affects the visual presentation of the product to customers but does not affect the product content, price, or variant information.
+A subcategory must belong to a top-level category directly. Subcategories cannot have their own subcategories.
 
-### Main Thumbnail Image Selection
+If a top-level category has a subcategory, that subcategory cannot have children of its own.
 
-The first image in the image sequence serves as the main image for the product. This main image is displayed as the thumbnail in product listings, category pages, and search results. The main image provides customers with the primary visual representation of the product before they click to view the full product detail page. Sellers control which image serves as the main image through the reordering functionality.
+Only top-level categories can have subcategories beneath them.
 
-### Image Deletion
+This two-level structure (parent and immediate child) is the maximum nesting depth allowed.
 
-Sellers can delete images from their products when they no longer wish to display them. Deleted images are permanently removed from the product and are no longer visible to customers. When an image is deleted, the remaining images maintain their relative order, with the next image becoming the new first image if the deleted image was the main image. Deletion does not affect the product itself, only the visual assets associated with it.
+Category creation and editing must validate that no more than one level of nesting exists.
 
-### Snapshot and Change Tracking
+Any attempt to create a subcategory of a subcategory is rejected.
 
-All image changes are included in product snapshots, including additions, deletions, and reordering operations. When a product snapshot is created, it captures the complete state of all images for that product at that moment in time. This includes the image URLs, their display order, and which image is designated as the main image. Snapshots of product images are preserved even if the product is deleted. This ensures that the visual presentation of a product can be reviewed for dispute resolution and that historical product listings can be accurately represented.
+### Category Name Requirement
 
-## InventoryRecord Rules
+Every category must have a name.
 
-Each product variant tracks its stock quantity through a history of inventory records. Every inventory record must include a quantity change value, reason for the change, and timestamp. Stock quantity is calculated by summing all inventory records for a variant. Sellers can add inventory through restocking or subtract inventory through adjustments or recording losses, each requiring a reason. When customers place orders, inventory records are automatically created with negative quantities. Order cancellations and refunds automatically create positive inventory records to restore stock. When stock reaches zero, variants are marked as out of stock and cannot be added to carts.
+The category name is required when creating a new category.
 
-### Inventory Quantity Tracking
+The category name is required when editing an existing category.
 
-Each product variant maintains its current stock quantity by tracking a history of inventory records.
+A category name cannot be empty or contain only whitespace characters.
 
-The current stock quantity is calculated as the sum of all quantity changes across all inventory records for that variant. Positive values increase stock, negative values decrease stock.
+The system rejects category creation if the name field is missing or blank.
 
-The system calculates current stock by summing all inventory records in real time; there is no separate stock quantity field stored independently.
+The system rejects category editing that would result in an empty or blank name.
 
-### Inventory Record Creation Requirements
+Category names are used to display categories to customers in browsing views.
 
-Every inventory record must include the following information:
+Category names are used as the primary identifier in category listings and navigation.
 
-- Quantity change: A positive or negative integer value indicating how much stock increased or decreased
-- Reason: A text description explaining why the quantity changed (e.g., "restock", "order placed", "adjustment", "damage loss")
-- Timestamp: The exact date and time when the inventory change occurred
+Changes to a category name create a snapshot of the change.
 
-All inventory records are immutable once created and cannot be modified or deleted.
+### Category Description Requirement
 
-### Positive Restock Records
+Every category must have a description.
 
-Sellers can add inventory to a product variant through restocking.
+The category description is required when creating a new category.
 
-When a seller restocks a variant, the system creates an inventory record with a positive quantity change value.
+The category description is required when editing an existing category.
 
-Every restock operation requires a reason explaining the restock (e.g., "warehouse replenishment", "returned items processed", "new shipment received").
+A category description can be empty text only if explicitly allowed by the system.
 
-Restocking increases the current stock quantity for that variant, allowing customers to purchase it again if it was previously out of stock.
+The system rejects category creation if the description field is missing.
 
-### Negative Order Records
+The system rejects category editing that would result in a missing description.
 
-When a customer successfully places an order for a variant, the system automatically creates negative inventory records for each variant in the order.
+The description provides context about the category's contents for customers.
 
-The quantity change equals the negative of the quantity purchased in the order item.
+The description appears when customers view category details.
 
-This automatic negative inventory record is created at the same time as order creation, immediately after payment is confirmed.
+Changes to a category description create a snapshot of the change.
 
-The negative inventory record ensures stock quantities reflect actual available inventory after orders are placed.
+### Administrator-Only Category Creation
 
-### Inventory Adjustment with Reason
+Only administrators can create new categories.
 
-Sellers can manually adjust inventory quantities to account for situations such as damaged goods, loss, theft, or other discrepancies.
+Customers cannot create categories under any circumstances.
 
-When a seller subtracts inventory through adjustment, the system creates an inventory record with a negative quantity change.
+Sellers cannot create categories under any circumstances.
 
-Every inventory adjustment requires a reason explaining the adjustment (e.g., "damaged during storage", "inventory discrepancy", "damaged returns processed", "lost in warehouse").
+Guest users cannot create categories.
 
-Adjustments are only available for seller accounts and require a valid reason to be recorded.
+The system checks the user's role before allowing category creation.
 
-### Automatic Inventory on Orders
+Category creation requests from non-administrators are rejected.
 
-Inventory records are automatically created when orders are placed successfully.
+The rejection message indicates that administrator privileges are required.
 
-For each variant in the order, a negative inventory record is created with quantity equal to the negative of the purchased quantity.
+Super administrators can create categories with the same privileges as regular administrators.
 
-This automatic inventory adjustment occurs at the moment the order is created and payment is confirmed.
+### Administrator-Only Category Management
 
-The automatic inventory deduction ensures customers see accurate stock levels immediately after placing an order.
+Only administrators can edit category names and descriptions.
 
-### Out of Stock Blocking Cart Additions
+Only administrators can delete categories.
 
-When a variant's stock quantity reaches zero, the variant is marked as "out of stock".
+Customers cannot edit categories under any circumstances.
 
-Customers cannot add out-of-stock variants to their shopping cart.
+Sellers cannot edit categories under any circumstances.
 
-If a customer attempts to add an out-of-stock variant to the cart, the request is rejected.
+Guest users cannot edit or delete categories.
 
-Variants that are out of stock remain visible in product listings but are marked as unavailable and cannot be selected during checkout.
+The system checks the user's role before allowing category edits or deletion.
 
-### Inventory History Viewing
+Category management requests from non-administrators are rejected.
 
-Sellers can view the complete inventory history for each of their product variants.
+Regular administrators and super administrators have equal category management privileges.
 
-The inventory history displays all inventory records for a variant, including quantity change values, reasons, and timestamps.
+Changes to category attributes create snapshots of the changes.
 
-The history shows the chronological sequence of all stock changes since the variant was created.
+### Category Browsing by Customers
 
-Administrators can also view inventory history for all variants on the platform for oversight purposes.
+Customers can view a list of all categories on the platform.
 
-### Inventory Restore on Cancellation
+Customers can browse top-level categories and subcategories.
 
-When a cancellation request is approved for an order item, the system automatically creates a positive inventory record for that variant.
+Customers can view category names and descriptions while browsing.
 
-The quantity change equals the quantity of the cancelled item, effectively restoring the stock.
+Category browsing is available to all logged-in customers.
 
-This automatic inventory restoration occurs at the moment the cancellation is approved by the seller.
+Guest users cannot browse categories as registration is required.
 
-The restored stock becomes available for customers to purchase again.
+The category list can be paginated for large numbers of categories.
 
-### Inventory Restore on Refund
+Customers can navigate through the category hierarchy by clicking on category names.
 
-When a refund request is approved for an order item, the system automatically creates a positive inventory record for that variant.
+The system displays the full category structure to customers.
 
-The quantity change equals the quantity of the refunded item, restoring the stock to available inventory.
+Categories are displayed in a tree or hierarchical format when browsing.
 
-This automatic inventory restoration occurs at the moment the refund is approved by the seller.
+### Category Product Viewing
 
-Refunded items restore stock regardless of the item's condition; customers return items but the system treats them as available inventory.
+Customers can view all products within a category when browsing.
+
+Customers can view products within a subcategory when that subcategory is selected.
+
+Product listings show products organized by their assigned category.
+
+Each product appears in exactly one category at any given time.
+
+Products in subcategories are accessible through the parent category navigation.
+
+The system displays product count for each category.
+
+Customers can filter and sort products within category listings.
+
+Products with no category assignment do not appear in category listings.
+
+Deleting a category does not delete the products; it removes them from the category listing.
+
+### Category Deletion Policy
+
+Only administrators can delete categories.
+
+When a category is deleted, all products in that category become uncategorized.
+
+Deleted categories no longer appear in category browsing views.
+
+Deleted categories are permanently removed from the system.
+
+The system preserves all products that were in the deleted category.
+
+Products that become uncategorized can be re-categorized by sellers.
+
+Category deletion is permanent and cannot be undone.
+
+The system records which products were affected by the category deletion.
+
+Deleting a category creates a snapshot of the category's final state.
+
+### Uncategorized Product State
+
+Products can exist without a category assignment (uncategorized state).
+
+Uncategorized products do not appear in any category browsing views.
+
+Uncategorized products can still be found through search functionality.
+
+Sellers can assign a category to products that are currently uncategorized.
+
+When a category is deleted, its products enter the uncategorized state.
+
+Uncategorized products remain in the system and are not deleted.
+
+Sellers cannot delete products solely because they are uncategorized.
+
+Uncategorized products can be purchased by customers.
+
+The uncategorized state is a temporary condition that can be resolved by adding a category.
 
 ## Order Rules
 
-Orders contain one or more order items and are created when payment succeeds after checkout. Each order item represents a purchased variant with its own individual status separate from the overall order. The overall order status is derived from all its items, meaning mixed item statuses result in partially completed order status. If all items are paid, the order status becomes paid. If any item is shipped but none delivered, the order is marked as shipped. When all items are delivered, the order reaches delivered status. If all items are cancelled or refunded, the order reaches those respective statuses.
+Orders contain one or more order items that can be from different sellers. The overall order status is automatically derived from its item statuses. When an order is successfully placed, stock quantities decrease for each purchased variant, items are removed from the cart, and product and seller profile snapshots are saved with each order item. Order statuses include paid, shipped, delivered, cancelled, refunded, and partially completed based on item states. Once an order is placed, the shipping address cannot be changed.
 
-### Order Status Derivation from Items
+### Multi-Item Order Structure
 
-The overall status of an order is derived from the statuses of all order items within that order. The system evaluates each item's status to determine the order's current state.
+An order contains one or more order items. Each order item represents a purchased product variant with a quantity.
 
-If all order items in an order have the status paid, the order status is set to paid.
+If a customer purchases 3 units of the same variant, it becomes one order item with quantity 3 (not three separate line items).
 
-If any order item in an order has the status shipped but no items have the status delivered, the order status is set to shipped.
+Order items can be from different sellers within the same order.
 
-If all order items in an order have the status delivered, the order status is set to delivered.
+### Cross-Seller Order Items
 
-If all order items in an order have the status cancelled, the order status is set to cancelled.
+A single order may contain order items from multiple different sellers.
 
-If all order items in an order have the status refunded, the order status is set to refunded.
+Each order item maintains its own independent status (paid, shipped, delivered, cancelled, or refunded).
 
-### Individual Order Item Statuses
+Different sellers can have different statuses for their respective order items within the same order.
 
-Each order item has its own independent status that is separate from the overall order status. The status of one item does not directly change the status of other items in the same order, except when calculating the overall order status.
+### Order Status Derivation
 
-The possible statuses for an order item are: paid, shipped, delivered, cancelled, and refunded.
+The overall order status is automatically derived from the statuses of its order items.
 
-An order item starts with the status paid after successful payment processing.
+The order has the following statuses: paid, shipped, delivered, cancelled, refunded, and partially completed.
 
-An order item transitions to shipped when the seller creates a shipment containing that item and provides tracking information.
+The order status is calculated based on the state of all its order items, not set independently.
 
-An order item transitions to delivered when the customer confirms delivery of the shipment, or automatically after 14 days from the shipping date.
+### Stock Reduction on Order Placement
 
-An order item transitions to cancelled when a cancellation request is approved by the seller for an item with status paid.
+When an order is placed successfully, stock quantities are immediately decreased for each purchased variant.
 
-An order item transitions to refunded when a refund request is approved by the seller for an item with status delivered.
+The stock reduction happens at the moment of order placement, before the seller ships the item.
 
-### Partially Completed Order States
+Each order item reduces stock by its quantity at the time of purchase.
 
-When an order contains items with mixed statuses, the order is considered partially completed.
+### Cart Removal on Order Placement
 
-An order is marked as partially completed when it contains items in different states, such as some items delivered and some refunded, or some items shipped and some cancelled.
+When an order is successfully placed, all order items are removed from the customer's shopping cart.
 
-The system evaluates the status of all items in the order to determine if the order is partially completed.
+The cart is cleared for the variants included in the placed order.
 
-Partially completed orders continue to exist in the system with their mixed status states.
+Items that are not part of the order remain in the cart unchanged.
 
-Customers can view the status of individual items within a partially completed order.
+### Snapshot Preservation at Purchase
 
-Customers can view the order history with all items listed separately with their respective statuses.
+When an order is placed, a snapshot is saved for each order item that captures:
+- The purchased product (name, description, category, images at that moment)
+- The purchased variant (SKU code, option values, price at that moment)
+- The seller's profile (shop name, logo at that moment)
 
-Shipment tracking and delivery confirmation continue to apply to individual shipments within the order, regardless of other items' statuses.
+These snapshots are immutable and preserved even if the product, variant, or seller profile is later edited or deleted.
 
-### Order Status Progression Rules
+Snapshots ensure the exact state of the purchase is recorded for dispute resolution.
 
-An order item with status paid cannot be cancelled after it transitions to shipped status. Cancellation requests are only accepted for items with status paid.
+### Shipping Address Immutability
 
-An order item with status shipped can be cancelled only if the cancellation request is submitted before the item is delivered.
+Once an order is placed, the shipping address cannot be changed by the customer.
 
-An order item with status delivered can be refunded, but only if the refund request is submitted within 7 days from the delivery date.
+The shipping address at the time of order placement is locked and becomes part of the order record.
 
-An order item with status cancelled or refunded cannot be cancelled or refunded again.
+Only administrators may modify shipping addresses for exceptional circumstances.
 
-An order item that transitions to delivered automatically changes after 14 days from shipping if the customer has not manually confirmed delivery.
+### Order Status Calculation Logic
 
-When a shipment is created containing multiple items, all items in that shipment transition to shipped status simultaneously.
+The order status is calculated using the following hierarchy:
 
-### All Items Cancelled or Refunded Orders
+- If all order items are delivered → order status is delivered
+- If any item is shipped (and none delivered yet) → order status is shipped
+- If all items are paid → order status is paid
+- If all items are cancelled → order status is cancelled
+- If all items are refunded → order status is refunded
+- If items have mixed states (e.g., some delivered, some refunded, some shipped) → order status is partially completed
 
-When all order items in an order have been cancelled, the entire order status is set to cancelled.
+The status calculation always considers ALL order items in the order.
 
-When a cancellation request for an item is approved, that item is cancelled and the stock quantity is restored for that item's variant.
+### Partial Completion Status
 
-When all order items in an order have been refunded, the entire order status is set to refunded.
+The partially completed status applies when an order has order items in different states.
 
-When a refund request for an item is approved, that item is refunded and the stock quantity is restored for that item's variant.
+Examples that trigger partially completed:
+- Some items delivered, some still shipped
+- Some items delivered, some cancelled
+- Some items shipped, some cancelled
+- Any other combination where not all items share the same status
 
-The cancellation or refund of individual items does not affect the processing of remaining items in the same order, unless all items are cancelled or refunded.
+Partially completed orders allow customers to track different stages of fulfillment for items within the same order.
 
-Once an order status becomes cancelled or refunded, no further cancellation or refund requests can be submitted for that order.
+### Order Status Hierarchy
+
+Order statuses follow a logical progression:
+
+1. paid: payment completed, awaiting shipment
+2. shipped: seller has shipped at least one item
+3. delivered: all items have been delivered
+4. cancelled: all items were cancelled (can occur from paid or shipped state)
+5. refunded: all items were refunded (typically after delivery)
+6. partially completed: items are in mixed states
+
+The order status can transition between states based on changes to individual order items.
+
+Once an order reaches delivered, shipped, cancelled, or refunded, it may still become partially completed if additional items change state.
 
 ## OrderItem Rules
 
-Each order item represents a purchased product variant with a quantity purchased and its own status. Order items can be individually cancelled or refunded, separate from other items in the same order. Items from different sellers can appear in the same customer order but are processed separately by each seller. The item status can be paid, shipped, delivered, cancelled, or refunded depending on the order progression. Cancellation can only be requested for items with paid status before they are shipped. Refunds can only be requested for items with delivered status within 7 days of delivery confirmation.
+Each order item represents a purchased product variant with its own individual status. Item statuses include paid, shipped, delivered, cancelled, and refunded. Items can be individually cancelled when status is paid (not yet shipped). Cancellation requests require a reason and must be approved by the seller. Refund requests can only be made for delivered items within 7 days of delivery and require a reason with seller approval. When cancelled or refunded, items restore their stock quantities and the order status updates accordingly.
 
-### Individual Item Cancellation
+### Individual Item Status Tracking
 
-Customers can request cancellation for individual order items with status "paid" (not yet shipped).
+Each order item maintains its own independent status, separate from the overall order status.
 
-A cancellation request must include a reason (text field) explaining why the customer wants to cancel.
+Item statuses are: paid, shipped, delivered, cancelled, and refunded.
 
-Only the customer who placed the order can request cancellation for that order's items.
+The overall order status is derived from the statuses of all items within that order. The order status reflects the collective state of its items.
 
-The seller of the specific item must approve or reject the cancellation request.
+### Paid Item Status
 
-When the seller responds to the cancellation request, a snapshot of the request state is created (recording when the seller approved or rejected).
+An order item has status "paid" when payment for that item has been successfully processed.
 
-If the cancellation is approved:
-- The item status changes to "cancelled"
-- The stock quantities for the variant are restored via inventory record
-- The refund is processed for that item only
-- The remaining items in the order continue processing normally
+When an item status is paid, the seller is notified to prepare the item for shipping.
 
-If the cancellation is rejected:
-- The item remains in "paid" status
-- The order continues processing normally for that item
+A paid item may be cancelled by the customer upon request, pending seller approval.
 
-The customer can view the status of their cancellation requests (pending, approved, rejected).
+A paid item cannot be refunded until it has been delivered.
 
-If all items in an order are cancelled, the entire order status becomes "cancelled".
+### Shipped Item Status
 
-Cancellation cannot be requested for items with status other than "paid" (already shipped, delivered, cancelled, or refunded items cannot be cancelled).
+An order item has status "shipped" when the seller has created a shipment containing that item and provided tracking information.
 
-The seller can cancel an item directly if the customer cancels via their dashboard.
+All items in the same shipment share the same shipped status.
 
-### Individual Item Refund
+A shipped item may be delivered to the customer.
 
-Customers can request a refund for individual order items with status "delivered".
+Once shipped, the item cannot be cancelled by the customer.
 
-A refund request must include a reason (text field) explaining why the customer wants a refund.
+### Delivered Item Status
 
-Refunds are processed on a per-item basis, not per entire order.
+An order item has status "delivered" when the customer confirms delivery of the shipment containing the item.
 
-Only items with status "delivered" are eligible for refund requests.
+If the customer does not confirm delivery, the item automatically changes to delivered status 14 days after the shipment status changed to shipped.
 
-Refunds can only be requested within 7 days from the date that item's delivery confirmation date.
+A delivered item may be reviewed by the customer.
 
-If more than 7 days have passed since delivery, the refund request is rejected.
+A delivered item may be refunded by the customer upon request.
 
-The seller of the specific item must approve or reject the refund request.
+### Cancelled Item Status
 
-When the seller responds to the refund request, a snapshot of the request state is created (recording when the seller approved or rejected).
+An order item has status "cancelled" when a cancellation request for that item has been approved by the seller.
 
-If the refund is approved:
-- The item status changes to "refunded"
-- The stock quantities for the variant are restored via inventory record
-- The refund is processed for that item only
-- The remaining items in the order are unaffected
+A cancelled item restores its stock quantity through an inventory record.
 
-If the refund is rejected:
-- The item remains in "delivered" status
-- The order continues normally for that item
+Cancellation of one item does not affect the status of other items in the same order.
 
-The customer can view the status of their refund requests (pending, approved, rejected).
+A cancelled item cannot be delivered, refunded, or reviewed.
 
-If all items in an order are refunded, the entire order status becomes "refunded".
+### Refunded Item Status
 
-Refund cannot be requested for items with status other than "delivered" (paid, shipped, cancelled items are not eligible for refund requests).
+An order item has status "refunded" when a refund request for that item has been approved by the seller.
 
-### Seller-Specific Item Processing
+A refunded item restores its stock quantity through an inventory record.
 
-Each order item is associated with a specific seller based on which seller created the product.
+Refund of one item does not affect the status of other items in the same order.
 
-Sellers can only view and process order items for products they created.
+A refunded item cannot be delivered again or reviewed.
 
-Sellers cannot view or modify order items for products created by other sellers, even if those items are in the same customer order.
+### Per-Item Cancellation Eligibility
 
-When a customer places an order containing items from multiple sellers, each seller receives notification only for their own items.
+Customers may request cancellation for individual order items, not for entire orders.
 
-Each seller manages their items independently:
-- A seller can ship their items while other sellers' items in the same order remain in "paid" status
-- A seller can approve cancellation for their items while other sellers' items continue normally
-- A seller can approve refund for their items while other sellers' items continue normally
+Cancellation requests are made on a per-item basis.
 
-Shipment is created separately for each seller:
-- Each shipment contains only items from that seller
-- Different sellers always have different shipments (never mixed in one shipment)
-- Each seller manages their own shipments independently
+Only items with status "paid" are eligible for cancellation request.
 
-Order status is derived from all items in the order, regardless of which seller created them:
-- The overall order status may reflect mixed states from different sellers' items
-- This allows one seller to ship while another seller's items are still processing
+Items with status "shipped", "delivered", "cancelled", or "refunded" cannot be cancelled.
 
-### Item Status Progression
+### Paid Status Cancellation Window
 
-Each order item has its own status independent of other items in the same order.
+A cancellation request can only be made while the item status is "paid".
 
-Item statuses are: "paid", "shipped", "delivered", "cancelled", "refunded".
+Once the item status changes to "shipped", the cancellation window closes and the item is no longer eligible for cancellation.
 
-**Default Status**:
-- When an order is placed successfully, all items are created with status "paid"
+The cancellation request must be submitted before the seller ships the item.
 
-**Status Transitions**:
+### Seller Approval for Cancellation
 
-1. **Paid to Shipped**:
-   - When the seller creates a shipment and adds the item to it, the item status changes to "shipped"
-   - The item can only transition from "paid" to "shipped" (no backward transition)
-   - The seller must provide tracking information (carrier name, tracking number) when creating the shipment
+All cancellation requests require approval from the seller of the item.
 
-2. **Shipped to Delivered**:
-   - The customer can confirm delivery for the shipment containing the item
-   - When the customer confirms delivery, the item status changes to "delivered"
-   - If the customer does not confirm, the item automatically changes to "delivered" after 14 days from the shipment's shipping date
-   - Once delivered, the item cannot change back to shipped or paid
+The seller reviews the cancellation request and may approve or reject it.
 
-3. **Paid to Cancelled**:
-   - Customer can request cancellation for paid items
-   - Seller must approve the cancellation
-   - Once cancelled, the item cannot change back to paid
+When the seller responds to the cancellation request, a snapshot of the request state is created.
 
-4. **Delivered to Refunded**:
-   - Customer can request refund for delivered items (within 7 days of delivery)
-   - Seller must approve the refund
-   - Once refunded, the item cannot change back to delivered
+Only after seller approval does the item status change to "cancelled".
 
-5. **Status Rejection**:
-   - If a customer requests cancellation for an item that is not "paid", the request is rejected
-   - If a customer requests refund for an item that is not "delivered", the request is rejected
-   - If a customer requests refund after the 7-day window has expired, the request is rejected
+### Per-Item Refund Eligibility
 
-### Mixed Order Item Statuses
+Customers may request refund for individual order items, not for entire orders.
 
-Orders can contain items with different statuses (mixed states).
+Refund requests are made on a per-item basis.
 
-**Mixed State Examples**:
-- Some items: delivered, other items: shipped
-- Some items: cancelled, other items: paid
-- Some items: refunded, other items: delivered
+Only items with status "delivered" are eligible for refund request.
 
-**Order Status Determination for Mixed States**:
+Items with status "paid", "shipped", "cancelled", or "refunded" cannot be refunded.
 
-When order items have mixed statuses, the overall order status is determined as follows:
-- If all items are paid → order status is "paid"
-- If any item is shipped (and none delivered yet) → order status is "shipped"
-- If all items are delivered → order status is "delivered"
-- If all items are cancelled → order status is "cancelled"
-- If all items are refunded → order status is "refunded"
-- If items have mixed states (not all same) → order status is "partially completed"
+### Delivered Status Refund Requirement
 
-**Example Scenarios**:
+A refund request can only be made for items that have status "delivered".
 
-1. An order has 5 items:
-   - 3 items are delivered
-   - 2 items are shipped
-   - Order status: "shipped" (because any item shipped and none delivered)
+The customer must confirm delivery before requesting a refund.
 
-2. An order has 4 items:
-   - 2 items are delivered
-   - 2 items are cancelled
-   - Order status: "partially completed" (mixed states)
+Items in transit or not yet delivered cannot be refunded.
 
-3. An order has 6 items:
-   - 4 items are refunded
-   - 2 items are delivered
-   - Order status: "partially completed" (mixed states)
+### 7-Day Refund Window
 
-Customers can view the status of each individual item in their order list.
+A refund request must be made within 7 days from the date the item status changed to "delivered".
 
-Each item's status is shown separately in the order details.
+Refund requests submitted after the 7-day window expires are rejected.
 
-The overall order status provides a summary but does not hide individual item statuses.
+The 7-day period begins on the day the item is marked as delivered.
 
-Cancellation or refund of individual items does not affect the status of other items in the same order.
+### Seller Approval for Refund
 
-### Paid to Shipped Transition
+All refund requests require approval from the seller of the item.
 
-The transition from "paid" to "shipped" status is triggered when the seller creates a shipment.
+The seller reviews the refund request and may approve or reject it.
 
-Sellers can view order items for their products that have status "paid" and need shipping.
+When the seller responds to the refund request, a snapshot of the request state is created.
 
-When creating a shipment, the seller can:
-- Select one or more of their paid items to include in the shipment
-- Enter tracking information (carrier name, tracking number)
-- Create the shipment
-
-**Shipment Behavior**:
-- All items in the same shipment share the same tracking information
-- When the shipment is created, all items in it change to status "shipped" immediately
-- Items from different sellers cannot be in the same shipment
-
-**Shipment Options**:
-- Sellers can ship items individually (one item per shipment)
-- Sellers can bundle multiple items into one shipment (multiple items, one tracking number)
-- The seller chooses how to bundle items based on inventory and logistics
-
-**Transition Rules**:
-- Items can only transition from "paid" to "shipped" once (no re-shipping)
-- Once shipped, the item cannot return to "paid" status
-- The tracking information remains associated with the shipment and all items in it
-- Customers can view tracking information for each shipment in their order
-
-If a shipment is cancelled or voided by the seller (before any item is marked as shipped), the item status returns to "paid".
-
-The item cannot be cancelled by the customer once it has status "shipped" (must wait for delivery and then request refund).
-
-## Shipment Rules
-
-A shipment is a package sent by a seller and can contain one or more order items from that same seller. Different sellers always create separate shipments even when selling in the same customer order. Sellers can choose to ship items individually or bundle multiple items into one shipment. All items in the same shipment share the same tracking information including carrier name and tracking number. When a shipment is created, all included items change to shipped status. Customers confirm delivery per shipment, and when confirmed, all items in that shipment become delivered. If no confirmation is given, items automatically become delivered after 14 days from shipping.
-
-### Seller-Specific Shipment Separation
-
-Each shipment contains order items from exactly one seller. When a customer order includes products from multiple sellers, each seller creates their own separate shipment for their items. Different sellers cannot share tracking information or combine items from different sellers into a single shipment. Sellers can only ship their own order items that belong to their products.
-
-### Shipment Bundling Options
-
-Sellers can choose to ship individual items separately or bundle multiple items together into one shipment. A single shipment can contain multiple order items from the same seller. The seller decides whether to ship all their items for a customer order together or in multiple separate shipments. Each shipment is independent and has its own tracking information.
-
-### Shared Tracking Information Within Shipment
-
-All order items included in the same shipment share the same tracking information. When a seller creates a shipment, they enter a carrier name and tracking number that applies to all items in that shipment. Customers can view the same tracking number for all items within a single shipment. Each item in the shipment inherits the shipment's tracking carrier and tracking number.
-
-### Shipment Status to Shipped Transition
-
-When a shipment is created, all order items included in that shipment change to shipped status immediately. The shipped status applies to every item in the shipment at the same time. Items cannot have different statuses if they are in the same shipment. Once shipped, items cannot be cancelled by customers or sellers.
-
-### Delivery Confirmation Per Shipment
-
-Customers confirm delivery per shipment, not per individual item. When a customer confirms delivery for a shipment, all order items in that shipment change to delivered status. A single confirmation action applies to all items in the shipment. Customers cannot confirm delivery for some items in a shipment while leaving others unconfirmed.
-
-### Automatic Delivery After Fourteen Days
-
-If a customer does not explicitly confirm delivery, order items automatically change to delivered status after fourteen days from the shipment date. The fourteen-day period starts when the shipment is created and marked as shipped. Items cannot be cancelled or refunded after the automatic delivery date. The automatic delivery occurs without any customer action required.
-
-### Tracking Information Requirements
-
-Sellers must provide both a carrier name and a tracking number when creating a shipment. A shipment cannot be created without complete tracking information. The carrier name must be provided as text, and the tracking number must be a non-empty string. If either the carrier name or tracking number is missing, the shipment creation request is rejected.
-
-## WishlistItem Rules
-
-Customers can add products to their wishlist to save items for later consideration. The wishlist operates at the product level rather than the variant level, meaning specific variants are not saved. Customers can view their wishlist with paginated results and remove products when they no longer want them. If a seller deletes a product from the platform, it is automatically removed from all customer wishlists. The wishlist is specific to each customer and cannot be shared across users. Customers manage their own wishlist items without seller or administrator intervention.
-
-### Wishlist Item Addition
-
-Customers can add products to their wishlist to save items for later purchase consideration. The wishlist operates at the product level, meaning only the product itself is saved, not any specific variant selection. When a customer adds a product to their wishlist, the system records which customer owns the wishlist item and which product is being saved. Customers can only add products that are currently available on the platform. Once added, the product appears in the customer's personal wishlist.
-
-### Variant Information Not Saved
-
-Wishlist items store product references only, without any variant-specific information. Customers do not select or save specific variants when adding a product to their wishlist. The wishlist does not record option values, SKU codes, or variant pricing. When viewing a wishlist item, customers see the product's base information but cannot determine which variant they originally intended to purchase. This product-level storage allows the wishlist to remain valid even when variants change or become unavailable.
-
-### Wishlist Pagination
-
-When customers view their wishlist, results are displayed in paginated format to manage large collections efficiently. The system shows a limited number of wishlist items per page, with navigation controls to access additional pages. Each page displays product information including the main image thumbnail, product name, base price, and seller shop name. Customers can navigate through their wishlist using page controls.
-
-### Manual Wishlist Item Removal
-
-Customers can remove products from their wishlist at any time when they no longer wish to save the item. When a customer removes a product from their wishlist, the wishlist item is permanently deleted from their list. The product itself remains available on the platform and can still be purchased. The customer can add the product back to their wishlist later if they change their mind.
-
-### Automatic Removal on Product Deletion
-
-If a seller deletes a product from the platform, that product is automatically removed from all customer wishlists that contain it. This automatic removal ensures that deleted products do not appear in wishlists as unavailable items. When a product is deleted, the system identifies all wishlist items referencing that product and removes them. Customers browsing their wishlists will no longer see products that have been deleted by sellers.
-
-### Customer-Specific Ownership
-
-Each customer's wishlist is private and specific to that individual customer only. Wishlist items are not shared across customers and cannot be viewed by other users. Customers can only view and manage their own wishlist items. Sellers cannot access customer wishlists, and administrators do not have access to individual customer wishlist contents. The wishlist is a personal customer feature that remains separate from public product listings.
-
-## Review Rules
-
-Customers can write reviews for products they have purchased only after the item status is delivered. Each customer can write one review per product per order. Reviews require a rating between one and five stars, while text content is optional. Reviews are displayed on product detail pages sorted by newest first. Customers can edit their own reviews at any time, with every edit creating a snapshot of the previous state. Customers can delete their own reviews while snapshots are preserved for dispute resolution. Product average ratings are calculated from all non-deleted reviews on the product.
-
-### Review Eligibility After Delivery
-
-Customers can write a review for a product only after the order item containing that product has status "delivered". An order item reaches delivered status when either the customer confirms delivery for the shipment, or fourteen days have elapsed since the shipment was created without customer confirmation. Before the item status is delivered, review submission is rejected.
-
-### One Review Per Product Per Order
-
-Each customer may write exactly one review per product per order. If a customer purchases the same product multiple times across different orders, they may write a separate review for each order. Attempting to write a second review for the same product in the same order is rejected. The system validates that no existing review from the customer for that product in that order is already active.
-
-### Star Rating Validation
-
-Every review must include a rating between one and five stars, inclusive. Ratings outside this range are rejected. Text content is optional; reviews may be submitted with only a rating and no text. The rating must be an integer value from one to five; decimal values such as 3.5 or 4.7 are not accepted.
-
-### Review Edit Snapshot
-
-Customers may edit their own reviews at any time. Each edit creates an immutable snapshot recording the previous rating and text content, the timestamp of the change, and the new values. The snapshot is preserved even after the review is deleted. When a review is edited, the new content replaces the existing content for display purposes.
-
-### Review Deletion with Snapshot
-
-Customers may delete their own reviews. When deleted, the review is no longer displayed on the product page or included in average rating calculations. However, a snapshot of the deleted review is preserved, including the rating, text content, deletion timestamp, and previous edit history. Only the owner or an administrator may delete a review.
-
-### Average Rating Calculation
-
-A product's average rating is calculated from all non-deleted reviews for that product. Deleted reviews are excluded from the calculation. The average is computed by summing all star ratings and dividing by the count of non-deleted reviews. If a product has no non-deleted reviews, no average rating is displayed.
-
-### Newest Review Sorting
-
-Reviews displayed on product detail pages are sorted by newest first, ordered by the creation timestamp. The newest review appears at the top of the list. This ordering applies to all views: product detail page, seller dashboard, and administrator oversight pages. Pagination may apply when displaying large numbers of reviews.
-
-## Snapshot Rules
-
-Snapshots are created whenever editable data is modified to preserve the previous state for records and dispute resolution. Snapshots record when a change was made, what was changed, and the values before and after the modification. Snapshots are immutable and cannot be deleted once created by the system. Snapshots are visible to relevant parties including owners and administrators for transparency and dispute resolution. Snapshots are created for product edits, variant edits, seller profile changes, order items, reviews, and cancellation and refund requests. Product snapshots include all product fields and snapshots of all variants at the time of change. Even after products are deleted, their snapshots are preserved for historical reference.
-
-### Snapshot Creation on Edits
-
-A snapshot is automatically created whenever a seller edits their product information, including the product name, description, category selection, or base price.
-
-A snapshot is automatically created whenever a seller edits a product variant, including the SKU code, option values, price override, or stock quantity.
-
-A snapshot is automatically created whenever a seller edits their shop profile, including the shop name, shop description, or logo image.
-
-A snapshot is automatically created whenever a customer edits their review, including the star rating or text content.
-
-A snapshot is automatically created whenever a seller responds to a cancellation request, including the approval or rejection decision.
-
-A snapshot is automatically created whenever a seller responds to a refund request, including the approval or rejection decision.
-
-The snapshot records the timestamp when the change was made, the type of change (created, updated, or deleted), and both the previous values and the new values.
-
-The snapshot records which user made the change, allowing traceability for dispute resolution.
-
-A snapshot is created even when the edit results in no actual value change, ensuring complete audit of all edit attempts.
-
-For product edits, the snapshot includes the complete state of all variants at the time of the edit, not just the main product fields.
-
-For variant edits, the snapshot captures the complete variant state including SKU code, option values, price, and stock quantity at that moment.
-
-The snapshot creation is automatic and cannot be skipped or delayed by any user action.
-
-### Snapshot Immutability and Protection
-
-Once a snapshot is created by the system, it cannot be modified in any way by any user or administrator.
-
-A snapshot cannot be deleted by the original owner who created the edit.
-
-A snapshot cannot be deleted by the seller who owns the product or profile.
-
-A snapshot cannot be deleted by any administrator, including super administrators.
-
-A snapshot cannot be deleted by any other user or actor in the system.
-
-The only exception to snapshot immutability is the system itself, which can remove snapshots during data restoration procedures with super administrator approval.
-
-Deleted products and deleted variants are preserved in snapshot form but are not accessible through normal user operations.
-
-A snapshot becomes a permanent record in the system that persists even after the associated data is deleted.
-
-The immutability of snapshots is enforced at the system level and cannot be overridden by any business rule or user permission.
-
-When a snapshot is retrieved for display, it shows the values exactly as they were at the time of the change, with no modifications to historical data.
-
-The snapshot system treats all snapshots as audit records that must be preserved according to legal and business requirements.
-
-Any attempt to modify a snapshot through the user interface or any other means will be rejected by the system.
-
-### Snapshot Visibility for Owners
-
-A seller can view snapshots of their own products in the seller dashboard.
-
-A seller can view snapshots of their own product variants in the variant management interface.
-
-A seller can view snapshots of their own shop profile changes in the shop management interface.
-
-A seller can view snapshots of their own reviews in the review management interface.
-
-An owner can view the reason text from the snapshot of why a cancellation or refund request was approved or rejected.
-
-An owner can view the complete change history for their products by reviewing all snapshots chronologically.
-
-An owner can compare their current product data with historical snapshot data to see what changed over time.
-
-An owner cannot view snapshots of products or reviews owned by other sellers or customers.
-
-An owner can view the timestamp of when each snapshot was created to understand the timing of changes.
-
-An owner can view both the old values and new values in each snapshot to understand exactly what was modified.
-
-An owner can access snapshots for dispute resolution purposes, such as proving what was sold to a customer.
-
-An owner can view snapshots in read-only mode and cannot edit or restore from snapshots through the user interface.
-
-An owner's access to their own snapshots is available only while their account remains active and not banned.
-
-### Snapshot Visibility for Administrators
-
-An administrator can view snapshots of any product on the platform, regardless of which seller owns it.
-
-An administrator can view snapshots of any seller's shop profile, regardless of which seller owns it.
-
-An administrator can view snapshots of any product variant, including those from any seller.
-
-An administrator can view snapshots of any review on the platform, regardless of which customer wrote it.
-
-A super administrator can view snapshots for all entities including orders and shipments in addition to standard administrator access.
-
-An administrator can view snapshots for dispute resolution investigations involving any seller or customer.
-
-An administrator can view snapshots for fraud investigations involving any user in the system.
-
-An administrator cannot edit or delete snapshots they view in the investigation interface.
-
-An administrator can export snapshot data for compliance and legal purposes through the administrator interface.
-
-An administrator can search snapshots by entity type, entity ID, date range, or change type for investigation purposes.
-
-An administrator can view the complete change history of any product by viewing all associated snapshots.
-
-An administrator can view snapshots even after the associated entity has been deleted by any user.
-
-An administrator's access to all snapshots is available only while their administrator status remains active and not revoked.
-
-### Product Snapshot Structure
-
-A product snapshot includes the product name as it existed at the time of the edit.
-
-A product snapshot includes the product description as it existed at the time of the edit.
-
-A product snapshot includes the category selection and subcategory as it existed at the time of the edit.
-
-A product snapshot includes the base price as it existed at the time of the edit.
-
-A product snapshot includes all product images with their URLs and display order as they existed at the time of the edit.
-
-A product snapshot includes the main image that was displayed as the thumbnail at the time of the edit.
-
-A product snapshot includes nested snapshots of all variants that were associated with the product at the time of the edit.
-
-Each nested variant snapshot includes the SKU code, option values, price override, and stock quantity at that moment.
-
-A product snapshot does not include current live product data, only the historical state at change time.
-
-A product snapshot does not include the product ID, only the product name and seller identifier.
-
-A product snapshot is created when a seller adds variants to an existing product, capturing the variant snapshot structure.
-
-A product snapshot is created when a seller reorders product images, capturing the new image display order.
-
-A product snapshot captures the seller shop name at the time of the product edit, preserving the shop identity for that product version.
-
-A complete product snapshot can be used to reconstruct exactly what the product looked like to customers at any point in history.
-
-### Variant Snapshot Structure
-
-A variant snapshot includes the SKU code as it existed at the time of the edit.
-
-A variant snapshot includes all option values associated with the variant, such as color, size, or other selected options.
-
-A variant snapshot includes the price as it existed at the time of the edit, including any override from the base price.
-
-A variant snapshot includes the stock quantity as it existed at the time of the edit.
-
-A variant snapshot includes the product ID to which the variant belongs, allowing variant identification within the product context.
-
-A variant snapshot does not include inventory records, only the snapshot of the variant itself at change time.
-
-A variant snapshot is created when a seller modifies the SKU code to preserve the old SKU value for record-keeping.
-
-A variant snapshot is created when a seller changes the option values, capturing the old option combination.
-
-A variant snapshot is created when a seller changes the price override, capturing the old price value.
-
-A variant snapshot is created when a seller changes the stock quantity through inventory adjustment, capturing the old stock value.
-
-A variant snapshot includes the timestamp when the variant change occurred for chronological tracking.
-
-A variant snapshot includes the seller identifier to identify which seller owns the variant at the time of change.
-
-A complete variant snapshot can be used to reconstruct exactly what that specific product variant looked like at any point in history.
-
-A variant snapshot is preserved in the product snapshot even when the product is deleted, allowing variant reconstruction for orders.
-
-### Snapshot Preservation After Deletion
-
-When a seller deletes a product, all snapshots of that product are preserved in the system indefinitely.
-
-When a seller deletes a product, snapshots of all variants of that product are preserved even after the variants are deleted.
-
-When a seller deletes a product, the product no longer appears in search results, category listings, or product detail pages.
-
-When a seller deletes a product, snapshots of that product remain accessible to administrators for oversight purposes.
-
-When a seller deletes a product, snapshots of that product remain accessible to customers who had that product in their wishlist.
-
-When a seller deletes a product, snapshots of that product remain accessible for order item reconstruction in existing customer orders.
-
-When a customer deletes their review, the review snapshot is preserved even though the review is no longer visible on the product detail page.
-
-When a customer deletes their review, the review snapshot remains accessible to the customer who wrote it for personal records.
-
-When a customer deletes their review, the review snapshot remains accessible to administrators for investigation purposes.
-
-When a product is deleted, the snapshot preserves the product name so it can be shown in order history even though the product is gone.
-
-When a product is deleted, the snapshot preserves the seller shop name so it can be shown in order history.
-
-When a product is deleted, the snapshot preserves the product price and variant prices so order totals can be recalculated correctly.
-
-Deleted products and their snapshots cannot be restored or undeleted through any user interface or administrator operation.
-
-Deleted products and their snapshots are kept for legal compliance and dispute resolution requirements.
-
-### Snapshot Usage in Dispute Resolution
-
-Snapshots are primarily used for dispute resolution between customers and sellers regarding what was sold and purchased.
-
-A customer can reference snapshot data when claiming a seller changed product information after purchase.
-
-A seller can reference snapshot data when proving what variant was offered to a customer at the time of purchase.
-
-An administrator can review snapshot data when mediating disputes between sellers and customers.
-
-A super administrator can review snapshot data when investigating fraud or policy violations involving any user.
-
-Snapshots provide evidence for cancellation request disputes regarding whether a seller made changes after payment.
-
-Snapshots provide evidence for refund request disputes regarding whether a product description matched the purchased item.
-
-Snapshots are used to calculate refunds based on the price at the time of purchase, not the current price.
-
-Snapshots are used to verify that the correct product and variant were delivered to the customer.
-
-Snapshots help determine liability in disputes by showing when and who made changes to product information.
-
-Snapshots are reviewed to verify that sellers did not change prices or descriptions to the detriment of customers after purchase.
-
-Snapshots are used to reconstruct the complete order state at the time of purchase for legal and tax purposes.
-
-All snapshot data created for dispute resolution is preserved according to legal retention requirements.
-
-When a dispute is resolved, both parties can access relevant snapshot data as evidence for their claims.
-
-## CancellationRequest Rules
-
-Customers can request cancellation for individual order items that are in paid status but not yet shipped. Cancellation requests must include a reason describing why the customer wants the item cancelled. The seller of the specific item can approve or reject the cancellation request. When the seller responds, a snapshot of the cancellation request state is created. If approved, the item is cancelled and a refund is processed for that specific item only. Cancelled items have their stock quantities restored through inventory records. If all items in an order are cancelled, the entire order status becomes cancelled. The remaining items in the order continue processing normally after individual cancellations.
-
-### Cancellation Eligibility
-
-Customers can request cancellation only for order items that have status paid. Cancellation requests cannot be made for items with status shipped, delivered, cancelled, or refunded. An item with status paid is waiting for the seller to ship and has not yet entered the shipping process. Items that have been shipped or delivered cannot be cancelled through the cancellation request system and must use the refund request process instead.
-
-### Cancellation Request Submission
-
-When submitting a cancellation request, customers must provide a reason describing why they want the item cancelled. The reason is required text that explains the customer's motivation for cancellation. The request is associated with the specific order item, not the entire order. A single order can have multiple cancellation requests if it contains multiple items in paid status.
-
-### Seller Cancellation Approval Process
-
-The seller who provided the item can review and approve or reject cancellation requests. When a seller approves a cancellation request, the item status changes to cancelled and the order item is marked as cancelled. The remaining items in the same order continue processing normally and are unaffected by the cancellation approval. The seller must respond to the cancellation request within their dashboard.
-
-### Seller Cancellation Rejection
-
-The seller can reject a cancellation request if they determine the request does not meet their cancellation policy or reasons. When a seller rejects a cancellation request, the request is marked as rejected and the item remains in its current status. The customer can view the rejection decision but cannot submit a new cancellation request for the same order item after rejection. The seller provides no required reason for rejection.
-
-### Cancellation Request Snapshots
-
-When a seller responds to a cancellation request by approving or rejecting, a snapshot of the cancellation request state is created. The snapshot records when the response was made, who made the response, and the decision made. Snapshots are immutable and cannot be deleted. Both the customer and seller can view the snapshots for dispute resolution purposes. Administrators can also view snapshots of any cancellation request.
-
-### Refund Processing on Cancellation
-
-When a cancellation request is approved, a refund is processed for that specific item only. The refund amount equals the price paid for the item at the time of purchase. The refund is processed through the payment system and credited to the customer's payment method. Only the cancelled item is refunded; other items in the same order continue normal processing and are not refunded. The refund is created at the moment the seller approves the request.
+Only after seller approval does the item status change to "refunded".
 
 ### Stock Restoration on Cancellation
 
-When a cancellation request is approved, stock quantities are restored for the cancelled item's variant through inventory records. A positive inventory record is created to reflect the quantity being added back to stock. The reason for the inventory record is recorded as 'cancellation'. This restores the variant's available stock for future purchases. The stock is available immediately after cancellation approval.
+When a cancellation request is approved, the item status changes to "cancelled" and its stock quantity is restored.
 
-### Individual Item Cancellation Impact
+Stock restoration occurs through an inventory record with a positive quantity change.
 
-Cancellation is handled per order item, not per entire order. If all items in an order are cancelled, the entire order status becomes cancelled. If only some items are cancelled, the order status reflects a partially completed or partially cancelled state. The remaining items continue processing normally and the order continues toward delivery. Each order item maintains its own cancellation request history independently.
+The reason for the inventory change is recorded as "cancellation".
 
-## RefundRequest Rules
-
-Customers can request refunds for individual order items that have been delivered. Refund requests must include a reason describing why the customer wants a refund. Refunds can only be requested within 7 days of the item being delivered. The seller of the item can approve or reject the refund request. When the seller responds, a snapshot of the refund request state is created. If approved, the item is refunded and stock quantities are restored through inventory records. The remaining items in the order are unaffected by individual refunds. If all items in an order are refunded, the entire order status becomes refunded.
-
-### Refund Eligibility
-
-Customers can request a refund for individual order items that have been delivered. Only items with delivered status are eligible for refund requests. Items with other statuses (paid, shipped, cancelled, or refunded) cannot have refund requests submitted.
-
-### Seven Day Refund Window
-
-Refund requests must be submitted within seven days from the date the item was delivered. Requests submitted after the seven-day window are rejected. The system calculates the deadline based on the delivery confirmation date or automatic delivery date.
-
-### Refund Request Reason
-
-Every refund request must include a reason describing why the customer is requesting the refund. The reason is entered as text and is required to submit the request. If no reason is provided, the request is rejected.
-
-### Seller Refund Approval
-
-The seller who sold the item can approve or reject refund requests for their order items. When the seller approves a refund request, the item is refunded and the order item status becomes refunded. A snapshot of the refund request state is created at the time of approval.
-
-### Seller Refund Rejection
-
-The seller who sold the item can approve or reject refund requests for their order items. When the seller rejects a refund request, the request is marked as rejected and no refund is processed. A snapshot of the refund request state is created at the time of rejection.
-
-### Refund Request Snapshot
-
-When a seller responds to a refund request (either approval or rejection), a snapshot of the request state is created. The snapshot records when the change was made, what was changed, and the values before and after. Snapshots are immutable and cannot be deleted. Both the customer and the seller can view the snapshots.
+The restored stock becomes available for other customers to purchase.
 
 ### Stock Restoration on Refund
 
-When a refund request is approved, stock quantities are restored for the refunded variant through inventory records. The system creates a positive inventory record with the quantity and reason. The restored stock becomes available for future orders. This applies to each refunded item individually.
+When a refund request is approved, the item status changes to "refunded" and its stock quantity is restored.
 
-### Individual Item Refund Scope
+Stock restoration occurs through an inventory record with a positive quantity change.
 
-Refunds are processed on an individual item basis, not on the entire order. Refunding one item does not affect the status or processing of other items in the same order. If all items in an order are refunded, the entire order status becomes refunded. Otherwise, remaining items continue processing normally.
+The reason for the inventory change is recorded as "refund".
 
-## SellerApprovalRequest Rules
+The restored stock becomes available for other customers to purchase.
 
-Seller registration requires administrator approval before sellers can begin selling products on the platform. Administrators can view all pending seller approval requests and approve or reject them. When rejecting a seller registration, administrators must provide a specific reason for the rejection. Rejected sellers can view the rejection reason and submit a new registration request. The seller account remains in pending status while the approval request is under review. Approved sellers can immediately start selling products after their request is approved. The approval status can be viewed by the seller at any time during the process.
+### Cancellation Request Reason Requirement
 
-### Seller Registration Approval Requirement
+All cancellation requests must include a reason (text).
 
-Seller accounts require administrator approval before sellers can begin selling products on the platform.
+The reason provides context for the seller to evaluate the cancellation request.
 
-A seller cannot list any products for sale until their registration request is approved by an administrator.
+Cancellation requests without a reason are rejected.
 
-The seller account remains in pending status while the approval request is under review. While in pending status, the seller can complete their shop profile but cannot create or publish products.
+### Refund Request Reason Requirement
 
-Once a seller's approval request is approved, they can immediately start selling products without any additional waiting period.
+All refund requests must include a reason (text).
 
-### Pending Seller Approval Status
+The reason provides context for the seller to evaluate the refund request.
 
-When a seller submits a registration request, their account status is set to pending until an administrator takes action.
+Refund requests without a reason are rejected.
 
-Sellers with pending status cannot access the seller dashboard features for product management.
+### Order Status Derived from Items
 
-Sellers with pending status can view their shop profile information and edit their shop name, description, and logo.
+If all items in an order have status "paid", the order status is "paid".
 
-Sellers with pending status cannot create product listings or modify product inventory.
+If any item has status "shipped" and no items have status "delivered", the order status is "shipped".
 
-The platform notifies sellers when their approval request status changes from pending to approved or rejected.
+If all items in an order have status "delivered", the order status is "delivered".
 
-### Administrator Approval Authority
+If all items in an order have status "cancelled", the order status is "cancelled".
 
-Only administrators have the authority to approve or reject seller registration requests.
+If all items in an order have status "refunded", the order status is "refunded".
 
-Administrators can view the complete list of all pending seller approval requests on the platform.
+If items have mixed statuses (e.g., some delivered, some refunded), the order status is "partially completed".
 
-Administrators can approve individual seller registration requests or reject them at their discretion.
+### Item Cancellation Does Not Affect Other Items
 
-Approved sellers gain full selling privileges immediately after their request is approved.
+Cancelling one order item only affects that specific item.
 
-The administrator's approval action is recorded with a timestamp for audit purposes.
+Other items in the same order continue processing normally.
 
-### Administrator Rejection with Reason
+The order may remain active if not all items are cancelled.
 
-When an administrator rejects a seller registration request, they must provide a specific reason for the rejection.
+If all items in an order are cancelled, the entire order status becomes "cancelled".
 
-The rejection reason is mandatory and must be entered by the administrator before the rejection is confirmed.
+### Item Refund Does Not Affect Other Items
 
-Rejection reasons are stored as text and can describe any valid grounds for rejection.
+Refunding one order item only affects that specific item.
 
-Rejected seller accounts remain in rejected status and cannot be reactivated without a new registration request.
+Other items in the same order continue with their current status.
 
-The rejection reason is preserved and cannot be modified once submitted.
+The order may remain active if not all items are refunded.
 
-### Rejection Reason Visibility to Seller
+If all items in an order are refunded, the entire order status becomes "refunded".
 
-Rejected sellers can view the complete rejection reason provided by the administrator.
+### Shipment Delivery Confirmation
 
-The rejection reason is displayed to the seller in their account status view.
+Delivery confirmation is per shipment, not per individual item.
 
-Sellers can view their rejection reason at any time after being rejected.
+When the customer confirms delivery of a shipment, all items in that shipment change to "delivered" status.
 
-The rejection reason provides feedback to sellers about what needs to be addressed.
+Items in different shipments are confirmed independently.
 
-Rejected sellers can use the rejection reason information to improve their future registration requests.
+Customers can confirm delivery for a shipment even if other shipments are still in transit.
 
-### New Registration After Rejection
+## Shipment Rules
 
-Sellers who have been rejected can submit a new registration request after viewing the rejection reason.
+A shipment is a package from a single seller containing one or more order items. Different sellers always ship in separate shipments. Sellers can bundle multiple items into one shipment or ship them individually. When shipping, sellers enter tracking information including carrier name and tracking number. All items in a shipment share the same tracking information and status changes to shipped when the shipment is created. Customers confirm delivery per shipment, which marks all items as delivered. If customers do not confirm, items automatically become delivered after 14 days from shipping.
 
-The new registration request requires the seller to complete the registration process again.
+### Shipment Composition
 
-A previously rejected seller's new registration request is treated as a new pending request.
+A shipment is a package that contains one or more order items from a single seller. Each shipment is associated with exactly one seller, and all items within the shipment must belong to products sold by that seller.
 
-The seller's history of rejection does not prevent them from submitting a new registration.
+Different sellers never ship in the same shipment. If an order contains items from multiple sellers, each seller creates separate shipments for their own items. These shipments may be shipped at different times, in different packages, with different tracking information.
 
-The administrator reviews each new registration request independently.
+A seller can choose to bundle multiple order items from their products into a single shipment. When creating a shipment, the seller selects which of their order items to include. All selected items become part of the same shipment and share the same shipment identifier.
 
-### Seller Approval Status Viewing
+A seller can also choose to ship each order item individually. In this case, each item becomes a separate shipment with its own tracking information and status. There is no requirement to bundle items; the seller has the option to ship individually or bundle multiple items together.
 
-Sellers can view their current approval status (pending, approved, or rejected) at any time in their account settings.
+When a shipment is created, all order items included in that shipment are grouped together. The grouping means the items share tracking information, status updates, and delivery confirmation for that shipment. Items grouped into the same shipment cannot have different tracking numbers or different shipping carriers.
 
-The approval status is displayed prominently in the seller's account dashboard.
+### Tracking Information
 
-Sellers can view their approval status even after being rejected, to understand why they were rejected.
+Every shipment must have tracking carrier information. When creating a shipment, the seller must specify which shipping carrier or logistics company is handling the delivery (for example, "DHL Express", "Korea Post", "Amazon Logistics"). A shipment cannot be created without specifying a carrier.
 
-The approval status view shows the date when the approval request was submitted.
+Every shipment must have a tracking number. The tracking number is the unique identifier provided by the shipping carrier for tracking the package. A shipment cannot be created without entering a tracking number. The tracking number must be provided at the time of shipment creation.
 
-The approval status view shows the date when the approval request was resolved (approved or rejected).
+All order items within the same shipment share identical tracking information. This means all items in a shipment have the same carrier name and the same tracking number. It is not possible for items in the same shipment to have different tracking information.
+
+Tracking information is provided by the seller when creating the shipment. Once a shipment is created with tracking information, that tracking information is associated with all items in the shipment and cannot differ between items within the same shipment.
+
+### Shipment Status and Delivery
+
+When a seller creates a shipment, the status of all order items in that shipment changes to "shipped". The shipment creation triggers this status update automatically for all grouped items.
+
+Delivery confirmation is handled per shipment, not per individual order item. When a shipment is created, the tracking information becomes visible to the customer who placed the order containing those items.
+
+The customer can confirm delivery for each shipment. When the customer confirms delivery, the status of all order items within that shipment changes to "delivered". The confirmation is made at the shipment level, and confirming one shipment does not affect shipments for the same order from other sellers.
+
+If the customer does not manually confirm delivery, the system automatically changes the status of all order items in the shipment to "delivered" after 14 days from the date the shipment was created (the shipping date). This automatic delivery occurs regardless of customer confirmation.
+
+The 14-day automatic delivery period begins from the shipment creation date, not from any other date. This period is fixed and applies to all shipments.
+
+### Shipment Validation Rules
+
+A seller can only create a shipment for order items that they own. Attempting to create a shipment for order items belonging to another seller is rejected.
+
+All order items included in a shipment must belong to the same seller. The system validates that all selected items for a shipment belong to one seller before allowing shipment creation.
+
+Tracking information (carrier and tracking number) is required when creating a shipment. If the seller omits the carrier name or tracking number, the shipment creation is rejected.
+
+A shipment cannot be created for order items with status other than "paid". Only order items with "paid" status can be shipped. Items with status "cancelled", "delivered", "refunded", or "shipped" cannot be included in a new shipment.
+
+Once a shipment is created, the tracking information cannot be changed. If the seller needs to update tracking information, they must contact customer support.
+
+If a shipment is created but the customer never confirms delivery, the automatic delivery after 14 days still applies. The shipment does not remain in "shipped" status indefinitely.
+
+## Address Rules
+
+Customers can maintain multiple shipping addresses in their account. Each address requires a recipient name, phone number, street address, city, state/province, postal code, and country. Customers can edit and delete their addresses. Customers can designate one address as their default shipping address. During checkout, customers must select a shipping address or use their default. Once an order is placed, the shipping address cannot be modified.
+
+### Address Creation and Required Fields
+
+Customers can add multiple shipping addresses to their account. There is no limit to the number of addresses a customer can maintain.
+
+Each shipping address must include the following required fields:
+
+- Recipient name: The full name of the person who will receive the package
+- Phone number: A valid contact phone number for the recipient
+- Street address: The complete street address including building and unit number
+- City: The city or municipality for delivery
+- State or province: The state, province, or region
+- Postal code: The postal or ZIP code for the delivery area
+- Country: The country for delivery
+
+All required fields must be provided when creating a new address. If any required field is missing, the address creation request is rejected.
+
+### Address Editing and Deletion
+
+Customers can edit their existing addresses to update any field.
+
+When editing an address, all field requirements remain the same. If any required field becomes missing or invalid after editing, the address update request is rejected.
+
+Customers can delete their addresses from the system. A customer may delete any of their addresses unless that address is actively associated with a pending order. If a customer attempts to delete an address that is currently used in an order that has not been completed, the deletion request is rejected.
+
+A customer must maintain at least one address in their account. If deleting an address would leave the customer with no addresses, the deletion request is rejected.
+
+### Default Address Designation
+
+Customers can designate one address as their default shipping address. Only one address can be marked as default at any given time.
+
+When a customer designates an address as default, any previously default address is automatically unset.
+
+Customers can change their default address at any time by selecting a different address from their list.
+
+If all of a customer's addresses are deleted, the default address designation is cleared.
+
+When a customer adds a new address, they may choose to set it as their default address during the creation process.
+
+### Checkout and Address Immutability
+
+During checkout, customers must select a shipping address for their order. Customers may select any of their saved addresses or use their default address.
+
+If a customer has no saved addresses, they must create at least one address before proceeding with checkout. The checkout process cannot be completed without selecting a valid shipping address.
+
+Once an order is successfully placed, the shipping address cannot be modified. The address selected at checkout becomes permanently associated with that order.
+
+Customers who need to change the delivery address for an existing order must contact customer service or the seller directly. The system does not provide self-service address modification after order placement.
+
+## Review Rules
+
+Customers can write a review only for products they have purchased and only after the item status is delivered. Each customer can write one review per product per order. Reviews require a rating from 1 to 5 stars, and text content is optional. Customers can edit their reviews—every edit creates a snapshot. Customers can delete their reviews, but snapshots are preserved. Product average ratings are calculated from all non-deleted reviews. Reviews display on the product detail page sorted by newest first.
+
+### Review Purchase Requirement
+
+WHEN a customer attempts to write a review for a product, THE system SHALL verify that the customer has purchased that product. THE system SHALL require a purchase record linking the customer to the product before allowing review creation. WHERE no purchase record exists for the customer and the product, THE system SHALL reject the review creation request. A review can only be written for products associated with a completed purchase transaction.
+
+### Review Delivered Status Requirement
+
+WHEN a customer attempts to write a review for a product, THE system SHALL check the status of the corresponding order item. THE system SHALL require the order item status to be delivered before allowing review creation. WHERE the order item status is not delivered, THE system SHALL reject the review creation request. Reviews can only be written after the delivered status is reached for the specific order item.
+
+### One Review Per Product Per Order
+
+THE system SHALL enforce a limit of one review per product per order per customer. WHEN a customer attempts to write a second review for the same product in the same order, THE system SHALL reject the request. A customer can write separate reviews for the same product across different orders. THE system SHALL track reviews per product per order to enforce this limit. WHERE a review already exists for the same product in the same order, THE system SHALL prevent additional review creation.
+
+### Review Rating Requirement
+
+EVERY review SHALL include a rating from 1 to 5 stars. THE rating 1 to 5 requirement is mandatory and cannot be omitted. WHERE a rating value outside the range of 1 to 5 is submitted, THE system SHALL reject the request. THE system SHALL validate that the rating is an integer within the range of 1 to 5. A review cannot be created without a valid rating.
+
+### Optional Review Text
+
+WHERE text content is provided, a customer may submit it with a review. THE text content is optional, and a review can be submitted without any text. THE system SHALL accept reviews where the text content field is empty. Customers may choose to submit only a rating without providing written text. THE system SHALL accept a review submission even when text content is not provided.
+
+### Review Editing Capability
+
+A customer SHALL edit their own review at any time. WHEN a customer submits an edit request for a review, THE system SHALL apply the changes if the customer owns the review. THE system SHALL reject any request to edit a review that the customer does not own. A customer can edit the rating, text content, or both. THE edit capability is restricted to review owners only.
+
+### Review Edit Snapshot Creation
+
+WHEN a review is edited, THE system SHALL create a snapshot recording the state before the change. THE snapshot SHALL record the rating and text content before and after the edit, along with the change timestamp. THE system SHALL capture the complete review state including rating and text content. WHEN an edit is performed, the snapshot is created automatically. THE snapshot is immutable and cannot be deleted. Every review edit triggers automatic snapshot creation.
+
+### Review Deletion Capability
+
+A customer SHALL delete their own review at any time. WHEN a customer submits a deletion request for a review, THE system SHALL remove the review from public view if the customer owns the review. THE system SHALL reject any request to delete a review that the customer does not own. A customer can delete any review they have written. The deletion capability is restricted to review owners only. Once deleted, a review no longer appears in public listings.
+
+### Review Snapshot Preservation
+
+WHEN a review is deleted, THE system SHALL preserve the snapshot of the review state. THE snapshot SHALL NOT be deleted even if the original review is deleted. THE snapshot SHALL remain accessible for dispute resolution. THE system SHALL retain all review snapshots permanently. Snapshots are preserved even after review deletion and cannot be removed. THE snapshot ensures review history is retained regardless of deletion.
+
+### Average Rating Calculation
+
+THE system SHALL calculate the average rating from all non-deleted reviews for a product. WHERE a review has been deleted, THE system SHALL exclude it from the average rating calculation. THE average rating shall NOT include ratings from deleted reviews. WHEN a new review is created or edited, THE system SHALL recalculate the average rating. Reviews that have been deleted do not contribute to the average rating calculation. THE system SHALL include only non-deleted reviews in the calculation.
+
+### Review Display Sort Order
+
+THE system SHALL display reviews sorted by newest first. WHEN displaying reviews, THE system SHALL order them with the most recently written or edited reviews at the top. THE system SHALL present reviews in reverse chronological order. THE newest review appears at the top of the list. Reviews are always displayed in newest-first order. The sort order ensures customers see the most recent reviews first.
+
+### Product Page Review Display
+
+THE system SHALL display reviews on the product detail page. Reviews SHALL appear below the product information and variants. THE system SHALL show the rating (as stars or numerical value), the text content if provided, the review date, and the customer display name. THE total number of reviews and average rating SHALL be shown on the product detail page. The product page displays all non-deleted reviews for that product in newest-first order. Customers can read all reviews for the product on the product detail page.
+
+## Wishlist Rules
+
+Customers can add products to their personal wishlist and view the complete list. The wishlist is paginated and shows products rather than specific variants. Customers can remove products from their wishlist at any time. If a seller deletes a product, it is automatically removed from all customer wishlists. The wishlist displays product information including main image, name, price, and seller shop name.
+
+### Wishlist Addition
+
+Customers can add products to their personal wishlist from the product detail page or search results.
+
+A customer adds a product by selecting it from a product listing.
+The product is added to the customer's wishlist regardless of current stock status.
+The same product can appear only once in a customer's wishlist.
+If the product is already in the wishlist, the addition is rejected.
+The product must exist and be active (not deleted) to be added to the wishlist.
+
+### Wishlist Viewing
+
+Customers can view their complete wishlist from the wishlist page.
+The wishlist shows all products the customer has added.
+Products in the wishlist display the main image thumbnail, product name, base price, seller shop name, and average rating.
+The wishlist shows the current stock status of the product's variants.
+
+### Paginated Wishlist Display
+
+The wishlist display is paginated.
+Each page shows a limited number of wishlist items.
+Navigation controls allow customers to view previous and next pages.
+The system displays page numbers and current position.
+
+### Product Level Wishlist
+
+Wishlist items are at the product level, not the variant level.
+A single product can be in the wishlist even if the customer has not selected a specific variant.
+The wishlist does not store which variant was being viewed when added.
+Products are shown in the wishlist without variant selection required.
+
+### Wishlist Removal
+
+Customers can remove products from their wishlist at any time.
+Removal is immediate and permanent.
+The customer confirms the removal action before the product is removed.
+Once removed, the product no longer appears in the customer's wishlist.
+
+### Automatic Removal on Product Deletion
+
+When a seller deletes a product from the platform, the product is automatically removed from all customer wishlists.
+Customers cannot add a deleted product back to their wishlist.
+The deletion propagates to all wishlists immediately.
+No notification is sent to customers when their wishlist item is removed due to product deletion.
+
+### Wishlist Product Display
+
+Each product in the wishlist displays the following information:
+- Main image (product thumbnail)
+- Product name
+- Base price or price range (if variants have different prices)
+- Seller shop name
+- Average rating (if reviews exist)
+- Stock status indicator (in stock or out of stock)
+
+### Product Deletion Propagation
+
+When a product is deleted, all references to that product are cleaned up:
+- The product is removed from all customer wishlists
+- The product is removed from search results
+- The product is removed from category listings
+- The product becomes unavailable for purchase
+- Product snapshots are preserved for historical reference
+
+## Snapshot Rules
+
+Every modification to editable data creates a snapshot that records when the change was made, what was changed, and the before and after values. Snapshots are immutable and cannot be deleted under any circumstances. Relevant parties such as data owners and administrators can view snapshots for dispute resolution. Snapshots are created for product edits, variant edits, seller profile edits, order item purchases, review edits, and cancellation/refund request responses. Snapshots include all fields at the time of change and are preserved even after the original data is deleted.
+
+### Edit Snapshot Creation Rule
+
+Every modification to editable data creates a snapshot that records the change.
+
+Products: When a seller edits any product field (name, description, category, base price, images), a product snapshot is created.
+
+Product Variants: When a seller edits a variant (SKU code, option values, price), a variant snapshot is created.
+
+Seller Profiles: When a seller edits their shop name, description, or logo, a seller profile snapshot is created.
+
+Reviews: When a customer edits their review (rating or text content), a review snapshot is created.
+
+Cancellation Requests: When a seller approves or rejects a cancellation request, a snapshot of the request state is created.
+
+Refund Requests: When a seller approves or rejects a refund request, a snapshot of the request state is created.
+
+Order Items: When an order is placed, snapshots of the purchased products, variants, and seller profiles are created with the order item.
+
+### Snapshot Immutability
+
+All snapshots are immutable and cannot be modified after creation.
+
+Once a snapshot is created, its content is permanently fixed and cannot be changed under any circumstances.
+
+This immutability ensures that the historical record of changes is preserved exactly as it was at the time of the change.
+
+The immutable nature of snapshots provides a trusted source of truth for dispute resolution and audit purposes.
+
+### Snapshot Non-Deletion Policy
+
+Snapshots cannot be deleted under any circumstances.
+
+Neither data owners nor administrators have the ability to delete snapshots.
+
+Even when the original data (product, variant, review, etc.) is deleted, the associated snapshots remain in the system.
+
+This non-deletion policy ensures that historical records are preserved for legal, audit, and dispute resolution purposes.
+
+### Before and After Value Recording
+
+Every snapshot records both the state before and after the change.
+
+For products: The snapshot captures all product fields (name, description, category, base price, images) both before and after the edit.
+
+For variants: The snapshot captures SKU code, option values, and price both before and after the edit.
+
+For seller profiles: The snapshot captures shop name, description, and logo both before and after the edit.
+
+For reviews: The snapshot captures rating and text content both before and after the edit.
+
+For cancellation and refund requests: The snapshot captures the request state, including reason and status, both before and after the response.
+
+### Change Timestamp Recording
+
+Every snapshot records when the change was made.
+
+The timestamp includes the exact date and time of the modification.
+
+This timestamp is recorded in a consistent format and cannot be modified after the snapshot is created.
+
+The timestamp allows parties to determine the chronological order of changes and verify when specific modifications occurred.
+
+### Snapshot Viewing Permissions
+
+Snapshot viewing is restricted to relevant parties based on the type of snapshot.
+
+Product snapshots: Product owners (sellers) can view snapshots of their own products. Administrators can view snapshots of any product.
+
+Variant snapshots: Product owners can view snapshots of variants they own. Administrators can view snapshots of any variant.
+
+Seller profile snapshots: The seller can view snapshots of their own shop profile. Administrators can view snapshots of any seller profile.
+
+Review snapshots: The review author can view snapshots of their own reviews. Administrators can view snapshots of any review.
+
+Cancellation request snapshots: The customer who created the request and the seller can view the request state snapshots. Administrators can view all cancellation request snapshots.
+
+Refund request snapshots: The customer who created the request and the seller can view the request state snapshots. Administrators can view all refund request snapshots.
+
+Order item snapshots: The customer who placed the order can view the order item snapshots. Administrators can view order item snapshots.
+
+### Product Snapshot Preservation
+
+Product snapshots preserve all product fields at the time of the edit.
+
+This includes product name, description, category selection, base price, and all product images.
+
+When a product has variants, the snapshot also includes snapshots of all variants that existed at the time of the product edit.
+
+Product snapshots remain accessible even after the product is deleted from the system.
+
+Administrators can view product snapshots to verify past states during disputes or audits.
+
+### Variant Snapshot Preservation
+
+Variant snapshots preserve all variant fields at the time of the edit.
+
+This includes SKU code, option values (such as color, size), price, and stock quantity.
+
+Variant snapshots are nested within product snapshots when the product is edited, preserving the complete variant state at that moment.
+
+Variant snapshots remain accessible even after the variant is deleted from the product.
+
+Administrators can view variant snapshots to verify past states during disputes or audits.
+
+### Seller Profile Snapshot
+
+Seller profile snapshots preserve the shop profile state at the time of each edit.
+
+This includes shop name, shop description, and logo image.
+
+Every edit to the seller profile creates a new snapshot, building a complete history of profile changes.
+
+Seller profile snapshots remain accessible even after the seller account is deleted.
+
+Order items include a snapshot of the seller's profile at the time of purchase, preserving the shop name and logo as they appeared when the transaction occurred.
+
+### Order Item Snapshot at Purchase
+
+When an order is placed, snapshots are created for each order item.
+
+Each order item snapshot captures:
+- The product at the time of purchase (name, description, category, images)
+- The variant at the time of purchase (SKU code, option values, price)
+- The seller's profile at the time of purchase (shop name, logo)
+
+These snapshots preserve the complete state of what the customer purchased, including the price paid and product details available at the time of the transaction.
+
+Order item snapshots remain accessible for the entire lifetime of the order, even if the original product or seller is later deleted.
+
+### Review Snapshot Preservation
+
+Review snapshots preserve the review state at the time of each edit.
+
+This includes the rating (1 to 5 stars) and text content both before and after each edit.
+
+Every time a customer edits their review, a new snapshot is created.
+
+When a customer deletes their review, the review data is removed from the main review list, but all snapshots are preserved.
+
+The average rating calculation excludes deleted reviews, but snapshot records of deleted reviews remain for dispute resolution purposes.
+
+### Cancellation Request Snapshot
+
+Cancellation request snapshots preserve the request state at the time of seller response.
+
+When a seller approves or rejects a cancellation request, a snapshot of the request is created.
+
+The snapshot includes the cancellation reason, current status, and the timestamp of the response.
+
+Cancellation request snapshots remain accessible after the cancellation is completed.
+
+Both the customer and the seller can view the snapshot to verify what was requested and how it was responded to.
+
+### Refund Request Snapshot
+
+Refund request snapshots preserve the request state at the time of seller response.
+
+When a seller approves or rejects a refund request, a snapshot of the request is created.
+
+The snapshot includes the refund reason, current status, the delivery date of the item, and the timestamp of the response.
+
+The 7-day refund window restriction is enforced based on the item's delivery date recorded in the system.
+
+Refund request snapshots remain accessible after the refund is completed.
+
+### Post-Deletion Snapshot Preservation
+
+Snapshots remain preserved even after the associated data is deleted from the system.
+
+When a product is deleted, all product snapshots and variant snapshots that were created are preserved.
+
+When a seller account is deleted, all seller profile snapshots and order item snapshots that reference that seller are preserved.
+
+When a review is deleted, all review snapshots are preserved.
+
+Post-deletion snapshot preservation ensures that historical records are maintained for legal, audit, and dispute resolution purposes, regardless of whether the original data remains in the system.
+
+### Dispute Resolution Snapshots
+
+Snapshots serve as evidence for dispute resolution between customers, sellers, and administrators.
+
+Customers can view snapshots to verify what was purchased, the state of products at purchase time, and seller profile information at transaction time.
+
+Sellers can view snapshots to verify cancellation and refund request history, and to confirm product and variant states when disputes arise.
+
+Administrators can view all snapshots to investigate disputes, conduct audits, or verify transaction history.
+
+The immutable and non-deletable nature of snapshots ensures that all parties have access to trusted historical records that cannot be altered or removed.
+
+## InventoryRecord Rules
+
+Each variant maintains its own stock quantity through inventory history records. Inventory records track quantity changes—positive values for restocking and negative values for orders or adjustments. Each record includes the reason for the change and timestamp. Current stock is calculated by summing all inventory records for a variant. Sellers can manually add inventory with a quantity and reason. Order placement automatically creates negative inventory records. Cancellation and refund automatically create positive inventory records. When stock reaches zero, the variant displays as out of stock and cannot be added to cart.
+
+### Variant-Level Inventory Tracking
+
+Each product variant maintains its own independent stock quantity. Stock is tracked at the variant level, not the product level, so different variants of the same product can have different stock quantities. The stock quantity represents the number of units available for purchase.
+
+### Inventory History Records
+
+Each variant maintains a complete history of all inventory changes through inventory records. Every time the stock quantity changes, a new inventory record is created and stored permanently. Inventory records are immutable—once created, they cannot be modified or deleted. Each record serves as an audit trail for tracking stock movements.
+
+### Restocking with Quantity
+
+Sellers can manually add inventory to a variant through restocking. When restocking, the seller specifies the quantity to add, which must be a positive number. Each restocking action creates a new inventory record with a positive quantity change. The seller must provide a reason for the restocking (e.g., "new shipment received" or "quarterly restock").
+
+### Adjustment with Quantity
+
+Sellers can adjust inventory manually for reasons other than restocking, such as damaged goods, loss, or counting discrepancies. When adjusting inventory, the seller specifies the quantity change, which can be negative (for loss/damage) or positive (for correction). Each adjustment creates a new inventory record with the specified quantity change. The seller must provide a reason for the adjustment.
+
+### Positive Inventory Changes
+
+A positive inventory change increases the variant's stock quantity. Positive changes occur through manual restocking by the seller, order cancellation, or order refund. All positive inventory records indicate units entering the inventory pool and become available for purchase.
+
+### Negative Inventory Changes
+
+A negative inventory change decreases the variant's stock quantity. Negative changes occur when customers place orders (deducting ordered quantities) or through manual adjustments for loss or damage. All negative inventory records indicate units leaving the inventory pool and no longer available for purchase.
+
+### Inventory Change Reason
+
+Every inventory record must include a reason field that explains why the change occurred. Valid reasons include: restocking, order placement, order cancellation, order refund, damage, loss, or other. The reason field is required and cannot be empty. Inventory reasons are immutable and cannot be changed after the record is created.
+
+### Inventory Change Timestamp
+
+Every inventory record captures the exact timestamp when the change occurred. The timestamp is automatically generated by the system and cannot be modified. This timestamp enables precise tracking of when stock levels changed and supports audit and dispute resolution.
+
+### Stock Calculation from Records
+
+The current stock quantity for each variant is calculated by summing all inventory records for that variant. The system calculates current stock by adding all positive quantity changes and subtracting all negative quantity changes. The calculation is always performed dynamically from the complete inventory record history.
+
+### Manual Restocking Capability
+
+Sellers have the capability to manually restock inventory for their product variants. This feature is available only for products owned by the seller. When restocking, the seller must specify both the quantity to add and a reason for the restocking. Restocking immediately increases the variant's available stock.
+
+### Automatic Order Inventory Deduction
+
+When a customer successfully places an order, the system automatically deducts the ordered quantities from each variant's stock. This creates a negative inventory record for each variant in the order, with the reason "order placement". The deduction occurs at order creation time, immediately after payment succeeds. If the variant does not have sufficient stock, the order cannot be placed.
+
+### Automatic Cancellation Inventory Restoration
+
+When a cancellation request for an order item is approved, the system automatically restores the cancelled quantities to the variant's stock. This creates a positive inventory record with the reason "cancellation". The restored quantities become available for purchase immediately after the cancellation is approved.
+
+### Automatic Refund Inventory Restoration
+
+When a refund request for an order item is approved, the system automatically restores the refunded quantities to the variant's stock. This creates a positive inventory record with the reason "refund". The restored quantities become available for purchase immediately after the refund is approved.
+
+### Zero Stock Out of Stock Display
+
+When a variant's current stock quantity reaches zero, the system displays it as "out of stock" in all product listings. Out of stock variants are clearly marked to inform customers that the item is currently unavailable. The out of stock status is automatically updated when the stock calculation reaches zero.
+
+### Out of Stock Cart Exclusion
+
+Customers cannot add out of stock variants to their shopping cart. When attempting to add an out of stock variant to the cart, the system rejects the request and displays a message indicating the item is unavailable. Out of stock variants can only be added to the cart after stock is restored through restocking.
+
+### Inventory History Viewing
+
+Sellers can view the complete inventory history for each of their product variants. The history displays all inventory records in chronological order, showing the timestamp, quantity change, running total, and reason for each record. This audit trail helps sellers track stock movements and resolve disputes.
+
+## CancellationRequest Rules
+
+Customers can request cancellation for individual order items that have paid status but have not yet shipped. Cancellation requests require a text reason. The seller of that item can approve or reject the cancellation request. When the seller responds, a snapshot of the request state is created. Approved cancellations cancel the item, process a refund for that item only, and restore stock quantities. Remaining items in the order continue processing normally. If all items in an order are cancelled, the entire order status becomes cancelled.
+
+### Per-Item Cancellation Eligibility
+
+Customers may request cancellation for individual order items only, not for entire orders at once.
+
+Cancellation eligibility is determined at the order item level. Each order item represents a purchased product variant with its own independent status and cancellation state.
+
+An order item is eligible for cancellation if and only if:
+- The item status is "paid"
+- The item has not been shipped
+- The item has not already been cancelled or refunded
+
+Items with status "shipped", "delivered", "cancelled", or "refunded" are not eligible for customer-initiated cancellation requests.
+
+### Paid Status Requirement
+
+An order item must have "paid" status to be eligible for cancellation.
+
+An order item has "paid" status when:
+- Payment for the order has succeeded
+- The item has not yet been shipped by the seller
+
+Items that have transitioned to "shipped" status are no longer eligible for customer cancellation. Once an item is marked as shipped, the cancellation process can no longer be initiated by the customer.
+
+### Pre-Shipment Cancellation
+
+Cancellation requests are only accepted before the seller ships the order item.
+
+The system enforces a pre-shipment restriction: customers cannot request cancellation once the item status changes to "shipped".
+
+This restriction exists because:
+- Shipped items are physically in transit
+- Shipping costs may have been incurred
+- Return processes apply instead of cancellation after shipment
+
+Sellers may still approve or reject cancellation requests submitted by customers while items remain in "paid" status. Once the seller creates a shipment for an item, the cancellation option becomes unavailable.
+
+### Cancellation Reason Requirement
+
+Cancellation requests must include a text reason provided by the customer.
+
+The reason field is required and cannot be empty when submitting a cancellation request.
+
+Customers can provide a reason for the cancellation, such as:
+- Changed mind
+- Ordered wrong variant
+- No longer need the item
+- Price concern
+
+The cancellation reason is preserved in the request snapshot and can be reviewed by the seller when deciding whether to approve or reject.
+
+### Seller Approval Requirement
+
+A cancellation request requires seller approval before any changes occur.
+
+The customer's cancellation request does not automatically cancel the item. Instead, the request is submitted to the seller of that specific item for review.
+
+Only the seller who fulfilled the order item can approve or reject the cancellation request. Other sellers or system processes cannot approve the request.
+
+The seller's approval action is required to transition the order item from "paid" status to "cancelled" status.
+
+### Seller Rejection Capability
+
+Sellers have the capability to reject cancellation requests.
+
+When a seller rejects a cancellation request:
+- The order item remains in "paid" status
+- No refund is processed
+- Stock quantities remain unchanged
+- The request state is snapshotted with the rejection decision
+
+Sellers may reject requests for various business reasons, such as:
+- Items are being prepared for shipment
+- Customer has cancelled too frequently
+- Rejection reason is provided for transparency
+
+Sellers may provide an optional rejection reason for customer transparency.
+
+### Cancellation Response Snapshot
+
+When a seller responds to a cancellation request (approve or reject), a snapshot of the request state is created.
+
+The snapshot records:
+- The response action taken (approved or rejected)
+- The response timestamp
+- The seller who made the decision
+- Any rejection reason provided by the seller
+- The state of the cancellation request immediately before the response
+
+This snapshot is immutable and cannot be deleted. It serves as an audit record for dispute resolution and can be viewed by both the customer and relevant administrators.
+
+### Partial Refund on Cancellation
+
+When a cancellation is approved, a refund is processed only for the cancelled item.
+
+The refund amount corresponds to the price of the cancelled order item.
+
+Other items in the same order are not affected by the cancellation:
+- They remain in their current status
+- No refunds are issued for other items
+- Payment for other items is retained
+
+This partial refund approach allows customers to cancel unwanted items while maintaining their other purchases.
+
+### Stock Restoration on Cancellation
+
+When a cancellation is approved, stock quantities for the cancelled variant are restored.
+
+The system creates an inventory record that increases the variant's stock quantity by the cancelled amount. This record includes:
+- The quantity being restored
+- The reason for the inventory change (order item cancellation)
+- The timestamp of the restoration
+
+Stock restoration occurs only after the seller approves the cancellation. The restored stock becomes available for other customers to purchase immediately.
+
+### Remaining Items Unaffected
+
+Cancellation of one order item does not affect other items in the same order.
+
+When an order item is cancelled:
+- Other order items in the same order continue processing normally
+- Shipping timelines for other items are not impacted
+- The order's overall status is recalculated based on remaining items
+- Other items maintain their original purchase conditions
+
+This per-item cancellation approach allows customers to remove unwanted items while keeping desired items in the order.
+
+### Order Cancellation on All Items
+
+When all order items in an order are cancelled, the entire order status becomes cancelled.
+
+The system monitors order-level cancellation states:
+- If every item in an order transitions to cancelled status
+- The order status automatically changes to "cancelled"
+- No further shipment or delivery actions occur for the order
+
+Partial cancellations (some items cancelled, others remaining) result in a partially completed order status rather than a fully cancelled order. Only when all items are cancelled does the entire order become cancelled.
+
+### Cancellation Request Flow
+
+The cancellation request process follows a defined workflow.
+
+```mermaid
+flowchart LR
+    A["Customer submits
+    cancellation request with reason"] --> B["Request pending
+    seller response"]
+    B -->|Seller approves| C["Item cancelled
+    Refund processed
+    Stock restored"]
+    B -->|Seller rejects| D["Request rejected
+    Item remains paid"]
+    C --> E["Order status updated
+    based on remaining items"]
+    D --> E
+```
+
+The process ensures all cancellation requests are reviewed by the seller before any changes occur.
+
+### Cancellation Eligibility States
+
+Only order items with specific statuses are eligible for cancellation.
+
+Eligible:
+- "paid": Payment succeeded, waiting for seller to ship
+
+Not Eligible:
+- "shipped": Item is in transit, cancellation no longer possible
+- "delivered": Item received, refund request process applies
+- "cancelled": Item already cancelled, no further action
+- "refunded": Item already refunded, no further action
+
+Customers cannot request cancellation for items outside the eligible status range.
+
+### Cancellation Error Scenarios
+
+The system handles cancellation requests with appropriate error conditions.
+
+Error Conditions:
+- If the order item does not exist, the request is rejected
+- If the order item has already been cancelled, the request is rejected
+- If the order item has been shipped, the request is rejected
+- If the order item has status "delivered", the request is rejected
+- If the order item is not in "paid" status, the request is rejected
+- If the cancellation reason is empty, the request is rejected
+
+The customer receives feedback indicating why the cancellation request could not be submitted.
+
+## RefundRequest Rules
+
+Customers can request refunds for individual order items that have delivered status. Refund requests must be made within 7 days of the item being delivered and require a text reason. The seller can approve or reject the refund request. When the seller responds, a snapshot of the request state is created. Approved refunds refund the item and restore stock quantities. Refunded items do not affect other items in the order. If all items in an order are refunded, the entire order status becomes refunded.
+
+### Per-Item Refund Eligibility
+
+Refund requests are handled on a per-order-item basis, not on the entire order. Each order item can have its own refund request independently from other items in the same order.
+
+If an order contains multiple items from different sellers, each item can have a separate refund request handled independently by its respective seller.
+
+The refund request is associated with a specific order item, and the refund amount equals the price paid for that specific order item at the time of purchase.
+
+Only one refund request can exist for an order item at any time. If a customer attempts to submit a second refund request for an item with an existing pending request, the new request is rejected. If a customer attempts to submit a refund request for an item with an approved or rejected refund request, the new request is rejected. Customers cannot submit refund requests for items that have already been refunded or cancelled.
+
+### Delivered Status Requirement
+
+Customers can request a refund for an individual order item only if that item has the status "delivered".
+
+Items with other statuses (paid, shipped, cancelled, refunded) are not eligible for refund requests.
+
+The delivered status is determined by customer delivery confirmation or automatic 14-day delivery confirmation after shipping.
+
+### 7-Day Refund Window
+
+Refund requests must be made within 7 days of the item being delivered. The 7-day window starts from the delivery date of the order item.
+
+The delivery date is determined by the shipment's delivery confirmation date or the automatic 14-day delivery confirmation (if the customer does not confirm delivery manually).
+
+If a refund request is submitted after the 7-day window has expired, the request is rejected.
+
+When the refund window expires, no further refund requests can be submitted for that order item.
+
+### Refund Reason Requirement
+
+Every refund request must include a text reason explaining why the refund is being requested.
+
+If the reason field is empty when submitting a refund request, the request is rejected.
+
+The reason text field has no minimum or maximum length constraint.
+
+The reason is visible to both the customer and the seller when reviewing the refund request.
+
+### Seller Approval and Rejection
+
+All refund requests require seller approval before the refund can be processed.
+
+The seller of the product associated with the order item is responsible for reviewing and responding to the refund request.
+
+Sellers can approve or reject any refund request for any reason.
+
+A refund request remains in pending status until the seller explicitly approves or rejects it.
+
+The system does not auto-approve or auto-reject refund requests; manual seller action is required.
+
+When rejecting a refund request, the seller must provide a rejection reason (text field). If the rejection reason field is empty when rejecting, the rejection action is rejected.
+
+### Refund Response Snapshot
+
+When the seller responds to a refund request (either approve or reject), a snapshot of the request state is created.
+
+The snapshot records: when the response was made, who made the response, what decision was made, and the decision reason.
+
+Snapshots are immutable and cannot be deleted or modified.
+
+Both the customer and relevant administrators can view the refund response snapshot.
+
+### Stock Restoration on Refund
+
+When a refund is approved, the stock quantity for the refunded product variant is restored.
+
+Stock restoration is recorded through an inventory record with a positive quantity change and reason "refund".
+
+The current stock level is recalculated by summing all inventory records for that variant.
+
+Restored stock becomes available for future orders immediately after the refund is processed.
+
+### Order Refund on All Items
+
+If all items in an order are refunded, the entire order status automatically changes to "refunded".
+
+The order status derivation checks all order items: if every item has refunded status, the order becomes refunded.
+
+If some items are refunded and others are in different statuses, the order shows a mixed status (not refunded).
+
+Once an order is fully refunded, no further actions can be taken on any items in that order.
+
+### Refund Request Visibility
+
+Customers can view their own refund requests and their current status.
+
+Sellers can view all refund requests for order items belonging to their products.
+
+Administrators can view all refund requests on the platform.
+
+Customers can see the seller's response reason when a refund request is rejected.
+
+Refund requests are sorted by creation date, newest first.
 
 ## Administrator Rules
 
-Administrators are responsible for managing seller approvals, categories, products, orders, and user accounts on the platform. Super administrators can promote regular administrators to super administrator and demote other super administrators but cannot demote themselves. Administrators can view all seller accounts and ban or suspend seller accounts as needed. Banned sellers cannot log in to the platform while existing orders remain. Suspended sellers can still process existing orders but cannot create or edit products. Administrators can ban customers which prevents them from logging in to the platform. Administrators can view and force-cancel or force-refund individual items or entire orders. Administrator level is determined by whether the user is a regular administrator or super administrator.
+Any user can submit a request to become an administrator with a reason. Super administrators view pending requests and approve or reject them. Administrators can manage seller approvals by viewing, approving, or rejecting registrations with required rejection reasons. Administrators can suspend seller accounts, which hides their products from search and purchase but allows processing of existing orders. Administrators can unsuspend accounts to make products visible again. Administrators can create and manage categories, view all products and snapshots, force-cancel or force-refund orders, and ban or unban customers and sellers.
 
-### Administrator Seller Management
+### Administrator Request Submission
 
-Administrators can view the list of all seller accounts on the platform.
+Any user (customer or seller) may submit a request to become an administrator by providing a reason for their request.
 
-Administrators can view the list of pending seller approval requests.
+When submitting the request, the user must provide a text reason explaining why they want administrator privileges.
 
-Administrators can approve or reject seller registration requests.
+The request cannot be submitted without a reason; if the reason field is empty, the request is rejected.
 
-When rejecting a seller registration, administrators must provide a rejection reason.
+Once submitted, the request enters a pending state until reviewed by a super administrator.
 
-Rejection reasons are visible to the rejected seller.
+A user can have only one pending administrator request at a time.
 
-Rejected sellers can submit a new registration request.
+If a pending request is rejected, the user may submit a new request with a different reason.
 
-Once approved, sellers can begin selling on the platform.
+The system stores the submission timestamp for each request for audit purposes.
 
-Rejected sellers cannot view products created before their account was rejected.
+### Super Administrator Approval Workflow
 
-Administrators can view seller profiles for all seller accounts.
+Super administrators can view a list of all pending administrator requests.
 
-Administrators can view seller approval status for any seller account.
+The pending requests list includes the requester's name, role (customer or seller), submission date, and the reason provided.
 
-Administrators can view pending cancellation requests for any seller's products.
+Super administrators can approve a pending request, which converts the user to a regular administrator.
 
-Administrators can view pending refund requests for any seller's products.
+Super administrators can reject a pending request.
 
-### Super Administrator Promotion
+When approved, the user immediately gains regular administrator privileges.
 
-Regular administrators can submit a request to become super administrators.
+The approval action is recorded with a timestamp and the approving super administrator's identity.
 
-The request must include a reason (text) for the promotion.
+A pending request that is not yet acted upon remains in the list until approved or rejected.
 
-Super administrators can approve or reject promotion requests for regular administrators.
+### Pending Request Viewing
 
-When a regular administrator is approved, they gain super administrator privileges.
+Pending administrator requests are visible to all super administrators.
 
-Super administrator privileges include:
-- Promoting other regular administrators to super administrator
-- Demoting other super administrators to regular administrator
-- Viewing and acting on all administrator actions
+Regular administrators cannot view pending administrator requests.
 
-Super administrators cannot promote themselves.
+The view of pending requests can be filtered by submission date range.
 
-Promotion requests are logged and cannot be deleted.
+The view can be sorted by submission date (newest first).
 
-The promotion takes effect immediately upon approval.
+Each pending request entry displays the requester's current role, name, and the reason text.
 
-A promoted super administrator retains all previous administrator capabilities.
+If no pending requests exist, an empty state is shown.
 
-Promotion history is recorded and visible to super administrators.
+### Seller Approval Management
 
-### Administrator Demotion Rules
+Administrators can view a list of pending seller approval requests.
 
-Super administrators can demote other super administrators to regular administrators.
+The seller approval list includes the seller's shop name, registration date, and current status.
 
-Super administrators cannot demote themselves.
+Administrators can approve a pending seller registration request.
 
-When a super administrator is demoted, they retain all regular administrator privileges.
+Administrators can reject a pending seller registration request.
 
-Demoted administrators lose the ability to promote other administrators.
+When a seller registration is approved, the seller can begin listing products and processing orders.
 
-Demoted administrators lose the ability to demote other super administrators.
+Seller approval decisions are recorded with the administrator's identity and timestamp.
 
-Demotion takes effect immediately upon execution.
+### Rejection Reason Requirement
 
-Demotion does not affect the administrator's ability to manage sellers, categories, products, or orders.
+When rejecting a seller registration, the administrator must provide a rejection reason in text format.
 
-Demotion does not affect the administrator's ability to ban users.
+The rejection reason cannot be empty; if left blank, the rejection is not processed.
 
-Demotion does not remove the administrator from the platform.
+The rejection reason is visible to the rejected seller.
 
-Demotion is logged and cannot be deleted.
+The rejection reason is recorded in the seller's account history for transparency.
 
-The demoted administrator retains their account and all previous permissions except super administrator privileges.
+A rejected seller may submit a new registration request after addressing the reason for rejection.
 
-### Seller Account Suspension
+### Seller Suspension Capability
 
-Administrators can suspend seller accounts on the platform.
+Administrators can suspend a seller's account.
 
-When a seller is suspended:
-- Their products are hidden from search results
-- Their products are hidden from category listings
-- Their products cannot be purchased
-
-Suspended sellers can still log in to the platform.
-
-Suspended sellers can still process existing orders:
-- Ship items to customers
-- Approve or reject cancellation requests
-- Approve or reject refund requests
+When a seller is suspended, their products are hidden from search and category listings.
 
 Suspended sellers cannot create new products.
 
 Suspended sellers cannot edit existing products.
 
-Suspended sellers can view their shop dashboard.
+Suspended sellers can still process existing orders (ship items, respond to cancellation and refund requests).
 
-Suspension does not affect existing order history.
+A suspended seller cannot log in to create or edit products; they can only access order-related functions.
 
-Suspension does not affect existing shipments.
+The suspension takes effect immediately upon administrator action.
 
-Suspension does not affect existing cancellation or refund requests.
+### Product Hiding on Suspension
 
-Administrators can unsuspend seller accounts.
+When a seller is suspended, all their products are hidden from all customer-facing search results.
 
-When unsuspended, seller products become visible in search and category listings again.
+Products from suspended sellers are hidden from all category browse pages.
 
-Unsuspended sellers can create and edit products again.
+Products from suspended sellers cannot be added to the shopping cart.
 
-### Seller Account Ban
+Products from suspended sellers cannot be purchased through checkout.
 
-Administrators can ban seller accounts on the platform.
+Existing orders containing suspended seller's items are not affected; fulfillment continues normally.
 
-When a seller is banned, they cannot log in to the platform.
+Product snapshots remain accessible to administrators for oversight purposes.
 
-Banned sellers lose access to their shop dashboard.
+### Seller Unsuspension
 
-Banned sellers cannot view pending orders.
+Administrators can unsuspend a previously suspended seller's account.
 
-Banned sellers cannot view their product listings.
+When unsuspended, the seller's products become visible in search and category listings again.
 
-Existing orders for banned sellers remain active.
+The seller regains the ability to create and edit products after unsuspension.
 
-Existing shipments for banned sellers remain valid.
+Unsuspending takes effect immediately.
 
-Administrators can handle existing orders on behalf of banned sellers if needed.
+The unsuspension action is recorded with the administrator's identity and timestamp.
 
-Existing cancellation requests for banned sellers remain actionable.
+A previously suspended seller's account history retains the suspension record for audit purposes.
 
-Existing refund requests for banned sellers remain actionable.
+### Category Creation and Editing
 
-Banned sellers cannot submit new registration requests.
+Administrators can create new categories with a name and description.
 
-Banning a seller does not delete their order history.
+The category name is required; creation is rejected if the name is empty.
 
-Banning a seller does not delete their products (they are hidden).
+The category description is required; creation is rejected if the description is empty.
 
-Banning a seller does not delete their profile (it is hidden).
+Categories can have one level of subcategory nesting.
 
-Administrators can unban seller accounts.
+Administrators can edit existing category names and descriptions.
 
-When unbanned, sellers regain login access to the platform.
+Edit actions create a snapshot of the category state before the change.
 
-Unbanned sellers regain access to their dashboard and existing orders.
+The change is recorded with the administrator's identity and timestamp.
+
+### Category Deletion
+
+Administrators can delete categories.
+
+When a category is deleted, all products previously in that category become uncategorized.
+
+Products that become uncategorized remain visible in the system but are not assigned to any category.
+
+Deleted categories cannot be recovered.
+
+The deletion action is recorded with the administrator's identity and timestamp.
+
+The deletion does not affect existing orders containing products from the deleted category.
+
+### Product Oversight
+
+Administrators can view all products on the platform, regardless of seller.
+
+Administrators can search products by name across all sellers.
+
+Administrators can view product details including seller name, category, price, and variants.
+
+Product oversight allows administrators to identify policy violations or problematic listings.
+
+Administrators can access product oversight without affecting customer visibility or functionality.
+
+### Product Snapshot Viewing
+
+Administrators can view snapshots of any product on the platform.
+
+Product snapshots include all fields (name, description, category, base price, images) at the time of each edit.
+
+Administrators can view snapshots of all variants including SKU code, option values, and price at the time of snapshot.
+
+Product snapshots are accessible regardless of the product's current deletion status.
+
+Deleted products' snapshots remain available to administrators for dispute resolution.
+
+Each snapshot entry shows the timestamp and the administrator or seller who made the edit.
+
+### Product Deletion
+
+Administrators can delete products for policy violations or other valid reasons.
+
+When a product is deleted by an administrator, it is removed from all search and category listings.
+
+Deleted products cannot be purchased.
+
+Deleting a product also deletes all its variants and inventory records.
+
+Product snapshots are preserved even after deletion for audit purposes.
+
+Existing orders containing the deleted product remain valid; order items retain the product snapshot.
+
+### Order Force Cancellation
+
+Administrators can force-cancel individual order items or entire orders.
+
+Force cancellation refunds the customer for the canceled items.
+
+Force cancellation restores stock quantities via inventory records for each canceled item.
+
+The force cancellation action is recorded with the administrator's identity and timestamp.
+
+Force-canceling an order item does not affect other items in the same order.
+
+If all items in an order are force-cancelled, the entire order status becomes cancelled.
+
+### Order Force Refund
+
+Administrators can force-refund individual order items or entire orders.
+
+Force refund refunds the customer for the refunded items.
+
+Force refund restores stock quantities via inventory records for each refunded item.
+
+The force refund action is recorded with the administrator's identity and timestamp.
+
+Force-refunding an order item does not affect other items in the same order.
+
+If all items in an order are force-refunded, the entire order status becomes refunded.
 
 ### Customer Ban Capability
 
-Administrators can ban customer accounts on the platform.
+Administrators can ban customer accounts.
 
 When a customer is banned, they cannot log in to the platform.
 
-Banned customers lose access to their account.
+Banned customers' existing orders remain valid and accessible for order history viewing.
 
-Banned customers cannot view their order history.
+Banned customers' existing cart contents are cleared upon ban.
 
-Banned customers cannot view their wishlist.
+The ban action is recorded with the administrator's identity and timestamp.
 
-Banned customers cannot add items to their cart.
+Banned customers cannot place new orders or perform any platform activities while banned.
 
-Banned customers cannot place new orders.
+### Customer Unban Capability
 
-Banned customers cannot write new reviews.
+Administrators can unban previously banned customer accounts.
 
-Existing orders for banned customers remain valid.
+When unbanned, the customer can log in to the platform again.
 
-Existing shipments for banned customers remain valid.
+The unban action takes effect immediately.
 
-Existing reviews by banned customers are preserved.
+The unban action is recorded with the administrator's identity and timestamp.
 
-Existing reviews by banned customers are shown as "deleted user".
+The customer's account history retains the ban record for audit purposes.
 
-Banning a customer does not delete their order history.
+### Seller Ban Capability
 
-Banning a customer does not delete their wishlist.
+Administrators can ban seller accounts.
 
-Banning a customer does not delete their reviews.
+When a seller is banned, they cannot log in to the platform.
 
-Administrators can unban customer accounts.
+Existing orders from banned sellers remain valid and can continue processing.
 
-When unbanned, customers regain login access to the platform.
+Banned sellers cannot create new products or edit existing products.
 
-Unbanned customers regain access to their account and order history.
+The ban action is recorded with the administrator's identity and timestamp.
 
-### Force Cancellation by Administrator
+Banned seller products remain visible to customers; existing orders can still be fulfilled.
 
-Administrators can force-cancel individual order items.
+### Seller Unbanning
 
-Administrators can force-cancel entire orders.
+Administrators can unban previously banned seller accounts.
 
-Force cancellation refunds the customer for the cancelled items or order.
+When unbanned, the seller can log in to the platform again.
 
-Force cancellation restores stock quantities for the cancelled variants.
+The unban action takes effect immediately.
 
-Force cancellation creates an inventory record with positive quantity change.
+The unban action is recorded with the administrator's identity and timestamp.
 
-Force cancellation is logged and cannot be deleted.
+The seller's account history retains the ban record for audit purposes.
 
-Force cancellation can be performed on items with any status.
+### Super Administrator Promotion and Demotion
 
-Force cancellation can be performed on items with any order status.
+Super administrators can promote regular administrators to super administrator status.
 
-Force cancellation does not require seller approval.
+Super administrators can demote other super administrators to regular administrator.
 
-Force cancellation does not require customer approval.
+Super administrators cannot demote themselves.
 
-Force cancellation is typically used for policy violations or platform errors.
+Promotion grants the administrator super administrator privileges immediately.
 
-Force cancellation preserves order history for audit purposes.
+Demotion removes super administrator privileges but retains regular administrator status.
 
-Force cancellation does not delete the order from the system.
+All promotion and demotion actions are recorded with the acting super administrator's identity and timestamp.
 
-Force cancellation marks the item or order as cancelled.
+### User Management Overview
 
-### Force Refund by Administrator
+Administrators can view all customer accounts on the platform.
 
-Administrators can force-refund individual order items.
+Administrators can view all seller accounts on the platform.
 
-Administrators can force-refund entire orders.
+User management includes viewing account details, status, and history.
 
-Force refund processes a refund to the customer for the refunded items or order.
+Administrator actions on user accounts are recorded for audit purposes.
 
-Force refund restores stock quantities for the refunded variants.
+User management does not expose sensitive credential information (passwords).
 
-Force refund creates an inventory record with positive quantity change.
+### Administrator Authority Hierarchy
 
-Force refund is logged and cannot be deleted.
+Super administrators have all powers of regular administrators.
 
-Force refund can be performed on items with any status.
+Super administrators can manage other administrators (promote and demote).
 
-Force refund can be performed on items with any order status.
+Regular administrators cannot promote or demote other administrators.
 
-Force refund does not require seller approval.
+Super administrator status is required for managing administrator accounts.
 
-Force refund does not require customer approval.
+The hierarchy ensures that critical administrative actions require elevated privileges.
 
-Force refund is typically used for policy violations or platform errors.
+## SuperAdministrator Rules
 
-Force refund preserves order history for audit purposes.
+Super administrators have elevated privileges including promoting regular administrators to super administrator status. Super administrators can also demote other super administrators to regular administrator status but cannot demote themselves. Super administrators can perform all regular administrator functions for seller management, category management, product oversight, order oversight, and user management. The inability to demote self prevents complete loss of super administrator access.
 
-Force refund does not delete the order from the system.
+### Super Administrator Privilege Level
 
-Force refund marks the item or order as refunded.
+Super administrators have complete access to all system functions including all regular administrator functions.
 
-## Payment Rules
+Regular administrator functions include:
+- Seller management (approve/reject registrations, suspend/unsuspend accounts, ban/unban sellers)
+- Category management (create/edit/delete categories and subcategories)
+- Product oversight (view all products, view product snapshots, delete products for policy violations)
+- Order oversight (view all orders, force-cancel items or entire orders, force-refund items or entire orders)
+- User management (view all customer and seller accounts, ban/unban customers and sellers)
 
-Payment is processed through an external payment gateway after the customer confirms and places the order. Payment can succeed or fail, and this determines whether the order is actually created. If payment fails, the order is not created and the customer can retry the payment process. If payment succeeds, the order is created and stock quantities are decreased for purchased variants. Failed payment does not create an order record, allowing the customer to correct payment issues without affecting inventory.
+In addition to regular administrator functions, super administrators have exclusive privileges to manage administrator accounts, including promoting regular administrators to super administrator status and demoting other super administrators to regular administrator status.
 
-### Payment Gateway Processing
+### Administrator Promotion Rule
 
-When a customer confirms and places an order, the system processes payment through an external payment gateway. The payment gateway handles the actual transaction with the customer's payment method. The system waits for the payment gateway to respond with success or failure. If the payment gateway cannot be reached or times out, the payment is treated as failed and the customer can retry. The order is not created until payment confirmation is received from the gateway. The system does not store or handle payment card details; all sensitive payment information is handled by the external payment gateway.
+Only super administrators can promote regular administrators to super administrator status.
 
-### Payment Success - Order Creation
+Regular administrators cannot promote themselves or other regular administrators.
 
-When the payment gateway returns a successful response, the system creates an order record with all order items from the customer's cart. The order is assigned a unique order number. The order status is set to paid. All items in the order are set to paid status. The system removes all order items from the customer's shopping cart. The order becomes visible in the customer's order history. The seller of each item in the order can view the new order items in their dashboard. The order is not accessible until payment succeeds; incomplete or abandoned carts do not create orders.
+The promotion applies the super administrator role to the target user account immediately.
 
-### Payment Failure - No Order Creation
+A user can only hold one administrator role at a time - either regular administrator or super administrator.
 
-When the payment gateway returns a failure response, the system does not create an order record. No order number is generated. No order items are created. The customer's cart remains unchanged and all items stay in the cart. The customer is shown an error message indicating the payment failed. The customer can review the cart and retry payment. Failed payments do not consume stock quantities. Failed payments do not generate any order records in the system. The customer can retry payment multiple times with the same cart contents. The system does not hold or reserve stock items when payment fails.
+### Administrator Demotion Rule
 
-### Retry Payment After Failure
+Only super administrators can demote other super administrators to regular administrator status.
 
-When payment fails, the customer can retry the payment process without recreating the cart. The customer can update payment information if needed before retrying. The system allows multiple retry attempts for the same cart contents. There is no limit on the number of payment retry attempts. The cart contents remain unchanged during payment retries. Failed payment attempts do not expire the cart contents. The customer can modify cart items between retry attempts. The customer can proceed to checkout and retry payment as many times as needed until successful.
+Super administrators cannot demote regular administrators.
 
-### Stock Deduction on Payment Success
+Demotion reduces the target super administrator's privileges from complete system access to regular administrator access only.
 
-When payment succeeds and the order is created, stock quantities are decreased for each purchased variant in the order. The quantity deducted equals the quantity specified in each order item. Stock is deducted immediately upon payment confirmation. If multiple items are purchased, stock is deducted for all variants in a single transaction. The stock deduction is permanent; returned items do not automatically restore stock (requires a refund request process). Out of stock variants cannot be successfully paid for. If stock reaches zero during payment processing, the variant is shown as unavailable.
+The demoted user retains all regular administrator functions but loses the ability to manage administrator accounts (promotion and demotion of other administrators).
 
-### Order Creation on Successful Payment
+### Self-Demotion Prohibition
 
-An order record is created immediately upon payment success confirmation from the gateway. The order record includes all order items with their variants and quantities. Each order item includes a snapshot of the product details at the time of purchase. Each order item includes a snapshot of the product variant details at the time of purchase. Each order item includes a snapshot of the seller profile at the time of purchase. The order creation is atomic; either all items are created successfully or none are created. The order creation cannot be partially completed; all or nothing. Once the order is created, it cannot be modified. The order status is derived from the individual item statuses. Customer can view the order immediately after creation.
+Super administrators cannot demote themselves under any circumstances.
+
+This prohibition is absolute and cannot be overridden.
+
+The self-demotion prohibition prevents a super administrator from accidentally or intentionally removing their own super administrator access.
+
+If a super administrator account is banned by administrator action, their super administrator privileges are retained but access to the system is restricted until the ban is lifted.
+
+### Administrative Hierarchy
+
+The administrator hierarchy has two levels: regular administrator and super administrator.
+
+Super administrators sit at the top of the hierarchy and have complete system access.
+
+Regular administrators have restricted access limited to system management functions, excluding administrator account management.
+
+The hierarchy ensures that administrator account management is controlled by a single point of authority (super administrators only).
+
+When a super administrator is demoted to regular administrator, they immediately lose all super administrator-specific privileges and functions.
+
+### Access Protection Rules
+
+Super administrator privileges are protected from complete removal through the self-demotion prohibition.
+
+Super administrators can only be demoted by other super administrators, not by regular administrators.
+
+Super administrators can only be banned by other super administrators or by super administrator actions (not by regular administrators).
+
+A super administrator who is banned from the system retains their super administrator role but cannot log in until the ban is lifted by another super administrator.
+
+The access protection rules prevent any single entity from having unilateral power to remove all super administrator access from the system.
+
+## SellerApprovalRequest Rules
+
+When sellers register, their accounts enter a pending approval state. Administrators must approve these requests before sellers can begin selling. Administrators can reject requests and must provide a rejection reason. Rejected sellers can view the reason and submit a new registration request. The system tracks approval status showing pending, approved, or rejected states. A seller cannot sell until their approval request transitions to approved status.
+
+### Seller Registration Approval Workflow
+
+When a seller registers on the platform, their account enters a pending approval state. The seller submits their registration request through the seller sign-up process. Administrators review each registration request and decide whether to approve or reject it. When an administrator approves a request, the seller account transitions to an approved state and the seller can begin selling. When an administrator rejects a request, the seller account transitions to a rejected state and the seller cannot sell until they submit a new registration request.
+
+The approval workflow requires an administrator action - sellers cannot activate their selling capabilities without administrator approval. The system tracks the approval status and displays it to the seller at all times.
+
+### Pending Approval State
+
+Upon registration, every seller account begins in a pending approval state. While in this state, the seller cannot list products for sale, cannot view order information, and cannot perform any selling-related activities. The seller can only view their approval status and the rejection reason if they were rejected.
+
+During the pending state, the seller's shop does not appear in search results or category listings. The seller account exists in the system but is restricted to a non-functional state for selling operations.
+
+### Administrator Approval Required
+
+Every seller registration request requires administrator approval before the seller can begin selling. Administrators are the only actors who can approve or reject seller registration requests. The approval decision is final and cannot be overridden by automated processes.
+
+When an administrator approves a request, the seller's account immediately transitions to an approved state. When an administrator rejects a request, the seller's account transitions to a rejected state. Administrators can view a list of all pending seller approval requests and review each one before making a decision.
+
+### Selling Restriction on Pending
+
+Sellers in pending approval state are strictly prohibited from selling activities. This includes:
+- Cannot create new products
+- Cannot edit existing products
+- Cannot view or manage orders
+- Cannot respond to customer inquiries
+- Cannot process shipments
+- Cannot view seller dashboard statistics
+
+The system prevents all selling-related operations while the account is in pending state. The restriction is enforced at the system level - sellers attempting to access restricted features receive an appropriate error message indicating their account requires approval.
+
+### Approval Status Viewing
+
+Sellers can view their current approval status at any time after registration. The status display shows one of three possible states: pending, approved, or rejected. When viewing their status, sellers can also see when the status was last updated.
+
+For sellers in pending state, the display shows that approval is still required and provides an estimated review time if available. For sellers in approved state, the display shows that the seller can begin selling. For sellers in rejected state, the display shows the rejection status and provides a link to the rejection reason (if available).
+
+### Rejection with Reason Requirement
+
+When an administrator rejects a seller registration request, the rejection MUST include a reason. The reason field is required - administrators cannot reject a request without providing a justification. The reason is stored with the rejection record and cannot be modified after submission.
+
+The rejection reason must be descriptive enough to help the seller understand what requirements or information were missing or inadequate in their original registration. This ensures transparency and provides guidance for future re-registration attempts.
+
+### Rejection Reason Visibility
+
+Sellers whose registration was rejected can view the full rejection reason provided by the administrator. The reason is visible on the seller's approval status page and cannot be hidden or redacted.
+
+The rejection reason is stored permanently with the rejection record and cannot be deleted. This ensures that sellers have access to the feedback they received and can use it to improve their re-registration submissions. The reason remains visible even if the seller submits a new registration request.
+
+### Re-registration Capability
+
+Sellers whose registration was rejected can submit a new registration request. There is no restriction on the number of times a seller can re-register after rejection. However, each new registration is treated as a fresh request and undergoes the complete review process.
+
+When a rejected seller submits a new registration request, the system creates a new approval request record. The previous rejection record remains in the system as a historical record. The new request starts in pending state and must be approved before the seller can sell.
+
+### New Request After Rejection
+
+When a rejected seller submits a new registration request, the following occurs:
+- A new approval request is created with status pending
+- The previous rejection record remains unchanged and visible to the seller
+- The seller can still view the original rejection reason on their approval status page
+- The new request is added to the administrator's pending approval queue
+- The new request is reviewed independently of the previous rejection
+
+The system tracks the number of registration attempts for each seller, though this information is only visible to administrators for review purposes. The seller sees only the current status and any pending request details.
+
+### Approval Status States
+
+Seller approval status has exactly three states: pending, approved, and rejected.
+
+Pending: The seller has registered but has not yet been approved or rejected. The account is non-functional for selling.
+
+Approved: The seller's registration has been approved by an administrator. The account is fully functional and the seller can begin selling.
+
+Rejected: The seller's registration was rejected by an administrator. The account cannot sell until a new registration request is submitted and approved.
+
+Once a status transitions to approved or rejected, it cannot be reverted to pending. The state transitions are final except for the rejected state, which can be reset to pending through re-registration.
+
+### Selling Activation on Approval
+
+When a seller approval request transitions from pending to approved, the seller account is immediately activated for selling operations. The following capabilities are unlocked:
+- Create new products
+- Edit existing products
+- View and manage orders for their products
+- Process shipments
+- Respond to customer inquiries
+- Access seller dashboard and statistics
+- Receive payments for sold items
+
+The activation is immediate - no additional confirmation or action is required from the seller. The seller can begin selling activities right after approval. The seller's shop becomes visible in search results and category listings (subject to other visibility rules).
 
 # Data Browsing Expectations
 
@@ -1752,119 +2167,168 @@ Business expectations for how users browse, find, and navigate through lists of 
 
 Define business expectations for how users find, filter, and browse lists.
 
-### Product Search Filtering
+### Product Search and Listing Rules
 
-Customers can search products by name across all sellers on the platform.
+Customers can search products by name. Search results include products from all sellers on the platform.
 
-When viewing search results, customers can filter by the following criteria:
+Customers can filter search results by:
+- Category (select from the list of all categories)
+- Price range (set minimum and maximum values)
+- In-stock only (show only variants with stock quantity greater than zero)
 
-Category: Customers can filter products by selecting a specific category or subcategory. Products must belong to the selected category to appear in filtered results.
+Customers can sort search results by:
+- Newest first (products sorted by creation date, most recent first)
+- Price from low to high
+- Price from high to low
 
-Price Range: Customers can filter by minimum and maximum price. Results will only include products whose variants fall within the specified price range. The base price is used for filtering when variants have the same price; when variants have different prices, the price range applies to any variant of the product.
+When viewing a list of products (from search results or category pages), each product entry displays:
+- Main image (thumbnail)
+- Product name
+- Base price or price range (if variants have different prices)
+- Seller shop name
+- Average rating (if the product has reviews)
 
-In-Stock Only: When enabled, search results will only include products that have at least one variant with stock quantity greater than zero.
+Products with no available variants are shown in search results but marked as "unavailable". Products deleted by sellers no longer appear in search or category listings. If a product is removed from a customer's wishlist due to deletion, no error is shown.
 
-If no filter criteria are specified, all products are shown.
+Search results are paginated. Each page displays a consistent number of products per page.
 
-Filter combinations are applied together, and results are limited to products matching all active filters.
+### Order History Browsing Rules
 
-When a filter is applied, the system shows a count of matching results. If no products match the filter criteria, a message is displayed indicating no results were found.
+Customers can view a paginated list of all their orders. The list is sorted by newest order first.
 
-Filter selections persist while the customer navigates to product detail pages and returns to the search results.
+Each order entry in the list displays:
+- Order number
+- Order date
+- Total price
+- Overall order status
 
-### Product Search Sorting
+Customers can view the full details of any order, including:
+- List of items with product name, variant, quantity, price, and item status
+- Shipping address used for the order
+- List of shipments with tracking information (showing which items are included in each shipment)
 
-Customers can sort search results using the following order:
+Orders are grouped by order, not by individual items. When an order contains items from multiple sellers, each item can have a different status, but the overall order status reflects the combined state of all items.
 
-Newest First: Products are ordered by creation date, with the most recently created products appearing first.
+If all items in an order have the same status, the order status matches that status. If items have mixed statuses, the order is shown as "partially completed". Order history is paginated with a consistent number of orders per page.
 
-Price Low to High: Products are ordered by variant price in ascending order. When a product has variants with different prices, the lowest variant price is used for sorting.
+### Wishlist Browsing Rules
 
-Price High to Low: Products are ordered by variant price in descending order. When a product has variants with different prices, the lowest variant price is used for sorting.
+Customers can view their personal wishlist as a paginated list.
 
-Sorting applies to all currently filtered results.
+Each wishlist entry displays:
+- Product main image (thumbnail)
+- Product name
+- Base price or price range
+- Seller shop name
+- Average rating (if the product has reviews)
 
-If no sorting criteria are specified, products are displayed in the order they were retrieved from the database (typically newest first by default).
+The wishlist contains products, not specific variants. When viewing a product in the wishlist, customers can navigate to the product detail page to see variant options and add a specific variant to their cart.
 
-Customers can change the sorting criteria at any time while viewing search results.
+If a product is deleted by the seller, it is automatically removed from all wishlists. No error or notification is shown when this happens. Customers can remove products from their wishlist at any time.
 
-Sorting does not affect the filter criteria—only the order in which matching products are displayed.
+Wishlist entries are paginated. Each page displays a consistent number of products per page.
 
-### List Pagination
+### Seller Dashboard Browsing Rules
 
-All searchable product lists are paginated to manage result size.
+Sellers can view a summary of their shop, including:
+- Total number of products
+- Total number of order items (for their products)
+- Number of pending cancellation requests
+- Number of pending refund requests
 
-Search Results: Product search results display a fixed number of products per page. Customers can navigate through pages using page numbers or next/previous controls.
+Sellers can view a list of all order items for their products. This list can be filtered by item status. The available statuses for filtering are:
+- Paid
+- Shipped
+- Delivered
+- Cancelled
+- Refunded
 
-Category Browsing: Products within a category are displayed with the same pagination as search results. When viewing a category, customers can navigate through all pages of products in that category.
+Order items can be from different orders. Each order item entry displays:
+- Order number
+- Product name
+- Variant options
+- Quantity
+- Price
+- Item status
+- Customer name
 
-Wishlist: Customer wishlists are paginated. Customers can view their wishlisted products across multiple pages using page navigation controls.
+Seller dashboard lists are paginated. Each page displays a consistent number of order items per page.
 
-Order History: Customer order lists are paginated, with orders sorted by newest first. Customers can navigate through their order history across multiple pages.
+### Administrator Browsing Rules
 
-Seller Order Items: Sellers can view order items for their products across multiple pages using pagination controls.
+Administrators can view lists of system-wide data:
 
-Pagination does not affect sorting or filtering—only the display range of results.
+**Seller Approvals**: Administrators can view pending seller registration requests. Each request shows the seller's email, shop name, request date, and status.
 
-Customers can see the total number of results and their current position within the total (e.g., "Showing 1-20 of 150 results").
+**Categories**: Administrators can view all categories with their names, descriptions, and parent-child relationships.
 
-When viewing product detail pages, customers can return to the previous list view (search, category, or wishlist) with filters and sorting preserved.
+**Products**: Administrators can view all products on the platform with product name, seller shop name, category, base price, and status.
 
-### Category Browsing Rules
+**Orders**: Administrators can view all orders on the platform with order number, customer name, order date, total price, and overall order status.
 
-Customers can browse the list of all categories available on the platform.
+**Customers**: Administrators can view all customer accounts with customer email, display name, registration date, and ban status.
 
-Categories are displayed in a hierarchical structure, showing parent categories and their subcategories (one level of nesting only).
+**Sellers**: Administrators can view all seller accounts with seller email, shop name, approval status, and ban status.
 
-When a customer clicks on a category, they view all products within that category (including subcategory products).
+**Cancellation Requests**: Administrators can view all pending cancellation requests.
 
-Products in deleted categories are shown as uncategorized and can still be browsed, but they do not appear in any category listing.
+**Refund Requests**: Administrators can view all pending refund requests.
 
-Categories are managed by administrators only. Customers can only view categories, not create or modify them.
+Administrator lists support filtering and sorting. Categories support viewing hierarchical structure. All administrator lists are paginated with a consistent number of items per page.
 
-When a product is deleted, it is immediately removed from category listings.
+### Filtering Rules
 
-When a product's category is changed by the seller, it no longer appears in the old category's product list and appears in the new category's product list.
+When filtering search results or lists, the following rules apply:
 
-The category list is displayed consistently across the platform, including on search results and product detail pages.
+**Category Filtering**: Customers can select one or multiple categories to filter products. Selecting a category includes all products within that category and its subcategories.
 
-### Product Listing Display Rules
+**Price Range Filtering**: Customers can set minimum and maximum price values. Products with base prices outside the range are excluded from results. If variants have different prices, the price range includes all variant prices.
 
-When viewing a list of products (search results, category page, or wishlist), each product displays the following information:
+**In-Stock Filtering**: When filtering for in-stock only, products with at least one variant having stock quantity greater than zero are included. Products where all variants have zero stock are excluded.
 
-Main Image: The first product image serves as the thumbnail, displayed in list view. Images can be reordered by the seller to change which image appears first.
+**Status Filtering**: Lists that support status filtering allow selection of one or multiple status values. Items not matching any selected status are excluded.
 
-Name: The product name is displayed.
+**Invalid Filter Combinations**: If filter values are invalid (e.g., minimum price greater than maximum price, category does not exist), the request is rejected and no results are returned. The system does not display invalid filter values as selected.
 
-Price: The base price is displayed. When variants have different prices, a price range is shown (e.g., "$10 - $20").
+**Empty Results**: When filtering returns no results, an appropriate message is shown indicating no matching items were found.
 
-Seller Shop Name: The shop name of the seller who created the product is displayed.
+**Filter Persistence**: Selected filters are maintained when paginating through results. Changing the page does not reset filters.
 
-Average Rating: If the product has reviews, the average rating is displayed (e.g., "4.5 out of 5 stars"). Products without reviews do not display a rating.
+### Sorting Rules
 
-Stock Status: When viewing product details, variants show their stock status (in stock, low stock, out of stock). In list views, out-of-stock products may be indicated visually but can still be browsed.
+When sorting lists, the following rules apply:
 
-Products with no variants are visible in search results but are marked as "unavailable" for purchase.
+**Newest First**: Items are sorted by creation date, with the most recently created items first.
 
-### Error Conditions for Browsing
+**Price Low to High**: Items are sorted by price in ascending order. Items with equal prices maintain their original relative order.
 
-When no products match search or filter criteria, the system displays a message indicating no results were found.
+**Price High to Low**: Items are sorted by price in descending order. Items with equal prices maintain their original relative order.
 
-When a customer attempts to view a deleted category, the system shows an appropriate message (categories are preserved for administrative purposes but are not browsable).
+**Default Sorting**: If no sort option is selected, the default is "newest first". Default sorting applies consistently across all list views.
 
-When a product detail page is accessed for a deleted product, the system shows that the product is no longer available and cannot be purchased.
+**Sorting Persistence**: Selected sort order is maintained when paginating through results. Changing the page does not reset the sort order.
 
-When a customer attempts to access a deleted product from their wishlist, the product is automatically removed from the wishlist.
+**Multi-Level Sorting**: When prices are equal in price-based sorting, a secondary sort by creation date (newest first) is applied to maintain consistent ordering.
 
-When a customer attempts to add an out-of-stock variant to the cart, the system shows a warning that the variant is out of stock and cannot be added.
+**Invalid Sorting**: If an invalid sort option is selected, the system falls back to the default sort order. The default sort option is always available.
 
-When a variant in the cart becomes unavailable (deleted or out of stock), the item is marked as unavailable and cannot proceed to checkout.
+### Pagination Rules
 
-When a customer's wishlisted product is deleted by the seller, the product is automatically removed from all customers' wishlists without notification.
+All browsable lists in the system use pagination:
 
-When a seller deletes a product, all references to that product are removed from search and category listings, but order history preserves the product data as it existed at purchase time.
+**Page Size**: Each page displays a consistent, fixed number of items. The page size is constant across all list types.
 
-When browsing seller-specific lists, if a seller account is suspended, their products are hidden from search and category listings but remain accessible via direct links (though they cannot be purchased).
+**Navigation**: Users can navigate between pages using previous and next controls. The first and last pages are accessible directly. Page numbers are displayed for easy navigation.
+
+**Total Count**: The pagination controls display the total number of items and the current page range (e.g., "Showing 1-10 of 45 items").
+
+**Empty Lists**: When a list contains no items, the pagination controls are hidden and an appropriate message is shown.
+
+**Invalid Page Numbers**: If a user requests an invalid page number (negative, zero, or beyond total pages), the system returns the first page or the last page as appropriate.
+
+**Per-Page Consistency**: The number of items displayed per page is consistent across all list views within the same module or section. Page sizes do not vary based on filter or sort criteria.
+
+**Back Button**: When users navigate to a new page using filters, sorting, or pagination controls, the browser back button returns to the previous view state.
 
 # Error Conditions
 
@@ -1874,241 +2338,53 @@ Business error scenarios and how the system should respond.
 
 Describe error conditions and expected system responses in natural language.
 
-### Registration and Account Creation Failures
+### Account Registration Rejections
 
-When a customer attempts to register, the system rejects the request if the email address is already associated with an existing account.
+Customer registration requests are rejected if the email is already registered. Customer registration requests are rejected if the email format is invalid. Customer registration requests are rejected if the password is empty. Customer registration requests are rejected if the password is less than 8 characters. Seller registration requests are rejected if the email is already registered. Seller registration requests are rejected if the email format is invalid. Seller registration requests are rejected if the password is empty. Seller registration requests are rejected if the password is less than 8 characters. Seller registration requests are rejected if the shop name is empty. Seller registration requests are rejected if the shop name is less than 3 characters. Seller registration requests are rejected if the shop name is more than 50 characters. Customer deletion requests are rejected if the customer has no account. Seller deletion requests are rejected if the seller has pending orders with paid or shipped status. Seller deletion requests are rejected if the seller has pending cancellation or refund requests. Account change password requests are rejected if the new password is empty. Account change password requests are rejected if the new password is less than 8 characters. Account change password requests are rejected if the new password matches the current password.
 
-When a customer attempts to register, the system rejects the request if the email address does not follow a valid email format.
+### Product Management Rejections
 
-When a seller attempts to register, the system rejects the request if the email address is already associated with an existing seller account.
+Product creation requests are rejected if the product name is empty. Product creation requests are rejected if the product description is empty. Product creation requests are rejected if the category is not selected. Product creation requests are rejected if the base price is not provided. Product creation requests are rejected if the base price is zero or negative. Product creation requests are rejected if the seller does not have an approved account. Product editing requests are rejected if the product does not exist. Product editing requests are rejected if the product belongs to a different seller. Product editing requests are rejected if the new product name is empty. Product editing requests are rejected if the new product description is empty. Product editing requests are rejected if the base price is zero or negative. Product deletion requests are rejected if the product does not exist. Product deletion requests are rejected if the product belongs to a different seller. Product deletion requests are rejected if any variant has pending order items with paid or shipped status. Product deletion requests are rejected if any variant has pending cancellation or refund requests. Product deletion requests are rejected if the seller account is suspended.
 
-When a seller attempts to register, the system rejects the request if the email address is already associated with a customer account.
+### Variant Management Rejections
 
-If a seller's registration is rejected by an administrator, the seller receives the rejection reason and may submit a new registration request.
+Variant creation requests are rejected if the product does not exist. Variant creation requests are rejected if the product does not belong to the seller. Variant creation requests are rejected if the SKU code is empty. Variant creation requests are rejected if the SKU code already exists for the product. Variant creation requests are rejected if the option values are empty. Variant creation requests are rejected if the stock quantity is negative. Variant creation requests are rejected if the variant price is zero or negative. Variant editing requests are rejected if the variant does not exist. Variant editing requests are rejected if the variant does not belong to the seller. Variant editing requests are rejected if the new SKU code is empty. Variant editing requests are rejected if the new SKU code already exists for the product. Variant editing requests are rejected if the new option values are empty. Variant editing requests are rejected if the new stock quantity is negative. Variant editing requests are rejected if the new price is zero or negative. Variant deletion requests are rejected if the variant does not exist. Variant deletion requests are rejected if the variant does not belong to the seller. Variant deletion requests are rejected if the variant has pending order items with paid or shipped status. Variant deletion requests are rejected if the variant has pending cancellation or refund requests. Variant deletion requests are rejected if the product has no other variants (must have at least one).
 
-### Account Deletion Restrictions
+### Cart and Checkout Failures
 
-A customer may delete their account only if they have no restrictions.
+Adding a variant to the cart is rejected if the variant does not exist. Adding a variant to the cart is rejected if the variant does not exist in the product. Adding a variant to the cart is rejected if the variant is out of stock. Adding a variant to the cart is rejected if the requested quantity exceeds available stock. Adding a variant to the cart is rejected if the product is no longer available. Adding a variant to the cart is rejected if the customer is not logged in. Adding a variant to the cart is rejected if the variant has been deleted. Adding a variant to the cart is rejected if the seller account is suspended. Cart quantity update requests are rejected if the variant does not exist in the cart. Cart quantity update requests are rejected if the new quantity is zero or negative. Cart quantity update requests are rejected if the new quantity exceeds available stock. Cart quantity update requests are rejected if the product is no longer available. Cart removal requests are rejected if the variant is not in the cart. Checkout requests are rejected if the cart contains unavailable items. Checkout requests are rejected if the customer has no valid shipping address. Checkout requests are rejected if the selected shipping address is invalid. Checkout requests are rejected if payment processing fails. Checkout requests are rejected if the customer is not logged in.
 
-When a customer deletes their account, their profile information is removed from the system.
+### Order Processing Failures
 
-When a customer deletes their account, their order history is preserved for record-keeping purposes.
+Order placement is rejected if the customer does not have a valid shipping address. Order placement is rejected if the cart contains items that are no longer available. Order placement is rejected if the cart contains items that are out of stock. Order placement is rejected if the total price calculation fails. Order placement is rejected if payment processing fails. Order placement is rejected if the customer is not logged in. Inventory reservation is rejected if stock becomes insufficient during checkout. Inventory reservation is rejected if a variant has no variants (product has no purchasable variants). Order status transition is rejected if the item status does not allow the transition. Order status transition is rejected if the seller account is suspended.
 
-When a customer deletes their account, their reviews are retained but displayed as from a deleted user.
+### Shipment and Tracking Errors
 
-A seller may delete their account only if they have no pending orders with paid or shipped status.
+Shipment creation is rejected if no order items are selected. Shipment creation is rejected if order items belong to different sellers. Shipment creation is rejected if order items do not belong to the seller. Shipment creation is rejected if order items are not in paid status. Shipment creation is rejected if the carrier name is empty. Shipment creation is rejected if the tracking number is empty. Shipment update requests are rejected if the shipment does not exist. Shipment update requests are rejected if the shipment does not belong to the seller. Shipment update requests are rejected if the order items in the shipment have been delivered. Shipment update requests are rejected if the order items in the shipment have been cancelled. Delivery confirmation is rejected if the shipment has already been confirmed. Delivery confirmation is rejected if the shipment does not exist. Delivery confirmation is rejected if the customer does not own the order. Delivery confirmation is rejected if the shipment has already been marked as delivered.
 
-A seller may delete their account only if they have no pending cancellation requests for any of their order items.
+### Cancellation Request Rejections
 
-A seller may delete their account only if they have no pending refund requests for any of their order items.
+Cancellation request creation is rejected if the order item does not exist. Cancellation request creation is rejected if the order item does not belong to the customer. Cancellation request creation is rejected if the order item status is not paid. Cancellation request creation is rejected if the order item status is shipped or delivered. Cancellation request creation is rejected if the cancellation reason is empty. Cancellation request creation is rejected if the order item has already been cancelled. Cancellation request creation is rejected if the order item has already been refunded. Cancellation request approval is rejected if the seller does not own the order item. Cancellation request approval is rejected if the cancellation request does not exist. Cancellation request approval is rejected if the cancellation request has already been approved. Cancellation request approval is rejected if the cancellation request has already been rejected. Cancellation request rejection is rejected if the seller does not own the order item. Cancellation request rejection is rejected if the cancellation request does not exist. Cancellation request rejection is rejected if the cancellation request has already been approved. Cancellation request rejection is rejected if the cancellation request has already been rejected. Cancellation request withdrawal is rejected if the customer does not own the cancellation request. Cancellation request withdrawal is rejected if the cancellation request has already been approved or rejected.
 
-When a seller deletes their account, all their products are removed from active listings.
+### Refund Request Rejections
 
-When a seller deletes their account, their order history and order snapshots are preserved.
+Refund request creation is rejected if the order item does not exist. Refund request creation is rejected if the order item does not belong to the customer. Refund request creation is rejected if the order item status is not delivered. Refund request creation is rejected if the order item has already been refunded. Refund request creation is rejected if the order item has already been cancelled. Refund request creation is rejected if the refund reason is empty. Refund request creation is rejected if 7 days have passed since the item was delivered. Refund request creation is rejected if the 7-day refund window has expired. Refund request approval is rejected if the seller does not own the order item. Refund request approval is rejected if the refund request does not exist. Refund request approval is rejected if the refund request has already been approved. Refund request approval is rejected if the refund request has already been rejected. Refund request rejection is rejected if the seller does not own the order item. Refund request rejection is rejected if the refund request does not exist. Refund request rejection is rejected if the refund request has already been approved. Refund request rejection is rejected if the refund request has already been rejected. Refund request withdrawal is rejected if the customer does not own the refund request. Refund request withdrawal is rejected if the refund request has already been approved or rejected.
 
-When a seller deletes their account, their shop name is retained in historical order records.
+### Review Submission and Management Errors
 
-### Product Creation and Validation Errors
+Review creation is rejected if the customer has not purchased the product. Review creation is rejected if the customer has no delivered order item for the product. Review creation is rejected if the customer has already written a review for the product in this order. Review creation is rejected if the rating is less than 1. Review creation is rejected if the rating is greater than 5. Review creation is rejected if the customer is not logged in. Review editing is rejected if the review does not exist. Review editing is rejected if the review does not belong to the customer. Review editing is rejected if the new rating is less than 1. Review editing is rejected if the new rating is greater than 5. Review deletion is rejected if the review does not exist. Review deletion is rejected if the review does not belong to the customer. Review deletion is rejected if the customer is not logged in. Product average rating calculation fails if no valid reviews exist for the product.
 
-The system rejects a product creation request if the product name is not provided.
+### Address Management Errors
 
-The system rejects a product creation request if the product description is not provided.
+Address creation is rejected if the customer is not logged in. Address creation is rejected if the recipient name is empty. Address creation is rejected if the phone number is empty. Address creation is rejected if the street address is empty. Address creation is rejected if the city is empty. Address creation is rejected if the postal code is empty. Address creation is rejected if the country is empty. Address editing is rejected if the address does not exist. Address editing is rejected if the address does not belong to the customer. Address editing is rejected if the new recipient name is empty. Address editing is rejected if the new phone number is empty. Address editing is rejected if the new street address is empty. Address editing is rejected if the new city is empty. Address editing is rejected if the new postal code is empty. Address editing is rejected if the new country is empty. Address deletion is rejected if the address does not exist. Address deletion is rejected if the address does not belong to the customer. Address deletion is rejected if the address is set as the default shipping address. Address setting as default is rejected if the address does not exist. Address setting as default is rejected if the address does not belong to the customer.
 
-The system rejects a product creation request if no category is selected.
+### Category and Product Oversight
 
-The system rejects a product creation request if no base price is provided.
+Category creation is rejected if the administrator is not authorized. Category creation is rejected if the category name is empty. Category creation is rejected if the category name exceeds 50 characters. Category creation is rejected if the parent category is a subcategory (max one level nesting). Category editing is rejected if the category does not exist. Category editing is rejected if the administrator is not authorized. Category editing is rejected if the new category name exceeds 50 characters. Category deletion is rejected if the category has products in it. Category deletion is rejected if the administrator is not authorized. Product viewing is rejected if the product is deleted. Product viewing is rejected if the seller account is suspended and the customer is not the seller. Product deletion by administrator is rejected if the product does not exist. Product deletion by administrator is rejected if the administrator is not authorized.
 
-The system rejects a product creation request if the product has no variants associated with it.
+### Seller Account and Approval Errors
 
-A product without variants is visible in search results but displays as unavailable for purchase.
-
-The system rejects a variant creation request if the SKU code is already in use by another variant.
-
-### Product and Variant Deletion Failures
-
-A seller may delete a product only if no variant of that product has order items with paid or shipped status.
-
-A seller may delete a product only if no variant of that product has pending cancellation requests.
-
-A seller may delete a product only if no variant of that product has pending refund requests.
-
-When a product is deleted, all its variants and their inventory records are removed from active listings.
-
-A seller may delete a variant only if that variant has no order items with paid or shipped status.
-
-A seller may delete a variant only if that variant has no pending cancellation requests.
-
-A seller may delete a variant only if that variant has no pending refund requests.
-
-Deleted products and variants no longer appear in search results or category listings.
-
-Product snapshots are preserved even after the product is deleted.
-
-### Inventory and Stock Validation Failures
-
-The system rejects adding a variant to the shopping cart if the variant's stock quantity is zero.
-
-When a variant's stock quantity falls below the quantity in the cart, a warning is displayed to the customer.
-
-If a variant becomes out of stock after items are added to the cart, the variant is marked as unavailable in the cart.
-
-If a variant is deleted by the seller after being added to a customer's cart, the variant is marked as unavailable in the cart.
-
-Order placement automatically reduces the stock quantity for each purchased variant.
-
-### Checkout and Payment Failures
-
-The system rejects checkout if any cart items are unavailable due to deleted products or out-of-stock variants.
-
-The system rejects checkout if the customer has not selected a shipping address.
-
-When a customer proceeds to checkout, they must review and confirm their order before placement.
-
-If payment fails during order placement, no order is created and the customer may retry payment.
-
-If payment fails during order placement, cart items are not removed and remain available for retry.
-
-When an order is successfully created, the purchased items are removed from the customer's cart.
-
-When an order is successfully created, stock quantities are immediately decreased for all purchased variants.
-
-After an order is placed, the selected shipping address cannot be modified.
-
-### Order Item Status and Transition Rules
-
-An order item with status paid cannot be cancelled by the seller if the status is already shipped.
-
-An order item with status shipped cannot be cancelled by the customer.
-
-An order item with status delivered cannot be cancelled by the customer.
-
-An order item with status cancelled or refunded cannot have further cancellation or refund requests submitted.
-
-An order's overall status is derived from its items' individual statuses.
-
-If all items in an order are paid, the order status is paid.
-
-If any item in an order is shipped and none are delivered, the order status is shipped.
-
-If all items in an order are delivered, the order status is delivered.
-
-If all items in an order are cancelled, the order status is cancelled.
-
-If all items in an order are refunded, the order status is refunded.
-
-If an order has mixed item statuses (e.g., some delivered, some refunded), the order status is partially completed.
-
-### Shipping and Delivery Timeouts
-
-A seller may ship only order items that they created and have status paid.
-
-When a shipment is created, all items in that shipment change to shipped status.
-
-Different sellers always ship their items in separate shipments.
-
-All items within a single shipment share the same tracking information.
-
-A customer may confirm delivery for a shipment on behalf of all items in that shipment.
-
-If a customer does not confirm delivery for a shipment, the items in that shipment automatically change to delivered status after 14 days from the shipment date.
-
-### Cancellation Request Validation
-
-A customer may request cancellation only for order items with status paid.
-
-A customer may request cancellation only for order items that have not been shipped.
-
-A cancellation request must include a reason provided by the customer.
-
-The seller of an order item may approve or reject a cancellation request for that item.
-
-When a seller responds to a cancellation request (approve or reject), a snapshot of the request is created.
-
-When a cancellation request is approved, only that specific item is cancelled.
-
-When a cancellation request is approved, the item's stock quantity is restored via an inventory record.
-
-When a cancellation request is rejected, the item continues processing normally.
-
-If all items in an order are cancelled, the entire order status becomes cancelled.
-
-### Refund Request Validation
-
-A customer may request a refund only for order items with status delivered.
-
-A customer may request a refund only within seven days from the item's delivery date.
-
-A refund request must include a reason provided by the customer.
-
-The seller of an order item may approve or reject a refund request for that item.
-
-When a seller responds to a refund request (approve or reject), a snapshot of the request is created.
-
-When a refund request is approved, only that specific item is refunded.
-
-When a refund request is approved, the item's stock quantity is restored via an inventory record.
-
-When a refund request is rejected, the item remains in delivered status.
-
-If all items in an order are refunded, the entire order status becomes refunded.
-
-### Review Creation and Modification Failures
-
-A customer may create a review only for an order item with status delivered.
-
-A customer may write only one review per product per order.
-
-The system rejects a review creation request if the rating is not provided.
-
-The rating must be an integer value from one to five stars.
-
-The system rejects a review creation request if the customer has not purchased the product in an order with delivered status.
-
-A customer may edit only their own reviews.
-
-When a customer edits a review, a snapshot of the review state is created.
-
-A customer may delete only their own reviews.
-
-When a customer deletes a review, a snapshot of the deleted review is preserved.
-
-A product's average rating is calculated from all non-deleted reviews.
-
-### Wishlist Synchronization Failures
-
-When a product is deleted by its seller, all references to that product are removed from customer wishlists.
-
-The system automatically removes a product from a wishlist when the product is no longer available for purchase.
-
-### Category and Product Oversight Failures
-
-When a category is deleted by an administrator, products in that category become uncategorized.
-
-Uncategorized products remain visible in product listings.
-
-When a seller account is suspended by an administrator, their products are hidden from search results and category listings.
-
-When a seller account is suspended by an administrator, their products cannot be purchased.
-
-When a seller account is suspended by an administrator, they may still process existing orders (ship items, respond to cancellation and refund requests).
-
-When a seller account is suspended by an administrator, they cannot create new products or edit existing products.
-
-When a banned customer attempts to log in, access is denied.
-
-When a banned seller attempts to log in, access is denied.
-
-When a banned seller attempts to log in, existing orders for that seller remain processable.
-
-### Snapshot Immutability Failures
-
-The system does not permit deletion of any snapshot record.
-
-Snapshots are immutable and cannot be modified after creation.
-
-Snapshots created on edits record the previous values before the change.
-
-Snapshots created on deletions record the values before the deletion.
+Seller approval request viewing is rejected if the seller is not logged in. Seller approval status viewing is rejected if the seller is not logged in. Seller re-registration is rejected if there is no previous rejection record. Seller re-registration is rejected if the seller account was banned. Seller suspension is rejected if the seller does not exist. Seller suspension is rejected if the administrator is not authorized. Seller unsuspension is rejected if the seller is not suspended. Seller unsuspension is rejected if the administrator is not authorized. Seller banning is rejected if the seller does not exist. Seller banning is rejected if the administrator is not authorized. Seller unbanning is rejected if the seller is not banned. Seller unbanning is rejected if the administrator is not authorized. Administrator request submission is rejected if the user has already submitted a request. Administrator request submission is rejected if the user already has an administrator account. Administrator request approval is rejected if the administrator is not a super administrator. Administrator request approval is rejected if the request does not exist. Administrator request rejection is rejected if the administrator is not a super administrator. Administrator request rejection is rejected if the request does not exist. Administrator promotion is rejected if the administrator does not exist. Administrator promotion is rejected if the administrator is already a super administrator. Administrator promotion is rejected if the requesting administrator is not a super administrator. Administrator demotion is rejected if the administrator does not exist. Administrator demotion is rejected if the administrator is not a regular administrator. Administrator demotion is rejected if the requesting administrator is not a super administrator. Administrator demotion is rejected if the target administrator is a super administrator attempting to demote themselves.
 
 # Integration Error Handling
 
@@ -2118,37 +2394,53 @@ Error handling and retry policies for external integrations.
 
 Define retry strategies, circuit breaker policies, fallback behavior, and error escalation for external service failures.
 
-### Payment Retry Policy
+### Payment Retry Behavior
 
-Customers may retry payment if the payment gateway fails to process their payment during checkout.
-Each retry attempt creates a new payment request to the gateway.
-Customers can retry payment an unlimited number of times.
-Successful payment creates an order; failed payment does not create an order.
-Payment retry is only available for the checkout process, not for post-order payment recovery.
+When payment processing fails, the order is not created and the customer can retry the payment.
 
-### Payment Gateway Failure Handling
+A payment retry can be initiated immediately after a failure.
 
-When the payment gateway returns an error, the checkout process is not completed.
-No order record is created when payment fails.
-The customer receives a clear error message describing the failure reason.
-The customer can retry the payment with the same cart contents.
-Cart contents are preserved during payment retry attempts.
+Each failed payment attempt is recorded for audit purposes.
 
-### Integration Error Recovery
+If payment succeeds on any retry attempt, the order is created with the payment status set to complete.
 
-If an external service integration fails during checkout, the system does not create an order.
-The cart remains intact for customer retry.
-The customer can resume checkout from the review stage.
-System administrators are notified of integration failures for monitoring.
-Failed integration attempts do not affect existing orders or inventory records.
+### External Service Fallback Rules
 
-### Fallback for Integration Failures
+When an external integration service (such as payment gateway or shipping provider) is unavailable, the system displays a service availability error to the user.
 
-When an integration service becomes unavailable, checkout operations are halted to prevent data corruption.
-Customers receive an error message indicating the temporary unavailability.
-Customers may retry checkout after the system restores integration connectivity.
-No partial orders or inventory reservations are created during integration failure.
-Administrators must restore integration before customers can complete new orders.
+If a required external service fails during checkout, the customer receives an error message and is returned to the cart page.
+
+The customer can retry the checkout after the service issue is resolved.
+
+Orders cannot be partially created when an integration failure occurs during checkout.
+
+If a non-critical external service fails (such as email notification), the order process continues and the failure is logged for later resolution.
+
+### Circuit Behavior for External Services
+
+When multiple consecutive external service failures are detected, the system limits subsequent retry attempts for that service.
+
+If a service failure pattern indicates a persistent outage, customers receive a service unavailable message.
+
+Administrators can view the current status of external service integrations.
+
+When an external service becomes available again, the system automatically resumes normal operation.
+
+The system logs all service unavailability events for monitoring and analysis.
+
+### Integration Error Handling
+
+When an external service returns an error, the system captures the error details and presents a user-friendly message to the affected party.
+
+For integration errors that affect order processing, the system logs the error with timestamp, service name, and error description.
+
+Customers are notified of integration errors that prevent order completion with instructions to retry.
+
+Administrators can view a log of integration errors for troubleshooting purposes.
+
+Integration errors do not create partial or incomplete orders in the system.
+
+When an integration error is detected, the system prevents any financial transactions from being completed until resolution.
 
 # File Validation Rules
 
@@ -2158,36 +2450,30 @@ Validation rules and policies for file uploads and storage.
 
 Define file type restrictions, virus scanning requirements, content validation, and retention policies for uploaded files.
 
-### File Validation
+### Product Image Upload
 
-Sellers can upload images for products and their seller profile logo.
-Uploaded image files must meet the following validation requirements before acceptance.
-File size is validated to ensure reasonable upload sizes for performance.
-File dimensions are validated to ensure images display correctly on the platform.
-Invalid file uploads are rejected with an appropriate error message.
-The uploading seller receives notification when their image upload fails validation.
+Sellers can upload multiple images for each product. Each product must have at least one image to be displayed in listings. The first uploaded image is designated as the main or thumbnail image for the product. Images are displayed on the product detail page and in search results. If a product has no images, it may still be visible in search but cannot be properly displayed on the product detail page.
 
-### Virus Scan
+### Product Image Management
 
-All uploaded images are scanned for malicious content before being accepted.
-Images that fail the virus scan are rejected and not stored in the system.
-Sellers are notified when their uploaded image contains malicious content.
-Rejected images from virus scans are not saved and cannot be accessed.
-The virus scan is performed automatically as part of the upload process.
+Sellers can reorder images for their products. The order of images determines display priority, with the first image shown as the main product image. Sellers can delete images from their products. When images are deleted or reordered, a product snapshot is created to record the change. If a product is deleted, all associated images are also deleted. Deleted images are permanently removed from the system.
 
-### Content Type
+### Seller Profile Image Upload
 
-Only image files are accepted for product images and seller profile logos.
-Supported image formats are specified by the platform.
-Non-image files are rejected during the upload process.
-The system validates the content type of uploaded files against allowed types.
-Attempts to upload files with unsupported content types are rejected with an error.
+Sellers can upload a logo image for their seller profile. The logo is displayed on the seller profile page and in product listings. Sellers can update their logo image at any time. When the logo is updated, a seller profile snapshot is created to preserve the previous logo state. The logo change is visible to all customers viewing the seller profile or products from that seller.
 
-### Retention Policies
+### Image Validation Rules
 
-Product images are retained for the lifetime of the product.
-When a product is deleted, its images are also deleted from the system.
-Seller profile logos are retained while the seller account is active.
-When a seller account is deleted or suspended, their profile logo is removed from listings.
-Images from deleted products are removed from all customer wishlists.
-Archived or deleted images may be retained for administrative dispute resolution purposes.
+Product images and seller profile images must be associated with valid products or seller accounts. Customers cannot upload or modify images. Only the owner of a product can upload, reorder, or delete images for that product. Only the seller can upload or modify their own seller profile logo. Image operations are only available to logged-in users with appropriate permissions.
+
+### Image Snapshot Preservation
+
+All image changes are captured in snapshots. When a product image is added, reordered, or deleted, the product snapshot records the change. When a seller logo is updated, the seller profile snapshot preserves the previous logo. Snapshots of images cannot be deleted and are preserved even after the associated product or seller profile is deleted. This ensures historical records of product appearance and seller branding remain available for dispute resolution.
+
+### Image Deletion and Availability
+
+When a product is deleted, all associated product images are also deleted. When a product is deleted by the seller, it is automatically removed from all customer wishlists. If a product image is deleted but the product remains active, the product may display without images until new images are added. Sellers must ensure products have at least one image for proper display in search and category listings.
+
+### Image Change Records
+
+Every image modification creates a record in the product snapshot or seller profile snapshot. The record includes when the change was made, what was changed (added, removed, reordered), and the state of images before and after the change. These records are immutable and cannot be modified or deleted. Administrators can view snapshot records for any product or seller profile.

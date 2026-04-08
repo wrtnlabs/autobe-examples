@@ -10,13 +10,14 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallWishlistItemCollector {
   export async function collect(props: {
     body: IEcommerceMallWishlistItem.ICreate;
-    customer: IEntity;
+    ecommerceMallCustomers: IEntity;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
+      id,
       created_at: new Date(),
       updated_at: new Date(),
-      customer: { connect: { id: props.customer.id } },
+      customer: { connect: { id: props.ecommerceMallCustomers.id } },
       product: { connect: { id: props.body.product_id } },
     } satisfies Prisma.ecommerce_mall_wishlist_itemsCreateInput;
   }

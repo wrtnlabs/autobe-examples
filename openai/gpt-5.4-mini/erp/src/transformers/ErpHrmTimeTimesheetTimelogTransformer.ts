@@ -1,11 +1,11 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
+import { IErpHrmTimeEmployeeDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployeeDashboardSummary";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
 import { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
-import { IErpHrmTimeTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTask";
+import { IErpHrmTimeTaskHistoryEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTaskHistoryEntry";
 import { IErpHrmTimeTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimelog";
 import { IErpHrmTimeTimesheet } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimesheet";
 import { IErpHrmTimeTimesheetTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimesheetTimelog";
@@ -23,18 +23,6 @@ export namespace ErpHrmTimeTimesheetTimelogTransformer {
   export type Payload = Prisma.erp_hrm_time_timesheet_timelogsGetPayload<
     ReturnType<typeof select>
   >;
-  export function select() {
-    return {
-      select: {
-        id: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        timesheet: ErpHrmTimeTimesheetAtSummaryTransformer.select(),
-        timelog: ErpHrmTimeTimelogAtSummaryTransformer.select(),
-      },
-    } satisfies Prisma.erp_hrm_time_timesheet_timelogsFindManyArgs;
-  }
   export async function transform(
     input: Payload,
   ): Promise<IErpHrmTimeTimesheetTimelog> {
@@ -46,9 +34,21 @@ export namespace ErpHrmTimeTimesheetTimelogTransformer {
       timelog: await ErpHrmTimeTimelogAtSummaryTransformer.transform(
         input.timelog,
       ),
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
     };
+  }
+  export function select() {
+    return {
+      select: {
+        id: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        timesheet: ErpHrmTimeTimesheetAtSummaryTransformer.select(),
+        timelog: ErpHrmTimeTimelogAtSummaryTransformer.select(),
+      },
+    } satisfies Prisma.erp_hrm_time_timesheet_timelogsFindManyArgs;
   }
 }

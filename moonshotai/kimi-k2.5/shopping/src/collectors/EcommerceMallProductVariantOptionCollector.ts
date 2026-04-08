@@ -11,10 +11,11 @@ export namespace EcommerceMallProductVariantOptionCollector {
   export async function collect(props: {
     body: IEcommerceMallProductVariantOption.ICreate;
     ecommerceMallProductVariants: IEntity;
+    ecommerceMallSellers: IEntity;
+    ecommerceMallSellerSessions: IEntity;
   }) {
-    const id = v4();
     return {
-      id,
+      id: v4(),
       option_name: props.body.optionName,
       option_value: props.body.optionValue,
       created_at: new Date(),

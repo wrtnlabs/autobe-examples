@@ -1,17 +1,22 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
-import { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
 import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPost";
-import { IRedditCommunityPostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPostImage";
+import { IRedditCommunityPostImageContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPostImageContent";
+import { IRedditCommunityPostLinkContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPostLinkContent";
+import { IRedditCommunityPostTextContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPostTextContent";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityCommunityAtSummaryTransformer } from "./RedditCommunityCommunityAtSummaryTransformer";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
-import { RedditCommunityPostImageTransformer } from "./RedditCommunityPostImageTransformer";
+import { RedditCommunityPostImageContentTransformer } from "./RedditCommunityPostImageContentTransformer";
+import { RedditCommunityPostLinkContentTransformer } from "./RedditCommunityPostLinkContentTransformer";
+import { RedditCommunityPostTextContentTransformer } from "./RedditCommunityPostTextContentTransformer";
 
 export namespace RedditCommunityPostTransformer {
   export type Payload = Prisma.reddit_community_postsGetPayload<
@@ -23,18 +28,17 @@ export namespace RedditCommunityPostTransformer {
         id: true,
         title: true,
         post_type: true,
-        text_content: true,
-        link_url: true,
-        image_path: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        author: RedditCommunityMemberAtSummaryTransformer.select(),
+        member: RedditCommunityMemberAtSummaryTransformer.select(),
         community: RedditCommunityCommunityAtSummaryTransformer.select(),
-        images: RedditCommunityPostImageTransformer.select(),
+        text: RedditCommunityPostTextContentTransformer.select(),
+        link: RedditCommunityPostLinkContentTransformer.select(),
+        image: RedditCommunityPostImageContentTransformer.select(),
         votes: {
           select: {
-            direction: true,
+            value: true,
           },
         } satisfies Prisma.reddit_community_post_votesFindManyArgs,
         comments: {
@@ -42,6 +46,11 @@ export namespace RedditCommunityPostTransformer {
             deleted_at: true,
           },
         } satisfies Prisma.reddit_community_commentsFindManyArgs,
+        reports: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.reddit_community_report_of_postsFindManyArgs,
       },
     } satisfies Prisma.reddit_community_postsFindManyArgs;
   }
@@ -51,30 +60,35 @@ export namespace RedditCommunityPostTransformer {
     return {
       id: input.id,
       title: input.title,
-      post_type: input.post_type,
-      text_content: input.text_content ?? undefined,
-      link_url: input.link_url ?? undefined,
-      image_path: input.image_path ?? undefined,
+      postType: input.post_type,
       author: await RedditCommunityMemberAtSummaryTransformer.transform(
-        input.author,
+        input.member,
       ),
       community: await RedditCommunityCommunityAtSummaryTransformer.transform(
         input.community,
       ),
-      images: await ArrayUtil.asyncMap(
-        input.images,
-        RedditCommunityPostImageTransformer.transform,
-      ),
-      vote_score: input.votes.reduce(
-        (sum, vote) => sum + (vote.direction === "UPVOTE" ? 1 : -1),
-        0,
-      ) as number & tags.Type<"int32">,
-      comments_count: input.comments.filter(
-        (comment) => comment.deleted_at === null,
-      ).length as number & tags.Type<"int32">,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
-    };
+      voteScore: input.votes.reduce((sum, vote) => sum + vote.value, 0),
+      commentsCount: input.comments.filter((comment) => !comment.deleted_at)
+        .length,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
+      content: await (async () => {
+        if (input.post_type === "text" && input.text) {
+          return await RedditCommunityPostTextContentTransformer.transform(
+            input.text,
+          );
+        } else if (input.post_type === "link" && input.link) {
+          return await RedditCommunityPostLinkContentTransformer.transform(
+            input.link,
+          );
+        } else if (input.post_type === "image" && input.image) {
+          return await RedditCommunityPostImageContentTransformer.transform(
+            input.image,
+          );
+        }
+        return undefined;
+      })(),
+    } satisfies IRedditCommunityPost;
   }
 }

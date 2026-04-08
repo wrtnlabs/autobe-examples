@@ -9,11 +9,13 @@ export function prepare_random_ecommerce_mall_category(
   input?: DeepPartial<IEcommerceMallCategory.ICreate>,
 ): IEcommerceMallCategory.ICreate {
   return {
-    name: input?.name ?? RandomGenerator.name(),
+    name:
+      input?.name ??
+      RandomGenerator.paragraph({ sentences: 2, wordMin: 3, wordMax: 6 }),
     description:
-      input?.description !== undefined
-        ? input.description
-        : RandomGenerator.paragraph({ sentences: 3 }),
-    parent_id: input?.parent_id ?? null,
+      input?.description === undefined
+        ? RandomGenerator.paragraph({ sentences: 1, wordMin: 5, wordMax: 10 })
+        : input.description,
+    parent_id: input?.parent_id,
   };
 }

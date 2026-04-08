@@ -13,36 +13,62 @@ export namespace EcommerceMallProductCollector {
     ecommerceMallSellers: IEntity;
   }) {
     const id: string = v4();
-    const now: Date = new Date();
-    const slug: string =
-      props.body.slug ?? generateSlugFromName(props.body.name);
     return {
       id,
       name: props.body.name,
-      description: props.body.description ?? null,
+      description: props.body.description,
       base_price: props.body.base_price,
-      slug,
-      status: "active",
-      created_at: now,
-      updated_at: now,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
-      seller: { connect: { id: props.ecommerceMallSellers.id } },
       category: { connect: { id: props.body.category_id } },
-      variants: undefined,
+      seller: { connect: { id: props.ecommerceMallSellers.id } },
+      wishlistItems: undefined,
+      customerReviews: undefined,
       images: undefined,
+      variants: undefined,
+      reviews: undefined,
+      reviewSnapshots: undefined,
+      reviewStat: undefined,
+      snapshots: undefined,
       productSnapshots: undefined,
       variantSnapshots: undefined,
-      reviews: undefined,
-      wishlistItems: undefined,
-      entitySnapshots: undefined,
     } satisfies Prisma.ecommerce_mall_productsCreateInput;
   }
-  function generateSlugFromName(name: string): string {
-    return name
-      .toLowerCase()
-      .replace(/[\s]+/g, "-")
-      .replace(/[^[\w\-]/g, "")
-      .replace(/\-+/g, "-")
-      .replace(/^\-+|\-+$/g, "");
-  }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallProductCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallProduct.ICreate;
+//           ecommerceMallSellers: IEntity; // from authorized actor
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       name: ...,
+//       description: ...,
+//       base_price: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       category: ...,
+//       seller: ...,
+//       wishlistItems: ...,
+//       customerReviews: ...,
+//       images: ...,
+//       variants: ...,
+//       reviews: ...,
+//       reviewSnapshots: ...,
+//       reviewStat: ...,
+//       snapshots: ...,
+//       productSnapshots: ...,
+//       variantSnapshots: ...,
+//           } satisfies Prisma.ecommerce_mall_productsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

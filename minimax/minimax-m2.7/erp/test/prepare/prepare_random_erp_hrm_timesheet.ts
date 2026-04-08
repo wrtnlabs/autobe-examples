@@ -8,22 +8,20 @@ import typia, { tags } from "typia";
 export function prepare_random_erp_hrm_timesheet(
   input?: DeepPartial<IErpHrmTimesheet.ICreate>,
 ): IErpHrmTimesheet.ICreate {
-  // Get a Monday for week_start_date
-  const now = new Date();
-  const dayOfWeek = now.getUTCDay();
-  // Days since Monday (0=Mon, 1=Tue, ..., 6=Sun)
-  // To get previous Monday: subtract (dayOfWeek + 6) % 7 days
-  const daysToSubtract = (dayOfWeek + 6) % 7;
-  const monday = new Date(now.getTime() - daysToSubtract * 24 * 60 * 60 * 1000);
-  monday.setUTCHours(0, 0, 0, 0);
-  const weekStartDate = input?.week_start_date ?? monday.toISOString();
-  // Calculate week_end_date as start + 6 days (Sunday)
-  const startDate = new Date(weekStartDate);
-  const sunday = new Date(startDate.getTime() + 6 * 24 * 60 * 60 * 1000);
-  sunday.setUTCHours(23, 59, 59, 999);
-  const weekEndDate = input?.week_end_date ?? sunday.toISOString();
+  // Helper to generate a valid Monday date-time within the past 4 weeks
+  const generateMondayDateTime = (): string => {
+    const now = new Date();
+    const currentDay = now.getDay();
+    // Calculate offset to the preceding Monday: Mon=0, Tue=6, Wed=5, Thu=4, Fri=3, Sat=2, Sun=1
+    const daysUntilPreviousMonday = (8 - currentDay) % 7;
+    // Random offset within past 4 weeks
+    const randomDaysBack = Math.floor(Math.random() * 28);
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - randomDaysBack + daysUntilPreviousMonday);
+    monday.setHours(0, 0, 0, 0);
+    return monday.toISOString();
+  };
   return {
-    week_start_date: weekStartDate,
-    week_end_date: weekEndDate,
+    weekStartDate: input?.weekStartDate ?? generateMondayDateTime(),
   };
 }

@@ -9,16 +9,14 @@ export function prepare_random_ecommerce_mall_shipment(
   input?: DeepPartial<IEcommerceMallShipment.ICreate>,
 ): IEcommerceMallShipment.ICreate {
   return {
-    orderItemIds: input?.orderItemIds
-      ? input.orderItemIds.map(
-          (id) => id ?? typia.random<string & tags.Format<"uuid">>(),
-        )
-      : ArrayUtil.repeat(
-          typia.random<
-            number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<5>
-          >(),
-          () => typia.random<string & tags.Format<"uuid">>(),
-        ),
+    orderItemIds:
+      input?.orderItemIds ??
+      ArrayUtil.repeat(
+        typia.random<
+          number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<5>
+        >(),
+        () => typia.random<string & tags.Format<"uuid">>(),
+      ),
     carrierName:
       input?.carrierName ??
       RandomGenerator.pick([
@@ -27,8 +25,9 @@ export function prepare_random_ecommerce_mall_shipment(
         "DHL",
         "USPS",
         "Amazon Logistics",
-        "OnTrac",
       ] as const),
-    trackingNumber: input?.trackingNumber ?? RandomGenerator.alphaNumeric(12),
+    trackingNumber:
+      input?.trackingNumber ??
+      RandomGenerator.alphaNumeric(12 + Math.floor(Math.random() * 8)),
   };
 }

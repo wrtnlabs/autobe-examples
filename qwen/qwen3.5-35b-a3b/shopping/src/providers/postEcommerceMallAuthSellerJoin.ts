@@ -16,88 +16,158 @@ export async function postEcommerceMallAuthSellerJoin(props: {
   ip: string;
   body: IEcommerceMallSeller.IJoin;
 }): Promise<IEcommerceMallSeller.IAuthorized> {
-  // Validate email uniqueness
+  // Check email uniqueness (active accounts only)
   const existing = await MyGlobal.prisma.ecommerce_mall_sellers.findFirst({
-    where: { email: props.body.email },
+    where: {
+      email: props.body.email,
+      deleted_at: null,
+    },
   });
-  if (existing) {
+  if (existing !== undefined) {
     throw new HttpException("Email already registered", 409);
   }
-  // Generate UUID for seller
+  // Generate unique IDs
   const sellerId: string & tags.Format<"uuid"> = v4();
-  // Create seller account (PasswordUtil handles hashing internally)
-  const createdSeller = await MyGlobal.prisma.ecommerce_mall_sellers.create({
+  const verificationId: string & tags.Format<"uuid"> = v4();
+  const sessionId: string & tags.Format<"uuid"> = v4();
+  // Generate verification token
+  const verificationToken: string & tags.Format<"uuid"> = v4();
+  const verificationTokenHash: string = verificationToken;
+  // Calculate timestamps
+  const nowIso: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
+  const expiresAt: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 24 * 60 * 60 * 1000),
+  );
+  const accessExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpires: string & tags.Format<"date-time"> = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+  // Create seller record
+  const seller = await MyGlobal.prisma.ecommerce_mall_sellers.create({
     data: {
       id: sellerId,
       email: props.body.email,
       password_hash: await PasswordUtil.hash(props.body.password),
+      display_name: props.body.display_name,
+      approval_status: "pending",
+      is_suspended: false,
+      rejection_reason: null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
     },
   });
-  // Generate session ID
-  const sessionId: string & tags.Format<"uuid"> = v4();
-  // Calculate token expiration times
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  // Create session record
-  const createdSession =
-    await MyGlobal.prisma.ecommerce_mall_seller_sessions.create({
-      data: {
-        id: sessionId,
-        seller_id: sellerId,
-        access_token: "",
-        refresh_token: "",
-        ip: props.body.ip ?? props.ip,
-        href: props.body.href,
-        referrer: props.body.referrer,
-        created_at: new Date(),
-        expired_at: accessExpires,
-      },
-    });
-  // Generate JWT tokens
-  const token: IAuthorizationToken = {
-    access: jwt.sign(
-      {
-        type: "seller",
-        id: sellerId,
-        session_id: sessionId,
-        created_at: new Date().toISOString(),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "seller",
-        id: sellerId,
-        session_id: sessionId,
-        tokenType: "refresh",
-        created_at: new Date().toISOString(),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-    expired_at: accessExpires.toISOString(),
-    refreshable_until: refreshExpires.toISOString(),
-  };
-  // Update session with tokens
-  await MyGlobal.prisma.ecommerce_mall_seller_sessions.update({
-    where: { id: sessionId },
+  // Create email verification record
+  await MyGlobal.prisma.ecommerce_mall_seller_email_verifications.create({
     data: {
-      access_token: token.access,
-      refresh_token: token.refresh,
+      id: verificationId,
+      ecommerce_mall_seller_id: sellerId,
+      token: verificationToken,
+      token_hash: verificationTokenHash,
+      email: props.body.email,
+      verified: false,
+      verified_at: null,
+      expires_at: new Date(expiresAt),
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
     },
   });
-  // Build response with proper type conversions
-  const response: IEcommerceMallSeller.IAuthorized = {
-    id: createdSeller.id,
-    email: createdSeller.email,
-    created_at: createdSeller.created_at.toISOString(),
-    updated_at: createdSeller.updated_at.toISOString(),
-    deleted_at: createdSeller.deleted_at?.toISOString() ?? null,
-    token,
+  // Create session record with JWT tokens
+  const accessJwt: string = jwt.sign(
+    {
+      type: "seller",
+      id: sellerId,
+      session_id: sessionId,
+      created_at: nowIso,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
+  );
+  const refreshJwt: string = jwt.sign(
+    {
+      type: "seller",
+      id: sellerId,
+      session_id: sessionId,
+      tokenType: "refresh",
+      created_at: nowIso,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
+  const session = await MyGlobal.prisma.ecommerce_mall_seller_sessions.create({
+    data: {
+      id: sessionId,
+      ecommerce_mall_seller_id: sellerId,
+      access_token: accessJwt,
+      refresh_token: refreshJwt,
+      ip: props.body.ip ?? props.ip,
+      href: props.body.href,
+      referrer: props.body.referrer,
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+      expired_at: new Date(accessExpires),
+    },
+  });
+  // Build IAuthorized response
+  const authorizedResponse: IEcommerceMallSeller.IAuthorized = {
+    id: seller.id,
+    email: seller.email,
+    display_name: seller.display_name,
+    approval_status: seller.approval_status as
+      | "pending"
+      | "approved"
+      | "rejected",
+    rejection_reason: seller.rejection_reason,
+    is_suspended: seller.is_suspended,
+    created_at: toISOStringSafe(seller.created_at),
+    updated_at: toISOStringSafe(seller.updated_at),
+    deleted_at:
+      seller.deleted_at !== null ? toISOStringSafe(seller.deleted_at) : null,
+    token: {
+      access: accessJwt,
+      refresh: refreshJwt,
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
+    },
   };
-  return response;
+  return authorizedResponse;
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function postEcommerceMallAuthSellerJoin(props: {
+//   ip: string;
+//   body: IEcommerceMallSeller.IJoin;
+// }): Promise<IEcommerceMallSeller.IAuthorized> {
+//   // No matching Collector/Transformer found for this operation.
+//     // You MUST call getDatabaseSchemas first to get exact relation property names.
+//     // NEVER guess relation names from table names — always verify against the schema.
+//     ...
+// }
+// ```
+//--------------------------------------------------------------

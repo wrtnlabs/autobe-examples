@@ -17,6 +17,17 @@ export async function getHrmPlatformMemberOrganizationsOrganizationId(props: {
   member: MemberPayload;
   organizationId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformOrganization> {
+  const membership =
+    await MyGlobal.prisma.hrm_platform_organization_memberships.findFirst({
+      where: {
+        hrm_platform_member_id: props.member.id,
+        hrm_platform_organization_id: props.organizationId,
+        deleted_at: null,
+      },
+    });
+  if (!membership) {
+    throw new HttpException("Forbidden", 403);
+  }
   const organization =
     await MyGlobal.prisma.hrm_platform_organizations.findUniqueOrThrow({
       where: {
@@ -25,15 +36,5 @@ export async function getHrmPlatformMemberOrganizationsOrganizationId(props: {
       },
       ...HrmPlatformOrganizationTransformer.select(),
     });
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      organization_id: props.organizationId,
-      user_id: props.member.id,
-      deleted_at: null,
-    },
-  });
-  if (employee === null) {
-    throw new HttpException("Forbidden", 404);
-  }
   return await HrmPlatformOrganizationTransformer.transform(organization);
 }

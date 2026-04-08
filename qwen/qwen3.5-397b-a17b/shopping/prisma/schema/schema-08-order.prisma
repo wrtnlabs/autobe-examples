@@ -1,0 +1,784 @@
+/// Customer orders grouping multiple order items with order-level metadata.
+///
+/// Orders represent complete purchase transactions made by customers. Each
+/// order contains one or more order items representing individual product
+/// variant purchases. Order-level status is derived from constituent order
+/// item statuses and should be computed via queries or materialized views.
+///
+/// Orders maintain purchase metadata including total price, order code for
+/// customer reference, and timestamps. Total price is a snapshot of the
+/// purchase amount that does not change after order creation. Orders support
+/// soft deletion for data retention policies.
+///
+/// @namespace order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the customer (member) who placed this order.
+  ///
+  /// Links the order to the {@link shopping_mall_members} account that made
+  /// the purchase. This relationship is required and immutable - orders cannot
+  /// be transferred between customers.
+  member_id String
+  
+  /// Unique order identification code for customer-facing reference.
+  ///
+  /// Human-readable order number used in customer communications, receipts,
+  /// and support inquiries. Must be unique across all orders. Format typically
+  /// includes date and sequence number.
+  code String
+  
+  /// Total monetary value of all order items at time of purchase.
+  ///
+  /// Snapshot of the total amount paid for this order. This represents the
+  /// purchase-time total and does not change after order creation.
+  total_price Float
+  
+  /// Timestamp when the order was created.
+  created_at DateTime
+  
+  /// Timestamp when the order was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the order was soft-deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member shopping_mall_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orderItems shopping_mall_order_items[]
+  shipments shopping_mall_shipments[]
+  reviews shopping_mall_reviews[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([code])
+  @@index([member_id, created_at])
+}
+
+/// Individual purchased items within orders representing specific product
+/// variants bought by customers.
+///
+/// Each order item captures the product, variant, seller, quantity, and
+/// price at the time of purchase. Status tracking enables independent
+/// lifecycle management for each item (paid, shipped, delivered, cancelled,
+/// refunded) supporting partial order operations.
+///
+/// References {@link shopping_mall_orders} as the parent order container.
+/// Links to {@link shopping_mall_products}, {@link
+/// shopping_mall_product_variants}, and {@link shopping_mall_sellers} for
+/// product and fulfillment details. Optional {@link shopping_mall_shipments}
+/// reference when item is shipped. Status field tracks item progression
+/// through fulfillment workflow.
+///
+/// @namespace order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the parent order containing this item.
+  ///
+  /// Links to {@link shopping_mall_orders}. Multiple order items belong to one
+  /// order. Cannot be null as every item must belong to an order.
+  shopping_mall_order_id String
+  
+  /// Foreign key to the purchased product.
+  ///
+  /// Links to {@link shopping_mall_products}. References the product at time
+  /// of purchase for historical accuracy. Product details may change but this
+  /// reference preserves what was bought.
+  shopping_mall_product_id String
+  
+  /// Foreign key to the specific product variant purchased.
+  ///
+  /// Links to {@link shopping_mall_product_variants}. Identifies the exact SKU
+  /// combination (size, color, etc.) that was purchased. Critical for
+  /// inventory tracking and fulfillment.
+  shopping_mall_product_variant_id String
+  
+  /// Foreign key to the seller who fulfills this order item.
+  ///
+  /// Links to {@link shopping_mall_sellers}. Determines which seller is
+  /// responsible for shipping and customer service for this item. Enables
+  /// seller-specific order management and dashboard views.
+  shopping_mall_seller_id String
+  
+  /// Foreign key to the shipment containing this order item.
+  ///
+  /// Links to {@link shopping_mall_shipments}. Nullable until the seller
+  /// creates a shipment. One-to-one relationship as each item belongs to
+  /// exactly one shipment when shipped. Used for tracking and delivery
+  /// confirmation.
+  shopping_mall_shipment_id String?
+  
+  /// Number of units of this variant purchased in this order item.
+  ///
+  /// Combined with price determines the line item total. Must be positive
+  /// integer. Used for inventory deduction and fulfillment planning.
+  quantity Int
+  
+  /// Unit price of the product variant at the time of purchase.
+  ///
+  /// Captured at checkout to preserve historical accuracy even if product
+  /// prices change later. Multiplied by quantity for line item total. Stored
+  /// as double for decimal precision.
+  price Float
+  
+  /// Current fulfillment status of this order item.
+  ///
+  /// Allowed values: paid (awaiting shipment), shipped (in transit), delivered
+  /// (confirmed or auto-delivered), cancelled (pre-shipment cancellation),
+  /// refunded (post-delivery return). Drives order-level status aggregation
+  /// and seller workflow queues.
+  status String
+  
+  /// Timestamp when this order item was created (at checkout).
+  created_at DateTime
+  
+  /// Timestamp when this order item was last updated (status changes, shipment
+  /// assignment).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  product shopping_mall_products @relation(fields: [shopping_mall_product_id], references: [id], onDelete: Cascade)
+  productVariant shopping_mall_product_variants @relation(fields: [shopping_mall_product_variant_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  shipment shopping_mall_shipments? @relation(fields: [shopping_mall_shipment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshot shopping_mall_order_item_snapshots?
+  cancellationRequests shopping_mall_cancellation_requests[]
+  refundRequest shopping_mall_refund_requests?
+  cancellationRequest shopping_mall_post_purchase_cancellation_requests?
+  refundRequests shopping_mall_post_purchase_refund_requests[]
+  review shopping_mall_reviews?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_mall_order_id])
+  @@index([shopping_mall_product_id])
+  @@index([shopping_mall_product_variant_id])
+  @@index([shopping_mall_shipment_id])
+  @@index([shopping_mall_seller_id, status])
+  @@index([status])
+}
+
+/// Immutable snapshots preserving product name, description, variant price,
+/// and seller profile at the time of purchase for dispute resolution and
+/// audit purposes.
+///
+/// These snapshots are created automatically when an order is placed and
+/// capture the exact state of the product and seller profile at that moment.
+/// This ensures that even if the original product or seller profile is later
+/// modified or deleted, the order history accurately reflects what the
+/// customer purchased.
+///
+/// Each snapshot is linked to exactly one {@link shopping_mall_order_items}
+/// via a unique foreign key constraint. The snapshot contains denormalized
+/// product and seller data to preserve historical accuracy. Variant option
+/// values are stored in the child table {@link
+/// shopping_mall_order_item_snapshot_options} to maintain 1NF compliance.
+///
+/// @namespace order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_item_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the order item this snapshot belongs to.
+  ///
+  /// Each order item has exactly one snapshot, created at the time of
+  /// purchase. This unique relationship ensures the snapshot preserves the
+  /// state of the product and seller profile for that specific purchase.
+  shopping_mall_order_item_id String
+  
+  /// Product name at the time of purchase.
+  ///
+  /// Denormalized from the product table to preserve the exact name the
+  /// customer saw when placing the order, even if the product is later renamed
+  /// or deleted.
+  product_name String
+  
+  /// Product description at the time of purchase.
+  ///
+  /// Denormalized from the product table to preserve the exact description the
+  /// customer saw when placing the order.
+  product_description String
+  
+  /// Variant price at the time of purchase.
+  ///
+  /// The actual price paid for this variant, which may differ from the current
+  /// product base price or variant price if discounts were applied or prices
+  /// changed.
+  variant_price Float
+  
+  /// Seller's shop name at the time of purchase.
+  ///
+  /// Denormalized from the seller profile to preserve the shop name the
+  /// customer saw when placing the order, even if the seller later changes
+  /// their shop name or deletes their account.
+  seller_shop_name String
+  
+  /// Seller's shop logo URL at the time of purchase.
+  ///
+  /// Denormalized from the seller profile to preserve the logo the customer
+  /// saw when placing the order.
+  seller_logo_url String?
+  
+  /// Timestamp when the snapshot was created.
+  ///
+  /// Records the exact moment the order was placed and the snapshot was
+  /// captured. This is the only temporal field as snapshots are immutable and
+  /// never updated or deleted.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  options shopping_mall_order_item_snapshot_options[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_item_id], map: "shopping_mall_order_item_snapshots_shopping_mall_order_d97a0b64")
+}
+
+/// Shipment groups containing order items from the same seller with carrier
+/// and tracking information.
+///
+/// A shipment represents a physical package sent by a seller containing one
+/// or more order items. Different sellers always ship separately, creating
+/// different shipments. When a shipment is created, all order items in it
+/// transition to "shipped" status. Customers confirm delivery per shipment,
+/// which transitions all items to "delivered" status. If not confirmed,
+/// items auto-transition to "delivered" after 14 days from shipping.
+///
+/// Each shipment belongs to exactly one {@link shopping_mall_orders} and is
+/// associated with exactly one seller. The shipment tracks carrier name,
+/// tracking number, and timestamps for shipping and delivery events.
+///
+/// @namespace order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the order this shipment belongs to.
+  ///
+  /// Each shipment is associated with exactly one order. The order contains
+  /// the order items that may be grouped into this shipment. This foreign key
+  /// enables retrieving all shipments for an order and linking shipment
+  /// tracking to order status.
+  shopping_mall_order_id String
+  
+  /// Reference to the seller who is shipping this shipment.
+  ///
+  /// Each shipment is created by exactly one seller. This identifies which
+  /// seller is responsible for the shipment and enables seller dashboard
+  /// queries. Different sellers always create separate shipments even for
+  /// items in the same order.
+  shopping_mall_seller_id String
+  
+  /// Name of the shipping carrier handling this shipment.
+  ///
+  /// Examples include postal services (USPS, Korea Post), courier companies
+  /// (FedEx, UPS, DHL), or local delivery services. This field is required
+  /// when the seller creates the shipment and provides tracking information to
+  /// the customer.
+  carrier_name String
+  
+  /// Tracking number assigned by the carrier for this shipment.
+  ///
+  /// This unique identifier allows customers to track the shipment progress
+  /// through the carrier's website or API. Combined with carrier_name, it
+  /// provides complete tracking information for the customer.
+  tracking_number String
+  
+  /// Timestamp when the seller created this shipment and marked items as
+  /// shipped.
+  ///
+  /// This timestamp is set when the seller enters tracking information and
+  /// confirms the shipment. It marks the transition of all order items in this
+  /// shipment from "paid" to "shipped" status. Also used to calculate the
+  /// 14-day auto-delivery deadline.
+  shipped_at DateTime
+  
+  /// Timestamp when this shipment was confirmed as delivered.
+  ///
+  /// This is set either when the customer manually confirms delivery, or
+  /// automatically after 14 days from shipped_at if no confirmation is
+  /// received. When set, all order items in this shipment transition to
+  /// "delivered" status. Null until delivery is confirmed.
+  delivered_at DateTime?
+  
+  /// Timestamp when this shipment record was created.
+  created_at DateTime
+  
+  /// Timestamp when this shipment record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this shipment was soft-deleted. Null if not deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  order shopping_mall_orders @relation(fields: [shopping_mall_order_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orderItems shopping_mall_order_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shopping_mall_order_id])
+  @@index([shopping_mall_seller_id])
+  @@index([shipped_at])
+}
+
+/// Customer cancellation requests for individual order items with seller
+/// review status.
+///
+/// Tracks cancellation requests initiated by customers for specific order
+/// items before shipment. Each request includes a reason and goes through a
+/// seller review workflow with pending, approved, or rejected statuses.
+///
+/// Each order item can have at most one cancellation request, enforced by
+/// unique constraint on {@link shopping_mall_order_items} reference. When
+/// approved, the order item status changes to cancelled and inventory is
+/// restored via {@link shopping_mall_inventory_records}. Rejected requests
+/// allow the order to continue normal processing.
+///
+/// @namespace order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the order item being cancelled.
+  ///
+  /// Links to {@link shopping_mall_order_items} to identify which specific
+  /// purchased item this cancellation request targets. The order item contains
+  /// seller information for routing the review and determines stock
+  /// restoration upon approval.
+  shopping_mall_order_item_id String
+  
+  /// References the customer who requested cancellation.
+  ///
+  /// Links to {@link shopping_mall_members} to identify the customer account
+  /// that initiated this cancellation request. Must match the customer who
+  /// placed the original order containing this order item.
+  shopping_mall_member_id String
+  
+  /// Customer's reason for requesting cancellation.
+  ///
+  /// Text explanation provided by the customer describing why they want to
+  /// cancel this order item. Required for seller review and dispute
+  /// resolution. Examples include 'ordered by mistake', 'found better price',
+  /// 'no longer needed'.
+  reason String
+  
+  /// Current review status of the cancellation request.
+  ///
+  /// Tracks the workflow state through seller review process. Values:
+  /// 'pending' when awaiting seller review, 'approved' when seller approves
+  /// cancellation and triggers refund, 'rejected' when seller denies the
+  /// request and order continues processing.
+  status String
+  
+  /// Timestamp when the seller responded to the cancellation request.
+  ///
+  /// Records when the seller made their approval or rejection decision. Null
+  /// while status is 'pending'. Used to track seller response times and
+  /// calculate automatic approval timeouts if implemented.
+  responded_at DateTime?
+  
+  /// Timestamp when the cancellation request was created.
+  created_at DateTime
+  
+  /// Timestamp when the cancellation request was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft delete. Null when active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_members @relation(fields: [shopping_mall_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_cancellation_request_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_item_id], map: "shopping_mall_cancellation_requests_shopping_mall_orde_25d5f1b3")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_order_item_id, status], map: "shopping_mall_cancellation_requests_shopping_mall_orde_2f2b5e14")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_member_id, created_at], map: "shopping_mall_cancellation_requests_shopping_mall_memb_270ddc58")
+}
+
+/// Immutable audit trail of cancellation request state changes and seller
+/// responses.
+///
+/// Preserves the complete state of a cancellation request at each
+/// significant event including initial submission and seller response. Used
+/// for dispute resolution and historical tracking. Each snapshot is
+/// append-only and cannot be modified or deleted.
+///
+/// Snapshots are created when a cancellation request is first submitted and
+/// when the seller responds (approves or rejects). The snapshot captures the
+/// status, customer's cancellation reason, seller's response reason if
+/// rejected, and the review timestamp.
+///
+/// @namespace order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_cancellation_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the parent cancellation request this snapshot belongs to.
+  ///
+  /// Links each snapshot record to its source {@link
+  /// shopping_mall_cancellation_requests} entity. Multiple snapshots can exist
+  /// for one cancellation request, each capturing state at different points in
+  /// time.
+  cancellation_request_id String
+  
+  /// Cancellation request status at the time of this snapshot.
+  ///
+  /// Captures the current state (pending, approved, rejected) when the
+  /// snapshot was created. Used to track status progression over time.
+  status String
+  
+  /// Customer's cancellation reason provided when requesting cancellation.
+  ///
+  /// Preserves the original reason text submitted by the customer. Remains
+  /// constant across all snapshots for the same request.
+  reason String
+  
+  /// Seller's response reason if the cancellation was rejected.
+  ///
+  /// Populated only when seller rejects the cancellation request. Null for
+  /// pending requests or approved cancellations.
+  response_reason String?
+  
+  /// Timestamp when seller reviewed and responded to the cancellation request.
+  ///
+  /// Null if the request is still pending. Set when seller approves or rejects
+  /// the request.
+  reviewed_at DateTime?
+  
+  /// Timestamp when this snapshot record was created.
+  ///
+  /// Records the exact time when this state snapshot was captured. Used for
+  /// chronological ordering of snapshots.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  cancellationRequest shopping_mall_cancellation_requests @relation(fields: [cancellation_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([cancellation_request_id, created_at], map: "shopping_mall_cancellation_request_snapshots_cancellat_e6cacb72")
+}
+
+/// Customer refund requests for delivered order items with seller review
+/// status.
+///
+/// Tracks refund requests submitted by customers for order items that have
+/// been delivered. Each request includes a reason and goes through a seller
+/// review workflow with approved or rejected outcomes.
+///
+/// References {@link shopping_mall_members} for the customer who submitted
+/// the request. References {@link shopping_mall_order_items} for the
+/// specific item being refunded. Each order item can have at most one refund
+/// request (enforced by unique constraint).
+///
+/// @namespace order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Customer who submitted the refund request.
+  ///
+  /// References {@link shopping_mall_members} to identify the customer
+  /// requesting the refund. This relationship is required as refund requests
+  /// are always initiated by customers.
+  shopping_mall_member_id String
+  
+  /// Order item being refunded.
+  ///
+  /// References {@link shopping_mall_order_items} to identify the specific
+  /// purchased item for which refund is requested. Each order item can have at
+  /// most one refund request, enforced by unique constraint.
+  shopping_mall_order_item_id String
+  
+  /// Customer's reason for requesting refund.
+  ///
+  /// Text explanation provided by the customer describing why they are
+  /// requesting a refund for this item. Required for seller review.
+  reason String
+  
+  /// Current review status of the refund request.
+  ///
+  /// Workflow states: pending (awaiting seller review), approved (seller
+  /// approved refund), rejected (seller denied refund). Transitions from
+  /// pending to either approved or rejected upon seller response.
+  status String
+  
+  /// Timestamp when seller responded to the refund request.
+  ///
+  /// Set when the seller approves or rejects the request. Null while status is
+  /// pending. Used to calculate the 7-day refund window and track response
+  /// times.
+  reviewed_at DateTime?
+  
+  /// Timestamp when the refund request was created.
+  created_at DateTime
+  
+  /// Timestamp when the refund request was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member shopping_mall_members @relation(fields: [shopping_mall_member_id], references: [id], onDelete: Cascade)
+  orderItem shopping_mall_order_items @relation(fields: [shopping_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_refund_request_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([shopping_mall_order_item_id])
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_member_id, created_at], map: "shopping_mall_refund_requests_shopping_mall_member_id__e9b420af")
+  @@index([status, created_at])
+}
+
+/// Immutable audit trail preserving complete state of refund requests at
+/// each modification point for dispute resolution and compliance.
+///
+///
+/// Each snapshot captures the refund request status, customer reason, and
+/// seller response details at a specific moment in time. Snapshots are
+/// created whenever the refund request status changes or when the seller
+/// responds to the request. This enables tracking the full history of state
+/// transitions and supports dispute resolution by providing an immutable
+/// record of what occurred and when.
+///
+///
+/// Snapshots are append-only and cannot be modified or deleted after
+/// creation. They are linked to their parent {@link
+/// shopping_mall_refund_requests} entity and can be queried chronologically
+/// to reconstruct the complete lifecycle of a refund request.
+///
+/// @namespace order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_refund_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent refund request being snapshotted.
+  ///
+  ///
+  /// Establishes the relationship to the {@link shopping_mall_refund_requests}
+  /// entity that this snapshot preserves the state of. Each refund request can
+  /// have multiple snapshots representing different points in its lifecycle.
+  shopping_mall_refund_request_id String
+  
+  /// Refund request status at the time of this snapshot.
+  ///
+  ///
+  /// Captures the current state of the refund request when this snapshot was
+  /// created. Valid values include: pending (awaiting seller review), approved
+  /// (seller approved the refund), rejected (seller rejected the refund). This
+  /// field preserves the historical state for audit purposes.
+  status String
+  
+  /// Customer's refund request reason at the time of this snapshot.
+  ///
+  ///
+  /// Preserves the text reason provided by the customer when requesting the
+  /// refund. This field captures what the customer stated as their
+  /// justification for the refund at the time the snapshot was created.
+  reason String
+  
+  /// Seller's response type at the time of this snapshot.
+  ///
+  ///
+  /// Captures the seller's decision on the refund request: approved or
+  /// rejected. Null when the request is still pending seller review. This
+  /// field preserves the historical seller response for audit purposes.
+  seller_response_type String?
+  
+  /// Seller's response comment at the time of this snapshot.
+  ///
+  ///
+  /// Preserves any comment or explanation provided by the seller when
+  /// responding to the refund request. Null when the request is still pending
+  /// or if the seller did not provide a comment. This field captures the
+  /// seller's reasoning for their decision.
+  seller_response_comment String?
+  
+  /// Timestamp when this snapshot record was created.
+  ///
+  ///
+  /// Records the exact moment when this snapshot was created, preserving when
+  /// the state change occurred. Used for chronological ordering of snapshots
+  /// and determining the sequence of state transitions in the refund request
+  /// lifecycle.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  refundRequest shopping_mall_refund_requests @relation(fields: [shopping_mall_refund_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_refund_request_id, created_at], map: "shopping_mall_refund_request_snapshots_shopping_mall_r_7cee8140")
+  @@index([created_at])
+}
+
+/// Key-value pairs storing variant option values for order item snapshots in
+/// 1NF-compliant format.
+///
+/// This table captures the option configuration (e.g., color: Red, size:
+/// Large) of a product variant at the time of purchase. Each {@link
+/// shopping_mall_order_item_snapshots} record can have multiple option
+/// entries, one for each option type that defined the variant.
+///
+/// Options are stored as normalized key-value pairs rather than JSON to
+/// maintain 1NF compliance and enable efficient querying. The composite
+/// unique constraint ensures each option key appears only once per snapshot.
+///
+/// @namespace order
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_order_item_snapshot_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the parent order item snapshot that this option belongs to.
+  ///
+  /// This foreign key establishes the 1:N relationship between {@link
+  /// shopping_mall_order_item_snapshots} and this options table. Each snapshot
+  /// can have multiple option key-value pairs representing the variant
+  /// configuration at purchase time.
+  shopping_mall_order_item_snapshot_id String
+  
+  /// Option name identifier such as 'color', 'size', 'material', etc.
+  ///
+  /// This field stores the option type name that was part of the variant
+  /// definition. Combined with the value field, it represents one dimension of
+  /// the variant configuration.
+  key String
+  
+  /// Option value such as 'Red', 'Large', 'Cotton', etc.
+  ///
+  /// This field stores the specific value for the option key. Together with
+  /// the key field, it fully describes one aspect of the variant that was
+  /// purchased.
+  value String
+  
+  /// Timestamp when this option record was created, matching the parent
+  /// snapshot creation time.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  options shopping_mall_order_item_snapshots @relation(fields: [shopping_mall_order_item_snapshot_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_order_item_snapshot_id, key], map: "shopping_mall_order_item_snapshot_options_shopping_mal_da47ff45")
+}

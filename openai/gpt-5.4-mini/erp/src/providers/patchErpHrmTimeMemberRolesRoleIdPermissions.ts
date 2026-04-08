@@ -1,8 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimePermission } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimePermission";
 import { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
-import { IErpHrmTimeRolePermission } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRolePermission";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -19,66 +19,71 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function patchErpHrmTimeMemberRolesRoleIdPermissions(props: {
   member: MemberPayload;
   roleId: string & tags.Format<"uuid">;
-  body: IErpHrmTimeRole.IUpdate;
+  body: IErpHrmTimeRole.IUpdatePermission;
 }): Promise<IErpHrmTimeRole> {
-  const role = await MyGlobal.prisma.erp_hrm_time_roles.findUniqueOrThrow({
+  const membership =
+    await MyGlobal.prisma.erp_hrm_time_organization_memberships.findFirstOrThrow(
+      {
+        where: {
+          erp_hrm_time_member_id: props.member.id,
+          is_selected_context: true,
+        },
+        select: {
+          erp_hrm_time_organization_id: true,
+        },
+      },
+    );
+  const role = await MyGlobal.prisma.erp_hrm_time_roles.findFirstOrThrow({
     where: {
       id: props.roleId,
+      erp_hrm_time_organization_id: membership.erp_hrm_time_organization_id,
       deleted_at: null,
     },
     select: {
       id: true,
       erp_hrm_time_organization_id: true,
+      name: true,
+      description: true,
       is_builtin: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
     },
   });
-  if (props.body.rolePermissions === undefined) {
-    const updated = await MyGlobal.prisma.erp_hrm_time_roles.findUniqueOrThrow({
-      where: {
-        id: props.roleId,
-      },
-      ...ErpHrmTimeRoleTransformer.select(),
-    });
-    return await ErpHrmTimeRoleTransformer.transform(updated);
-  }
   if (role.is_builtin) {
-    throw new HttpException(
-      "Built-in roles cannot have their permission set replaced",
-      400,
-    );
+    const supportedBuiltIn =
+      role.name === "Owner" ||
+      role.name === "Manager" ||
+      role.name === "Employee";
+    if (!supportedBuiltIn) throw new HttpException("Forbidden", 403);
   }
-  if (props.body.rolePermissions.length === 0) {
-    throw new HttpException("Permission set cannot be empty", 400);
+  if (new Set(props.body.permissions).size !== props.body.permissions.length) {
+    throw new HttpException("Invalid permission", 400);
   }
-  const permissionIds = props.body.rolePermissions.map(
-    (item) => item.erpHrmTimePermissionId,
-  );
-  if (new Set(permissionIds).size !== permissionIds.length) {
-    throw new HttpException("Duplicated permissions are not allowed", 400);
-  }
-  const permissions = await MyGlobal.prisma.erp_hrm_time_permissions.findMany({
+  const catalog = await MyGlobal.prisma.erp_hrm_time_permissions.findMany({
     where: {
-      id: { in: permissionIds },
-      deleted_at: null,
+      key: { in: props.body.permissions },
     },
     select: {
       id: true,
+      key: true,
+      description: true,
     },
   });
-  if (permissions.length !== permissionIds.length) {
-    throw new HttpException("Unsupported permission detected", 400);
+  if (catalog.length !== props.body.permissions.length) {
+    throw new HttpException("Invalid permission", 400);
   }
   await MyGlobal.prisma.$transaction(async (prisma) => {
     await prisma.erp_hrm_time_role_permissions.deleteMany({
       where: {
-        erp_hrm_time_role_id: props.roleId,
+        erp_hrm_time_role_id: role.id,
       },
     });
     await prisma.erp_hrm_time_role_permissions.createMany({
-      data: permissionIds.map((permissionId) => ({
+      data: catalog.map((permission) => ({
         id: v4(),
-        erp_hrm_time_role_id: props.roleId,
-        erp_hrm_time_permission_id: permissionId,
+        erp_hrm_time_role_id: role.id,
+        erp_hrm_time_permission_id: permission.id,
         created_at: toISOStringSafe(new Date()),
         updated_at: toISOStringSafe(new Date()),
       })),
@@ -86,7 +91,7 @@ export async function patchErpHrmTimeMemberRolesRoleIdPermissions(props: {
   });
   const updated = await MyGlobal.prisma.erp_hrm_time_roles.findUniqueOrThrow({
     where: {
-      id: props.roleId,
+      id: role.id,
     },
     ...ErpHrmTimeRoleTransformer.select(),
   });

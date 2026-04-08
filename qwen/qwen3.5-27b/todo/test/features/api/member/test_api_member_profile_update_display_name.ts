@@ -1,7 +1,7 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IMultiUserTodoMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IMultiUserTodoMember";
+import type { ITodoAppMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMember";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -13,72 +13,64 @@ import { authorize_member_login } from "../../../authorize/authorize_member_logi
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
 
 /**
- * Test that an authenticated member can successfully update their display name.
+ * Test updating a member's display name through the profile update endpoint.
  *
- * This test verifies the complete profile update workflow:
- * 1. Register a new member with initial display name
- * 2. Update the display name to a new value
- * 3. Validate the updated profile contains the new display name
- * 4. Verify other fields remain unchanged
- * 5. Confirm updated_at timestamp was refreshed
+ * Validates the complete profile update workflow including member registration, authentication, and display name modification. Ensures that the display name is correctly updated and that the updated_at timestamp is automatically refreshed upon modification.
+ *
+ * Special attention is given to verifying that the member's identity remains consistent (id, email unchanged) while only the display_name and updated_at fields are modified.
+ *
+ * 1. Register a new member account with email, password, and optional display name.
+ * 2. Update the member's display name to a new value.
+ * 3. Validate the response contains the updated display name.
+ * 4. Verify the updated_at timestamp has been refreshed.
+ * 5. Confirm other fields (id, email, created_at, deleted_at) remain unchanged.
  */
 export async function test_api_member_profile_update_display_name(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Register and authenticate member
+  // 1. Register and authenticate a new member
   const memberConnection: api.IConnection = { host: connection.host };
-  const joined = await authorize_member_join(memberConnection, {
+  const authorized = await authorize_member_join(memberConnection, {
     body: {
-      display_name: RandomGenerator.name(),
+      display_name: null,
     },
   });
-  typia.assert(joined);
+  typia.assert(authorized);
   // Store original values for comparison
-  const originalDisplayName = joined.display_name;
-  const originalEmail = joined.email;
-  const originalCreatedAt = joined.created_at;
-  const originalUpdatedAt = joined.updated_at;
-  // 2. Generate new display name
-  const newDisplayName = RandomGenerator.name();
-  // 3. Update profile with new display name
-  const updated = await api.functional.multiUserTodo.member.profile.update(
-    memberConnection,
-    {
-      body: {
-        display_name: newDisplayName,
-      } satisfies IMultiUserTodoMember.IUpdate,
-    },
-  );
-  typia.assert(updated);
-  // 4. Validate display name was updated
+  const originalId = authorized.id;
+  const originalEmail = authorized.email;
+  const originalCreatedAt = authorized.created_at;
+  const originalUpdatedAt = authorized.updated_at;
+  // 2. Update the member's display name
+  const updatedMember =
+    await api.functional.todoApp.member.member.profile.update(
+      memberConnection,
+      {
+        body: {
+          display_name: "John Doe",
+        } satisfies ITodoAppMember.IUpdate,
+      },
+    );
+  typia.assert(updatedMember);
+  // 3. Validate the display name was updated
   TestValidator.equals(
-    "display name matches new value",
-    updated.display_name,
-    newDisplayName,
+    "display name matches input",
+    updatedMember.display_name,
+    "John Doe",
   );
+  // 4. Verify the updated_at timestamp was refreshed
   TestValidator.notEquals(
-    "display name changed from original",
-    updated.display_name,
-    originalDisplayName,
-  );
-  // 5. Validate other fields remain unchanged
-  TestValidator.equals("email unchanged", updated.email, originalEmail);
-  TestValidator.equals(
-    "created_at unchanged",
-    updated.created_at,
-    originalCreatedAt,
-  );
-  TestValidator.equals("id unchanged", updated.id, joined.id);
-  // 6. Validate updated_at was refreshed
-  TestValidator.notEquals(
-    "updated_at was refreshed",
-    updated.updated_at,
+    "updated_at timestamp changed",
+    updatedMember.updated_at,
     originalUpdatedAt,
   );
-  // 7. Validate account is still active
+  // 5. Confirm other fields remain unchanged
+  TestValidator.equals("member id unchanged", updatedMember.id, originalId);
+  TestValidator.equals("email unchanged", updatedMember.email, originalEmail);
   TestValidator.equals(
-    "account is active (deleted_at is null)",
-    updated.deleted_at,
-    null,
+    "created_at unchanged",
+    updatedMember.created_at,
+    originalCreatedAt,
   );
+  TestValidator.equals("account is active", updatedMember.deleted_at, null);
 }

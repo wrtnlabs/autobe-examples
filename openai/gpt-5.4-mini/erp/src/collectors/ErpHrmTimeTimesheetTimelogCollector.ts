@@ -10,10 +10,10 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ErpHrmTimeTimesheetTimelogCollector {
   export async function collect(props: {
     body: IErpHrmTimeTimesheetTimelog.ICreate;
-    erpHrmTimeTimesheets: IEntity;
+    timesheet: IEntity;
   }) {
     const id: string = v4();
-    const now: Date = new Date();
+    const now = new Date();
     return {
       id,
       created_at: now,
@@ -21,12 +21,12 @@ export namespace ErpHrmTimeTimesheetTimelogCollector {
       deleted_at: null,
       timesheet: {
         connect: {
-          id: props.erpHrmTimeTimesheets.id,
+          id: props.timesheet.id,
         },
       },
       timelog: {
         connect: {
-          id: props.body.erp_hrm_time_timelog_id,
+          id: props.body.timelogId,
         },
       },
     } satisfies Prisma.erp_hrm_time_timesheet_timelogsCreateInput;

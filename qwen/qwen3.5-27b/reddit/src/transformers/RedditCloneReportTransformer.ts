@@ -4,13 +4,15 @@ import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
 import { IRedditCloneReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneReport";
+import { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCloneCommentAtSummaryTransformer } from "./RedditCloneCommentAtSummaryTransformer";
-import { RedditCloneCommunityAtSummaryTransformer } from "./RedditCloneCommunityAtSummaryTransformer";
 import { RedditCloneMemberAtSummaryTransformer } from "./RedditCloneMemberAtSummaryTransformer";
 import { RedditClonePostAtSummaryTransformer } from "./RedditClonePostAtSummaryTransformer";
 
@@ -22,14 +24,13 @@ export namespace RedditCloneReportTransformer {
     return {
       select: {
         id: true,
-        content_type: true,
+        report_type: true,
         reason: true,
         status: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
         reporter: RedditCloneMemberAtSummaryTransformer.select(),
-        community: RedditCloneCommunityAtSummaryTransformer.select(),
         reportedPost: RedditClonePostAtSummaryTransformer.select(),
         reportedComment: RedditCloneCommentAtSummaryTransformer.select(),
       },
@@ -38,14 +39,11 @@ export namespace RedditCloneReportTransformer {
   export async function transform(input: Payload): Promise<IRedditCloneReport> {
     return {
       id: input.id,
-      content_type: input.content_type,
+      report_type: input.report_type,
       reason: input.reason,
       status: input.status,
       reporter: await RedditCloneMemberAtSummaryTransformer.transform(
         input.reporter,
-      ),
-      community: await RedditCloneCommunityAtSummaryTransformer.transform(
-        input.community,
       ),
       reportedPost: input.reportedPost
         ? await RedditClonePostAtSummaryTransformer.transform(

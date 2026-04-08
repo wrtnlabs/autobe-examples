@@ -7,61 +7,52 @@ import {
 import typia, { tags } from "typia";
 
 import { IEcommerceMallCartItem } from "../../../../../structures/IEcommerceMallCartItem";
+import { IPageIEcommerceMallCartItem } from "../../../../../structures/IPageIEcommerceMallCartItem";
 
 /**
- * Add a product variant to the authenticated customer's shopping cart.
+ * Retrieve a filtered and paginated list of cart items with availability status.
  *
- * This endpoint allows customers to add items to their cart by specifying a product variant and desired quantity. The system automatically retrieves the current customer's cart or creates a new one if it does not exist. If the specified variant already exists in the cart, the quantities are combined into a single line item rather than creating duplicate entries.
+ * This operation returns cart items for the authenticated customer with their current availability status. Each item includes product name, variant options, price, quantity, and line subtotal. The response marks items as unavailable if their variant has been deleted or is out of stock.
  *
- * The request body must include the variantId identifying the specific product variant (such as a particular color and size combination) and the quantity the customer wishes to purchase. The variant must belong to an active, non-deleted product from an approved seller.
- *
- * The response returns the updated cart item with complete product information including product name, selected variant options, unit price, and the resulting quantity after any combination. An availability warning is included if the requested quantity exceeds available stock.
- *
- * This operation does not deduct inventory—items are reserved only upon successful order placement during checkout.
- *
- * Related Operations:
- * - GET /cart returns the complete cart with all items and total
- * - PUT /cart/items/{itemId} updates the quantity of an existing cart item
- * - DELETE /cart/items/{itemId} removes a specific item from the cart
+ * Items with stock shortages are flagged with warnings indicating available quantity. The operation joins cart items with product and variant data to provide complete item information.
  *
  * @param props.connection
- * @param props.body The product variant ID and quantity to add to cart
+ * @param props.body Search filters and pagination parameters for cart items
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification 1. Extract customer ID from authenticated session token.
- * 2. Retrieve or create the customer's cart:
- *    - Query ecommerce_mall_carts table for existing cart with customer_id
- *    - If not found and this is the first item, create new cart record
- * 3. Validate the variant:
- *    - Query ecommerce_mall_product_variants to verify variant exists
- *    - Verify the variant's product is active (not deleted)
- *    - Verify the product's seller is approved and not suspended
- * 4. Check for existing cart item with same variant:
- *    - Query ecommerce_mall_cart_items for existing item with same cart_id and product_variant_id
- *    - If found, add quantity to existing item
- *    - If not found, create new cart item
- * 5. Verify stock availability:
- *    - Query ecommerce_mall_inventory_records to check current stock
- *    - Include availability_warning in response if requested quantity exceeds stock
- * 6. Calculate line subtotal (quantity × variant price).
- * 7. Return the cart item with product details and availability warning if applicable.
+ * @x-autobe-specification Query ecommerce_mall_cart_items table with JOIN to ecommerce_mall_products and ecommerce_mall_product_variants.
  *
- * Edge Cases:
- * - Variant not found → Return 404 error
- * - Product deleted or inactive → Return 400 error
- * - Seller suspended → Return 400 error
- * - Quantity <= 0 → Return 400 validation error
- * - Quantity exceeds stock → Include warning but allow adding (no hard block)
+ * Authenticate customer via JWT from Authorization header. Get customer_id from session.
+ *
+ * Join with:
+ * - ecommerce_mall_products: cart_items.ecommerce_mall_product_variant_id -> product_variants.id -> product_variants.ecommerce_mall_product_id -> products.id
+ * - ecommerce_mall_product_variants: cart_items.ecommerce_mall_product_variant_id -> variants.id
+ * - ecommerce_mall_carts: cart_items.ecommerce_mall_cart_id -> carts.id
+ *
+ * Filter criteria from request body:
+ * - productName: partial match on products.name (case-insensitive)
+ * - variantSkuCode: exact match on variants.sku_code
+ * - stockStatus: 'in_stock' | 'out_of_stock' | 'unavailable' | 'all'
+ * - createdAtFrom/createdAtTo: date range filter on cart_items.created_at
+ *
+ * For each cart item, compute:
+ * - availabilityStatus: 'available' if variant.deleted_at is null AND variant.quantity >= cart_item.quantity, 'out_of_stock' if variant.quantity < cart_item.quantity AND variant.deleted_at is null, 'unavailable' if variant.deleted_at is not null
+ * - stockWarning: true if variant.quantity < cart_item.quantity AND variant.deleted_at is null, showing shortage amount
+ * - lineSubtotal: variant.price (or product.base_price if null) * cart_item.quantity
+ *
+ * Apply cursor-based pagination with configurable page size (default 20, max 100). Sort by cart_items.created_at DESC.
+ *
+ * Return items only from the authenticated customer's cart (carts.ecommerce_mall_customer_id = session customer_id).
  * @path /ecommerceMall/customer/cart/items
- * @accessor api.functional.ecommerceMall.customer.cart.items.create
+ * @accessor api.functional.ecommerceMall.customer.cart.items.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function create(
+export async function index(
   connection: IConnection,
-  props: create.Props,
-): Promise<create.Response> {
+  props: index.Props,
+): Promise<index.Response> {
   return true === connection.simulate
-    ? create.simulate(connection, props)
+    ? index.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -71,25 +62,25 @@ export async function create(
           },
         },
         {
-          ...create.METADATA,
-          path: create.path(),
+          ...index.METADATA,
+          path: index.path(),
           status: null,
         },
         props.body,
       );
 }
-export namespace create {
+export namespace index {
   export type Props = {
     /**
-     * The product variant ID and quantity to add to cart
+     * Search filters and pagination parameters for cart items
      */
-    body: IEcommerceMallCartItem.ICreate;
+    body: IEcommerceMallCartItem.IRequest;
   };
-  export type Body = IEcommerceMallCartItem.ICreate;
-  export type Response = IEcommerceMallCartItem;
+  export type Body = IEcommerceMallCartItem.IRequest;
+  export type Response = IPageIEcommerceMallCartItem.ISummary;
 
   export const METADATA = {
-    method: "POST",
+    method: "PATCH",
     path: "/ecommerceMall/customer/cart/items",
     request: {
       type: "application/json",
@@ -102,16 +93,16 @@ export namespace create {
   } as const;
 
   export const path = () => "/ecommerceMall/customer/cart/items";
-  export const random = (): IEcommerceMallCartItem =>
-    typia.random<IEcommerceMallCartItem>();
+  export const random = (): IPageIEcommerceMallCartItem.ISummary =>
+    typia.random<IPageIEcommerceMallCartItem.ISummary>();
   export const simulate = (
     connection: IConnection,
-    props: create.Props,
+    props: index.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: create.path(),
+      path: index.path(),
       contentType: "application/json",
     });
     try {
@@ -130,31 +121,33 @@ export namespace create {
 }
 
 /**
- * Retrieve detailed information about a specific cart item by its unique identifier.
+ * Retrieve a specific cart item by its unique identifier.
  *
- * This endpoint returns the complete details of a single cart item including the associated product information, selected variant options, pricing details, quantity, and availability status. The response includes computed line-item subtotal and availability warnings if the variant is out of stock or unavailable.
+ * This endpoint returns detailed information about a single cart item including the associated product name, selected variant options (such as color and size), the unit price at the time of addition, quantity selected, line item subtotal, and current availability status.
  *
- * The cart item is identified by the itemId path parameter which corresponds to the primary key of the ecommerce_mall_cart_items table. The system validates that the requested cart item belongs to the authenticated customer by traversing the relationship: cart_item -> cart -> customer.
+ * The response includes stock warnings if the requested quantity exceeds available inventory. If the referenced product variant has been deleted by the seller, the item is marked as unavailable in the response.
  *
- * The response includes the product name and description from the associated ecommerce_mall_products table, the SKU code and price override from the ecommerce_mall_product_variants table, and the quantity from the cart item itself. If the variant has a deleted_at timestamp, the item is marked as unavailable. If the variant's current stock quantity is less than the requested cart quantity, a stock warning is included.
- *
- * This operation is used in conjunction with the cart listing endpoint (GET /cart) and quantity update endpoint (PUT /cart/items/{itemId}) to provide complete cart management capabilities.
+ * This operation is scoped to the authenticated customer's cart. Customers can only retrieve cart items that belong to their own cart.
  *
  * @param props.connection
- * @param props.itemId Unique identifier of the cart item to retrieve
+ * @param props.itemId Unique identifier of the cart item to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification 1. Extract itemId from path parameters.
- * 2. Validate itemId is a valid UUID format.
- * 3. Query ecommerce_mall_cart_items table filtering by id = itemId.
- * 4. Join with ecommerce_mall_carts to verify cart ownership by authenticated customer.
- * 5. Join with ecommerce_mall_product_variants to get variant details (sku_code, price, quantity).
- * 6. Join with ecommerce_mall_products to get product details (name, description).
- * 7. Join with ecommerce_mall_product_variant_option_values to get variant option key-value pairs.
- * 8. Calculate line-item subtotal: quantity * (variant.price ?? product.base_price).
- * 9. Determine availability: variant.deleted_at IS NULL and variant.quantity >= cart_item.quantity.
- * 10. Return cart item with all joined data, computed subtotal, and availability status.
- * 11. Return 404 if cart item not found or does not belong to authenticated customer.
+ * @x-autobe-specification Query the ecommerce_mall_cart_items table using the provided itemId as the primary key.
+ *
+ * Verify the cart item belongs to the authenticated customer's cart by joining with ecommerce_mall_carts table and matching ecommerce_mall_customer_id.
+ *
+ * Join with ecommerce_mall_product_variants to get variant details including sku_code, price (using variant price if not null, otherwise falling back to product base_price), and quantity.
+ *
+ * Join with ecommerce_mall_products to get product name and verify the product is not soft-deleted (deleted_at is null).
+ *
+ * Calculate the line item subtotal by multiplying quantity by unit price.
+ *
+ * Check current stock availability: if product_variant.deleted_at is not null, mark as unavailable; if variant quantity is less than cart item quantity, include a stock_warning with available quantity.
+ *
+ * Return 404 Not Found if the cart item does not exist or does not belong to the authenticated customer.
+ *
+ * Return 410 Gone if the associated product variant has been soft-deleted.
  * @path /ecommerceMall/customer/cart/items/:itemId
  * @accessor api.functional.ecommerceMall.customer.cart.items.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -183,7 +176,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the cart item to retrieve
+     * Unique identifier of the cart item to retrieve.
      */
     itemId: string & tags.Format<"uuid">;
   };
@@ -229,37 +222,132 @@ export namespace at {
 }
 
 /**
- * Remove a specific item from the authenticated customer's shopping cart.
+ * Update the quantity of an item in the shopping cart.
  *
- * This endpoint permanently deletes a cart item line from the customer's shopping cart. The operation succeeds for any valid cart item regardless of the current stock status or availability of the associated product variant. When a product variant has been deleted by the seller, the cart item is still removable through this endpoint.
+ * This endpoint allows customers to modify the quantity of a specific cart item. The customer must be authenticated and own the cart containing the specified item.
  *
- * The customer must be authenticated to access this endpoint. The itemId must belong to an item in the customer's own cart. Items from other customers' carts cannot be accessed or removed.
+ * The operation validates that the item exists and belongs to the customer's cart. Quantity updates are immediate and affect the cart total calculation. Customers can update quantities regardless of stock status, allowing them to set desired quantities for out-of-stock items.
  *
- * Upon successful removal, the system recalculates and returns the updated cart contents including the cart total. If the removed item was the last item in the cart, the response returns an empty items array with a total of zero.
- *
- * This operation has no confirmation requirement - the item is removed immediately upon request. There are no restrictions on removing cart items, ensuring customers have full control over their cart contents at any time.
+ * When the quantity is updated, the system recalculates the line item subtotal and the overall cart total. If the updated quantity is zero, the behavior follows cart item removal rules.
  *
  * @param props.connection
- * @param props.itemId Unique identifier of the cart item to remove from the cart
+ * @param props.itemId Unique identifier of the cart item to update (global scope)
+ * @param props.body New quantity value for the cart item
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implement the following logic for removing a cart item:
+ * @x-autobe-specification Validate that the authenticated customer owns the cart containing the specified item. Query ecommerce_mall_cart_items table by item ID. Verify the item exists and is not already deleted. Validate the provided quantity is a positive integer (minimum 1). If quantity is zero or negative, reject with validation error. Update the quantity field in the database. Set updated_at timestamp to current time. Return the complete updated cart item with current variant information including product name, variant options, and unit price.
+ * @path /ecommerceMall/customer/cart/items/:itemId
+ * @accessor api.functional.ecommerceMall.customer.cart.items.update
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function update(
+  connection: IConnection,
+  props: update.Props,
+): Promise<update.Response> {
+  return true === connection.simulate
+    ? update.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...update.METADATA,
+          path: update.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace update {
+  export type Props = {
+    /**
+     * Unique identifier of the cart item to update (global scope)
+     */
+    itemId: string & tags.Format<"uuid">;
+
+    /**
+     * New quantity value for the cart item
+     */
+    body: IEcommerceMallCartItem.IUpdate;
+  };
+  export type Body = IEcommerceMallCartItem.IUpdate;
+  export type Response = IEcommerceMallCartItem;
+
+  export const METADATA = {
+    method: "PUT",
+    path: "/ecommerceMall/customer/cart/items/:itemId",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/ecommerceMall/customer/cart/items/${encodeURIComponent(props.itemId ?? "null")}`;
+  export const random = (): IEcommerceMallCartItem =>
+    typia.random<IEcommerceMallCartItem>();
+  export const simulate = (
+    connection: IConnection,
+    props: update.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: update.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("itemId")(() => typia.assert(props.itemId));
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Remove a specific item from the authenticated customer's shopping cart.
  *
- * 1. Extract the itemId from the path parameter (UUID format)
- * 2. Retrieve the authenticated customer from the session context
- * 3. Query the ecommerce_mall_cart_items table to find the cart item with the given id
- * 4. Verify the cart item belongs to a cart owned by the authenticated customer (join with ecommerce_mall_carts and verify ecommerce_mall_customer_id matches)
- * 5. If the cart item is not found or belongs to another customer, return 404 error
- * 6. Delete the cart item record from ecommerce_mall_cart_items table
- * 7. Query remaining cart items for the customer's cart
- * 8. Calculate updated cart total (sum of quantity * variant unit price for all items)
- * 9. Return the updated cart with all remaining items
+ * This operation permanently deletes the cart line item from the customer's cart. The removal succeeds unconditionally regardless of the variant's current stock status, availability state, or any other condition. There is no confirmation required for this operation.
  *
- * Edge cases to handle:
- * - Item already deleted: Return success (idempotent operation)
- * - Invalid UUID format for itemId: Return 400 Bad Request
- * - Item belongs to another customer's cart: Return 404 Not Found
- * - Cart does not exist for customer: Return 404 Not Found
+ * When the last item is removed from the cart, the system transitions to an empty cart state. The cart total is recalculated immediately after removal.
+ *
+ * This endpoint only removes available items; if the referenced variant has been deleted by the seller, the item is marked as unavailable in the cart and this endpoint allows customers to remove such unavailable items as well.
+ *
+ * @param props.connection
+ * @param props.itemId Unique identifier of the cart item to remove (UUID)
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor customer
+ * @x-autobe-specification Delete the cart item record from ecommerce_mall_cart_items table where id matches the itemId parameter.
+ *
+ * 1. Verify the cart item exists by matching itemId against ecommerce_mall_cart_items.id
+ * 2. Verify the cart item belongs to the authenticated customer by joining with ecommerce_mall_carts table and matching ecommerce_mall_cart.customer_id with the current customer session
+ * 3. If cart item not found or does not belong to customer, return 404 error
+ * 4. Delete the cart item record from ecommerce_mall_cart_items
+ * 5. Optionally: Return 204 No Content on success
+ *
+ * Edge cases:
+ * - Item already deleted: Return 404
+ * - Item belongs to different customer's cart: Return 404 (not 403 to prevent enumeration)
+ * - Deleted variant referenced: Delete the cart item anyway (no restrictions)
+ * - Out of stock variant: Delete the cart item anyway (no restrictions)
+ *
+ * No validation on variant status, stock levels, or any other condition required.
  * @path /ecommerceMall/customer/cart/items/:itemId
  * @accessor api.functional.ecommerceMall.customer.cart.items.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -288,7 +376,7 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Unique identifier of the cart item to remove from the cart
+     * Unique identifier of the cart item to remove (UUID)
      */
     itemId: string & tags.Format<"uuid">;
   };

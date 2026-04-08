@@ -12,15 +12,15 @@ export async function guestAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const guest = await MyGlobal.prisma.hrm_platform_guests.findFirst({
+  const guestSession = await MyGlobal.prisma.hrm_time_track_guest_sessions.findFirst({
     where: {
-      id: payload.id,
-      deleted_at: null,
+      id: payload.session_id,
+      expired_at: { gt: new Date() },
     },
   });
 
-  if (guest === null) {
-    throw new ForbiddenException("You're not enrolled");
+  if (guestSession === null) {
+    throw new ForbiddenException("Guest session not found or expired");
   }
 
   return payload;

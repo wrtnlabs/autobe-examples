@@ -8,8 +8,10 @@ import { IHrmPlatformProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structu
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmPlatformEmployeeAtSummaryTransformer } from "./HrmPlatformEmployeeAtSummaryTransformer";
 import { HrmPlatformProjectAtSummaryTransformer } from "./HrmPlatformProjectAtSummaryTransformer";
@@ -25,7 +27,6 @@ export namespace HrmPlatformProjectMemberTransformer {
         role: true,
         created_at: true,
         updated_at: true,
-        deleted_at: true,
         employee: HrmPlatformEmployeeAtSummaryTransformer.select(),
         project: HrmPlatformProjectAtSummaryTransformer.select(),
       },
@@ -37,15 +38,14 @@ export namespace HrmPlatformProjectMemberTransformer {
     return {
       id: input.id,
       role: input.role,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
       employee: await HrmPlatformEmployeeAtSummaryTransformer.transform(
         input.employee,
       ),
       project: await HrmPlatformProjectAtSummaryTransformer.transform(
         input.project,
       ),
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
-    };
+    } satisfies IHrmPlatformProjectMember;
   }
 }

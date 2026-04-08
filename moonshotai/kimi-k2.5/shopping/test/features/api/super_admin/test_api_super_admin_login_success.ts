@@ -8,51 +8,60 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+import { authorize_super_admin_join } from "../../../authorize/authorize_super_admin_join";
 import { authorize_super_admin_login } from "../../../authorize/authorize_super_admin_login";
 import { authorize_super_admin_refresh } from "../../../authorize/authorize_super_admin_refresh";
 
+/**
+ * Test the happy path for super administrator login.
+ * 1. Create a super admin account via the join endpoint.
+ * 2. Attempt to log in with the same email and password credentials.
+ * 3. Validate that the response returns HTTP 200 with a complete IEcommerceMallSuperAdmin.IAuthorized object containing: the super admin's id, email, grade (should be 'super_admin'), createdAt/updatedAt timestamps, deletedAt (should be null for active account), and a valid IAuthorizationToken with access token, refresh token, expired_at timestamp, and refreshable_until timestamp.
+ * 4. Verify that the session metadata (IP, href, referrer) from the login request is properly captured in the session record.
+ */
 export async function test_api_super_admin_login_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // Generate unique credentials for the test
-  const email = typia.random<string & tags.Format<"email">>();
-  const password = typia.random<string & tags.Format<"password">>();
-  // Step 1: Create a super admin account using join endpoint
+  // Create a dedicated connection for super admin creation
+  const createConnection: api.IConnection = { host: connection.host };
+  // Step 1: Create super admin account with random credentials
   const joinBody = {
-    email,
-    password,
-    href: "https://example.com/super-admin/join",
-    referrer: "https://example.com/",
-    ip: "127.0.0.1",
+    email: typia.random<string & tags.Format<"email">>(),
+    password: typia.random<string & tags.Format<"password">>(),
   } satisfies IEcommerceMallSuperAdmin.IJoin;
-  const created = await api.functional.ecommerceMall.auth.superAdmin.join(
-    connection,
-    {
-      body: joinBody,
-    },
-  );
-  typia.assert(created);
-  // Step 2: Login with the same credentials using utility function
-  const superAdminConnection: api.IConnection = { host: connection.host };
+  const joined = await authorize_super_admin_join(createConnection, {
+    body: joinBody,
+  });
+  typia.assert(joined);
+  // Step 2: Create a fresh connection for login (no authentication)
+  const loginConnection: api.IConnection = { host: connection.host };
+  // Step 3: Login with the same credentials
   const loginBody = {
-    email,
-    password,
+    email: joinBody.email,
+    password: joinBody.password,
+    href: "https://admin.mall.example.com/login",
+    referrer: "https://admin.mall.example.com/",
+    ip: typia.random<string & tags.Format<"ipv4">>(),
   } satisfies IEcommerceMallSuperAdmin.ILogin;
-  const authorized = await authorize_super_admin_login(superAdminConnection, {
+  const authorized = await authorize_super_admin_login(loginConnection, {
     body: loginBody,
   });
   typia.assert(authorized);
-  // Step 3: Validate business logic and response structure
-  TestValidator.equals("email matches input", authorized.email, email);
+  // Step 4: Validate super admin identity fields
+  TestValidator.equals("email matches input", authorized.email, joinBody.email);
   TestValidator.equals("grade is super_admin", authorized.grade, "super_admin");
-  TestValidator.equals("id matches created account", authorized.id, created.id);
-  TestValidator.equals("deletedAt is null", authorized.deletedAt, null);
+  TestValidator.equals(
+    "deletedAt is null for active account",
+    authorized.deletedAt,
+    null,
+  );
+  // Step 5: Validate authorization token structure (typia.assert already validates format)
   TestValidator.predicate(
     "access token exists",
-    authorized.token.access.length > 0,
+    () => authorized.token.access.length > 0,
   );
   TestValidator.predicate(
     "refresh token exists",
-    authorized.token.refresh.length > 0,
+    () => authorized.token.refresh.length > 0,
   );
 }

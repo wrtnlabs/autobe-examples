@@ -6,187 +6,37 @@ import {
 } from "@nestia/fetcher";
 import typia, { tags } from "typia";
 
-import { IPageIRedditCloneUserKarma } from "../../../../../structures/IPageIRedditCloneUserKarma";
-import { IRedditCloneUserKarma } from "../../../../../structures/IRedditCloneUserKarma";
+import { IPageIRedditCloneCommunityBan } from "../../../../../structures/IPageIRedditCloneCommunityBan";
+import { IRedditCloneCommunityBan } from "../../../../../structures/IRedditCloneCommunityBan";
 
 /**
- * Ban a user from a community, permanently recording the restriction in the database.
+ * Retrieve a filtered and paginated list of banned users within a specific community.
  *
- * This endpoint allows community moderators and owners to restrict users who violate community rules or guidelines. The ban creates an audit trail by recording the moderator who issued it and the reason provided.
+ * This operation allows moderators and community owners to search through bans, view active and expired bans, and manage the ban list for their community. Supports filtering by banned user, ban status, issuer, and date range. Pagination enables efficient browsing of large ban lists.
  *
- * When a ban is created, the system enforces the following behaviors for the banned user within that community:
- * - The user CANNOT create new posts or comments
- * - The user CAN view existing posts and comments
- * - The user CAN vote on posts and comments
- * - The user CANNOT subscribe to the community
- *
- * The ban record includes a reason field for accountability and an optional expires_at field for temporary bans. Permanent bans leave expires_at as null. The banned_user_id and issued_by_reddit_clone_user_id establish the relationship between the affected user and the moderator who enforced the ban.
- *
- * Authorization requires the requesting user to be either the community owner or a moderator with the 'moderator' or 'owner' role in the reddit_clone_moderators table. The community is identified by its unique name in the path parameter, and the target user is identified by their username in the request body.
- *
- * The response returns the complete ban record including the generated UUID, timestamps, community reference, banned user reference, and the issuer reference for verification.
- *
- * **Important restrictions**: The community owner cannot be banned from their own community. Moderators cannot ban other moderators from the same community.
+ * The response includes summary information for each ban including the banned user's identifier, the reason for the ban, the moderator who issued it, timestamps, and expiration information if applicable.
  *
  * @param props.connection
- * @param props.communityName Unique name of the community (URL-safe identifier)
- * @param props.body Username of the user to ban and the reason for the ban
+ * @param props.communityId Unique identifier of the community (global scope)
+ * @param props.body Search criteria including filters for banned user, ban status, issuer, date range, and pagination parameters
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implementation for ban creation operation:
+ * @x-autobe-specification Query the reddit_clone_bans table filtering by reddit_clone_community_id equal to the path parameter.
  *
- * 1. PATH PARAMETER EXTRACTION:
- *    - Extract communityName from path parameter
- *    - Query reddit_clone_communities table to get id by name WHERE name = communityName
- *    - Return 404 if community not found
+ * Apply search filters:
+ * - Filter by banned user ID or username if provided
+ * - Filter by status: active bans (deleted_at IS NULL AND (expires_at IS NULL OR expires_at > NOW)) vs expired/revoked bans (deleted_at IS NOT NULL OR expires_at <= NOW)
+ * - Filter by issuer moderator ID if provided
+ * - Filter by date range (created_at between start and end dates) if provided
  *
- * 2. AUTHENTICATION VERIFICATION:
- *    - Verify member is authenticated via session
- *    - Extract authenticated member ID from session token
+ * Order by created_at descending by default (newest first), with optional sorting.
  *
- * 3. MODERATOR AUTHORIZATION CHECK:
- *    - Query reddit_clone_moderators table to verify the authenticated member has either:
- *      - role = 'owner' OR role = 'moderator' in the target community
- *      - WHERE reddit_clone_community_id = community.id AND reddit_clone_member_id = authenticatedMemberId AND deleted_at IS NULL
- *    - Return 403 if not authorized
+ * Join with reddit_clone_members tables to resolve user and moderator display information.
  *
- * 4. TARGET USER VALIDATION:
- *    - Extract bannedUsername from request body
- *    - Query reddit_clone_members table to get user ID WHERE username = bannedUsername AND deleted_at IS NULL
- *    - Return 404 if target user not found
+ * Return cursor-based or offset pagination with configurable page size.
  *
- * 5. BAN ELIGIBILITY CHECK:
- *    - Query reddit_clone_bans table to check existing active ban:
- *      - WHERE reddit_clone_community_id = community.id AND reddit_clone_user_id = targetUser.id AND deleted_at IS NULL AND (expires_at IS NULL OR expires_at > NOW())
- *    - Return 409 Conflict if user is already banned
- *
- * 6. BAN CREATION:
- *    - Generate UUID for new ban record
- *    - Set created_at and updated_at to current timestamp
- *    - Leave deleted_at as NULL (ban is active)
- *    - Set expires_at from request body if provided, otherwise NULL
- *    - INSERT INTO reddit_clone_bans:
- *      - id, reddit_clone_community_id, reddit_clone_user_id, issued_by_reddit_clone_user_id, reason, created_at, updated_at, deleted_at, expires_at
- *
- * 7. RESPONSE:
- *    - Return the complete ban record with all fields populated
- *    - Include nested community object (without children arrays)
- *    - Include nested bannedUser object (without sensitive fields like password_hash)
- *    - Include nested issuer object (without sensitive fields)
- * @path /redditClone/member/communities/:communityName/bans
- * @accessor api.functional.redditClone.member.communities.bans.create
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function create(
-  connection: IConnection,
-  props: create.Props,
-): Promise<create.Response> {
-  return true === connection.simulate
-    ? create.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...create.METADATA,
-          path: create.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace create {
-  export type Props = {
-    /**
-     * Unique name of the community (URL-safe identifier)
-     */
-    communityName: string;
-
-    /**
-     * Username of the user to ban and the reason for the ban
-     */
-    body: IRedditCloneUserKarma.ICreate;
-  };
-  export type Body = IRedditCloneUserKarma.ICreate;
-  export type Response = IRedditCloneUserKarma;
-
-  export const METADATA = {
-    method: "POST",
-    path: "/redditClone/member/communities/:communityName/bans",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/redditClone/member/communities/${encodeURIComponent(props.communityName ?? "null")}/bans`;
-  export const random = (): IRedditCloneUserKarma =>
-    typia.random<IRedditCloneUserKarma>();
-  export const simulate = (
-    connection: IConnection,
-    props: create.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: create.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("communityName")(() => typia.assert(props.communityName));
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Retrieve a paginated and filterable list of banned users within a specific community.
- *
- * This endpoint provides moderators and community owners with comprehensive access to the ban management view. It allows searching through the ban records using various filters such as banned user username, ban issuance date ranges, ban expiration status, and the moderator who issued the ban.
- *
- * The operation returns active bans by default, excluding unbanned users (those with deleted_at set). Each ban record includes the banned user's information, the reason for the ban, when it was issued, and optionally when it expires (for temporary bans).
- *
- * Access is restricted to authenticated moderators and community owners only. Regular members and guests receive a 403 Forbidden response. The endpoint requires the community to exist and the authenticated user to have moderation privileges within that community.
- *
- * The response is paginated with configurable page size and sorting options by ban creation date.
- *
- * @param props.connection
- * @param props.communityName Unique name of the community (URL-safe identifier)
- * @param props.body Search criteria and pagination parameters for filtering banned users
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the reddit_clone_bans table with JOINs to reddit_clone_communities and reddit_clone_members tables to resolve user information.
- *
- * 1. Validate community existence by communityName (unique constraint on name field)
- * 2. Verify the authenticated user is a moderator or owner of the community (check reddit_clone_community_moderators table)
- * 3. Apply filters from request body:
- *    - Filter by banned username (partial match)
- *    - Filter by ban issuance date range (created_at between startDate and endDate)
- *    - Filter by expiration status (active only, expired only, or all)
- *    - Filter by issuing moderator username
- * 4. Exclude unbanned records (WHERE deleted_at IS NULL for active bans)
- * 5. Apply pagination with page number and limit
- * 6. Order by ban creation date descending (newest first)
- * 7. Return summary data including user info, reason, timestamps, and expiration
- * @path /redditClone/member/communities/:communityName/bans
+ * Ensure only community moderators or owner can access this endpoint - validate the requesting user has moderation rights for the community.
+ * @path /redditClone/member/communities/:communityId/bans
  * @accessor api.functional.redditClone.member.communities.bans.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -215,21 +65,21 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Unique name of the community (URL-safe identifier)
+     * Unique identifier of the community (global scope)
      */
-    communityName: string;
+    communityId: string & tags.Format<"uuid">;
 
     /**
-     * Search criteria and pagination parameters for filtering banned users
+     * Search criteria including filters for banned user, ban status, issuer, date range, and pagination parameters
      */
-    body: IRedditCloneUserKarma.IRequest;
+    body: IRedditCloneCommunityBan.IRequest;
   };
-  export type Body = IRedditCloneUserKarma.IRequest;
-  export type Response = IPageIRedditCloneUserKarma.ISummary;
+  export type Body = IRedditCloneCommunityBan.IRequest;
+  export type Response = IPageIRedditCloneCommunityBan.ISummary;
 
   export const METADATA = {
     method: "PATCH",
-    path: "/redditClone/member/communities/:communityName/bans",
+    path: "/redditClone/member/communities/:communityId/bans",
     request: {
       type: "application/json",
       encrypted: false,
@@ -241,9 +91,9 @@ export namespace index {
   } as const;
 
   export const path = (props: Omit<Props, "body">) =>
-    `/redditClone/member/communities/${encodeURIComponent(props.communityName ?? "null")}/bans`;
-  export const random = (): IPageIRedditCloneUserKarma.ISummary =>
-    typia.random<IPageIRedditCloneUserKarma.ISummary>();
+    `/redditClone/member/communities/${encodeURIComponent(props.communityId ?? "null")}/bans`;
+  export const random = (): IPageIRedditCloneCommunityBan.ISummary =>
+    typia.random<IPageIRedditCloneCommunityBan.ISummary>();
   export const simulate = (
     connection: IConnection,
     props: index.Props,
@@ -255,7 +105,7 @@ export namespace index {
       contentType: "application/json",
     });
     try {
-      assert.param("communityName")(() => typia.assert(props.communityName));
+      assert.param("communityId")(() => typia.assert(props.communityId));
       assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
@@ -271,39 +121,33 @@ export namespace index {
 }
 
 /**
- * Retrieve details of a specific user ban within a community.
+ * Retrieve a specific ban record within a community.
  *
- * This endpoint returns the complete ban record including the banned user information, issuing moderator, ban reason, timestamps, and expiration status. The ban is scoped to the specified community, ensuring users banned from one community retain access to others.
+ * This endpoint retrieves detailed information about a ban issued within a community, including the banned member, the moderator who issued the ban, the reason for the ban, and the ban's temporal details.
  *
- * The response includes the issuer's information for accountability purposes, as moderators must be identifiable for their enforcement actions. Temporary bans include expiration timestamps, while permanent bans have null expiration.
+ * The operation requires the authenticated user to have moderator privileges within the specified community, or be the community owner. Regular members cannot view ban details for other users.
  *
- * Authorization: Only community moderators and the community owner can access this endpoint. Regular members and guests receive a 403 Forbidden response.
+ * If the ban has been lifted (unbanned), the response will include the updated_at timestamp reflecting when the ban was removed. Temporary bans will include an expires_at timestamp indicating when the ban automatically ends.
  *
- * This operation is typically used in conjunction with the ban listing endpoint to view detailed information about a specific enforcement action.
+ * This operation is part of the moderation tools suite, allowing moderators to audit ban records and track enforcement history within their community.
  *
  * @param props.connection
- * @param props.communityName Unique name identifier of the community (from reddit_clone_communities.name)
- * @param props.banId UUID of the ban record to retrieve
+ * @param props.communityId Unique identifier of the community (UUID)
+ * @param props.banId Unique identifier of the ban record (UUID)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the reddit_clone_bans table using the banId parameter as the primary identifier.
+ * @x-autobe-specification Query the reddit_clone_community_bans table to retrieve the ban record by its id.
  *
- * Join with reddit_clone_communities to verify the community exists and match by communityName.
+ * Verify the ban belongs to the specified community by checking reddit_clone_community_id matches the communityId path parameter.
  *
- * Join with reddit_clone_members twice: once to fetch banned user details (bannedUser relation), once to fetch issuer details (issuer relation).
+ * Join with reddit_clone_members table to retrieve the banned user's information (username, display name).
  *
- * Verify the requesting user is either:
- * - The community owner (reddit_clone_communities.reddit_clone_member_id)
- * - A moderator in the community (reddit_clone_community_moderators)
+ * Join with reddit_clone_community_moderators table to retrieve the moderator who issued the ban.
  *
- * Return the complete ban record with related user and issuer information.
+ * If the ban record does not exist or does not belong to the specified community, return a 404 error.
  *
- * If ban has been soft-deleted (deleted_at IS NOT NULL), return 404 Not Found.
- *
- * If ban belongs to a different community, return 404 Not Found.
- *
- * If requester lacks authorization, return 403 Forbidden.
- * @path /redditClone/member/communities/:communityName/bans/:banId
+ * Return all ban fields including: reason, created_at, expires_at, updated_at.
+ * @path /redditClone/member/communities/:communityId/bans/:banId
  * @accessor api.functional.redditClone.member.communities.bans.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -331,20 +175,20 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique name identifier of the community (from reddit_clone_communities.name)
+     * Unique identifier of the community (UUID)
      */
-    communityName: string;
+    communityId: string & tags.Format<"uuid">;
 
     /**
-     * UUID of the ban record to retrieve
+     * Unique identifier of the ban record (UUID)
      */
     banId: string & tags.Format<"uuid">;
   };
-  export type Response = IRedditCloneUserKarma;
+  export type Response = IRedditCloneCommunityBan;
 
   export const METADATA = {
     method: "GET",
-    path: "/redditClone/member/communities/:communityName/bans/:banId",
+    path: "/redditClone/member/communities/:communityId/bans/:banId",
     request: null,
     response: {
       type: "application/json",
@@ -353,9 +197,9 @@ export namespace at {
   } as const;
 
   export const path = (props: Props) =>
-    `/redditClone/member/communities/${encodeURIComponent(props.communityName ?? "null")}/bans/${encodeURIComponent(props.banId ?? "null")}`;
-  export const random = (): IRedditCloneUserKarma =>
-    typia.random<IRedditCloneUserKarma>();
+    `/redditClone/member/communities/${encodeURIComponent(props.communityId ?? "null")}/bans/${encodeURIComponent(props.banId ?? "null")}`;
+  export const random = (): IRedditCloneCommunityBan =>
+    typia.random<IRedditCloneCommunityBan>();
   export const simulate = (
     connection: IConnection,
     props: at.Props,
@@ -367,7 +211,7 @@ export namespace at {
       contentType: "application/json",
     });
     try {
-      assert.param("communityName")(() => typia.assert(props.communityName));
+      assert.param("communityId")(() => typia.assert(props.communityId));
       assert.param("banId")(() => typia.assert(props.banId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
@@ -383,41 +227,41 @@ export namespace at {
 }
 
 /**
- * Update an existing ban within a community to modify its reason or expiration time.
+ * Lift an active ban to allow a previously banned user to participate in the community again.
  *
- * This endpoint allows community moderators and owners to update the details of an existing ban. Moderators can change the reason for the ban to provide better documentation, or modify the expiration timestamp for temporary bans.
+ * This operation sets the deleted_at timestamp on a ban record, effectively unbanning the user. Only moderators and owners of the community can perform this action. The unbanned user will regain the ability to create posts and comments in the community.
  *
- * The operation requires authentication. Only moderators of the specified community or the community owner can update a ban. The banned user cannot be changed - to ban a different user, a new ban must be created. Banned users retain read access to community content but cannot create new posts or comments.
+ * The operation requires the authenticated user to have moderator or owner permissions in the specified community. Attempting to unban a user without proper authorization returns a 403 Forbidden response.
  *
- * The ban record in the database tracks the original issuing moderator (issued_by_reddit_clone_user_id), which is preserved during updates. Only the reason and expiration time can be modified.
- *
- * If the ban has already been lifted (deleted_at is set), this operation returns a 404 error. To re-ban a previously unbanned user, a new ban must be created.
- *
- * Related operations:
- * - POST /communities/{communityName}/bans - Create a new ban
- * - DELETE /communities/{communityName}/bans/{banId} - Lift a ban
- * - GET /communities/{communityName}/bans - List all bans for the community
+ * If the ban has already been lifted (deleted_at is set), the operation returns the existing unbanned record without modification. Temporary bans that have expired naturally are also returned without modification.
  *
  * @param props.connection
- * @param props.communityName Unique name identifier of the community (e.g., 'askreddit', 'funny')
- * @param props.banId Unique identifier of the ban record to update
- * @param props.body Fields to update in the ban record
+ * @param props.communityId Unique identifier of the community (UUID)
+ * @param props.banId Unique identifier of the ban record to update (UUID)
+ * @param props.body Update data containing the unbanned timestamp
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query reddit_clone_communities to find the community by name. Verify the requesting user is authenticated and is a moderator of the community or the community owner.
+ * @x-autobe-specification Update the reddit_clone_bans record identified by banId within the specified community.
  *
- * Query reddit_clone_bans to find the ban by id where reddit_clone_community_id matches the community and deleted_at is null.
+ * Implementation steps:
+ * 1. Verify the authenticated user has moderator or owner permissions for the community (reddit_clone_community_id)
+ * 2. Retrieve the ban record by banId and verify it belongs to the specified community
+ * 3. Verify the ban is currently active (deleted_at is null)
+ * 4. Set deleted_at to current timestamp to lift the ban
+ * 5. Return the updated ban record with all relations loaded
  *
- * If ban not found or community not found, return 404 error.
+ * Validation rules:
+ * - communityId must reference an existing community
+ * - banId must reference an existing ban record
+ * - ban must belong to the specified community
+ * - ban must currently be active (not already unbanned)
+ * - User must have moderator or owner role in the community
  *
- * Validate request body fields:
- * - reason: optional string, max 500 characters
- * - expires_at: optional timestamp, must be in the future if provided
- *
- * Update only the provided fields in the ban record. Set updated_at to current timestamp.
- *
- * Return the updated ban record with community, banned user, and issuer details joined.
- * @path /redditClone/member/communities/:communityName/bans/:banId
+ * Error responses:
+ * - 404 Not Found: Community or ban does not exist
+ * - 403 Forbidden: User lacks moderation permissions
+ * - 400 Bad Request: Ban is already lifted or expired
+ * @path /redditClone/member/communities/:communityId/bans/:banId
  * @accessor api.functional.redditClone.member.communities.bans.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -446,26 +290,26 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * Unique name identifier of the community (e.g., 'askreddit', 'funny')
+     * Unique identifier of the community (UUID)
      */
-    communityName: string;
+    communityId: string & tags.Format<"uuid">;
 
     /**
-     * Unique identifier of the ban record to update
+     * Unique identifier of the ban record to update (UUID)
      */
     banId: string & tags.Format<"uuid">;
 
     /**
-     * Fields to update in the ban record
+     * Update data containing the unbanned timestamp
      */
-    body: IRedditCloneUserKarma.IUpdate;
+    body: IRedditCloneCommunityBan.IUpdate;
   };
-  export type Body = IRedditCloneUserKarma.IUpdate;
-  export type Response = IRedditCloneUserKarma;
+  export type Body = IRedditCloneCommunityBan.IUpdate;
+  export type Response = IRedditCloneCommunityBan;
 
   export const METADATA = {
     method: "PUT",
-    path: "/redditClone/member/communities/:communityName/bans/:banId",
+    path: "/redditClone/member/communities/:communityId/bans/:banId",
     request: {
       type: "application/json",
       encrypted: false,
@@ -477,9 +321,9 @@ export namespace update {
   } as const;
 
   export const path = (props: Omit<Props, "body">) =>
-    `/redditClone/member/communities/${encodeURIComponent(props.communityName ?? "null")}/bans/${encodeURIComponent(props.banId ?? "null")}`;
-  export const random = (): IRedditCloneUserKarma =>
-    typia.random<IRedditCloneUserKarma>();
+    `/redditClone/member/communities/${encodeURIComponent(props.communityId ?? "null")}/bans/${encodeURIComponent(props.banId ?? "null")}`;
+  export const random = (): IRedditCloneCommunityBan =>
+    typia.random<IRedditCloneCommunityBan>();
   export const simulate = (
     connection: IConnection,
     props: update.Props,
@@ -491,7 +335,7 @@ export namespace update {
       contentType: "application/json",
     });
     try {
-      assert.param("communityName")(() => typia.assert(props.communityName));
+      assert.param("communityId")(() => typia.assert(props.communityId));
       assert.param("banId")(() => typia.assert(props.banId));
       assert.body(() => typia.assert(props.body));
     } catch (exp) {
@@ -508,45 +352,19 @@ export namespace update {
 }
 
 /**
- * Remove a ban from a user within a community, allowing them to participate again.
+ * Remove an active ban from a user within a community, restoring their ability to post content.
  *
- * This endpoint lifts an active ban within a specific community. When executed, the ban record's deleted_at field is set to the current timestamp, effectively unbanning the user without removing the ban record from the database. This soft deletion approach preserves the audit history of all ban actions taken by moderators.
+ * This operation performs a soft delete on the ban record by setting the deleted_at timestamp. Only moderators with appropriate authority in the specified community can unban users. Once unbanned, the user regains the ability to create posts and comments in that community, though they retain full read access regardless of ban status.
  *
- * Only users with moderation privileges in the community can unban other users. This includes community moderators appointed by the owner and the community owner themselves. The system verifies the requesting user's authorization before allowing the unban action.
- *
- * Banned users who are unbanned regain full access to create posts and comments within the community. Their existing posts and comments that were created before the ban remain visible and are not affected by the unban action.
- *
- * The reddit_clone_bans table stores ban records with fields for reddit_clone_community_id, reddit_clone_user_id, issued_by_reddit_clone_user_id, reason, created_at, updated_at, deleted_at, and expires_at. The soft deletion via deleted_at preserves all audit information while allowing the user to participate again.
+ * The operation requires the unique ban identifier which can be obtained from the list of community bans. The response includes the updated ban record showing the deletion timestamp.
  *
  * @param props.connection
- * @param props.communityName Unique name identifier of the community (e.g., 'askreddit', 'funny')
+ * @param props.communityId Unique identifier of the community (scoped to global)
  * @param props.banId Unique identifier of the ban record to remove
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Implement the unban operation for the reddit_clone_bans table:
- *
- * 1. **Parameter Extraction**: Extract communityName from path parameters to identify the target community, and banId to identify the specific ban record.
- *
- * 2. **Authorization Verification**:
- *    - Retrieve the community using the communityName from reddit_clone_communities
- *    - Verify the requesting user is authenticated (member session)
- *    - Check if the requesting user has moderation privileges in the community by querying reddit_clone_moderators
- *    - Verify either: (a) the user has a 'moderator' role in reddit_clone_moderators for this community, or (b) the user has the 'owner' role
- *    - If authorization fails, return 403 Forbidden
- *
- * 3. **Ban Existence Check**:
- *    - Query reddit_clone_bans where id equals banId
- *    - Verify the ban belongs to the specified community
- *    - Verify the ban's deleted_at is NULL (active ban)
- *    - If no active ban found, return 404 Not Found
- *
- * 4. **Soft Delete Execution**:
- *    - Set deleted_at field to current timestamp (UTC)
- *    - Update updated_at field to current timestamp
- *    - Execute UPDATE query on reddit_clone_bans table
- *
- * 5. **Response**: Return 204 No Content on success with no response body.
- * @path /redditClone/member/communities/:communityName/bans/:banId
+ * @x-autobe-specification Soft-delete the ban record by setting deleted_at to current timestamp. Validate that: (1) the ban exists and belongs to the specified community, (2) the ban is currently active (deleted_at is null), (3) the requesting user has moderator privileges in the community. If the ban has already been deleted (unbanned), return a not-found error. Return the updated ban record with deleted_at populated to confirm the unban action.
+ * @path /redditClone/member/communities/:communityId/bans/:banId
  * @accessor api.functional.redditClone.member.communities.bans.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -574,9 +392,9 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Unique name identifier of the community (e.g., 'askreddit', 'funny')
+     * Unique identifier of the community (scoped to global)
      */
-    communityName: string;
+    communityId: string & tags.Format<"uuid">;
 
     /**
      * Unique identifier of the ban record to remove
@@ -586,7 +404,7 @@ export namespace erase {
 
   export const METADATA = {
     method: "DELETE",
-    path: "/redditClone/member/communities/:communityName/bans/:banId",
+    path: "/redditClone/member/communities/:communityId/bans/:banId",
     request: null,
     response: {
       type: "application/json",
@@ -595,7 +413,7 @@ export namespace erase {
   } as const;
 
   export const path = (props: Props) =>
-    `/redditClone/member/communities/${encodeURIComponent(props.communityName ?? "null")}/bans/${encodeURIComponent(props.banId ?? "null")}`;
+    `/redditClone/member/communities/${encodeURIComponent(props.communityId ?? "null")}/bans/${encodeURIComponent(props.banId ?? "null")}`;
   export const random = (): void => typia.random<void>();
   export const simulate = (
     connection: IConnection,
@@ -608,8 +426,121 @@ export namespace erase {
       contentType: "application/json",
     });
     try {
-      assert.param("communityName")(() => typia.assert(props.communityName));
+      assert.param("communityId")(() => typia.assert(props.communityId));
       assert.param("banId")(() => typia.assert(props.banId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Ban a user from a community, preventing them from creating posts or comments.
+ *
+ * This operation creates a ban record that restricts the specified user from participating in the community. Moderators and community owners can issue bans when users violate community rules or guidelines.
+ *
+ * When a moderator issues a ban, the system records the moderator's ID from the authenticated session, the community, the banned user, the reason for the ban, and an optional expiration timestamp for temporary bans.
+ *
+ * Banned users retain the ability to view content within the community but cannot create new posts or comments. Voting privileges remain intact for banned users.
+ *
+ * @param props.connection
+ * @param props.communityCode Unique name identifier of the community (scoped globally).
+ * @param props.body Ban creation details including the user to ban and the reason.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor member
+ * @x-autobe-specification 1. Validate the authenticated user has moderator or owner permissions in the community.
+ * 2. Validate the community exists and is active using communityCode.
+ * 3. Validate the target user exists in reddit_clone_members table.
+ * 4. Validate the target user is not already banned in this community (check composite unique constraint).
+ * 5. Create the ban record with:
+ *    - id: generated UUID
+ *    - reddit_clone_community_id: from resolved community
+ *    - reddit_clone_user_id: from request body
+ *    - issued_by_reddit_clone_user_id: from authenticated session
+ *    - reason: from request body
+ *    - created_at: current timestamp
+ *    - updated_at: current timestamp
+ *    - expires_at: from request body (optional)
+ *    - deleted_at: null (active ban)
+ * 6. Return the created ban entity with full details.
+ * @path /redditClone/member/communities/:communityCode/bans
+ * @accessor api.functional.redditClone.member.communities.bans.create
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function create(
+  connection: IConnection,
+  props: create.Props,
+): Promise<create.Response> {
+  return true === connection.simulate
+    ? create.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...create.METADATA,
+          path: create.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace create {
+  export type Props = {
+    /**
+     * Unique name identifier of the community (scoped globally).
+     */
+    communityCode: string;
+
+    /**
+     * Ban creation details including the user to ban and the reason.
+     */
+    body: IRedditCloneCommunityBan.ICreate;
+  };
+  export type Body = IRedditCloneCommunityBan.ICreate;
+  export type Response = IRedditCloneCommunityBan;
+
+  export const METADATA = {
+    method: "POST",
+    path: "/redditClone/member/communities/:communityCode/bans",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/redditClone/member/communities/${encodeURIComponent(props.communityCode ?? "null")}/bans`;
+  export const random = (): IRedditCloneCommunityBan =>
+    typia.random<IRedditCloneCommunityBan>();
+  export const simulate = (
+    connection: IConnection,
+    props: create.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: create.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("communityCode")(() => typia.assert(props.communityCode));
+      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

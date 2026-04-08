@@ -10,67 +10,42 @@ import { IEcommerceMallCategory } from "../../../structures/IEcommerceMallCatego
 import { IPageIEcommerceMallCategory } from "../../../structures/IPageIEcommerceMallCategory";
 
 /**
- * List categories with search, filter and pagination.
+ * Retrieve a filtered and paginated list of product categories.
  *
- * This operation enables administrators to retrieve a paginated list of product categories. Categories organize products into browsable hierarchies with support for one level of nesting (parent categories and subcategories).
+ * This operation provides browsing capabilities for the platform's category hierarchy. Categories support a maximum nesting depth of two levels: parent categories (top-level) and subcategories (one level below). Each category has a unique name within its parent scope and optional description.
  *
- * The category system uses a hierarchical structure where each category can optionally belong to a parent category. Top-level categories have no parent, while subcategories have a parent_id referencing another category. The hierarchy is limited to one level of nesting to maintain navigational simplicity.
+ * The response includes category summaries optimized for list displays, showing essential information such as name, description, and parent relationship. Pagination follows standard page-based navigation with a default page size of 20 items.
  *
- * This endpoint supports advanced filtering including:
- * - Parent category filtering to view subcategories of a specific parent
- * - Name search using PostgreSQL trigram similarity (gin_trgm_ops index)
- * - Soft delete visibility control via deleted_at filtering
+ * Soft-deleted categories are automatically excluded from results. When a category is deleted by an administrator, it becomes unavailable for browsing but its history is preserved for existing orders and audit purposes.
  *
- * Categories are managed exclusively by administrators. Sellers and customers cannot create, modify, or delete categories.
- *
- * The returned summary includes essential category information such as id, name, description, parent relationship, and hierarchical position. Use GET /categories/{categoryId} to retrieve full category details including subcategory counts and product associations.
- *
- * Related operations:
- * - POST /categories: Create a new category (admin only)
- * - GET /categories/{categoryId}: Retrieve detailed category information
- * - PUT /categories/{categoryId}: Update category name/description (admin only)
- * - DELETE /categories/{categoryId}: Remove a category (admin only, makes products uncategorized)
+ * When filtering by parentId, the operation returns subcategories belonging to that specific parent category. When parentId is omitted or null, the operation returns top-level parent categories.
  *
  * @param props.connection
  * @param props.body Search criteria and pagination parameters for category listing
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the ecommerce_mall_categories table with pagination and filtering support.
+ * @x-autobe-specification Query ecommerce_mall_categories table with pagination support.
  *
- * Implementation requirements:
- * 1. Parse IEcommerceMallCategory.IRequest from request body containing:
- *    - search: Optional string for name-based search using PostgreSQL ILIKE or trigram similarity
- *    - parentId: Optional UUID filter to show only subcategories of a specific parent (null for top-level categories only)
- *    - includeDeleted: Optional boolean to include soft-deleted categories (default false for admin safety)
- *    - sort: Array of sort criteria (supported: created_at, name, updated_at)
- *    - pagination: Standard pagination input (limit/cursor-based)
+ * Apply optional filters:
+ * - parentId: Filter by parent category to get subcategories. When null or omitted, return top-level categories (where parent_id IS NULL).
  *
- * 2. Build SELECT query with appropriate WHERE clauses:
- *    - Apply deleted_at IS NULL filter unless includeDeleted is true
- *    - Apply parent_id equality filter when parentId is provided
- *    - Apply parent_id IS NULL filter when explicitly requesting top-level categories
- *    - Apply name ILIKE filter when search term provided (use %search% pattern)
+ * Implement cursor-based pagination using createdAt and id as cursor fields for stable ordering.
  *
- * 3. Execute two queries in parallel (within transaction):
- *    - Count query for total matching records
- *    - Data query with JOIN to parent category for parent name resolution
- *    - Apply ORDER BY based on sort criteria
- *    - Apply LIMIT/OFFSET for cursor-based pagination
+ * Return paginated response with:
+ * - data: Array of category summaries
+ * - pagination: Cursor information for next/previous pages
  *
- * 4. Transform results to IEcommerceMallCategory.ISummary array:
- *    - Map id, name, description fields directly
- *    - Include parent object with id and name when parent_id exists
- *    - Include subcategory count via aggregation query on subcategories relation
- *    - Include product count if applicable
+ * Categories should be ordered by:
+ * 1. Parent categories first (null parent_id), then subcategories
+ * 2. Within same level, order by createdAt descending (newest first)
  *
- * 5. Return IPageIEcommerceMallCategory.ISummary with:
- *    - data: Array of category summaries
- *    - pagination: Cursor-based pagination metadata
+ * Include in summary:
+ * - id, name, description
+ * - parentId (null for top-level categories)
+ * - createdAt, updatedAt
+ * - subcategoryCount (if parent category, count of its subcategories)
  *
- * Error handling:
- * - Return empty data array with valid pagination if no categories match filters
- * - Handle invalid parentId UUID format with validation error
- * - Handle sort field validation errors
+ * Authorization: All authenticated users (customer, seller, admin, superAdmin) can access.
  * @path /ecommerceMall/categories
  * @accessor api.functional.ecommerceMall.categories.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -149,45 +124,33 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific category by its unique identifier.
+ * Retrieve a single category by its unique identifier.
  *
- * This endpoint returns the complete category data including its name, description, hierarchical relationships, and timestamps. The category may optionally have a parent category reference if it is a subcategory.
+ * This operation returns complete category information including its name, description, and hierarchical relationships. If the category is a subcategory, its parent category details are included. If the category has subcategories, those are listed as well.
  *
- * Access is available to all authenticated users (customers, sellers, administrators) for browsing the category catalog. Soft-deleted categories are not returned.
+ * This endpoint supports the category browsing experience for customers navigating the product catalog hierarchy. Categories are organized in a two-level hierarchy: parent categories at the top level and subcategories nested beneath them.
  *
- * ## Database Context
- *
- * Queries the `ecommerce_mall_categories` table which stores the platform's product classification hierarchy.
- *
- * ### Key Fields
- * - `id`: Primary key (UUID)
- * - `parent_id`: Optional reference to parent category (null for top-level categories)
- * - `name`: Unique category name within parent scope
- * - `description`: Optional category description
- * - `created_at`: Timestamp of category creation
- * - `updated_at`: Timestamp of last modification
- *
- * ### Relationships
- * - `parent`: Belongs-to relation to parent category (self-reference)
- * - `subcategories`: Has-many relation to child subcategories
- *
- * Access: customer, seller, admin, superAdmin
+ * Categories implement soft delete—deleted categories cannot be retrieved through this endpoint. If a category with no products is deleted, it becomes unavailable for browsing. Products in deleted categories become uncategorized but remain accessible through other means.
  *
  * @param props.connection
- * @param props.categoryId Unique identifier of the category to retrieve (UUID format)
+ * @param props.categoryId Unique identifier of the category (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification 1. Extract categoryId from path parameter
- * 2. Query ecommerce_mall_categories table:
- *    - WHERE id = categoryId
- *    - AND deleted_at IS NULL (exclude soft-deleted categories)
- * 3. Include parent category relation (eager load parent)
- * 4. Include subcategories relation
- * 5. Validation:
- *    - Return 404 if category not found or soft-deleted
- * 6. Response: IEcommerceMallCategory with all fields
+ * @x-autobe-specification Query the ecommerce_mall_categories table by id (UUID primary key).
  *
- * Security: Verify user is authenticated (customer, seller, or admin). Guests cannot browse categories per platform policy.
+ * Exclude categories where deleted_at is not null (soft deleted categories).
+ *
+ * Join with parent category via parent_id relationship if parent_id is set.
+ *
+ * Join with subcategories to retrieve child categories where their parent_id equals this category's id (excluding soft deleted subcategories).
+ *
+ * Return 404 if category not found or has been soft deleted.
+ *
+ * Include all scalar fields: id, name, description, parent_id, created_at, updated_at.
+ *
+ * Include parent object with id, name if parent exists.
+ *
+ * Include subcategories array with id, name for each active subcategory ordered by name ASC.
  * @path /ecommerceMall/categories/:categoryId
  * @accessor api.functional.ecommerceMall.categories.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -216,7 +179,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the category to retrieve (UUID format)
+     * Unique identifier of the category (UUID format)
      */
     categoryId: string;
   };

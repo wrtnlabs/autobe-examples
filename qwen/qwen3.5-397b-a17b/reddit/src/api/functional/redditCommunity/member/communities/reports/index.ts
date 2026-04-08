@@ -4,34 +4,47 @@ import {
   NestiaSimulator,
   PlainFetcher,
 } from "@nestia/fetcher";
-import typia from "typia";
+import typia, { tags } from "typia";
 
-import { IPageIRedditCommunityCommentReport } from "../../../../../structures/IPageIRedditCommunityCommentReport";
-import { IRedditCommunityCommentReport } from "../../../../../structures/IRedditCommunityCommentReport";
+import { IRedditCommunityReport } from "../../../../../structures/IRedditCommunityReport";
+
+export * as pending from "./pending/index";
 
 /**
- * Retrieve a filtered and paginated list of moderation reports for comments within a specific community.
+ * Approves a content report, permanently deleting the reported post or comment.
  *
- * This operation allows community moderators to view all reports submitted for comments in their community. Reports include the reason provided by the reporter, the status of the report (pending, approved, or dismissed), and information about the reported comment content.
+ * This endpoint allows moderators to approve reports filed against community content. When a report is approved, the system permanently deletes the reported content (either a post or comment) from the community and updates the report status to 'approved'. The resolution is recorded with the moderator's identity and timestamp.
  *
- * Moderators can filter reports by status to focus on pending reports requiring action. The endpoint enforces community scope - moderators can only access reports for communities where they have moderator privileges. Reports are filtered by joining through the reported comment's post to determine community membership. Response includes reporter information, report reason, status, reported comment preview, and timestamps.
+ * Only moderators of the specified community can approve reports. The report must be in 'pending' status; attempting to approve an already resolved report returns an error. Once approved, the report cannot be reverted and the content deletion is permanent.
+ *
+ * The operation verifies that the requesting user has moderator authority over the community before processing. Reports can only be resolved once - either approved or dismissed.
  *
  * @param props.connection
- * @param props.communityName Unique community name (scoped globally)
- * @param props.body Search criteria and pagination parameters for filtering comment reports
+ * @param props.communityId Community UUID (scoped to verify moderator authority).
+ * @param props.reportId Report UUID to approve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query reddit_community_comment_reports table joined with reddit_community_comments and reddit_community_moderators. First verify the requesting member is a moderator of the community by checking reddit_community_moderators where community_id matches the community's id and member_id matches the authenticated user. Filter reports where the reported comment's reddit_community_post_id belongs to a post in the specified community (join through reddit_community_comments → reddit_community_posts → reddit_community_communities where name = communityName). Apply status filter if provided (PENDING/APPROVED/DISMISSED). Support pagination with cursor-based or offset-based approach. Sort by created_at DESC by default. Return report summaries including reporter info, reason, status, reported content preview, and timestamps.
- * @path /redditCommunity/member/communities/:communityName/reports
- * @accessor api.functional.redditCommunity.member.communities.reports.index
+ * @x-autobe-specification Verify the requesting user is a moderator of the specified community by checking reddit_community_moderators table for an active record matching the user and communityId. Reject with 403 if no moderator assignment exists.
+ *
+ * Query reddit_community_reports table for the reportId. Verify the report exists and is in 'pending' status. Reject with 404 if report not found or 400 if already resolved.
+ *
+ * Check the report_type field to determine target content type. If 'post', query reddit_community_report_of_posts to get the post ID. If 'comment', query reddit_community_report_of_comments to get the comment ID.
+ *
+ * Permanently delete the reported content: For posts, delete from reddit_community_posts (cascade deletes related post_texts, post_links, post_images). For comments, delete from reddit_community_comments (cascade deletes related comment_votes and nested replies).
+ *
+ * Update the report record: set status to 'approved', resolved_by_id to current user ID, resolved_at to current timestamp. Do not soft delete the report - it remains as an audit record.
+ *
+ * Return the updated report object with all fields including the new status and resolution metadata.
+ * @path /redditCommunity/member/communities/:communityId/reports/:reportId/approve
+ * @accessor api.functional.redditCommunity.member.communities.reports.approve
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function index(
+export async function approve(
   connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
+  props: approve.Props,
+): Promise<approve.Response> {
   return true === connection.simulate
-    ? index.simulate(connection, props)
+    ? approve.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -41,58 +54,145 @@ export async function index(
           },
         },
         {
-          ...index.METADATA,
-          path: index.path(props),
+          ...approve.METADATA,
+          path: approve.path(props),
           status: null,
         },
-        props.body,
       );
 }
-export namespace index {
+export namespace approve {
   export type Props = {
     /**
-     * Unique community name (scoped globally)
+     * Community UUID (scoped to verify moderator authority).
      */
-    communityName: string;
+    communityId: string & tags.Format<"uuid">;
 
     /**
-     * Search criteria and pagination parameters for filtering comment reports
+     * Report UUID to approve.
      */
-    body: IRedditCommunityCommentReport.IRequest;
+    reportId: string & tags.Format<"uuid">;
   };
-  export type Body = IRedditCommunityCommentReport.IRequest;
-  export type Response = IPageIRedditCommunityCommentReport.ISummary;
+  export type Response = IRedditCommunityReport;
 
   export const METADATA = {
-    method: "PATCH",
-    path: "/redditCommunity/member/communities/:communityName/reports",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
+    method: "POST",
+    path: "/redditCommunity/member/communities/:communityId/reports/:reportId/approve",
+    request: null,
     response: {
       type: "application/json",
       encrypted: false,
     },
   } as const;
 
-  export const path = (props: Omit<Props, "body">) =>
-    `/redditCommunity/member/communities/${encodeURIComponent(props.communityName ?? "null")}/reports`;
-  export const random = (): IPageIRedditCommunityCommentReport.ISummary =>
-    typia.random<IPageIRedditCommunityCommentReport.ISummary>();
+  export const path = (props: Props) =>
+    `/redditCommunity/member/communities/${encodeURIComponent(props.communityId ?? "null")}/reports/${encodeURIComponent(props.reportId ?? "null")}/approve`;
+  export const random = (): IRedditCommunityReport =>
+    typia.random<IRedditCommunityReport>();
   export const simulate = (
     connection: IConnection,
-    props: index.Props,
+    props: approve.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: index.path(props),
+      path: approve.path(props),
       contentType: "application/json",
     });
     try {
-      assert.param("communityName")(() => typia.assert(props.communityName));
-      assert.body(() => typia.assert(props.body));
+      assert.param("communityId")(() => typia.assert(props.communityId));
+      assert.param("reportId")(() => typia.assert(props.reportId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Dismiss a content report, keeping the reported content visible and removing the report from the moderator queue.
+ *
+ * Moderators can dismiss reports that do not violate community guidelines. When a report is dismissed, the reported post or comment remains unchanged and visible to users. The report status changes to 'dismissed' and is removed from the active reports list.
+ *
+ * Only moderators of the community can dismiss reports. The community ID in the path is used to verify the moderator has authority over the community where the report was filed.
+ *
+ * @param props.connection
+ * @param props.communityId Community ID (scoped to verify moderator authority)
+ * @param props.reportId Report ID to dismiss
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor member
+ * @x-autobe-specification Verify the requesting user is a moderator of the specified community by checking reddit_community_moderators table. Load the report from reddit_community_reports and verify it exists and is in 'pending' status. Verify the report belongs to the specified community by joining with reddit_community_report_of_posts or reddit_community_report_of_comments and then to the post/comment to get the community_id. Update the report status to 'dismissed', set resolved_by_id to the current user's ID, and set resolved_at to current timestamp. Return the updated report object. Reject if user is not a moderator, report doesn't exist, report is already resolved, or report doesn't belong to the community.
+ * @path /redditCommunity/member/communities/:communityId/reports/:reportId/dismiss
+ * @accessor api.functional.redditCommunity.member.communities.reports.dismiss
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function dismiss(
+  connection: IConnection,
+  props: dismiss.Props,
+): Promise<dismiss.Response> {
+  return true === connection.simulate
+    ? dismiss.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...dismiss.METADATA,
+          path: dismiss.path(props),
+          status: null,
+        },
+      );
+}
+export namespace dismiss {
+  export type Props = {
+    /**
+     * Community ID (scoped to verify moderator authority)
+     */
+    communityId: string & tags.Format<"uuid">;
+
+    /**
+     * Report ID to dismiss
+     */
+    reportId: string & tags.Format<"uuid">;
+  };
+  export type Response = IRedditCommunityReport;
+
+  export const METADATA = {
+    method: "POST",
+    path: "/redditCommunity/member/communities/:communityId/reports/:reportId/dismiss",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/redditCommunity/member/communities/${encodeURIComponent(props.communityId ?? "null")}/reports/${encodeURIComponent(props.reportId ?? "null")}/dismiss`;
+  export const random = (): IRedditCommunityReport =>
+    typia.random<IRedditCommunityReport>();
+  export const simulate = (
+    connection: IConnection,
+    props: dismiss.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: dismiss.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("communityId")(() => typia.assert(props.communityId));
+      assert.param("reportId")(() => typia.assert(props.reportId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

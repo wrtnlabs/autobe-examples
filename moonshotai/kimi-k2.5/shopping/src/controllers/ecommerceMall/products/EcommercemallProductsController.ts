@@ -1,6 +1,6 @@
 import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia from "typia";
+import typia, { tags } from "typia";
 
 import { IEcommerceMallProduct } from "../../../api/structures/IEcommerceMallProduct";
 import { IPageIEcommerceMallProduct } from "../../../api/structures/IPageIEcommerceMallProduct";
@@ -10,65 +10,42 @@ import { patchEcommerceMallProducts } from "../../../providers/patchEcommerceMal
 @Controller("/ecommerceMall/products")
 export class EcommercemallProductsController {
   /**
-   * Search and retrieve a paginated list of products with advanced filtering and sorting capabilities.
+   * Search and retrieve a paginated list of products with optional filtering and sorting.
    *
-   * This operation provides the primary product discovery interface for customers to browse the e-commerce catalog. It supports multiple search and filter criteria to help customers find relevant products efficiently.
+   * This endpoint allows customers to discover products through various search criteria including text search by product name, category filtering, price range filtering, and stock availability filtering. Results can be sorted by newest first, price ascending, or price descending.
    *
-   * **Search Capabilities:**
-   * - Text search on product name using partial matching
-   * - Filter by category and subcategory
-   * - Filter by price range (minimum and maximum)
-   * - Filter to show only in-stock products
-   * - Sort results by newest first, price low-to-high, or price high-to-low
+   * The response includes product summaries optimized for browsing displays, containing the main thumbnail image, product name, pricing information, seller shop name, and average customer rating. Products without any variants are included in results but marked as unavailable for purchase.
    *
-   * **Response Content:**
-   * Each product summary includes basic identifying information (ID, name, base price), the main thumbnail image (first image), seller shop name, and average rating information. Products without any variants are included in results but marked as unavailable for purchase.
-   *
-   * **Access Control:**
-   * - Customers: Can search and browse all active products
-   * - Sellers: Can browse products but management endpoints are separate
-   * - Administrators: Have access through admin-specific endpoints
-   *
-   * **Related Operations:**
-   * - `GET /products/{productId}` - Retrieve detailed information for a single product including all images, variants, and reviews
-   * - `POST /sellers/products` - Create new products (seller only)
+   * Only active (non-deleted) products from approved sellers are returned in search results. The search uses GIN trigram indexing for efficient text matching on product names.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for product discovery
+   * @param body Product search criteria including text search, filters, sorting, and pagination parameters
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_products table with the following implementation:
+   * @x-autobe-specification Query ecommerce_mall_products table filtering by deleted_at IS NULL to exclude soft-deleted products.
    *
-   * 1. **Base Query:**
-   *    - Select from ecommerce_mall_products where deleted_at IS NULL (only active products)
-   *    - Join with ecommerce_mall_categories for category name validation
-   *    - Join with ecommerce_mall_sellers and ecommerce_mall_seller_profiles for shop name
-   *    - Left join with ecommerce_mall_product_images for thumbnail (first image by display_order)
-   *    - Left join with ecommerce_mall_reviews for average rating calculation
+   * Join with ecommerce_mall_sellers to filter for approved sellers only (approval_status = 'approved' AND deleted_at IS NULL).
    *
-   * 2. **Filter Processing:**
-   *    - `name`: Apply ILIKE '%{name}%' for case-insensitive partial matching on product name
-   *    - `categoryId`: Filter by exact category match (includes products in subcategories if parent specified)
-   *    - `minPrice`: Filter where base_price >= minPrice
-   *    - `maxPrice`: Filter where base_price <= maxPrice
-   *    - `inStockOnly`: When true, only include products that have at least one variant with positive inventory (requires subquery on ecommerce_mall_product_variants joined with inventory aggregation)
+   * Apply search filters from request body:
+   * - search: Use trigram similarity search on name field (GIN index) when provided
+   * - categoryId: Filter by exact category_id match
+   * - subcategoryId: Filter by category_id when subcategory is specified
+   * - priceMin/priceMax: Filter by base_price range
+   * - inStockOnly: When true, join with ecommerce_mall_product_variants and aggregate inventory from ecommerce_mall_inventory_records to filter products having at least one variant with quantity > 0
    *
-   * 3. **Sorting Logic:**
-   *    - 'newest': ORDER BY created_at DESC
-   *    - 'price_asc': ORDER BY base_price ASC, created_at DESC
-   *    - 'price_desc': ORDER BY base_price DESC, created_at DESC
-   *    - Default: created_at DESC (newest first)
+   * Apply sorting based on sortBy field:
+   * - 'newest': ORDER BY created_at DESC
+   * - 'priceAsc': ORDER BY base_price ASC
+   * - 'priceDesc': ORDER BY base_price DESC
    *
-   * 4. **Pagination:**
-   *    - Use cursor-based pagination with limit/offset or keyset pagination
-   *    - Default page size: 20 items
-   *    - Include total count for pagination metadata
+   * For each product in results, calculate:
+   * - priceRange: MIN/MAX of variant prices (or base_price if no variant override)
+   * - averageRating: AVG of ratings from ecommerce_mall_reviews where deleted_at IS NULL
+   * - reviewCount: COUNT of non-deleted reviews
+   * - thumbnailImage: image_url from first image (display_order = 0) via ecommerce_mall_product_images
+   * - sellerShopName: from related ecommerce_mall_sellers profile
    *
-   * 5. **Response Construction:**
-   *    - Map database fields to IEcommerceMallProduct.ISummary DTO
-   *    - Calculate price range across variants (min/max variant prices override base_price)
-   *    - Count total reviews and calculate average rating per product
-   *    - Check if product has any variants for availability status
+   * Implement cursor-based pagination for consistent performance with large datasets.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -87,43 +64,29 @@ export class EcommercemallProductsController {
   }
 
   /**
-   * Retrieve complete details for a single product.
+   * Retrieve detailed information about a single product by its unique identifier.
    *
-   * This endpoint returns the full product information required for the product detail page. The response includes product details (name, description, base price), category information, seller shop details, all product images in display order, all available variants with current stock status, average customer rating, and all reviews.
+   * This operation returns the complete product information including the product name, description, category assignment, and base price. The response includes all associated product variants (SKUs) with their option values, individual prices, and current stock quantities.
    *
-   * The product is identified by its UUID in the path parameter. The product must exist and not be soft-deleted. Deleted products can only be viewed by administrators in the context of order history or audit trails.
+   * Product images are returned in their display order, with the first image serving as the main thumbnail. Seller information including the shop name and description is included to help customers identify the product source.
    *
-   * For customers, this provides the complete shopping information needed to make purchase decisions including variant options and stock availability. For sellers, this enables product management and inventory oversight. For administrators, this supports policy enforcement and dispute resolution.
+   * Customer reviews and ratings for the product are also included, showing the average rating and individual review details. This comprehensive data enables the product detail page to display all necessary information for customer purchase decisions.
    *
-   * Related operations:
-   * - PATCH /products for searching and filtering products
-   * - POST /products for creating new products (seller only)
-   * - PUT /products/{productId} for updating product details (seller only)
-   * - DELETE /products/{productId} for deleting products (seller or administrator)
+   * This endpoint is accessible to all authenticated users. Customers can view any active product. Sellers can view their own products including hidden or suspended ones. Administrators can view all products regardless of status for oversight purposes.
    *
    * @param connection
-   * @param productId Target product's unique identifier (UUID format)
+   * @param productId Unique identifier of the product to retrieve (global scope)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_products table by id.
-   * Join with ecommerce_mall_categories for category name.
-   * Join with ecommerce_mall_sellers and seller profile for shop name and logo.
-   * Query ecommerce_mall_product_images where product_id matches, ordered by display_order ascending.
-   * Query ecommerce_mall_product_variants where product_id matches and deleted_at is null, include current stock calculation from inventory_records.
-   * Query reviews for average rating and review count.
+   * @x-autobe-specification Query the ecommerce_mall_products table by the provided productId UUID parameter. Join with ecommerce_mall_product_variants to fetch all variants including their SKU codes, option values, prices, and calculated stock quantities from inventory records. Join with ecommerce_mall_product_images to retrieve all associated images ordered by display_order. Join with ecommerce_mall_sellers and ecommerce_mall_seller_profiles to get seller shop information. Join with ecommerce_mall_reviews and ecommerce_mall_customers to get review data including ratings and reviewer names. Join with ecommerce_mall_categories to get category name and hierarchy information.
    *
-   * Authorization check:
-   * - Allow if actor is administrator
-   * - Allow if actor is seller and product.seller_id matches actor.sellerId
-   * - Allow if product is not soft-deleted (deleted_at is null) for customers
-   *
-   * Return 404 if product not found or access denied.
+   *  Implement authorization checks: allow customers to access active products only (products with at least one variant), allow sellers to access their own products regardless of status, allow administrators to access any product. Return 404 if product not found or user lacks permission. Calculate average rating from non-deleted reviews. Calculate stock quantity by summing all inventory records for each variant.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":productId")
   public async at(
     @TypedParam("productId")
-    productId: string,
+    productId: string & tags.Format<"uuid">,
   ): Promise<IEcommerceMallProduct> {
     try {
       return await getEcommerceMallProductsProductId({

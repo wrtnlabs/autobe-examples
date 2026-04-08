@@ -3,10 +3,11 @@ import { IEcommerceMallCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/str
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
 
 export namespace EcommerceMallCustomerSessionTransformer {
   export type Payload = Prisma.ecommerce_mall_customer_sessionsGetPayload<
@@ -21,7 +22,11 @@ export namespace EcommerceMallCustomerSessionTransformer {
         referrer: true,
         created_at: true,
         expired_at: true,
-        customer: EcommerceMallCustomerAtSummaryTransformer.select(),
+        customer: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_customersFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_customer_sessionsFindManyArgs;
   }
@@ -30,9 +35,10 @@ export namespace EcommerceMallCustomerSessionTransformer {
   ): Promise<IEcommerceMallCustomerSession> {
     return {
       id: input.id,
-      customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
-        input.customer,
-      ),
+      customerId: input.customer.id,
+      customer: {
+        id: input.customer.id,
+      } satisfies IEcommerceMallCustomer.ISummary,
       ip: input.ip,
       href: input.href,
       referrer: input.referrer,

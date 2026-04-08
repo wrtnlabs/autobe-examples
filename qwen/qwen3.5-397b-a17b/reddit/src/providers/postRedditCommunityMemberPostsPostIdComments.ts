@@ -1,7 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCommunityComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityComment";
 import { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
-import { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
 import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPost";
 import { ArrayUtil } from "@nestia/e2e";
@@ -23,34 +22,28 @@ export async function postRedditCommunityMemberPostsPostIdComments(props: {
   postId: string & tags.Format<"uuid">;
   body: IRedditCommunityComment.ICreate;
 }): Promise<IRedditCommunityComment> {
-  // Validate that the post exists and is not deleted
-  await MyGlobal.prisma.reddit_community_posts.findUniqueOrThrow({
+  const post = await MyGlobal.prisma.reddit_community_posts.findUniqueOrThrow({
+    where: { id: props.postId, deleted_at: null },
+    select: { id: true, reddit_community_community_id: true },
+  });
+  const ban = await MyGlobal.prisma.reddit_community_bans.findFirst({
     where: {
-      id: props.postId,
+      reddit_community_member_id: props.member.id,
+      reddit_community_community_id: post.reddit_community_community_id,
       deleted_at: null,
     },
   });
-  // If parent_comment_id is provided, validate parent comment exists and is not deleted
-  if (
-    props.body.parent_comment_id !== undefined &&
-    props.body.parent_comment_id !== null
-  ) {
-    await MyGlobal.prisma.reddit_community_comments.findUniqueOrThrow({
-      where: {
-        id: props.body.parent_comment_id,
-        deleted_at: null,
-      },
-    });
+  if (ban !== null) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Create the comment using the collector
-  const created = await MyGlobal.prisma.reddit_community_comments.create({
+  const record = await MyGlobal.prisma.reddit_community_comments.create({
     data: await RedditCommunityCommentCollector.collect({
       body: props.body,
       redditCommunityMembers: { id: props.member.id },
+      redditCommunityMemberSessions: { id: props.member.session_id },
       redditCommunityPosts: { id: props.postId },
     }),
     ...RedditCommunityCommentTransformer.select(),
   });
-  // Transform and return the complete comment entity
-  return await RedditCommunityCommentTransformer.transform(created);
+  return await RedditCommunityCommentTransformer.transform(record);
 }

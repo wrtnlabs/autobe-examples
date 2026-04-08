@@ -2,7 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIRedditCloneCommentSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIRedditCloneCommentSnapshot";
 import { IRedditCloneCommentSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommentSnapshot";
-import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
+import { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -20,111 +20,75 @@ export async function patchRedditClonePostsPostIdCommentsCommentIdSnapshots(prop
   commentId: string & tags.Format<"uuid">;
   body: IRedditCloneCommentSnapshot.IRequest;
 }): Promise<IPageIRedditCloneCommentSnapshot.ISummary> {
-  // Validate that the comment exists and belongs to the post
+  // Validate post exists
+  await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
+    where: { id: props.postId },
+  });
+  // Validate comment exists
   await MyGlobal.prisma.reddit_clone_comments.findUniqueOrThrow({
-    where: {
-      id: props.commentId,
-      reddit_clone_post_id: props.postId,
-    },
+    where: { id: props.commentId },
   });
+  // Parse pagination parameters
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where clause with filters
-  const whereInput: Prisma.reddit_clone_comment_snapshotsWhereInput = {
+  // Build where clause
+  const whereInput = {
     reddit_clone_comment_id: props.commentId,
-  };
-  // Date range filter
-  if (props.body.from_date !== undefined) {
-    whereInput.snapshot_created_at = {
-      gte: new Date(props.body.from_date),
-    };
-  }
-  if (props.body.to_date !== undefined) {
-    if (
-      whereInput.snapshot_created_at &&
-      typeof whereInput.snapshot_created_at === "object" &&
-      "gte" in whereInput.snapshot_created_at
-    ) {
-      (whereInput.snapshot_created_at as any).lte = new Date(
-        props.body.to_date,
-      );
-    } else {
-      whereInput.snapshot_created_at = {
+    ...(props.body.search && {
+      content: {
+        contains: props.body.search,
+        mode: "insensitive" as const,
+      },
+    }),
+    ...(props.body.from_date && {
+      snapshot_created_at: {
+        gte: new Date(props.body.from_date),
+      },
+    }),
+    ...(props.body.to_date && {
+      snapshot_created_at: {
         lte: new Date(props.body.to_date),
-      };
-    }
-  }
-  // Vote score range filter
-  if (props.body.vote_score_min !== undefined) {
-    whereInput.vote_score = {
-      gte: props.body.vote_score_min,
-    };
-  }
-  if (props.body.vote_score_max !== undefined) {
-    if (
-      whereInput.vote_score &&
-      typeof whereInput.vote_score === "object" &&
-      "gte" in whereInput.vote_score
-    ) {
-      (whereInput.vote_score as any).lte = props.body.vote_score_max;
-    } else {
-      whereInput.vote_score = {
-        lte: props.body.vote_score_max,
-      };
-    }
-  }
-  // Deleted state filter
-  if (props.body.is_deleted !== undefined && props.body.is_deleted !== null) {
-    whereInput.comment_deleted_at = props.body.is_deleted
-      ? { not: null }
-      : { equals: null };
-  }
-  // Content search filter (trigram matching)
-  if (props.body.search !== undefined && props.body.search.length > 0) {
-    whereInput.content = {
-      contains: props.body.search,
-    };
-  }
+      },
+    }),
+  } satisfies Prisma.reddit_clone_comment_snapshotsWhereInput;
   // Build order by clause
-  const orderByInput: Prisma.reddit_clone_comment_snapshotsOrderByWithRelationInput =
-    {
-      snapshot_created_at: "desc",
-    };
-  if (props.body.sort !== undefined) {
-    const sortOrder: "asc" | "desc" = props.body.order ?? "desc";
-    if (props.body.sort === "snapshot_created_at") {
-      orderByInput.snapshot_created_at = sortOrder;
-    } else if (props.body.sort === "vote_score") {
-      orderByInput.vote_score = sortOrder;
-    } else if (props.body.sort === "content") {
-      orderByInput.content = sortOrder;
-    }
-  }
+  const orderByInput = (
+    props.body.sort === "snapshot_created_at_asc"
+      ? { snapshot_created_at: "asc" as const }
+      : props.body.sort === "snapshot_created_at_desc"
+        ? { snapshot_created_at: "desc" as const }
+        : props.body.sort === "created_at_asc"
+          ? { created_at: "asc" as const }
+          : props.body.sort === "created_at_desc"
+            ? { created_at: "desc" as const }
+            : { snapshot_created_at: "desc" as const }
+  ) satisfies Prisma.reddit_clone_comment_snapshotsOrderByWithRelationInput;
   // Fetch snapshots with pagination
-  const data = await MyGlobal.prisma.reddit_clone_comment_snapshots.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: orderByInput,
-    ...RedditCloneCommentSnapshotAtSummaryTransformer.select(),
-  });
+  const records = await MyGlobal.prisma.reddit_clone_comment_snapshots.findMany(
+    {
+      where: whereInput,
+      skip,
+      take: limit,
+      orderBy: orderByInput,
+      ...RedditCloneCommentSnapshotAtSummaryTransformer.select(),
+    },
+  );
   // Count total records
   const total = await MyGlobal.prisma.reddit_clone_comment_snapshots.count({
     where: whereInput,
   });
-  // Transform results
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    RedditCloneCommentSnapshotAtSummaryTransformer.transform,
-  );
+  // Transform and return paginated response
   return {
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
-    data: transformedData,
+    },
+    data: await ArrayUtil.asyncMap(
+      records,
+      RedditCloneCommentSnapshotAtSummaryTransformer.transform,
+    ),
   };
 }

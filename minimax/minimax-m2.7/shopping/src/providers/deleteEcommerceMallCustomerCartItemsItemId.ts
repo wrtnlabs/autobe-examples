@@ -15,26 +15,58 @@ export async function deleteEcommerceMallCustomerCartItemsItemId(props: {
   customer: CustomerPayload;
   itemId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const cartItem = await MyGlobal.prisma.ecommerce_mall_cart_items.findUnique({
-    where: { id: props.itemId },
-    select: {
-      id: true,
-      ecommerce_mall_cart_id: true,
-      cart: {
-        select: {
-          id: true,
-          ecommerce_mall_customer_id: true,
+  const cartItem =
+    await MyGlobal.prisma.ecommerce_mall_cart_items.findFirstOrThrow({
+      where: {
+        id: props.itemId,
+      },
+      select: {
+        id: true,
+        cart: {
+          select: {
+            ecommerce_mall_customer_id: true,
+          },
         },
       },
-    },
-  });
-  if (!cartItem) {
-    throw new HttpException("Cart item not found", 404);
-  }
+    });
   if (cartItem.cart.ecommerce_mall_customer_id !== props.customer.id) {
-    throw new HttpException("Cart item not found", 404);
+    throw new HttpException("Not found", 404);
   }
   await MyGlobal.prisma.ecommerce_mall_cart_items.delete({
-    where: { id: props.itemId },
+    where: {
+      id: props.itemId,
+    },
   });
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function deleteEcommerceMallCustomerCartItemsItemId(props: {
+//   customer: CustomerPayload;
+//   itemId: string & tags.Format<"uuid">;
+// }): Promise<void> {
+//   await MyGlobal.prisma.....delete({
+//     where: { ... },
+//   });
+// }
+// ```
+//--------------------------------------------------------------

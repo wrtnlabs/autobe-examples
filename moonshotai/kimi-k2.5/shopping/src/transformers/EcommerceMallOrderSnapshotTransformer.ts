@@ -1,12 +1,12 @@
-import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderSnapshot";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallOrderAtSummaryTransformer } from "./EcommerceMallOrderAtSummaryTransformer";
 
 export namespace EcommerceMallOrderSnapshotTransformer {
   export type Payload = Prisma.ecommerce_mall_order_snapshotsGetPayload<
@@ -16,9 +16,12 @@ export namespace EcommerceMallOrderSnapshotTransformer {
     return {
       select: {
         id: true,
-        order_id: true,
         created_at: true,
-        order: EcommerceMallOrderAtSummaryTransformer.select(),
+        order: {
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.ecommerce_mall_order_snapshotsFindManyArgs;
   }
@@ -27,11 +30,8 @@ export namespace EcommerceMallOrderSnapshotTransformer {
   ): Promise<IEcommerceMallOrderSnapshot> {
     return {
       id: input.id,
-      orderId: input.order_id,
+      orderId: input.order.id,
       createdAt: input.created_at.toISOString(),
-      order: await EcommerceMallOrderAtSummaryTransformer.transform(
-        input.order,
-      ),
     };
   }
 }

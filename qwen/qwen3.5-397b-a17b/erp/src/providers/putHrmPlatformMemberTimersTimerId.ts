@@ -25,59 +25,52 @@ export async function putHrmPlatformMemberTimersTimerId(props: {
   timerId: string & tags.Format<"uuid">;
   body: IHrmPlatformTimer.IUpdate;
 }): Promise<IHrmPlatformTimer> {
-  const employee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-      where: {
-        user_id: props.member.id,
-        deleted_at: null,
-      },
-    });
   const timer = await MyGlobal.prisma.hrm_platform_timers.findUniqueOrThrow({
     where: { id: props.timerId },
     select: {
       id: true,
-      employee_id: true,
-      project_id: true,
-      deleted_at: true,
+      hrm_platform_employee_id: true,
+      stopped_at: true,
+      hrm_platform_project_id: true,
     },
   });
-  if (timer.deleted_at !== null) {
-    throw new HttpException("Timer not found", 404);
+  const employee =
+    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
+      where: {
+        member_id: props.member.id,
+        id: timer.hrm_platform_employee_id,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        organization_id: true,
+      },
+    });
+  if (timer.stopped_at !== null) {
+    throw new HttpException(
+      "Timer is already stopped and cannot be updated",
+      400,
+    );
   }
-  if (timer.employee_id !== employee.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const targetProjectId = props.body.project_id ?? timer.project_id;
-  if (props.body.project_id !== undefined) {
-    const projectMembership =
-      await MyGlobal.prisma.hrm_platform_project_members.findFirst({
+  const targetProjectId =
+    props.body.hrm_platform_project_id ?? timer.hrm_platform_project_id;
+  if (props.body.hrm_platform_project_id !== undefined) {
+    const projectMember =
+      await MyGlobal.prisma.hrm_platform_project_members.findFirstOrThrow({
         where: {
           hrm_platform_employee_id: employee.id,
-          hrm_platform_project_id: props.body.project_id,
+          hrm_platform_project_id: props.body.hrm_platform_project_id,
         },
       });
-    if (!projectMembership) {
-      throw new HttpException(
-        "Employee is not assigned to the specified project",
-        400,
-      );
-    }
   }
-  if (props.body.task_id !== undefined) {
-    if (props.body.task_id !== null) {
-      const task = await MyGlobal.prisma.hrm_platform_tasks.findUnique({
-        where: { id: props.body.task_id },
-        select: { hrm_platform_project_id: true },
+  if (props.body.hrm_platform_task_id !== undefined) {
+    if (props.body.hrm_platform_task_id !== null) {
+      const task = await MyGlobal.prisma.hrm_platform_tasks.findFirstOrThrow({
+        where: {
+          id: props.body.hrm_platform_task_id,
+          hrm_platform_project_id: targetProjectId,
+        },
       });
-      if (!task) {
-        throw new HttpException("Task not found", 400);
-      }
-      if (task.hrm_platform_project_id !== targetProjectId) {
-        throw new HttpException(
-          "Task does not belong to the selected project",
-          400,
-        );
-      }
     }
   }
   await MyGlobal.prisma.hrm_platform_timers.update({
@@ -86,10 +79,12 @@ export async function putHrmPlatformMemberTimersTimerId(props: {
       ...(props.body.description !== undefined && {
         description: props.body.description,
       }),
-      ...(props.body.project_id !== undefined && {
-        project_id: props.body.project_id,
+      ...(props.body.hrm_platform_project_id !== undefined && {
+        hrm_platform_project_id: props.body.hrm_platform_project_id,
       }),
-      ...(props.body.task_id !== undefined && { task_id: props.body.task_id }),
+      ...(props.body.hrm_platform_task_id !== undefined && {
+        hrm_platform_task_id: props.body.hrm_platform_task_id,
+      }),
       updated_at: new Date(),
     },
   });

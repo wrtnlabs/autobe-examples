@@ -10,32 +10,47 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallShipmentCollector {
   export async function collect(props: {
     body: IShoppingMallShipment.ICreate;
+    shoppingMallOrders: IEntity;
     shoppingMallSellers: IEntity;
   }) {
     const id: string = v4();
     return {
       id,
-      tracking_carrier: props.body.tracking_carrier,
+      carrier_name: props.body.carrier_name,
       tracking_number: props.body.tracking_number,
-      shipped_at: new Date(),
-      delivered_at: null,
-      delivery_confirmed: false,
       created_at: new Date(),
       updated_at: new Date(),
+      delivered_at: null,
       deleted_at: null,
+      order: { connect: { id: props.shoppingMallOrders.id } },
       seller: { connect: { id: props.shoppingMallSellers.id } },
-      shipmentItems: {
-        create: await ArrayUtil.asyncMap(
-          props.body.order_item_ids,
-          async (orderItemId) => ({
-            id: v4(),
-            shopping_mall_order_item_id: orderItemId,
-            shopping_mall_shipment_id: id,
-            created_at: new Date(),
-            orderItem: { connect: { id: orderItemId } },
-          }),
-        ),
-      },
     } satisfies Prisma.shopping_mall_shipmentsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace ShoppingMallShipmentCollector {
+//         export async function collect(props: {
+//           body: IShoppingMallShipment.ICreate;
+//           shoppingMallOrders: IEntity; // from path parameter orderId
+// shoppingMallSellers: IEntity; // from authorized actor
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       carrier_name: ...,
+//       tracking_number: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       delivered_at: ...,
+//       deleted_at: ...,
+//       order: ...,
+//       seller: ...,
+//           } satisfies Prisma.shopping_mall_shipmentsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

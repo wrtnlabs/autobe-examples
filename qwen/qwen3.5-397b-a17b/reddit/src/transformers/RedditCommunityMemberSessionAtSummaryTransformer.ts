@@ -1,12 +1,12 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { IRedditCommunityMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMemberSession";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
 
 export namespace RedditCommunityMemberSessionAtSummaryTransformer {
   export type Payload = Prisma.reddit_community_member_sessionsGetPayload<
@@ -16,14 +16,11 @@ export namespace RedditCommunityMemberSessionAtSummaryTransformer {
     return {
       select: {
         id: true,
-        access_token: true,
-        refresh_token: true,
         ip: true,
         href: true,
         referrer: true,
         created_at: true,
         expired_at: true,
-        member: RedditCommunityMemberAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_community_member_sessionsFindManyArgs;
   }
@@ -37,9 +34,6 @@ export namespace RedditCommunityMemberSessionAtSummaryTransformer {
       referrer: input.referrer,
       created_at: input.created_at.toISOString(),
       expired_at: input.expired_at.toISOString(),
-      member: await RedditCommunityMemberAtSummaryTransformer.transform(
-        input.member,
-      ),
-    };
+    } satisfies IRedditCommunityMemberSession.ISummary;
   }
 }

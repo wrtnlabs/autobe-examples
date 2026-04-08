@@ -23,68 +23,57 @@ export async function patchEcommerceMallSuperAdminAuditLogs(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const whereInput: Prisma.ecommerce_mall_admin_audit_logsWhereInput = {
-    ...(props.body.adminId !== undefined && {
-      ecommerce_mall_admin_id: props.body.adminId,
-    }),
-    ...(props.body.action !== undefined && {
-      action: { contains: props.body.action, mode: "insensitive" },
-    }),
-    ...(props.body.resourceType !== undefined &&
-      props.body.resourceType !== null && {
-        resource_type: props.body.resourceType,
-      }),
-    ...(props.body.resourceId !== undefined &&
-      props.body.resourceId !== null && {
-        resource_id: props.body.resourceId,
-      }),
-    ...(props.body.ip !== undefined &&
-      props.body.ip !== null && {
-        ip: props.body.ip,
-      }),
-    ...(props.body.createdAtFrom !== undefined ||
-    props.body.createdAtTo !== undefined
-      ? {
-          created_at: {
-            ...(props.body.createdAtFrom !== undefined && {
-              gte: new Date(props.body.createdAtFrom),
-            }),
-            ...(props.body.createdAtTo !== undefined && {
-              lte: new Date(props.body.createdAtTo),
-            }),
-          },
-        }
-      : {}),
-  };
-  const orderByInput: Prisma.ecommerce_mall_admin_audit_logsOrderByWithRelationInput =
-    props.body.sortBy === "created_at" || props.body.sortBy === undefined
-      ? { created_at: props.body.sortOrder ?? "desc" }
-      : props.body.sortBy === "action"
-        ? { action: props.body.sortOrder ?? "desc" }
-        : { created_at: props.body.sortOrder ?? "desc" };
-  const [data, total] = await Promise.all([
+  // Build where conditions
+  const where: Prisma.ecommerce_mall_admin_audit_logsWhereInput = {};
+  if (props.body.adminId !== null) {
+    where.ecommerce_mall_admin_id = props.body.adminId;
+  }
+  if (props.body.actionTypes !== null && props.body.actionTypes.length > 0) {
+    where.action = { in: props.body.actionTypes };
+  }
+  if (
+    props.body.resourceTypes !== null &&
+    props.body.resourceTypes.length > 0
+  ) {
+    where.resource_type = { in: props.body.resourceTypes };
+  }
+  if (props.body.resourceId !== null) {
+    where.resource_id = props.body.resourceId;
+  }
+  if (props.body.ipAddress !== null) {
+    where.ip = props.body.ipAddress;
+  }
+  if (props.body.dateFrom !== null || props.body.dateTo !== null) {
+    where.created_at = {};
+    if (props.body.dateFrom !== null) {
+      where.created_at.gte = new Date(props.body.dateFrom);
+    }
+    if (props.body.dateTo !== null) {
+      where.created_at.lte = new Date(props.body.dateTo);
+    }
+  }
+  // Query admin audit logs
+  const [adminLogs, totalCount] = await Promise.all([
     MyGlobal.prisma.ecommerce_mall_admin_audit_logs.findMany({
-      where: whereInput,
+      where,
+      orderBy: { created_at: "desc" },
       skip,
       take: limit,
-      orderBy: orderByInput,
       ...EcommerceMallAdminAuditLogAtSummaryTransformer.select(),
     }),
-    MyGlobal.prisma.ecommerce_mall_admin_audit_logs.count({
-      where: whereInput,
-    }),
+    MyGlobal.prisma.ecommerce_mall_admin_audit_logs.count({ where }),
   ]);
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
+  const data = await ArrayUtil.asyncMap(
+    adminLogs,
     EcommerceMallAdminAuditLogAtSummaryTransformer.transform,
   );
   return {
-    data: transformedData,
+    data,
     pagination: {
       current: page,
       limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
+      records: totalCount,
+      pages: Math.ceil(totalCount / limit),
     } satisfies IPage.IPagination,
   };
 }

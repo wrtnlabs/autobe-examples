@@ -1,4 +1,4 @@
-import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { ForbiddenException } from "@nestjs/common";
 import { MyGlobal } from "../../MyGlobal";
 import { jwtAuthorize } from "./jwtAuthorize";
 import { AdminPayload } from "../../decorators/payload/AdminPayload";
@@ -6,26 +6,20 @@ import { AdminPayload } from "../../decorators/payload/AdminPayload";
 export async function adminAuthorize(request: {
   headers: { authorization?: string };
 }): Promise<AdminPayload> {
-  const payload: AdminPayload = jwtAuthorize({
-    request,
-  }) as AdminPayload;
+  const payload: AdminPayload = jwtAuthorize({ request }) as AdminPayload;
 
   if (payload.type !== "admin") {
-    throw new ForbiddenException(`You're not ${payload.type}`);
+    throw new ForbiddenException("You're not an admin");
   }
 
-  const session = await MyGlobal.prisma.erp_hrm_admin_sessions.findFirst({
+  const admin = await MyGlobal.prisma.erp_hrm_admins.findFirst({
     where: {
-      id: payload.session_id,
-      erp_hrm_admin_id: payload.id,
-      expired_at: {
-        gt: new Date(),
-      },
+      id: payload.id,
     },
   });
 
-  if (session === null) {
-    throw new UnauthorizedException("Session expired or invalid");
+  if (admin === null) {
+    throw new ForbiddenException("You're not enrolled");
   }
 
   return payload;

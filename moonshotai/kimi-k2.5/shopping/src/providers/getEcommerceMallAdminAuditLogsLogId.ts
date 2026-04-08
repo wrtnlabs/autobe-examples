@@ -16,12 +16,12 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getEcommerceMallAdminAuditLogsLogId(props: {
   admin: AdminPayload;
-  logId: string & tags.Format<"uuid">;
+  logId: string;
 }): Promise<IEcommerceMallAdminAuditLog> {
-  const auditLog =
+  const log =
     await MyGlobal.prisma.ecommerce_mall_admin_audit_logs.findUniqueOrThrow({
       where: { id: props.logId },
       ...EcommerceMallAdminAuditLogTransformer.select(),
     });
-  return await EcommerceMallAdminAuditLogTransformer.transform(auditLog);
+  return await EcommerceMallAdminAuditLogTransformer.transform(log);
 }

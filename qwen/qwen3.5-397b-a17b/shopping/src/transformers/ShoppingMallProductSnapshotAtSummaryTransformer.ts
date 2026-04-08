@@ -1,6 +1,5 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
-import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -23,51 +22,28 @@ export namespace ShoppingMallProductSnapshotAtSummaryTransformer {
         description: true,
         base_price: true,
         created_at: true,
-        product: {
-          select: {
-            base_price: true,
-            variants: {
-              select: {
-                price_override: true,
-              },
-            } satisfies Prisma.shopping_mall_product_variantsFindManyArgs,
-          },
-        } satisfies Prisma.shopping_mall_productsFindManyArgs,
+        product: { select: { id: true } },
         category: ShoppingMallCategoryAtSummaryTransformer.select(),
-        snapshotVariants: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.shopping_mall_product_snapshot_variantsFindManyArgs,
+        productVariantSnapshots: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_product_variant_snapshotsFindManyArgs,
+        images: {
+          select: { id: true },
+        } satisfies Prisma.shopping_mall_product_snapshot_imagesFindManyArgs,
       },
     } satisfies Prisma.shopping_mall_product_snapshotsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IShoppingMallProductSnapshot.ISummary> {
-    const variantPrices = input.product.variants
-      .map((v) => v.price_override)
-      .filter((p): p is number => p !== null);
-    const minPrice =
-      variantPrices.length > 0
-        ? Math.min(...variantPrices)
-        : input.product.base_price;
-    const maxPrice =
-      variantPrices.length > 0
-        ? Math.max(...variantPrices)
-        : input.product.base_price;
     return {
       id: input.id,
       name: input.name,
       base_price: input.base_price,
-      created_at: toISOStringSafe(input.created_at),
-      product: {
-        min: minPrice,
-        max: maxPrice,
-      } satisfies IShoppingMallProduct.ISummary,
       category: await ShoppingMallCategoryAtSummaryTransformer.transform(
         input.category,
       ),
-    };
+      created_at: input.created_at.toISOString(),
+    } satisfies IShoppingMallProductSnapshot.ISummary;
   }
 }

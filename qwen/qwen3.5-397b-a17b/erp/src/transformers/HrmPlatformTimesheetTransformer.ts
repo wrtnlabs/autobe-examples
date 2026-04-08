@@ -10,11 +10,14 @@ import { IHrmPlatformTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IH
 import { IHrmPlatformTimesheet } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTimesheet";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmPlatformEmployeeAtSummaryTransformer } from "./HrmPlatformEmployeeAtSummaryTransformer";
-import { HrmPlatformTimelogTransformer } from "./HrmPlatformTimelogTransformer";
+import { HrmPlatformMemberAtSummaryTransformer } from "./HrmPlatformMemberAtSummaryTransformer";
+import { HrmPlatformTimelogAtSummaryTransformer } from "./HrmPlatformTimelogAtSummaryTransformer";
 
 export namespace HrmPlatformTimesheetTransformer {
   export type Payload = Prisma.hrm_platform_timesheetsGetPayload<
@@ -34,8 +37,8 @@ export namespace HrmPlatformTimesheetTransformer {
         updated_at: true,
         deleted_at: true,
         employee: HrmPlatformEmployeeAtSummaryTransformer.select(),
-        reviewedByEmployee: HrmPlatformEmployeeAtSummaryTransformer.select(),
-        timelogs: HrmPlatformTimelogTransformer.select(),
+        reviewer: HrmPlatformMemberAtSummaryTransformer.select(),
+        timelogs: HrmPlatformTimelogAtSummaryTransformer.select(),
       },
     } satisfies Prisma.hrm_platform_timesheetsFindManyArgs;
   }
@@ -44,29 +47,25 @@ export namespace HrmPlatformTimesheetTransformer {
   ): Promise<IHrmPlatformTimesheet> {
     return {
       id: input.id,
-      employee_id: input.employee.id,
-      reviewed_by_employee_id: input.reviewedByEmployee?.id ?? null,
-      week_start_date: input.week_start_date,
-      week_end_date: input.week_end_date,
-      status: input.status,
-      submitted_at: input.submitted_at?.toISOString() ?? null,
-      reviewed_at: input.reviewed_at?.toISOString() ?? null,
-      rejection_reason: input.rejection_reason,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
       employee: await HrmPlatformEmployeeAtSummaryTransformer.transform(
         input.employee,
       ),
-      reviewedByEmployee: input.reviewedByEmployee
-        ? await HrmPlatformEmployeeAtSummaryTransformer.transform(
-            input.reviewedByEmployee,
-          )
-        : null,
+      reviewer: input.reviewer
+        ? await HrmPlatformMemberAtSummaryTransformer.transform(input.reviewer)
+        : undefined,
+      weekStartDate: input.week_start_date.toISOString(),
+      weekEndDate: input.week_end_date.toISOString(),
+      status: input.status,
+      submittedAt: input.submitted_at?.toISOString() ?? null,
+      reviewedAt: input.reviewed_at?.toISOString() ?? null,
+      rejectionReason: input.rejection_reason ?? undefined,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
       timelogs: await ArrayUtil.asyncMap(
         input.timelogs,
-        HrmPlatformTimelogTransformer.transform,
+        HrmPlatformTimelogAtSummaryTransformer.transform,
       ),
-    };
+    } satisfies IHrmPlatformTimesheet;
   }
 }

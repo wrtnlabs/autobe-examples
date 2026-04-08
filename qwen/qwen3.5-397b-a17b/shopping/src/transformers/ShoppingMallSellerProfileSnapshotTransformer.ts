@@ -1,4 +1,5 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
 import { IShoppingMallSellerProfileSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfileSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
@@ -19,8 +20,8 @@ export namespace ShoppingMallSellerProfileSnapshotTransformer {
       select: {
         id: true,
         shop_name: true,
-        description: true,
-        logo_image_uri: true,
+        shop_description: true,
+        logo_image_url: true,
         created_at: true,
         sellerProfile: ShoppingMallSellerProfileAtSummaryTransformer.select(),
       },
@@ -36,9 +37,9 @@ export namespace ShoppingMallSellerProfileSnapshotTransformer {
           input.sellerProfile,
         ),
       shop_name: input.shop_name,
-      description: input.description,
-      logo_image_uri: input.logo_image_uri ?? undefined,
+      shop_description: input.shop_description,
+      logo_image_url: input.logo_image_url ?? null,
       created_at: input.created_at.toISOString(),
-    };
+    } satisfies IShoppingMallSellerProfileSnapshot;
   }
 }

@@ -4,8 +4,10 @@ import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHr
 import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmPlatformMemberAtSummaryTransformer } from "./HrmPlatformMemberAtSummaryTransformer";
 import { HrmPlatformOrganizationAtSummaryTransformer } from "./HrmPlatformOrganizationAtSummaryTransformer";
@@ -23,8 +25,6 @@ export namespace HrmPlatformActivityLogTransformer {
         target_entity_id: true,
         details: true,
         created_at: true,
-        updated_at: true,
-        deleted_at: true,
         organization: HrmPlatformOrganizationAtSummaryTransformer.select(),
         member: HrmPlatformMemberAtSummaryTransformer.select(),
       },
@@ -35,18 +35,17 @@ export namespace HrmPlatformActivityLogTransformer {
   ): Promise<IHrmPlatformActivityLog> {
     return {
       id: input.id,
+      actionType: input.action_type,
+      targetEntityType: input.target_entity_type,
+      targetEntityId: input.target_entity_id,
+      details: input.details,
+      createdAt: input.created_at.toISOString(),
       organization: await HrmPlatformOrganizationAtSummaryTransformer.transform(
         input.organization,
       ),
       member: await HrmPlatformMemberAtSummaryTransformer.transform(
         input.member,
       ),
-      action_type: input.action_type,
-      target_entity_type: input.target_entity_type,
-      target_entity_id: input.target_entity_id ?? undefined,
-      details: input.details ?? undefined,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-    };
+    } satisfies IHrmPlatformActivityLog;
   }
 }

@@ -9,7 +9,7 @@ export function prepare_random_ecommerce_mall_category(
   input?: DeepPartial<IEcommerceMallCategory.ICreate>,
 ): IEcommerceMallCategory.ICreate {
   return {
-    name: input?.name ?? RandomGenerator.name(),
+    name: input?.name ?? RandomGenerator.name(2),
     description:
       input?.description ?? RandomGenerator.paragraph({ sentences: 2 }),
     parentId: input?.parentId ?? null,

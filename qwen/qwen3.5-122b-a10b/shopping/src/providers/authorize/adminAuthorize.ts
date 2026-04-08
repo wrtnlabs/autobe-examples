@@ -12,7 +12,7 @@ export async function adminAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const admin = await MyGlobal.prisma.ecommerce_mall_admins.findFirst({
+  const admin = await MyGlobal.prisma.ecommerce_admins.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,
@@ -21,6 +21,19 @@ export async function adminAuthorize(request: {
 
   if (admin === null) {
     throw new ForbiddenException("You're not enrolled");
+  }
+
+  const session = await MyGlobal.prisma.ecommerce_admin_sessions.findFirst({
+    where: {
+      id: payload.session_id,
+      ecommerce_admin_id: payload.id,
+      deleted_at: null,
+      expired_at: { gt: new Date() },
+    },
+  });
+
+  if (session === null) {
+    throw new ForbiddenException("Session expired or invalid");
   }
 
   return payload;

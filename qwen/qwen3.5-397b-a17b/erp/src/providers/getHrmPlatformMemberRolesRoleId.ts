@@ -1,7 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
-import { IHrmPlatformRolePermission } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRolePermission";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -26,14 +25,15 @@ export async function getHrmPlatformMemberRolesRoleId(props: {
     },
     ...HrmPlatformRoleTransformer.select(),
   });
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      user_id: props.member.id,
-      organization_id: role.organization.id,
-      deleted_at: null,
-    },
-  });
-  if (!employee) {
+  const membership =
+    await MyGlobal.prisma.hrm_platform_organization_memberships.findFirst({
+      where: {
+        hrm_platform_member_id: props.member.id,
+        hrm_platform_organization_id: role.organization.id,
+        deleted_at: null,
+      },
+    });
+  if (!membership) {
     throw new HttpException("Forbidden", 403);
   }
   return await HrmPlatformRoleTransformer.transform(role);

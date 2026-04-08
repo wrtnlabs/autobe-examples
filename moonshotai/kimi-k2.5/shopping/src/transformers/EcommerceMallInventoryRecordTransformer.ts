@@ -4,65 +4,41 @@ import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/li
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallProductVariantOptionAtSummaryTransformer } from "./EcommerceMallProductVariantOptionAtSummaryTransformer";
+import { EcommerceMallProductVariantAtSummaryTransformer } from "./EcommerceMallProductVariantAtSummaryTransformer";
 
 export namespace EcommerceMallInventoryRecordTransformer {
   export type Payload = Prisma.ecommerce_mall_inventory_recordsGetPayload<
     ReturnType<typeof select>
   >;
+  export async function transform(
+    input: Payload,
+  ): Promise<IEcommerceMallInventoryRecord> {
+    return {
+      id: input.id,
+      variantId: input.product_variant_id,
+      quantityChange: input.quantity_change,
+      reason: input.reason,
+      createdAt: input.created_at.toISOString(),
+      variant: await EcommerceMallProductVariantAtSummaryTransformer.transform(
+        input.variant,
+      ),
+    };
+  }
   export function select() {
     return {
       select: {
         id: true,
+        product_variant_id: true,
         quantity_change: true,
         reason: true,
         created_at: true,
-        variant: {
-          select: {
-            id: true,
-            sku_code: true,
-            price: true,
-            created_at: true,
-            deleted_at: true,
-            variantOptions:
-              EcommerceMallProductVariantOptionAtSummaryTransformer.select(),
-            inventoryRecords: {
-              select: {
-                quantity_change: true,
-              },
-            } satisfies Prisma.ecommerce_mall_inventory_recordsFindManyArgs,
-          },
-        } satisfies Prisma.ecommerce_mall_product_variantsFindManyArgs,
+        variant: EcommerceMallProductVariantAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_inventory_recordsFindManyArgs;
-  }
-  export async function transform(
-    input: Payload,
-  ): Promise<IEcommerceMallInventoryRecord> {
-    const currentStock = input.variant.inventoryRecords.reduce(
-      (sum, record) => sum + record.quantity_change,
-      0,
-    );
-    return {
-      id: input.id,
-      quantityChange: input.quantity_change,
-      reason: input.reason,
-      createdAt: input.created_at.toISOString(),
-      variant: {
-        id: input.variant.id,
-        skuCode: input.variant.sku_code,
-        price: input.variant.price ?? null,
-        options: await ArrayUtil.asyncMap(
-          input.variant.variantOptions,
-          EcommerceMallProductVariantOptionAtSummaryTransformer.transform,
-        ),
-        currentStock,
-        isAvailable: currentStock > 0 && input.variant.deleted_at === null,
-        createdAt: input.variant.created_at.toISOString(),
-      } satisfies IEcommerceMallProductVariant.ISummary,
-    };
   }
 }

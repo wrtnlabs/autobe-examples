@@ -10,19 +10,14 @@ export function prepare_random_erp_hrm_timelog(
 ): IErpHrmTimelog.ICreate {
   return {
     projectId: input?.projectId ?? typia.random<string & tags.Format<"uuid">>(),
-    taskId:
-      input?.taskId ??
-      RandomGenerator.pick([
-        null,
-        typia.random<string & tags.Format<"uuid">>(),
-      ] as const) ??
-      null,
-    date: input?.date ?? new Date().toISOString(),
+    taskId: input?.taskId ?? null,
+    date: input?.date ?? typia.random<string & tags.Format<"date-time">>(),
     durationMinutes:
       input?.durationMinutes ??
-      typia.random<number & tags.Type<"int32"> & tags.Minimum<1>>(),
-    description:
-      input?.description ?? RandomGenerator.paragraph({ sentences: 2 }),
-    billable: input?.billable ?? RandomGenerator.pick([true, false] as const),
+      typia.random<
+        number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<1440>
+      >(),
+    description: input?.description ?? null,
+    billable: input?.billable ?? true,
   };
 }

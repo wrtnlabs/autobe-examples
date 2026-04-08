@@ -10,36 +10,39 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { EcommerceMallProductVariantOptionValueCollector } from "./EcommerceMallProductVariantOptionValueCollector";
 
 export namespace EcommerceMallProductVariantCollector {
-  /**
-   * Collector for creating product variants.
-   * Handles variant creation with nested option values via neighbor collector.
-   */
   export async function collect(props: {
     body: IEcommerceMallProductVariant.ICreate;
     ecommerceMallProducts: IEntity;
     ecommerceMallSellers: IEntity;
     ecommerceMallSellerSessions: IEntity;
   }) {
+    const variantId = v4();
     return {
       // Scalar fields
-      id: v4(),
-      sku_code: props.body.sku_code,
+      id: variantId,
+      sku_code: props.body.skuCode,
       price: props.body.price ?? null,
       quantity: props.body.quantity ?? 0,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      // BelongsTo relation - Connect to parent product
+      // BelongsTo relation
       product: { connect: { id: props.ecommerceMallProducts.id } },
-      // HasMany relation - Nested create with neighbor collector
-      optionValues: props.body.option_values?.length
+      // HasMany relation - nested create with neighbor collector
+      optionValues: props.body.optionValues?.length
         ? {
             create: await ArrayUtil.asyncMap(
-              props.body.option_values,
-              (option) =>
+              props.body.optionValues,
+              (optionValue) =>
                 EcommerceMallProductVariantOptionValueCollector.collect({
-                  body: option,
-                  productVariant: { id: "" },
+                  body: optionValue,
+                  ecommerceMallProductVariants: {
+                    id: variantId,
+                  } as IEntity,
+                  ecommerceMallProducts: props.ecommerceMallProducts,
+                  ecommerceMallSellers: props.ecommerceMallSellers,
+                  ecommerceMallSellerSessions:
+                    props.ecommerceMallSellerSessions,
                 }),
             ),
           }
@@ -47,3 +50,34 @@ export namespace EcommerceMallProductVariantCollector {
     } satisfies Prisma.ecommerce_mall_product_variantsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallProductVariantCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallProductVariant.ICreate;
+//           ecommerceMallProducts: IEntity; // from path parameter productId
+// ecommerceMallSellers: IEntity; // from authorized actor
+// ecommerceMallSellerSessions: IEntity; // from authorized session
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       sku_code: ...,
+//       price: ...,
+//       quantity: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       product: ...,
+//       optionValues: ...,
+//       inventoryRecords: ...,
+//       cartItems: ...,
+//       orderItems: ...,
+//           } satisfies Prisma.ecommerce_mall_product_variantsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

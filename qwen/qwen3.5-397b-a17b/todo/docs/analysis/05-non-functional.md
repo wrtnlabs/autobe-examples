@@ -1,4 +1,4 @@
-**multiUserTodo — Data ownership, privacy, retention, and recovery policies**
+**todoApp — Data ownership, privacy, retention, and recovery policies**
 
 Data ownership, privacy, retention, and recovery policies
 
@@ -10,13 +10,9 @@ Data ownership, privacy, retention, and recovery policies from a business perspe
 
 Define who owns what data, who can access it, and privacy boundaries between users.
 
-### Data Ownership and Isolation
+### User Data Ownership and Privacy
 
-Users own all todos they create. Each user's todos are completely isolated from other users' data. There are no shared todos or public todos in the system. When a user deletes their account, all their todos including those in trash are permanently deleted. User profile data belongs to the individual user and is not shared with other users.
-
-### Access Control and Privacy
-
-Users can only access their own todos. There is no way to view, access, or share another user's todos. Users cannot view other users' profiles as this is a private todo application. The system enforces complete privacy boundaries between users. No mechanism exists for users to grant access to their todos to other users.
+Each user owns all todos they create. A user's todos are completely private and isolated from all other users. Users can only access, view, edit, or delete their own todos. There is no way for a user to view, access, or share another user's todos. Users cannot view other users' profiles or any information about other users. When a user deletes their account, all their todos including those in trash are permanently deleted. The system enforces strict data isolation so that users have no visibility into other users' data or activities.
 
 ## Data Retention and Recovery
 
@@ -24,36 +20,16 @@ Define what happens to deleted data, how long it is retained, and how users can 
 
 ### Soft Delete Behavior
 
-When a user deletes a todo, the todo is soft deleted and moved to the trash.
-Soft deleted todos do not appear in the normal todo list.
-Soft deleted todos remain accessible through the trash view.
-The todo retains all its properties while in trash, including title, description, start date, due date, and completion status.
-Soft deleted todos maintain their association with the user who deleted them.
-Other users cannot access soft deleted todos, maintaining privacy isolation.
+When a user deletes a todo, the todo is soft deleted rather than immediately removed from the system. A soft deleted todo is moved to the user's trash and no longer appears in the normal todo list. The todo and its edit history are retained in the system until the user either restores the todo or permanently deletes it from the trash. When a user deletes their account, all their todos including those in trash are permanently deleted.
 
-### Data Retention
+### Trash Retention Policy
 
-Soft deleted todos are retained in the trash indefinitely until the user takes action.
-There is no automatic deletion of trashed todos based on time.
-When a user deletes their account, all their todos including those in trash are permanently deleted.
-Edit history is retained for all todos that exist in the system.
-When a todo is permanently deleted, its edit history is also deleted.
-Account deletion removes all user data permanently with no recovery option.
+Soft deleted todos are retained in the user's trash indefinitely until the user takes action. The system retains deleted todos to allow users to recover them if needed. Each deleted todo remains in the trash along with its complete edit history. The retention of deleted todos applies only to the user who owns them, consistent with the privacy policy that each user's data is completely isolated.
 
-### Data Recovery
+### Todo Recovery
 
-Users can restore any todo from the trash.
-When a todo is restored, it returns to the normal todo list.
-Restored todos retain all their original properties including title, description, dates, and completion status.
-The edit history of a restored todo is preserved during recovery.
-Restored todos maintain their original creation date.
-Only the owner of a todo can restore it from the trash.
+Users can recover a soft deleted todo by restoring it from the trash. When a todo is restored, it returns to the normal todo list and becomes visible in the user's active todos again. The restored todo retains all its original properties including title, description, start date, due date, completion status, and creation date. The edit history of the todo is also preserved during recovery.
 
 ### Permanent Deletion
 
-Users can permanently delete a todo from the trash.
-When a todo is permanently deleted, it cannot be recovered.
-Permanent deletion removes the todo and all its edit history.
-Permanently deleted todos are removed from the system entirely.
-Account deletion triggers permanent deletion of all user todos and their edit history.
-Permanent deletion is irreversible and no backup or recovery mechanism exists for permanently deleted data.
+Users can permanently delete a todo from the trash, which removes the todo and all its edit history from the system permanently. Permanent deletion cannot be undone and the todo cannot be recovered after this action. When a user deletes their account, all todos owned by that user including those in trash are permanently deleted along with their edit histories. Permanent deletion is the only method to completely remove todo data from the system.

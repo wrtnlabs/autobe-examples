@@ -13,36 +13,32 @@ export namespace EcommerceMallProductVariantCollector {
   export async function collect(props: {
     body: IEcommerceMallProductVariant.ICreate;
     ecommerceMallProducts: IEntity;
-  }) {
-    const id = v4();
-    const now = new Date();
+    ecommerceMallSellers: IEntity;
+    ecommerceMallSellerSessions: IEntity;
+  }): Promise<Prisma.ecommerce_mall_product_variantsCreateInput> {
+    const id: string = v4();
     return {
       id,
       sku_code: props.body.skuCode,
       price: props.body.price ?? null,
-      created_at: now,
-      updated_at: now,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
-      product: { connect: { id: props.ecommerceMallProducts.id } },
-      variantOptions: {
-        create: await ArrayUtil.asyncMap(props.body.options, (option) =>
-          EcommerceMallProductVariantOptionCollector.collect({
-            body: option,
-            ecommerceMallProductVariants: { id },
-          }),
-        ),
+      product: {
+        connect: { id: props.ecommerceMallProducts.id },
       },
-      inventoryRecords:
-        props.body.stock && props.body.stock > 0
-          ? {
-              create: {
-                id: v4(),
-                quantity_change: props.body.stock,
-                reason: "initial_stock",
-                created_at: now,
-              },
-            }
-          : undefined,
+      variantOptions: props.body.options.length
+        ? {
+            create: await ArrayUtil.asyncMap(props.body.options, (option) =>
+              EcommerceMallProductVariantOptionCollector.collect({
+                body: option,
+                ecommerceMallProductVariants: { id },
+                ecommerceMallSellers: props.ecommerceMallSellers,
+                ecommerceMallSellerSessions: props.ecommerceMallSellerSessions,
+              }),
+            ),
+          }
+        : undefined,
     } satisfies Prisma.ecommerce_mall_product_variantsCreateInput;
   }
 }

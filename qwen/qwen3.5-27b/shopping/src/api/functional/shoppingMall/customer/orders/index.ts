@@ -10,48 +10,46 @@ import { IPageIShoppingMallOrder } from "../../../../structures/IPageIShoppingMa
 import { IShoppingMallOrder } from "../../../../structures/IShoppingMallOrder";
 
 export * as items from "./items/index";
+export * as shipments from "./shipments/index";
 
 /**
- * Retrieve a filtered and paginated list of shopping mall orders based on search criteria.
+ * Search and list orders for the authenticated customer with filtering and pagination support.
  *
- * This operation provides comprehensive order listing capabilities with support for filtering by order status, date ranges, price ranges, and sorting preferences. The response includes order summaries optimized for list displays, containing essential information such as order ID, status, total price, creation timestamp, and shipping address snapshot.
+ * This endpoint allows customers to browse their order history with flexible search criteria including order status, date range, and order number. Results are returned as paginated summaries containing essential order information such as order number, creation date, status, total price, and item count. The overall order status is derived from the collective status of all order items (paid, shipped, delivered, cancelled, refunded, or partially completed).
  *
- * The shipping address is stored as an immutable snapshot at the time of order placement, ensuring historical accuracy even if the customer later modifies or deletes their address. This preserves the exact delivery location used for each order, which is critical for order fulfillment, dispute resolution, and order history accuracy.
- *
- * Authorization is role-based: customers can only view their own orders, sellers can view orders containing their products, and administrators can view all platform orders. The operation supports flexible pagination with configurable page sizes and sorting options to efficiently handle large order datasets.
- *
- * Related operations include GET /orders/{orderId} for retrieving detailed order information, POST /orders for creating new orders, and various order item operations for cancellations, refunds, and shipments.
+ * Orders are sorted by creation date in descending order by default (newest first). The response includes pagination metadata for navigating through large order histories. Each order summary includes the shipping address used at checkout time, which is preserved even if the address is later modified or deleted.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for order listing
+ * @param props.body Search criteria for filtering orders including status, order number, date range, and pagination parameters.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query shopping_mall_orders table with pagination and filtering support.
+ * @x-autobe-specification Query shopping_mall_orders table for the authenticated customer's orders with pagination and filtering.
  *
- * 1. Parse request body for search criteria:
- *    - status filter (paid, shipped, delivered, cancelled, refunded, partially_completed)
- *    - date range filters (created_at start and end)
- *    - price range filters (total_price min and max)
- *    - pagination parameters (page, limit, sort field, sort direction)
+ * Implementation steps:
+ * 1. Extract customer_id from authentication context (shopping_mall_customer_id foreign key)
+ * 2. Apply search filters from request body:
+ *    - status: filter by derived order status (paid, shipped, delivered, cancelled, refunded, partially_completed)
+ *    - order_number: partial match search on order_number field
+ *    - created_at_from: filter orders created after this timestamp
+ *    - created_at_to: filter orders created before this timestamp
+ * 3. Calculate derived order status from shopping_mall_order_items.status values:
+ *    - All items 'paid' → order status 'paid'
+ *    - Any item 'shipped' (none 'delivered') → order status 'shipped'
+ *    - All items 'delivered' → order status 'delivered'
+ *    - All items 'cancelled' → order status 'cancelled'
+ *    - All items 'refunded' → order status 'refunded'
+ *    - Mixed states → order status 'partially_completed'
+ * 4. Join with shopping_mall_order_items to calculate total_price (sum of quantity * price) and item_count
+ * 5. Join with shopping_mall_customer_addresses to include shipping address snapshot
+ * 6. Apply pagination (cursor-based or offset-based) with default page size
+ * 7. Sort by created_at DESC by default
+ * 8. Return paginated response with order summaries
  *
- * 2. Apply role-based filtering:
- *    - For customers: filter by shopping_mall_customer_id = current user's customer ID
- *    - For sellers: join with shopping_mall_order_items, filter by shopping_mall_seller_id = current user's seller ID
- *    - For admins: no additional filtering, return all orders
- *
- * 3. Execute query with ORDER BY created_at DESC (newest first by default)
- *
- * 4. Apply cursor-based or offset-based pagination based on limit parameter
- *
- * 5. Return paginated response with order summaries including:
- *    - Order ID, status, total_price, created_at
- *    - Shipping address snapshot (read-only)
- *    - Order item count
- *    - Customer display name
- *
- * 6. Handle soft-deleted orders by excluding records where deleted_at is not null
- *
- * 7. Implement idempotency for read operations - same query parameters should return consistent results
+ * Edge cases:
+ * - Handle soft-deleted orders (deleted_at IS NULL)
+ * - Ensure customer can only access their own orders (data isolation)
+ * - Calculate derived status correctly for edge cases (empty order items, mixed states)
+ * - Handle null shipping addresses gracefully
  * @path /shoppingMall/customer/orders
  * @accessor api.functional.shoppingMall.customer.orders.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -81,7 +79,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for order listing
+     * Search criteria for filtering orders including status, order number, date range, and pagination parameters.
      */
     body: IShoppingMallOrder.IRequest;
   };
@@ -130,39 +128,28 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information for a specific customer order including all order items, shipping address, and order status.
+ * Retrieve complete details of a specific order by order ID.
  *
- * This operation provides complete order details for a customer's purchase transaction. The response includes the order header information (total price, overall status, creation date) and all line items within the order. Each order item contains the product snapshot, variant snapshot, and seller profile snapshot as they existed at the time of purchase, ensuring historical accuracy even if products or seller profiles are later modified or deleted.
+ * This endpoint returns the full order record including order number, customer reference, shipping address, and all associated order items. Each order item includes product variant details, quantity, price, status, and immutable snapshots preserving the product and seller information at purchase time. Shipment information with carrier name and tracking numbers is included for all shipments associated with the order.
  *
- * The shipping address is returned as a snapshot captured at checkout time, preserving the exact delivery location used for fulfillment. This address remains immutable and is not affected by any subsequent changes to the customer's address book.
- *
- * Access is restricted to the order's owner only. The authenticated customer can only view their own orders, enforcing data isolation between customers. Orders from deleted customer accounts remain accessible for seller and legal record purposes, but banned customers cannot access their order history.
- *
- * This endpoint is typically used after retrieving the order list from GET /customers/me/orders to view full details of a specific order, including shipment tracking information and the ability to request cancellations or refunds for eligible items.
+ * Orders are accessible to the customer who placed them. Order history remains preserved even after customer account deletion, ensuring seller records and transaction history remain intact for legal and accounting purposes. The endpoint supports viewing orders in any status (paid, shipped, delivered, cancelled, refunded).
  *
  * @param props.connection
- * @param props.orderId UUID of the order to retrieve
+ * @param props.orderId UUID of the order to retrieve (global scope).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query shopping_mall_orders table by id and shopping_mall_customer_id (from authenticated user's JWT token) to enforce data isolation.
+ * @x-autobe-specification Query shopping_mall_orders table by id parameter.
  *
- * Join with shopping_mall_order_items on order.id = order_item.shopping_mall_order_id to retrieve all line items.
- *
- * For each order item, include:
- * - Product snapshot (product_snapshot field) - contains product name, description at purchase time
- * - Variant snapshot (variant_snapshot field) - contains SKU, option values at purchase time
- * - Seller profile snapshot (seller_profile_snapshot field) - contains shop name at purchase time
- * - Quantity, price, and current status
- *
- * Include shipping_address_snapshot from the order record (JSON string containing address details at purchase time).
- *
- * Include order-level status which is derived from all order item statuses.
- *
- * Return 404 if order not found or if authenticated customer does not own the order.
- *
- * Return 403 if customer account is banned (check customer account state).
- *
- * Support soft-deleted orders: exclude orders where deleted_at is not null.
+ * 1. Validate that the authenticated customer owns this order (shopping_mall_customer_id matches current user).
+ * 2. JOIN with shopping_mall_order_items to retrieve all order items for this order.
+ * 3. For each order item, JOIN with shopping_mall_order_item_snapshots to get immutable product and seller state at purchase time.
+ * 4. JOIN with shopping_mall_shipments to retrieve all shipments for this order.
+ * 5. Include shipping address details from shopping_mall_customer_addresses.
+ * 6. Return complete order object with nested items array (each item includes snapshot data) and shipments array.
+ * 7. Handle soft-deleted orders (deleted_at is null) - only return active orders.
+ * 8. Return 404 if order not found or belongs to different customer.
+ * 9. Include order item statuses (paid, shipped, delivered, cancelled, refunded) for each item.
+ * 10. Include delivered_at timestamp for shipments to show delivery confirmation status.
  * @path /shoppingMall/customer/orders/:orderId
  * @accessor api.functional.shoppingMall.customer.orders.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -191,7 +178,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * UUID of the order to retrieve
+     * UUID of the order to retrieve (global scope).
      */
     orderId: string & tags.Format<"uuid">;
   };

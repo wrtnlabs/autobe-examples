@@ -1,6 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeOrganizationSetting } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationSetting";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -21,30 +21,45 @@ export async function putErpHrmTimeMemberOrganizationsOrganizationIdSettings(pro
   body: IErpHrmTimeOrganizationSetting.IUpdate;
 }): Promise<IErpHrmTimeOrganizationSetting> {
   const organization =
-    await MyGlobal.prisma.erp_hrm_time_organizations.findUniqueOrThrow({
-      where: { id: props.organizationId },
+    await MyGlobal.prisma.erp_hrm_time_organizations.findUnique({
+      where: {
+        id: props.organizationId,
+      },
       select: {
         id: true,
         owner_member_id: true,
       },
     });
+  if (organization === null) {
+    throw new HttpException("Organization not found", 404);
+  }
   if (organization.owner_member_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
+  const current =
+    await MyGlobal.prisma.erp_hrm_time_organization_settings.findUnique({
+      where: {
+        erp_hrm_time_organization_id: props.organizationId,
+      },
+    });
+  if (current === null) {
+    throw new HttpException("Organization settings not found", 404);
+  }
   const updated =
     await MyGlobal.prisma.erp_hrm_time_organization_settings.update({
-      where: { erp_hrm_time_organization_id: props.organizationId },
+      where: {
+        id: current.id,
+      },
       data: {
-        ...(props.body.currency_code !== undefined && {
-          currency_code: props.body.currency_code,
-        }),
-        ...(props.body.timezone !== undefined && {
-          timezone: props.body.timezone,
-        }),
-        ...(props.body.fiscal_start_month !== undefined && {
-          fiscal_start_month: props.body.fiscal_start_month,
-        }),
-        updated_at: new Date(),
+        ...(props.body.currencyCode !== undefined
+          ? { currency_code: props.body.currencyCode }
+          : {}),
+        ...(props.body.timezone !== undefined
+          ? { timezone: props.body.timezone }
+          : {}),
+        ...(props.body.fiscalStartMonth !== undefined
+          ? { fiscal_start_month: props.body.fiscalStartMonth }
+          : {}),
       },
       ...ErpHrmTimeOrganizationSettingTransformer.select(),
     });

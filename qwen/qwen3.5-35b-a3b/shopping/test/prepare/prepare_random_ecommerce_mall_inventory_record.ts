@@ -6,25 +6,24 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_ecommerce_mall_inventory_record(
-  input?: DeepPartial<IEcommerceMallInventoryRecord.ICreate>,
+  input?: DeepPartial<IEcommerceMallInventoryRecord.ICreate> | undefined,
 ): IEcommerceMallInventoryRecord.ICreate {
+  const OPERATION_TYPES = ["RESTOCK", "ADJUSTMENT", "LOSS"] as const;
   return {
-    ecommerce_mall_product_variant_id:
-      input?.ecommerce_mall_product_variant_id ??
-      typia.random<string & tags.Format<"uuid">>(),
     quantity_change:
       input?.quantity_change ??
-      typia.random<number & tags.Type<"int32"> & tags.Minimum<1>>(),
-    reason:
-      input?.reason ??
-      RandomGenerator.paragraph({ sentences: 1, wordMin: 3, wordMax: 6 }),
-    type: input?.type ?? ("INCOMING" as const),
-    description:
-      input?.description ??
-      RandomGenerator.content({
-        paragraphs: 1,
-        sentenceMin: 1,
-        sentenceMax: 2,
-      }),
+      (Math.random() > 0.5
+        ? typia.random<number & tags.Type<"int32"> & tags.Minimum<1>>()
+        : typia.random<number & tags.Type<"int32"> & tags.Maximum<-1>>()),
+    operation_type:
+      input?.operation_type ?? RandomGenerator.pick(OPERATION_TYPES),
+    reference_id:
+      input?.reference_id ??
+      (Math.random() > 0.7
+        ? null
+        : typia.random<string & tags.Format<"uuid">>()),
+    notes:
+      input?.notes ??
+      RandomGenerator.paragraph({ sentences: 2, wordMin: 3, wordMax: 8 }),
   };
 }

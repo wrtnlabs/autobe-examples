@@ -1,10 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IRedditCloneCommunityBan } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunityBan";
-import { IRedditCloneFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFile";
-import { IRedditCloneFileAssociation } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileAssociation";
-import { IRedditCloneMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMemberSession";
-import { IRedditClonePostTextContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostTextContent";
-import { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
+import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
+import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
+import { IRedditCloneSubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneSubscription";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -13,59 +10,90 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditClonePostTextContentCollector } from "../collectors/RedditClonePostTextContentCollector";
+import { RedditCloneSubscriptionCollector } from "../collectors/RedditCloneSubscriptionCollector";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { RedditClonePostTextContentTransformer } from "../transformers/RedditClonePostTextContentTransformer";
+import { RedditCloneSubscriptionTransformer } from "../transformers/RedditCloneSubscriptionTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postRedditCloneMemberSubscriptions(props: {
   member: MemberPayload;
-  body: IRedditClonePostTextContent.ICreate;
-}): Promise<IRedditClonePostTextContent> {
-  // 1. Validate community exists
-  const community =
-    await MyGlobal.prisma.reddit_clone_communities.findUniqueOrThrow({
-      where: { id: props.body.community_id },
-      select: { id: true },
-    });
-  // 2. Check if member is banned from community
+  body: IRedditCloneSubscription.ICreate;
+}): Promise<IRedditCloneSubscription> {
+  // Verify community exists
+  await MyGlobal.prisma.reddit_clone_communities.findUniqueOrThrow({
+    where: { id: props.body.communityId },
+  });
+  // Check if user is banned from this community
   const existingBan =
-    await MyGlobal.prisma.reddit_clone_community_bans.findUnique({
+    await MyGlobal.prisma.reddit_clone_community_bans.findFirst({
       where: {
-        reddit_clone_community_id_reddit_clone_member_id: {
-          reddit_clone_community_id: props.body.community_id,
-          reddit_clone_member_id: props.member.id,
-        },
+        reddit_clone_community_id: props.body.communityId,
+        reddit_clone_member_id: props.member.id,
       },
     });
-  if (existingBan !== null) {
+  if (existingBan) {
     throw new HttpException("You are banned from this community", 403);
   }
-  // 3. Check if already subscribed
+  // Check if subscription already exists
   const existingSubscription =
-    await MyGlobal.prisma.reddit_clone_subscriptions.findUnique({
+    await MyGlobal.prisma.reddit_clone_subscriptions.findFirst({
       where: {
-        reddit_clone_member_id_reddit_clone_community_id: {
-          reddit_clone_member_id: props.member.id,
-          reddit_clone_community_id: props.body.community_id,
-        },
+        reddit_clone_member_id: props.member.id,
+        reddit_clone_community_id: props.body.communityId,
       },
     });
-  if (existingSubscription !== null) {
+  if (existingSubscription) {
     throw new HttpException("Already subscribed to this community", 409);
   }
-  // 4. Create subscription using collector
-  const subscriptionData = await RedditClonePostTextContentCollector.collect({
-    body: props.body,
-    member: { id: props.member.id },
-    community: { id: community.id },
+  // Create subscription
+  const record = await MyGlobal.prisma.reddit_clone_subscriptions.create({
+    data: await RedditCloneSubscriptionCollector.collect({
+      body: props.body,
+      redditCloneMembers: { id: props.member.id },
+      redditCloneMemberSessions: { id: props.member.session_id },
+    }),
+    ...RedditCloneSubscriptionTransformer.select(),
   });
-  // 5. Create record in database
-  const created = await MyGlobal.prisma.reddit_clone_subscriptions.create({
-    data: subscriptionData,
-    ...RedditClonePostTextContentTransformer.select(),
-  });
-  // 6. Return transformed result
-  return await RedditClonePostTextContentTransformer.transform(created);
+  return await RedditCloneSubscriptionTransformer.transform(record);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IRedditCloneSubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneSubscription";
+// import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
+// import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function postRedditCloneMemberSubscriptions(props: {
+//   member: MemberPayload;
+//   body: IRedditCloneSubscription.ICreate;
+// }): Promise<IRedditCloneSubscription> {
+//   const record = await MyGlobal.prisma.reddit_clone_subscriptions.create({
+//     data: await RedditCloneSubscriptionCollector.collect({
+//       body: props.body,
+//       ...
+//     }),
+//     ...RedditCloneSubscriptionTransformer.select(),
+//   });
+//   return await RedditCloneSubscriptionTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

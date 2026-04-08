@@ -4,14 +4,13 @@ import { IAuthorizationToken } from "./IAuthorizationToken";
 
 export namespace IEcommerceMallGuest {
   /**
-   * Authorization response containing JWT access and refresh tokens for guest session. This type is returned after successful guest join or token refresh operations, providing the guest with credentials to maintain their session across subsequent API requests.
+   * Authorization response containing guest session identifier and JWT token pair with expiration metadata for maintaining authenticated guest sessions.
    */
   export type IAuthorized = {
     /**
-     * Unique identifier for the guest account. This UUID is the primary key from the guests table and is used to identify the guest in subsequent API requests.
+     * The unique identifier of the authenticated guest session.
      *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.id UUID column.
+     * @x-autobe-specification Guest identifier extracted from JWT claims during authentication. Maps to ecommerce_mall_guests.id for session identity. This is a computed value from the JWT token, not a direct database property.
      */
     id: string & tags.Format<"uuid">;
 
@@ -24,20 +23,7 @@ export namespace IEcommerceMallGuest {
   };
 
   /**
-   * Request body for refreshing a guest session token. Contains the current refresh token that was issued during guest session creation. The server validates this token and issues new access and refresh tokens to maintain session continuity without requiring re-authentication.
-   */
-  export type IRefresh = {
-    /**
-     * The current refresh token issued during guest session creation. This token is used to obtain new access and refresh tokens.
-     *
-     * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping to ecommerce_mall_guest_sessions.id. The refreshToken value is the UUID of the guest session record used to look up and validate the existing session before issuing new tokens.
-     */
-    refreshToken: string;
-  };
-
-  /**
-   * Request body for guest self-registration. Contains device fingerprint for identity creation and session context fields including current page URL, referrer, IP address, and user agent string for security tracking.
+   * Request body for guest session establishment. Contains device fingerprint for anonymous visitor identification and session context for navigation tracking.
    */
   export type IJoin = {
     /**
@@ -45,34 +31,55 @@ export namespace IEcommerceMallGuest {
      */
     fingerprint: string;
     href: string & tags.Format<"uri">;
-
-    /**
-     * Client IP address at session creation time.
-     *
-     * @x-autobe-database-schema-property ip_address
-     * @x-autobe-specification Maps to ecommerce_mall_guests.ip_address column.
-     */
-    ip?: (string & tags.Format<"ipv4">) | null | undefined;
     referrer: string & tags.Format<"uri">;
-
-    /**
-     * Browser or client user agent string for device identification.
-     *
-     * @x-autobe-database-schema-property user_agent
-     * @x-autobe-specification Maps to ecommerce_mall_guests.user_agent column.
-     */
-    user_agent?: string | null | undefined;
+    ip?: (string & tags.Format<"ipv4">) | undefined;
   };
 
   /**
-   * Lightweight summary representation of a guest entity for display in session and list contexts. Contains essential device identification and activity information without sensitive data or collection references.
+   * Request body for refreshing guest session access token. Contains the refresh token issued during guest join to obtain a new access token without re-authentication. Includes optional client context (IP, URL, referrer) for security tracking.
+   */
+  export type IRefresh = {
+    /**
+     * The refresh token issued during guest join used to obtain new access tokens.
+     *
+     * @x-autobe-specification The refresh token value is used to look up the corresponding session record in ecommerce_mall_guest_sessions. The server validates the token's signature and checks that the session has not expired (expired_at > now). This is NOT a direct column mapping - it's a session lookup operation.
+     */
+    refreshToken: string;
+
+    /**
+     * Guest's IPv4 address for security tracking during token refresh.
+     *
+     * @x-autobe-database-schema-property ip
+     * @x-autobe-specification Maps directly to ecommerce_mall_guest_sessions.ip. Captured as security context for the refresh request. Optional per SSR conventions.
+     */
+    ip?: (string & tags.Format<"ipv4">) | undefined;
+
+    /**
+     * Current page URL being accessed by the guest during token refresh.
+     *
+     * @x-autobe-database-schema-property href
+     * @x-autobe-specification Maps directly to ecommerce_mall_guest_sessions.href. Captures navigation context for audit/security purposes.
+     */
+    href?: (string & tags.Format<"uri">) | undefined;
+
+    /**
+     * HTTP referrer header indicating the previous page URL.
+     *
+     * @x-autobe-database-schema-property referrer
+     * @x-autobe-specification Maps directly to ecommerce_mall_guest_sessions.referrer. Captures referrer context for analytics and security audit.
+     */
+    referrer?: (string & tags.Format<"uri">) | undefined;
+  };
+
+  /**
+   * Lightweight guest summary for session listings containing device identification information.
    */
   export type ISummary = {
     /**
-     * Unique identifier of the guest account (UUID format).
+     * Unique identifier of the guest account.
      *
      * @x-autobe-database-schema-property id
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.id. Primary key UUID.
+     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.id (UUID primary key). Unique identifier for the guest account.
      */
     id: string & tags.Format<"uuid">;
 
@@ -80,40 +87,16 @@ export namespace IEcommerceMallGuest {
      * Device fingerprint string used to identify anonymous guest visitors across sessions.
      *
      * @x-autobe-database-schema-property fingerprint
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.fingerprint. Unique device identifier.
+     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.fingerprint. Unique constraint enforced. Device fingerprint string used to identify anonymous guest visitors across sessions.
      */
     fingerprint: string;
-
-    /**
-     * IP address of the guest's device for geographic tracking and security purposes.
-     *
-     * @x-autobe-database-schema-property ip_address
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.ip_address. Nullable field.
-     */
-    ip_address?: string | null | undefined;
 
     /**
      * Browser or client user agent string for device identification and analytics.
      *
      * @x-autobe-database-schema-property user_agent
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.user_agent. Nullable field.
+     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.user_agent. Nullable field storing browser or client user agent string for device identification and analytics.
      */
-    user_agent?: string | null | undefined;
-
-    /**
-     * Timestamp of the guest's last activity across any session.
-     *
-     * @x-autobe-database-schema-property last_active_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.last_active_at. Nullable timestamp.
-     */
-    last_active_at?: (string & tags.Format<"date-time">) | null | undefined;
-
-    /**
-     * Timestamp when the guest account was first created.
-     *
-     * @x-autobe-database-schema-property created_at
-     * @x-autobe-specification Direct mapping from ecommerce_mall_guests.created_at. Non-nullable timestamp.
-     */
-    created_at: string & tags.Format<"date-time">;
+    userAgent: string | null;
   };
 }

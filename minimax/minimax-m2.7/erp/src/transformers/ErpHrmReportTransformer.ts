@@ -1,17 +1,14 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IErpHrmDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmDepartment";
-import { IErpHrmEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmEmployee";
 import { IErpHrmMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmMember";
 import { IErpHrmOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmOrganization";
-import { IErpHrmProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProjectMember";
 import { IErpHrmReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmReport";
 import { IErpHrmReportParameter } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmReportParameter";
-import { IErpHrmRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmRole";
-import { IErpHrmTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTask";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ErpHrmMemberAtSummaryTransformer } from "./ErpHrmMemberAtSummaryTransformer";
 import { ErpHrmOrganizationAtSummaryTransformer } from "./ErpHrmOrganizationAtSummaryTransformer";
@@ -38,10 +35,10 @@ export namespace ErpHrmReportTransformer {
   export async function transform(input: Payload): Promise<IErpHrmReport> {
     return {
       id: input.id,
-      report_type: input.report_type,
+      reportType: input.report_type,
       name: input.name ?? undefined,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
       organization: await ErpHrmOrganizationAtSummaryTransformer.transform(
         input.organization,
       ),
@@ -49,8 +46,48 @@ export namespace ErpHrmReportTransformer {
         input.generatedByMember,
       ),
       parameter: input.parameter
-        ? await ErpHrmReportParameterTransformer.transform(input.parameter)
-        : (null as never),
-    };
+        ? typia.assert<IErpHrmReportParameter>(
+            await ErpHrmReportParameterTransformer.transform(input.parameter),
+          )
+        : (() => {
+            throw new Error("Report parameter is required but not provided");
+          })(),
+    } satisfies IErpHrmReport;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace ErpHrmReportTransformer {
+//       export type Payload = Prisma.erp_hrm_reportsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             createdAt: true,
+//             id: true,
+//             name: true,
+//             reportType: true,
+//             updatedAt: true,
+//             ...
+//           },
+//         } satisfies Prisma.erp_hrm_reportsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IErpHrmReport> {
+//         return {
+//   createdAt: {string},
+//   generatedByMember: {IErpHrmMember.ISummary},
+//   id: {string},
+//   name: {string},
+//   organization: {IErpHrmOrganization.ISummary},
+//   parameter: {IErpHrmReportParameter},
+//   reportType: {string},
+//   updatedAt: {string},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

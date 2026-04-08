@@ -6,11 +6,13 @@ import type { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/struct
 import type { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 import type { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import type { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
+import type { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import type { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import type { IMallPlatformReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformReview";
 import type { IMallPlatformReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformReviewSnapshot";
 import type { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 import type { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
+import type { IMallPlatformSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerProfile";
 import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import type { IPageIMallPlatformReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformReviewSnapshot";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -19,75 +21,79 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_customer_join } from "../../../authorize/authorize_customer_join";
-import { authorize_customer_login } from "../../../authorize/authorize_customer_login";
-import { authorize_customer_refresh } from "../../../authorize/authorize_customer_refresh";
+import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
+import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
+import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
 
 export async function test_api_review_snapshot_history_owner_access(
   connection: api.IConnection,
 ): Promise<void> {
-  const ownerConnection: api.IConnection = { host: connection.host };
-  const owner = await authorize_customer_join(ownerConnection, {
+  const sellerConnection: api.IConnection = { host: connection.host };
+  const sellerEmail = `${RandomGenerator.alphaNumeric(12)}@test.com`;
+  const sellerPassword = `P@ssw0rd${RandomGenerator.alphaNumeric(8)}`;
+  const authorized = await authorize_seller_join(sellerConnection, {
     body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-    } satisfies IMallPlatformCustomer.IJoin,
+      email: sellerEmail,
+      password: sellerPassword,
+    } satisfies IMallPlatformSeller.IJoin,
   });
-  typia.assert(owner);
-  const reviewId = typia.random<string & tags.Format<"uuid">>();
-  const page =
-    await api.functional.mallPlatform.customer.reviews.snapshots.index(
-      ownerConnection,
+  typia.assert(authorized);
+  const review = await api.functional.mallPlatform.seller.reviews.at(
+    sellerConnection,
+    {
+      reviewId: typia.random<string & tags.Format<"uuid">>(),
+    },
+  );
+  typia.assert(review);
+  const output =
+    await api.functional.mallPlatform.seller.reviews.snapshots.index(
+      sellerConnection,
       {
-        reviewId,
+        reviewId: review.reviewId,
         body: {
-          reviewId,
-          customerId: owner.id,
           page: 1,
           limit: 10,
-          sort: "createdAt",
-          order: "desc",
+          sort: "-createdAt",
         } satisfies IMallPlatformReviewSnapshot.IRequest,
       },
     );
-  typia.assert(page);
+  typia.assert(output);
   TestValidator.equals(
-    "pagination current page should be 1",
-    page.pagination.current,
+    "snapshot history page number",
+    output.pagination.current,
     1,
   );
   TestValidator.equals(
-    "pagination limit should be 10",
-    page.pagination.limit,
+    "snapshot history page limit",
+    output.pagination.limit,
     10,
   );
   TestValidator.predicate(
-    "pagination records should be non-negative",
-    page.pagination.records >= 0,
+    "snapshot history entries belong to the requested review",
+    output.data.every((snapshot) => snapshot.review.id === review.reviewId),
   );
   TestValidator.predicate(
-    "pagination pages should be non-negative",
-    page.pagination.pages >= 0,
+    "snapshot history entries preserve review ownership",
+    output.data.every(
+      (snapshot) => snapshot.customer.id === review.customer.id,
+    ),
   );
   TestValidator.predicate(
-    "snapshot data should be an array",
-    Array.isArray(page.data),
+    "snapshot history entries are ordered newest first",
+    output.data.every(
+      (snapshot, index, array) =>
+        index === 0 || array[index - 1].createdAt >= snapshot.createdAt,
+    ),
   );
-  for (const snapshot of page.data) {
-    typia.assert(snapshot);
-    TestValidator.equals(
-      "snapshot should reference the authenticated owner",
-      snapshot.customer.id,
-      owner.id,
-    );
-    TestValidator.equals(
-      "snapshot should use the requested review id",
-      snapshot.review.id,
-      reviewId,
-    );
-    TestValidator.predicate(
-      "snapshot timestamp should not be empty",
-      snapshot.createdAt.length > 0,
-    );
-  }
+  TestValidator.predicate(
+    "snapshot history entries preserve immutable snapshot fields",
+    output.data.every(
+      (snapshot) =>
+        typeof snapshot.snapshotAction === "string" &&
+        typeof snapshot.rating === "number" &&
+        typeof snapshot.content !== "undefined" &&
+        typeof snapshot.isDeleted === "boolean" &&
+        typeof snapshot.createdAt === "string",
+    ),
+  );
 }

@@ -15,13 +15,14 @@ export namespace RedditCommunityBanCollector {
   }) {
     return {
       id: v4(),
-      community: { connect: { id: props.redditCommunityCommunities.id } },
-      bannedMember: { connect: { id: props.body.reddit_community_member_id } },
-      bannedBy: { connect: { id: props.redditCommunityMembers.id } },
-      reason: props.body.reason ?? null,
+      reason: props.body.reason,
+      status: props.body.status,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
+      community: { connect: { id: props.redditCommunityCommunities.id } },
+      member: { connect: { id: props.body.reddit_community_member_id } },
+      issuer: { connect: { id: props.redditCommunityMembers.id } },
     } satisfies Prisma.reddit_community_bansCreateInput;
   }
 }

@@ -2,8 +2,10 @@ import { IEcommerceMallProductSnapshotVariantOptionValue } from "@ORGANIZATION/P
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallProductSnapshotVariantOptionValueTransformer {
@@ -34,6 +36,37 @@ export namespace EcommerceMallProductSnapshotVariantOptionValueTransformer {
       key: input.key,
       value: input.value,
       created_at: input.created_at.toISOString(),
-    };
+    } satisfies IEcommerceMallProductSnapshotVariantOptionValue;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallProductSnapshotVariantOptionValueTransformer {
+//       export type Payload = Prisma.ecommerce_mall_product_snapshot_variant_option_valuesGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             key: true,
+//             value: true,
+//             created_at: true,
+//             ecommerce_mall_product_snapshot_variant_id: true,
+//           },
+//         } satisfies Prisma.ecommerce_mall_product_snapshot_variant_option_valuesFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallProductSnapshotVariantOptionValue> {
+//         return {
+//   id: {string},
+//   key: {string},
+//   value: {string},
+//   created_at: {string},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

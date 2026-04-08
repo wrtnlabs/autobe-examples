@@ -10,36 +10,53 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallCancellationRequestCollector {
   export async function collect(props: {
     body: IEcommerceMallCancellationRequest.ICreate;
-    ecommerceMallCustomers: IEntity;
   }) {
     const id: string = v4();
-    // Query order_item to get seller_snapshot_id for the seller relation
+    // Query order item to get indirect references (order_id and seller_id)
     const orderItem =
       await MyGlobal.prisma.ecommerce_mall_order_items.findFirstOrThrow({
         where: { id: props.body.order_item_id },
-        select: {
-          seller_snapshot_id: true,
-        },
       });
     return {
       id,
-      orderItem: {
-        connect: { id: props.body.order_item_id },
-      },
-      customer: {
-        connect: { id: props.ecommerceMallCustomers.id },
-      },
-      seller: {
-        connect: { id: orderItem.seller_snapshot_id },
-      },
-      inventoryRecords: undefined,
-      snapshots: undefined,
-      status: "pending",
       reason: props.body.reason,
-      seller_response: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      status: "pending",
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
+      // BelongsTo relations
+      item: { connect: { id: props.body.order_item_id } },
+      order: { connect: { id: orderItem.ecommerce_mall_order_id } },
+      seller: { connect: { id: orderItem.seller_id } },
+      // HasMany relations (not needed - handled by triggers)
     } satisfies Prisma.ecommerce_mall_cancellation_requestsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallCancellationRequestCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallCancellationRequest.ICreate;
+//           
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       reason: ...,
+//       status: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       item: ...,
+//       order: ...,
+//       seller: ...,
+//       ecommerceMallSnapshotss: ...,
+//       ecommerceMallCancellationRequestSnapshotss: ...,
+//           } satisfies Prisma.ecommerce_mall_cancellation_requestsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

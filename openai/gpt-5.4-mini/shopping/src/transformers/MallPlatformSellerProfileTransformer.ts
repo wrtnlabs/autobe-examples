@@ -25,11 +25,7 @@ export namespace MallPlatformSellerProfileTransformer {
         updated_at: true,
         deleted_at: true,
         sellerAccount: MallPlatformSellerAtSummaryTransformer.select(),
-        sellerProfileSnapshots: {
-          select: {
-            id: true,
-          },
-        },
+        sellerProfileSnapshots: true,
       },
     } satisfies Prisma.mall_platform_seller_profilesFindManyArgs;
   }
@@ -43,10 +39,49 @@ export namespace MallPlatformSellerProfileTransformer {
       ),
       shopName: input.shop_name,
       shopDescription: input.shop_description,
-      logoImageUri: input.logo_image_uri,
+      logoImageUri: input.logo_image_uri ?? null,
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
       deletedAt: input.deleted_at?.toISOString() ?? null,
-    };
+    } satisfies IMallPlatformSellerProfile;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace MallPlatformSellerProfileTransformer {
+//       export type Payload = Prisma.mall_platform_seller_profilesGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             shop_name: true,
+//             shop_description: true,
+//             logo_image_uri: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//             seller_account_id: true,
+//             ...
+//           },
+//         } satisfies Prisma.mall_platform_seller_profilesFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IMallPlatformSellerProfile> {
+//         return {
+//   id: {string},
+//   sellerAccount: {IMallPlatformSeller.ISummary},
+//   shopName: {string},
+//   shopDescription: {string},
+//   logoImageUri: {string | null},
+//   createdAt: {string},
+//   updatedAt: {string},
+//   deletedAt: {string | null},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

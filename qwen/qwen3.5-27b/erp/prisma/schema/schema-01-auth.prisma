@@ -1,0 +1,457 @@
+/// Pending invitations for unregistered email addresses awaiting
+/// organization membership.
+///
+/// Guests represent unregistered email addresses that have received
+/// organization invitations but have not yet created accounts. Each guest
+/// invitation contains the invited email address, the organization they were
+/// invited to join, and the role they will be assigned upon acceptance.
+/// Guests have no system permissions until they complete account
+/// registration.
+///
+/// When a guest creates an account using the invited email address, they are
+/// automatically added to the organization with their assigned role. The
+/// invitation is consumed during account creation and cannot be reused.
+///
+/// @namespace auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization that sent the invitation.
+  ///
+  /// This foreign key links the guest invitation to the organization that
+  /// created it. When the guest accepts the invitation by creating an account,
+  /// they will be added as a member of this organization.
+  hrm_time_track_organization_id String
+  
+  /// Role that will be assigned when the guest accepts the invitation.
+  ///
+  /// This foreign key references the role definition that will be granted to
+  /// the user when they create an account and accept the invitation. The role
+  /// determines the member's permissions within the organization.
+  hrm_time_track_role_id String
+  
+  /// Email address of the invited guest.
+  ///
+  /// This is the email address that was invited to join the organization. When
+  /// the guest creates an account using this email address, they will be
+  /// automatically added to the organization. The email must be unique across
+  /// all pending invitations.
+  email String
+  
+  /// Current status of the invitation.
+  ///
+  /// Valid values are 'pending' for active invitations awaiting acceptance,
+  /// 'accepted' for invitations that have been consumed during account
+  /// creation, and 'expired' for invitations that have passed their expiration
+  /// date.
+  status String
+  
+  /// Expiration timestamp for the invitation.
+  ///
+  /// Invitations that have not been accepted by this timestamp are
+  /// automatically marked as expired. This ensures that old invitations do not
+  /// remain valid indefinitely.
+  expires_at DateTime
+  
+  /// Timestamp when the invitation was created.
+  created_at DateTime
+  
+  /// Timestamp when the invitation was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the invitation was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_time_track_organizations @relation(fields: [hrm_time_track_organization_id], references: [id], onDelete: Cascade)
+  role hrm_time_track_roles @relation(fields: [hrm_time_track_role_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  guestSessions hrm_time_track_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_time_track_role_id])
+  @@unique([email])
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_organization_id, created_at], map: "hrm_time_track_guests_hrm_time_track_organization_id_c_20a53108")
+  @@index([status])
+}
+
+/// Temporary session tokens for guest invitation acceptance flow.
+///
+/// This table stores session tokens that allow unregistered guests to
+/// complete their organization invitation acceptance process. Each session
+/// is tied to a specific guest invitation and provides temporary
+/// authenticated access for the invitation acceptance workflow.
+///
+/// Sessions are created when a guest receives an invitation link and expire
+/// after a configured time period or upon invitation acceptance/rejection.
+///
+/// @namespace auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Unique identifier for each guest session token.
+  id String @id
+  
+  /// Foreign key to the guest invitation record.
+  ///
+  /// Establishes the relationship between this session token and the pending
+  /// invitation it belongs to. Each session is associated with exactly one
+  /// guest invitation, and a single guest may have multiple sessions over
+  /// time.
+  hrm_time_track_guest_id String
+  
+  /// Client IP address from which the session was created.
+  ///
+  /// Records the network address of the guest's device for security auditing
+  /// and session validation purposes.
+  ip String
+  
+  /// Current page URL when the session was created or last accessed.
+  ///
+  /// Tracks the invitation acceptance page URL for session context and
+  /// navigation state.
+  href String
+  
+  /// Referrer URL that led to the invitation acceptance page.
+  ///
+  /// Records the source URL (e.g., email invitation link) for tracking
+  /// invitation delivery channels.
+  referrer String?
+  
+  /// Timestamp when the guest session was created.
+  ///
+  /// Records the exact time the session token was issued to the guest for
+  /// invitation acceptance.
+  created_at DateTime
+  
+  /// Timestamp when the guest session expires.
+  ///
+  /// Defines the session validity period for security. Sessions are
+  /// automatically invalidated after this time to prevent unauthorized access
+  /// to invitation links.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest hrm_time_track_guests @relation(fields: [hrm_time_track_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_guest_id, created_at], map: "hrm_time_track_guest_sessions_hrm_time_track_guest_id__d7c4bd54")
+}
+
+/// Registered user accounts with email/password authentication supporting
+/// multi-organization membership. Each member account serves as the primary
+/// identity for authentication across the platform.
+///
+/// @namespace auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for unique member account identification.
+  id String @id
+  
+  /// Unique email address used for authentication and account identification.
+  ///
+  /// This field serves as the primary identifier for login and must be unique
+  /// across all members. It is case-sensitive and should be stored in
+  /// lowercase for consistency.
+  email String
+  
+  /// Server-side password hash for authentication verification.
+  ///
+  /// Stores the cryptographic hash of the user's password. Never store plain
+  /// text passwords. The hash is verified during login attempts.
+  password_hash String
+  
+  /// Timestamp when the member account was first created.
+  ///
+  /// This field is set automatically upon account creation and is never
+  /// updated. It serves as the official account creation timestamp for
+  /// auditing purposes.
+  created_at DateTime
+  
+  /// Timestamp when the member account was last updated.
+  ///
+  /// This field is updated on any modification to account settings or security
+  /// credentials.
+  updated_at DateTime
+  
+  /// Timestamp when the account was marked as deleted (soft delete).
+  ///
+  /// When set, the account is logically deleted but data is preserved for
+  /// audit purposes. A NULL value indicates an active account.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions hrm_time_track_member_sessions[]
+  passwordResets hrm_time_track_member_password_resets[]
+  emailVerifications hrm_time_track_member_email_verifications[]
+  employees hrm_time_track_employees[]
+  employeeSnapshots hrm_time_track_employee_snapshots[]
+  roleSnapshots hrm_time_track_role_snapshots[]
+  approvedTimesheets hrm_time_track_timesheets[]
+  timesheetSnapshots hrm_time_track_timesheet_snapshots[]
+  timerSnapshots hrm_time_track_timer_snapshots[]
+  activityLogs hrm_time_track_activity_logs[]
+  taskHistoryEntries hrm_time_track_task_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+}
+
+/// JWT session tokens for member authentication with organization context
+/// scoping.
+///
+/// This table maintains authenticated sessions for hrm_time_track_members
+/// actors. Each session is associated with a specific organization context,
+/// ensuring multi-tenant data isolation. Sessions track client information
+/// (IP, href, referrer) for security auditing and support token expiration
+/// for access control.
+///
+/// Sessions are created during login and remain active until expiration or
+/// logout. Members can switch organization contexts without creating new
+/// sessions, but all data access is scoped to the currently selected
+/// organization.
+///
+/// @namespace auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for session record.
+  id String @id
+  
+  /// References the authenticated member account.
+  ///
+  /// Each session belongs to exactly one hrm_time_track_member. This foreign
+  /// key establishes the authentication relationship between the session and
+  /// the member's global identity.
+  hrm_time_track_member_id String
+  
+  /// References the organization context for this session.
+  ///
+  /// Per section [13] Session Management, each session is associated with a
+  /// specific organization context. This ensures multi-tenant data isolation
+  /// by scoping all session actions to the selected organization.
+  hrm_time_track_organization_id String
+  
+  /// Client IP address at session creation time.
+  ///
+  /// Captured for security auditing and anomaly detection. Used to identify
+  /// suspicious login patterns or unauthorized access attempts.
+  ip String
+  
+  /// Referring URL that initiated the login request.
+  ///
+  /// Tracks the entry point to the authentication flow for security analysis
+  /// and user experience tracking.
+  href String?
+  
+  /// HTTP referrer header from the login request.
+  ///
+  /// Additional context about how the user arrived at the login page, used for
+  /// security auditing.
+  referrer String?
+  
+  /// Timestamp when the session was created during login.
+  ///
+  /// Used to calculate session age and enforce expiration policies.
+  created_at DateTime
+  
+  /// Timestamp when the session expires and becomes invalid.
+  ///
+  /// Set at session creation based on configured session duration. Sessions
+  /// are automatically invalidated after this time for security.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member hrm_time_track_members @relation(fields: [hrm_time_track_member_id], references: [id], onDelete: Cascade)
+  organization hrm_time_track_organizations @relation(fields: [hrm_time_track_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_organization_id], map: "hrm_time_track_member_sessions_hrm_time_track_organiza_015c855f")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_member_id, created_at], map: "hrm_time_track_member_sessions_hrm_time_track_member_i_bd3321e5")
+}
+
+/// Password reset tokens with expiration for member account recovery.
+///
+/// This table stores temporary, single-use tokens that allow members to
+/// reset their forgotten passwords. Each token is cryptographically
+/// generated, linked to a specific member, and has a limited validity period
+/// for security.
+///
+/// Tokens are created when a member requests a password reset via the forgot
+/// password flow. The token is sent to the member's registered email
+/// address. When the member uses the token to set a new password, the token
+/// is marked as used and cannot be reused.
+///
+/// @namespace auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who requested the password reset.
+  ///
+  /// This foreign key links the password reset token to the specific member
+  /// account that needs recovery. Only the member associated with this token
+  /// can use it to reset their password.
+  hrm_time_track_member_id String
+  
+  /// Cryptographically secure token for password reset authentication.
+  ///
+  /// This field contains a unique, random string that serves as proof of
+  /// authorization for the password reset operation. The token is sent to the
+  /// member's email and must be provided when setting a new password. Each
+  /// token is single-use only.
+  token String
+  
+  /// Timestamp when the password reset token was generated.
+  created_at DateTime
+  
+  /// Timestamp when the password reset token expires and becomes invalid.
+  ///
+  /// Tokens have a limited validity period (typically 1 hour) for security.
+  /// After this timestamp, the token cannot be used to reset the password, and
+  /// the member must request a new reset token.
+  expired_at DateTime
+  
+  /// Timestamp when the password reset token was consumed to reset the
+  /// password.
+  ///
+  /// This field is null until the token is successfully used. Once a token is
+  /// used to reset a password, this timestamp is set and the token becomes
+  /// invalid for future use. This prevents replay attacks.
+  used_at DateTime?
+  
+  /// Timestamp for soft deletion of the password reset record.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member hrm_time_track_members @relation(fields: [hrm_time_track_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_member_id, created_at], map: "hrm_time_track_member_password_resets_hrm_time_track_m_e7ac2a31")
+}
+
+/// Email verification tokens for member registration confirmation.
+///
+/// These tokens are generated when a member registers with an unverified
+/// email address. The member must click a verification link containing the
+/// token to confirm their email ownership before full account activation.
+///
+/// Each token is single-use and expires after a configured time period
+/// (typically 24 hours) for security purposes.
+///
+/// @namespace auth
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_member_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the member account awaiting email verification.
+  ///
+  /// Each member can have multiple verification tokens if they request new
+  /// ones before completing verification. Only the most recent unused token is
+  /// typically valid.
+  hrm_time_track_member_id String
+  
+  /// Unique verification token sent to the member's email.
+  ///
+  /// The token is a cryptographically secure random string that the member
+  /// must provide by clicking the verification link. Once used, the token
+  /// cannot be reused.
+  token String
+  
+  /// Email address being verified.
+  ///
+  /// Stored for display purposes and to confirm the token matches the intended
+  /// recipient email address.
+  email String
+  
+  /// Timestamp when the verification token was generated and sent to the
+  /// member's email.
+  created_at DateTime
+  
+  /// Timestamp when the verification token expires.
+  ///
+  /// Tokens typically expire after 24 hours for security. Expired tokens
+  /// cannot be used for verification.
+  expired_at DateTime
+  
+  /// Timestamp when the verification token was successfully used to verify the
+  /// email.
+  ///
+  /// NULL if the token has not been used yet. Once set, the token cannot be
+  /// reused.
+  used_at DateTime?
+  
+  /// Timestamp when the record was soft deleted.
+  ///
+  /// Used for audit trail while allowing data recovery if needed.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member hrm_time_track_members @relation(fields: [hrm_time_track_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_member_id, created_at], map: "hrm_time_track_member_email_verifications_hrm_time_tra_d9444a5b")
+  @@index([email])
+}

@@ -7,10 +7,11 @@ export async function customerAuthorize(request: {
   headers: { authorization?: string };
 }): Promise<CustomerPayload> {
   let payload: CustomerPayload;
+
   try {
     payload = jwtAuthorize({ request }) as CustomerPayload;
   } catch {
-    throw new UnauthorizedException("Invalid or missing access token");
+    throw new UnauthorizedException("Invalid access token");
   }
 
   if (payload.type !== "customer") {
@@ -30,15 +31,11 @@ export async function customerAuthorize(request: {
   const session = await MyGlobal.prisma.mall_platform_customer_sessions.findFirst({
     where: {
       id: payload.session_id,
-      mall_platform_customer_id: payload.id,
-      expired_at: {
-        gt: new Date(),
-      },
     },
   });
 
   if (session === null) {
-    throw new UnauthorizedException("Your session has expired or been revoked");
+    throw new UnauthorizedException("Session expired");
   }
 
   return payload;

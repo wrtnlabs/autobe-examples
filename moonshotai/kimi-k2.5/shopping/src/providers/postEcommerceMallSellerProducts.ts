@@ -5,7 +5,6 @@ import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/stru
 import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -24,25 +23,25 @@ export async function postEcommerceMallSellerProducts(props: {
   seller: SellerPayload;
   body: IEcommerceMallProduct.ICreate;
 }): Promise<IEcommerceMallProduct> {
-  // Verify seller is approved
-  const seller = await MyGlobal.prisma.ecommerce_mall_sellers.findUniqueOrThrow(
-    {
-      where: { id: props.seller.id },
-      select: { id: true, approval_status: true },
-    },
-  );
-  if (seller.approval_status !== "approved") {
-    throw new HttpException("Seller account is not approved", 403);
-  }
-  // Verify category exists and not deleted
-  const category = await MyGlobal.prisma.ecommerce_mall_categories.findUnique({
-    where: { id: props.body.categoryId, deleted_at: null },
-    select: { id: true },
+  // Check seller registration status
+  const seller = await MyGlobal.prisma.ecommerce_mall_sellers.findUnique({
+    where: { id: props.seller.id },
+    select: { approval_status: true },
   });
-  if (category === null) {
-    throw new HttpException("Category not found or has been deleted", 404);
+  if (!seller) {
+    throw new HttpException("Seller not found", 404);
   }
-  // Create product with images in transaction
+  if (seller.approval_status !== "approved") {
+    throw new HttpException(
+      "Seller registration is not approved. Selling features are unavailable until registration is approved.",
+      403,
+    );
+  }
+  // Verify category exists
+  await MyGlobal.prisma.ecommerce_mall_categories.findUniqueOrThrow({
+    where: { id: props.body.categoryId },
+  });
+  // Create product using Collector and Transformer
   const created = await MyGlobal.prisma.ecommerce_mall_products.create({
     data: await EcommerceMallProductCollector.collect({
       body: props.body,

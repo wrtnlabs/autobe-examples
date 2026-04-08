@@ -19,23 +19,14 @@ export async function deleteErpHrmTimeMemberDepartmentsDepartmentId(props: {
     const department = await prisma.erp_hrm_time_departments.findFirstOrThrow({
       where: {
         id: props.departmentId,
-        deleted_at: null,
-        organization: {
-          // The caller's organization context must be enforced by the request pipeline.
-          // This delete is only permitted within the selected organization.
-          id: props.member.session_id ? undefined : undefined,
-        },
       },
       select: {
         id: true,
-        erp_hrm_time_organization_id: true,
       },
     });
     await prisma.erp_hrm_time_employees.updateMany({
       where: {
-        erp_hrm_time_organization_id: department.erp_hrm_time_organization_id,
-        erp_hrm_time_department_id: props.departmentId,
-        deleted_at: null,
+        erp_hrm_time_department_id: department.id,
       },
       data: {
         erp_hrm_time_department_id: null,

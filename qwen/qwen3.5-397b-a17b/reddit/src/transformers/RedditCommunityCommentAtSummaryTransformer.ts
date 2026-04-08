@@ -1,12 +1,17 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCommunityComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityComment";
+import { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
 import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
+import { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPost";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
+import { RedditCommunityPostAtSummaryTransformer } from "./RedditCommunityPostAtSummaryTransformer";
 
 export namespace RedditCommunityCommentAtSummaryTransformer {
   export type Payload = Prisma.reddit_community_commentsGetPayload<
@@ -21,67 +26,43 @@ export namespace RedditCommunityCommentAtSummaryTransformer {
         updated_at: true,
         deleted_at: true,
         member: RedditCommunityMemberAtSummaryTransformer.select(),
-        parentComment: {
+        post: RedditCommunityPostAtSummaryTransformer.select(),
+        parent: {
           select: {
             id: true,
-            content: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
-            member: RedditCommunityMemberAtSummaryTransformer.select(),
-            votes: {
-              select: {
-                direction: true,
-              },
-            } satisfies Prisma.reddit_community_comment_votesFindManyArgs,
+          },
+        } satisfies Prisma.reddit_community_commentsFindManyArgs,
+        replies: {
+          select: {
+            id: true,
           },
         } satisfies Prisma.reddit_community_commentsFindManyArgs,
         votes: {
           select: {
-            direction: true,
+            value: true,
           },
         } satisfies Prisma.reddit_community_comment_votesFindManyArgs,
+        reports: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.reddit_community_report_of_commentsFindManyArgs,
       },
     } satisfies Prisma.reddit_community_commentsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IRedditCommunityComment.ISummary> {
-    const upvotes = input.votes.filter((v) => v.direction === "UPVOTE").length;
-    const downvotes = input.votes.filter(
-      (v) => v.direction === "DOWNVOTE",
-    ).length;
     return {
       id: input.id,
-      content: input.content,
       author: await RedditCommunityMemberAtSummaryTransformer.transform(
         input.member,
       ),
-      parent: input.parentComment
-        ? {
-            id: input.parentComment.id,
-            content: input.parentComment.content,
-            author: await RedditCommunityMemberAtSummaryTransformer.transform(
-              input.parentComment.member,
-            ),
-            parent: undefined,
-            vote_score:
-              input.parentComment.votes.filter((v) => v.direction === "UPVOTE")
-                .length -
-              input.parentComment.votes.filter(
-                (v) => v.direction === "DOWNVOTE",
-              ).length,
-            created_at: input.parentComment.created_at.toISOString(),
-            updated_at: input.parentComment.updated_at.toISOString(),
-            deleted_at: input.parentComment.deleted_at
-              ? input.parentComment.deleted_at.toISOString()
-              : null,
-          }
-        : undefined,
-      vote_score: upvotes - downvotes,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at ? input.deleted_at.toISOString() : null,
-    };
+      content: input.content,
+      voteScore: input.votes.reduce((sum, vote) => sum + vote.value, 0),
+      createdAt: input.created_at.toISOString(),
+      repliesCount: input.replies.length,
+      post: await RedditCommunityPostAtSummaryTransformer.transform(input.post),
+    } satisfies IRedditCommunityComment.ISummary;
   }
 }

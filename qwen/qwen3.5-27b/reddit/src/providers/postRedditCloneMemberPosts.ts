@@ -1,8 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
-import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
-import { IRedditClonePostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostImage";
+import { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -21,27 +20,40 @@ export async function postRedditCloneMemberPosts(props: {
   member: MemberPayload;
   body: IRedditClonePost.ICreate;
 }): Promise<IRedditClonePost> {
-  // Check if member is banned from the community
-  const activeBan = await MyGlobal.prisma.reddit_clone_bans.findFirst({
-    where: {
-      community_id: props.body.communityId,
-      member_id: props.member.id,
-      lifted_at: null,
-      deleted_at: null,
-    },
+  // Get the member's user profile
+  const userProfile =
+    await MyGlobal.prisma.reddit_clone_user_profiles.findUniqueOrThrow({
+      where: {
+        reddit_clone_member_id: props.member.id,
+      },
+    });
+  // Verify community exists and is not deleted
+  const community = await MyGlobal.prisma.reddit_clone_communities.findUnique({
+    where: { id: props.body.community_id },
+    select: { id: true, deleted_at: true },
   });
-  if (activeBan !== null) {
-    throw new HttpException("You are banned from this community", 403);
+  if (community === null || community.deleted_at !== null) {
+    throw new HttpException("Community not found", 404);
   }
-  // Create the post using collector and transformer
-  const created = await MyGlobal.prisma.reddit_clone_posts.create({
+  // Verify member is subscribed to the community
+  const subscription =
+    await MyGlobal.prisma.reddit_clone_community_subscriptions.findFirst({
+      where: {
+        reddit_clone_member_id: props.member.id,
+        reddit_clone_community_id: props.body.community_id,
+        deleted_at: null,
+      },
+    });
+  if (subscription === null) {
+    throw new HttpException("Not subscribed to community", 403);
+  }
+  // Create the post using Collector and Transformer
+  const record = await MyGlobal.prisma.reddit_clone_posts.create({
     data: await RedditClonePostCollector.collect({
       body: props.body,
-      redditCloneMembers: {
-        id: props.member.id,
-      },
+      redditCloneUserProfiles: userProfile,
     }),
     ...RedditClonePostTransformer.select(),
   });
-  return await RedditClonePostTransformer.transform(created);
+  return await RedditClonePostTransformer.transform(record);
 }

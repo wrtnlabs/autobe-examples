@@ -8,58 +8,33 @@ import typia, { tags } from "typia";
 
 import { IRedditCloneComment } from "../../../../../structures/IRedditCloneComment";
 
-export * as _vote from "./_vote/index";
+export * as votes from "./votes/index";
 
 /**
- * Create a new comment on a post to participate in community discussions.
+ * Create a new comment on a post.
  *
- * This operation allows authenticated members to add comments to posts, enabling threaded conversations within the Reddit-like platform. Comments support unlimited nesting depth through parent-child relationships, allowing users to reply to other comments and create rich discussion threads.
+ * This operation allows authenticated users to create comments on posts within communities. Comments can be top-level (directly on a post) or replies to existing comments, supporting unlimited nesting depth. The comment content is required and cannot be empty. Users must not be banned from the community containing the post to create comments.
  *
- * Each comment is associated with the authenticated user as the author and the target post. The system automatically initializes the comment with a vote score of zero and records the creation timestamp. Comments become immediately visible to all users who can view the post.
- *
- * Security and validation:
- * - Requires authenticated member account
- * - User must not be banned from the community containing the post
- * - Post must exist and not be deleted
- * - Comment content must be between 1 and 1000 characters
- * - If replying to another comment (parent_id provided), the parent must exist and belong to the same post
- *
- * Related operations:
- * - `GET /posts/{postId}/comments` - Retrieve all comments on a post with sorting options
- * - `PATCH /comments/{commentId}` - Edit an existing comment
- * - `DELETE /comments/{commentId}` - Delete a comment
- * - `POST /comments/{commentId}/vote` - Vote on a comment
+ * When a comment is created, it is automatically associated with the creating user's profile and the target post. The system records the creation timestamp for sorting and display purposes. Comments participate in the voting system and can be reported by other users for moderator review.
  *
  * @param props.connection
- * @param props.postId UUID of the post to comment on
- * @param props.body Comment creation data including content and optional parent comment for replies
+ * @param props.postId The unique identifier of the post to comment on (global scope).
+ * @param props.body Comment creation data including the comment content and optional parent comment reference for replies.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Create a new comment record in reddit_clone_comments table.
+ * @x-autobe-specification Insert a new record into reddit_clone_comments table with the following logic:
  *
- * 1. Validate authentication: Extract current member ID from authenticated session.
- * 2. Validate post exists: Query reddit_clone_posts by postId, ensure deleted_at is NULL.
- * 3. Check ban status: Query reddit_clone_bans to ensure member is not banned from the post's community (reddit_clone_community_id).
- * 4. Validate content: Ensure content is 1-1000 characters, not empty.
- * 5. Handle threading: If parent_id provided in request, validate it exists and belongs to the same post.
- * 6. Create comment: Insert into reddit_clone_comments with:
- *    - id: Generate UUID
- *    - reddit_clone_member_id: Current authenticated member
- *    - reddit_clone_post_id: postId from path parameter
- *    - parent_id: From request body (optional, for replies)
- *    - content: From request body (validated 1-1000 chars)
- *    - score: Initialize to 0
- *    - created_at: Current timestamp
- *    - updated_at: Current timestamp
- *    - deleted_at: NULL
- * 7. Return created comment with full details including author and post references.
- *
- * Error handling:
- * - 401 if not authenticated
- * - 404 if post not found or deleted
- * - 403 if user is banned from community
- * - 400 if content validation fails (empty or exceeds 1000 chars)
- * - 400 if parent_id provided but doesn't exist or belongs to different post
+ * 1. Validate that the postId exists in reddit_clone_posts table. Return 404 if not found.
+ * 2. Validate that the creating user is not banned from the community containing the post (check reddit_clone_community_bans).
+ * 3. Validate that comment content is not empty or null. Return 400 if invalid.
+ * 4. If parentCommentId is provided, validate it exists in reddit_clone_comments table and belongs to the same post. Return 400 if invalid.
+ * 5. Set reddit_clone_user_profile_id to the authenticated user's profile ID.
+ * 6. Set reddit_clone_post_id to the postId path parameter.
+ * 7. Set parent_comment_id to the parentCommentId from request body (or null for top-level comments).
+ * 8. Set content to the provided comment text.
+ * 9. Set created_at and updated_at to current timestamp.
+ * 10. Set deleted_at to null.
+ * 11. Return the newly created comment entity with all fields including generated id and timestamps.
  * @path /redditClone/member/posts/:postId/comments
  * @accessor api.functional.redditClone.member.posts.comments.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -89,12 +64,12 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * UUID of the post to comment on
+     * The unique identifier of the post to comment on (global scope).
      */
     postId: string & tags.Format<"uuid">;
 
     /**
-     * Comment creation data including content and optional parent comment for replies
+     * Comment creation data including the comment content and optional parent comment reference for replies.
      */
     body: IRedditCloneComment.ICreate;
   };
@@ -145,42 +120,43 @@ export namespace create {
 }
 
 /**
- * Update an existing comment's content text.
+ * Update an existing comment's content.
  *
- * This operation allows comment authors to modify the text content of their own comments. The comment must belong to an active post and must not have been soft-deleted. Only the original author of the comment can perform this update operation.
+ * This operation allows authenticated users to modify the text content of comments they created. The original posting time (created_at) is preserved when content is edited, while the updated_at timestamp is refreshed to reflect the modification time. Only the comment's author can perform this update operation.
  *
- * The comment content must be between 1 and 1000 characters. Empty content is not permitted. When a comment is edited, the original creation timestamp is preserved, existing vote scores are maintained, and the comment's position in the threaded discussion remains unchanged.
+ * **Authorization**: The authenticated user must be the original author of the comment. Attempts to edit another user's comment are rejected with a permission denied error.
  *
- * The system validates that the comment's deleted_at field is null (indicating the comment is active). If the comment has been soft-deleted (deleted_at is not null), the update operation is rejected. This ensures that deleted content cannot be modified.
- *
- * Security: This operation requires authentication. The system validates that the requesting user is the author of the comment being edited by comparing the authenticated member's ID with the comment's reddit_clone_member_id. Community moderators cannot edit comments they did not author.
- *
- * Related operations: Use GET /posts/{postId}/comments to list all comments on a post before editing. Use DELETE /posts/{postId}/comments/{commentId} to soft-delete a comment instead of editing.
+ * **Validation**: The comment must exist and belong to the specified post. The new content must not be empty. If the comment has been soft-deleted, the update is rejected.
  *
  * @param props.connection
- * @param props.postId UUID of the post that contains the comment being edited
- * @param props.commentId UUID of the comment to edit
- * @param props.body Updated comment content
+ * @param props.postId UUID of the post that this comment belongs to. Used to verify the comment's parent post context.
+ * @param props.commentId UUID of the comment to update. Must reference an existing, non-deleted comment.
+ * @param props.body Update payload containing the new comment content. Only the content field can be modified.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Update an existing comment's content.
+ * @x-autobe-specification Update operation for reddit_clone_comments table.
  *
- * 1. Validate authentication: Request must be made by authenticated member.
- * 2. Validate comment existence: Query reddit_clone_comments by commentId.
- * 3. Validate ownership: Check that requestor's member ID matches comment's reddit_clone_member_id. Reject if not author.
- * 4. Validate comment is not deleted: Check deleted_at is null. Reject if comment was soft-deleted.
- * 5. Validate new content: Must be between 1 and 1000 characters. Reject if empty or exceeds limit.
- * 6. Update comment: Set content to new value, update updated_at timestamp.
- * 7. Preserve metadata: Do not modify created_at, score, or parent_id.
- * 8. Create snapshot: Insert record into reddit_clone_comment_snapshots before update for audit trail.
- * 9. Return updated comment with full details including author info.
+ * **Implementation Steps**:
+ * 1. Verify the authenticated user's session and retrieve their user_profile_id
+ * 2. Query the comment by commentId from reddit_clone_comments table
+ * 3. Validate that the comment exists and is not soft-deleted (deleted_at is null)
+ * 4. Verify the comment's reddit_clone_user_profile_id matches the authenticated user's profile
+ * 5. Validate the comment's reddit_clone_post_id matches the postId path parameter
+ * 6. Update the content field with the new value from request body
+ * 7. Set updated_at to current timestamp (created_at remains unchanged)
+ * 8. Return the updated comment entity
  *
- * Error handling:
- * - 401: Not authenticated
- * - 404: Comment not found or post not found
- * - 403: Not authorized (not the comment author)
- * - 409: Comment is deleted
- * - 422: Validation error (empty content, content too long)
+ * **Error Handling**:
+ * - Return 404 if comment not found
+ * - Return 404 if comment is soft-deleted
+ * - Return 403 if user is not the comment author
+ * - Return 400 if comment does not belong to the specified post
+ * - Return 400 if content is empty or missing
+ *
+ * **Business Rules**:
+ * - Only content field is editable
+ * - created_at timestamp is never modified
+ * - updated_at is always set to current time on update
  * @path /redditClone/member/posts/:postId/comments/:commentId
  * @accessor api.functional.redditClone.member.posts.comments.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -210,17 +186,17 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * UUID of the post that contains the comment being edited
+     * UUID of the post that this comment belongs to. Used to verify the comment's parent post context.
      */
     postId: string & tags.Format<"uuid">;
 
     /**
-     * UUID of the comment to edit
+     * UUID of the comment to update. Must reference an existing, non-deleted comment.
      */
     commentId: string & tags.Format<"uuid">;
 
     /**
-     * Updated comment content
+     * Update payload containing the new comment content. Only the content field can be modified.
      */
     body: IRedditCloneComment.IUpdate;
   };
@@ -272,58 +248,50 @@ export namespace update {
 }
 
 /**
- * Delete a comment from a post, removing it from all views and comment threads.
+ * Delete a comment from a post by the comment author or a community moderator.
  *
- * This operation permanently removes a comment by setting its deleted_at timestamp, effectively hiding it from all users while preserving the database record for audit purposes. When a comment is deleted, all nested replies are cascade deleted as well, maintaining thread integrity.
+ * **Authorization Requirements**
  *
- * Authorization is enforced at two levels: comment authors can delete their own comments, and community moderators can delete any comment within their community. The system verifies that the requesting user either owns the comment or has moderator privileges in the associated community.
+ * Only the comment author or a moderator of the post's community can delete a comment. The system validates ownership before allowing deletion. If the requesting user is not the author and not a moderator, the request is rejected with a permission denied error.
  *
- * When a comment is deleted, the system automatically adjusts karma scores for the affected authors and removes the comment from all feeds, search results, and post comment threads. Unlike permanent deletion, soft deletion preserves the comment structure in the database while making it invisible to users.
+ * **Cascade Deletion**
  *
- * Related operations include GET /posts/{postId}/comments for viewing comments, PATCH /comments/{commentId} for editing comments, and POST /posts/{postId}/comments for creating new comments.
+ * When a comment is deleted, all replies to that comment are also permanently deleted. This cascade deletion applies recursively to all nested replies at any depth.
+ *
+ * **Soft Delete Behavior**
+ *
+ * Deleted comments are soft deleted by setting the deleted_at timestamp. The comment is removed from all views but preserved in the database for audit purposes. Deleted comments cannot be recovered or restored.
+ *
+ * **Error Conditions**
+ *
+ * - Comment not found: Returns 404 if the commentId does not exist
+ * - Permission denied: Returns 403 if the user is not the author and not a moderator
+ * - Unauthorized: Returns 401 if the user is not authenticated
  *
  * @param props.connection
- * @param props.postId Target post's ID
- * @param props.commentId Target comment's ID
+ * @param props.postId UUID of the post containing the comment (global scope)
+ * @param props.commentId UUID of the comment to delete (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification DELETE /posts/{postId}/comments/{commentId} implementation:
+ * @x-autobe-specification Query the reddit_clone_comments table for the comment with the given commentId.
  *
- * 1. AUTHORIZATION CHECK:
- *    - Verify user is authenticated (member actor)
- *    - Fetch comment by commentId from reddit_clone_comments
- *    - Verify comment belongs to the specified postId
- *    - Check if user is the comment author (reddit_clone_member_id matches)
- *    - OR check if user is a moderator of the post's community (via reddit_clone_community_moderators)
- *    - Reject with 403 if neither condition is met
+ * 1. **Validate comment existence**: Query by id = commentId. If not found, return 404 Not Found.
  *
- * 2. CASCADE DELETION:
- *    - Query all nested replies (comments where parent_id = commentId)
- *    - Recursively find all descendant comments in the reply tree
- *    - Set deleted_at = NOW() for the target comment and all descendants
- *    - Use database transaction to ensure atomicity
+ * 2. **Validate authorization**: Check if the authenticated user has permission to delete:
+ *    - Author check: Verify user's profile ID matches reddit_clone_user_profile_id
+ *    - Moderator check: Verify user is a moderator of the community containing the post (join reddit_clone_posts -> reddit_clone_communities -> reddit_clone_community_moderators)
+ *    - If neither condition is met, return 403 Forbidden
  *
- * 3. KARMA ADJUSTMENT:
- *    - For each deleted comment, calculate karma impact (score value)
- *    - Update author's karma score in reddit_clone_members by subtracting the comment's score
- *    - Handle nested replies' karma adjustments
+ * 3. **Cascade delete replies**: The database schema has CASCADE ON DELETE on parent_comment_id, so deleting the comment automatically deletes all replies. No additional queries needed.
  *
- * 4. SOFT DELETE:
- *    - Set deleted_at column to current timestamp (NOW())
- *    - Do NOT physically remove records from database
- *    - Preserve comment structure for audit trail
+ * 4. **Soft delete**: Update the comment record by setting deleted_at to current timestamp. Do not physically delete the row.
  *
- * 5. ERROR HANDLING:
- *    - 404 if commentId not found
- *    - 404 if postId not found or comment doesn't belong to that post
- *    - 403 if user lacks authorization
- *    - 400 if comment is already deleted
- *    - 500 for database errors
+ * 5. **Return response**: Return 204 No Content or 200 OK with null body to confirm deletion.
  *
- * 6. POST-DELETION:
- *    - Comment becomes invisible in all views (filter where deleted_at IS NULL)
- *    - Thread structure preserved but deleted comments shown as [Removed]
- *    - No notification sent to original author when moderator deletes
+ * **Edge Cases**:
+ * - If comment is already deleted (deleted_at is set), still allow the operation (idempotent)
+ * - If parent comment is deleted, child comments are already cascade deleted by database constraint
+ * - Ensure transaction safety for the update operation
  * @path /redditClone/member/posts/:postId/comments/:commentId
  * @accessor api.functional.redditClone.member.posts.comments.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -352,12 +320,12 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Target post's ID
+     * UUID of the post containing the comment (global scope)
      */
     postId: string & tags.Format<"uuid">;
 
     /**
-     * Target comment's ID
+     * UUID of the comment to delete (global scope)
      */
     commentId: string & tags.Format<"uuid">;
   };
@@ -388,143 +356,6 @@ export namespace erase {
     try {
       assert.param("postId")(() => typia.assert(props.postId));
       assert.param("commentId")(() => typia.assert(props.commentId));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Vote on a comment to express agreement or disagreement with the content.
- *
- * This operation allows users to upvote, downvote, or remove their vote on a specific comment. Upvoting adds one point to the comment's score and increases the comment author's karma by one point. Downvoting subtracts one point from the score and decreases the author's karma by one point. Removing a vote reverses these effects.
- *
- * Each user can cast only one vote per comment. Changing an existing vote from upvote to downvote (or vice versa) adjusts the score by two points. The vote operation is idempotent - submitting the same vote multiple times has no additional effect.
- *
- * Guest users can vote on comments in public feeds and communities. However, if a user is banned from a community, their vote attempts on comments within that community's posts are silently ignored and not recorded. This restriction applies to both new votes and vote modifications.
- *
- * The comment must exist and belong to the specified post. The operation validates the relationship between the comment and post before processing the vote. If the comment has been deleted (soft-deleted), voting on it is not allowed.
- *
- * Related operations include GET /posts/{postId}/comments to view comments with their scores, and POST /posts/{postId}/comments to create new comments that can receive votes.
- *
- * @param props.connection
- * @param props.postId The UUID of the post that contains the comment being voted on
- * @param props.commentId The UUID of the comment to vote on
- * @param props.body Vote value for the comment
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the comment by commentId from reddit_clone_comments table.
- *
- * Verify the comment belongs to the postId specified in the path parameter.
- *
- * Retrieve the post's community_id from reddit_clone_posts table.
- *
- * Check if the current user (from session/auth context) is banned from this community by querying reddit_clone_bans table for an active ban (lifted_at IS NULL, deleted_at IS NULL) for this user and community.
- *
- * If user is banned, silently ignore the vote - return success without recording the vote.
- *
- * Check if user already has a vote on this comment in the votes table.
- *
- * If vote exists:
- *   - If new vote value is same as existing, return current state without changes
- *   - If vote value changed, calculate score delta (new_value - old_value)
- *   - Update the vote record with new value
- *   - Update comment score by adding the delta
- *   - Update author's karma by adding the delta
- *
- * If no vote exists:
- *   - If vote value is 0 (remove), return early without creating vote
- *   - Create new vote record with the vote value
- *   - Update comment score by adding the vote value
- *   - Update author's karma by adding the vote value
- *
- * All score and karma updates must be done in a database transaction to ensure atomicity.
- *
- * Return the updated vote information including new comment score and karma change.
- * @path /redditClone/member/posts/:postId/comments/:commentId/vote
- * @accessor api.functional.redditClone.member.posts.comments.vote
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function vote(
-  connection: IConnection,
-  props: vote.Props,
-): Promise<vote.Response> {
-  return true === connection.simulate
-    ? vote.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...vote.METADATA,
-          path: vote.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace vote {
-  export type Props = {
-    /**
-     * The UUID of the post that contains the comment being voted on
-     */
-    postId: string & tags.Format<"uuid">;
-
-    /**
-     * The UUID of the comment to vote on
-     */
-    commentId: string & tags.Format<"uuid">;
-
-    /**
-     * Vote value for the comment
-     */
-    body: IRedditCloneComment.IVote;
-  };
-  export type Body = IRedditCloneComment.IVote;
-  export type Response = IRedditCloneComment.IVoteResult;
-
-  export const METADATA = {
-    method: "PATCH",
-    path: "/redditClone/member/posts/:postId/comments/:commentId/vote",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/redditClone/member/posts/${encodeURIComponent(props.postId ?? "null")}/comments/${encodeURIComponent(props.commentId ?? "null")}/vote`;
-  export const random = (): IRedditCloneComment.IVoteResult =>
-    typia.random<IRedditCloneComment.IVoteResult>();
-  export const simulate = (
-    connection: IConnection,
-    props: vote.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: vote.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("postId")(() => typia.assert(props.postId));
-      assert.param("commentId")(() => typia.assert(props.commentId));
-      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

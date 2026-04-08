@@ -4,8 +4,10 @@ import { IErpHrmOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IE
 import { IErpHrmRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmRole";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ErpHrmOrganizationAtSummaryTransformer } from "./ErpHrmOrganizationAtSummaryTransformer";
 
@@ -24,16 +26,22 @@ export namespace ErpHrmRoleAtSummaryTransformer {
         deleted_at: true,
         organization: ErpHrmOrganizationAtSummaryTransformer.select(),
         employees: {
-          select: { id: true },
-        } satisfies Prisma.erp_hrm_employeesFindManyArgs,
+          select: {
+            id: true,
+          },
+        },
         rolePermissions: {
-          select: { id: true },
-        } satisfies Prisma.erp_hrm_role_permissionsFindManyArgs,
+          select: {
+            id: true,
+          },
+        },
         invitations: {
-          select: { id: true },
-        } satisfies Prisma.erp_hrm_invitationsFindManyArgs,
+          select: {
+            id: true,
+          },
+        },
       },
-    } satisfies Prisma.erp_hrm_rolesFindManyArgs;
+    };
   }
   export async function transform(
     input: Payload,
@@ -41,11 +49,46 @@ export namespace ErpHrmRoleAtSummaryTransformer {
     return {
       id: input.id,
       name: input.name,
-      is_builtin: input.is_builtin,
-      created_at: input.created_at.toISOString(),
+      isBuiltin: input.is_builtin,
+      createdAt: toISOStringSafe(input.created_at),
       organization: await ErpHrmOrganizationAtSummaryTransformer.transform(
         input.organization,
       ),
-    };
+      permissionsCount: input.rolePermissions.length,
+    } satisfies IErpHrmRole.ISummary;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace ErpHrmRoleAtSummaryTransformer {
+//       export type Payload = Prisma.erp_hrm_rolesGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             name: true,
+//             isBuiltin: true,
+//             createdAt: true,
+//             permissionsCount: true,
+//             ...
+//           },
+//         } satisfies Prisma.erp_hrm_rolesFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IErpHrmRole.ISummary> {
+//         return {
+//   id: {string},
+//   name: {string},
+//   isBuiltin: {boolean},
+//   createdAt: {string},
+//   organization: {IErpHrmOrganization.ISummary},
+//   permissionsCount: {integer},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

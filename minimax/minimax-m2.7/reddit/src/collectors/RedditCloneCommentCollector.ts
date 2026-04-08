@@ -10,8 +10,9 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace RedditCloneCommentCollector {
   export async function collect(props: {
     body: IRedditCloneComment.ICreate;
-    post: IEntity;
-    member: IEntity;
+    redditClonePosts: IEntity;
+    redditCloneMembers: IEntity;
+    redditCloneMemberSessions: IEntity;
   }) {
     return {
       id: v4(),
@@ -20,11 +21,40 @@ export namespace RedditCloneCommentCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      post: { connect: { id: props.post.id } },
-      member: { connect: { id: props.member.id } },
+      post: { connect: { id: props.redditClonePosts.id } },
+      member: { connect: { id: props.redditCloneMembers.id } },
       parent: props.body.parentCommentId
         ? { connect: { id: props.body.parentCommentId } }
         : undefined,
     } satisfies Prisma.reddit_clone_commentsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace RedditCloneCommentCollector {
+//         export async function collect(props: {
+//           body: IRedditCloneComment.ICreate;
+//           redditClonePosts: IEntity; // from path parameter postId
+// redditCloneMembers: IEntity; // from authorized actor
+// redditCloneMemberSessions: IEntity; // from authorized session
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       content: ...,
+//       vote_score: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       post: ...,
+//       member: ...,
+//       parent: ...,
+//       replies: ...,
+//           } satisfies Prisma.reddit_clone_commentsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

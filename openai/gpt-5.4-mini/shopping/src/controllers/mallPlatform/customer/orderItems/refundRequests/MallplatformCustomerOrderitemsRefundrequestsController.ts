@@ -3,48 +3,92 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IMallPlatformRefundRequest } from "../../../../../api/structures/IMallPlatformRefundRequest";
+import { IPageIMallPlatformRefundRequest } from "../../../../../api/structures/IPageIMallPlatformRefundRequest";
 import { CustomerAuth } from "../../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../../decorators/payload/CustomerPayload";
-import { postMallPlatformCustomerOrderItemsOrderItemIdRefundRequests } from "../../../../../providers/postMallPlatformCustomerOrderItemsOrderItemIdRefundRequests";
+import { getMallPlatformCustomerOrderItemsOrderItemIdRefundRequestsRefundRequestId } from "../../../../../providers/getMallPlatformCustomerOrderItemsOrderItemIdRefundRequestsRefundRequestId";
+import { patchMallPlatformCustomerOrderItemsOrderItemIdRefundRequests } from "../../../../../providers/patchMallPlatformCustomerOrderItemsOrderItemIdRefundRequests";
 
 @Controller("/mallPlatform/customer/orderItems/:orderItemId/refundRequests")
 export class MallplatformCustomerOrderitemsRefundrequestsController {
   /**
-   * Create a refund request for a single delivered order item.
+   * Search refund requests for a specific order item.
    *
-   * This operation lets a customer request a refund for one purchased item after delivery, using the order item as the business scope. The refund request is tied to exactly one order item, and the platform stores the customer’s reason together with the current review state so the seller or administrator can process the claim later.
+   * This endpoint returns the refund requests that belong to the referenced order item. It is intended for item-level refund review, allowing the caller to inspect the request reason and the current request state for that single purchased item.
    *
-   * The request is valid only when the target order item is eligible for refund processing and there is no existing active refund request for the same item. The refund workflow is item-level, so other items in the order remain unchanged. When the request is later reviewed, the system records immutable snapshot history for dispute review and audit purposes.
+   * Refund requests are scoped to one order item only, so the result never includes requests from other items. Access is limited to the customer who owns the order item, the seller responsible for the item, and administrators. If the parent order item does not exist or is not available to the caller, the request is rejected without exposing unrelated refund data.
    *
-   * If the order item does not exist, is not refundable, or already has a conflicting refund request, the operation must fail without creating any partial refund record. Authorization must ensure the caller owns the order item context and is allowed to submit the request.
+   * When a refund request changes status, the system preserves snapshot history for dispute review and audit purposes. This endpoint lists the current refund request records; snapshots are stored separately and are not returned unless explicitly modeled by the summary DTO.
    *
    * @param connection
-   * @param orderItemId Identifier of the order item being refunded. The item must belong to the authenticated customer.
-   * @param body Refund request submission data for the selected order item.
+   * @param orderItemId The identifier of the order item whose refund requests are being searched.
+   * @param body Search criteria for refund requests on the specified order item, including pagination, sorting, and supported filters.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Load the target order item by id and verify it belongs to the authenticated customer. Reject the request if the order item is missing, deleted, not in delivered status, or otherwise ineligible for refund according to business rules. Also reject if a refund request already exists for the same order item, because the schema enforces one refund request per item.
+   * @x-autobe-specification Resolve the parent order item by order_item identifier first so the collection is always scoped to one item and authorization can be checked against that exact purchase context. Query mall_platform_refund_requests filtered by the order item foreign key, then apply pagination, sorting, and any supported search filters from the request body.
    *
-   * Create the refund request in a transaction using the order item id, authenticated customer id, the item's seller id, the submitted reason, and an initial pending status. Do not allow the client to supply foreign keys or status fields that are derived by the service. If the business layer requires administrator handling, keep the administrator id null at creation.
+   * Use a stable newest-first default sort with a deterministic secondary sort key for repeatable pages. Do not load refund requests for other order items. Do not synthesize an active request if none exists. If the parent item is deleted or otherwise unavailable, follow the platform’s historical-data and access rules, and return the appropriate business error when the caller is not allowed to view the item’s refund data.
    *
-   * After insertion, return the created refund request record. If any validation fails, abort without inserting anything. Preserve later lifecycle changes through the refund request snapshot mechanism when the request is reviewed or its state changes.
+   * The request body should support only criteria that correspond to actual refund request fields and common list controls such as page, page size, ordering, and state-based filtering. Keep the response shape as a paginated summary list suitable for management and customer UI screens.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post()
-  public async create(
+  @TypedRoute.Patch()
+  public async index(
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedParam("orderItemId")
     orderItemId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IMallPlatformRefundRequest.ICreate,
+    body: IMallPlatformRefundRequest.IRequest,
+  ): Promise<IPageIMallPlatformRefundRequest.ISummary> {
+    try {
+      return await patchMallPlatformCustomerOrderItemsOrderItemIdRefundRequests(
+        {
+          customer,
+          orderItemId,
+          body,
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve the current refund request for a specific order item.
+   *
+   * This operation returns the live refund-request record attached to the specified order item, including the customer reason, request status, reviewer note, reviewer identity when present, and the timestamps that describe the request lifecycle. Because refund requests are item-level records, the order item scope is part of the resource identity and must match the stored relationship exactly.
+   *
+   * The refund workflow does not apply to the whole order. This endpoint is intended for customer support, seller review, and administrator dispute handling, and it should reject requests when the refund request does not exist, has been deleted, or does not belong to the supplied order item.
+   *
+   * @param connection
+   * @param orderItemId The unique identifier of the order item that owns the refund request.
+   * @param refundRequestId The unique identifier of the refund request within the specified order item.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification Load the refund request by id and verify that mall_platform_refund_requests.mall_platform_order_item_id matches the provided orderItemId. Return the full live refund request record, not a snapshot, and include the related order item, customer, seller, and optional administrator references as required by the response schema.
+   *
+   * Apply authorization so only the requesting customer, the responsible seller, or an administrator can access the resource. If the refund request is missing, deleted, or outside the provided order-item scope, return a normal business error. Do not modify any refund state in this operation, and do not rely on the order item id alone because the same order item can only have one refund request but the path must still be validated for exact ownership.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":refundRequestId")
+  public async at(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedParam("orderItemId")
+    orderItemId: string & tags.Format<"uuid">,
+    @TypedParam("refundRequestId")
+    refundRequestId: string & tags.Format<"uuid">,
   ): Promise<IMallPlatformRefundRequest> {
     try {
-      return await postMallPlatformCustomerOrderItemsOrderItemIdRefundRequests({
-        customer,
-        orderItemId,
-        body,
-      });
+      return await getMallPlatformCustomerOrderItemsOrderItemIdRefundRequestsRefundRequestId(
+        {
+          customer,
+          orderItemId,
+          refundRequestId,
+        },
+      );
     } catch (error) {
       console.log(error);
       throw error;

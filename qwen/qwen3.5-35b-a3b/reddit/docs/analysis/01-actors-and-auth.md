@@ -1,4 +1,4 @@
-**redditCommunity — Actor definitions, permission matrix, authentication, session, account lifecycle**
+**redditPlatform — Actor definitions, permission matrix, authentication, session, account lifecycle**
 
 Actor definitions, permission matrix, authentication, session, account lifecycle
 
@@ -8,99 +8,271 @@ Define all user actor types with their identity, permissions, and access boundar
 
 ## guest Actor
 
-Guest users are visitors who access the platform without logging in. They can browse the popular feed to see trending posts from all communities across the platform. Guests can also view community feeds to read posts from specific communities. They can access and view user profiles to see another user's display name, bio, avatar, and public content. Guest users can see post details including title, content, author, community, and vote score. However, guests cannot create posts, comments, or replies. They cannot subscribe or unsubscribe from communities. Guests cannot vote on posts or comments. They also cannot report inappropriate content. All interactive features require the user to be logged in as a member.
+A guest is a user who has not authenticated with the platform using email and password credentials. Guests have anonymous access to public content across all communities without requiring login. They can browse the list of all communities and search for communities by name. Guests can view the popular feed which displays posts from all communities platform-wide. They can access any community feed and read posts and comments within those communities. However, guests cannot vote on posts or comments in any community. They cannot create posts, write comments, or reply to existing comments. Guests cannot subscribe to communities or view any private member data. When attempting to perform any interactive action, guests must authenticate first.
 
-### Guest Access Overview
+### Guest Identity Definition
 
-Guest users are visitors who access the platform without logging in. They can browse the platform to view public content including posts and user profiles. Guest access is limited to read-only operations on content that is publicly visible to all users. All interactive features require the user to be logged in as a member. Guests cannot create, modify, or delete any content on the platform.
+A guest is an anonymous visitor who has not authenticated with the platform using email and password credentials. The platform recognizes users as either guests or members based on their authentication status. A guest session begins when a user accesses the platform without providing valid login credentials.
 
-### Popular Feed Viewing
+### Public Content Access
 
-Guest users can access the popular feed to view trending posts from all communities across the platform. The popular feed displays posts from every community in the system, regardless of subscription status. Each post in the popular feed shows the title, author username, community name, vote score, comment count, and time since posted. Guests can sort the popular feed by different options including hot, new, top, and controversial. The top sort option includes time filters: today, this week, this month, this year, and all time. Popular feed viewing is available to all visitors without requiring authentication. The feed is paginated, and guests can navigate through multiple pages of results.
+Guests have read-only access to all public content across the platform. This includes the ability to browse the complete list of communities and search for communities by name. Guests can view the popular feed, which displays posts from all communities platform-wide. Guests can also access any community feed and read the content within those communities. This public access is available to anyone visiting the platform, regardless of whether they have an account.
 
-### Community Feed Viewing
+### Reading Posts and Comments
 
-Guest users can view community feeds to read posts from specific communities. To access a community feed, guests can browse the list of all communities or search for communities by name. Once a community is selected, guests see all posts created in that community. Each post in the community feed displays the same information as the popular feed: title, author username, community name, vote score, comment count, and time since posted. Community feed viewing is available to all visitors without requiring authentication. Guests can sort community feed posts by hot, new, top, and controversial options. The top sort option includes time filters for today, this week, this month, this year, and all time. The community feed is paginated to display posts in manageable chunks.
+When viewing any feed or community, guests can read posts and comments displayed to them. For each post in a feed, guests can see the title, author username, community name, vote score, comment count, time since posted, and the appropriate content preview (text snippet for text posts, thumbnail for image posts, domain name for link posts). Guests can view the full content of individual posts, including the complete text, image, or link destination. Guests can also read all comments on a post, including nested replies, with each comment showing the author, content, vote score, and time since posted.
 
-### User Profile Viewing
+### Restriction: No Voting
 
-Guest users can view any user's profile on the platform. A user profile displays the display name, bio text, and avatar image of the user. The profile also shows the user's total karma score. The profile page lists all posts the user has created. The profile page also lists all comments the user has written. Guests can navigate from a post or comment to view the author's profile. Profile viewing is available to all visitors without requiring authentication. Guests cannot edit another user's profile. Only the profile owner can update their own display name, bio, and avatar.
+Guests cannot vote on posts or comments in any community. The upvote and downvote functions are unavailable to guests. This restriction applies to all posts and comments across all communities. When a guest attempts to vote, the system requires authentication first.
 
-### Post Detail Viewing
+### Restriction: No Content Creation
 
-Guest users can view the full details of any post on the platform. When viewing a post, guests see the title, full content, author username, community name, vote score, comment count, and when the post was created. For text posts, the full text content is displayed. For link posts, the URL and domain name are shown. For image posts, the full image is displayed. The post detail page also shows all comments on the post, including nested replies. Each comment displays the author, content, vote score, and time since posted. Guests can see the sort options for comments: best, new, and controversial. Viewing post details is available to all visitors without requiring authentication. Guests cannot edit or delete posts they do not own.
+Guests cannot create posts, write comments, or reply to existing comments. Content creation is restricted to authenticated members only. Guests attempting to create content must authenticate before the action can proceed.
 
-### Restricted Actions for Guests
+### Restriction: No Subscription
 
-Guest users cannot create posts in any community. Creating posts requires the user to be logged in as a member. Guest users cannot create comments on any post. Creating comments requires the user to be logged in as a member. Guest users cannot create replies to any comment. Creating replies requires the user to be logged in as a member. Guest users cannot subscribe to any community. Subscribing to communities requires the user to be logged in as a member. Guest users cannot unsubscribe from any community. Unsubscribing requires the user to be logged in as a member. Guest users cannot vote on any post. Voting on posts requires the user to be logged in as a member. Guest users cannot vote on any comment. Voting on comments requires the user to be logged in as a member. Guest users cannot report any post or comment. Reporting content requires the user to be logged in as a member. All interactive operations on the platform require the user to have an active session and be authenticated as a member.
+Guests cannot subscribe to communities or view their subscribed communities. Subscription status is only visible and modifiable by authenticated members. Subscribing to a community is required before creating posts within that community.
+
+### Restriction: No Profile Access
+
+Guests cannot view any user profiles on the platform. Profile pages, which display display name, bio, avatar, karma score, posts, and comments, are only accessible to authenticated members. Guest access to profile information is entirely blocked.
+
+### Authentication Required for Interactive Actions
+
+All interactive actions require the user to be authenticated as a member. When a guest attempts to perform any interactive action—including voting, posting, commenting, subscribing, or viewing profiles—the system redirects to the authentication flow. After successful authentication, the user retains access to their previously viewed public content without interruption.
 
 ## member Actor
 
-Member users are registered accounts who have successfully logged in with their email and password. Members can access the home feed showing posts only from communities they are subscribed to. Members can create posts in any community they have subscribed to, choosing from text, link, or image types. Members can write comments on posts and reply to comments with unlimited nesting depth. They can vote on both posts and comments, changing their vote or removing it at any time. Members can subscribe and unsubscribe from communities freely. They can edit their own posts and comments, and delete their own content. Members can create reports on inappropriate posts or comments with a reason. They can view their own profile and edit their display name, bio, and avatar. Members can browse communities they are subscribed to.
+A member is an authenticated user who has registered with email and password and selected a unique username. Members have access to their profile containing display name, bio, avatar, and karma score. They can edit their own profile information and view other users' public profiles. Members can subscribe and unsubscribe from communities and view their subscribed community list. They have voting rights on posts and comments across all communities including upvote, downvote, and vote removal. Members can create posts in communities they subscribe to, including text, link, and image posts. They can write comments and unlimited reply threads on posts. Members can edit and delete their own posts and comments. Members can report posts and comments by providing reasons. Community owners and moderators have elevated permissions within their respective communities.
 
-### Home Feed Access
+### Member Identity and Authentication
 
-Logged-in members can access the home feed, which displays posts from communities they have subscribed to. The home feed is only available after successful authentication with email and password.
+A member is an authenticated user who has successfully registered with an email address and password, and has selected a unique username.
 
-### Post Creation in Subscribed Communities
+**Email and Password Registration**
 
-Members can create posts in any community they have subscribed to. A post must include a title. Members can choose one of three post types: text, link, or image. The post type determines what content fields are required.
+During registration, a user must provide a valid email address and choose a password. The email address must not already be registered in the system.
 
-### Text Post Creation
+If the email address is already in use, the registration request is rejected.
 
-Members can create text posts with a title and text content. The text content displays the full post body when viewing the post details.
+**Username Selection**
 
-### Link Post Creation
+The username is a unique identifier that must be chosen during registration. The username must not already be taken by another account.
 
-Members can create link posts with a title and a URL. The domain name of the URL displays in the post list view.
+If the requested username is already in use, the registration request is rejected.
 
-### Image Post Creation
+Once a username is selected, it cannot be changed by the user.
 
-Members can create image posts with a title and an uploaded image. A thumbnail of the image displays in the post list view.
+**Login Access**
 
-### Comment Writing on Posts
+Members log in by providing their email address and password.
 
-Members can write comments on any post. Comments display the author, content, vote score, time posted, and nested replies.
+If the credentials are incorrect or the account does not exist, the login request is rejected.
 
-### Comment Reply Nesting
+### Profile Management
 
-Members can reply to any comment with unlimited nesting depth. Replies can have their own replies, creating a threaded conversation structure.
+Each member has a profile containing a display name, bio text, and avatar image.
 
-### Post Voting Actions
+**Profile Viewing**
 
-Members can upvote posts to add 1 to the vote score, downvote posts to subtract 1 from the vote score, change their vote from upvote to downvote or vice versa, or remove their vote entirely. Each member can vote once per post.
+Members can view their own profile at any time.
 
-### Comment Voting Actions
+Members can also view any other user's public profile.
 
-Members can upvote comments to add 1 to the vote score, downvote comments to subtract 1 from the vote score, change their vote from upvote to downvote or vice versa, or remove their vote entirely. Each member can vote once per comment.
+A user's profile page displays:
+- Display name
+- Bio text
+- Avatar image
+- Karma score
+- A list of all posts the user has created
+- A list of all comments the user has written
 
-### Subscription Management
+**Profile Editing**
 
-Members can subscribe to any community by adding it to their subscription list. Members can unsubscribe from any community they are subscribed to by removing it from their list.
+Members can edit their own display name, bio text, and avatar image.
 
-### Viewing Subscriptions
+If the member attempts to set a display name that is blank, the update request is rejected.
 
-Members can view a list of all communities they have subscribed to. This list displays the communities they can create posts in.
+### Karma Score
 
-### Self Content Editing
+Every member has a single karma score displayed on their profile.
 
-Members can edit their own posts to update the title and content. Members can edit their own comments to update the content. Editing is limited to the post or comment creator only.
+The karma score increases by 1 for each upvote received on the member's posts or comments.
 
-### Self Content Deletion
+The karma score decreases by 1 for each downvote received on the member's posts or comments.
 
-Members can delete their own posts, which removes them permanently from the platform. Members can delete their own comments, which removes them permanently from the platform. Deletion is limited to the post or comment creator only.
+When a user removes their vote on a post or comment, the karma score adjusts accordingly by reversing the previous vote's effect.
 
-### Report Creation with Reason
+Karma score can be negative.
 
-Members can create reports on any post or comment by providing a reason as text. Reports are submitted to moderators of the community where the content appears.
+The karma score is calculated and updated in real time as votes are cast or removed.
 
-### Member Reporting Capability
+### Community Subscription and Home Feed
 
-Members can report inappropriate posts or comments on the platform. The reporting capability is available to all logged-in members.
+**Subscription Access**
 
-### Profile Editing
+Members can subscribe to any community in the system.
 
-Members can edit their profile to update their display name, bio text, and avatar image. Profile editing is limited to the account owner.
+Members can unsubscribe from any community they are subscribed to.
+
+Members can view a list of all communities they are subscribed to.
+
+Subscribing to a community is required before the member can create posts in that community.
+
+**Home Feed Access**
+
+The home feed is available only to authenticated members.
+
+The home feed shows posts only from communities the member is subscribed to.
+
+Guests cannot access the home feed.
+
+### Content Creation
+
+**Post Creation**
+
+Members can create a post in any community they are subscribed to.
+
+Every post requires a title.
+
+A post must be one of three types:
+- Text post: contains text content
+- Link post: contains a URL
+- Image post: contains an uploaded image
+
+If the member attempts to create a post in a community they are not subscribed to, the request is rejected.
+
+If the title is missing, the post creation request is rejected.
+
+**Comment Writing**
+
+Members can write a comment on any post.
+
+Members can reply to any comment.
+
+Replies can have their own replies, with no depth limit.
+
+Members can write comments even if they are not subscribed to the community where the post exists.
+
+### Content Management
+
+**Own Post Editing**
+
+Members can edit their own posts after creation.
+
+If a member attempts to edit a post they did not create, the request is rejected.
+
+**Own Comment Editing**
+
+Members can edit their own comments after creation.
+
+If a member attempts to edit a comment they did not write, the request is rejected.
+
+**Own Content Deletion**
+
+Members can delete their own posts.
+
+Members can delete their own comments.
+
+When a user deletes their account, all posts and comments written by that user are also deleted.
+
+### Voting System
+
+**Post Voting**
+
+Members can upvote a post, which adds 1 to the vote score.
+
+Members can downvote a post, which subtracts 1 from the vote score.
+
+Each member can only have one vote per post at any time.
+
+Members can change their vote from upvote to downvote or vice versa.
+
+Members can remove their vote entirely.
+
+Vote score equals the total number of upvotes minus the total number of downvotes.
+
+**Comment Voting**
+
+Members can upvote or downvote any comment.
+
+One vote per member per comment is allowed.
+
+Members can change their vote or remove their vote.
+
+The same voting rules apply to comments as to posts.
+
+Members can vote on content from any community, including communities they are not subscribed to.
+
+### Reporting System
+
+Members can report any post or comment in the system.
+
+When submitting a report, the member must provide a reason as text.
+
+The reason field is required; a report without a reason is rejected.
+
+Once submitted, reports are visible to moderators of the community where the content exists.
+
+Each report shows:
+- The reported content
+- The member who submitted the report
+- The reason for the report
+
+Members cannot withdraw or edit a report after submission.
+
+### Community Leadership Roles
+
+**Community Ownership**
+
+Any member can create a new community.
+
+When a member creates a community, they automatically become its owner.
+
+The community owner has the highest authority within that community.
+
+The owner can add other members as moderators.
+
+The owner can remove moderators from their community.
+
+**Moderator Role**
+
+Moderators are members appointed by the community owner or by other moderators.
+
+Moderators can add other moderators to the community.
+
+Moderators cannot remove the community owner.
+
+Moderators cannot remove other moderators.
+
+Only the owner can remove a moderator.
+
+**Moderator Actions**
+
+Moderators can delete any post in their community.
+
+Moderators can delete any comment in their community.
+
+Moderators can ban users from their community.
+
+Moderators can unban users from their community.
+
+Moderators can view the list of banned users in their community.
+
+Banned users cannot create posts or comments in that community, but they can still view content.
+
+### Moderator Banning System
+
+When a moderator bans a user from a community, they must provide a reason for the ban.
+
+Bans may have an expiration date, or they may be permanent.
+
+Banned users are prevented from creating posts or comments in the banned community.
+
+Banned users can still view content in the community.
+
+Banned users retain access to all other communities where they are not banned.
 
 # Authentication Flows
 
@@ -112,131 +284,121 @@ Define user registration and login flows including validation and error handling
 
 ### User Registration
 
-A new user can register for the platform by providing an email address, choosing a password, and selecting a unique username.
+New users can create an account by providing an email address, choosing a password, and selecting a unique username.
 
-The email address must be a valid email format and will be used for login.
+The email address must not be already in use by another account.
+If the email is already registered, the registration request is rejected.
 
-The username must be unique across all users in the system. If the chosen username is already taken, the registration is rejected.
+The username must be unique across the platform.
+If the desired username is already taken, the registration request is rejected.
 
-The password must be provided and stored securely. The system does not enforce specific complexity requirements.
+The password must be provided but there is no minimum length requirement defined.
 
-After successful registration, the user is automatically logged in and a session is created.
-
-The user's initial karma score is zero.
-
-If the email address is already registered, the registration request is rejected.
+After successful registration, the user is automatically logged in and can access all member features.
 
 ### User Login
 
-A registered user can log in by providing their email address and password.
+Registered users can log in by providing their email address and password.
 
-The system validates the email address and password combination.
-
-If the credentials are correct, the user is authenticated and a new session is created.
-
-After successful login, the user gains access to member-only features such as the home feed, post creation, and commenting.
-
-Guest users cannot access the home feed or create content until they log in.
-
-When a logged-in user attempts to log in again from the same or a different device, a new session is created while the previous session may remain active depending on platform policy.
-
-After successful authentication, the user is redirected to their home feed or the page they were trying to access.
-
-### Session Management
-
-When a user logs in successfully, the system creates an active session that allows access to protected features.
-
-The session remains active while the user continues to use the platform.
-
-Users can view their profile while logged in and are identified by their username.
-
-The system allows users to be logged in from multiple devices simultaneously, each with its own session.
-
-When a session is active, the user can access the home feed, create posts in subscribed communities, write comments, vote on posts and comments, and subscribe to communities.
-
-Guest users can only browse public content such as the popular feed, community feeds, and public user profiles.
-
-### Registration Error Conditions
-
-If the email address is already registered, the registration is rejected with an error message indicating the email is in use.
-
-If the username is already taken, the registration is rejected with an error message indicating the username is unavailable.
-
-If the email address is not in a valid format, the registration is rejected.
-
-If the password is not provided, the registration request is rejected.
-
-If any required field is missing, the registration request is rejected.
-
-### Login Error Conditions
-
-If the email address does not match any registered user, the login request is rejected.
-
+The system validates the credentials against the registered account.
+If the email address is not found, the login request is rejected.
 If the password is incorrect, the login request is rejected.
 
-If the provided email or password combination is invalid, the system does not specify which field is incorrect to prevent information leakage.
+After successful login, the user session is created and the user gains access to all member features including creating posts, comments, and managing their profile.
 
-If the user account does not exist, the login is rejected with a generic authentication failure message.
+### Authentication States
+
+Guests are users who are not logged in and have limited access.
+Guests can view public content including the list of all communities, search for communities by name, and view posts in the popular feed and community feeds.
+
+Members are users who are currently logged in and have full access.
+Members can perform all guest actions plus create posts, write comments, vote on posts and comments, subscribe to communities, edit their profile, and access their personal feeds.
+
+Each user can only have one active session at a time.
+When a user logs in from a new location, any previous active session is terminated.
+
+### Guest vs Member Permissions
+
+Guests can view:
+- The list of all communities
+- Search for communities by name
+- Posts in the popular feed (all communities)
+- Posts in any community feed
+- User profiles
+- Post details and comments
+
+Members can perform all guest actions plus:
+- Create new posts in subscribed communities
+- Write comments on posts
+- Reply to comments
+- Vote on posts and comments
+- Subscribe and unsubscribe from communities
+- Create new communities
+- View and edit their own profile
+- View their home feed (posts from subscribed communities)
+- Manage community moderation (if they are moderators)
 
 ## Session and Logout
 
 Define session behavior and logout from a user perspective.
 
-### Session Behavior
+### Session Management
 
-When a user successfully logs in with their email and password, a session is created that allows access to member-only features.
+When a member logs in with their email and password, they obtain an active session.
 
-The session enables access to the home feed, which shows posts only from communities the user is subscribed to.
+The active session allows the member to access authenticated features of the platform.
 
-The session enables creation of posts in communities the user is subscribed to.
+While the member has an active session, they can view their profile and account settings.
 
-The session enables writing comments on posts.
+When a member's session ends, they must log in again with their email and password to access authenticated features.
 
-The session enables editing and deleting the user's own posts and comments.
+The system maintains the member's session state so they can continue using authenticated features without re-authentication.
 
-The session enables viewing and managing the user's profile, including display name, bio text, and avatar image.
+### Logout
 
-The session enables subscribing to and unsubscribing from communities.
+Members can log out from their session at any time.
 
-The session enables viewing posts, communities, and other user profiles.
+When a member logs out, their session is terminated and they must log in again to access authenticated features.
 
-The session persists across browser sessions until explicitly logged out or expired.
+After logging out, the member no longer has access to features that require authentication.
 
-### Logout Functionality
+Members can log in again using their email and password after logging out.
 
-Users can log out from any page in the application.
+The platform allows members to log out and log in multiple times as needed.
 
-Logging out ends the current session immediately.
+### Account Security - Password Management
 
-After logging out, the user's session data is cleared from the active session.
+Members can change their password when they have an active session.
 
-After logging out, the user is redirected to a public-facing page where only guest features are available.
+To change their password, the member must provide their current password and enter a new password.
 
-After logging out, the user cannot access member-only features such as the home feed, post creation, or comment writing.
+The system validates the new password meets security requirements before allowing the change.
 
-After logging out, attempting to access member-only features requires logging in again.
+After successfully changing their password, the member can log in using their new password.
 
-Logging out does not delete the user's account or any of their content.
+If the member provides an incorrect current password, the password change is rejected.
 
-Logging out does not change the user's password or other account information.
+The member must remember their new password to log in in the future.
 
-### Session Security
+### Account Security - Account Deletion
 
-Sessions are maintained securely to prevent unauthorized access.
+Members can delete their account when they have an active session.
 
-The session is tied to the user's authentication credentials (email and password).
+Before deleting their account, the member must confirm their password to verify their identity.
 
-A user can only have one active session at a time.
+When a member deletes their account, all of their posts are permanently deleted.
 
-If a user logs in from a new location while already logged in, the existing session remains active.
+When a member deletes their account, all of their comments are permanently deleted.
 
-The session requires valid authentication for all member-only operations.
+The member's profile information is removed from the platform.
 
-If the user changes their password, existing sessions may be invalidated requiring re-authentication.
+The member's karma score is removed from the system.
 
-The session cannot be used by anyone other than the authenticated user.
+After account deletion, the member's email address and username become available for new registrations.
 
-Sessions are protected to prevent session hijacking or unauthorized access.
+Account deletion is permanent and cannot be undone.
+
+Once an account is deleted, the member must register again with a new account to use the platform.
 
 # Account Lifecycle
 
@@ -246,44 +408,14 @@ Account creation, deletion, and password management.
 
 Define how users create accounts, delete accounts, and change passwords.
 
-### Account Registration
+### Account Creation
 
-A new user can create an account by providing an email address, a password, and choosing a unique username.
-
-The email address must be a valid email format and is used as the primary identifier for the account.
-
-The username must be unique across the platform and cannot be used by another account.
-
-The password must meet platform security requirements.
-
-After registration, the user account is created with an initial karma score of zero.
-
-The newly created user can then log in with their email and password.
+Users can create an account by providing an email address, a password, and choosing a unique username. The username must be unique across all users in the system. The email address must be valid and not already associated with an existing account. When creating an account, the user is automatically logged in and can immediately access all member features.
 
 ### Account Deletion
 
-A user can delete their own account at any time.
-
-When an account is deleted, all posts created by that user are permanently removed from the platform.
-
-When an account is deleted, all comments written by that user are permanently removed from the platform.
-
-All subscriptions made by the user are removed when the account is deleted.
-
-All communities owned by the user are removed when the account is deleted.
-
-After account deletion, the user can no longer log in with their credentials.
-
-Deleted accounts cannot be recovered or restored.
+Users can delete their own account at any time. When an account is deleted, all posts created by the user and all comments written by the user are also permanently deleted. The deletion is irreversible. After account deletion, the user's profile is removed from the system and cannot be viewed by other users.
 
 ### Password Change
 
-A logged-in user can change their account password.
-
-The user must provide their current password to verify identity before changing to a new password.
-
-The new password must meet platform security requirements.
-
-After a successful password change, the user can log in with the new password.
-
-Existing active sessions for the account may be invalidated after a password change.
+Authenticated users can change their password. To change a password, the user must provide their current password and the new password. The new password must meet the system's password requirements. After successfully changing the password, the user remains logged in with the new password.

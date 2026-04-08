@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIRedditCloneMember";
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
+import { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -17,107 +18,65 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function patchRedditCloneMembers(props: {
   body: IRedditCloneMember.IRequest;
 }): Promise<IPageIRedditCloneMember.ISummary> {
-  const body = props.body;
-  // Parse pagination parameters
-  const page = body.page ?? 1;
-  const pageSize = body.page_size ?? body.limit ?? 20;
-  const skip = (page - 1) * pageSize;
-  // Build WHERE clause
-  const whereInput: Prisma.reddit_clone_membersWhereInput = {
-    deleted_at: null,
-  };
-  // Search term - combined search on username and display_name
-  const searchCondition: Prisma.reddit_clone_membersWhereInput | undefined =
-    body.search !== undefined && body.search !== null
-      ? {
-          OR: [
-            { username: { contains: body.search, mode: "insensitive" } },
-            { display_name: { contains: body.search, mode: "insensitive" } },
-          ],
-        }
-      : undefined;
-  // Individual filters
-  const usernameCondition: Prisma.reddit_clone_membersWhereInput | undefined =
-    body.username !== undefined && body.username !== null
-      ? { username: { contains: body.username, mode: "insensitive" } }
-      : undefined;
-  const displayNameCondition:
-    | Prisma.reddit_clone_membersWhereInput
-    | undefined =
-    body.display_name !== undefined && body.display_name !== null
-      ? { display_name: { contains: body.display_name, mode: "insensitive" } }
-      : undefined;
-  const emailCondition: Prisma.reddit_clone_membersWhereInput | undefined =
-    body.email !== undefined && body.email !== null
-      ? { email: { contains: body.email, mode: "insensitive" } }
-      : undefined;
-  const karmaMinCondition: Prisma.reddit_clone_membersWhereInput | undefined =
-    body.karma_min !== undefined && body.karma_min !== null
-      ? { karma: { gte: body.karma_min } }
-      : undefined;
-  const karmaMaxCondition: Prisma.reddit_clone_membersWhereInput | undefined =
-    body.karma_max !== undefined && body.karma_max !== null
-      ? { karma: { lte: body.karma_max } }
-      : undefined;
-  const createdAfterCondition:
-    | Prisma.reddit_clone_membersWhereInput
-    | undefined =
-    body.created_after !== undefined && body.created_after !== null
-      ? { created_at: { gte: new Date(body.created_after) } }
-      : undefined;
-  const createdBeforeCondition:
-    | Prisma.reddit_clone_membersWhereInput
-    | undefined =
-    body.created_before !== undefined && body.created_before !== null
-      ? { created_at: { lte: new Date(body.created_before) } }
-      : undefined;
-  // Combine all conditions with AND
-  const andConditions: Prisma.reddit_clone_membersWhereInput[] = [
-    searchCondition,
-    usernameCondition,
-    displayNameCondition,
-    emailCondition,
-    karmaMinCondition,
-    karmaMaxCondition,
-    createdAfterCondition,
-    createdBeforeCondition,
-  ].filter(
-    (condition): condition is Prisma.reddit_clone_membersWhereInput =>
-      condition !== undefined,
-  );
-  if (andConditions.length > 0) {
-    whereInput.AND = andConditions;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const skip = (page - 1) * limit;
+  const whereInput: Prisma.reddit_clone_membersWhereInput = {};
+  if (props.body.email !== undefined) {
+    whereInput.email = {
+      contains: props.body.email,
+    };
   }
-  // Build ORDER BY clause
-  const sortField = body.sort_by ?? "created_at";
-  const sortOrder = body.sort_order ?? "desc";
-  const orderByInput: Prisma.reddit_clone_membersOrderByWithRelationInput = {
-    [sortField]: sortOrder,
-  };
-  // Query members
+  if (props.body.username !== undefined) {
+    whereInput.username = {
+      contains: props.body.username,
+    };
+  }
+  if (props.body.created_at_start !== undefined) {
+    whereInput.created_at = {
+      gte: new Date(props.body.created_at_start),
+    };
+  }
+  if (props.body.created_at_end !== undefined) {
+    whereInput.created_at = {
+      lte: new Date(props.body.created_at_end),
+    };
+  }
+  if (props.body.status === "active") {
+    whereInput.deleted_at = null;
+  } else if (props.body.status === "deleted") {
+    whereInput.deleted_at = {
+      not: null,
+    };
+  }
+  const orderByInput: Prisma.reddit_clone_membersOrderByWithRelationInput =
+    props.body.sortBy === "created_at"
+      ? { created_at: props.body.sortOrder ?? "desc" }
+      : props.body.sortBy === "updated_at"
+        ? { updated_at: props.body.sortOrder ?? "desc" }
+        : props.body.sortBy === "username"
+          ? { username: props.body.sortOrder ?? "asc" }
+          : { created_at: "desc" };
   const data = await MyGlobal.prisma.reddit_clone_members.findMany({
     where: whereInput,
     skip,
-    take: pageSize,
+    take: limit,
     orderBy: orderByInput,
     ...RedditCloneMemberAtSummaryTransformer.select(),
   });
-  // Count total records
   const total = await MyGlobal.prisma.reddit_clone_members.count({
     where: whereInput,
   });
-  // Transform results
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    RedditCloneMemberAtSummaryTransformer.transform,
-  );
   return {
     pagination: {
       current: page,
-      limit: pageSize,
+      limit: limit,
       records: total,
-      pages: Math.ceil(total / pageSize),
-    },
-    data: transformedData,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      data,
+      RedditCloneMemberAtSummaryTransformer.transform,
+    ),
   };
 }

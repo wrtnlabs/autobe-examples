@@ -1,114 +1,50 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IHrmPlatformAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformAdmin";
+import type { IHrmTimeTrackMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackMember";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
-import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
-import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
+import { authorize_member_join } from "../../../authorize/authorize_member_join";
+import { authorize_member_login } from "../../../authorize/authorize_member_login";
+import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
 
 /**
- * Test that permission removal is rejected for built-in roles (Owner, Manager, Employee).
+ * Test the protection mechanism that prevents permission modification on built-in roles.
  *
- * This test validates that the system protects built-in roles from permission modifications.
- * When attempting to remove a permission from a built-in role, the API should return
- * HTTP 405 Method Not Allowed, indicating that built-in roles cannot be modified.
+ * Validates that the system correctly rejects attempts to modify permissions on built-in roles (Owner, Manager, Employee), ensuring system integrity and preventing unauthorized changes to core role definitions. The test authenticates as a member with organization management permissions and attempts to remove a permission from a built-in role, expecting a 403 Forbidden error.
  *
- * Note: Since role listing APIs are not available in the current SDK, this test uses
- * simulated built-in role UUIDs to verify the protection mechanism.
+ * 1. Authenticate as a member with organization management permissions.
+ * 2. Attempt to remove a permission from a built-in role using the DELETE endpoint.
+ * 3. Verify the request is rejected with 403 Forbidden status code.
  */
 export async function test_api_role_permission_removal_built_in_role_protection(
   connection: api.IConnection,
-) {
-  // 1. Authenticate as admin (organization owner)
-  const adminConnection: api.IConnection = { host: connection.host };
-  const adminAuth = await authorize_admin_join(adminConnection, {
-    body: {
-      email: `admin-test-${typia.random<string & tags.Format<"uuid">>()}@test.com`,
-      password: "SecurePassword123!",
-      href: "https://hrm-platform.example.com/admin/join",
-      referrer: "https://hrm-platform.example.com/admin",
-      ip: "192.168.1.100",
-    },
-  });
-  typia.assert(adminAuth);
-  // 2. Simulate built-in role UUIDs (Owner, Manager, Employee roles)
-  // In a real scenario, these would be obtained from role listing API
-  const ownerRoleId: string & tags.Format<"uuid"> = typia.random<
+): Promise<void> {
+  // 1. Authenticate as member
+  const memberConnection: api.IConnection = { host: connection.host };
+  await authorize_member_join(memberConnection);
+  // 2. Attempt to remove permission from built-in role
+  // Using UUIDs that represent a built-in role (Owner, Manager, or Employee)
+  const builtInRoleId: string & tags.Format<"uuid"> = typia.random<
     string & tags.Format<"uuid">
   >();
-  const managerRoleId: string & tags.Format<"uuid"> = typia.random<
+  const permissionId: string & tags.Format<"uuid"> = typia.random<
     string & tags.Format<"uuid">
   >();
-  const employeeRoleId: string & tags.Format<"uuid"> = typia.random<
-    string & tags.Format<"uuid">
-  >();
-  // 3. Test that permission removal is rejected for Owner built-in role
+  // 3. Verify the request is rejected with 403 Forbidden
   await TestValidator.httpError(
-    "Owner built-in role permission removal should return 405 Method Not Allowed",
-    405,
+    "built-in role permission removal should be rejected with 403",
+    403,
     async () =>
-      await api.functional.hrmPlatform.admin.roles.permissions.erasePermission(
-        adminConnection,
+      await api.functional.hrmTimeTrack.member.roles.permissions.erase(
+        memberConnection,
         {
-          roleId: ownerRoleId,
-          permissionCode: "employee_manage",
-        },
-      ),
-  );
-  // 4. Test that permission removal is rejected for Manager built-in role
-  await TestValidator.httpError(
-    "Manager built-in role permission removal should return 405 Method Not Allowed",
-    405,
-    async () =>
-      await api.functional.hrmPlatform.admin.roles.permissions.erasePermission(
-        adminConnection,
-        {
-          roleId: managerRoleId,
-          permissionCode: "time_approve",
-        },
-      ),
-  );
-  // 5. Test that permission removal is rejected for Employee built-in role
-  await TestValidator.httpError(
-    "Employee built-in role permission removal should return 405 Method Not Allowed",
-    405,
-    async () =>
-      await api.functional.hrmPlatform.admin.roles.permissions.erasePermission(
-        adminConnection,
-        {
-          roleId: employeeRoleId,
-          permissionCode: "project_view",
-        },
-      ),
-  );
-  // 6. Verify protection applies to different permission codes on the same role
-  await TestValidator.httpError(
-    "built-in role protection applies to organization_edit permission",
-    405,
-    async () =>
-      await api.functional.hrmPlatform.admin.roles.permissions.erasePermission(
-        adminConnection,
-        {
-          roleId: ownerRoleId,
-          permissionCode: "organization_edit",
-        },
-      ),
-  );
-  await TestValidator.httpError(
-    "built-in role protection applies to report_view permission",
-    405,
-    async () =>
-      await api.functional.hrmPlatform.admin.roles.permissions.erasePermission(
-        adminConnection,
-        {
-          roleId: ownerRoleId,
-          permissionCode: "report_view",
+          roleId: builtInRoleId,
+          permissionId: permissionId,
         },
       ),
   );

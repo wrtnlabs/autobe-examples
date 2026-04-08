@@ -12,7 +12,7 @@ export async function memberAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const member = await MyGlobal.prisma.reddit_platform_members.findFirst({
+  const member = await MyGlobal.prisma.reddit_like_members.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,

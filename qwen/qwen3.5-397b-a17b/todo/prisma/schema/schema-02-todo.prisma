@@ -1,0 +1,173 @@
+/// Main todo entity storing task information including title, description,
+/// optional dates, completion status, and soft-delete state.
+///
+/// Each todo belongs to exactly one {@link todo_app_members} and tracks the
+/// task's lifecycle from creation through completion or deletion. The title
+/// is required while description and date fields are optional.
+///
+/// Completion status (is_completed) defaults to false for new todos.
+/// Soft-delete is implemented via is_deleted and deleted_at fields, allowing
+/// todos to be moved to trash and potentially restored. Permanently deleted
+/// todos are removed from this table along with their {@link
+/// todo_app_todo_edit_histories}.
+///
+/// @namespace todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the {@link todo_app_members} who owns this todo.
+  ///
+  /// Every todo must belong to exactly one member. This foreign key
+  /// establishes ownership and enables privacy isolation - members can only
+  /// access their own todos.
+  todo_app_member_id String
+  
+  /// The todo's title or summary.
+  ///
+  /// This is a required field that briefly describes what task needs to be
+  /// completed. Must be provided when creating a new todo.
+  title String
+  
+  /// Optional detailed description of the todo.
+  ///
+  /// Can be left empty if no additional details are needed. Provides context
+  /// or instructions for completing the task.
+  description String?
+  
+  /// Optional date when the todo should be started.
+  ///
+  /// Can be left empty if no specific start date is needed. Used for planning
+  /// and scheduling purposes.
+  start_date DateTime?
+  
+  /// Optional date by which the todo should be completed.
+  ///
+  /// Can be left empty if no deadline is set. Used for tracking upcoming tasks
+  /// and priorities.
+  due_date DateTime?
+  
+  /// Completion status flag indicating whether the todo has been finished.
+  ///
+  /// Defaults to false for newly created todos. When toggled to true, the todo
+  /// is marked as complete but remains in the list unless deleted.
+  is_completed Boolean
+  
+  /// Soft-delete flag indicating whether the todo has been moved to trash.
+  ///
+  /// When true, the todo is hidden from the normal todo list but can be viewed
+  /// in trash and potentially restored. Defaults to false.
+  is_deleted Boolean
+  
+  /// Timestamp when the todo was soft-deleted (moved to trash).
+  ///
+  /// Null if the todo has never been deleted. Set when is_deleted becomes
+  /// true, cleared if the todo is restored from trash.
+  deleted_at DateTime?
+  
+  /// Timestamp when the todo was created.
+  created_at DateTime
+  
+  /// Timestamp when the todo was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member todo_app_members @relation(fields: [todo_app_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  editHistories todo_app_todo_edit_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_member_id, is_deleted, created_at])
+  @@index([todo_app_member_id, is_completed])
+  @@index([is_deleted, deleted_at])
+}
+
+/// Edit history entries automatically created when todos are modified,
+/// recording what fields changed and when.
+///
+/// Each entry captures the state of changed fields at the time of edit,
+/// providing a complete audit trail of all modifications made to a {@link
+/// todo_app_todos} record. Entries are created automatically by the system
+/// whenever a todo is updated through the edit operation.
+///
+/// History entries are append-only and cannot be modified after creation.
+/// They are permanently deleted only when the associated todo is permanently
+/// deleted from the trash.
+///
+/// @namespace todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model todo_app_todo_edit_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the todo that was edited.
+  ///
+  /// Establishes ownership relationship to {@link todo_app_todos}. Each
+  /// history entry belongs to exactly one todo and tracks modifications made
+  /// to that todo over time. When the parent todo is permanently deleted, all
+  /// associated history entries are cascading deleted.
+  todo_app_todo_id String
+  
+  /// Timestamp when the edit was made.
+  ///
+  /// Records the exact point in time when the todo modification occurred. Used
+  /// for ordering history entries chronologically and displaying edit timeline
+  /// to users.
+  created_at DateTime
+  
+  /// New title value after the edit.
+  ///
+  /// Stores the updated title if the title field was changed during this edit
+  /// operation. Null if the title was not modified in this particular edit.
+  /// Allows reconstruction of title change history by examining non-null
+  /// values across entries.
+  title String?
+  
+  /// New description value after the edit.
+  ///
+  /// Stores the updated description if the description field was changed
+  /// during this edit operation. Null if the description was not modified.
+  /// Supports optional description field on the parent todo.
+  description String?
+  
+  /// New start date value after the edit.
+  ///
+  /// Stores the updated start date if the start date field was changed during
+  /// this edit operation. Null if the start date was not modified or if it was
+  /// set to null. Tracks changes to optional start date attribute.
+  started_at DateTime?
+  
+  /// New due date value after the edit.
+  ///
+  /// Stores the updated due date if the due date field was changed during this
+  /// edit operation. Null if the due date was not modified or if it was set to
+  /// null. Tracks changes to optional due date attribute.
+  due_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo todo_app_todos @relation(fields: [todo_app_todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_app_todo_id, created_at])
+}

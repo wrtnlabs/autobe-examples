@@ -1,11 +1,11 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
+import { IErpHrmTimeEmployeeDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployeeDashboardSummary";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
 import { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
-import { IErpHrmTimeTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTask";
+import { IErpHrmTimeTaskHistoryEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTaskHistoryEntry";
 import { IErpHrmTimeTimer } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimer";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -24,13 +24,12 @@ export async function getErpHrmTimeMemberTimersTimerId(props: {
   member: MemberPayload;
   timerId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeTimer> {
-  const timer = await MyGlobal.prisma.erp_hrm_time_timers.findFirstOrThrow({
-    where: {
-      id: props.timerId,
-      member_id: props.member.id,
-      deleted_at: null,
-    },
+  const timer = await MyGlobal.prisma.erp_hrm_time_timers.findUniqueOrThrow({
+    where: { id: props.timerId },
     ...ErpHrmTimeTimerTransformer.select(),
   });
+  if (timer.member.id !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
+  }
   return await ErpHrmTimeTimerTransformer.transform(timer);
 }

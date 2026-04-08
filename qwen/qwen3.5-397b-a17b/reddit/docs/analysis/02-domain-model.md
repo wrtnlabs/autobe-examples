@@ -8,250 +8,224 @@ Describe what each concept means in the business domain and its key attributes.
 
 ## User Concept
 
-Users are the primary actors who participate in the platform by creating content and interacting with communities. Each user has a unique username that identifies them across the platform. Users authenticate with an email address and password for account access. Every user maintains a profile containing a display name, bio text, and avatar image. Each user has a single karma score that reflects their contribution quality. Karma increases when others upvote the user's posts or comments. Karma decreases when others downvote the user's posts or comments. Karma can become negative if downvotes exceed upvotes. Users can take on different roles including community owner, moderator, or regular member. Users can be banned from specific communities while retaining platform access. Users can subscribe to multiple communities to follow their content. When a user deletes their account, all their posts and comments are also removed.
+Users are individuals who participate in the platform by creating accounts and engaging with content. Each user has a unique username that identifies them across the entire platform. Users sign up with email and password credentials for authentication. A display name is shown publicly on the user's profile page. Bio text allows users to describe themselves in their own words. Avatar image provides visual representation of the user on their profile. Users have a single karma score that reflects their community contribution through votes received on their posts and comments. When a user deletes their account, all their posts and comments are also deleted from the platform. The username must be unique and cannot be duplicated by other users.
 
-### User Identity
+### User Identity and Business Meaning
 
-Every user has a unique username that identifies them across the platform. No two users can have the same username. The username is chosen by the user during account creation and cannot be changed afterward.
+A user represents an individual participant in the platform community. The user concept encompasses both identity and participation rights within the business domain.
 
-Users authenticate with an email address and password. The email address serves as the primary credential for account access. Each email address can only be associated with one user account. Users must provide a valid password during login to access their account.
+The username serves as the permanent, unique identity for each user across the entire platform. No two users can share the same username. This identity is displayed alongside all content the user creates.
 
-The password is used to secure the user's account. Users can change their password at any time through their account settings. When a user changes their password, the old password can no longer be used to access the account.
+Email serves as the authentication credential for account access. Users authenticate using their email and password combination.
 
-### User Profile
+The user profile contains presentation attributes (defined in parent unit section) that represent how the user appears to the community. Users can view any other user's profile to see their public information and content history.
 
-Each user maintains a profile that is visible to all other users on the platform. The profile contains three main attributes:
+### Karma as Reputation Metric
 
-The display name is shown alongside the user's content and on their profile page. Users can edit their display name at any time. The display name does not need to be unique across the platform.
+Karma score is a reputation metric that reflects a user's community contribution standing. The score is a single numeric value that changes based on how the community votes on the user's posts and comments.
 
-The bio is a text description where users can write about themselves. Users can edit their bio at any time. The bio is optional and users are not required to provide one.
+When the community upvotes a user's content, the karma score increases. When the community downvotes a user's content, the karma score decreases. When votes are removed, the karma score adjusts to reflect the current vote state. The karma score can be negative, indicating more downvotes than upvotes received.
 
-The avatar is an image that represents the user visually. Users can upload and change their avatar at any time. The avatar appears on the user's profile page and alongside their posts and comments.
+The karma score appears on the user's profile page as part of their public reputation display.
 
-All users can view any other user's profile to see their display name, bio, avatar, karma score, posts, and comments.
+### Account Deletion and Content Cascade
 
-### Karma Score
+Account deletion is a user-initiated action that permanently removes the user from the platform. When a user deletes their account, all content created by that user is also permanently deleted from the platform.
 
-Every user has a single karma score that reflects their contribution quality on the platform. The karma score is a single number that can be positive, negative, or zero.
+This includes all posts and comments authored by the user. The deletion cascades to all user-generated content, ensuring no orphaned content remains attributed to a deleted account.
 
-When another user upvotes the user's post, the karma score increases by 1. When another user upvotes the user's comment, the karma score increases by 1.
-
-When another user downvotes the user's post, the karma score decreases by 1. When another user downvotes the user's comment, the karma score decreases by 1.
-
-When a user removes their upvote from a post or comment, the karma score decreases by 1. When a user removes their downvote from a post or comment, the karma score increases by 1.
-
-When a user changes their vote from upvote to downvote, the karma score decreases by 2. When a user changes their vote from downvote to upvote, the karma score increases by 2.
-
-The karma score can become negative if the total downvotes exceed the total upvotes across all the user's posts and comments.
-
-### User Roles and Status
-
-Users can take on different roles within the platform based on their activities and permissions.
-
-A user becomes a community owner when they create a community. The community creator is automatically assigned as the owner of that community. A user can own multiple communities.
-
-A user can be assigned as a moderator in a community. The community owner can add other users as moderators. Moderators can also add other users as moderators, but cannot remove the owner or other moderators.
-
-A user can be banned from a specific community. When banned, the user cannot create posts or comments in that community but can still view content. Only moderators and owners can ban users from their community. A user can be banned from multiple communities while retaining access to the platform.
-
-```mermaid
-flowchart LR
-    A["regular member"] -->|"Create community"| B["community owner"]
-    A -->|"Added by owner/moderator"| C["moderator"]
-    A -->|"Banned by moderator"| D["banned user"]
-```
-
-### User Membership and Content Ownership
-
-Users can subscribe to any community on the platform. A subscription represents the user's membership in that community. Users can subscribe to multiple communities. Users can unsubscribe from any community they are subscribed to.
-
-When a user creates a post, they become the author and owner of that post. The post is attributed to the user who created it. The author information is displayed alongside the post.
-
-When a user writes a comment, they become the author of that comment. The comment is attributed to the user who wrote it. The author information is displayed alongside the comment.
-
-When a user deletes their account, all posts created by that user are also deleted. All comments written by that user are also deleted. This deletion is permanent and cannot be undone. The user's profile, karma score, and all subscriptions are also removed when the account is deleted.
+The username becomes available for reuse after the account and all associated content are deleted.
 
 ## Community Concept
 
-Communities are user-created spaces that organize content around shared interests. Each community has a unique name that distinguishes it from all other communities. Communities include a description text that explains their purpose and topic. Communities display an icon image for visual identification and branding. The user who creates a community becomes its owner with highest authority. Communities track and display their total subscriber count publicly. Communities can have multiple moderators who assist with content management. Communities serve as containers for posts created by subscribed users. Communities enable browsing and searching functionality for discovery. Communities establish the context for moderation actions and reporting. Communities define the scope for ban enforcement. Communities organize content feeds for subscribers and visitors.
+Communities are topic-based groups created by users to organize discussions around specific subjects. Each community has a unique name that identifies it across the platform. Description text explains the community's purpose and what content belongs there. Icon image provides visual branding for the community. The user who creates a community becomes its owner with highest authority level. Subscriber count shows the size and popularity of the community to visitors. Communities can be browsed in a list and searched by name for discovery. Communities serve as containers for posts and discussions from subscribed members. Community name uniqueness is enforced across all communities.
 
-### Community Identity and Attributes
+### Community Definition and Attributes
 
-A community is identified by a unique name that distinguishes it from all other communities on the platform. No two communities can share the same name. The community name serves as the primary identifier for browsing, searching, and referencing the community throughout the platform.
+A community is a topic-based group that organizes discussions around specific subjects on the platform. Each community serves as a dedicated space where users can share posts and engage in conversations related to the community's theme.
 
-Each community includes a description text that explains its purpose, topic, and intended audience. The description helps users understand what type of content belongs in the community and what discussions are appropriate.
+Every community has a unique name that identifies it across the platform. No two communities can share the same name. The community name is visible to all users and is used to reference the community throughout the platform.
 
-Communities display an icon image for visual identification and branding. The icon appears alongside the community name in feeds, search results, and community pages to help users quickly recognize communities they follow.
+A community includes description text that explains the community's purpose and what type of content belongs there. This helps users understand whether the community matches their interests before subscribing.
 
-Every community tracks and publicly displays its total subscriber count. The subscriber count represents the number of users who have subscribed to the community and is visible to all users viewing the community.
+Each community has an icon image that provides visual branding. The icon appears alongside the community name in lists, feeds, and profile pages to help users quickly identify the community.
 
-### Community Ownership and Moderation Structure
+The user who creates a community becomes its owner. The owner has the highest authority level within that community and can manage moderators and community settings.
 
-The user who creates a community becomes its owner with highest authority over that community. The owner holds ultimate responsibility for the community's governance and has exclusive powers that moderators do not possess.
+Every community displays its subscriber count publicly. This number shows the size and popularity of the community to all visitors, helping users gauge community activity before subscribing.
 
-Communities can have a team of moderators who assist the owner with content management and community governance. The owner can add users as moderators to help manage the community. Moderators can also add other moderators to the team, expanding the moderation capacity.
+### Community Discovery
 
-The owner holds exclusive authority to remove moderators from the community. Moderators cannot remove the community owner. Moderators cannot remove other moderators; only the owner can remove moderators from the team.
+Users can browse all communities in a list view. The list displays communities with their names, icons, and subscriber counts to help users discover new communities to join.
 
-Moderation authority is bounded by the community. Moderators can only take moderation actions within their own community. A moderator of one community has no moderation authority in other communities. The community defines the boundary within which moderation actions apply.
+Users can search for communities by name. The search functionality allows users to find specific communities or explore communities related to topics they are interested in. Search results show matching communities with their names, icons, and subscriber counts.
 
-### Community Content and Discovery Scope
+### Community as Content Container
 
-Communities serve as containers that organize posts around shared interests. Every post belongs to exactly one community. The community establishes the context and scope for all posts created within it.
+A community serves as a container for posts and discussions. All posts created on the platform belong to exactly one community. Posts within a community are visible in that community's feed and can be discovered through various feed views.
 
-Posts are organized by their parent community. When viewing a community, users see only posts that belong to that specific community. The community defines which posts appear in its dedicated feed.
+Only users who are subscribed to a community can create posts within that community. This ensures that posts are created by users who have an interest in the community's topic.
 
-Communities serve as the content source for feed generation. The home feed displays posts from communities to which the user is subscribed. The community feed displays posts from one specific community. The popular feed aggregates posts from all communities across the platform.
-
-Communities support browsing through a list view that shows all communities on the platform. Users can browse the complete list of communities to discover new communities of interest.
-
-Communities support search functionality by name. Users can search for communities using the community name as the search term. Search results return communities whose names match the search query.
-
-Subscription to a community is a prerequisite for creating posts in that community. Users must be subscribed to a community before they can create posts within it. The subscription requirement ensures that post creators have an established connection to the community.
+Comments on posts are associated with the community through their parent post. All discussions within a community are contained within that community's boundary, keeping conversations organized by topic.
 
 ## Post Concept
 
-Posts are the primary content units that users share within communities. Every post requires a title that summarizes its content. Posts must be one of three types: text post, link post, or image post. Text posts contain written content authored by the user. Link posts include a URL pointing to external content. Image posts contain an uploaded image file. Each post belongs to exactly one community. Posts have an author who created and owns the content. Posts accumulate a vote score based on user voting. Posts track the total number of comments they have received. Posts display when they were created relative to current time. Posts serve as the parent container for comments and replies.
+Posts are content items shared by users within communities to start discussions. Every post requires a title that summarizes its content. Posts have three distinct types: text posts with written content, link posts with URL references, or image posts with uploaded images. Text posts contain the full written content from the author. Link posts include a URL that points to external content with domain name display. Image posts contain uploaded visual content with thumbnail preview. Posts belong to a specific community where they are shared and visible. Posts show the author username and when they were created. Posts can be edited or deleted by their original author only.
 
-### Post Title and Content Types
+### Post Concept and Attributes
 
-Every post requires a title that summarizes its content. The title is mandatory and cannot be empty.
+A post is a content item created by users within communities to share information and start discussions. Every post has exactly one author who created it. Every post belongs to exactly one community where it is shared. Every post requires a title that summarizes its content. The title is mandatory for all posts and cannot be empty. Every post has a vote score that reflects the net result of upvotes and downvotes from users. Every post records when it was created, displayed as relative time such as hours ago or days ago. The author of a post can edit the post after creation. The author of a post can delete the post at any time.
 
-Posts must be classified as one of three types: text post, link post, or image post. The post type determines what additional content the post contains.
+### Post Type Classification
 
-Text posts contain written content authored by the user. The text content is the main body of the post.
-
-Link posts include a URL pointing to external content. The URL directs users to content outside the platform.
-
-Image posts contain an uploaded image file. The image is the primary content of the post.
-
-### Post Ownership and Relationships
-
-Each post belongs to exactly one community. A post cannot exist without being associated with a community.
-
-Each post has an author who created and owns the content. The author is the user who created the post.
-
-Post authors can edit their own posts. Only the author of a post can modify its content.
-
-Post authors can delete their own posts. Only the author of a post can remove it from the platform.
-
-Posts serve as the parent container for comments and replies. All comments on a post are organized under that post.
-
-```mermaid
-flowchart LR
-    A["Post"] -->|"contains"| B["Comments"]
-    B -->|"can have"| C["Replies"]
-    C -->|"can have"| D["Nested Replies"]
-```
-
-### Post Metrics and Feed Display
-
-Posts accumulate a vote score based on user upvotes and downvotes. The vote score equals total upvotes minus total downvotes.
-
-Posts track the total number of comments they have received. The comment count includes all comments and replies on the post.
-
-Posts display when they were created relative to current time. The display shows time elapsed since posting (e.g., "3 hours ago").
-
-In feed lists, each post displays: title, author username, community name, vote score, comment count, and time since posted.
-
-Text posts in feed lists show the first 200 characters of content as a preview.
-
-Image posts in feed lists show a thumbnail of the image.
-
-Link posts in feed lists show the domain name of the URL (e.g., "youtube.com").
-
-```mermaid
-flowchart LR
-    A["Post in Feed"] --> B["Title"]
-    A --> C["Author & Community"]
-    A --> D["Vote Score & Comment Count"]
-    A --> E["Time Since Posted"]
-    A --> F["Type-Specific Preview"]
-```
+Every post must be classified as one of three types: text post, link post, or image post. The post type determines what content the post contains and cannot be changed after the post is created. A text post contains written content from the author. A link post contains a URL that points to external content. The URL's domain name is associated with the link post. An image post contains an uploaded image. The image post includes a thumbnail preview of the uploaded image.
 
 ## Comment Concept
 
-Comments are user responses that provide discussion on posts. Users can write comments on any post within the platform. Comments can reply to other comments to create threaded conversations. Replies can nest indefinitely with no depth limit. Each comment contains content text written by the author. Comments have an author who created the comment. Comments belong to a specific post as their root container. Comments accumulate vote scores from user voting. Comments display when they were posted relative to current time. Comments show their nested replies in a hierarchical structure. Comments can be edited by their authors. Comments can be deleted by their authors or moderators.
+Comments are responses users write on posts or reply to other comments to engage in discussions. Comments contain text content written by the author. Comments can be nested as replies to other comments with unlimited depth allowed. Each comment has a vote score that reflects community reception and can be negative. Comments show the author username and when they were posted. Comments can be edited by their original author to update content. Comments can be deleted by their original author to remove from discussion. Comments enable threaded discussions that branch from posts and other comments. Comment depth has no maximum limit for nested conversations.
 
-### Comment Definition
+### Comment Definition and Attributes
 
-A comment is a user-written response that contributes to discussion on a post. Every comment contains content text written by its author. Each comment has exactly one author who created it. Every comment belongs to one specific post as its root container. Comments display when they were posted using relative time (e.g., "3 hours ago"). Each comment accumulates a vote score from user voting activity. The vote score is a single number that can be positive, negative, or zero.
+A comment is a response that users write on posts or as replies to other comments to participate in discussions.
 
-### Comment Reply Structure
+Each comment has the following attributes:
+- Content: the text written by the author
+- Author: the username of the user who wrote the comment
+- Vote score: reflects community reception from upvotes and downvotes (can be positive, negative, or zero)
+- Time since posted: shows when the comment was posted (displayed as relative time, e.g., "3 hours ago")
 
-Comments can reply to other comments to create threaded conversations. A comment may have a parent comment, establishing a reply relationship. When a comment has no parent comment, it is a top-level comment directly on the post. When a comment has a parent comment, it is a reply to that comment. Replies can nest indefinitely with no depth limit, forming a hierarchical tree structure. The nested reply structure enables multi-level discussions where users can respond to specific points within a conversation thread. Each comment in the hierarchy maintains its position within the reply tree, allowing the system to track and display the conversation flow.
+Comments display the author username, content, vote score, and time since posting. Nested replies appear beneath each comment to maintain conversation flow.
 
-### Comment Vote Score
+### Comment Threading and Lifecycle
 
-Every comment has a vote score representing the net result of user votes. The vote score equals total upvotes minus total downvotes. A comment's vote score can be negative when downvotes exceed upvotes. The vote score updates dynamically as users cast, change, or remove their votes. Each comment displays its current vote score to users viewing the post.
+Comments support nested replies where users can reply to any comment, creating threaded discussion structures.
 
-### Comment Display Attributes
+Reply depth has no maximum limit, allowing unlimited nesting for branched conversations.
 
-When viewing a comment, the following information is displayed: the author's username, the comment content text, the current vote score, the time since the comment was posted, and any nested replies in hierarchical order. For comments with replies, the nested reply visualization shows child comments indented or otherwise visually distinguished from their parent comment, maintaining the threaded conversation flow. The display presents comments and their replies in a structure that reflects the reply hierarchy tracking, enabling users to follow conversation threads.
+Comment lifecycle capabilities:
+- Authors can edit their own comments to update content
+- Authors can delete their own comments to remove them from discussions
+
+Each comment shows nested replies beneath it. Comments enable threaded discussions that branch from both posts and other comments.
 
 ## Vote Concept
 
-Votes represent user opinions on posts and comments throughout the platform. Users can cast votes on both posts and comments. Each user can vote only once per target content item. Votes can be either upvotes or downvotes. Upvotes add one point to the target's score. Downvotes subtract one point from the target's score. Users can change their vote from upvote to downvote or vice versa. Users can remove their vote entirely to neutralize their impact. Vote score equals total upvotes minus total downvotes. Votes directly affect the author's karma score. Vote adjustments occur when users change or remove votes. Votes enable content sorting by popularity and controversy.
+Votes express user opinion on posts or comments through upvotes or downvotes. Each vote has a value that is either positive for upvote or negative for downvote. Users can cast votes on both posts and comments throughout the platform. Each user can only vote once per post or comment item at any time. Votes can be changed from upvote to downvote or vice versa by the same user. Votes can be removed entirely by the user who cast them. Vote score is calculated as total upvotes minus total downvotes and can be negative. Karma adjusts based on votes received on a user's posts and comments. Vote value determines karma impact on the content author.
 
-### Vote and Target Association
+### Vote
 
-A vote represents a user's opinion on content within the platform. A vote targets either a post or a comment. Each user can have only one active vote per target content item at any time. A user cannot cast multiple votes on the same post or comment simultaneously. The vote establishes an association between the user and the target content. This one-vote-per-target rule applies across all posts and comments on the platform.
+A vote represents a user's opinion on a post or comment within the platform. Every vote has a vote value that indicates the type of opinion expressed. The vote value is either positive for an upvote or negative for a downvote. Each vote is associated with the user who cast it and the content item it targets, which can be either a post or a comment. A user can have only one vote per content item at any time. The vote value determines the impact on the content author's karma.
 
-### Vote Direction and Score Impact
+### Vote Score
 
-A vote has one of three states: upvote, downvote, or no vote. An upvote adds one point to the target content's vote score. A downvote subtracts one point from the target content's vote score. The vote score of a post or comment equals the total number of upvotes minus the total number of downvotes. A vote score can be positive, negative, or zero. The vote score serves as the basis for sorting content by popularity. Posts and comments with many votes but scores close to zero are identified as controversial content.
+Vote score is a calculated value that represents the overall community reception of a post or comment. The vote score equals the total number of upvotes minus the total number of downvotes received by the content. Vote score can be positive when upvotes exceed downvotes. Vote score can be negative when downvotes exceed upvotes. Vote score can be zero when upvotes equal downvotes or when no votes exist. The vote score is displayed on each post and comment.
 
-### Vote Modification and Karma Relationship
+### Karma Connection
 
-A user can change their vote from upvote to downvote or from downvote to upvote on the same target. A user can remove their vote entirely, returning the target to a neutral vote state for that user. When a vote is changed or removed, the target's vote score adjusts accordingly. Each vote affects the karma score of the content author. When a post or comment receives an upvote, the author's karma increases by one. When a post or comment receives a downvote, the author's karma decreases by one. When a vote is changed or removed, the author's karma is adjusted to reflect the change. A user's karma score can be positive, negative, or zero.
-
-## Report Concept
-
-Reports flag content that may violate community guidelines for moderator review. Users can report any post or comment on the platform. When reporting, users must provide a reason explaining their concern. Reports identify the user who submitted the report. Reports target specific content items either posts or comments. Reports belong to the community where the content was posted. Moderators can view all reports for their communities. Reports display the reported content for context. Reports show who reported the content and why. Moderators can approve reports which deletes the reported content. Moderators can dismiss reports which keeps the content visible. Dismissed reports are removed from the active report list.
-
-### Report
-
-A report is a flag submitted by a user to indicate that a post or comment may violate community guidelines. Each report identifies the user who submitted it. Reports include a reason text explaining the concern. Reports are associated with the community where the reported content was posted. The reason provided by the reporter is visible to moderators during review.
-
-### Report Target
-
-Reports can target either a post or a comment. The reported content is displayed to moderators for context during review. When a post is reported, the full post content is shown. When a comment is reported, the comment content and its position in the reply thread are shown.
-
-### Report Status
-
-Reports have a status that indicates their review state. Pending reports await moderator review. Approved reports result in deletion of the reported content. Dismissed reports keep the content visible and are removed from the active report list. A report transitions from pending to either approved or dismissed upon moderator decision.
-
-## Ban Concept
-
-Bans restrict specific users from participating in particular communities. Moderators can ban users from their communities. Bans apply only to the specific community where they were issued. Banned users cannot create posts in the banned community. Banned users cannot write comments in the banned community. Banned users retain the ability to view all community content. Bans are issued by moderators or community owners. Owners can remove bans issued by themselves or moderators. Bans are tracked per community per user. The list of banned users is visible to moderators. Bans do not affect user access to other communities. Bans remain in effect until explicitly removed by authorized moderators.
-
-### Ban Definition and Scope
-
-A ban restricts a specific user from participating in a particular community. Each ban applies only to the community where it was issued, not to other communities on the platform. A user banned from one community retains full access to all other communities. Bans are tracked individually per community per user, meaning a user can be banned from multiple communities independently. A ban remains in effect indefinitely until explicitly removed by an authorized moderator or community owner. The ban scope is limited to the single community where the ban was issued, ensuring cross community access is preserved for banned users.
-
-### Ban Effects on User Actions
-
-When a user is banned from a community, the ban enforcement prevents specific actions within that community. A banned user cannot create posts in the banned community. A banned user cannot write comments in the banned community. These posting ban restriction and commenting ban restriction rules apply to all content creation within the community. However, a banned user retains the ability to view all community content, including posts and comments. The ban does not restrict content viewing allowance, allowing banned users to read but not participate. User ban enforcement is automatic and applies to all post and comment creation attempts in the banned community.
-
-### Ban Authority and Management
-
-Community owners and moderators have authority to issue bans within their communities. The community owner holds the highest ban authority and can ban any user from their community. Moderators can ban users from their community but cannot ban the community owner. For ban removal capability, the community owner can remove any ban issued in their community, including bans issued by moderators. Moderators can remove bans they issued themselves but cannot remove bans issued by other moderators. Only the community owner can remove bans issued by other moderators, establishing an owner ban override capability. This moderator ban limitation ensures that ban removal authority is properly hierarchical. Owner ban authority supersedes all other ban management actions.
-
-### Ban Visibility and Tracking
-
-Moderators can view the list of banned users for their community. The banned user list visibility is restricted to moderators and community owners only. Each ban record tracks which user was banned, which community the ban applies to, which moderator issued the ban, and when the ban was created. Ban status verification is available to moderators when reviewing user participation eligibility. The ban persistence rule ensures bans remain active across sessions and do not expire automatically. Ban tracking is maintained per community, allowing moderators to see the complete history of bans issued in their community. Regular users cannot view the banned user list or ban status of other users.
+Karma is directly connected to votes received on a user's posts and comments. When a vote is cast on a user's content, the author's karma adjusts based on the vote value. An upvote on a user's post or comment increases the author's karma by one. A downvote on a user's post or comment decreases the author's karma by one. When a vote is changed or removed, the author's karma adjusts to reflect the difference. Karma can be negative when a user receives more downvotes than upvotes across all their content.
 
 ## Subscription Concept
 
-Subscriptions connect users to communities they want to follow. Users can subscribe to any community on the platform. Users can unsubscribe from communities at any time. Subscriptions are required to create posts in a community. Subscriptions track when the user subscribed to the community. Users can view a list of all their subscribed communities. Subscriptions enable the home feed to show relevant content. Subscriptions represent ongoing membership interest in a community. Multiple users can subscribe to the same community. Community subscriber counts reflect total active subscriptions. Subscriptions do not grant special privileges beyond posting ability. Subscriptions can be created or removed freely by users.
+Subscriptions connect users to communities they want to follow and participate in. Users subscribe to communities based on their interests and preferences. Subscription is required to create posts in that community before posting. Users can unsubscribe from communities they no longer wish to follow. Subscription has a timestamp showing when the user subscribed to the community. Users can view a list of all communities they are subscribed to for management. Subscription status is tracked for each user-community pair individually. The home feed shows posts only from subscribed communities for logged-in users. Subscriber count on communities reflects total active subscriptions.
 
-### Subscription Definition
+### Subscription Definition and Attributes
 
-A subscription represents a user's ongoing membership interest in a community. Each subscription connects one user to one community, establishing a community following relationship. A subscription has a timestamp that tracks when the user subscribed to the community. Users can have multiple subscriptions to different communities. Each subscription represents a user community connection that enables content access enablement for the home feed. Subscriptions exist in an active state while the user remains subscribed. The subscription membership status indicates whether the user is currently following the community. Users maintain free subscription management, meaning they can subscribe or unsubscribe without restrictions or costs. A subscription is created when a user performs a community subscription action. The subscription state tracking allows the system to know which communities a user follows at any time.
+A subscription represents the connection between a user and a community they want to follow and participate in. Each subscription is unique to a user-community pair and tracks the relationship individually.
 
-### Subscription Effects
+A subscription has the following attributes:
+- Subscription timestamp: records when the user subscribed to the community
+- Subscription status: indicates whether the user is currently subscribed or has unsubscribed
 
-Subscriptions have several effects on the platform. The subscription requirement rule states that users must be subscribed to a community before they can create posts in that community, making subscription a post creation prerequisite. Each community displays a subscriber count that reflects the total number of active subscriptions through subscriber count aggregation. The home feed filtering uses subscriptions to show only posts from communities the user is subscribed to. When a user performs an unsubscribe capability action, the subscription is removed and the user loses posting ability in that community. The subscribed communities list shows all communities where the user has active subscriptions. Multiple users can subscribe to the same community, and each subscription contributes to that community's subscriber count. Subscriptions do not grant special privileges beyond posting ability—any user can view community content regardless of subscription status.
+Users subscribe to communities based on their interests and preferences. When a user subscribes to a community, they establish an active connection that enables participation and content visibility. Users can unsubscribe from communities they no longer wish to follow, which updates the subscription status to reflect the inactive relationship.
+
+The subscription timestamp is maintained for each subscription to track when the user joined the community. This timestamp remains associated with the subscription record even if the user unsubscribes.
+
+### Subscription Relationships and Effects
+
+Subscriptions enable several key capabilities and affect how content is displayed across the platform:
+
+**Posting Access**: A user must be subscribed to a community before they can create posts in that community. This subscription requirement ensures users have established interest in the community before contributing content.
+
+**Subscribed Communities List**: Users can view a list of all communities they are currently subscribed to. This list shows active subscriptions and allows users to manage their community memberships.
+
+**Home Feed Filtering**: For logged-in users, the home feed displays posts only from communities the user is subscribed to. This subscription-based filter ensures users see content relevant to their interests.
+
+**Subscriber Count**: Each community displays a subscriber count that reflects the total number of active subscriptions. When users subscribe, the count increases; when users unsubscribe, the count decreases. This count represents the community's audience size.
+
+**Community Access**: Subscription provides users with access to participate in community activities, including creating posts and engaging with community content. Users can browse all communities regardless of subscription status, but posting requires an active subscription.
+
+## Moderator Concept
+
+Moderators are users with elevated authority to manage community content and members. The community creator is the owner with the highest authority level in the community. Owners can add moderators to help manage their community operations. Owners can remove moderators from their community when needed. Moderators can add other moderators to the community for assistance. Moderators cannot remove the community owner under any circumstances. Moderators cannot remove other moderators, only the owner can remove moderators. Moderator role is assigned at a specific time when added to the community. Owner protection ensures the community creator retains ultimate control.
+
+### Moderator Role Definition
+
+A moderator is a user with elevated authority to manage community content and members within a specific community. The moderator role represents a business relationship between a user and a community, granting permission to perform moderation actions.
+
+Each moderator has a moderator role type, which is either owner or moderator. The owner role type indicates the highest authority level in the community. The moderator role type indicates standard moderation authority.
+
+A moderator has an assignment timestamp, which records when the user was added to the moderator role in that community.
+
+The community creator automatically becomes the owner of the community upon creation. This is the only way to become an owner.
+
+### Moderator Authority Hierarchy
+
+The moderator hierarchy defines the authority structure within a community. The owner holds the highest authority level and has ultimate control over the community.
+
+Owners can add users to the moderator role in their community. Owners can remove users from the moderator role in their community, including removing moderators.
+
+Moderators can add other users to the moderator role in their community. Moderators cannot remove the community owner under any circumstances. Moderators cannot remove other moderators from the community. Only the owner can remove moderators.
+
+The owner protection rule ensures the community creator retains ultimate control and cannot be removed from the owner role by any other user.
+
+## Ban Concept
+
+Bans restrict user access to specific communities for rule violations or misconduct. Moderators can ban users from their community when necessary. Banned users cannot create posts or comments in that community while banned. Banned users can still view content in the community they are banned from. Moderators can unban users to restore their posting privileges. Ban has a reason documenting why the user was banned for record. Ban has a status indicating whether the user is currently banned or unbanned. Moderators can view the list of all banned users in their community for oversight. Community access restriction applies only to posting and commenting abilities.
+
+### Ban Concept Definition
+
+A Ban represents a community-level access restriction applied to a user for rule violations or misconduct. Each Ban is associated with one specific community and one specific user. A Ban has a reason that documents why the ban was issued for record-keeping and moderator reference. A Ban has a status that indicates whether the user is currently banned or unbanned from the community. When status is banned, the user has restricted access to the community. When status is unbanned, the user has full access restored. The Ban concept exists to allow communities to maintain order by restricting problematic users while preserving their ability to view content.
+
+### Ban Access Restrictions
+
+A Ban imposes community-specific access restrictions on a user. When a user has an active ban in a community, the user cannot create new posts in that community. When a user has an active ban in a community, the user cannot create new comments in that community. Despite posting and commenting restrictions, a banned user can still view all content in the community including posts, comments, and community information. The ban restriction applies only to the specific community where the ban was issued. A user banned from one community can still participate in other communities where they are not banned.
+
+### Banned Users List
+
+Each community maintains a list of all users who have been banned from that community. The banned users list shows each banned user and their associated ban reason. The list serves as an oversight tool for moderators to track enforcement actions. When a user is unbanned, they are removed from the active banned users list.
+
+## Report Concept
+
+Reports flag problematic content for moderator review and potential action. Users can report any post or comment they find problematic or violating. Reports require a reason text explaining why the content is being reported. Moderators can view all reports for their community to review. Each report shows the reported content details for moderator review. Reports show who reported the content and when it was submitted. Moderators can approve reports which deletes the reported content from the community. Moderators can dismiss reports which keeps the content visible to users. Dismissed reports are removed from the active report list after review.
+
+### Report Definition
+
+A report is a flag submitted by a user to indicate problematic content that requires moderator review. Reports serve as the primary mechanism for community members to bring violating or inappropriate content to moderator attention.
+
+Each report contains the following attributes:
+- The reported content (either a post or a comment)
+- The reason text explaining why the content is being reported
+- The user who submitted the report
+- The time when the report was submitted
+- The current status of the report (pending, approved, or dismissed)
+
+Reports are associated with the community where the reported content exists. Only moderators of that community can review and act on reports.
+
+### Report Submission
+
+Users can report any post or comment they find problematic or violating community standards. When submitting a report, users must provide a reason text explaining why the content is being reported. The reason is required and cannot be empty.
+
+Both posts and comments can be reported. A user can report content regardless of whether they are subscribed to the community where the content exists. Multiple users can report the same piece of content, creating separate report entries for each submission.
+
+### Report Resolution
+
+Moderators can view all reports for their community to review reported content. Each report displays the reported content details, who reported it, and the reason provided.
+
+Moderators can take two actions on a report:
+- Approve: The reported content is deleted from the community. The report is marked as approved.
+- Dismiss: The reported content remains visible to users. The report is marked as dismissed.
+
+Dismissed reports are removed from the active report list after review. Approved reports result in the deletion of the reported post or comment from the community.
 
 # Domain Relationships
 
@@ -261,25 +235,100 @@ Describe how concepts relate to each other from a business perspective.
 
 Describe how concepts relate to each other in business terms.
 
-### User-Community Relationships
+### User-Community Relationship
 
-A user can own multiple communities. The user who creates a community becomes its owner. A community has exactly one owner. A user can subscribe to multiple communities. A community can have multiple subscribers. The relationship between a user and a community through subscription is called a subscription. A user can view the list of communities they are subscribed to. A user can view any community regardless of subscription status. Subscription to a community is required before a user can create posts in that community. A user can unsubscribe from any community they are subscribed to. When a user deletes their account, all their community subscriptions are removed.
+A user can have multiple community associations through different relationship types.
 
-### Content Ownership and Authorship
+**Ownership Relationship**: When a user creates a community, an ownership relationship is established. The user becomes the owner of that community. A community has exactly one owner. An owner can own multiple communities.
 
-Every post belongs to exactly one user as its author. Every comment belongs to exactly one user as its author. A user can author multiple posts. A user can author multiple comments. The author of a post can edit that post. The author of a post can delete that post. The author of a comment can edit that comment. The author of a comment can delete that comment. When a user deletes their account, all posts and comments they authored are deleted. A post belongs to exactly one community. A comment belongs to exactly one post. The author of content and the community where content resides may be different users and entities.
+**Subscription Relationship**: A user can subscribe to multiple communities. A subscription represents a belongs-to association between a user and a community. When a user subscribes to a community, the community's subscriber count increases. When a user unsubscribes, the subscriber count decreases.
 
-### Community Content Hierarchy
+**Moderation Relationship**: A user can be assigned as a moderator in multiple communities. A community can have multiple moderators. The owner is automatically a moderator with the highest authority. Moderators can add other moderators to the community.
 
-A community contains multiple posts. A community can contain zero or more posts. A post contains multiple comments. A post can contain zero or more comments. A comment can contain multiple reply comments. A comment can have zero or more reply comments. Replies to comments can themselves have replies, with no limit on nesting depth. All comments on a post form a threaded conversation structure. When a post is deleted, all comments on that post are deleted. When a community is deleted, all posts in that community are deleted. The community owner and moderators can delete any post or comment within their community.
+### User-Content Association
 
-### Voting Associations
+Users have a has-many relationship with both posts and comments.
 
-A user can cast one vote on each post. A user can cast one vote on each comment. A vote belongs to exactly one user who cast it. A vote targets exactly one post or one comment. A user cannot cast multiple votes on the same post. A user cannot cast multiple votes on the same comment. A user can change their vote direction on a post from upvote to downvote or vice versa. A user can change their vote direction on a comment from upvote to downvote or vice versa. A user can remove their vote from a post entirely. A user can remove their vote from a comment entirely. When a vote is cast, changed, or removed, the target's score adjusts accordingly. A post score equals total upvotes minus total downvotes. A comment score equals total upvotes minus total downvotes. Vote scores can be negative.
+**Post Authorship**: When a user creates a post, the post belongs-to that user as its author. A user can create multiple posts across different communities. Each post has exactly one author.
 
-### Moderation and Reporting Relationships
+**Comment Authorship**: When a user writes a comment, the comment belongs-to that user as its author. A user can write multiple comments on different posts. Each comment has exactly one author.
 
-A community has one or more moderators. The community owner is automatically a moderator with highest authority. The owner can add other users as moderators. The owner can remove moderators from the community. Moderators can add other users as moderators. Moderators cannot remove the community owner. Moderators cannot remove other moderators. A ban applies to one user within one community. A banned user cannot create posts or comments in that community. A banned user can still view content in the community. Moderators can ban users from their community. Moderators can unban users from their community. Moderators can view the list of banned users in their community. A report targets exactly one post or one comment. A report is filed by exactly one user. A report includes a reason provided by the reporter. Moderators can view all reports for their community. Moderators can approve a report, which deletes the reported content. Moderators can dismiss a report, which keeps the content and removes the report from the list.
+**Content Ownership**: Users own the posts and comments they create. Only the author can edit or delete their own posts and comments. When a user deletes their account, all posts and comments that belong-to that user are also deleted.
+
+### Community-Content Relationship
+
+Communities have a has-many relationship with posts.
+
+**Post Containment**: Every post belongs-to exactly one community. A community can contain multiple posts. Posts cannot exist without being associated with a community.
+
+**Subscription Requirement**: Only users who have a subscription relationship with a community can create posts in that community. This association must exist before post creation.
+
+**Community Content Scope**: All posts within a community are visible to users viewing that community's feed, regardless of their subscription status.
+
+### Post-Comment Association
+
+Posts and comments have a hierarchical belongs-to relationship.
+
+**Comment Hierarchy**: Every comment belongs-to exactly one post. A post can have multiple comments. Comments can also have replies, creating a nested structure with no depth limit.
+
+**Reply Relationship**: A comment can be a reply to another comment. The parent comment has-many child comments. Each reply belongs-to its parent comment, forming a threaded conversation structure.
+
+**Comment Display**: When viewing a post, all comments that belong-to that post are displayed, including nested replies.
+
+### Vote Relationship
+
+Votes create an association between users and votable content.
+
+**Vote Target Association**: A vote belongs-to either a post or a comment. Each vote has exactly one target. Posts and comments can each have multiple votes from different users.
+
+**User Vote Association**: Each user can cast one vote per votable item. A user has-many votes across different posts and comments. The association between a user and their vote on a specific item is unique.
+
+**Vote Impact**: Votes affect the karma score of the content author. Upvotes increase karma by 1, downvotes decrease karma by 1. The vote score of a post or comment equals total upvotes minus total downvotes.
+
+### Report Association
+
+Reports create a belongs-to relationship between users and content requiring review.
+
+**Report Target**: A report belongs-to either a post or a comment. Each report has exactly one target. Posts and comments can each have multiple reports from different users.
+
+**Reporter Association**: The user who files a report is associated with that report. A user can file multiple reports across different content items.
+
+**Report Resolution**: Reports are resolved by moderators of the community where the reported content belongs. When a report is approved or dismissed, the report association is removed from the active report list.
+
+### Ban Relationship
+
+Bans create an association between communities and restricted users.
+
+**Ban Scope**: A ban belongs-to a specific community and applies to a specific user. A community can have multiple banned users. A user can be banned from multiple communities.
+
+**Ban Authority**: Bans are issued by moderators or owners of the community. The ban creates a restriction association that prevents the banned user from creating posts or comments in that community.
+
+**Ban Effect**: While banned, the user maintains their subscription relationship with the community but cannot create new content. The user can still view all content in the community.
+
+### Relationship Overview
+
+The following diagram illustrates the key relationships between business concepts:
+
+```mermaid
+flowchart LR
+    U["User"] -->|"owns"| C["Community"]
+    U -->|"subscribes to"| C
+    U -->|"creates"| P["Post"]
+    U -->|"writes"| CM["Comment"]
+    U -->|"casts"| V["Vote"]
+    U -->|"files"| R["Report"]
+    C -->|"contains"| P
+    C -->|"bans"| B["Ban"]
+    C -->|"has"| M["Moderator"]
+    P -->|"has"| CM
+    CM -->|"replies to"| CM
+    P -->|"receives"| V
+    CM -->|"receives"| V
+    P -->|"can be"| R
+    CM -->|"can be"| R
+    B -->|"applies to"| U
+    M -->|"assigned to"| C
+```
 
 ## Lifecycle and Retention
 
@@ -287,66 +336,47 @@ Describe concept lifecycle states and transitions only. Detailed retention/recov
 
 ### Account and Content Lifecycle
 
-A user account exists from registration until the user chooses to delete it.
+User accounts begin when registration is completed with email, password, and username.
 
-When a user deletes their account, all posts created by that user are deleted.
-When a user deletes their account, all comments written by that user are deleted.
+Accounts remain active while maintained by the user.
 
-### Post and Comment Lifecycle
+Users can delete their own account at any time. When an account is deleted, all posts and comments created by that user are also deleted.
 
-A post exists from creation until it is deleted by its author or a moderator.
+Posts and comments enter the system when created by users.
 
-A post can be edited by its author at any time before deletion.
-A post can be deleted by its author.
-A post can be deleted by a moderator of the community where the post was created.
+Authors can edit their own posts and comments at any time.
 
-A comment exists from creation until it is deleted by its author or a moderator.
-A comment can be edited by its author at any time before deletion.
-A comment can be deleted by its author.
-A comment can be deleted by a moderator of the community where the comment was posted.
+Authors can delete their own posts and comments.
 
-### Report Lifecycle
+Moderators can delete any post or comment within their community.
 
-A report is created when a user reports a post or comment with a reason.
+Reports begin when a user submits a report on a post or comment with a reason.
 
-A report remains in the report list until a moderator takes action on it.
+Reports enter a pending state awaiting moderator review.
 
-A moderator can approve a report, which deletes the reported content.
-A moderator can dismiss a report, which keeps the reported content visible.
+Moderators can approve a report, which results in deletion of the reported content.
 
-When a report is approved, the reported post or comment is deleted.
-When a report is dismissed, the report is removed from the report list.
+Moderators can dismiss a report, which keeps the content but removes the report from the review list.
 
-Approved reports are removed from the report list after the content is deleted.
-Dismissed reports are removed from the report list immediately.
+Once a report is approved or dismissed, it is resolved and no longer appears in the active report list.
 
-### Subscription Lifecycle
+The user requirements do not specify archival processes, retention periods, or data recovery mechanisms.
 
-A subscription is created when a user subscribes to a community.
+### Deletion Effects
 
-A subscription remains active until the user unsubscribes from the community.
+When a user deletes their account, all posts and comments they authored are deleted.
 
-A user can unsubscribe from any community they are subscribed to.
-When a user unsubscribes, the subscription is removed.
+When a post is deleted, it is removed from feeds, user profiles, and community views.
 
-A user must be subscribed to a community to create posts in that community.
-When a user's subscription is removed, they can no longer create posts in that community.
+When a comment is deleted, it is removed from the post and its nested replies remain unless also deleted.
 
-### Ban Lifecycle
+Vote scores associated with deleted content are no longer counted toward user karma.
 
-A ban is created when a moderator or owner bans a user from a community.
+Subscriptions to communities remain unaffected when a user's content is deleted.
 
-A ban remains active until a moderator or owner unbans the user.
+Moderator assignments and ban records are removed when the associated user account is deleted.
 
-A banned user cannot create posts in the community where they are banned.
-A banned user cannot create comments in the community where they are banned.
-A banned user can still view content in the community where they are banned.
-
-A moderator can unban a user from their community.
-When a user is unbanned, they can create posts and comments in the community again.
-
-Only the owner can remove moderators.
-Only the owner can ban or unban moderators.
+Deleted content cannot be viewed or restored through the platform.
 
 # Business Categories and State Flows
 
@@ -360,130 +390,124 @@ Define all business category classifications with their allowed values and descr
 
 Every post must be classified into exactly one of three types:
 
-**Text Post**: Contains written content authored by the user. The text content is displayed in full when viewing the post.
+**Text Post**: Contains written text content. The text content is required for this type.
 
-**Link Post**: Contains a URL pointing to an external resource. The domain name of the URL is displayed in post lists (e.g., "youtube.com").
+**Link Post**: Contains a URL pointing to an external resource. The URL is required for this type.
 
-**Image Post**: Contains an uploaded image. A thumbnail of the image is displayed in post lists.
+**Image Post**: Contains an uploaded image. The image is required for this type.
 
-The post type is set when the post is created and cannot be changed afterward. The type determines how the content is displayed and what input is required from the user.
+The post type is determined at creation and cannot be changed. A post cannot have multiple types simultaneously.
 
-### Vote Direction Categories
+### Vote Value Classification
 
-Votes have three possible directions:
+Each vote cast by a user has one of three possible values:
 
-**Upvote**: Indicates positive engagement. Adds 1 to the target's vote score and increases the author's karma by 1.
+**Upvote**: Adds one point to the target content's score. Represents positive feedback.
 
-**Downvote**: Indicates negative engagement. Subtracts 1 from the target's vote score and decreases the author's karma by 1.
+**Downvote**: Subtracts one point from the target content's score. Represents negative feedback.
 
-**No Vote**: The user has not voted or has removed their vote. Has no effect on the vote score or karma.
+**No Vote**: The user has removed their vote. This occurs when a user actively removes a previous upvote or downvote, or has never voted on the content.
 
-Each user can have only one active vote direction per target (post or comment) at any time. Changing from one direction to another adjusts the score and karma accordingly.
+A user can only have one active vote value per post or comment at any time. Changing from upvote to downvote (or vice versa) adjusts the score by two points.
 
-### Report Status Types
+### Moderator Role Classification
 
-Reports have two final statuses determined by moderator review:
+Each moderator assignment has one of two role types:
 
-**Approved**: The moderator has validated the report. The reported content is deleted and removed from the platform.
+**Owner**: The user who created the community. Has the highest authority and can add or remove any moderator including other owners if multiple exist. Cannot be removed by other moderators.
 
-**Dismissed**: The moderator has rejected the report. The reported content remains visible and the report is removed from the report list.
+**Moderator**: A user granted moderation privileges by an owner or another moderator. Can add new moderators but cannot remove the owner or other moderators. Can perform all moderation actions within the community.
 
-Reports are created in a pending state when filed by users. Moderators review pending reports and assign either approved or dismissed status. Once a status is assigned, it cannot be changed.
+The role type determines what actions the user can perform within the community's moderation system.
 
-### Feed Type Categories
+### Report Status Classification
 
-The platform provides three distinct feed types for viewing posts:
+Each report filed on content has one of three statuses:
 
-**Home Feed**: Displays posts only from communities the user is subscribed to. Available exclusively to logged-in users.
+**Pending**: The report has been submitted and is awaiting moderator review. This is the initial status when a report is created.
 
-**Popular Feed**: Displays posts from all communities across the platform. Available to all users including those who are not logged in.
+**Approved**: A moderator has reviewed the report and taken action. The reported content is deleted as a result.
 
-**Community Feed**: Displays posts from one specific community. Available to all users regardless of subscription or login status.
+**Dismissed**: A moderator has reviewed the report and decided no action is needed. The reported content remains visible. The report is removed from the active report list.
 
-Each feed type serves a different discovery purpose and has different content availability rules.
+Reports transition from pending to either approved or dismissed upon moderator review. Once a report is approved or dismissed, it cannot return to pending status.
 
-### Content Sorting Classifications
+### Ban Status Classification
 
-All feeds support four sorting methods that determine post ordering:
+Each ban applied to a user in a community has one of two statuses:
 
-**Hot**: Prioritizes recent posts with high engagement. Posts with many upvotes posted recently appear first.
+**Active**: The user is currently banned from the community. Cannot create posts or comments in that community. Can still view community content.
 
-**New**: Orders posts by creation time. Most recently created posts appear first.
+**Removed**: The ban has been lifted by a moderator. The user regains the ability to create posts and comments in the community.
 
-**Top**: Orders posts by vote score. Highest score appears first. Requires a time filter to limit the scoring window.
-
-**Controversial**: Prioritizes posts with many total votes but a vote score close to zero. Indicates divisive content with both upvotes and downvotes.
-
-Comment lists support three sorting methods: best (highest score), new (most recent), and controversial (many votes, score near zero).
-
-### Time Filter Categories
-
-The top sorting method requires a time filter to define the scoring window:
-
-**Today**: Only posts from the current calendar day are considered.
-
-**This Week**: Only posts from the current week are considered.
-
-**This Month**: Only posts from the current calendar month are considered.
-
-**This Year**: Only posts from the current calendar year are considered.
-
-**All Time**: All posts regardless of creation date are considered.
-
-The time filter affects which posts are included in the top sorting calculation and their relative ranking.
+A ban is created with active status when a moderator bans a user. The status changes to removed when a moderator unbans the user. A user can only have one active ban per community at any time.
 
 ## State Transitions
 
 Define valid state transition paths for stateful concepts.
 
-### Report Status Transitions
+### Report Workflow
 
-### Report Status Transitions
+Reports follow a defined state-flow from submission to resolution.
 
-When a user reports a post or comment, the report enters a pending status.
-Moderators can review pending reports for their community.
-When a moderator approves a report, the reported content is deleted and the report status changes to approved.
-When a moderator dismisses a report, the reported content remains visible and the report is removed from the report list.
-Each report can only be in one status at a time: pending, approved, or dismissed.
-Once a report is approved or dismissed, it cannot return to pending status.
-Only moderators of the community can change the status of reports for content in their community.
-The reporter and reason for the report remain associated with the report throughout its lifecycle.
+When a user reports content, the report enters a pending status. Moderators review pending reports and perform one of two status-change actions:
 
-### Ban Status Transitions
+- Approve: The reported content is deleted and the report status changes to approved
+- Dismiss: The reported content remains visible and the report is removed from the report list
 
-### Ban Status Transitions
+Once a report transitions to approved or dismissed, it cannot return to pending status. This workflow ensures all reports reach a final resolution state.
 
-When a moderator bans a user from a community, the user enters a banned status for that community.
-A banned user cannot create posts or comments in the community where they are banned.
-A banned user can still view all content in the community.
-When a moderator unbans a user, the user's banned status is removed and they regain posting privileges.
-Only the community owner and moderators can ban users from the community.
-Only the community owner and moderators can unban users from the community.
-A user can only be banned or unbanned in one community at a time, independent of other communities.
-The identity of who banned the user and when the ban occurred is recorded.
+```mermaid
+flowchart LR
+    A["pending"] -->|"Approve"| B["approved"]
+    A -->|"Dismiss"| C["dismissed"]
+```
 
-### Content Deletion States
+### Ban Status Transition
 
-### Content Deletion States
+User bans follow a simple active and inactive state-flow within a community.
 
-When a user creates a post or comment, it enters an active visible state.
-When a user deletes their own post or comment, the content is permanently removed from the platform.
-When a moderator deletes a post or comment in their community, the content is permanently removed from the platform.
-When a user deletes their account, all posts and comments created by that user are permanently deleted.
-Once content is deleted, it cannot be recovered or restored.
-Deleted posts no longer appear in any feed or community view.
-Deleted comments no longer appear in the comment thread, and their nested replies are also removed.
-The deletion action is final and cannot be undone.
+When a moderator bans a user, the ban status transitions from inactive to active. The banned user cannot create posts or comments in that community but retains viewing access.
 
-### Subscription State Changes
+When a moderator unbans a user, the ban status transitions from active to inactive, restoring the user's posting privileges.
 
-### Subscription State Changes
+This transition can occur multiple times for the same user within a community.
 
-When a user subscribes to a community, they enter a subscribed state for that community.
-A subscribed user can create posts in the community.
-A subscribed user appears in the community's subscriber count.
-When a user unsubscribes from a community, their subscription is removed and they can no longer create posts in that community.
-Users can subscribe and unsubscribe from the same community multiple times.
-A user's subscription state is independent for each community.
-Only logged-in users can subscribe to communities.
-The time when a user subscribed to a community is recorded.
+```mermaid
+flowchart LR
+    A["inactive"] -->|"Ban"| B["active"]
+    B -->|"Unban"| A
+```
+
+### Subscription Status Transition
+
+Community subscriptions follow a subscribed and unsubscribed state-flow.
+
+When a user subscribes to a community, their subscription status changes to subscribed. This status-change is required before the user can create posts in that community.
+
+When a user unsubscribes from a community, their subscription status changes to unsubscribed, removing their ability to create posts there.
+
+Users can transition between these states at any time for any community.
+
+```mermaid
+flowchart LR
+    A["unsubscribed"] -->|"Subscribe"| B["subscribed"]
+    B -->|"Unsubscribe"| A
+```
+
+### Moderator Role Transition
+
+Moderator roles follow specific assignment and removal workflow rules.
+
+The community creator holds the owner role permanently and cannot be removed. The owner can add other users as moderators, transitioning them from member to moderator status.
+
+Moderators can also add other users as moderators. Only the owner can remove moderators, transitioning them from moderator back to member status.
+
+This workflow ensures the owner maintains ultimate authority while allowing moderators to expand the moderation team.
+
+```mermaid
+flowchart LR
+    A["member"] -->|"Added as moderator"| B["moderator"]
+    B -->|"Owner removes"| A
+    C["creator"] -->|"Creates community"| D["owner"]
+```

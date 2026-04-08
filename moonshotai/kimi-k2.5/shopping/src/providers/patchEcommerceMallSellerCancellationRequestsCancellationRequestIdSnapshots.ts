@@ -20,87 +20,76 @@ export async function patchEcommerceMallSellerCancellationRequestsCancellationRe
   cancellationRequestId: string & tags.Format<"uuid">;
   body: IEcommerceMallCancellationRequestSnapshot.IRequest;
 }): Promise<IPageIEcommerceMallCancellationRequestSnapshot.ISummary> {
-  // Find the cancellation request and verify it exists
+  // Verify cancellation request exists and belongs to seller's order item
   const cancellationRequest =
-    await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findUnique({
-      where: { id: props.cancellationRequestId },
-      select: {
-        id: true,
-        seller_id: true,
+    await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findFirst({
+      where: {
+        id: props.cancellationRequestId,
         orderItem: {
-          select: {
-            seller_id: true,
+          seller: {
+            id: props.seller.id,
           },
         },
       },
+      select: { id: true },
     });
   if (cancellationRequest === null) {
-    throw new HttpException("Cancellation request not found", 404);
+    throw new HttpException(
+      "Cancellation request not found or access denied",
+      404,
+    );
   }
-  // Verify seller authorization - seller must be the one assigned to the cancellation request
-  // or the seller who owns the order item
-  const authorizedSellerId =
-    cancellationRequest.seller_id ?? cancellationRequest.orderItem?.seller_id;
-  if (authorizedSellerId !== props.seller.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Parse pagination parameters
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Parse sort parameter (default: created_at:desc)
-  const sortParts = (props.body.sort ?? "created_at:desc").split(":");
-  const sortField = sortParts[0] ?? "created_at";
-  const sortDirection = sortParts[1] === "asc" ? "asc" : "desc";
-  // Build date range filter for created_at
-  const createdAtFilter: Prisma.DateTimeFilter | undefined =
-    props.body.created_at_from != null || props.body.created_at_to != null
-      ? {
-          ...(props.body.created_at_from != null && {
-            gte: new Date(props.body.created_at_from),
-          }),
-          ...(props.body.created_at_to != null && {
-            lte: new Date(props.body.created_at_to),
-          }),
-        }
-      : undefined;
   // Build where clause with filters
-  const whereInput = {
-    cancellation_request_id: props.cancellationRequestId,
-    ...(props.body.status_before != null && {
-      status_before: props.body.status_before,
-    }),
-    ...(props.body.status_after != null && {
-      status_after: props.body.status_after,
-    }),
-    ...(createdAtFilter !== undefined && { created_at: createdAtFilter }),
-  } satisfies Prisma.ecommerce_mall_cancellation_request_snapshotsWhereInput;
-  // Query snapshots with pagination
-  const snapshots =
+  const where: Prisma.ecommerce_mall_cancellation_request_snapshotsWhereInput =
+    {
+      cancellation_request_id: props.cancellationRequestId,
+    };
+  if (props.body.createdAtFrom !== null || props.body.createdAtTo !== null) {
+    where.created_at = {};
+    if (props.body.createdAtFrom !== null) {
+      where.created_at.gte = new Date(props.body.createdAtFrom);
+    }
+    if (props.body.createdAtTo !== null) {
+      where.created_at.lte = new Date(props.body.createdAtTo);
+    }
+  }
+  if (props.body.statusBefore !== null) {
+    where.status_before = props.body.statusBefore;
+  }
+  if (props.body.statusAfter !== null) {
+    where.status_after = props.body.statusAfter;
+  }
+  // Determine sort order
+  const sortOrder = props.body.sortOrder ?? "desc";
+  const orderBy = {
+    created_at: sortOrder,
+  } satisfies Prisma.ecommerce_mall_cancellation_request_snapshotsOrderByWithRelationInput;
+  // Execute queries
+  const data =
     await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.findMany(
       {
-        where: whereInput,
+        where,
+        orderBy,
         skip,
         take: limit,
-        orderBy: { [sortField]: sortDirection },
         ...EcommerceMallCancellationRequestSnapshotAtSummaryTransformer.select(),
       },
     );
-  // Count total records
   const total =
     await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.count({
-      where: whereInput,
+      where,
     });
-  // Transform results
-  const data = await ArrayUtil.asyncMap(
-    snapshots,
-    EcommerceMallCancellationRequestSnapshotAtSummaryTransformer.transform,
-  );
   return {
-    data,
+    data: await ArrayUtil.asyncMap(
+      data,
+      EcommerceMallCancellationRequestSnapshotAtSummaryTransformer.transform,
+    ),
     pagination: {
-      current: page satisfies number as number,
-      limit: limit satisfies number as number,
+      current: page,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,

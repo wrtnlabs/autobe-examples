@@ -2,7 +2,7 @@ import { TypedBody, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia from "typia";
 
-import { IShoppingMallCustomer } from "../../../../api/structures/IShoppingMallCustomer";
+import { IShoppingMallSellerProfile } from "../../../../api/structures/IShoppingMallSellerProfile";
 import { CustomerAuth } from "../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
 import { putShoppingMallCustomerProfile } from "../../../../providers/putShoppingMallCustomerProfile";
@@ -10,47 +10,46 @@ import { putShoppingMallCustomerProfile } from "../../../../providers/putShoppin
 @Controller("/shoppingMall/customer/profile")
 export class ShoppingmallCustomerProfileController {
   /**
-   * Update the current customer's profile information including display name and phone number.
+   * Update the current seller's shop profile including shop name, description, and logo image.
    *
-   * This operation allows authenticated customers to modify their public profile information. The display name is shown on reviews and order history, while the phone number is used for order notifications and delivery coordination. At least one field must be changed to successfully update the profile.
+   * This operation allows sellers to modify their public-facing business information. When any field is updated, the system automatically creates an immutable snapshot of the previous profile state for audit trail and dispute resolution purposes. The updated profile is immediately visible to customers on product listings and order records.
    *
-   * Profile updates are processed synchronously and applied immediately without requiring approval. All changes are saved atomically, ensuring that either all provided fields are updated or none are. The updated_at timestamp is automatically refreshed to record the modification time.
+   * The shop name is displayed prominently in search results and product listings. The shop description provides customers with information about the seller's products and business practices. The logo image appears on the seller profile page and throughout the platform.
    *
-   * Security considerations: Only authenticated customers can update their own profile. Customers with banned accounts are blocked from making any profile modifications. The system validates that display names are not empty and phone numbers follow the correct format before saving.
-   *
-   * Related operations: GET /profile retrieves the current profile, PUT /customers/me/password changes the authentication password, and DELETE /customers/me deletes the account while preserving order history.
+   * Sellers can update their profile at any time while their account is active and not suspended. Each modification creates a separate snapshot record that is preserved even if the seller later deletes their account.
    *
    * @param connection
-   * @param body Profile update data containing display name and/or phone number
+   * @param body Updated seller profile information including shop name, shop description, and optional logo image URI.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Authenticate the request and verify the user is a customer actor with a valid session.
+   * @x-autobe-specification Update the shopping_mall_seller_profiles record for the authenticated seller's profile.
    *
-   * 2. Check the customer's account status from shopping_mall_customers table. If status is 'banned', reject the request with an access denied error and log the attempt for audit purposes.
+   * 1. Validate that the seller is authenticated and their account is not banned or suspended.
+   * 2. Before updating, capture the current values of shop_name, shop_description, and logo_uri from the database.
+   * 3. Update the profile record with the new values provided in the request body.
+   * 4. Create a new record in shopping_mall_seller_profile_snapshots with:
+   *    - shopping_mall_seller_profile_id: the profile's ID
+   *    - shop_name_before: previous shop name value (or null if unchanged)
+   *    - shop_name_after: new shop name value (or null if unchanged)
+   *    - shop_description_before: previous description (or null if unchanged)
+   *    - shop_description_after: new description (or null if unchanged)
+   *    - logo_image_before: previous logo URI (or null if unchanged)
+   *    - logo_image_after: new logo URI (or null if unchanged)
+   *    - created_at: current timestamp
+   * 5. Update the updated_at timestamp on the profile record.
+   * 6. Return the complete updated profile including all fields.
    *
-   * 3. Validate the request body:
-   *    - Ensure at least one field (display_name or phone_number) is provided and different from current value
-   *    - display_name must not be empty (minLength: 1)
-   *    - phone_number must match valid format if provided
-   *    - Reject if no fields are changed
+   * Validation rules:
+   * - shop_name is required and must be non-empty string
+   * - shop_description is required and must be non-empty string
+   * - logo_uri is optional; if provided, must be a valid URI string
+   * - Reject if seller account is banned
+   * - Reject if seller account is suspended (suspended sellers cannot edit profile)
    *
-   * 4. Begin database transaction:
-   *    - Create a snapshot of the current profile state in shopping_mall_customer_profile_snapshots table
-   *    - Store snapshot_data as JSON containing current display_name, phone_number, and timestamp
-   *    - If snapshot creation fails, abort the entire operation and return error
-   *
-   * 5. Update the shopping_mall_customers table:
-   *    - Set display_name to new value if provided
-   *    - Set phone_number to new value if provided
-   *    - Update updated_at timestamp to current time
-   *    - Ensure atomic update - all changes succeed or none apply
-   *
-   * 6. Commit transaction and return the updated customer profile.
-   *
-   * 7. Error handling:
-   *    - If account status changes to banned during operation, abort and reject
-   *    - If snapshot database is unavailable, prevent the update
-   *    - Return appropriate error codes for validation failures
+   * Edge cases:
+   * - If only one field changes, snapshot should have null for unchanged fields
+   * - If logo_uri is not provided in request, keep existing value (do not set to null)
+   * - Multiple rapid updates create multiple separate snapshots
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put()
@@ -58,8 +57,8 @@ export class ShoppingmallCustomerProfileController {
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedBody()
-    body: IShoppingMallCustomer.IUpdate,
-  ): Promise<IShoppingMallCustomer> {
+    body: IShoppingMallSellerProfile.IUpdate,
+  ): Promise<IShoppingMallSellerProfile> {
     try {
       return await putShoppingMallCustomerProfile({
         customer,

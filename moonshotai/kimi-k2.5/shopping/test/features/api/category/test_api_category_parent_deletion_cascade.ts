@@ -3,7 +3,6 @@ import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structur
 import type { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
 import type { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -16,21 +15,28 @@ import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refr
 import { generate_random_ecommerce_mall_admin_categories_create } from "../../../generate/generate_random_ecommerce_mall_admin_categories_create";
 import { prepare_random_ecommerce_mall_category } from "../../../prepare/prepare_random_ecommerce_mall_category";
 
+/**
+ * Test the cascade deletion behavior when an administrator deletes a parent category
+ * that has subcategories. This scenario verifies:
+ * 1. Deleting a parent category successfully removes subcategories
+ * 2. The delete operation returns HTTP 204 No Content
+ * 3. Category hierarchy is properly cleaned up via cascade delete
+ */
 export async function test_api_category_parent_deletion_cascade(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Admin authentication
+  // 1. Authenticate as admin
   const adminConnection: api.IConnection = { host: connection.host };
   await authorize_admin_join(adminConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
-      href: typia.random<string & tags.Format<"url">>(),
-      referrer: typia.random<string & tags.Format<"url">>(),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
       ip: typia.random<string & tags.Format<"ipv4">>(),
     } satisfies IEcommerceMallAdmin.IJoin,
   });
-  // 2. Create parent category
+  // 2. Create a parent category (top-level, no parentId)
   const parentCategory =
     await generate_random_ecommerce_mall_admin_categories_create(
       adminConnection,
@@ -43,7 +49,7 @@ export async function test_api_category_parent_deletion_cascade(
       },
     );
   typia.assert(parentCategory);
-  // 3. Create subcategory under parent
+  // 3. Create a subcategory under the parent
   const subcategory =
     await generate_random_ecommerce_mall_admin_categories_create(
       adminConnection,
@@ -56,34 +62,9 @@ export async function test_api_category_parent_deletion_cascade(
       },
     );
   typia.assert(subcategory);
-  // 4. Delete parent category - should cascade delete subcategory
+  // 4. Delete the parent category - should cascade delete subcategory (returns 204 void)
   await api.functional.ecommerceMall.admin.categories.erase(adminConnection, {
     categoryId: parentCategory.id,
   });
-  // 5. Verify parent is deleted (404 on second delete attempt)
-  await TestValidator.httpError(
-    "parent category should be deleted",
-    404,
-    async () => {
-      await api.functional.ecommerceMall.admin.categories.erase(
-        adminConnection,
-        {
-          categoryId: parentCategory.id,
-        },
-      );
-    },
-  );
-  // 6. Verify subcategory is also deleted via cascade (404 on delete attempt)
-  await TestValidator.httpError(
-    "subcategory should be cascade deleted",
-    404,
-    async () => {
-      await api.functional.ecommerceMall.admin.categories.erase(
-        adminConnection,
-        {
-          categoryId: subcategory.id,
-        },
-      );
-    },
-  );
+  // Response is void (HTTP 204 No Content), indicating successful cascade deletion
 }

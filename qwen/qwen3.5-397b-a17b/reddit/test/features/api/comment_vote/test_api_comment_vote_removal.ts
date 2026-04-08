@@ -4,10 +4,11 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IRedditCommunityComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityComment";
 import type { IRedditCommunityCommentVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommentVote";
 import type { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
-import type { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
 import type { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import type { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPost";
-import type { IRedditCommunityPostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPostImage";
+import type { IRedditCommunityPostImageContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPostImageContent";
+import type { IRedditCommunityPostLinkContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPostLinkContent";
+import type { IRedditCommunityPostTextContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPostTextContent";
 import type { IRedditCommunitySubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunitySubscription";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -18,35 +19,37 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_reddit_community_comments_votes_vote } from "../../../generate/generate_random_reddit_community_comments_votes_vote";
 import { generate_random_reddit_community_member_communities_create } from "../../../generate/generate_random_reddit_community_member_communities_create";
+import { generate_random_reddit_community_member_member_subscriptions_create } from "../../../generate/generate_random_reddit_community_member_member_subscriptions_create";
 import { generate_random_reddit_community_member_posts_comments_create } from "../../../generate/generate_random_reddit_community_member_posts_comments_create";
+import { generate_random_reddit_community_posts_create } from "../../../generate/generate_random_reddit_community_posts_create";
 import { prepare_random_reddit_community_comment } from "../../../prepare/prepare_random_reddit_community_comment";
-import { prepare_random_reddit_community_comment_vote } from "../../../prepare/prepare_random_reddit_community_comment_vote";
 import { prepare_random_reddit_community_community } from "../../../prepare/prepare_random_reddit_community_community";
+import { prepare_random_reddit_community_post } from "../../../prepare/prepare_random_reddit_community_post";
+import { prepare_random_reddit_community_subscription } from "../../../prepare/prepare_random_reddit_community_subscription";
 
 /**
- * Test removing a vote from a comment.
+ * Test comment vote removal functionality for member accounts.
  *
- * Setup:
- * 1. Authenticate as member to perform voting actions
- * 2. Create community as container for post and comment
- * 3. Subscribe member to community to enable post creation
- * 4. Create post that will contain the comment to be voted on
- * 5. Create comment that will receive the vote
- * 6. Cast an initial UPVOTE on the comment
+ * Validates the complete vote removal workflow including member authentication, community setup, post and comment creation, initial vote casting, and vote removal via soft-delete. Ensures that removing a vote by setting value to 0 properly soft-deletes the vote record while preserving the audit trail.
  *
- * Test:
- * 1. Remove the vote by submitting null direction
- * 2. Verify the vote removal works correctly
- * 3. Test with DOWNVOTE as well to ensure bidirectional correctness
+ * The test verifies that the vote record maintains its original id after removal, the deleted_at timestamp is set to indicate soft-delete status, and the vote no longer contributes to the comment's vote score calculation.
+ *
+ * 1. Member registers with email, password, and username.
+ * 2. Member creates a community with name, description, and icon.
+ * 3. Member subscribes to the created community.
+ * 4. Member creates a text post in the community.
+ * 5. Member creates a comment on the post.
+ * 6. Member casts an initial upvote (+1) on the comment.
+ * 7. Member removes their vote by setting value to 0.
+ * 8. Validates the vote record is soft-deleted with deleted_at timestamp set.
  */
 export async function test_api_comment_vote_removal(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Authenticate as member
+  // 1. Member registration
   const memberConnection: api.IConnection = { host: connection.host };
-  const memberAuth = await authorize_member_join(memberConnection, {
+  await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
@@ -54,9 +57,8 @@ export async function test_api_comment_vote_removal(
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
       ip: typia.random<string & tags.Format<"ipv4">>(),
-    },
+    } satisfies IRedditCommunityMember.IJoin,
   });
-  typia.assert(memberAuth);
   // 2. Create community
   const community =
     await generate_random_reddit_community_member_communities_create(
@@ -66,22 +68,25 @@ export async function test_api_comment_vote_removal(
   typia.assert(community);
   // 3. Subscribe to community
   const subscription =
-    await api.functional.redditCommunity.member.communities.subscription.create(
+    await generate_random_reddit_community_member_member_subscriptions_create(
       memberConnection,
       {
-        communityName: community.name,
+        body: {
+          community_id: community.id,
+        } satisfies IRedditCommunitySubscription.ICreate,
       },
     );
   typia.assert(subscription);
   // 4. Create post
-  const post = await api.functional.redditCommunity.member.posts.create(
+  const post = await generate_random_reddit_community_posts_create(
     memberConnection,
     {
       body: {
         title: RandomGenerator.paragraph({ sentences: 2 }),
         post_type: "text",
-        text_content: RandomGenerator.content({ paragraphs: 2 }),
-      },
+        community_id: community.id,
+        body: RandomGenerator.content({ paragraphs: 2 }),
+      } satisfies IRedditCommunityPost.ICreate,
     },
   );
   typia.assert(post);
@@ -90,55 +95,54 @@ export async function test_api_comment_vote_removal(
     await generate_random_reddit_community_member_posts_comments_create(
       memberConnection,
       {
-        params: { postId: post.id },
+        params: {
+          postId: post.id,
+        },
+        body: {
+          content: RandomGenerator.paragraph({ sentences: 3 }),
+        } satisfies IRedditCommunityComment.ICreate,
       },
     );
   typia.assert(comment);
-  // Record initial vote score
-  const initialVoteScore = comment.voteScore;
-  // 6. Cast initial UPVOTE on comment
-  const upvote = await generate_random_reddit_community_comments_votes_vote(
-    memberConnection,
-    {
-      params: { commentId: comment.id },
-      body: { direction: "UPVOTE" },
-    },
-  );
-  typia.assert(upvote);
-  // Verify upvote was cast
-  TestValidator.equals("upvote direction", upvote.direction, "UPVOTE");
-  // 7. Remove the UPVOTE by submitting null direction
-  const removedUpvote =
-    await api.functional.redditCommunity.comments.votes.vote(memberConnection, {
-      commentId: comment.id,
-      body: { direction: null },
-    });
-  typia.assert(removedUpvote);
-  // 8. Cast DOWNVOTE on comment
-  const downvote = await generate_random_reddit_community_comments_votes_vote(
-    memberConnection,
-    {
-      params: { commentId: comment.id },
-      body: { direction: "DOWNVOTE" },
-    },
-  );
-  typia.assert(downvote);
-  // Verify downvote was cast
-  TestValidator.equals("downvote direction", downvote.direction, "DOWNVOTE");
-  // 9. Remove the DOWNVOTE by submitting null direction
-  const removedDownvote =
-    await api.functional.redditCommunity.comments.votes.vote(memberConnection, {
-      commentId: comment.id,
-      body: { direction: null },
-    });
-  typia.assert(removedDownvote);
-  // Verify vote operations completed successfully
+  // 6. Cast initial upvote (+1)
+  const initialVote =
+    await api.functional.redditCommunity.member.comments.votes.patchByCommentid(
+      memberConnection,
+      {
+        commentId: comment.id,
+        body: {
+          value: 1,
+        } satisfies IRedditCommunityCommentVote.IUpdate,
+      },
+    );
+  typia.assert(initialVote);
+  TestValidator.equals("initial vote value", initialVote.value, 1);
   TestValidator.predicate(
-    "upvote removal completed",
-    removedUpvote !== undefined,
+    "initial vote not deleted",
+    initialVote.deleted_at === null,
   );
-  TestValidator.predicate(
-    "downvote removal completed",
-    removedDownvote !== undefined,
-  );
+  // 7. Remove vote by setting value to 0
+  const removedVote =
+    await api.functional.redditCommunity.member.comments.votes.patchByCommentid(
+      memberConnection,
+      {
+        commentId: comment.id,
+        body: {
+          value: 0,
+        } satisfies IRedditCommunityCommentVote.IUpdate,
+      },
+    );
+  typia.assert(removedVote);
+  // 8. Validate vote removal
+  TestValidator.equals("vote id unchanged", removedVote.id, initialVote.id);
+  TestValidator.predicate("vote soft-deleted", removedVote.deleted_at !== null);
+  TestValidator.predicate("deleted_at is valid timestamp", () => {
+    const deletedAt = new Date(removedVote.deleted_at!);
+    return !isNaN(deletedAt.getTime());
+  });
+  TestValidator.predicate("deleted_at after created_at", () => {
+    const createdAt = new Date(removedVote.created_at);
+    const deletedAt = new Date(removedVote.deleted_at!);
+    return deletedAt.getTime() >= createdAt.getTime();
+  });
 }

@@ -9,56 +9,62 @@ import typia, { tags } from "typia";
 import { IPageIRedditClonePost } from "../../../structures/IPageIRedditClonePost";
 import { IRedditClonePost } from "../../../structures/IRedditClonePost";
 
+export * as votes from "./votes/index";
+export * as snapshots from "./snapshots/index";
 export * as comments from "./comments/index";
-export * as images from "./images/index";
 
 /**
- * Retrieve a filtered and paginated list of posts from the Reddit-like community platform.
+ * Search and list posts with filtering, sorting, and pagination support.
  *
- * This operation provides advanced search and filtering capabilities for browsing posts across the platform. Users can retrieve posts from their personalized home feed (posts from subscribed communities), popular posts (highest-scoring posts globally), or posts from a specific community. The operation supports filtering by post type (text, link, or image), author, community, and date ranges.
+ * This endpoint retrieves posts from the reddit clone platform with various filtering options including community, author, search terms, and post type. Results can be sorted by hot (recent with many upvotes), new (most recent), top (highest score), or controversial (many votes with score near zero). Pagination is supported for large result sets.
  *
- * Text search functionality allows users to find posts by keywords in the title or content. The search uses trigram similarity for fuzzy matching, enabling users to find relevant posts even with slight spelling variations or partial matches.
+ * Different feed types are available: home feed shows posts from subscribed communities (requires authentication), popular feed shows posts from all communities (available to everyone), and community-specific feeds show posts from a single community.
  *
- * The response includes post summary information optimized for list displays, including the post title, author details, community information, vote score, and timestamp. Each post summary excludes the full content body to reduce payload size, with detailed content available through the individual post retrieval endpoint.
- *
- * Pagination is cursor-based for efficient navigation through large result sets. The response includes metadata about the current page, total available posts, and cursor tokens for retrieving the next or previous page of results.
- *
- * Related operations include GET /posts/{postId} for retrieving a single post's full details, POST /posts for creating new posts, and PATCH /posts/{postId} for editing existing posts.
+ * Only non-deleted posts are returned. Each post includes the title, author information, community name, vote score, comment count, and creation timestamp. For text posts, a preview of the first 200 characters is included. Image posts include thumbnail URLs, and link posts show the domain name.
  *
  * @param props.connection
- * @param props.body Search criteria, filters, and pagination parameters for post listing
+ * @param props.body Search criteria for posts including filters (community, author, search terms, post type), sorting option (hot, new, top, controversial), time range for top sorting, and pagination parameters (page number, page size).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query reddit_clone_posts table with pagination and filtering support.
+ * @x-autobe-specification Query the reddit_clone_posts table with the following implementation details:
  *
- * Filtering Logic:
- * - Apply feed_type filter: 'home' returns posts from subscribed communities, 'popular' returns top-scoring posts across all communities, 'community' returns posts from specified community_id
- * - Apply post_type filter if provided (text, link, image)
- * - Apply author filter using reddit_clone_members_id if provided
- * - Apply community filter using reddit_clone_community_id if provided
- * - Apply date range filters using created_at or updated_at
- * - Apply text search on title and content fields using trigram similarity
- * - Always filter out soft-deleted posts (deleted_at IS NULL) unless explicitly requested
+ * 1. **Filtering**: Apply filters from the request body:
+ *    - communityId: Filter by reddit_clone_community_id (for community-specific feeds)
+ *    - userId: Filter by reddit_clone_user_profile_id (for user's posts)
+ *    - searchQuery: Full-text search on title using trigram index
+ *    - postType: Filter by post_type (text, link, image)
+ *    - subscribedOnly: If true, filter to communities where the authenticated user has a subscription in reddit_clone_community_subscriptions
  *
- * Sorting Logic:
- * - Default sort: created_at DESC
- * - Support sorting by: score DESC/ASC, created_at DESC/ASC, updated_at DESC/ASC
- * - Validate sort field and direction against allowed values
+ * 2. **Soft Delete Handling**: Always exclude posts where deleted_at IS NOT NULL
  *
- * Pagination Logic:
- * - Use cursor-based pagination for large result sets
- * - Support page_size parameter (default 20, max 100)
- * - Return pagination metadata with total count, current page, and cursor tokens
+ * 3. **Sorting**: Implement sorting logic:
+ *    - 'hot': Score = log(vote_score + 1) / (age_hours + 2), descending
+ *    - 'new': created_at descending
+ *    - 'top': vote_score descending, with optional time range filter (today, week, month, year, all)
+ *    - 'controversial': WHERE ABS(vote_score) < threshold AND vote_count > threshold, order by vote_count descending
  *
- * Join Operations:
- * - LEFT JOIN reddit_clone_communities to include community name and details
- * - LEFT JOIN reddit_clone_members to include author username and display name
- * - Calculate comment count via subquery on reddit_clone_comments
+ * 4. **Vote Score Calculation**: Join with reddit_clone_post_votes to calculate:
+ *    - vote_score = SUM(CASE WHEN vote_type = 'upvote' THEN 1 ELSE -1 END) for non-deleted votes
+ *    - Only count votes where deleted_at IS NULL
  *
- * Authorization:
- * - Guest users: Can view public posts only
- * - Members: Can view posts in subscribed communities and public posts
- * - Admin: Can view all posts including soft-deleted ones
+ * 5. **Comment Count**: Use a subquery or join to count comments from reddit_clone_comments where post_id matches and deleted_at IS NULL
+ *
+ * 6. **Pagination**: Implement cursor-based or offset-based pagination:
+ *    - Accept page number and page size in request
+ *    - Return total count for client-side pagination UI
+ *    - Default page size: 25, maximum: 100
+ *
+ * 7. **Response Optimization**: Return summary fields only (not full post objects):
+ *    - id, title, post_type, author (display_name, avatar), community (name, icon)
+ *    - vote_score, comment_count, created_at
+ *    - Preview: text_content (first 200 chars) for text posts, thumbnail for image posts, domain for link posts
+ *
+ * 8. **Error Handling**:
+ *    - Return 400 for invalid sort options or pagination parameters
+ *    - Return 404 if searching for a specific community that doesn't exist
+ *    - Return empty array if no posts match criteria (not an error)
+ *
+ * 9. **Performance**: Use indexes on reddit_clone_community_id, reddit_clone_user_profile_id, created_at, and the trigram index on title
  * @path /redditClone/posts
  * @accessor api.functional.redditClone.posts.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -88,7 +94,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria, filters, and pagination parameters for post listing
+     * Search criteria for posts including filters (community, author, search terms, post type), sorting option (hot, new, top, controversial), time range for top sorting, and pagination parameters (page number, page size).
      */
     body: IRedditClonePost.IRequest;
   };
@@ -137,32 +143,19 @@ export namespace index {
 }
 
 /**
- * Retrieve complete details of a specific post by its unique identifier.
+ * Retrieve complete details of a single post by its unique identifier.
  *
- * This operation returns the full post object including title, content, post type, vote score, creation and update timestamps, and associated metadata. The response includes joined data from related entities: the author's profile information (username, display name, karma score) and the community details (name, description, icon, subscriber count).
+ * This operation returns the full post content including title, text/link/image content, author information, community context, current vote score, comment count, and timestamps. The post must exist and not be deleted to be accessible.
  *
- * Posts are publicly accessible to all actors including guests, members, and administrators. This aligns with the platform's design where content visibility is not restricted by subscription status. However, soft-deleted posts (where deleted_at is not null) are excluded from results and will return a 404 Not Found response.
+ * The response includes the author's username from their user profile and the community name where the post was published. Vote score is calculated as the sum of all upvotes (+1) and downvotes (-1) on the post. Comment count reflects only non-deleted comments.
  *
- * The operation supports three post types: 'text' posts contain full article content, 'link' posts reference external URLs, and 'image' posts include visual media. For image posts, the response includes thumbnail and full-size image URIs. The vote score reflects the net difference between upvotes and downvotes from community members.
- *
- * This endpoint is typically used after browsing feed lists or user post histories to display the complete post content in detail view pages. Related operations include GET /posts for feed listing, GET /users/{username}/posts for author post history, and GET /communities/{community} for community-specific feeds.
+ * Returns 404 Not Found if the post does not exist or has been deleted.
  *
  * @param props.connection
  * @param props.postId Unique identifier of the post to retrieve (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Query the reddit_clone_posts table for a single post record matching the provided postId UUID.
- *
- * 1. Validate that the postId is a valid UUID format.
- * 2. Execute a SELECT query on reddit_clone_posts WHERE id = postId AND deleted_at IS NULL.
- * 3. Join with reddit_clone_members table on reddit_clone_members_id to retrieve author information (username, display name, karma).
- * 4. Join with reddit_clone_communities table on reddit_clone_community_id to retrieve community information (name, description, icon).
- * 5. If post type is 'image', join with reddit_clone_post_images to retrieve associated image data.
- * 6. Calculate and include comment count by counting records in reddit_clone_comments where post_id matches.
- * 7. Return the complete post object with all fields and joined relationships.
- * 8. If no active post is found (deleted or doesn't exist), return 404 Not Found.
- * 9. Apply authentication middleware to identify the requesting actor but allow access to all actors (guest, member, admin).
- * 10. Handle edge cases: soft-deleted posts return 404, ensure proper error responses for invalid UUIDs.
+ * @x-autobe-specification Query reddit_clone_posts table by id parameter. Verify post exists and deleted_at is null (not soft-deleted). Join with reddit_clone_user_profiles on reddit_clone_user_profile_id to get author username. Join with reddit_clone_communities on reddit_clone_community_id to get community name. Calculate vote score by summing reddit_clone_post_votes.vote_value where post_id matches (upvote=+1, downvote=-1). Count comments by querying reddit_clone_comments where reddit_clone_post_id matches and deleted_at is null. Return 404 if post not found or deleted_at is not null. Include all post fields: id, title, post_type, text_content, link_url, image_url, created_at, updated_at, vote_score, comment_count, author_username, community_name.
  * @path /redditClone/posts/:postId
  * @accessor api.functional.redditClone.posts.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

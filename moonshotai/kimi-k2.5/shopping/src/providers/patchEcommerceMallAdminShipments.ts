@@ -1,7 +1,7 @@
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
-import { IEcommerceMallShipmentDelivery } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentDelivery";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallShipment";
@@ -23,66 +23,91 @@ export async function patchEcommerceMallAdminShipments(props: {
   body: IEcommerceMallShipment.IRequest;
 }): Promise<IPageIEcommerceMallShipment.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const shippedAtFilter = (() => {
-    if (props.body.shippedAtFrom && props.body.shippedAtTo) {
-      return {
-        gte: new Date(props.body.shippedAtFrom),
-        lte: new Date(props.body.shippedAtTo),
-      };
-    }
-    if (props.body.shippedAtFrom) {
-      return { gte: new Date(props.body.shippedAtFrom) };
-    }
-    if (props.body.shippedAtTo) {
-      return { lte: new Date(props.body.shippedAtTo) };
-    }
-    return undefined;
-  })();
+  const shippedAtFilter: {
+    gte?: Date;
+    lte?: Date;
+  } = {};
+  if (props.body.shippedAtFrom) {
+    shippedAtFilter.gte = new Date(props.body.shippedAtFrom);
+  }
+  if (props.body.shippedAtTo) {
+    shippedAtFilter.lte = new Date(props.body.shippedAtTo);
+  }
   const whereInput: Prisma.ecommerce_mall_shipmentsWhereInput = {
     deleted_at: null,
     ...(props.body.orderId && { order_id: props.body.orderId }),
     ...(props.body.sellerId && { seller_id: props.body.sellerId }),
     ...(props.body.carrierName && {
-      carrier_name: { contains: props.body.carrierName, mode: "insensitive" },
-    }),
-    ...(props.body.trackingNumber && {
-      tracking_number: {
-        contains: props.body.trackingNumber,
-        mode: "insensitive",
+      carrier_name: {
+        contains: props.body.carrierName,
+        mode: "insensitive" as const,
       },
     }),
-    ...(shippedAtFilter && { shipped_at: shippedAtFilter }),
+    ...(props.body.status === "delivered" && {
+      delivery: {
+        is: {},
+      },
+    }),
+    ...(props.body.status === "in_transit" && {
+      delivery: {
+        is: null,
+      },
+    }),
+    ...(Object.keys(shippedAtFilter).length > 0 && {
+      shipped_at: shippedAtFilter,
+    }),
+    ...(props.body.search && {
+      OR: [
+        {
+          carrier_name: {
+            contains: props.body.search,
+            mode: "insensitive" as const,
+          },
+        },
+        {
+          tracking_number: {
+            contains: props.body.search,
+            mode: "insensitive" as const,
+          },
+        },
+      ],
+    }),
   };
+  const orderByField = props.body.sort ?? "shipped_at";
+  const orderDirection = props.body.order ?? "desc";
   const orderByInput: Prisma.ecommerce_mall_shipmentsOrderByWithRelationInput =
-    (() => {
-      if (!props.body.sort || props.body.sort.length === 0) {
-        return { shipped_at: "desc" };
-      }
-      const sortField = props.body.sort[0];
-      const direction = sortField.startsWith("-") ? "desc" : "asc";
-      const field = sortField.replace(/^[+-]/, "");
-      const fieldMap: Record<
-        string,
-        keyof Prisma.ecommerce_mall_shipmentsOrderByWithRelationInput
-      > = {
-        shippedAt: "shipped_at",
-        createdAt: "created_at",
-        updatedAt: "updated_at",
-      };
-      return { [fieldMap[field] ?? field]: direction };
-    })();
-  const data = await MyGlobal.prisma.ecommerce_mall_shipments.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: orderByInput,
-    ...EcommerceMallShipmentAtSummaryTransformer.select(),
-  });
-  const total = await MyGlobal.prisma.ecommerce_mall_shipments.count({
-    where: whereInput,
-  });
+    orderByField === "carrier_name"
+      ? { carrier_name: orderDirection }
+      : orderByField === "created_at"
+        ? { created_at: orderDirection }
+        : { shipped_at: orderDirection };
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.ecommerce_mall_shipments.findMany({
+      where: whereInput,
+      skip,
+      take: limit,
+      orderBy: orderByInput,
+      include: {
+        seller: {
+          include: {
+            registrations: true,
+          },
+        },
+        order: {
+          include: {
+            customer: true,
+          },
+        },
+        shipmentItems: true,
+        delivery: true,
+      },
+    }),
+    MyGlobal.prisma.ecommerce_mall_shipments.count({
+      where: whereInput,
+    }),
+  ]);
   return {
     data: await ArrayUtil.asyncMap(
       data,

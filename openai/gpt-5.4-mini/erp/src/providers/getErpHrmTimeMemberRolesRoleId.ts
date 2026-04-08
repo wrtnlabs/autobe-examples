@@ -1,5 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimePermission } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimePermission";
 import { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
 import { ArrayUtil } from "@nestia/e2e";
@@ -19,9 +20,10 @@ export async function getErpHrmTimeMemberRolesRoleId(props: {
   member: MemberPayload;
   roleId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeRole> {
-  const role = await MyGlobal.prisma.erp_hrm_time_roles.findUniqueOrThrow({
+  const role = await MyGlobal.prisma.erp_hrm_time_roles.findFirstOrThrow({
     where: {
       id: props.roleId,
+      deleted_at: null,
     },
     ...ErpHrmTimeRoleTransformer.select(),
   });

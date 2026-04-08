@@ -1,0 +1,1146 @@
+/// User profile data including display name, bio, avatar image, and karma
+/// score.
+///
+/// This table stores the public-facing profile information for {@link
+/// reddit_community_members}. Each member has exactly one profile, enforced
+/// by a unique foreign key constraint. The profile contains display
+/// preferences and reputation metrics that are separate from authentication
+/// credentials.
+///
+/// **Profile Fields**
+///
+/// The display_name is shown publicly instead of the username. The bio is
+/// optional markdown-formatted text describing the user. The avatar_url
+/// points to the user's profile image.
+///
+/// **Karma System**
+///
+/// The karma field tracks the user's reputation score based on votes
+/// received on their posts and comments. Karma increases by 1 for each
+/// upvote and decreases by 1 for each downvote. Karma can be negative and is
+/// updated atomically when votes are cast or removed.
+///
+/// @namespace reddit_community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_user_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the {@link reddit_community_members} table that owns this
+  /// profile.
+  ///
+  /// This foreign key establishes a one-to-one relationship between members
+  /// and profiles. Each member has exactly one profile, and each profile
+  /// belongs to exactly one member. The unique constraint ensures no member
+  /// can have multiple profiles.
+  reddit_community_member_id String
+  
+  /// The user's public display name shown on posts, comments, and profile
+  /// pages.
+  ///
+  /// This is the name other users see when viewing content created by this
+  /// member. It can be changed by the user at any time and is distinct from
+  /// the username used for authentication.
+  display_name String
+  
+  /// Optional biographical text describing the user.
+  ///
+  /// This markdown-formatted text appears on the user's profile page. Users
+  /// can edit or clear their bio at any time. Maximum length should be
+  /// enforced at the application layer.
+  bio String?
+  
+  /// URL pointing to the user's avatar/profile image.
+  ///
+  /// This URI references an uploaded image file displayed alongside the user's
+  /// content. Users can upload a new avatar or remove their existing one. Null
+  /// indicates no avatar is set.
+  avatar_url String?
+  
+  /// The user's reputation score based on votes received on their content.
+  ///
+  /// Karma increases by 1 for each upvote and decreases by 1 for each downvote
+  /// on the user's posts and comments. This value can be negative. The score
+  /// is updated atomically when votes are cast, changed, or removed via {@link
+  /// reddit_community_post_votes} and {@link reddit_community_comment_votes}.
+  karma Int
+  
+  /// Timestamp when the profile was created.
+  created_at DateTime
+  
+  /// Timestamp when the profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the profile was soft-deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_community_member_id])
+}
+
+/// Community definitions representing topic-based discussion spaces within
+/// the platform.
+///
+/// Each community serves as a container for posts and comments, with its own
+/// identity, subscriber base, and moderation structure. Communities are
+/// created by members who become owners with full administrative authority.
+///
+/// The {@link reddit_community_members} table stores the community owner
+/// reference. The {@link reddit_community_subscriptions} table tracks all
+/// subscriber relationships. The {@link reddit_community_moderators} table
+/// defines moderator assignments. The {@link reddit_community_posts} table
+/// contains all posts within this community.
+///
+/// @namespace reddit_community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who created and owns this community.
+  ///
+  /// The owner has the highest authority level within the community, including
+  /// the ability to add or remove moderators, manage bans, and delete any
+  /// content. This relationship establishes ownership and administrative
+  /// control.
+  owner_id String
+  
+  /// Unique community name used for identification and URL routing.
+  ///
+  /// This is the public-facing identifier for the community, displayed in URLs
+  /// and search results. Must be unique across all communities to prevent
+  /// naming conflicts.
+  name String
+  
+  /// Community description explaining the topic, purpose, and rules.
+  ///
+  /// Provides context for potential subscribers about what content belongs in
+  /// this community. Displayed on the community page and in search results.
+  description String
+  
+  /// URL to the community's icon or avatar image.
+  ///
+  /// Visual identifier displayed alongside the community name in feeds, search
+  /// results, and community pages. Stored as a URI pointing to the hosted
+  /// image file.
+  icon String
+  
+  /// Timestamp when the community was created.
+  created_at DateTime
+  
+  /// Timestamp when the community was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when the community was soft-deleted, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner reddit_community_members @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  posts reddit_community_posts[]
+  subscriptions reddit_community_subscriptions[]
+  moderators reddit_community_moderators[]
+  bans reddit_community_bans[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([owner_id])
+}
+
+/// Post metadata including title, type discriminator, author, community, and
+/// timestamps.
+///
+/// This is the central table for all posts in the system. Each post belongs
+/// to exactly one {@link reddit_community_members} (author) and one {@link
+/// reddit_community_communities}. The post_type field indicates which
+/// type-specific table contains the actual content: {@link
+/// reddit_community_post_texts} for text posts, {@link
+/// reddit_community_post_links} for link posts, or {@link
+/// reddit_community_post_images} for image posts.
+///
+/// Vote scores and comment counts are NOT stored here - they are calculated
+/// at query time from {@link reddit_community_post_votes} and {@link
+/// reddit_community_comments} respectively. This avoids data duplication and
+/// ensures consistency.
+///
+/// @namespace reddit_community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the {@link reddit_community_members} who authored this post.
+  ///
+  /// Every post must have exactly one author. This is a required relationship
+  /// - posts cannot exist without an author.
+  reddit_community_member_id String
+  
+  /// Reference to the {@link reddit_community_communities} this post belongs
+  /// to.
+  ///
+  /// Every post must be posted in exactly one community. This is a required
+  /// relationship.
+  reddit_community_community_id String
+  
+  /// The title of the post.
+  ///
+  /// This is a required field for all posts regardless of type. Maximum length
+  /// should be enforced at the application layer.
+  title String
+  
+  /// Discriminator indicating the type of post content.
+  ///
+  /// Allowed values: 'text', 'link', 'image'. This field determines which
+  /// type-specific table contains the actual content: 'text' maps to {@link
+  /// reddit_community_post_texts}, 'link' maps to {@link
+  /// reddit_community_post_links}, 'image' maps to {@link
+  /// reddit_community_post_images}.
+  post_type String
+  
+  /// Timestamp when the post was created.
+  created_at DateTime
+  
+  /// Timestamp when the post was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft-deleted. NULL if the post is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  text reddit_community_post_texts?
+  link reddit_community_post_links?
+  image reddit_community_post_images?
+  comments reddit_community_comments[]
+  votes reddit_community_post_votes[]
+  reports reddit_community_report_of_posts[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_posts_reddit_community_member_id_crea_b4877c90")
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_id, created_at], map: "reddit_community_posts_reddit_community_community_id_c_ede20472")
+}
+
+/// Text content for text-type posts in one-to-one relationship with posts.
+///
+/// This table stores the body text content exclusively for posts of type
+/// 'text'. Each record corresponds to exactly one post, enforced by a unique
+/// constraint on the foreign key. This design follows the 1:1 relationship
+/// pattern, avoiding nullable fields on the parent {@link
+/// reddit_community_posts} table.
+///
+/// The body field contains the full text content of the post, which can be
+/// formatted with markdown. Temporal fields track creation and last
+/// modification times for audit purposes.
+///
+/// @namespace reddit_community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_texts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent post that this text content belongs to.
+  ///
+  /// This foreign key establishes a one-to-one relationship with {@link
+  /// reddit_community_posts}. The unique constraint ensures each post has at
+  /// most one text content record, enforcing the mutually exclusive post type
+  /// design where a post is either text, link, or image type.
+  reddit_community_post_id String
+  
+  /// The main text content of the post.
+  ///
+  /// This field contains the full body text that the user wrote for their
+  /// text-type post. Content may include markdown formatting. Maximum length
+  /// should be enforced at the application layer based on business
+  /// requirements.
+  body String
+  
+  /// Timestamp when this text content was created.
+  ///
+  /// Automatically set when the post is initially created. Used for audit
+  /// trails and sorting.
+  created_at DateTime
+  
+  /// Timestamp when this text content was last updated.
+  ///
+  /// Updated whenever the user edits their post content. Used to track
+  /// modification history and display 'edited' indicators.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_community_post_id])
+}
+
+/// Link-specific data for link-type posts including URL and extracted domain.
+///
+/// This table stores the URL and domain information for posts with type
+/// 'link'. Each record corresponds to exactly one post, forming a one-to-one
+/// relationship. Separating link data from the main posts table maintains
+/// 3NF compliance by avoiding nullable fields when posts can be text, link,
+/// or image types.
+///
+/// The domain field is extracted from the URL for display purposes and
+/// enables searching posts by domain (e.g., finding all posts from
+/// 'github.com').
+///
+/// @namespace reddit_community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_links {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the parent post that this link data belongs to.
+  ///
+  /// This foreign key establishes a one-to-one relationship with {@link
+  /// reddit_community_posts}. Each link record corresponds to exactly one
+  /// post, and each link-type post has exactly one link record. The unique
+  /// constraint ensures this 1:1 cardinality.
+  reddit_community_post_id String
+  
+  /// The full URL of the link post.
+  ///
+  /// This is the actual web address that users share when creating a link-type
+  /// post. Must be a valid URI format. This is the primary content of a link
+  /// post, displayed to users when viewing the post.
+  url String
+  
+  /// The extracted domain name from the URL for display and search.
+  ///
+  /// This field contains the domain portion of the URL (e.g., 'github.com',
+  /// 'youtube.com') extracted for user-friendly display and efficient
+  /// domain-based searching. Enables features like finding all posts from a
+  /// specific domain.
+  domain String
+  
+  /// Timestamp when this link record was created.
+  created_at DateTime
+  
+  /// Timestamp when this link record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_community_post_id])
+  @@index([domain])
+}
+
+/// Image data for image-type posts including original image URL and optional
+/// thumbnail.
+///
+/// This table stores image references for posts with type 'image'. Each
+/// record corresponds to exactly one post through a unique foreign key
+/// constraint. The image_url field contains the original uploaded image
+/// location, while thumbnail_url stores a smaller preview version generated
+/// during upload processing.
+///
+/// Lifecycle is tied to {@link reddit_community_posts} - when a post is
+/// deleted, its image record is cascade deleted. Thumbnails may be null
+/// initially if async generation is pending.
+///
+/// @namespace reddit_community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the parent post this image belongs to.
+  ///
+  /// This foreign key establishes a one-to-one relationship with {@link
+  /// reddit_community_posts}. The unique constraint ensures each post has at
+  /// most one image record. Cascade delete removes image data when parent post
+  /// is deleted.
+  reddit_community_post_id String
+  
+  /// URL of the original uploaded image.
+  ///
+  /// This field stores the location of the full-resolution image file uploaded
+  /// by the user. Must be a valid URI pointing to accessible image storage.
+  /// Required for all image-type posts.
+  image_url String
+  
+  /// URL of the generated thumbnail image.
+  ///
+  /// Optional thumbnail version of the original image, typically smaller
+  /// dimensions for preview purposes. May be null if thumbnail generation is
+  /// pending or failed. Generated asynchronously after upload.
+  thumbnail_url String?
+  
+  /// Timestamp when this image record was created.
+  ///
+  /// Automatically set when the image post is created. Used for sorting and
+  /// audit purposes.
+  created_at DateTime
+  
+  /// Timestamp when this image record was last updated.
+  ///
+  /// Updated whenever image metadata changes, such as when thumbnail
+  /// generation completes. Used for cache invalidation and audit tracking.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_community_post_id])
+  @@index([created_at])
+}
+
+/// User comments on posts with support for nested replies through
+/// self-referencing parent comment.
+///
+/// Comments are the primary way users engage with post content. Each comment
+/// belongs to exactly one post and is authored by one member. Comments can
+/// reply to other comments, creating unlimited nesting depth through the
+/// parent comment reference.
+///
+/// The vote score is computed from {@link reddit_community_comment_votes}
+/// and not stored here to maintain 3NF compliance. Soft delete via
+/// deleted_at preserves reply threads when parent comments are removed.
+///
+/// @namespace reddit_community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The member who authored this comment.
+  ///
+  /// Links to {@link reddit_community_members} to identify the comment author.
+  /// This relationship is required - every comment must have an author.
+  reddit_community_member_id String
+  
+  /// The post this comment belongs to.
+  ///
+  /// Links to {@link reddit_community_posts} to establish the comment's parent
+  /// post. This relationship is required - every comment must belong to
+  /// exactly one post.
+  reddit_community_post_id String
+  
+  /// The parent comment this comment replies to.
+  ///
+  /// Links to {@link reddit_community_comments} for nested reply threading.
+  /// Null for top-level comments that directly reply to the post. Enables
+  /// unlimited nesting depth through self-reference.
+  reddit_community_comment_id String?
+  
+  /// The text content of the comment.
+  ///
+  /// Contains the actual comment text written by the member. This is the
+  /// primary content field and is required for all comments.
+  content String
+  
+  /// Timestamp when the comment was created.
+  ///
+  /// Records the exact time the comment was first submitted. Used for sorting
+  /// comments chronologically and displaying 'time since posted'.
+  created_at DateTime
+  
+  /// Timestamp when the comment was last updated.
+  ///
+  /// Updated whenever the comment content is edited. Allows tracking
+  /// modification history and showing edit indicators to users.
+  updated_at DateTime
+  
+  /// Timestamp when the comment was soft-deleted.
+  ///
+  /// Null for active comments. Set when a user deletes their comment or a
+  /// moderator removes it. Enables content recovery and maintains referential
+  /// integrity for replies.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  parent reddit_community_comments? @relation("recursive", fields: [reddit_community_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  replies reddit_community_comments[] @relation("recursive")
+  votes reddit_community_comment_votes[]
+  reports reddit_community_report_of_comments[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_community_member_id])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_post_id, created_at], map: "reddit_community_comments_reddit_community_post_id_cre_7ea47a9e")
+  @@index([reddit_community_comment_id])
+}
+
+/// User votes on posts with vote value enforcing one vote per user per post.
+///
+/// Tracks individual votes cast by members on posts. Each member can vote
+/// only once per post, with the vote value being +1 for upvote or -1 for
+/// downvote. The unique constraint on member and post combination enforces
+/// this business rule at the database level.
+///
+/// Vote scores on {@link reddit_community_posts} are calculated by summing
+/// all vote values. When a member changes their vote, the value is updated.
+/// When a member removes their vote, the record is deleted.
+///
+/// @namespace reddit_community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who cast the vote.
+  ///
+  /// Links to {@link reddit_community_members} to identify which authenticated
+  /// user voted. Combined with post_id in a unique constraint to enforce one
+  /// vote per member per post.
+  reddit_community_member_id String
+  
+  /// Reference to the post being voted on.
+  ///
+  /// Links to {@link reddit_community_posts} to identify which post received
+  /// the vote. Combined with member_id in a unique constraint to enforce one
+  /// vote per member per post.
+  reddit_community_post_id String
+  
+  /// Vote value: +1 for upvote, -1 for downvote.
+  ///
+  /// Represents the direction of the member's vote. Positive value indicates
+  /// upvote, negative value indicates downvote. The sum of all values for a
+  /// post determines its vote score.
+  value Int
+  
+  /// Timestamp when the vote was first cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last modified (e.g., changed from upvote to
+  /// downvote).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_community_post_id])
+  // spellchecker: ignore-next-line
+  @@unique([reddit_community_member_id, reddit_community_post_id], map: "reddit_community_post_votes_reddit_community_member_id_23a38409")
+}
+
+/// User votes on comments with vote value enforcing one vote per user per
+/// comment.
+///
+/// Tracks individual voting behavior on comments. Each member can cast
+/// exactly one vote per comment, either upvote (+1) or downvote (-1). The
+/// unique constraint on member_id and comment_id prevents duplicate votes.
+///
+/// Vote scores are calculated by summing all vote values for a comment. When
+/// a member changes their vote, the value is updated. When a member removes
+/// their vote, the record is soft-deleted via deleted_at timestamp.
+///
+/// @namespace reddit_community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who cast the vote.
+  ///
+  /// Links to {@link reddit_community_members} to identify which authenticated
+  /// user voted. Combined with comment_id in a unique index to enforce one
+  /// vote per member per comment.
+  member_id String
+  
+  /// Reference to the comment being voted on.
+  ///
+  /// Links to {@link reddit_community_comments} to identify the target of the
+  /// vote. Combined with member_id in a unique index to enforce one vote per
+  /// member per comment.
+  comment_id String
+  
+  /// Vote value indicating upvote or downvote.
+  ///
+  /// Positive one (+1) represents an upvote, negative one (-1) represents a
+  /// downvote. The sum of all vote values for a comment determines its vote
+  /// score.
+  value Int
+  
+  /// Timestamp when the vote was first cast.
+  created_at DateTime
+  
+  /// Timestamp when the vote was last modified. Updated when a member changes
+  /// their vote from upvote to downvote or vice versa.
+  updated_at DateTime
+  
+  /// Timestamp when the vote was soft-deleted. Null when the vote is active.
+  /// Set when a member removes their vote, allowing for potential recovery and
+  /// audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  comment reddit_community_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([member_id, comment_id])
+  @@index([comment_id])
+}
+
+/// Junction table tracking user subscriptions to communities.
+///
+/// Records when a member subscribes to a community, enabling content
+/// filtering and access control. Each subscription links exactly one member
+/// to one community with timestamp tracking.
+///
+/// Subscriptions are required for posting in communities. Unsubscribing uses
+/// soft delete (deleted_at) to preserve historical data while marking the
+/// subscription as inactive. The unique constraint on (member_id,
+/// community_id) prevents duplicate subscriptions.
+///
+/// @namespace reddit_community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the subscribing member.
+  ///
+  /// Links to {@link reddit_community_members} to identify which user holds
+  /// this subscription. Members can subscribe to multiple communities,
+  /// creating multiple subscription records.
+  member_id String
+  
+  /// Reference to the subscribed community.
+  ///
+  /// Links to {@link reddit_community_communities} to identify which community
+  /// the member is subscribed to. Communities can have multiple subscribers,
+  /// creating multiple subscription records.
+  community_id String
+  
+  /// Timestamp when the subscription was created.
+  ///
+  /// Records the exact moment when the member subscribed to the community.
+  /// Used for sorting subscription lists and tracking user engagement history.
+  created_at DateTime
+  
+  /// Timestamp when the subscription was cancelled (soft delete).
+  ///
+  /// Null value indicates active subscription. When set, marks the
+  /// subscription as unsubscribed while preserving historical record. Enables
+  /// features like 'previously subscribed communities' and audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([member_id, community_id])
+  @@index([member_id, created_at])
+  @@index([community_id])
+}
+
+/// Moderator assignments linking members to communities with role type and
+/// assignment date.
+///
+/// Tracks which users have moderation authority over which communities. Each
+/// assignment specifies whether the user is an owner (highest authority,
+/// created the community) or a moderator (added by owner or other
+/// moderators). A member can only have one role per community.
+///
+/// Related to {@link reddit_community_members} through the member foreign
+/// key and {@link reddit_community_communities} through the community
+/// foreign key. Used by moderation operations to authorize actions like
+/// deleting posts, banning users, and managing other moderators.
+///
+/// @namespace reddit_community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_moderators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who is a moderator of the community.
+  ///
+  /// Links to {@link reddit_community_members} to identify the user with
+  /// moderation authority. This member can perform moderation actions based on
+  /// their role (owner or moderator). Cannot be null as every moderator
+  /// assignment must have a member.
+  reddit_community_member_id String
+  
+  /// Reference to the community being moderated.
+  ///
+  /// Links to {@link reddit_community_communities} to identify the community
+  /// where this member has moderation authority. The community owner and
+  /// moderators can manage content and users within this community. Cannot be
+  /// null as every moderator assignment must target a community.
+  reddit_community_community_id String
+  
+  /// The type of moderation role: owner or moderator.
+  ///
+  /// Owner is the highest authority, typically the user who created the
+  /// community. Owners can add and remove moderators, including other
+  /// moderators. Moderators can add other moderators but cannot remove owners
+  /// or other moderators. Owners can delete any content and ban users;
+  /// moderators have similar content moderation powers but limited moderator
+  /// management authority.
+  role String
+  
+  /// Timestamp when the moderator assignment was created.
+  ///
+  /// Records when the member was granted moderation authority over the
+  /// community. For owners, this is typically the community creation time. For
+  /// added moderators, this is when an existing moderator assigned them. Used
+  /// for audit trails and sorting moderators by seniority.
+  assigned_at DateTime
+  
+  /// Timestamp when this moderator assignment record was created.
+  created_at DateTime
+  
+  /// Timestamp when this moderator assignment record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this moderator assignment was soft deleted (null if
+  /// active).
+  ///
+  /// Used for soft delete functionality to preserve audit history. When a
+  /// moderator is removed, this field is set instead of deleting the record.
+  /// Allows tracking of historical moderator assignments and potential
+  /// restoration.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_community_member_id, reddit_community_community_id], map: "reddit_community_moderators_reddit_community_member_id_e301c3ed")
+  @@index([reddit_community_community_id])
+}
+
+/// Community bans restricting user posting privileges with reason and status.
+///
+/// Each ban record represents a restriction applied to a specific user
+/// within a specific community. The ban prevents the user from creating
+/// posts and comments in that community while maintaining their ability to
+/// view all content.
+///
+/// The status field tracks whether the ban is currently active or has been
+/// removed by a moderator. When active, the user cannot create new content.
+/// When removed, the user regains full posting privileges. A user can only
+/// have one ban record per community, with the status updated rather than
+/// creating duplicate records.
+///
+/// Moderators and community owners issue bans to enforce community rules.
+/// The issuer is tracked for accountability and audit purposes.
+///
+/// @namespace reddit_community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_bans {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the community where the ban applies.
+  ///
+  /// Each ban is scoped to exactly one community. The restriction only affects
+  /// the user's ability to create content within this specific community. The
+  /// user can still participate in other communities where they are not
+  /// banned.
+  reddit_community_community_id String
+  
+  /// Reference to the member who is banned from the community.
+  ///
+  /// This is the user who has restricted posting privileges in the community.
+  /// When the ban status is active, this member cannot create posts or
+  /// comments in the associated community. The member retains viewing access
+  /// to all community content.
+  reddit_community_member_id String
+  
+  /// Reference to the moderator or owner who issued the ban.
+  ///
+  /// Tracks which moderator or community owner enacted the ban for
+  /// accountability and audit purposes. This allows communities to maintain
+  /// records of enforcement actions and enables oversight of moderation
+  /// decisions.
+  issuer_member_id String
+  
+  /// Documentation of why the ban was issued.
+  ///
+  /// Provides context for the moderation action, helping other moderators
+  /// understand the enforcement history. The reason is visible to moderators
+  /// in the banned users list for oversight and reference purposes.
+  reason String
+  
+  /// Current ban status indicating whether restrictions are active or removed.
+  ///
+  /// When 'active', the member cannot create posts or comments in the
+  /// community but can view all content. When 'removed', the member regains
+  /// full posting privileges. Status transitions from inactive to active when
+  /// a moderator bans a user, and from active to inactive when unbanned.
+  status String
+  
+  /// Timestamp when the ban was created.
+  created_at DateTime
+  
+  /// Timestamp when the ban was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft delete. Null when active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  member reddit_community_members @relation("reddit_community_bans_of_reddit_community_member_id", fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  issuer reddit_community_members @relation("reddit_community_bans_of_issuer_member_id", fields: [issuer_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([issuer_member_id])
+  // spellchecker: ignore-next-line
+  @@unique([reddit_community_community_id, reddit_community_member_id], map: "reddit_community_bans_reddit_community_community_id_re_54cc39e0")
+  @@index([reddit_community_community_id, status])
+  @@index([reddit_community_member_id])
+}
+
+/// Content reports filed by users on posts or comments with reason and
+/// resolution status.
+///
+/// Reports enable community moderation by allowing users to flag
+/// inappropriate content. Each report includes the reporter's identity, the
+/// reason for reporting, and tracks the resolution workflow through
+/// moderator review.
+///
+/// Report lifecycle: Reports start as 'pending' when filed. Moderators
+/// review and either 'approve' (content deleted) or 'dismiss' (content kept,
+/// report removed from queue). Approved reports result in content deletion
+/// per moderation policies.
+///
+/// Polymorphic design: Uses report_type discriminator to target either
+/// {@link reddit_community_posts} or {@link reddit_community_comments}.
+/// Subtype tables reddit_community_report_of_posts and
+/// reddit_community_report_of_comments maintain 1:1 relationships with
+/// specific content references, avoiding nullable foreign keys.
+///
+/// @namespace reddit_community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who filed this report.
+  ///
+  /// Links to {@link reddit_community_members} to identify the user who
+  /// submitted the report. This enables tracking reporter history and
+  /// preventing abuse through rate limiting.
+  reporter_id String
+  
+  /// Reference to the moderator who resolved this report.
+  ///
+  /// Links to {@link reddit_community_members} to track which moderator made
+  /// the resolution decision. Nullable for pending reports that have not yet
+  /// been reviewed.
+  resolved_by_id String?
+  
+  /// Discriminator for the type of content being reported.
+  ///
+  /// Values: 'post' or 'comment'. Determines which subtype table contains the
+  /// target reference. Used for polymorphic relationship pattern to avoid
+  /// nullable foreign keys.
+  report_type String
+  
+  /// The reporter's explanation for why this content violates community
+  /// guidelines.
+  ///
+  /// Required text field capturing the user's justification for the report.
+  /// Helps moderators understand the concern and make informed decisions.
+  reason String
+  
+  /// Current resolution status of this report.
+  ///
+  /// Values: 'pending' (awaiting moderator review), 'approved' (content
+  /// deleted), 'dismissed' (content kept). Drives the moderation workflow and
+  /// determines report visibility in moderator queues.
+  status String
+  
+  /// Timestamp when the moderator resolved this report.
+  ///
+  /// Populated when status changes from 'pending' to 'approved' or
+  /// 'dismissed'. Nullable for pending reports.
+  resolved_at DateTime?
+  
+  /// Timestamp when this report was filed.
+  created_at DateTime
+  
+  /// Timestamp when this report was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this report was soft deleted.
+  ///
+  /// Nullable field for soft delete support. Allows reports to be marked as
+  /// deleted without removing from database, supporting data retention and
+  /// recovery policies.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  reporter reddit_community_members @relation("reddit_community_reports_of_reporter_id", fields: [reporter_id], references: [id], onDelete: Cascade)
+  resolvedBy reddit_community_members? @relation("reddit_community_reports_of_resolved_by_id", fields: [resolved_by_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  reportOfPost reddit_community_report_of_posts?
+  reportOfComment reddit_community_report_of_comments?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reporter_id])
+  @@index([resolved_by_id])
+  @@index([report_type, status])
+  @@index([status])
+}
+
+/// Subtype table linking reports to specific posts with unique 1:1
+/// relationship to reddit_community_reports.
+///
+/// This table implements the polymorphic relationship pattern where reports
+/// can target either posts or comments. Each report record in {@link
+/// reddit_community_reports} has exactly one corresponding record in either
+/// this table or {@link reddit_community_report_of_comments}, never both.
+///
+/// The unique constraint on reddit_community_report_id enforces the 1:1
+/// relationship, ensuring each report targets exactly one post.
+///
+/// @namespace reddit_community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_report_of_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent report record.
+  ///
+  /// This foreign key establishes the 1:1 relationship with {@link
+  /// reddit_community_reports}. Each report must target exactly one content
+  /// item (either a post or a comment), enforced by the unique constraint on
+  /// this field.
+  reddit_community_report_id String
+  
+  /// Reference to the post being reported.
+  ///
+  /// This foreign key links to {@link reddit_community_posts}, identifying the
+  /// specific post that was reported. Combined with the report reference, this
+  /// creates the complete report-to-post relationship.
+  reddit_community_post_id String
+  
+  /// Timestamp when the report-post relationship was created.
+  ///
+  /// Automatically set when the report is filed against a post. Used for
+  /// auditing and chronological sorting of reports.
+  created_at DateTime
+  
+  /// Timestamp when the report-post relationship was last updated.
+  ///
+  /// Updated whenever the report record is modified. Maintains consistency
+  /// with other domain tables.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion of the report-post relationship.
+  ///
+  /// When set, indicates the relationship has been logically deleted while
+  /// preserving audit history. NULL means the record is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report reddit_community_reports @relation(fields: [reddit_community_report_id], references: [id], onDelete: Cascade)
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([reddit_community_report_id])
+  @@index([reddit_community_post_id])
+}
+
+/// Subtype table linking content reports to specific comments.
+///
+/// Implements the polymorphic relationship where {@link
+/// reddit_community_reports} can target either posts or comments. This table
+/// handles comment-targeted reports with a unique 1:1 relationship to the
+/// parent report.
+///
+/// Each record represents one report filed against a specific comment. The
+/// unique constraint on {@link reddit_community_report_id} ensures each
+/// report targets exactly one entity type (post OR comment, never both).
+/// Moderators resolve reports by approving (deleting content) or dismissing
+/// (keeping content) as defined in reporting requirements.
+///
+/// @namespace reddit_community
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_report_of_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the parent report entity.
+  ///
+  /// Unique constraint enforces 1:1 relationship: each report targets exactly
+  /// one entity type. Links to {@link reddit_community_reports} which contains
+  /// the reporter, reason, and resolution status.
+  reddit_community_report_id String
+  
+  /// References the comment being reported.
+  ///
+  /// Links to {@link reddit_community_comments} to identify the specific
+  /// content that was reported. Used by moderators to review and resolve the
+  /// report.
+  reddit_community_comment_id String
+  
+  /// Timestamp when this report-comment linkage was created.
+  created_at DateTime
+  
+  /// Timestamp when this record was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null when active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report reddit_community_reports @relation(fields: [reddit_community_report_id], references: [id], onDelete: Cascade)
+  comment reddit_community_comments @relation(fields: [reddit_community_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_community_report_id], map: "reddit_community_report_of_comments_reddit_community_r_30422e6c")
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_comment_id], map: "reddit_community_report_of_comments_reddit_community_c_9c6c4ecc")
+}

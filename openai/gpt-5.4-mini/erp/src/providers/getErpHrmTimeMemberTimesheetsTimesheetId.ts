@@ -1,11 +1,11 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
+import { IErpHrmTimeEmployeeDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployeeDashboardSummary";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
 import { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
-import { IErpHrmTimeTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTask";
+import { IErpHrmTimeTaskHistoryEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTaskHistoryEntry";
 import { IErpHrmTimeTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimelog";
 import { IErpHrmTimeTimesheet } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimesheet";
 import { IErpHrmTimeTimesheetTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimesheetTimelog";
@@ -30,46 +30,69 @@ export async function getErpHrmTimeMemberTimesheetsTimesheetId(props: {
       where: { id: props.timesheetId },
       select: {
         id: true,
-        status: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        erp_hrm_time_employee_id: true,
-        reviewed_by_member_id: true,
+        employee: {
+          select: {
+            id: true,
+            organization: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
+        reviewedByMember: {
+          select: {
+            id: true,
+          },
+        },
         week_start_date: true,
         week_end_date: true,
+        status: true,
         submitted_at: true,
         reviewed_at: true,
         rejection_reason: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        timesheetTimelogs: {
+          select: {
+            id: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+            timesheet: {
+              select: {
+                id: true,
+              },
+            },
+            timelog: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
       },
     });
-  if (
-    timesheet.erp_hrm_time_employee_id !== props.member.id &&
-    timesheet.status !== "submitted" &&
-    timesheet.status !== "approved" &&
-    timesheet.status !== "rejected"
-  ) {
-    throw new HttpException("Forbidden", 403);
+  if (timesheet.employee.organization.id !== props.member.id) {
+    throw new HttpException("Not Found", 404);
   }
-  return {
-    id: timesheet.id,
-    status: timesheet.status,
-    created_at: toISOStringSafe(timesheet.created_at),
-    updated_at: toISOStringSafe(timesheet.updated_at),
-    deleted_at:
-      timesheet.deleted_at === null
-        ? null
-        : toISOStringSafe(timesheet.deleted_at),
-    week_start_date: toISOStringSafe(timesheet.week_start_date),
-    week_end_date: toISOStringSafe(timesheet.week_end_date),
-    submitted_at:
-      timesheet.submitted_at === null
-        ? null
-        : toISOStringSafe(timesheet.submitted_at),
-    reviewed_at:
-      timesheet.reviewed_at === null
-        ? null
-        : toISOStringSafe(timesheet.reviewed_at),
-    rejection_reason: timesheet.rejection_reason,
-  } as unknown as IErpHrmTimeTimesheet;
+  if (timesheet.employee.id !== props.member.id) {
+    const approval =
+      await MyGlobal.prisma.erp_hrm_time_organization_memberships.findFirst({
+        where: {
+          erp_hrm_time_organization_id: timesheet.employee.organization.id,
+          erp_hrm_time_member_id: props.member.id,
+          status: "active",
+        },
+        select: {
+          id: true,
+        },
+      });
+    const canApprove = approval !== null;
+    if (timesheet.status !== "submitted" || canApprove === false) {
+      throw new HttpException("Forbidden", 403);
+    }
+  }
+  return timesheet as unknown as IErpHrmTimeTimesheet;
 }

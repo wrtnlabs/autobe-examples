@@ -2,44 +2,90 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
+import { IEcommerceMallWishlist } from "../../../../api/structures/IEcommerceMallWishlist";
 import { IEcommerceMallWishlistItem } from "../../../../api/structures/IEcommerceMallWishlistItem";
-import { IPageIEcommerceMallWishlistItem } from "../../../../api/structures/IPageIEcommerceMallWishlistItem";
+import { IPageIEcommerceMallWishlist } from "../../../../api/structures/IPageIEcommerceMallWishlist";
 import { CustomerAuth } from "../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
-import { deleteEcommerceMallCustomerWishlistWishlistItemId } from "../../../../providers/deleteEcommerceMallCustomerWishlistWishlistItemId";
-import { getEcommerceMallCustomerWishlistWishlistItemId } from "../../../../providers/getEcommerceMallCustomerWishlistWishlistItemId";
+import { deleteEcommerceMallCustomerWishlistProductId } from "../../../../providers/deleteEcommerceMallCustomerWishlistProductId";
 import { patchEcommerceMallCustomerWishlist } from "../../../../providers/patchEcommerceMallCustomerWishlist";
+import { postEcommerceMallCustomerWishlist } from "../../../../providers/postEcommerceMallCustomerWishlist";
 
 @Controller("/ecommerceMall/customer/wishlist")
 export class EcommercemallCustomerWishlistController {
   /**
-   * Retrieve a paginated list of wishlist items for the authenticated customer.
+   * Add a product to the authenticated customer's wishlist.
    *
-   * This endpoint returns all products that have been added to the customer's wishlist. Each wishlist item includes product details such as the product name, main image, and current availability status.
+   * This operation allows customers to save products they are interested in for future purchase consideration. Customers can add products regardless of the product's current stock status - items can be saved whether they are in stock, out of stock, or have variants with varying availability.
    *
-   * The response is paginated to handle customers with large wishlists efficiently. Support is provided for pagination parameters to navigate through results.
+   * Each product can only appear once per customer's wishlist due to database constraints. Attempting to add a product that is already in the wishlist returns the existing wishlist item without creating a duplicate.
    *
-   * The operation is scoped to the authenticated customer identified through the session token. Customers can only access their own wishlist items.
+   * The wishlist item maintains a reference to the product rather than storing product details directly, ensuring customers always see current product information when viewing their wishlist.
    *
-   * When a product is deleted by its seller, the corresponding wishlist item is automatically and permanently removed from all customer wishlists. This cascade removal ensures referential integrity and prevents references to non-existent products.
-   *
-   * Related operations:
-   * - POST /ecommerceMall/customer/wishlist - Add a product to the wishlist
-   * - DELETE /ecommerceMall/customer/wishlist/{productId} - Remove a product from the wishlist
+   * When a seller deletes a product, all associated wishlist items are automatically removed across all customers' wishlists through database cascade rules.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters
+   * @param body Product identifier to add to wishlist
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query ecommerce_mall_wishlist_items table joined with ecommerce_mall_wishlists and ecommerce_mall_products.
+   * @x-autobe-specification Implementation steps:
+   * 1. Extract authenticated customer from request context
+   * 2. Get or validate customer's wishlist exists (one-to-one relationship)
+   * 3. Validate productId is provided and is a valid UUID format
+   * 4. Verify the referenced product exists and is not soft-deleted (deleted_at is null)
+   * 5. Check if wishlist item already exists for this product in customer's wishlist
+   * 6. If item exists, return existing item (idempotent behavior)
+   * 7. If item does not exist, create new wishlist item with current timestamp
+   * 8. Return created wishlist item with product summary information
    *
-   * 1. Get the authenticated customer ID from session context
-   * 2. Query the wishlist for the customer: ecommerce_mall_wishlists WHERE shopping_customer_id = :customerId
-   * 3. Query wishlist_items for that wishlist_id with pagination (limit, offset or cursor)
-   * 4. Join with ecommerce_mall_products to include product details (name, main image)
-   * 5. Return product availability status based on whether product exists and its status
-   * 6. Handle deleted products gracefully - include wishlist item but indicate product unavailable
-   * 7. Order by created_at descending (newest first) by default
+   * Error handling:
+   * - Return 400 Bad Request if productId is missing or invalid
+   * - Return 404 Not Found if product does not exist or is deleted
+   * - Return 500 for database constraint violations (except duplicate)
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Post()
+  public async create(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedBody()
+    body: IEcommerceMallWishlistItem.ICreate,
+  ): Promise<IEcommerceMallWishlistItem.IInvert> {
+    try {
+      return await postEcommerceMallCustomerWishlist({
+        customer,
+        body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve the authenticated customer's wishlist with optional filtering and pagination.
+   *
+   * This endpoint allows customers to view their saved products wishlist. The response includes paginated wishlist items with product information such as name, images, and current price status. Customers can filter results by product name and configure pagination through page size and cursor-based navigation.
+   *
+   * The operation returns wishlist items that may reference deleted products (handled gracefully by the system), allowing customers to see their saved references even if products have been removed by sellers. Empty wishlists return a friendly empty state message rather than an error.
+   *
+   * @param connection
+   * @param body Search criteria including pagination cursor and optional product name filter
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification Query the authenticated customer's wishlist using session context.
+   *
+   * If pagination.cursor is provided, retrieve wishlist items after the cursor position. Otherwise, start from the beginning.
+   *
+   * Apply optional product name filter if request.name contains a search term (case-insensitive partial matching on product name).
+   *
+   * Join with ecommerce_mall_wishlist_items and ecommerce_mall_products to retrieve product details for each wishlist item.
+   *
+   * For wishlist items referencing deleted products, include them with a null or unavailable indicator for product fields.
+   *
+   * Return results sorted by wishlist item creation time descending (newest first).
+   *
+   * Implement pagination with configurable page size (default 20, max 100).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -47,8 +93,8 @@ export class EcommercemallCustomerWishlistController {
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedBody()
-    body: IEcommerceMallWishlistItem.IRequest,
-  ): Promise<IPageIEcommerceMallWishlistItem.ISummary> {
+    body: IEcommerceMallWishlist.IRequest,
+  ): Promise<IPageIEcommerceMallWishlist.ISummary> {
     try {
       return await patchEcommerceMallCustomerWishlist({
         customer,
@@ -61,107 +107,45 @@ export class EcommercemallCustomerWishlistController {
   }
 
   /**
-   * Retrieve a specific wishlist item by its unique identifier.
-   *
-   * This endpoint returns detailed information about a single wishlist item including the associated product details. The operation verifies the wishlist item exists and validates that the authenticated customer owns the wishlist containing this item.
-   *
-   * When the linked product has been deleted by the seller, the system returns the wishlist item marked as unavailable rather than treating it as non-existent, allowing customers to understand why the product is no longer accessible.
-   *
-   * The response includes the wishlist item metadata (when it was added) and the full product details including name, description, price, images, and availability status. This enables customers to view saved product information even if they are revisiting a wishlist item at a later time.
-   *
-   * Security: Only the customer who owns the wishlist containing this item can retrieve it. Customers cannot access wishlist items belonging to other customers.
-   *
-   * @param connection
-   * @param wishlistItemId Unique identifier of the wishlist item to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement the following logic:
-   *
-   * 1. **Extract wishlistItemId** from path parameters and validate it is a valid UUID format.
-   *
-   * 2. **Query wishlist item**: Join ecommerce_mall_wishlist_items with ecommerce_mall_wishlists to verify ownership via shopping_customer_id matching the authenticated customer.
-   *
-   * 3. **Product availability check**: Query the linked ecommerce_mall_products record to verify deleted_at is NULL. If deleted_at is set, include the item with an 'unavailable' flag.
-   *
-   * 4. **Return structure**: If found and owned, return the wishlist item with:
-   *    - wishlistItemId, createdAt
-   *    - nested product object (id, name, description, basePrice, mainImage, availabilityStatus)
-   *    - If product deleted: product id, name, unavailable flag = true
-   *
-   * 5. **Error handling**:
-   *    - If wishlistItemId format invalid: return 400 Bad Request
-   *    - If wishlist item not found: return 404 Not Found
-   *    - If wishlist item exists but belongs to different customer: return 404 (do not leak existence)
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":wishlistItemId")
-  public async at(
-    @CustomerAuth()
-    customer: CustomerPayload,
-    @TypedParam("wishlistItemId")
-    wishlistItemId: string & tags.Format<"uuid">,
-  ): Promise<IEcommerceMallWishlistItem> {
-    try {
-      return await getEcommerceMallCustomerWishlistWishlistItemId({
-        customer,
-        wishlistItemId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
    * Remove a product from the authenticated customer's wishlist.
    *
-   * This operation deletes a specific wishlist item identified by its unique identifier. The wishlist item must belong to the authenticated customer's wishlist - cross-customer removal attempts are rejected as if the item does not exist (preventing information leakage about other customers' wishlists).
+   * This operation allows customers to delete unwanted items from their wishlist. The system verifies that the specified product exists in the customer's wishlist before removal. Customers can only remove items from their own wishlist; attempting to remove a product not in their wishlist returns a not-found error.
    *
-   * The operation validates that the wishlist item exists in the ecommerce_mall_wishlist_items table before deletion. If the item has already been removed (due to product deletion cascade), the system returns a not found error.
-   *
-   * Security: Only the customer who owns the wishlist containing this item can remove it. The system performs ownership verification by joining the wishlist item to its parent wishlist and verifying the wishlist belongs to the authenticated customer session.
-   *
-   * Related operations: POST /customers/wishlist to add items, GET /customers/wishlist to list items. This delete operation complements the create and list operations for complete wishlist management.
-   *
-   * Error responses: 404 Not Found if item doesn't exist or belongs to another customer (same response for security), 401 Unauthorized if not authenticated.
+   * The operation permanently removes the wishlist item link between the customer and product. This action does not affect the product itself or other customers' wishlists containing the same product.
    *
    * @param connection
-   * @param wishlistItemId Unique identifier of the wishlist item to remove
+   * @param productId UUID of the product to remove from wishlist
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Service layer implementation for removing a wishlist item:
+   * @x-autobe-specification Remove a wishlist item by product ID for the authenticated customer.
    *
-   * 1. Extract wishlistItemId from path parameter
-   * 2. Authenticate the requesting customer via session token
-   * 3. Validate wishlistItemId is a valid UUID format
-   * 4. Query wishlist_items table with id = wishlistItemId
-   * 5. If not found, return 404 Not Found
-   * 6. Join to wishlists table to get shopping_customer_id
-   * 7. Verify the wishlist's customer matches the authenticated customer
-   * 8. If ownership check fails, return 404 Not Found (do not reveal existence)
-   * 9. Delete the wishlist item from wishlist_items table
-   * 10. Return 204 No Content on success
+   * 1. Extract customer ID from the authenticated session/JWT token.
+   * 2. Retrieve the customer's wishlist using the customer ID.
+   * 3. Query ecommerce_mall_wishlist_items table to find the item where:
+   *    - ecommerce_mall_wishlist_id matches the customer's wishlist ID
+   *    - ecommerce_mall_product_id matches the {productId} path parameter
+   * 4. If no item found, return 404 NOT FOUND error.
+   * 5. Delete the wishlist item record from the database.
+   * 6. Return 204 No Content on success.
    *
    * Edge cases:
-   * - Invalid UUID format: Return 400 Bad Request
-   * - Expired or invalid session: Return 401 Unauthorized
-   * - Item already deleted: Return 404 Not Found
-   * - Concurrent deletion: Handle gracefully with idempotent response
-   *
-   * Database transaction: Single delete operation within authenticated context
+   * - Product does not exist in wishlist: Return 404 NOT FOUND with appropriate message.
+   * - Product does not exist in system: Still return 404 since item cannot be in wishlist.
+   * - Customer has no wishlist: Return 404 NOT FOUND.
+   * - Wishlist item deleted concurrently: Handle gracefully, return 404.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Delete(":wishlistItemId")
+  @TypedRoute.Delete(":productId")
   public async erase(
     @CustomerAuth()
     customer: CustomerPayload,
-    @TypedParam("wishlistItemId")
-    wishlistItemId: string & tags.Format<"uuid">,
+    @TypedParam("productId")
+    productId: string & tags.Format<"uuid">,
   ): Promise<void> {
     try {
-      return await deleteEcommerceMallCustomerWishlistWishlistItemId({
+      return await deleteEcommerceMallCustomerWishlistProductId({
         customer,
-        wishlistItemId,
+        productId,
       });
     } catch (error) {
       console.log(error);

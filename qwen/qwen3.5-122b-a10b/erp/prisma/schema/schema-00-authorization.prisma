@@ -1,0 +1,481 @@
+/// Temporary guest accounts identified by device fingerprint for
+/// unauthenticated access.
+///
+/// Guest accounts enable device-based tracking and temporary session
+/// management without requiring email registration or password
+/// authentication. Each device is uniquely identified by its fingerprint,
+/// allowing the system to maintain continuity across browsing sessions for
+/// unauthenticated users.
+///
+/// **Identification**
+///
+/// The device_fingerprint field serves as the primary identifier for guest
+/// accounts, generated from browser and device characteristics. This enables
+/// recognition of returning devices without requiring user registration.
+///
+/// **Lifecycle**
+///
+/// Guest accounts support soft delete via the deleted_at field, allowing
+/// temporary deactivation while preserving historical data. Active guests
+/// have a null deleted_at value.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Unique identifier for each guest account.
+  id String @id
+  
+  /// Unique device fingerprint identifying the guest's device.
+  ///
+  /// This field enables device-based identification without requiring user
+  /// registration. Each device should have a unique fingerprint generated from
+  /// browser/device characteristics such as user agent, screen resolution,
+  /// installed fonts, and other browser APIs.
+  device_fingerprint String
+  
+  /// Timestamp when the guest account was created.
+  created_at DateTime
+  
+  /// Timestamp when the guest account was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the guest account was soft-deleted. Null indicates active
+  /// status.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions hrm_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([device_fingerprint])
+  @@index([created_at])
+  @@index([deleted_at])
+}
+
+/// Temporary session tokens for guest device access with expiration.
+///
+/// This table stores authentication session records for guest users who
+/// access the system without creating a full member account. Each session is
+/// tied to a specific guest device and includes metadata for security
+/// auditing.
+///
+/// Session Lifecycle
+///
+/// Sessions are created when a guest device first accesses the system and
+/// are automatically invalidated after expiration. The expired_at field is
+/// NOT NULL to enforce explicit session timeout policies.
+///
+/// Security Considerations
+///
+/// Each session tracks the originating IP address, href, and referrer for
+/// audit purposes. Sessions belong to exactly one {@link hrm_guests} record
+/// and support multiple concurrent sessions per guest device.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the session record.
+  id String @id
+  
+  /// Reference to the guest account that owns this session.
+  ///
+  /// This foreign key establishes the relationship to {@link hrm_guests},
+  /// ensuring each session belongs to exactly one guest device. The guest
+  /// record is identified by device fingerprint and temporary credentials.
+  hrm_guest_id String
+  
+  /// IP address of the client device that created this session.
+  ///
+  /// Used for security auditing and detecting suspicious access patterns from
+  /// different locations.
+  ip String
+  
+  /// The href URL where the session was initiated.
+  ///
+  /// Tracks the entry point of the guest session for analytics and security
+  /// purposes.
+  href String
+  
+  /// The referrer URL that led to this session creation.
+  ///
+  /// Captures the source page or external link that directed the guest to the
+  /// system.
+  referrer String
+  
+  /// Timestamp when this session was created.
+  ///
+  /// Marks the beginning of the session lifecycle.
+  created_at DateTime
+  
+  /// Timestamp when this session expires and becomes invalid.
+  ///
+  /// This field is NOT NULL to enforce explicit session timeout policies.
+  /// Sessions beyond this timestamp are automatically considered invalid.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest hrm_guests @relation(fields: [hrm_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_guest_id, created_at])
+}
+
+/// Member user accounts with email/password authentication credentials and
+/// global profile data.
+///
+/// This table represents the core actor entity for authenticated users in
+/// the system. Each member has a unique email address for login and a
+/// securely hashed password. The global profile data is stored here and
+/// shared across all organizations the user belongs to.
+///
+/// Authentication: Members authenticate using email and password
+/// credentials. The password_hash field stores a bcrypt hash of the user's
+/// password for secure authentication.
+///
+/// Soft Delete Support: The deleted_at field enables soft deletion, allowing
+/// member accounts to be deactivated without permanent data loss. When
+/// deleted_at is null, the account is active.
+///
+/// Multi-Organization Membership: Members can belong to multiple
+/// organizations through the hrm_employees table, which links members to
+/// organizations with role and department assignments.
+///
+/// Account Lifecycle: Members can delete their accounts, subject to
+/// constraints around organization ownership and employee records in other
+/// organizations.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key identifier for the member account.
+  id String @id
+  
+  /// Unique email address for authentication.
+  ///
+  /// This field serves as the primary identifier for member login. It must be
+  /// unique across all member accounts and is used for authentication,
+  /// password reset, and email verification flows.
+  email String
+  
+  /// Bcrypt hash of the user's password.
+  ///
+  /// The password is never stored in plain text. This field contains the
+  /// securely hashed password using bcrypt or equivalent algorithm for
+  /// authentication.
+  password_hash String
+  
+  /// Timestamp when the account was created.
+  ///
+  /// Set automatically upon account registration. Used for audit trails and
+  /// account age calculations.
+  created_at DateTime
+  
+  /// Timestamp when the account was last updated.
+  ///
+  /// Automatically updated on any modification to the account. Used for
+  /// tracking account changes and synchronization.
+  updated_at DateTime
+  
+  /// Timestamp when the account was soft-deleted. Null if active.
+  ///
+  /// When set, the account is considered deleted but data is retained. This
+  /// enables account recovery and audit compliance. Null value indicates an
+  /// active account.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions hrm_member_sessions[]
+  passwordResets hrm_member_password_resets[]
+  emailVerifications hrm_member_email_verifications[]
+  organizationOwners hrm_organization_owners[]
+  employee hrm_employees?
+  sentInvitations hrm_employee_invitations[] @relation("hrm_employee_invitations_of_invited_by_id")
+  receivedInvitation hrm_employee_invitations? @relation("hrm_employee_invitations_of_member_id")
+  employeeSnapshots hrm_employee_snapshots[]
+  taskHistories hrm_task_histories[]
+  reviewedTimesheets hrm_timesheets[]
+  activityLogs hrm_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([created_at])
+}
+
+/// JWT session tokens for member authentication with access and refresh
+/// token support.
+///
+/// This table tracks authenticated member sessions and their lifecycle. Each
+/// session contains JWT tokens for API authentication and metadata about the
+/// session origin.
+///
+/// ## Session Lifecycle
+///
+/// Sessions are created upon successful member login and expire based on
+/// configured token expiration policies. Sessions are append-only audit
+/// trails managed exclusively through authentication flows.
+///
+/// ## Security Considerations
+///
+/// Sessions include IP address and referrer information for security
+/// auditing. The expired_at field enforces session expiration and is NOT
+/// NULL by default to ensure all sessions have defined lifecycles.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the session record.
+  id String @id
+  
+  /// Reference to the member user who owns this session.
+  ///
+  /// Each session belongs to exactly one {@link hrm_members} record. Multiple
+  /// sessions may exist for the same member across different devices or
+  /// browsers.
+  hrm_member_id String
+  
+  /// JWT access token for API authentication.
+  ///
+  /// This token is used to authenticate API requests and contains claims about
+  /// the member's identity and permissions. Tokens are short-lived and must be
+  /// refreshed periodically.
+  access_token String
+  
+  /// JWT refresh token for obtaining new access tokens.
+  ///
+  /// This token is used to generate new access tokens when the current one
+  /// expires. Refresh tokens have longer lifespans than access tokens and are
+  /// rotated on use for security.
+  refresh_token String
+  
+  /// IP address of the client that created this session.
+  ///
+  /// Used for security auditing and detecting suspicious session activity from
+  /// unusual locations.
+  ip String
+  
+  /// Current page URL (href) when session was created.
+  ///
+  /// Captures the page context where the user initiated the login or session
+  /// refresh.
+  href String?
+  
+  /// Referrer URL when session was created.
+  ///
+  /// Tracks the source page that led to the authentication action.
+  referrer String?
+  
+  /// Timestamp when this session was created.
+  ///
+  /// Used for session ordering and calculating session age.
+  created_at DateTime
+  
+  /// Timestamp when this session expires.
+  ///
+  /// Sessions are invalidated after this timestamp. This field is NOT NULL to
+  /// enforce explicit session expiration policies.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member hrm_members @relation(fields: [hrm_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_member_id, created_at])
+}
+
+/// Password reset tokens for member account recovery with expiration and
+/// single-use constraint.
+///
+/// This table stores one-time use tokens that members can use to reset their
+/// passwords. Each token is valid for a limited time and becomes invalid
+/// after use.
+///
+/// ## Token Lifecycle
+///
+/// Tokens are created when a member requests a password reset. The token is
+/// sent via email and must be used within the expiration period. Once used,
+/// the token is marked as consumed and cannot be reused.
+///
+/// ## Security Constraints
+///
+/// - Tokens are single-use only
+/// - Tokens expire after a configured time period
+/// - Multiple tokens can exist for the same member, but only unexpired,
+/// unused tokens are valid
+/// - Old tokens are cleaned up via scheduled job
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key identifier for this password reset token record.
+  id String @id
+  
+  /// Reference to the member account requesting password reset.
+  ///
+  /// This foreign key links the reset token to the specific member whose
+  /// password will be reset. The member must exist in {@link hrm_members}
+  /// table.
+  hrm_member_id String
+  
+  /// Unique cryptographic token sent to member's email for password reset.
+  ///
+  /// This token is generated using a secure random algorithm and is unique
+  /// across all password reset requests. It must be included in the password
+  /// reset request URL.
+  token String
+  
+  /// Timestamp when this token becomes invalid.
+  ///
+  /// Tokens are automatically considered invalid after this time. A background
+  /// job should periodically delete expired tokens to maintain table
+  /// cleanliness.
+  expires_at DateTime
+  
+  /// Timestamp when this token was consumed for password reset.
+  ///
+  /// Once this field is populated, the token cannot be used again. This
+  /// enforces the single-use constraint. Null indicates the token is still
+  /// valid for use.
+  used_at DateTime?
+  
+  /// Timestamp when this password reset token was created.
+  created_at DateTime
+  
+  /// Timestamp when this record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this record was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member hrm_members @relation(fields: [hrm_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  @@index([hrm_member_id, created_at])
+  @@index([expires_at])
+}
+
+/// Email verification tokens for member registration with expiration and
+/// single-use constraint.
+///
+/// This table stores temporary verification tokens sent to users during
+/// registration to confirm email ownership. Each token is valid for a
+/// limited time and can only be used once.
+///
+/// **Token Lifecycle**
+/// - Created when user registers or requests email verification
+/// - Sent via email to the user
+/// - Validated when user clicks verification link
+/// - Marked as used after successful verification
+/// - Expired tokens are cleaned up periodically
+///
+/// **Security Constraints**
+/// - Single-use: token is invalidated after first use
+/// - Expiration: tokens expire after configured time period
+/// - Unique token per verification request
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_member_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the email verification record.
+  id String @id
+  
+  /// Reference to the member account whose email is being verified.
+  ///
+  /// This foreign key links the verification token to the user account created
+  /// during registration. The member record exists before verification is
+  /// complete.
+  ///
+  /// {@link hrm_members}
+  hrm_member_id String
+  
+  /// Unique verification token sent to the user's email address.
+  ///
+  /// This is a cryptographically secure random string used to validate email
+  /// ownership. The token is included in the verification email link and must
+  /// match exactly for verification to succeed.
+  token String
+  
+  /// Email address being verified.
+  ///
+  /// Stored for reference and to allow re-sending verification emails. This
+  /// should match the email provided during member registration.
+  email String
+  
+  /// Timestamp when the verification token expires.
+  ///
+  /// Tokens are invalidated after this time to prevent reuse of old
+  /// verification links. Typical expiration is 24 hours from creation.
+  expires_at DateTime
+  
+  /// Timestamp when the token was successfully used for verification.
+  ///
+  /// This field is null until the user completes email verification. Once set,
+  /// the token cannot be used again (single-use constraint).
+  used_at DateTime?
+  
+  /// Timestamp when the verification token was created.
+  created_at DateTime
+  
+  /// Timestamp when the verification record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the verification record was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member hrm_members @relation(fields: [hrm_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  @@index([hrm_member_id, created_at])
+  @@index([expires_at])
+}

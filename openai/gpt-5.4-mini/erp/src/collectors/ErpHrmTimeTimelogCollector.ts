@@ -19,14 +19,26 @@ export namespace ErpHrmTimeTimelogCollector {
       work_date: new Date(props.body.workDate),
       duration_minutes: props.body.durationMinutes,
       description: props.body.description ?? null,
-      billable: props.body.billable,
+      billable: props.body.billable ?? true,
       created_at: now,
       updated_at: now,
       deleted_at: null,
-      member: { connect: { id: props.member.id } },
-      project: { connect: { id: props.body.projectId } },
+      member: {
+        connect: {
+          id: props.member.id,
+        },
+      },
+      project: {
+        connect: {
+          id: props.body.projectId,
+        },
+      },
       task: props.body.taskId
-        ? { connect: { id: props.body.taskId } }
+        ? {
+            connect: {
+              id: props.body.taskId,
+            },
+          }
         : undefined,
     } satisfies Prisma.erp_hrm_time_timelogsCreateInput;
   }

@@ -26,6 +26,7 @@ export async function guestAuthorize(request: {
   const session = await MyGlobal.prisma.reddit_community_guest_sessions.findFirst({
     where: {
       id: payload.session_id,
+      reddit_community_guest_id: payload.id,
       expired_at: { gt: new Date() },
     },
   });

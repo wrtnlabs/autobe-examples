@@ -21,12 +21,14 @@ export namespace ErpHrmTimeProjectCollector {
       color_code: props.body.colorCode,
       status: props.body.status,
       budget_hours: props.body.budgetHours ?? null,
-      start_date: props.body.startDate ?? null,
-      end_date: props.body.endDate ?? null,
+      start_date: props.body.startDate ? new Date(props.body.startDate) : null,
+      end_date: props.body.endDate ? new Date(props.body.endDate) : null,
       created_at: now,
       updated_at: now,
       deleted_at: null,
-      organization: { connect: { id: props.organization.id } },
+      organization: {
+        connect: { id: props.organization.id },
+      },
     } satisfies Prisma.erp_hrm_time_projectsCreateInput;
   }
 }

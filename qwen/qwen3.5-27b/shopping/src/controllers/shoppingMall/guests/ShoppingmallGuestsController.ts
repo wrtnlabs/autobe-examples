@@ -10,44 +10,37 @@ import { patchShoppingMallGuests } from "../../../providers/patchShoppingMallGue
 @Controller("/shoppingMall/guests")
 export class ShoppingmallGuestsController {
   /**
-   * Retrieve a filtered and paginated list of guest accounts from the shopping mall platform.
+   * Search and list guest accounts on the shopping mall platform with filtering and pagination.
    *
-   * This operation provides the ability to search and browse guest accounts, which represent unauthenticated users browsing the platform. Guest accounts are identified by unique device fingerprints rather than email credentials, allowing the system to track browsing sessions without requiring registration.
+   * This endpoint allows administrators to browse guest accounts identified by device fingerprints. Guests are unauthenticated users who can access public content like product listings, categories, and reviews without registration. Each guest is uniquely identified by a device fingerprint generated from browser characteristics.
    *
-   * Guest accounts contain device fingerprint identifiers, IP addresses, and temporal information including creation and last update timestamps. Each guest may have associated sessions stored in the shopping_mall_guest_sessions table, which track login activity and session expiration.
+   * Use the request body to filter guests by device fingerprint, creation date range, and deletion status. The response includes session activity statistics showing how many times each guest has accessed the platform and their most recent activity.
    *
-   * The operation supports filtering by device fingerprint, IP address, creation date range, and deletion status. By default, soft-deleted guests (those with a deleted_at timestamp) are excluded from results unless explicitly requested. This helps monitor active guest traffic and identify potential abuse patterns.
-   *
-   * Related operations include GET /guests/{guestId} for retrieving detailed guest information with associated sessions.
+   * This operation is useful for monitoring platform usage patterns, identifying active guest users, and analyzing traffic sources through referrer information stored in guest sessions.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for guest accounts
+   * @param body Search criteria for guest accounts including device fingerprint filter, creation date range, deletion status filter, and pagination parameters.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the shopping_mall_guests table with pagination and filtering capabilities.
+   * @x-autobe-specification Query shopping_mall_guests table with pagination and filtering capabilities.
    *
-   * 1. Parse request body for search criteria: device_fingerprint (exact match), ip (exact match), created_at_from (timestamp), created_at_to (timestamp), include_deleted (boolean, default false)
+   * Search filters:
+   * - device_fingerprint: exact match or partial match search
+   * - created_at range: filter guests by registration date range
+   * - deleted_at: filter by deletion status (null for active guests, non-null for deleted guests)
    *
-   * 2. Build base query selecting guest fields: id, device_fingerprint, ip, created_at, updated_at, deleted_at
+   * Join with shopping_mall_guest_sessions to include:
+   * - Session count for each guest
+   * - Last session activity timestamp
+   * - Most recent IP address and referrer information
    *
-   * 3. Apply filters:
-   *    - If device_fingerprint provided, add equality condition
-   *    - If ip provided, add equality condition
-   *    - If created_at_from provided, add greater-than-or-equal condition
-   *    - If created_at_to provided, add less-than-or-equal condition
-   *    - If include_deleted is false (default), exclude records where deleted_at is not null
+   * Apply cursor-based pagination for large result sets.
    *
-   * 4. Apply pagination from request body: page (default 1), limit (default 20, max 100)
+   * Sort by created_at descending by default (newest guests first).
    *
-   * 5. Apply sorting: default by created_at descending (newest first)
+   * Exclude guests who have registered as authenticated users (customer, seller, administrator) if their guest account was soft-deleted.
    *
-   * 6. Execute query and fetch total count for pagination metadata
-   *
-   * 7. For each guest in results, perform a count query on shopping_mall_guest_sessions where shopping_mall_guest_id matches and session is not expired (expired_at > current timestamp)
-   *
-   * 8. Transform results to IShoppingMallGuest.ISummary format including: id, device_fingerprint, ip, created_at, updated_at, active_session_count
-   *
-   * 9. Return paginated response with IPageIShoppingMallGuest.ISummary structure containing pagination metadata and data array
+   * Return guest summary with essential fields: id, device_fingerprint, created_at, updated_at, deleted_at, and session statistics.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -66,36 +59,29 @@ export class ShoppingmallGuestsController {
   }
 
   /**
-   * Retrieve detailed information about a specific guest account by their unique identifier.
+   * Retrieve a single guest account by their unique identifier.
    *
-   * This operation allows administrators to view complete guest account information including device fingerprint, IP address, and account timestamps. Guest accounts represent unauthenticated users who browse the shopping mall platform without creating a registered account. Each guest is identified by a unique device fingerprint generated from browser and device characteristics.
-   *
-   * Guest accounts are temporary in nature and may be automatically cleaned up after extended inactivity. The deleted_at field indicates whether a guest account has been soft-deleted. Soft-deleted guest accounts are not accessible through this endpoint and will return a 404 Not Found response.
-   *
-   * This endpoint is restricted to authenticated administrators only. Guest accounts do not have ownership of any business entities such as orders, cart items, or wishlists, as these features require user registration. The device fingerprint allows the platform to identify returning guests across sessions and provide personalized browsing experiences without requiring authentication.
-   *
-   * Related operations include listing all guests (PATCH /guests) and viewing guest session information through the guest sessions endpoint.
+   * This endpoint returns complete guest account information including device fingerprint, creation timestamp, and update timestamp. Guest accounts represent temporary unauthenticated users who browse public platform content without email or password credentials. Each guest is identified by a unique device fingerprint that persists across browser sessions.
    *
    * @param connection
-   * @param guestId Unique identifier of the guest account to retrieve (global scope)
+   * @param guestId Unique identifier of the guest account to retrieve (global scope).
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the shopping_mall_guests table for a single guest record matching the provided guestId UUID.
+   * @x-autobe-specification Query shopping_mall_guests table by primary key (id) matching the guestId parameter.
    *
-   * Implementation steps:
-   * 1. Validate the guestId parameter is a valid UUID format
-   * 2. Query shopping_mall_guests table WHERE id = guestId AND deleted_at IS NULL
-   * 3. If no record found, return 404 Not Found
-   * 4. If record found but deleted_at IS NOT NULL, return 404 Not Found (soft-deleted records are not accessible)
-   * 5. Return the guest record with all fields: id, device_fingerprint, ip, created_at, updated_at
-   * 6. Do not include related sessions in the response (use separate endpoint if needed)
+   * Return the full guest record including:
+   * - id: UUID primary key
+   * - device_fingerprint: Unique device identifier
+   * - created_at: Account creation timestamp
+   * - updated_at: Last update timestamp
+   * - deleted_at: Soft delete timestamp (nullable)
    *
-   * Authorization: This operation requires admin authentication. Verify the requesting user has admin role before executing the query.
+   * Handle edge cases:
+   * - If guestId does not exist, return 404 Not Found
+   * - If guest is soft-deleted (deleted_at is not null), return 404 Not Found
+   * - Validate guestId is a valid UUID format
    *
-   * Error handling:
-   * - Return 404 if guest not found or soft-deleted
-   * - Return 401 if unauthorized (non-admin user)
-   * - Return 403 if admin user lacks sufficient permissions
+   * This operation does not include guest sessions in the response. Sessions are accessed through separate endpoints.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":guestId")

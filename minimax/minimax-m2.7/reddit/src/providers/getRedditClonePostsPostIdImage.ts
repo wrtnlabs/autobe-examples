@@ -1,0 +1,79 @@
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IRedditCloneFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFile";
+import { IRedditCloneFileAssociation } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileAssociation";
+import { IRedditCloneFileScan } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileScan";
+import { IRedditCloneFileThumbnail } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileThumbnail";
+import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
+import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
+import { Prisma } from "@prisma/sdk";
+import jwt from "jsonwebtoken";
+import typia, { tags } from "typia";
+import { v4 } from "uuid";
+
+import { MyGlobal } from "../MyGlobal";
+import { RedditCloneFileTransformer } from "../transformers/RedditCloneFileTransformer";
+import { PasswordUtil } from "../utils/PasswordUtil";
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+
+export async function getRedditClonePostsPostIdImage(props: {
+  postId: string & tags.Format<"uuid">;
+}): Promise<IRedditCloneFile> {
+  await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
+    where: { id: props.postId },
+    select: { id: true },
+  });
+  const postImage = await MyGlobal.prisma.reddit_clone_post_images.findFirst({
+    where: {
+      reddit_clone_post_id: props.postId,
+      file: {
+        deleted_at: null,
+      },
+    },
+    select: {
+      file: RedditCloneFileTransformer.select(),
+    },
+  });
+  if (!postImage) {
+    throw new HttpException("Not found", 404);
+  }
+  return await RedditCloneFileTransformer.transform(postImage.file);
+}
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IRedditCloneFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFile";
+// import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
+// import { IRedditCloneFileThumbnail } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileThumbnail";
+// import { IRedditCloneFileScan } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileScan";
+// import { IRedditCloneFileAssociation } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileAssociation";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function getRedditClonePostsPostIdImage(props: {
+//   postId: string & tags.Format<"uuid">;
+// }): Promise<IRedditCloneFile> {
+//   const record = await MyGlobal.prisma.reddit_clone_files.findFirstOrThrow({
+//     ...RedditCloneFileTransformer.select(),
+//     where: { ... },
+//   });
+//   return await RedditCloneFileTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

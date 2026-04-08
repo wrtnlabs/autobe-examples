@@ -7,6 +7,8 @@ import { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IH
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTask";
 import { IHrmPlatformTimer } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTimer";
+import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { IPageIHrmPlatformTimer } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIHrmPlatformTimer";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -16,82 +18,68 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { HrmPlatformTimerTransformer } from "../transformers/HrmPlatformTimerTransformer";
+import { HrmPlatformTimerAtSummaryTransformer } from "../transformers/HrmPlatformTimerAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchHrmPlatformMemberTimers(props: {
   member: MemberPayload;
-  body: IHrmPlatformTimer.IUpdate;
-}): Promise<IHrmPlatformTimer> {
-  // Find employee record for the authenticated member
+  body: IHrmPlatformTimer.IRequest;
+}): Promise<IPageIHrmPlatformTimer.ISummary> {
   const employee =
     await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
       where: {
-        user_id: props.member.id,
+        member_id: props.member.id,
         deleted_at: null,
       },
-      select: {
-        id: true,
-      },
     });
-  // Find the active timer for this employee
-  const timer = await MyGlobal.prisma.hrm_platform_timers.findUniqueOrThrow({
-    where: {
-      employee_id: employee.id,
-      deleted_at: null,
-    },
-  });
-  // Determine the effective project_id (new or existing)
-  const effectiveProjectId = props.body.project_id ?? timer.project_id;
-  // Validate project assignment if project_id is provided
-  if (props.body.project_id !== undefined) {
-    const projectMembership =
-      await MyGlobal.prisma.hrm_platform_project_members.findFirst({
-        where: {
-          hrm_platform_employee_id: employee.id,
-          hrm_platform_project_id: props.body.project_id,
+  const page = props.body.page ?? 1;
+  const limit = Math.min(props.body.limit ?? 100, 100);
+  const skip = (page - 1) * limit;
+  const whereInput: Prisma.hrm_platform_timersWhereInput = {
+    hrm_platform_employee_id: employee.id,
+    ...(props.body.status !== undefined && {
+      stopped_at: props.body.status === "active" ? null : { not: null },
+    }),
+    ...(props.body.projectId !== undefined && {
+      hrm_platform_project_id: props.body.projectId,
+    }),
+    ...(props.body.taskId !== undefined && {
+      hrm_platform_task_id: props.body.taskId,
+    }),
+    ...(props.body.dateFrom !== undefined && {
+      started_at: {
+        gte: props.body.dateFrom,
+        ...(props.body.dateTo !== undefined && { lte: props.body.dateTo }),
+      },
+    }),
+    ...(props.body.dateFrom === undefined &&
+      props.body.dateTo !== undefined && {
+        started_at: {
+          lte: props.body.dateTo,
         },
-      });
-    if (!projectMembership) {
-      throw new HttpException(
-        "Employee is not assigned to the specified project",
-        400,
-      );
-    }
-  }
-  // Validate task belongs to project if task_id is provided
-  if (props.body.task_id !== undefined && props.body.task_id !== null) {
-    const task = await MyGlobal.prisma.hrm_platform_tasks.findFirst({
-      where: {
-        id: props.body.task_id,
-        hrm_platform_project_id: effectiveProjectId,
-      },
-    });
-    if (!task) {
-      throw new HttpException(
-        "Task does not belong to the selected project",
-        400,
-      );
-    }
-  }
-  // Update the timer with provided fields
-  const updated = await MyGlobal.prisma.hrm_platform_timers.update({
-    where: {
-      employee_id: employee.id,
-      deleted_at: null,
-    },
-    data: {
-      ...(props.body.description !== undefined && {
-        description: props.body.description,
       }),
-      ...(props.body.project_id !== undefined && {
-        project_id: props.body.project_id,
-      }),
-      ...(props.body.task_id !== undefined && { task_id: props.body.task_id }),
-      updated_at: new Date(),
-    },
-    ...HrmPlatformTimerTransformer.select(),
+  } satisfies Prisma.hrm_platform_timersWhereInput;
+  const records = await MyGlobal.prisma.hrm_platform_timers.findMany({
+    where: whereInput,
+    skip,
+    take: limit,
+    orderBy: { started_at: "desc" },
+    ...HrmPlatformTimerAtSummaryTransformer.select(),
   });
-  return await HrmPlatformTimerTransformer.transform(updated);
+  const total = await MyGlobal.prisma.hrm_platform_timers.count({
+    where: whereInput,
+  });
+  return {
+    pagination: {
+      current: page,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      records,
+      HrmPlatformTimerAtSummaryTransformer.transform,
+    ),
+  } satisfies IPageIHrmPlatformTimer.ISummary;
 }

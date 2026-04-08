@@ -5,29 +5,28 @@ import { ArrayUtil, RandomGenerator } from "@nestia/e2e";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+/**
+ * Prepare random product creation data for E2E testing.
+ *
+ * Generates a complete IEcommerceMallProduct.ICreate with randomized values.
+ */
 export function prepare_random_ecommerce_mall_product(
-  input?: DeepPartial<IEcommerceMallProduct.ICreate>,
+  input?: DeepPartial<IEcommerceMallProduct.ICreate> | undefined,
 ): IEcommerceMallProduct.ICreate {
   return {
     name:
       input?.name ??
-      RandomGenerator.paragraph({ sentences: 2, wordMin: 2, wordMax: 4 }),
+      RandomGenerator.paragraph({ sentences: 4, wordMin: 3, wordMax: 8 }),
     description:
-      input?.description ?? RandomGenerator.content({ paragraphs: 2 }) ?? null,
+      input?.description ??
+      RandomGenerator.content({
+        paragraphs: 2,
+        sentenceMin: 5,
+        sentenceMax: 10,
+      }),
     category_id:
       input?.category_id ?? typia.random<string & tags.Format<"uuid">>(),
     base_price:
-      input?.base_price ??
-      typia.random<
-        number & tags.Type<"uint32"> & tags.Minimum<1000> & tags.Maximum<999999>
-      >(),
-    slug:
-      input?.slug ??
-      (input?.name
-        ? input.name
-            .toLowerCase()
-            .replace(/\s+/g, "-")
-            .replace(/[^a-z0-9-]/g, "")
-        : typia.random<string & tags.Pattern<"^[a-z][a-z0-9-]*$">>()),
+      input?.base_price ?? typia.random<number & tags.ExclusiveMinimum<0>>(),
   };
 }

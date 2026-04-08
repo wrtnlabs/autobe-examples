@@ -2,76 +2,54 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IPageIRedditClonePostLink } from "../../../api/structures/IPageIRedditClonePostLink";
-import { IRedditClonePostLink } from "../../../api/structures/IRedditClonePostLink";
+import { IPageIRedditClonePost } from "../../../api/structures/IPageIRedditClonePost";
+import { IRedditClonePost } from "../../../api/structures/IRedditClonePost";
 import { getRedditClonePostsPostId } from "../../../providers/getRedditClonePostsPostId";
 import { patchRedditClonePosts } from "../../../providers/patchRedditClonePosts";
 
 @Controller("/redditClone/posts")
 export class RedditclonePostsController {
   /**
-   * Retrieve a filtered and sorted list of posts for the popular feed.
+   * Retrieve a single post by its unique identifier.
    *
-   * This endpoint provides access to all posts across communities, ordered by various sorting criteria. It serves as the public feed that both guests and authenticated members can browse.
+   * This endpoint returns complete information about a specific post including its title, full content appropriate to the post type, author details, community information, voting statistics, and timestamps. The content displayed varies by post type: text posts show the full body text, link posts display the complete URL, and image posts provide access to the full image.
    *
-   * **Sorting Options:**
-   * - `hot`: Posts ordered by a combination of vote score and recency using Reddit's hot algorithm
-   * - `new`: Posts ordered by creation timestamp, newest first
-   * - `top`: Posts ordered by vote score, highest first, with optional time range filter
-   * - `controversial`: Posts with similar up and down vote counts appear first (polarizing content)
+   * The post author username and community name are included for immediate context. The vote score reflects the net number of upvotes minus downvotes, and the comment count shows total comments on the post. The created_at timestamp provides the exact posting time.
    *
-   * **Time Range Filter:**
-   * When sorting by 'top' or 'controversial', the optional timeRange parameter filters posts:
-   * - `day`: Posts from the last 24 hours
-   * - `week`: Posts from the last 7 days
-   * - `month`: Posts from the last 30 days
-   * - `year`: Posts from the last 365 days
-   * - `all`: All posts regardless of age
-   *
-   * **Pagination:**
-   * Results are returned in paginated format with configurable page size. Cursor-based pagination is used for efficient traversal of large result sets.
-   *
-   * **Data Source:**
-   * This endpoint queries the reddit_clone_posts table with denormalized vote_score and comment_count fields for efficient sorting. Posts with deleted_at set are excluded from results.
+   * This operation is accessible to all users including banned users, as reading content within a community is permitted even for banned users.
    *
    * @param connection
-   * @param body Search criteria including sorting, time range filter, and pagination parameters
+   * @param postId Unique identifier of the post to retrieve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_clone_posts table to retrieve posts for the popular feed.
+   * @x-autobe-specification Query the reddit_clone_posts table filtering by id equal to postId.
    *
-   * 1. **Base Query**: Select posts where deleted_at is NULL (active posts only)
+   * Verify the post exists and deleted_at is null (exclude soft-deleted posts).
    *
-   * 2. **Sorting Logic**:
-   *    - `hot`: Calculate hot score = vote_score / (age_hours + 2)^1.5, order by score descending
-   *    - `new`: Order by created_at descending
-   *    - `top`: Order by vote_score descending (apply timeRange filter if specified)
-   *    - `controversial`: Order by ABS(upvotes - downvotes) / (upvotes + downvotes + 1) descending
+   * Based on the post type field:
+   * - If type equals 'text': JOIN with reddit_clone_post_text_contents ON post_id, retrieve body field
+   * - If type equals 'link': JOIN with reddit_clone_post_links ON post_id, retrieve url field
+   * - If type equals 'image': JOIN with reddit_clone_post_images ON post_id, then JOIN with reddit_clone_files ON file_id, retrieve storage_path as imageUrl
    *
-   * 3. **Time Range Filtering**:
-   *    - Calculate cutoff timestamp based on timeRange: day (24h), week (7d), month (30d), year (365d), all (no filter)
-   *    - Apply filter only when sorting by 'top' or 'controversial'
+   * JOIN with reddit_clone_members to retrieve the authorUsername from username field.
    *
-   * 4. **Pagination**:
-   *    - Use cursor-based pagination with created_at and id as cursor for stable ordering
-   *    - Default page size: 20, maximum: 100
+   * JOIN with reddit_clone_communities to retrieve the communityName from name field.
    *
-   * 5. **Response Construction**:
-   *    - Join with reddit_clone_members for author username
-   *    - Join with reddit_clone_communities for community name
-   *    - Return summary fields: id, title, type, vote_score, comment_count, created_at, author info, community info
+   * Return the post id, title, type, vote_score, comment_count, created_at, the appropriate content field, authorUsername, and communityName.
    *
-   * 6. **Security**: No authentication required - publicly accessible
+   * Handle case when post is not found: return 404 error.
+   *
+   * Handle case when post is soft-deleted (deleted_at is not null): return 404 error.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
-  public async index(
-    @TypedBody()
-    body: IRedditClonePostLink.IRequest,
-  ): Promise<IPageIRedditClonePostLink.ISummary> {
+  @TypedRoute.Get(":postId")
+  public async at(
+    @TypedParam("postId")
+    postId: string & tags.Format<"uuid">,
+  ): Promise<IRedditClonePost> {
     try {
-      return await patchRedditClonePosts({
-        body,
+      return await getRedditClonePostsPostId({
+        postId,
       });
     } catch (error) {
       console.log(error);
@@ -80,45 +58,62 @@ export class RedditclonePostsController {
   }
 
   /**
-   * Retrieve a single post by its unique identifier.
+   * Retrieve a paginated list of posts with filtering, sorting, and pagination support.
    *
-   * This endpoint returns the complete post information including the title, full content based on the post type (text body for text posts, URL for link posts, or image reference for image posts), the author's username, the community name where it was posted, the current vote score, the total comment count, and the creation timestamp.
+   * This endpoint serves the main post feed functionality of the Reddit-like platform. It supports three feed types: Home Feed (posts from subscribed communities for authenticated users), Popular Feed (all posts sorted by engagement), and Community Feed (posts from a specific community).
    *
-   * The post type discriminator in the response indicates which content variant is present: 'text' posts include the full body text, 'link' posts include the external URL, and 'image' posts include the associated image file reference.
+   * The endpoint supports multiple sorting algorithms: Hot (engagement rate), New (chronological), Top (highest score within time filter), and Controversial (most polarizing). Time filters for Top and Controversial sorting include today, this week, this month, this year, and all time.
    *
-   * This operation is publicly accessible to all users (both guests and members) without authentication. Users do not need to be logged in to view post details.
+   * Each post in the response includes essential display information: title, author username, community name, vote score, comment count, relative timestamp, and type-specific content preview (first 200 characters for text, domain name for links, thumbnail URL for images).
    *
-   * The author relationship is resolved through the reddit_clone_members table to display the author's username. The community relationship is resolved through the reddit_clone_communities table to display the community name.
-   *
-   * If the specified post does not exist, the server returns a 404 Not Found response.
+   * Pagination uses cursor-based navigation with configurable page sizes.
    *
    * @param connection
-   * @param postId Unique identifier of the post to retrieve
+   * @param body Search criteria including sort order, filters, and pagination parameters
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_clone_posts table by the specified postId (UUID). Verify the post exists and has not been soft-deleted (deleted_at is null).
+   * @x-autobe-specification Query the reddit_clone_posts table with the following implementation details:
    *
-   * Retrieve the post's type discriminator to determine which content table to JOIN:
-   * - If type = 'text': JOIN with reddit_clone_post_text_contents to get the body field
-   * - If type = 'link': JOIN with reddit_clone_post_links to get the url field
-   * - If type = 'image': JOIN with reddit_clone_post_images and reddit_clone_files to get the image file reference
+   * 1. Base Query: Start with reddit_clone_posts table joined with reddit_clone_members (for author username) and reddit_clone_communities (for community name).
    *
-   * JOIN with reddit_clone_members to get the author username.
-   * JOIN with reddit_clone_communities to get the community name.
+   * 2. Filtering: Apply optional filters based on request body:
+   *    - communityId: Filter posts by specific community
+   *    - subscribedOnly: For authenticated users, filter to subscribed communities only
+   *    - type: Filter by post type ('text', 'link', 'image')
    *
-   * Return the denormalized vote_score and comment_count directly from the posts table.
+   * 3. Sorting: Apply sort based on sort parameter:
+   *    - 'hot': Order by (vote_score / exponential_decay(created_at)) DESC
+   *    - 'new': Order by created_at DESC
+   *    - 'top': Order by vote_score DESC, filtered by timeRange
+   *    - 'controversial': Order by ABS(vote_score) ASC with minimum vote threshold, filtered by timeRange
    *
-   * If post not found or soft-deleted, return 404 error response.
+   * 4. Time Range Filter: For 'top' and 'controversial' sorting, filter created_at based on timeRange:
+   *    - 'day': last 24 hours
+   *    - 'week': last 7 days
+   *    - 'month': last 30 days
+   *    - 'year': last 365 days
+   *    - 'all': no filter
+   *
+   * 5. Pagination: Apply cursor-based pagination using created_at and id as cursor. Return requested pageSize posts.
+   *
+   * 6. Response Construction: For each post, include:
+   *    - Join with reddit_clone_post_text_contents for text posts (truncate body to 200 chars)
+   *    - Join with reddit_clone_post_links for link posts (extract domain from URL)
+   *    - Join with reddit_clone_post_images and reddit_clone_file_thumbnails for image post thumbnails
+   *
+   * 7. Authorization: If subscribedOnly is true, verify user session and fetch user's subscribed community IDs from reddit_clone_subscriptions.
+   *
+   * 8. Exclude deleted posts: Add WHERE deleted_at IS NULL.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get(":postId")
-  public async at(
-    @TypedParam("postId")
-    postId: string & tags.Format<"uuid">,
-  ): Promise<IRedditClonePostLink> {
+  @TypedRoute.Patch()
+  public async index(
+    @TypedBody()
+    body: IRedditClonePost.IRequest,
+  ): Promise<IPageIRedditClonePost.ISummary> {
     try {
-      return await getRedditClonePostsPostId({
-        postId,
+      return await patchRedditClonePosts({
+        body,
       });
     } catch (error) {
       console.log(error);

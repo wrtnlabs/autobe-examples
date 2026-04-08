@@ -10,27 +10,53 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallCancellationRequestCollector {
   export async function collect(props: {
     body: IShoppingMallCancellationRequest.ICreate;
-    customer: IEntity;
+    shoppingMallCustomers: IEntity;
+    shoppingMallOrderItems: IEntity;
   }) {
-    const id: string = v4();
-    // Query the order item to establish the relation
-    const orderItem =
-      await MyGlobal.prisma.shopping_mall_order_items.findFirstOrThrow({
-        where: { id: props.body.orderItemId },
-      });
     return {
-      id,
-      reason: props.body.reason,
+      // Scalar fields
+      id: v4(),
       status: "pending",
-      rejection_reason: null,
-      requested_at: new Date(),
-      responded_at: null,
+      reason: props.body.reason,
+      response_reason: null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      orderItem: { connect: { id: orderItem.id } },
-      customer: { connect: { id: props.customer.id } },
-      seller: undefined,
+      // BelongsTo relations
+      customer: { connect: { id: props.shoppingMallCustomers.id } },
+      orderItem: { connect: { id: props.shoppingMallOrderItems.id } },
+      // HasMany relations (reverse relations, not created here)
+      requestSnapshots: undefined,
+      snapshots: undefined,
     } satisfies Prisma.shopping_mall_cancellation_requestsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace ShoppingMallCancellationRequestCollector {
+//         export async function collect(props: {
+//           body: IShoppingMallCancellationRequest.ICreate;
+//           shoppingMallCustomers: IEntity; // from authorized actor
+// shoppingMallOrderItems: IEntity; // from path parameter itemId
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       status: ...,
+//       reason: ...,
+//       response_reason: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       customer: ...,
+//       orderItem: ...,
+//       requestSnapshots: ...,
+//       snapshots: ...,
+//           } satisfies Prisma.shopping_mall_cancellation_requestsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

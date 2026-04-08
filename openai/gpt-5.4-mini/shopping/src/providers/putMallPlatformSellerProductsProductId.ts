@@ -1,7 +1,18 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
+import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
+import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
+import { IMallPlatformProductImageSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImageSnapshot";
+import { IMallPlatformProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductSnapshot";
+import { IMallPlatformProductSnapshotImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductSnapshotImage";
+import { IMallPlatformProductSnapshotVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductSnapshotVariant";
+import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
+import { IMallPlatformProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariantSnapshot";
+import { IMallPlatformReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformReview";
+import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformWishlist";
+import { IMallPlatformWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformWishlistItem";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -20,74 +31,90 @@ export async function putMallPlatformSellerProductsProductId(props: {
   productId: string & tags.Format<"uuid">;
   body: IMallPlatformProduct.IUpdate;
 }): Promise<IMallPlatformProduct> {
-  const existing = await MyGlobal.prisma.mall_platform_products.findUnique({
-    where: { id: props.productId },
-    select: {
-      id: true,
-      seller_account_id: true,
-      category_id: true,
-      name: true,
-      description: true,
-      base_price: true,
-      deleted_at: true,
-      category: {
+  const result = await MyGlobal.prisma.$transaction(async () => {
+    const product =
+      await MyGlobal.prisma.mall_platform_products.findUniqueOrThrow({
+        where: { id: props.productId },
         select: {
-          name: true,
+          id: true,
+          seller_account_id: true,
         },
-      },
-    },
-  });
-  if (existing === null) {
-    throw new HttpException("Not Found", 404);
-  }
-  if (existing.deleted_at !== null) {
-    throw new HttpException("Conflict", 409);
-  }
-  if (existing.seller_account_id !== props.seller.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  if (props.body.categoryId !== undefined && props.body.categoryId !== null) {
-    await MyGlobal.prisma.mall_platform_categories.findUniqueOrThrow({
-      where: { id: props.body.categoryId },
-      select: { id: true },
-    });
-  }
-  await MyGlobal.prisma.$transaction(async (prisma) => {
-    await prisma.mall_platform_product_snapshots.create({
-      data: {
-        id: v4(),
-        mall_platform_product_id: existing.id,
-        snapshot_kind: "update_before",
-        product_name: existing.name,
-        product_description: existing.description,
-        category_name: existing.category?.name ?? null,
-        base_price: existing.base_price,
-        main_image_uri: null,
-        image_count: 0,
-        variant_count: 0,
-        created_at: new Date(),
-      },
-    });
-    await prisma.mall_platform_products.update({
+      });
+    if (product.seller_account_id !== props.seller.id) {
+      throw new HttpException("Forbidden", 403);
+    }
+    await MyGlobal.prisma.mall_platform_products.update({
       where: { id: props.productId },
       data: {
-        ...(props.body.name !== undefined ? { name: props.body.name } : {}),
-        ...(props.body.description !== undefined
-          ? { description: props.body.description }
-          : {}),
-        ...(props.body.categoryId !== undefined
-          ? { category_id: props.body.categoryId }
-          : {}),
-        ...(props.body.basePrice !== undefined
-          ? { base_price: props.body.basePrice }
-          : {}),
+        ...(props.body.name !== undefined && { name: props.body.name }),
+        ...(props.body.description !== undefined && {
+          description: props.body.description,
+        }),
+        ...(props.body.category_id !== undefined && {
+          category_id: props.body.category_id,
+        }),
+        ...(props.body.base_price !== undefined && {
+          base_price: props.body.base_price,
+        }),
       },
     });
-  });
-  const updated =
-    await MyGlobal.prisma.mall_platform_products.findUniqueOrThrow({
+    return await MyGlobal.prisma.mall_platform_products.findUniqueOrThrow({
       where: { id: props.productId },
       ...MallPlatformProductTransformer.select(),
     });
-  return await MallPlatformProductTransformer.transform(updated);
+  });
+  return await MallPlatformProductTransformer.transform(result);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
+// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+// import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
+// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
+// import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
+// import { IMallPlatformProductImageSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImageSnapshot";
+// import { IMallPlatformProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariantSnapshot";
+// import { IMallPlatformWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformWishlistItem";
+// import { IMallPlatformWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformWishlist";
+// import { IMallPlatformReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformReview";
+// import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+// import { IMallPlatformProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductSnapshot";
+// import { IMallPlatformProductSnapshotImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductSnapshotImage";
+// import { IMallPlatformProductSnapshotVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductSnapshotVariant";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function putMallPlatformSellerProductsProductId(props: {
+//   seller: SellerPayload;
+//   productId: string & tags.Format<"uuid">;
+//   body: IMallPlatformProduct.IUpdate;
+// }): Promise<IMallPlatformProduct> {
+//   await MyGlobal.prisma.mall_platform_products.update({
+//     where: { ... },
+//     data: { ... },
+//   });
+//   const updated = await MyGlobal.prisma.mall_platform_products.findUniqueOrThrow({
+//     where: { ... },
+//     ...MallPlatformProductTransformer.select(),
+//   });
+//   return await MallPlatformProductTransformer.transform(updated);
+// }
+// ```
+//--------------------------------------------------------------

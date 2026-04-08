@@ -2,8 +2,10 @@ import { IEcommerceMallGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IE
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallGuestAtSummaryTransformer {
@@ -35,10 +37,40 @@ export namespace EcommerceMallGuestAtSummaryTransformer {
     return {
       id: input.id,
       fingerprint: input.fingerprint,
-      ip_address: input.ip_address ?? undefined,
-      user_agent: input.user_agent ?? undefined,
-      last_active_at: input.last_active_at?.toISOString() ?? undefined,
-      created_at: input.created_at.toISOString(),
+      userAgent: input.user_agent,
     };
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallGuestAtSummaryTransformer {
+//       export type Payload = Prisma.ecommerce_mall_guestsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             fingerprint: true,
+//             ip_address: true,
+//             user_agent: true,
+//             last_active_at: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//           },
+//         } satisfies Prisma.ecommerce_mall_guestsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallGuest.ISummary> {
+//         return {
+//   id: {string},
+//   fingerprint: {string},
+//   userAgent: {string | null},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

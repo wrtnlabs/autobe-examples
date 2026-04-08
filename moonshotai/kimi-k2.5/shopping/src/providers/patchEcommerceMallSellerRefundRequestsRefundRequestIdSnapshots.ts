@@ -11,79 +11,93 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
-import { EcommerceMallRefundRequestSnapshotAtSummaryTransformer } from "../transformers/EcommerceMallRefundRequestSnapshotAtSummaryTransformer";
+import { EcommerceMallRefundRequestSnapshotTransformer } from "../transformers/EcommerceMallRefundRequestSnapshotTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchEcommerceMallSellerRefundRequestsRefundRequestIdSnapshots(props: {
   seller: SellerPayload;
-  refundRequestId: string & tags.Format<"uuid">;
+  refundRequestId: string;
   body: IEcommerceMallRefundRequestSnapshot.IRequest;
-}): Promise<IPageIEcommerceMallRefundRequestSnapshot.ISummary> {
+}): Promise<IPageIEcommerceMallRefundRequestSnapshot> {
   // Verify refund request exists and belongs to seller
   const refundRequest =
     await MyGlobal.prisma.ecommerce_mall_refund_requests.findFirst({
       where: {
         id: props.refundRequestId,
-        seller_id: props.seller.id,
+        orderItem: {
+          seller_id: props.seller.id,
+        },
       },
-      select: { id: true },
+      select: {
+        id: true,
+      },
     });
   if (refundRequest === null) {
     throw new HttpException("Refund request not found or access denied", 404);
   }
-  // Pagination parameters
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 10;
-  const skip = (page - 1) * limit;
-  // Sort configuration
-  const sortField = props.body.sortField ?? "createdAt";
-  const sortDirection = props.body.sortDirection ?? "desc";
-  const orderByColumn = sortField === "status" ? "status" : "created_at";
-  const orderDirection = sortDirection === "asc" ? "asc" : "desc";
   // Build where clause
-  const whereInput: Prisma.ecommerce_mall_refund_request_snapshotsWhereInput = {
+  const whereInput = {
     refund_request_id: props.refundRequestId,
-  };
-  // Add status filter if provided
-  if (props.body.status !== undefined) {
-    whereInput.status = props.body.status;
-  }
-  // Add search filter if provided
-  if (props.body.search !== undefined && props.body.search.length > 0) {
-    whereInput.OR = [
-      { reason: { contains: props.body.search, mode: "insensitive" } },
-      { response_reason: { contains: props.body.search, mode: "insensitive" } },
-    ];
-  }
-  // Query snapshots
-  const snapshots =
+    ...(props.body.status !== null && { status: props.body.status }),
+    ...(props.body.reason !== null &&
+      props.body.reason !== undefined && {
+        reason: { contains: props.body.reason },
+      }),
+    ...(props.body.responseReason !== null &&
+      props.body.responseReason !== undefined && {
+        response_reason: { contains: props.body.responseReason },
+      }),
+    ...(props.body.createdAtFrom !== null && props.body.createdAtTo !== null
+      ? {
+          created_at: {
+            gte: new Date(props.body.createdAtFrom),
+            lte: new Date(props.body.createdAtTo),
+          },
+        }
+      : props.body.createdAtFrom !== null
+        ? {
+            created_at: {
+              gte: new Date(props.body.createdAtFrom),
+            },
+          }
+        : props.body.createdAtTo !== null
+          ? {
+              created_at: {
+                lte: new Date(props.body.createdAtTo),
+              },
+            }
+          : {}),
+  } satisfies Prisma.ecommerce_mall_refund_request_snapshotsWhereInput;
+  // Pagination
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const skip = (page - 1) * limit;
+  // Fetch data and count
+  const data =
     await MyGlobal.prisma.ecommerce_mall_refund_request_snapshots.findMany({
       where: whereInput,
       skip,
       take: limit,
-      orderBy: { [orderByColumn]: orderDirection },
-      ...EcommerceMallRefundRequestSnapshotAtSummaryTransformer.select(),
+      orderBy: { created_at: "desc" },
+      ...EcommerceMallRefundRequestSnapshotTransformer.select(),
     });
-  // Count total
   const total =
     await MyGlobal.prisma.ecommerce_mall_refund_request_snapshots.count({
       where: whereInput,
     });
   // Transform results
   const transformedData = await ArrayUtil.asyncMap(
-    snapshots,
-    EcommerceMallRefundRequestSnapshotAtSummaryTransformer.transform,
+    data,
+    EcommerceMallRefundRequestSnapshotTransformer.transform,
   );
-  // Calculate pagination
-  const pagination: IPage.IPagination = {
-    current: page,
-    limit: limit,
-    records: total,
-    pages: Math.ceil(total / limit),
-  };
   return {
     data: transformedData,
-    pagination,
+    pagination: {
+      current: page,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
   };
 }

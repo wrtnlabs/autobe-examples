@@ -1,11 +1,10 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
+import { IErpHrmTimeEmployeeDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployeeDashboardSummary";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
 import { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
-import { IErpHrmTimeTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTask";
 import { IErpHrmTimeTaskHistoryEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTaskHistoryEntry";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -26,33 +25,21 @@ export async function getErpHrmTimeMemberProjectsProjectIdTasksTaskIdHistoryEntr
   taskId: string & tags.Format<"uuid">;
   historyEntryId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeTaskHistoryEntry> {
-  await MyGlobal.prisma.erp_hrm_time_members.findUniqueOrThrow({
-    where: {
-      id: props.member.id,
-    },
-    select: {
-      id: true,
-    },
-  });
-  await MyGlobal.prisma.erp_hrm_time_projects.findFirstOrThrow({
-    where: {
-      id: props.projectId,
-    },
-    select: {
-      id: true,
-    },
-  });
-  await MyGlobal.prisma.erp_hrm_time_tasks.findFirstOrThrow({
+  const task = await MyGlobal.prisma.erp_hrm_time_tasks.findUniqueOrThrow({
     where: {
       id: props.taskId,
       erp_hrm_time_project_id: props.projectId,
     },
     select: {
       id: true,
+      erp_hrm_time_project_id: true,
     },
   });
+  if (task.erp_hrm_time_project_id !== props.projectId) {
+    throw new HttpException("Not Found", 404);
+  }
   const historyEntry =
-    await MyGlobal.prisma.erp_hrm_time_task_history_entries.findFirstOrThrow({
+    await MyGlobal.prisma.erp_hrm_time_task_history_entries.findUniqueOrThrow({
       where: {
         id: props.historyEntryId,
         erp_hrm_time_task_id: props.taskId,

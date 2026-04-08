@@ -1,5 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
+import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
+import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
+import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 import { IMallPlatformWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformWishlist";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -8,25 +11,12 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { MallPlatformCustomerAtSummaryTransformer } from "./MallPlatformCustomerAtSummaryTransformer";
+import { MallPlatformProductAtSummaryTransformer } from "./MallPlatformProductAtSummaryTransformer";
 
 export namespace MallPlatformWishlistAtSummaryTransformer {
-  export type Payload = Prisma.mall_platform_wishlistsGetPayload<
+  export type Payload = Prisma.mall_platform_wishlist_itemsGetPayload<
     ReturnType<typeof select>
   >;
-  export async function transform(
-    input: Payload,
-  ): Promise<IMallPlatformWishlist.ISummary> {
-    return {
-      id: input.id,
-      customer: await MallPlatformCustomerAtSummaryTransformer.transform(
-        input.customer,
-      ),
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-    };
-  }
   export function select() {
     return {
       select: {
@@ -34,13 +24,55 @@ export namespace MallPlatformWishlistAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        customer: MallPlatformCustomerAtSummaryTransformer.select(),
-        wishlistItems: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.mall_platform_wishlist_itemsFindManyArgs,
+        wishlist: true,
+        product: MallPlatformProductAtSummaryTransformer.select(),
       },
-    } satisfies Prisma.mall_platform_wishlistsFindManyArgs;
+    } satisfies Prisma.mall_platform_wishlist_itemsFindManyArgs;
+  }
+  export async function transform(
+    input: Payload,
+  ): Promise<IMallPlatformWishlist.ISummary> {
+    return {
+      id: input.id,
+      product: await MallPlatformProductAtSummaryTransformer.transform(
+        input.product,
+      ),
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+    } satisfies IMallPlatformWishlist.ISummary;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace MallPlatformWishlistAtSummaryTransformer {
+//       export type Payload = Prisma.mall_platform_wishlist_itemsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//             mall_platform_wishlist_id: true,
+//             product: MallPlatformProductAtSummaryTransformer.select(),
+//           },
+//         } satisfies Prisma.mall_platform_wishlist_itemsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IMallPlatformWishlist.ISummary> {
+//         return {
+//   id: {string},
+//   product: await MallPlatformProductAtSummaryTransformer.transform(input.product),
+//   created_at: {string},
+//   updated_at: {string},
+//   deleted_at: {string | null},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

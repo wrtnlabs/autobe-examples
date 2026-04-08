@@ -34,5 +34,37 @@ export async function getHrmPlatformMemberTimelogsTimelogId(props: {
       ...HrmPlatformTimelogTransformer.select(),
     },
   );
+  const employee =
+    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
+      where: {
+        member_id: props.member.id,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        role: {
+          select: {
+            id: true,
+            rolePermissions: {
+              select: {
+                permission: {
+                  select: {
+                    id: true,
+                    code: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  const isOwner = timelog.employee.id === employee.id;
+  const hasViewAllPermission = employee.role.rolePermissions.some(
+    (rp: any) => rp.permission.code === "time:view_all",
+  );
+  if (!isOwner && !hasViewAllPermission) {
+    throw new HttpException("Forbidden", 403);
+  }
   return await HrmPlatformTimelogTransformer.transform(timelog);
 }

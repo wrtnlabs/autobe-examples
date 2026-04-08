@@ -10,26 +10,25 @@ export function prepare_random_ecommerce_mall_product_variant(
   input?: DeepPartial<IEcommerceMallProductVariant.ICreate>,
 ): IEcommerceMallProductVariant.ICreate {
   return {
-    skuCode: input?.skuCode ?? RandomGenerator.alphaNumeric(8),
+    skuCode: input?.skuCode ?? RandomGenerator.alphaNumeric(8).toUpperCase(),
+    price:
+      input?.price ??
+      (RandomGenerator.pick([true, false])
+        ? typia.random<number & tags.Minimum<0>>()
+        : null),
     options: input?.options
       ? input.options.map((option) => ({
-          optionName: option.optionName ?? RandomGenerator.alphabets(6),
-          optionValue: option.optionValue ?? RandomGenerator.alphabets(6),
+          optionName: option.optionName ?? RandomGenerator.name(1),
+          optionValue: option.optionValue ?? RandomGenerator.name(1),
         }))
       : ArrayUtil.repeat(
           typia.random<
             number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<3>
           >(),
           () => ({
-            optionName: RandomGenerator.alphabets(6),
-            optionValue: RandomGenerator.alphabets(6),
+            optionName: RandomGenerator.name(1),
+            optionValue: RandomGenerator.name(1),
           }),
         ),
-    price: input?.price ?? typia.random<number & tags.Minimum<0>>(),
-    stock:
-      input?.stock ??
-      typia.random<
-        number & tags.Type<"int32"> & tags.Minimum<0> & tags.Maximum<1000>
-      >(),
   };
 }

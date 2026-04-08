@@ -2,10 +2,10 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import type { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
 import type { IErpHrmTimeEmployeeContract } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployeeContract";
+import type { IErpHrmTimeEmployeeDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployeeDashboardSummary";
 import type { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import type { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import type { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import type { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
 import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import type { IPageIErpHrmTimeEmployeeContract } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIErpHrmTimeEmployeeContract";
@@ -22,67 +22,46 @@ import { authorize_member_refresh } from "../../../authorize/authorize_member_re
 export async function test_api_employee_contract_history_organization_isolation(
   connection: api.IConnection,
 ): Promise<void> {
-  const requesterConnection: api.IConnection = { host: connection.host };
-  const requester = await authorize_member_join(requesterConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: "password123!",
-      name: RandomGenerator.name(),
-      href: "https://example.com/register/requester",
-      referrer: "https://example.com/signup",
-      ip: "127.0.0.1",
-    } satisfies IErpHrmTimeMember.IJoin,
-  });
-  typia.assert(requester);
-  const foreignConnection: api.IConnection = { host: connection.host };
-  const foreign = await authorize_member_join(foreignConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: "password123!",
-      name: RandomGenerator.name(),
-      href: "https://example.com/register/foreign",
-      referrer: "https://example.com/signup",
-      ip: "127.0.0.1",
-    } satisfies IErpHrmTimeMember.IJoin,
-  });
-  typia.assert(foreign);
-  const requesterHistory =
-    await api.functional.erpHrmTime.member.employee.contracts.history.index(
-      requesterConnection,
-    );
-  typia.assert(requesterHistory);
-  const foreignHistory =
-    await api.functional.erpHrmTime.member.employee.contracts.history.index(
-      foreignConnection,
-    );
-  typia.assert(foreignHistory);
-  TestValidator.equals(
-    "requester history page should be a valid page structure",
-    requesterHistory.pagination.current,
-    requesterHistory.pagination.current,
+  const organizationAConnection: api.IConnection = { host: connection.host };
+  const organizationAAuthorized = await authorize_member_join(
+    organizationAConnection,
+    {
+      body: {
+        email: typia.random<string & tags.Format<"email">>(),
+        password: "1234",
+        displayName: RandomGenerator.name(),
+        href: "https://example.com/onboarding/a",
+        referrer: "https://example.com/referrer/a",
+      } satisfies IErpHrmTimeMember.IJoin,
+    },
   );
-  TestValidator.equals(
-    "foreign history page should be a valid page structure",
-    foreignHistory.pagination.current,
-    foreignHistory.pagination.current,
+  const organizationBConnection: api.IConnection = { host: connection.host };
+  const organizationBAuthorized = await authorize_member_join(
+    organizationBConnection,
+    {
+      body: {
+        email: typia.random<string & tags.Format<"email">>(),
+        password: "1234",
+        displayName: RandomGenerator.name(),
+        href: "https://example.com/onboarding/b",
+        referrer: "https://example.com/referrer/b",
+      } satisfies IErpHrmTimeMember.IJoin,
+    },
   );
-  TestValidator.notEquals(
-    "separate authorized sessions should not share the same member id",
-    requester.id,
-    foreign.id,
-  );
-  TestValidator.equals(
-    "history responses should remain read-only summaries",
-    requesterHistory.data.every(
-      (item) => item.deletedAt === null || typeof item.deletedAt === "string",
-    ),
-    true,
-  );
-  TestValidator.equals(
-    "history responses should remain read-only summaries for the foreign context",
-    foreignHistory.data.every(
-      (item) => item.deletedAt === null || typeof item.deletedAt === "string",
-    ),
-    true,
+  await TestValidator.httpError(
+    "cross-organization contract history must be rejected as not found",
+    [404],
+    async () => {
+      await api.functional.erpHrmTime.member.employees.contracts.index(
+        organizationAConnection,
+        {
+          employeeId: organizationBAuthorized.id,
+          body: {
+            page: 1,
+            limit: 10,
+          } satisfies IErpHrmTimeEmployeeContract.IRequest,
+        },
+      );
+    },
   );
 }

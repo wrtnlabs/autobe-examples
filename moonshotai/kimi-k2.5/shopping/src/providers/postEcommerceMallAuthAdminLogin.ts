@@ -16,14 +16,8 @@ export async function postEcommerceMallAuthAdminLogin(props: {
   ip: string;
   body: IEcommerceMallAdmin.ILogin;
 }): Promise<IEcommerceMallAdmin.IAuthorized> {
-  // 1. Find admin by email with password_hash
   const admin = await MyGlobal.prisma.ecommerce_mall_admins.findFirst({
-    where: {
-      email: {
-        equals: props.body.email,
-        mode: "insensitive",
-      },
-    },
+    where: { email: props.body.email, deleted_at: null },
     select: {
       id: true,
       email: true,
@@ -39,7 +33,9 @@ export async function postEcommerceMallAuthAdminLogin(props: {
   if (!admin) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 2. Verify password
+  if (admin.status !== "active") {
+    throw new HttpException("Account is not active", 403);
+  }
   const isValid = await PasswordUtil.verify(
     props.body.password,
     admin.password_hash,
@@ -47,71 +43,53 @@ export async function postEcommerceMallAuthAdminLogin(props: {
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 3. Check account status
-  if (admin.status === "suspended") {
-    throw new HttpException("Account suspended", 403);
-  }
-  if (admin.status === "banned") {
-    throw new HttpException("Account banned", 403);
-  }
-  // 4. Create new session
+  const sessionId = v4();
   const now = new Date();
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const session = await MyGlobal.prisma.ecommerce_mall_admin_sessions.create({
+  const accessExpiresAt = new Date(now.getTime() + 15 * 60 * 1000);
+  const refreshExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  await MyGlobal.prisma.ecommerce_mall_admin_sessions.create({
     data: {
-      id: v4(),
+      id: sessionId,
       admin_id: admin.id,
       ip: props.ip,
-      href: "login",
-      referrer: "",
-      created_at: now.toISOString(),
-      expired_at: accessExpires.toISOString(),
+      href: (props.body as any).href ?? "",
+      referrer: (props.body as any).referrer ?? "",
+      created_at: toISOStringSafe(now),
+      expired_at: toISOStringSafe(refreshExpiresAt),
     },
   });
-  // 5. Generate JWT tokens
-  const createdAt = now.toISOString();
-  const token: IAuthorizationToken = {
-    access: jwt.sign(
-      {
-        type: "admin",
-        id: admin.id,
-        session_id: session.id,
-        created_at: createdAt,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "admin",
-        id: admin.id,
-        session_id: session.id,
-        tokenType: "refresh",
-        created_at: createdAt,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-    expired_at: accessExpires.toISOString() as string &
-      tags.Format<"date-time">,
-    refreshable_until: refreshExpires.toISOString() as string &
-      tags.Format<"date-time">,
+  const tokenPayload = {
+    type: "admin",
+    id: admin.id,
+    session_id: sessionId,
+    created_at: toISOStringSafe(now),
   };
-  // 6. Return authorized response
+  const accessToken = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    expiresIn: "15m",
+    issuer: "autobe",
+  });
+  const refreshToken = jwt.sign(
+    { ...tokenPayload, tokenType: "refresh" },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "30d", issuer: "autobe" },
+  );
   return {
-    id: admin.id as string & tags.Format<"uuid">,
-    email: admin.email as string & tags.Format<"email">,
-    grade: admin.grade as "regular" | "super_admin",
-    status: admin.status as "active" | "suspended" | "banned",
+    id: admin.id,
+    email: admin.email,
+    grade: typia.assert<"regular" | "super_admin">(admin.grade),
+    status: admin.status,
     nickname: admin.nickname,
-    created_at: admin.created_at.toISOString() as string &
-      tags.Format<"date-time">,
-    updated_at: admin.updated_at.toISOString() as string &
-      tags.Format<"date-time">,
-    deleted_at: admin.deleted_at
-      ? (admin.deleted_at.toISOString() as string & tags.Format<"date-time">)
-      : null,
-    token,
+    createdAt: toISOStringSafe(admin.created_at),
+    updatedAt: toISOStringSafe(admin.updated_at),
+    deletedAt: admin.deleted_at ? toISOStringSafe(admin.deleted_at) : null,
+    access: accessToken,
+    refresh: refreshToken,
+    expired_at: toISOStringSafe(accessExpiresAt),
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: toISOStringSafe(accessExpiresAt),
+      refreshable_until: toISOStringSafe(refreshExpiresAt),
+    },
   };
 }

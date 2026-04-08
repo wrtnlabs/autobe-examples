@@ -1,6 +1,5 @@
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -16,65 +15,57 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putEcommerceMallAdminCategoriesCategoryId(props: {
   admin: AdminPayload;
-  categoryId: string & tags.Format<"uuid">;
+  categoryId: string;
   body: IEcommerceMallCategory.IUpdate;
 }): Promise<IEcommerceMallCategory> {
-  // Find existing category ensuring not soft-deleted
-  const existing = await MyGlobal.prisma.ecommerce_mall_categories.findFirst({
-    where: {
-      id: props.categoryId,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      parent_id: true,
-      name: true,
-    },
-  });
-  if (existing === null) {
-    throw new HttpException("Category not found", 404);
-  }
-  // Check for duplicate name if name is being updated
+  // Verify category exists
+  const existing =
+    await MyGlobal.prisma.ecommerce_mall_categories.findUniqueOrThrow({
+      where: { id: props.categoryId },
+      select: { id: true, parent_id: true, name: true },
+    });
+  // Check name uniqueness if name is being updated (case-insensitive)
   if (props.body.name !== undefined && props.body.name !== existing.name) {
     const duplicate = await MyGlobal.prisma.ecommerce_mall_categories.findFirst(
       {
         where: {
           parent_id: existing.parent_id,
-          name: props.body.name,
+          id: { not: props.categoryId },
           deleted_at: null,
-          id: {
-            not: props.categoryId,
+          name: {
+            equals: props.body.name,
+            mode: "insensitive",
           },
         },
-        select: { id: true },
       },
     );
-    if (duplicate !== null) {
+    if (duplicate) {
       throw new HttpException(
-        "Category name already exists within this parent scope",
+        "A category with this name already exists in the same parent category",
         409,
       );
     }
   }
-  // Build update data
+  // Build update data dynamically
   const updateData: Prisma.ecommerce_mall_categoriesUpdateInput = {
-    ...(props.body.name !== undefined && { name: props.body.name }),
-    ...(props.body.description !== undefined && {
-      description: props.body.description,
-    }),
     updated_at: new Date(),
   };
-  // Execute update
+  if (props.body.name !== undefined) {
+    updateData.name = props.body.name;
+  }
+  if (props.body.description !== undefined) {
+    updateData.description = props.body.description;
+  }
+  // Perform update
   await MyGlobal.prisma.ecommerce_mall_categories.update({
     where: { id: props.categoryId },
     data: updateData,
   });
-  // Fetch updated record with full selection
+  // Fetch and return updated category with full details
   const updated =
     await MyGlobal.prisma.ecommerce_mall_categories.findUniqueOrThrow({
       where: { id: props.categoryId },
       ...EcommerceMallCategoryTransformer.select(),
     });
-  // Transform and return
   return await EcommerceMallCategoryTransformer.transform(updated);
 }

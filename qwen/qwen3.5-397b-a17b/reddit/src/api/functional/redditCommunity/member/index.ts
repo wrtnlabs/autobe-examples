@@ -1,10 +1,9 @@
 export * as profile from "./profile/index";
-export * as sessions from "./sessions/index";
-export * as avatars from "./avatars/index";
-export * as karma_histories from "./karma_histories/index";
 export * as communities from "./communities/index";
-export * as subscriptions from "./subscriptions/index";
+export * as member from "./member/index";
 export * as posts from "./posts/index";
 export * as comments from "./comments/index";
+export * as reports from "./reports/index";
 export * as members from "./members/index";
-export * as feeds from "./feeds/index";
+export * as subscribed_communities from "./subscribed_communities/index";
+export * as feed from "./feed/index";

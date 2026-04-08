@@ -2,8 +2,6 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
 import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
-import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
-import { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformProject";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTask";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
@@ -26,39 +24,53 @@ export async function patchHrmPlatformMemberProjectsProjectIdTasks(props: {
   projectId: string & tags.Format<"uuid">;
   body: IHrmPlatformTask.IRequest;
 }): Promise<IPageIHrmPlatformTask.ISummary> {
-  await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow({
+  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
-      id: props.projectId,
+      member_id: props.member.id,
       deleted_at: null,
     },
   });
+  if (!employee) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const projectMember =
+    await MyGlobal.prisma.hrm_platform_project_members.findFirst({
+      where: {
+        hrm_platform_project_id: props.projectId,
+        hrm_platform_employee_id: employee.id,
+      },
+    });
+  if (!projectMember) {
+    throw new HttpException("Forbidden", 403);
+  }
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 100, 100);
+  const limit = Math.min(props.body.limit ?? 20, 100);
   const skip = (page - 1) * limit;
-  const whereInput: Prisma.hrm_platform_tasksWhereInput = {
+  const whereInput = {
     hrm_platform_project_id: props.projectId,
     deleted_at: null,
-    ...(props.body.search &&
-      props.body.search.trim() && {
-        OR: [
-          { title: { contains: props.body.search, mode: "insensitive" } },
-          { description: { contains: props.body.search, mode: "insensitive" } },
-        ],
-      }),
     ...(props.body.status && { status: props.body.status }),
     ...(props.body.priority && { priority: props.body.priority }),
-    ...(props.body.hrm_platform_employee_id !== undefined && {
-      hrm_platform_employee_id: props.body.hrm_platform_employee_id,
+    ...(props.body.assignedEmployeeId !== undefined && {
+      assigned_employee_id: props.body.assignedEmployeeId,
+    }),
+    ...(props.body.search && {
+      OR: [
+        { title: { contains: props.body.search } },
+        { description: { contains: props.body.search } },
+      ],
     }),
   } satisfies Prisma.hrm_platform_tasksWhereInput;
-  const orderByInput: Prisma.hrm_platform_tasksOrderByWithRelationInput =
-    props.body.sort === "due_date"
-      ? { due_date: props.body.direction === "asc" ? "asc" : "desc" }
-      : props.body.sort === "priority"
-        ? { priority: props.body.direction === "asc" ? "asc" : "desc" }
-        : props.body.sort === "title"
-          ? { title: props.body.direction === "asc" ? "asc" : "desc" }
-          : { created_at: props.body.direction === "asc" ? "asc" : "desc" };
+  const sortField = props.body.sort ?? "createdAt";
+  const sortDirection = props.body.sortDirection ?? "asc";
+  const orderByInput = (() => {
+    if (sortField === "dueDate") {
+      return { due_date: { sort: sortDirection, nulls: "last" } };
+    } else if (sortField === "priority") {
+      return { priority: sortDirection };
+    }
+    return { created_at: sortDirection };
+  })() satisfies Prisma.hrm_platform_tasksOrderByWithRelationInput;
   const data = await MyGlobal.prisma.hrm_platform_tasks.findMany({
     where: whereInput,
     skip,
@@ -69,16 +81,14 @@ export async function patchHrmPlatformMemberProjectsProjectIdTasks(props: {
   const total = await MyGlobal.prisma.hrm_platform_tasks.count({
     where: whereInput,
   });
+  const totalPages = Math.ceil(total / limit);
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      HrmPlatformTaskAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: totalPages,
     } satisfies IPage.IPagination,
-  };
+    data: await HrmPlatformTaskAtSummaryTransformer.transformAll(data),
+  } satisfies IPageIHrmPlatformTask.ISummary;
 }

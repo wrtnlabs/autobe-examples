@@ -1,7 +1,11 @@
+import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
+import { IEcommerceMallShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShippingAddress";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
 import { IPageIEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallOrder";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -23,76 +27,95 @@ export async function patchEcommerceMallCustomerOrders(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where conditions for filtering
-  const whereConditions: Prisma.ecommerce_mall_ordersWhereInput[] = [];
-  // Only return orders belonging to the authenticated customer (data isolation)
-  whereConditions.push({
-    ecommerce_mall_customer_id: props.customer.id,
-  });
-  // Soft delete filter: only return non-deleted orders
-  whereConditions.push({
-    deleted_at: null,
-  });
-  // Filter by order status if provided
-  if (props.body.status !== undefined) {
-    whereConditions.push({
-      status: props.body.status,
-    });
-  }
-  // Filter by order number (partial match)
-  if (props.body.orderNumber !== undefined) {
-    whereConditions.push({
-      order_number: {
-        contains: props.body.orderNumber,
-        mode: "insensitive",
-      },
-    });
-  }
-  // Filter by created date range
-  if (
-    props.body.createdAtFrom !== undefined ||
-    props.body.createdAtTo !== undefined
-  ) {
-    whereConditions.push({
-      created_at: {
-        ...(props.body.createdAtFrom !== undefined && {
-          gte: new Date(props.body.createdAtFrom),
-        }),
-        ...(props.body.createdAtTo !== undefined && {
-          lte: new Date(props.body.createdAtTo),
-        }),
-      },
-    });
-  }
-  // Combine all where conditions with AND
   const whereInput = {
-    AND: whereConditions,
+    ecommerce_mall_customer_id: props.customer.id,
+    deleted_at: null,
+    ...(props.body.orderNumber && {
+      order_number: { contains: props.body.orderNumber },
+    }),
+    ...(props.body.status && {
+      status:
+        typeof props.body.status === "string"
+          ? props.body.status
+          : { in: props.body.status },
+    }),
+    ...(props.body.createdAtFrom && {
+      created_at: { gte: new Date(props.body.createdAtFrom) },
+    }),
+    ...(props.body.createdAtTo && {
+      created_at: { lte: new Date(props.body.createdAtTo) },
+    }),
   } satisfies Prisma.ecommerce_mall_ordersWhereInput;
-  // Execute queries sequentially (findMany first, then count)
-  const orders = await MyGlobal.prisma.ecommerce_mall_orders.findMany({
+  const records = await MyGlobal.prisma.ecommerce_mall_orders.findMany({
     where: whereInput,
+    ...EcommerceMallOrderAtSummaryTransformer.select(),
     skip,
     take: limit,
     orderBy: { created_at: "desc" },
-    ...EcommerceMallOrderAtSummaryTransformer.select(),
   });
-  const total = await MyGlobal.prisma.ecommerce_mall_orders.count({
+  const totalRecords = await MyGlobal.prisma.ecommerce_mall_orders.count({
     where: whereInput,
   });
-  // Transform orders to response format
-  const transformedOrders = await ArrayUtil.asyncMap(
-    orders,
-    EcommerceMallOrderAtSummaryTransformer.transform,
-  );
   return {
     pagination: {
-      current: page as number & tags.Type<"int32"> & tags.Minimum<0>,
-      limit: limit as number & tags.Type<"int32"> & tags.Minimum<0>,
-      records: total as number & tags.Type<"int32"> & tags.Minimum<0>,
-      pages: Math.ceil(total / limit) as number &
-        tags.Type<"int32"> &
-        tags.Minimum<0>,
-    } satisfies IPage.IPagination,
-    data: transformedOrders,
+      current: page,
+      limit: limit,
+      records: totalRecords,
+      pages: Math.ceil(totalRecords / limit),
+    },
+    data: await ArrayUtil.asyncMap(
+      records,
+      EcommerceMallOrderAtSummaryTransformer.transform,
+    ),
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
+// import { IPageIEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallOrder";
+// import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
+// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+// import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
+// import { IEcommerceMallShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShippingAddress";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallCustomerOrders(props: {
+//   customer: CustomerPayload;
+//   body: IEcommerceMallOrder.IRequest;
+// }): Promise<IPageIEcommerceMallOrder.ISummary> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_orders.findMany({
+//     ...EcommerceMallOrderAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallOrderAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

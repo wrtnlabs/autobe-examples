@@ -1,6 +1,5 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministrator";
-import { IMallPlatformAdministratorPasswordReset } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministratorPasswordReset";
+import { IMallPlatformCustomerPasswordReset } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomerPasswordReset";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -10,27 +9,57 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
-import { MallPlatformAdministratorPasswordResetTransformer } from "../transformers/MallPlatformAdministratorPasswordResetTransformer";
+import { MallPlatformCustomerPasswordResetTransformer } from "../transformers/MallPlatformCustomerPasswordResetTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getMallPlatformCustomerPasswordResetsPasswordResetId(props: {
   customer: CustomerPayload;
   passwordResetId: string & tags.Format<"uuid">;
-}): Promise<IMallPlatformAdministratorPasswordReset> {
-  const passwordReset =
-    await MyGlobal.prisma.mall_platform_administrator_password_resets.findUniqueOrThrow(
+}): Promise<IMallPlatformCustomerPasswordReset> {
+  const record =
+    await MyGlobal.prisma.mall_platform_customer_password_resets.findUniqueOrThrow(
       {
         where: {
           id: props.passwordResetId,
         },
-        ...MallPlatformAdministratorPasswordResetTransformer.select(),
+        ...MallPlatformCustomerPasswordResetTransformer.select(),
       },
     );
-  if (passwordReset.deleted_at !== null) {
-    throw new HttpException("Not Found", 404);
-  }
-  return await MallPlatformAdministratorPasswordResetTransformer.transform(
-    passwordReset,
-  );
+  return await MallPlatformCustomerPasswordResetTransformer.transform(record);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IMallPlatformCustomerPasswordReset } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomerPasswordReset";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function getMallPlatformCustomerPasswordResetsPasswordResetId(props: {
+//   customer: CustomerPayload;
+//   passwordResetId: string & tags.Format<"uuid">;
+// }): Promise<IMallPlatformCustomerPasswordReset> {
+//   const record = await MyGlobal.prisma.mall_platform_customer_password_resets.findFirstOrThrow({
+//     ...MallPlatformCustomerPasswordResetTransformer.select(),
+//     where: { ... },
+//   });
+//   return await MallPlatformCustomerPasswordResetTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

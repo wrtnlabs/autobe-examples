@@ -10,18 +10,16 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace RedditCommunityPostVoteCollector {
   export async function collect(props: {
     body: IRedditCommunityPostVote.ICreate;
-    redditCommunityMembers: IEntity;
-    redditCommunityPosts: IEntity;
+    member: IEntity;
+    post: IEntity;
   }) {
-    const id: string = v4();
     return {
-      id,
-      direction: props.body.direction,
+      id: v4(),
+      value: props.body.value,
       created_at: new Date(),
       updated_at: new Date(),
-      deleted_at: null,
-      member: { connect: { id: props.redditCommunityMembers.id } },
-      post: { connect: { id: props.redditCommunityPosts.id } },
+      member: { connect: { id: props.member.id } },
+      post: { connect: { id: props.post.id } },
     } satisfies Prisma.reddit_community_post_votesCreateInput;
   }
 }

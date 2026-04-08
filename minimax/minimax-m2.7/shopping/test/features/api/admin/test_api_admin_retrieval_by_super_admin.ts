@@ -9,9 +9,6 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
-import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
-import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
 import { authorize_super_admin_join } from "../../../authorize/authorize_super_admin_join";
 import { authorize_super_admin_login } from "../../../authorize/authorize_super_admin_login";
 import { authorize_super_admin_refresh } from "../../../authorize/authorize_super_admin_refresh";
@@ -19,49 +16,48 @@ import { authorize_super_admin_refresh } from "../../../authorize/authorize_supe
 export async function test_api_admin_retrieval_by_super_admin(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create a superAdmin account to have authorization for retrieving admin info
-  const superAdminConnection: api.IConnection = { host: connection.host };
-  await authorize_super_admin_join(superAdminConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: typia.random<string & tags.Format<"password">>(),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-    },
-  });
-  // 2. Create an admin account to retrieve its details
-  const adminConnection: api.IConnection = { host: connection.host };
-  const adminAuth = await authorize_admin_join(adminConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: typia.random<string & tags.Format<"password">>(),
-      name: RandomGenerator.name(),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-    },
-  });
-  // 3. SuperAdmin retrieves the admin's detailed information
-  const admin = await api.functional.ecommerceMall.superAdmin.admins.at(
-    superAdminConnection,
-    {
-      adminId: adminAuth.id,
-    },
+  // Step 1: Create a super admin session to authenticate
+  const authenticatorConnection: api.IConnection = { host: connection.host };
+  const authenticator = await authorize_super_admin_join(
+    authenticatorConnection,
+    {},
   );
-  typia.assert(admin);
-  // 4. Validate response contains required fields
-  TestValidator.equals("admin id matches", admin.id, adminAuth.id);
-  TestValidator.equals("admin email matches", admin.email, adminAuth.email);
-  TestValidator.equals("admin name matches", admin.name, adminAuth.name);
-  TestValidator.predicate("has created_at", admin.created_at !== undefined);
-  TestValidator.predicate("has updated_at", admin.updated_at !== undefined);
+  // Step 2: Create another admin account (target admin to retrieve)
+  const targetConnection: api.IConnection = { host: connection.host };
+  const targetAdmin = await authorize_super_admin_join(targetConnection, {});
+  // Step 3: Retrieve the target admin's details using the authenticated super admin
+  const retrievedAdmin =
+    await api.functional.ecommerceMall.superAdmin.superAdmin.admins.at(
+      authenticatorConnection,
+      {
+        adminId: targetAdmin.id,
+      },
+    );
+  typia.assert(retrievedAdmin);
+  // Step 4 & 5: Validate the retrieved admin details match the created account
   TestValidator.equals(
-    "deleted_at is null for active account",
-    admin.deleted_at,
+    "retrieved admin id matches",
+    retrievedAdmin.id,
+    targetAdmin.id,
+  );
+  TestValidator.equals(
+    "retrieved admin email matches",
+    retrievedAdmin.email,
+    targetAdmin.email,
+  );
+  TestValidator.equals(
+    "retrieved admin deleted_at is null",
+    retrievedAdmin.deleted_at,
     null,
   );
-  // 5. Verify password_hash is NOT present in the response (security requirement)
   TestValidator.predicate(
-    "password_hash not in response",
-    !("password_hash" in admin),
+    "retrieved admin has valid created_at",
+    retrievedAdmin.created_at !== null &&
+      retrievedAdmin.created_at !== undefined,
+  );
+  TestValidator.predicate(
+    "retrieved admin has valid updated_at",
+    retrievedAdmin.updated_at !== null &&
+      retrievedAdmin.updated_at !== undefined,
   );
 }

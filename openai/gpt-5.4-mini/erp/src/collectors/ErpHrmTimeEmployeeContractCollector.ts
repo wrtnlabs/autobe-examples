@@ -25,7 +25,9 @@ export namespace ErpHrmTimeEmployeeContractCollector {
       created_at: now,
       updated_at: now,
       deleted_at: null,
-      employee: { connect: { id: props.employee.id } },
+      employee: {
+        connect: { id: props.employee.id },
+      },
     } satisfies Prisma.erp_hrm_time_employee_contractsCreateInput;
   }
 }

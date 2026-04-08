@@ -1,13 +1,13 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IRedditCommunityComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityComment";
 import { IRedditCommunityCommentVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommentVote";
 import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { RedditCommunityCommentAtSummaryTransformer } from "./RedditCommunityCommentAtSummaryTransformer";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
 
 export namespace RedditCommunityCommentVoteTransformer {
@@ -18,11 +18,12 @@ export namespace RedditCommunityCommentVoteTransformer {
     return {
       select: {
         id: true,
-        direction: true,
+        value: true,
         created_at: true,
         updated_at: true,
+        deleted_at: true,
         member: RedditCommunityMemberAtSummaryTransformer.select(),
-        comment: RedditCommunityCommentAtSummaryTransformer.select(),
+        comment: true,
       },
     } satisfies Prisma.reddit_community_comment_votesFindManyArgs;
   }
@@ -30,16 +31,14 @@ export namespace RedditCommunityCommentVoteTransformer {
     input: Payload,
   ): Promise<IRedditCommunityCommentVote> {
     return {
+      value: input.value,
       id: input.id,
-      direction: input.direction,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
       member: await RedditCommunityMemberAtSummaryTransformer.transform(
         input.member,
       ),
-      comment: await RedditCommunityCommentAtSummaryTransformer.transform(
-        input.comment,
-      ),
-    };
+    } satisfies IRedditCommunityCommentVote;
   }
 }

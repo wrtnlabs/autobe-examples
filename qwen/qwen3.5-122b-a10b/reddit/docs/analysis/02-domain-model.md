@@ -1,919 +1,136 @@
-**redditPlatform — Business concepts, relationships, and states from user perspective**
+**redditLike — Business concepts, relationships, and states from user perspective**
 
 Business concepts, relationships, and states from user perspective
 
 # Domain Concepts
 
-Describe what each concept means to users and why it exists.
+Describe what each concept means in the business domain and its key attributes.
 
 ## User Concept
 
-Users are the individuals who participate in the community platform by creating accounts and engaging with content. Each user registers with a unique email address, password, and username that identifies them across the platform. Users can log in securely to access their personalized features and manage their account settings. Every user maintains a public profile that includes a display name, bio text, and avatar image that others can view. Users have the ability to edit their own profile information at any time to update how they appear to the community. Each user accumulates a karma score based on the upvotes and downvotes their posts and comments receive from other users. Users can create posts and comments within communities they subscribe to, contributing to discussions and sharing content. Users can also vote on posts and comments created by others to express agreement or disagreement. When users decide to leave the platform, they can delete their accounts, which removes all their posts and comments from the system. Users can view any other user's public profile to learn about their contributions and community activity.
+A User represents an individual person who registers and participates on the platform. Each user has a unique username that identifies them publicly across all their activities. Users authenticate with email and password credentials to access their accounts. A user's profile contains a display name for personalization, a bio text for self-description, and an avatar image for visual identity. Every user maintains a karma score that reflects community engagement through upvotes and downvotes on their content. The user account serves as the foundation for ownership relationships, as users create posts, comments, communities, and reports. When a user deletes their account, all their associated content is also removed from the platform.
 
-### User Registration and Account Creation
+### User Registration and Identity
 
-WHEN a new user registers for the platform, THE system SHALL:
-1. Require a valid email address
-2. Require a password
-3. Require a unique username
-4. Create a user account with the provided information
+Users register on the platform by providing an email address and choosing a password. During registration, users must select a unique username that will serve as their public identifier across the platform. The username must be unique and cannot be duplicated by another user. Users authenticate to their accounts using their email address and password credentials. Users can change their password after registration.
 
-WHEN a user attempts to register with an email that already exists, THE system SHALL reject the registration request.
+### User Profile Information
 
-WHEN a user attempts to register with a username that already exists, THE system SHALL reject the registration request.
+Each user has a profile that displays their identity to other users. The profile includes a display name that can differ from the username and is used for personalization. Users can write a bio text to describe themselves or provide information about their interests. Users can upload an avatar image that represents them visually on the platform. Users can edit their own display name, bio text, and avatar image at any time. Other users can view any user's profile to see this information.
 
-WHEN a user logs in, THE system SHALL:
-1. Accept email and password credentials
-2. Authenticate the user against stored credentials
-3. Grant access to authenticated features upon successful authentication
+### Karma Score Tracking
 
-WHEN authentication fails due to invalid credentials, THE system SHALL deny access and indicate the failure.
+Every user has a karma score represented as a single number. Karma reflects community engagement and is calculated from votes received on the user's content. When another user upvotes a post or comment created by this user, the karma score increases by 1. When another user downvotes a post or comment created by this user, the karma score decreases by 1. If a user removes their vote on content, the karma score adjusts accordingly to reflect the change. A user's karma score can be positive, zero, or negative.
 
-THE system SHALL ensure each user has exactly one account associated with their email address.
+### Account Deletion and Content Removal
 
-THE system SHALL ensure each username is unique across all registered users.
+Users can delete their own account from the platform. When a user deletes their account, all content created by that user is also permanently deleted from the platform. This includes all posts written by the user and all comments made by the user.
 
-### User Profile Management
+### User Ownership and Community Participation
 
-WHEN a user views their own profile, THE system SHALL display:
-1. Their display name
-2. Their bio text
-3. Their avatar image
-4. Their total karma score
-5. A list of all posts they have created
-6. A list of all comments they have written
-
-WHEN a user views another user's profile, THE system SHALL display the same information as above.
-
-WHEN a user edits their display name, THE system SHALL update the display name on their profile.
-
-WHEN a user edits their bio text, THE system SHALL update the bio text on their profile.
-
-WHEN a user uploads or changes their avatar image, THE system SHALL update the avatar image on their profile.
-
-WHEN a user attempts to edit another user's profile information, THE system SHALL deny the edit request.
-
-THE system SHALL allow any user to view any other user's public profile information.
-
-THE system SHALL store the display name, bio text, and avatar image as part of the user's public profile.
-
-### User Identity and Karma Tracking
-
-THE system SHALL maintain a single karma score for each user.
-
-WHEN someone upvotes a user's post, THE system SHALL increase that user's karma score by 1.
-
-WHEN someone upvotes a user's comment, THE system SHALL increase that user's karma score by 1.
-
-WHEN someone downvotes a user's post, THE system SHALL decrease that user's karma score by 1.
-
-WHEN someone downvotes a user's comment, THE system SHALL decrease that user's karma score by 1.
-
-WHEN someone removes their upvote from a user's post or comment, THE system SHALL decrease that user's karma score by 1.
-
-WHEN someone removes their downvote from a user's post or comment, THE system SHALL increase that user's karma score by 1.
-
-WHEN a user changes their vote from upvote to downvote on a post or comment, THE system SHALL decrease the original author's karma score by 2.
-
-WHEN a user changes their vote from downvote to upvote on a post or comment, THE system SHALL increase the original author's karma score by 2.
-
-THE system SHALL allow karma scores to be negative values.
-
-THE system SHALL make each user's karma score visible on their profile page.
-
-THE system SHALL identify each user by their unique username across the platform.
-
-### Account Deletion
-
-WHEN a user requests account deletion, THE system SHALL:
-1. Remove the user's account from the system
-2. Delete all posts created by the user
-3. Delete all comments created by the user
-4. Remove all votes cast by the user from posts and comments
-5. Remove all subscriptions the user has to communities
-
-WHEN a user's account is deleted, THE system SHALL ensure their content (posts and comments) is no longer visible on the platform.
-
-WHEN a user's account is deleted, THE system SHALL remove their username from the system, making it available for future registration.
-
-THE system SHALL require explicit confirmation from the user before proceeding with account deletion.
-
-THE system SHALL make account deletion irreversible once completed.
+Users own all content they create on the platform. A user owns the posts they write and can edit or delete their own posts. A user owns the comments they write and can edit or delete their own comments. Users participate in communities by subscribing to them. Users can create communities and become the owner of those communities. A user's participation identity is established through their username, which appears alongside all their posts, comments, and votes across the platform.
 
 ## Community Concept
 
-Communities are topic-based spaces where users gather to share content and discuss specific subjects of interest. Any registered user can create a new community by providing a unique name, description text, and icon image that represents the community's theme. The user who creates a community automatically becomes its owner with the highest level of authority over community management. Communities can be browsed by all users through a list view that shows all available communities on the platform. Users can search for communities by name to find specific topics or interests they want to join. Each community displays its subscriber count so users can see how many people are part of the community. Community owners and moderators have special privileges to manage posts, comments, and member access within their communities. Communities serve as the primary organizational structure for content, with all posts belonging to a specific community. Users must subscribe to a community before they can create posts within it, ensuring active participation. Communities enable focused discussions around shared interests while maintaining separation from other topics on the platform.
+A Community represents a topic-based gathering space where users share content around common interests. Each community has a unique name that distinguishes it from all others on the platform. Communities include a description text that explains their purpose and focus area. An icon image provides visual branding for the community. The subscriber count reflects how many users have joined the community. The creator of a community automatically becomes its owner with highest authority. Communities serve as containers for posts and comments, organizing content by subject matter. Users must subscribe to a community before they can create posts within it.
 
-### Community Creation and Ownership
+### Community Definition and Attributes
 
-### Community Creation Requirements
+A community is a topic-based gathering space where users share content around common interests. Each community has a unique name that distinguishes it from all others on the platform, serving as its primary identifier. Communities include a description text that explains their purpose and focus area to help users understand what the community is about. An icon image provides visual branding for the community, making it recognizable in lists and feeds. The subscriber count metric reflects how many users have joined the community, displayed on the community page to indicate its size and activity level.
 
-WHEN a registered user creates a community, THE system SHALL:
-1. Require a unique community name that does not already exist on the platform
-2. Require a description text that explains the community's purpose and topic
-3. Allow an optional icon image to visually represent the community
-4. Automatically assign ownership of the community to the creating user
-5. Record the creation timestamp for the community
+### Community Ownership and Authority
 
-THE system SHALL ensure that community names are unique across the entire platform.
+The user who creates a community automatically becomes its owner, establishing initial ownership and highest authority within that community. The owner has the ability to add moderators to help manage the community. The owner can also remove moderators they have added. This ownership structure ensures clear accountability and governance for each community on the platform. Community creation ownership is permanent and cannot be transferred to another user.
 
-THE system SHALL prevent duplicate community names from being registered.
+### Community Membership and Content Access
 
-### Community Ownership
-
-THE system SHALL assign the highest level of authority to the community owner.
-
-THE system SHALL allow the owner to manage community settings and membership.
-
-THE system SHALL allow the owner to add moderators to the community.
-
-THE system SHALL allow the owner to remove moderators from the community.
-
-THE system SHALL prevent moderators from removing the community owner.
-
-THE system SHALL prevent moderators from removing other moderators (only the owner can do this).
-
-### Community Content Requirements
-
-WHEN a community is created, THE system SHALL:
-1. Initialize with zero subscribers
-2. Allow posts to be created by subscribed members
-3. Allow comments to be made on posts within the community
-4. Display all community content to guests and members
-
-THE system SHALL associate all posts with the community in which they are created.
-
-THE system SHALL maintain the community as the primary organizational unit for content.
-
-### Community Discovery and Browsing
-
-### Community Discovery
-
-THE system SHALL display all communities in a browsable list view.
-
-THE system SHALL allow all users (including guests) to browse the complete list of communities.
-
-THE system SHALL display the following information for each community in the list:
-1. Community name
-2. Community description (truncated if necessary)
-3. Subscriber count
-
-THE system SHALL allow users to search for communities by name.
-
-THE system SHALL return matching communities when a search query is provided.
-
-THE system SHALL perform case-insensitive matching for community name searches.
-
-### Subscriber Count Display
-
-THE system SHALL display the current subscriber count on each community's page.
-
-THE system SHALL update the subscriber count when users subscribe or unsubscribe.
-
-THE system SHALL display the subscriber count in the community list view.
-
-THE system SHALL ensure the subscriber count reflects active subscriptions only.
-
-### Community Page Information
-
-WHEN a user views a community page, THE system SHALL display:
-1. Community name
-2. Community description
-3. Community icon image (if provided)
-4. Current subscriber count
-5. List of posts within the community
-6. Information about whether the viewing user is subscribed
-
-THE system SHALL allow all users to view any community's public page.
-
-THE system SHALL indicate to subscribed users their subscription status.
-
-### Community Structure and Organization
-
-### Topic-Based Organization
-
-Communities serve as topic-based spaces where users gather to share content.
-
-THE system SHALL organize all posts under their respective communities.
-
-THE system SHALL maintain separation between different community topics.
-
-THE system SHALL allow users to participate in multiple communities simultaneously.
-
-THE system SHALL ensure content from one community remains distinct from other communities.
-
-### Community Subscription Model
-
-THE system SHALL require users to subscribe to a community before creating posts within it.
-
-THE system SHALL allow users to subscribe to any community.
-
-THE system SHALL allow users to unsubscribe from any community.
-
-THE system SHALL maintain a list of communities each user is subscribed to.
-
-THE system SHALL allow users to view their subscribed communities list.
-
-THE system SHALL prevent unsubscribed users from creating posts in a community.
-
-THE system SHALL allow unsubscribed users to view community content.
-
-### Content Organization by Community
-
-THE system SHALL associate each post with exactly one community.
-
-THE system SHALL associate each comment with the post it belongs to.
-
-THE system SHALL display community context when viewing posts and comments.
-
-THE system SHALL allow filtering and browsing content by community.
-
-### Community Management and Moderation
-
-### Community Management Authority
-
-THE system SHALL grant the community owner full management authority over the community.
-
-THE system SHALL allow the owner to appoint moderators to assist with community management.
-
-THE system SHALL allow moderators to perform management actions within their assigned community.
-
-THE system SHALL establish a clear hierarchy: owner has highest authority, moderators have secondary authority.
-
-### Moderator Capabilities
-
-WHEN a user is a moderator of a community, THE system SHALL allow them to:
-1. Delete any post within the community (regardless of author)
-2. Delete any comment within the community (regardless of author)
-3. Ban users from participating in the community
-4. Unban previously banned users
-5. View the list of banned users for the community
-6. Add other moderators to the community
-
-THE system SHALL prevent moderators from removing the community owner.
-
-THE system SHALL prevent moderators from removing other moderators.
-
-### Banned User Restrictions
-
-WHILE a user is banned from a community, THE system SHALL:
-1. Prevent them from creating new posts in that community
-2. Prevent them from creating new comments in that community
-3. Allow them to view community content
-4. Prevent them from voting on posts or comments in that community
-
-THE system SHALL allow banned users to view posts and comments after being banned.
-
-THE system SHALL maintain the ban status until explicitly removed by a moderator or owner.
+Users can browse all communities through a platform-wide list view. Users can search for communities by name to find specific communities of interest. Each community page displays the subscriber count so users can see how many members have joined. To create posts within a community, users must first subscribe to that community. This subscription requirement ensures that only interested users can contribute content to a community. Subscribing does not restrict users from viewing community content; non-subscribers can still browse posts and comments in any community.
 
 ## Post Concept
 
-Posts are the primary content units that users create to share information, links, images, or text with community members. Every post requires a title that summarizes its content and must be created within a community the user is subscribed to. Posts can take one of three forms: text posts with written content, link posts with external URLs, or image posts with uploaded pictures. Users who create posts can edit their content to correct mistakes or update information over time. Users can delete their own posts when they are no longer relevant or appropriate. Each post displays its vote score, comment count, author username, community name, and posting timestamp to provide context. Posts appear in various feeds based on their community, popularity, or recency to help users discover content. Text posts show a preview of the first 200 characters in feed listings to give readers a taste of the content. Link posts display the domain name so users know where the link leads before clicking. Image posts show thumbnails in feed listings to attract visual engagement. Posts enable users to contribute meaningful content to their subscribed communities and spark discussions with other members.
+A Post represents a primary piece of content shared within a community to start discussions. Every post requires a title that summarizes its subject matter. Posts come in three distinct types: text posts with written content, link posts with external URLs, or image posts with uploaded pictures. Each post belongs to one specific community where it is displayed in feeds. Posts have an author who created them and owns the content. Posts accumulate vote scores through community upvotes and downvotes. Posts display comment counts showing discussion activity. Posts include timestamps indicating when they were created for sorting and chronological reference.
 
-### Post Creation and Types
+### Post as Primary Content Unit
 
-WHEN a user creates a post, THE system SHALL require the user to be subscribed to the target community.
-WHEN a user creates a post, THE system SHALL require a title that summarizes the post content.
-WHEN a user creates a post, THE system SHALL allow the user to select one of three post types: text, link, or image.
+A Post serves as the primary content unit within the platform, representing the main vehicle for users to share information and initiate discussions. Each post belongs to exactly one community, which serves as its container and determines where it appears in feeds. Posts are the fundamental building blocks that populate community feeds and drive platform engagement.
 
-WHEN a user creates a text post, THE system SHALL require text content to be provided.
-WHEN a user creates a link post, THE system SHALL require a valid URL to be provided.
-WHEN a user creates an image post, THE system SHALL require an image file to be uploaded.
+### Post Title and Content Types
 
-IF the user is not subscribed to the community, THE system SHALL prevent post creation in that community.
-IF the title is missing or empty, THE system SHALL reject the post creation request.
-IF the post type is selected but required content is missing, THE system SHALL reject the post creation request.
+Every post requires a title that summarizes its subject matter. The title is mandatory and cannot be left empty. Posts are classified into three distinct types determined at creation time: text posts, link posts, and image posts. Text posts contain written content that can be read directly on the platform. Link posts contain a URL that directs users to external resources. Image posts include uploaded picture files. Each post supports only one content type, and the type determines what additional content is required beyond the title.
 
-### Post Management Operations
+### Post Metadata and Scoring
 
-WHEN a user edits their own post, THE system SHALL allow updating the title and content.
-WHEN a user edits their own post, THE system SHALL preserve the original post timestamp.
-WHEN a user edits their own post, THE system SHALL allow changing the post type if content is updated.
+Posts accumulate a vote score calculated from community member upvotes and downvotes. The vote score represents the net difference between upvotes and downvotes received. Posts track a comment count that reflects the total number of comments and replies associated with the post. Each post includes a creation timestamp that indicates when it was published, enabling chronological sorting and time-based filtering in feeds.
 
-IF the user is not the post author, THE system SHALL prevent editing the post.
-IF the post has been deleted, THE system SHALL prevent any editing operations.
+### Post Ownership and Feed Display
 
-WHEN a user deletes their own post, THE system SHALL remove the post from all feeds and community listings.
-WHEN a user deletes their own post, THE system SHALL preserve the comment count for historical accuracy.
-
-IF the user is not the post author, THE system SHALL prevent post deletion.
-IF the post is being actively viewed by other users, THE system SHALL still allow deletion but mark it as removed.
-
-### Post Display and Metadata
-
-THE system SHALL display the vote score for each post, calculated as total upvotes minus total downvotes.
-THE system SHALL display the comment count for each post, showing total number of comments and replies.
-THE system SHALL display the post author username on all post views.
-THE system SHALL display the community name where the post was created.
-THE system SHALL display the post timestamp showing when the post was created.
-THE system SHALL display time-relative formatting for timestamps (e.g., "3 hours ago").
-
-WHEN viewing a feed listing, THE system SHALL show vote score, comment count, author, community, and timestamp for each post.
-WHEN viewing a single post, THE system SHALL show full content along with vote score, comment count, author, community, and timestamp.
-
-### Post Discovery and Feeds
-
-WHEN a user views the home feed, THE system SHALL show posts only from communities the user is subscribed to.
-WHEN a user views the popular feed, THE system SHALL show posts from all communities across the platform.
-WHEN a user views a community feed, THE system SHALL show posts from that specific community.
-
-THE system SHALL support sorting posts by hot (recent posts with many upvotes).
-THE system SHALL support sorting posts by new (most recently created first).
-THE system SHALL support sorting posts by top (highest vote score with time filters: today, this week, this month, this year, all time).
-THE system SHALL support sorting posts by controversial (posts with many votes but score close to zero).
-
-WHEN displaying text posts in feed listings, THE system SHALL show the first 200 characters of content as preview.
-WHEN displaying image posts in feed listings, THE system SHALL show a thumbnail of the uploaded image.
-WHEN displaying link posts in feed listings, THE system SHALL show the domain name of the URL.
-
-THE system SHALL paginate all post feeds to manage content volume.
-THE system SHALL make the home feed available only to logged-in users.
-THE system SHALL make the popular feed available to all users including guests.
-THE system SHALL make community feeds available to all users including guests.
+The post author is the user who created the post and retains ownership of the content. When viewing posts in any feed, the display includes the title, author username, community name, vote score, comment count, and time since posted. Text posts show the first 200 characters of content, image posts display a thumbnail, and link posts show the domain name of the URL.
 
 ## Comment Concept
 
-Comments are user responses to posts that enable discussion and dialogue around shared content. Users can write comments on any post to share their thoughts, opinions, or additional information with the community. Comments support nested replies, allowing users to respond directly to other comments with unlimited depth. Each comment displays the author's username, content text, vote score, and timestamp when it was posted. Users who create comments can edit their content to clarify their points or fix errors after posting. Users can delete their own comments when they no longer want them visible in the discussion. Comments contribute to the overall engagement of a post and help build community conversations. The nested reply structure allows for organized discussions where related points stay grouped together. Comments can be sorted by best score, newness, or controversy to help users find the most relevant responses. Comments enable deeper engagement with posts beyond simple voting and help communities develop rich discussions around shared interests.
+A Comment represents a response to a post or another comment that builds conversation threads. Comments contain text content expressing opinions, answers, or reactions. Each comment has an author who wrote it and maintains ownership rights. Comments accumulate vote scores through upvotes and downvotes from other users. Comments support nested replies with unlimited depth, allowing multi-level discussions. Comments include timestamps showing when they were created. Comments belong to specific posts, creating a hierarchical relationship where multiple comments can exist under one post. Comments can be replied to, creating parent-child relationships in the discussion structure.
 
-### Comment Creation and Authorship
+### Comment Definition and Purpose
 
-WHEN a user creates a comment on a post, THE system SHALL associate the comment with the user as the author.
+A comment is a response that users write to express opinions, answers, or reactions to posts or other comments. Comments form the basis of conversation threads on the platform.
 
-WHEN a user creates a comment, THE system SHALL require text content for the comment.
+Each comment contains text content that the author writes. The author of a comment is the user who created it and maintains ownership of that comment.
 
-WHEN a user creates a comment, THE system SHALL record the timestamp of creation.
+Comments are always associated with a specific post. Multiple comments can belong to the same post, creating a collection of responses under that post.
 
-THE system SHALL allow any logged-in user to create a comment on any post.
+### Comment Threading and Reply Structure
 
-THE system SHALL display the author's username on each comment.
+Comments can be replies to other comments, creating a nested structure that supports multi-level discussions. A comment can have a parent comment, and that parent can itself be a reply to another comment. This parent-child relationship can continue with no depth limit, allowing conversations to branch into unlimited levels of replies.
 
-THE system SHALL display the author's display name when viewing the author's profile.
+When a comment is a reply to another comment, it maintains the parent-child hierarchy. The original comment on a post has no parent comment. Replies to comments have the replied-to comment as their parent. This structure enables threaded discussions where related responses group together visually.
 
-IF a user is not logged in, THE system SHALL prevent comment creation.
+### Comment Voting and Metadata
 
-IF a user attempts to create a comment with empty content, THE system SHALL reject the request.
+Each comment has a vote score that reflects community feedback. Users can upvote or downvote comments, and the vote score equals total upvotes minus total downvotes. Each user can cast only one vote per comment, but can change their vote or remove it entirely.
 
-THE comment authorship SHALL be immutable once the comment is created.
-
-### Comment Content and Structure
-
-WHEN a user creates a comment, THE system SHALL store the text content of the comment.
-
-WHEN a user replies to a comment, THE system SHALL create a nested reply associated with the parent comment.
-
-THE system SHALL support unlimited nesting depth for comment replies.
-
-WHEN viewing a comment, THE system SHALL display all nested replies in a threaded format.
-
-THE system SHALL visually indicate the nesting level of each reply.
-
-WHEN a comment has no replies, THE system SHALL display it as a top-level comment.
-
-THE system SHALL allow users to expand or collapse nested reply threads.
-
-THE comment content SHALL be displayed in full when viewing a single post.
-
-THE system SHALL show a preview of comment content in the post feed (first 200 characters for text content).
-
-IF a reply is created, THE system SHALL associate it with both the parent comment and the original post.
-
-### Comment Display and Timestamps
-
-THE system SHALL display the time since posting for each comment (e.g., "3 hours ago").
-
-THE system SHALL display comments in a threaded discussion format when viewing a post.
-
-THE system SHALL organize nested replies under their parent comments.
-
-THE system SHALL show the comment count on each post in the feed.
-
-WHEN viewing a post, THE system SHALL display all comments and their replies.
-
-THE discussion thread SHALL remain intact when comments are sorted.
-
-THE system SHALL preserve the parent-child relationship between comments and replies during sorting.
-
-THE system SHALL display the nested reply structure in a visually clear manner.
-
-### Comment Voting
-
-WHEN a user votes on a comment, THE system SHALL allow upvote or downvote.
-
-WHEN a user upvotes a comment, THE system SHALL increase the comment's vote score by 1.
-
-WHEN a user downvotes a comment, THE system SHALL decrease the comment's vote score by 1.
-
-THE system SHALL allow each user to cast only one vote per comment.
-
-WHEN a user changes their vote from upvote to downvote, THE system SHALL adjust the vote score accordingly.
-
-WHEN a user removes their vote from a comment, THE system SHALL adjust the vote score accordingly.
-
-THE system SHALL display the vote score for each comment.
-
-THE system SHALL allow users to view the vote score on both individual comments and comment previews in feeds.
-
-IF a user attempts to vote on a comment they have already voted on, THE system SHALL update their existing vote instead of creating a new one.
-
-### Comment Editing and Deletion
-
-WHEN a user edits their comment, THE system SHALL allow modification of the comment content.
-
-THE system SHALL allow only the comment author to edit their comment.
-
-WHEN a user deletes their comment, THE system SHALL remove the comment from display.
-
-THE system SHALL allow only the comment author to delete their comment.
-
-WHEN a comment is deleted, THE system SHALL also delete all nested replies to that comment.
-
-THE system SHALL prevent editing or deletion of comments by users who are not the author.
-
-IF a moderator deletes a comment in their community, THE system SHALL remove the comment and all nested replies.
-
-THE system SHALL display an indicator when a comment has been edited.
-
-### Comment Sorting and Organization
-
-THE system SHALL support sorting comments by best (highest vote score first).
-
-THE system SHALL support sorting comments by new (most recent first).
-
-THE system SHALL support sorting comments by controversial (many votes but score close to zero).
-
-WHEN comments are sorted, THE system SHALL preserve the nested reply structure.
-
-THE system SHALL allow users to change the comment sorting order at any time.
-
-THE reply conversations SHALL remain grouped under their parent comments regardless of sorting.
-
-THE system SHALL display the currently selected sorting option.
-
-THE default comment sorting SHALL be by best score.
+Comments include a timestamp showing when they were created, displayed as time elapsed since posting (e.g., "3 hours ago"). This allows users to understand the recency of contributions in a discussion thread.
 
 ## Vote Concept
 
-Votes are the mechanism by which users express agreement or disagreement with posts and comments on the platform. Users can upvote content they find valuable, helpful, or interesting, which increases the content's score by one point. Users can downvote content they find inappropriate, misleading, or unhelpful, which decreases the content's score by one point. Each user can cast only one vote per post or comment, preventing manipulation of scores through multiple votes. Users can change their vote from upvote to downvote or vice versa if they reconsider their opinion. Users can also remove their vote entirely, returning the content's score to its previous state. Vote scores are calculated as the total number of upvotes minus the total number of downvotes for each piece of content. When users receive upvotes on their posts or comments, their personal karma score increases by one point. When users receive downvotes on their posts or comments, their personal karma score decreases by one point. Vote removal adjusts karma accordingly to reflect the change in community reception. Votes help surface quality content through sorting algorithms and provide feedback to content creators about how their contributions are received.
+A Vote represents user preference feedback on posts or comments within the platform. Votes have two types: upvotes indicating approval or downvotes indicating disapproval. Each user can cast only one vote per post or comment at any given time. Users can change their vote from upvote to downvote or vice versa. Users can also remove their vote entirely, reverting the content score. Votes directly affect the vote score of the content, which equals total upvotes minus total downvotes. Votes contribute to the karma score of the content author. Votes have timestamps recording when they were cast for tracking purposes.
 
-### Vote Types and Actions
+### Vote Definition and Voting Rules
 
-WHEN a user views a post or comment, THE system SHALL display upvote and downvote action options.
+A Vote represents user preference feedback on posts or comments within the platform. Users can express approval of content by casting an upvote, which indicates they find the content valuable or agreeable. Users can express disapproval of content by casting a downvote, which indicates they find the content unhelpful or disagreeable.
 
-WHEN a user upvotes a post, THE system SHALL:
-1. Record the upvote action associated with the user and the post
-2. Increase the post's vote score by one
-3. Increase the post author's karma score by one
+Each user can cast only one vote per post or comment at any given time. This one vote per content rule ensures that each user's opinion is counted exactly once for each piece of content.
 
-WHEN a user upvotes a comment, THE system SHALL:
-1. Record the upvote action associated with the user and the comment
-2. Increase the comment's vote score by one
-3. Increase the comment author's karma score by one
+Users can change their vote from upvote to downvote or vice versa at any time. When a user changes their vote, the previous vote is replaced with the new vote type. Users can also remove their vote entirely, which reverts the content score as if the vote had never been cast.
 
-WHEN a user downvotes a post, THE system SHALL:
-1. Record the downvote action associated with the user and the post
-2. Decrease the post's vote score by one
-3. Decrease the post author's karma score by one
+### Vote Impact and Relationships
 
-WHEN a user downvotes a comment, THE system SHALL:
-1. Record the downvote action associated with the user and the comment
-2. Decrease the comment's vote score by one
-3. Decrease the comment author's karma score by one
+Votes directly affect the vote score of the content they are cast on. The vote score equals total upvotes minus total downvotes for that content. When a user upvotes, the vote score increases by one. When a user downvotes, the vote score decreases by one. When a user removes their vote, the vote score adjusts accordingly.
 
-THE system SHALL display the current vote score for each post and comment.
+Votes also contribute to the karma score of the content author. When someone upvotes a user's post or comment, that user's karma increases by one. When someone downvotes a user's post or comment, that user's karma decreases by one. When someone removes their vote from a user's content, the karma adjusts accordingly. Karma scores can be negative if a user receives more downvotes than upvotes across their content.
 
-THE system SHALL indicate to users whether they have already voted on a specific post or comment.
-
-### Vote Constraints and Uniqueness
-
-WHEN a user attempts to vote on a post or comment, THE system SHALL verify whether the user has already cast a vote on that content.
-
-IF a user has already upvoted a post or comment, THE system SHALL prevent the user from casting another upvote on the same content.
-
-IF a user has already downvoted a post or comment, THE system SHALL prevent the user from casting another downvote on the same content.
-
-THE system SHALL allow each user to cast exactly one vote per post.
-
-THE system SHALL allow each user to cast exactly one vote per comment.
-
-WHEN a user has not voted on a post or comment, THE system SHALL allow the user to cast either an upvote or a downvote.
-
-THE system SHALL prevent vote manipulation by ensuring users cannot create multiple accounts to cast additional votes on the same content.
-
-### Vote Score Calculation
-
-THE system SHALL calculate the vote score for each post as the total number of upvotes minus the total number of downvotes.
-
-THE system SHALL calculate the vote score for each comment as the total number of upvotes minus the total number of downvotes.
-
-THE system SHALL display the vote score as a single numeric value for each post and comment.
-
-THE system SHALL update the vote score immediately when a user casts, changes, or removes their vote.
-
-THE system SHALL allow vote scores to be positive, zero, or negative values.
-
-WHEN a post or comment receives no votes, THE system SHALL display a vote score of zero.
-
-THE system SHALL ensure vote score calculations remain consistent across all views and feeds where the content appears.
-
-### Vote Modification and Removal
-
-WHEN a user who has upvoted a post or comment decides to change their vote, THE system SHALL allow the user to switch to a downvote.
-
-WHEN a user who has downvoted a post or comment decides to change their vote, THE system SHALL allow the user to switch to an upvote.
-
-WHEN a user changes their vote from upvote to downvote, THE system SHALL:
-1. Remove the previous upvote record
-2. Create a new downvote record
-3. Adjust the content's vote score by subtracting two (removing upvote effect and adding downvote effect)
-4. Adjust the content author's karma score by subtracting two
-
-WHEN a user changes their vote from downvote to upvote, THE system SHALL:
-1. Remove the previous downvote record
-2. Create a new upvote record
-3. Adjust the content's vote score by adding two (removing downvote effect and adding upvote effect)
-4. Adjust the content author's karma score by adding two
-
-WHEN a user removes their vote from a post or comment, THE system SHALL:
-1. Remove the vote record completely
-2. Adjust the content's vote score to reflect the removal
-3. Adjust the content author's karma score to reflect the removal
-
-WHEN a user removes an upvote, THE system SHALL decrease the content's vote score by one and decrease the author's karma by one.
-
-WHEN a user removes a downvote, THE system SHALL increase the content's vote score by one and increase the author's karma by one.
-
-### Karma Adjustment System
-
-WHEN a user receives an upvote on their post, THE system SHALL increase their karma score by one.
-
-WHEN a user receives an upvote on their comment, THE system SHALL increase their karma score by one.
-
-WHEN a user receives a downvote on their post, THE system SHALL decrease their karma score by one.
-
-WHEN a user receives a downvote on their comment, THE system SHALL decrease their karma score by one.
-
-WHEN a user removes their upvote from another user's content, THE system SHALL decrease the content author's karma score by one.
-
-WHEN a user removes their downvote from another user's content, THE system SHALL increase the content author's karma score by one.
-
-WHEN a user changes their vote from upvote to downvote on another user's content, THE system SHALL decrease the content author's karma score by two.
-
-WHEN a user changes their vote from downvote to upvote on another user's content, THE system SHALL increase the content author's karma score by two.
-
-THE system SHALL display each user's total karma score on their profile page.
-
-THE system SHALL allow karma scores to be positive, zero, or negative values.
-
-THE system SHALL provide karma as feedback to content creators about how their contributions are received by the community.
-
-### Vote-Based Content Sorting
-
-WHEN users view the Hot sorting option in any feed, THE system SHALL order posts by recent activity combined with upvote density, prioritizing posts with many upvotes that were posted recently.
-
-WHEN users view the Top sorting option in any feed, THE system SHALL order posts by vote score in descending order (highest score first).
-
-WHEN users select the Top sorting option with a time filter, THE system SHALL:
-1. Filter posts created within the selected time period (today, this week, this month, this year, or all time)
-2. Order the filtered posts by vote score in descending order
-
-WHEN users view the Controversial sorting option in any feed, THE system SHALL order posts by vote volume with scores close to zero, prioritizing posts that have received many votes but have a low absolute score.
-
-WHEN users view comments on a post with Best sorting, THE system SHALL order comments by vote score in descending order (highest score first).
-
-WHEN users view comments on a post with Controversial sorting, THE system SHALL order comments by vote volume with scores close to zero.
-
-THE system SHALL apply vote-based sorting consistently across Home Feed, Popular Feed, and Community Feed.
-
-THE system SHALL ensure sorting algorithms reflect community reception and content quality as indicated by vote patterns.
+Votes are associated with either a post or a comment. A vote on a post affects the post's vote score and the post author's karma. A vote on a comment affects the comment's vote score and the comment author's karma. Each vote is recorded with a timestamp that tracks when the vote was cast.
 
 ## Report Concept
 
-Reports are the tool users employ to flag posts or comments that violate community guidelines or platform rules. Users can submit reports on any post or comment they encounter that they believe is inappropriate or problematic. When creating a report, users must provide a text reason explaining why they believe the content should be reviewed. Reports are visible only to moderators of the community where the reported content exists. Moderators can view all pending reports for their community along with the reported content, reporter information, and reason provided. Moderators have two options for handling reports: approve or dismiss. When a moderator approves a report, the reported content is deleted from the platform to protect the community. When a moderator dismisses a report, the content remains visible and the report is removed from the pending list. This system empowers community members to help maintain content quality and safety through collective oversight. Reports enable moderation teams to address problematic content that automated systems or community guidelines cannot automatically handle.
+A Report represents a user flagging of posts or comments that violate community standards. Reports include a reason text explaining why the content was flagged. Reports have a status indicating their moderation progress: pending, approved, or dismissed. Reports are created by users against specific posts or comments within communities. Reports are visible to moderators of the community where the reported content exists. Approved reports result in deletion of the reported content. Dismissed reports are removed from the moderation queue and content remains. Reports help maintain community quality through user-driven moderation.
 
-### Report Submission
+### Report Definition
 
-WHEN a user encounters a post or comment that violates community guidelines, THE system SHALL allow the user to submit a report.
+A Report represents a user flagging of posts or comments that violate community standards. This user content flagging mechanism allows community members to identify problematic content for moderator review. When creating a report, users must provide a report reason text explaining why the content was flagged. This reason is stored and visible to moderators during their review process. Reports serve as a tool for community quality maintenance through user-driven moderation, enabling the community to self-police content that may violate established norms.
 
-WHEN a user submits a report, THE system SHALL:
-1. Require the user to provide a text reason explaining why the content is problematic
-2. Associate the report with the specific post or comment being reported
-3. Record the submitting user as the reporter
-4. Set the initial report status to pending
-5. Record the timestamp of report submission
+### Report Status States
 
-IF a user attempts to report content without providing a reason, THE system SHALL reject the report submission.
+Reports have three status states that track their moderation progress:
 
-IF a user attempts to report the same content multiple times, THE system SHALL allow multiple reports but track each separately with its own reason.
+- **Pending**: A pending report status indicates the report has been submitted and is awaiting moderator review
+- **Approved**: An approved report status indicates the moderator has reviewed and confirmed the report
+- **Dismissed**: A dismissed report status indicates the moderator has reviewed and rejected the report
 
-### Report Visibility and Access
+A report begins with pending status when created by a user. The status transitions to either approved or dismissed based on moderator review decisions. Dismissed reports are removed from the moderation queue.
 
-Reports are visible only to moderators of the community where the reported content exists.
+### Reported Content Association
 
-THE system SHALL display reports to moderators with:
-1. The reported content (post or comment)
-2. The reporter's username
-3. The reason provided by the reporter
-4. The timestamp when the report was submitted
-5. The current status of the report (pending, approved, or dismissed)
-
-WHEN a moderator views reports for their community, THE system SHALL show all pending reports.
-
-IF a user is not a moderator of the community, THE system SHALL NOT display any reports to that user.
-
-THE system SHALL NOT expose report information to the reporter after submission, except for viewing their own report status if needed.
-
-### Moderator Review Workflow
-
-WHEN a moderator reviews reports for their community, THE system SHALL:
-1. Display all pending reports in a dedicated moderation queue
-2. Allow moderators to view the full reported content
-3. Show the reporter information and reason for each report
-4. Provide options to approve or dismiss each report
-
-WHEN a moderator approves a report, THE system SHALL:
-1. Delete the reported content from the platform
-2. Update the report status to approved
-3. Remove the report from the pending list
-4. Record the moderator who approved the report
-
-WHEN a moderator dismisses a report, THE system SHALL:
-1. Keep the reported content visible on the platform
-2. Update the report status to dismissed
-3. Remove the report from the pending list
-4. Record the moderator who dismissed the report
-
-Moderators can review reports at any time after submission. There is no time limit for report review.
-
-### Content Deletion on Report Approval
-
-WHEN a report is approved by a moderator, THE system SHALL delete the reported content from the platform.
-
-IF the reported content is a post, THE system SHALL:
-1. Remove the post from all feeds
-2. Remove the post from the community
-3. Remove all comments on the deleted post
-4. Update the author's karma accordingly
-5. Remove any votes on the deleted post
-
-IF the reported content is a comment, THE system SHALL:
-1. Remove the comment from the post
-2. Remove all replies to the deleted comment
-3. Update the author's karma accordingly
-4. Remove any votes on the deleted comment
-
-THE system SHALL NOT allow recovery of content deleted through report approval.
-
-WHEN content is deleted due to report approval, THE system SHALL notify the content author that their content was removed due to a community report.
-
-### Report Tracking and Moderation Analytics
-
-WHEN a user submits a report for problematic content, THE system SHALL track the report through its entire lifecycle.
-
-THE system SHALL maintain report history including:
-1. Initial submission timestamp and reporter information
-2. Review timestamp when a moderator first viewed the report
-3. Resolution timestamp when the report was approved or dismissed
-4. Moderator identity who made the final decision
-
-THE system SHALL associate reports with community guidelines violations to help moderators identify patterns of problematic content.
-
-IF a community receives multiple reports for the same user's content, THE system SHALL allow moderators to view all related reports together.
-
-THE system SHALL provide moderators with a list of all reports (pending, approved, and dismissed) for their community for tracking purposes.
-
-Report tracking enables moderation teams to:
-1. Monitor report volume and response times
-2. Identify repeat offenders in the community
-3. Analyze common violation types
-4. Ensure all reports receive timely review
-
-## Subscription Concept
-
-Subscriptions represent the relationship between users and communities that enables content participation and personalized feeds. Users can subscribe to any community to indicate their interest in that community's content and discussions. Users can unsubscribe from any community at any time to stop receiving content from that community in their feeds. Subscribing to a community is required before a user can create posts within that community, ensuring only interested members contribute. Users can view a list of all communities they are currently subscribed to for easy management. The home feed shows posts only from communities the user has subscribed to, creating a personalized content experience. Subscriptions help users curate their content consumption by following only communities relevant to their interests. Community creators automatically subscribe to their own communities when they create them. Subscriptions do not affect a user's ability to view content from communities they are not subscribed to, as public feeds remain accessible. This subscription model balances community participation requirements with open content visibility for all platform users.
-
-### Community Subscription
-
-WHEN a user subscribes to a community, THE system SHALL:
-1. Create a subscription record linking the user to the community
-2. Increment the community's subscriber count by 1
-3. Allow the subscription to be created regardless of current subscription status
-4. Update the subscription visibility to the user immediately
-
-WHEN a user views a community, THE system SHALL display whether the user is currently subscribed to that community.
-
-THE system SHALL ensure each user can subscribe to unlimited communities.
-
-THE system SHALL ensure each subscription is unique per user-community pair.
-
-IF a user attempts to subscribe to a non-existent community, THE system SHALL reject the request.
-
-IF a user is already subscribed to a community, THE system SHALL maintain the existing subscription without duplication.
-
-THE system SHALL notify the user when a subscription is successfully created.
-
-### Automatic Subscription on Community Creation
-
-WHEN a user creates a community, THE system SHALL automatically subscribe that user to the newly created community.
-
-THE system SHALL count the community creator as the first subscriber to their own community.
-
-WHEN the community creator unsubscribes from their own community, THE system SHALL allow the action but maintain their ownership status.
-
-### Subscription Visibility
-
-WHEN viewing any community, THE system SHALL display the current subscriber count to all users.
-
-WHEN viewing their own subscription status, THE system SHALL indicate whether the user is subscribed or not subscribed to each community.
-
-### Subscription Management
-
-WHEN a user unsubscribes from a community, THE system SHALL:
-1. Remove the subscription record linking the user to the community
-2. Decrement the community's subscriber count by 1
-3. Update the subscription visibility to the user immediately
-4. Allow the user to re-subscribe at any time
-
-THE system SHALL allow users to unsubscribe from any community they are currently subscribed to.
-
-THE system SHALL allow users to manage subscriptions without affecting their account or other communities.
-
-IF a user unsubscribes from a community, THE system SHALL remove that community's posts from their home feed.
-
-### Subscription Actions
-
-WHEN a user subscribes to a community, THE system SHALL confirm the subscription action to the user.
-
-WHEN a user unsubscribes from a community, THE system SHALL confirm the unsubscription action to the user.
-
-THE system SHALL allow subscription changes to take effect immediately without requiring page refresh.
-
-### Subscription Limits
-
-THE system SHALL NOT impose a maximum limit on the number of communities a user can subscribe to.
-
-THE system SHALL NOT require a minimum number of subscriptions for account functionality.
-
-### Unsubscribe Confirmation
-
-WHEN a user initiates an unsubscribe action, THE system SHALL process the request without requiring additional confirmation.
-
-IF a user unsubscribes from their last subscribed community, THE system SHALL allow the action without restriction.
-
-THE system SHALL preserve the user's ability to re-subscribe to any previously unsubscribed community.
-
-### Posting Eligibility
-
-WHEN a user attempts to create a post in a community, THE system SHALL verify the user is subscribed to that community.
-
-IF a user is not subscribed to a community, THE system SHALL prevent post creation in that community.
-
-IF a user is subscribed to a community, THE system SHALL allow post creation in that community.
-
-THE system SHALL display an error message when a user attempts to post without subscription.
-
-### Subscription Requirement Enforcement
-
-WHEN a user views a community they are not subscribed to, THE system SHALL indicate that subscription is required to post.
-
-WHEN a user views a community they are subscribed to, THE system SHALL indicate that posting is available.
-
-THE system SHALL enforce subscription requirements for all post types (text, link, and image posts).
-
-### Eligibility for Other Actions
-
-WHEN a user attempts to comment on a post, THE system SHALL NOT require community subscription.
-
-WHEN a user attempts to vote on a post, THE system SHALL NOT require community subscription.
-
-WHEN a user attempts to report content, THE system SHALL NOT require community subscription.
-
-### Subscription Verification
-
-THE system SHALL verify subscription status in real-time before allowing post creation.
-
-IF subscription status changes between viewing and posting, THE system SHALL re-verify before allowing the post.
-
-THE system SHALL cache subscription status for performance but validate on critical actions.
-
-### Subscribed Communities List
-
-WHEN a user views their subscribed communities list, THE system SHALL display all communities the user is currently subscribed to.
-
-THE system SHALL display the following information for each subscribed community:
-1. Community name
-2. Community icon image
-3. Current subscriber count
-4. Subscription status indicator
-
-THE system SHALL allow users to access their subscribed communities list from their profile or account settings.
-
-### List Display Requirements
-
-WHEN displaying the subscribed communities list, THE system SHALL show communities in a scrollable or paginated format.
-
-WHEN a user has no subscribed communities, THE system SHALL display an empty state message.
-
-THE system SHALL update the list immediately when subscription status changes.
-
-### List Interaction
-
-WHEN a user selects a community from their subscribed list, THE system SHALL navigate to that community's feed.
-
-WHEN viewing the subscribed communities list, THE system SHALL allow users to unsubscribe directly from the list.
-
-THE system SHALL allow users to search or filter their subscribed communities by name.
-
-### List Accuracy
-
-THE system SHALL ensure the subscribed communities list reflects current subscription status.
-
-IF a community is deleted, THE system SHALL remove it from the user's subscribed list.
-
-THE system SHALL ensure subscriber counts displayed in the list are current.
-
-### Home Feed Personalization
-
-WHEN a logged-in user accesses their home feed, THE system SHALL display posts only from communities the user is subscribed to.
-
-THE system SHALL exclude posts from communities the user is not subscribed to from the home feed.
-
-WHEN a user subscribes to a new community, THE system SHALL include posts from that community in the home feed.
-
-WHEN a user unsubscribes from a community, THE system SHALL remove posts from that community from the home feed.
-
-### Feed Content Rules
-
-WHEN displaying the home feed, THE system SHALL show posts in the user's preferred sort order.
-
-THE system SHALL support all sorting options (hot, new, top, controversial) in the home feed.
-
-THE system SHALL paginate home feed results consistently with other feed types.
-
-THE system SHALL display the same post information in the home feed as in other feeds.
-
-### Feed Availability
-
-THE system SHALL require user authentication to access the home feed.
-
-IF a user is not logged in, THE system SHALL redirect to the popular feed instead.
-
-THE system SHALL allow the home feed to display posts even when the user has no subscribed communities (empty state).
-
-### Feed Updates
-
-WHEN new posts are created in subscribed communities, THE system SHALL make them appear in the home feed according to the sort order.
-
-WHEN posts are deleted from subscribed communities, THE system SHALL remove them from the home feed.
-
-THE system SHALL refresh the home feed when subscription status changes.
-
-### Content Curation
-
-THE system SHALL enable users to curate their home feed by managing their subscriptions.
-
-WHEN users subscribe to communities, THE system SHALL tailor their home feed to those interests.
-
-THE system SHALL allow users to control their content consumption through subscription management.
-
-THE system SHALL ensure the home feed reflects the user's community following preferences.
-
-### Participation Eligibility Rules
-
-WHEN a user wants to participate in a community through posting, THE system SHALL verify subscription eligibility.
-
-THE system SHALL distinguish between content consumption (viewing) and content creation (posting) eligibility.
-
-### Consumption Eligibility
-
-WHEN a user wants to view community content, THE system SHALL NOT require subscription.
-
-THE system SHALL allow all users to browse community feeds regardless of subscription status.
-
-THE system SHALL allow all users to view individual posts and comments regardless of subscription status.
-
-### Creation Eligibility
-
-WHEN a user wants to create a post, THE system SHALL require active subscription to the target community.
-
-WHEN a user wants to create a comment, THE system SHALL require active subscription to the target community.
-
-THE system SHALL allow all authenticated users to comment on posts in communities they are subscribed to.
-
-### Eligibility Enforcement
-
-THE system SHALL enforce participation eligibility rules consistently across all communities.
-
-IF eligibility requirements are not met, THE system SHALL display a clear message explaining the restriction.
-
-THE system SHALL provide guidance on how to meet eligibility requirements (e.g., subscribe to post).
-
-### Special Cases
-
-WHEN a community owner posts in their own community, THE system SHALL allow posting (automatic subscription applies).
-
-WHEN a moderator posts in a moderated community, THE system SHALL require subscription (unless they are the owner).
-
-THE system SHALL apply the same eligibility rules to all user types (regular users, moderators, owners).
+A report is associated with exactly one piece of content that is being flagged. This content can be either a post or a comment within a community. The report to post relationship and report to comment relationship are both one-to-one: each report targets a single post or a single comment. When a report is approved, the specific content it targets is deleted from the community, resulting in content deletion on approval.
 
 # Domain Relationships
 
@@ -923,627 +140,325 @@ Describe how concepts relate to each other from a business perspective.
 
 Describe how concepts relate to each other in business terms.
 
-### Community Ownership
+### Entity Relationship Overview
 
-THE system SHALL associate each community with exactly one owner user.
+The platform consists of interconnected business entities that form a cohesive community ecosystem. Users interact with communities, create content, and participate through voting and reporting mechanisms.
 
-WHEN a user creates a community, THE system SHALL assign that user as the community owner.
+Users are the central actors who own communities, create posts and comments, cast votes, and submit reports. Each user maintains a unique identity through their username and can build reputation through karma accumulation.
 
-THE owner SHALL have exclusive authority to remove moderators from the community.
+Communities serve as topic-based gathering spaces where users subscribe, create posts, and engage in discussions. Communities are owned by their creators and can have additional moderators who help manage content.
 
-THE owner SHALL have exclusive authority to remove other moderators.
+Posts are the primary content units within communities. Each post belongs to exactly one community and is authored by a single user. Posts can contain text, links, or images, and receive votes and comments from other users.
 
-THE system SHALL prevent moderators from removing the community owner.
+Comments provide threaded discussion on posts. Each comment is written by a user on a specific post and can have nested replies, creating unlimited depth conversation threads.
 
-THE system SHALL prevent moderators from removing each other.
+Votes represent user feedback on posts and comments. Each user can cast one vote (upvote or downvote) per piece of content, and can change or remove their vote at any time.
 
-THE system SHALL maintain the ownership relationship even when the owner modifies their profile.
-
-THE system SHALL preserve ownership when the community receives new moderators.
-
-### Post-Community Association
-
-THE system SHALL associate each post with exactly one community.
-
-THE system SHALL require a post to belong to a community before it can be created.
-
-WHEN a user creates a post, THE system SHALL record the community association.
-
-THE system SHALL display the community name when viewing a post.
-
-THE system SHALL filter posts by community when displaying a community feed.
-
-THE system SHALL prevent a post from being moved to a different community after creation.
-
-THE system SHALL delete all posts in a community when the community is removed.
-
-### Comment Hierarchy
-
-THE system SHALL associate each comment with exactly one post.
-
-THE system SHALL allow comments to have a parent comment for replies.
-
-THE system SHALL support unlimited nesting depth for comment replies.
-
-WHEN a comment is created, THE system SHALL record its parent relationship.
-
-THE system SHALL display nested replies under their parent comments.
-
-THE system SHALL maintain reply order within each comment thread.
-
-THE system SHALL delete all replies when a parent comment is deleted.
-
-### User-Content Ownership
-
-THE system SHALL associate each post with exactly one author user.
-
-THE system SHALL associate each comment with exactly one author user.
-
-THE author SHALL have exclusive rights to edit their own posts.
-
-THE author SHALL have exclusive rights to delete their own posts.
-
-THE author SHALL have exclusive rights to edit their own comments.
-
-THE author SHALL have exclusive rights to delete their own comments.
-
-WHEN a user account is deleted, THE system SHALL remove all posts authored by that user.
-
-WHEN a user account is deleted, THE system SHALL remove all comments authored by that user.
-
-### Vote Associations
-
-THE system SHALL associate each vote with exactly one user.
-
-THE system SHALL associate each vote with exactly one target (post or comment).
-
-THE system SHALL allow a user to cast one vote per post.
-
-THE system SHALL allow a user to cast one vote per comment.
-
-THE system SHALL record the vote type (upvote or downvote) for each association.
-
-WHEN a user changes their vote, THE system SHALL update the existing association.
-
-WHEN a user removes their vote, THE system SHALL delete the vote association.
-
-### Report Associations
-
-THE system SHALL associate each report with exactly one user (the reporter).
-
-THE system SHALL associate each report with exactly one target (post or comment).
-
-THE system SHALL record the reason provided when a report is created.
-
-THE system SHALL allow moderators to view reports associated with their community.
-
-WHEN a report is approved, THE system SHALL delete the reported content.
-
-WHEN a report is dismissed, THE system SHALL remove the report from the active list.
-
-### Subscription Relationships
-
-THE system SHALL associate each user with zero or more communities through subscriptions.
-
-THE system SHALL require a subscription association before a user can create posts in a community.
-
-THE system SHALL allow users to create new subscription associations.
-
-THE system SHALL allow users to remove subscription associations.
-
-THE system SHALL display subscribed communities on a user's profile.
-
-THE system SHALL filter the home feed to show only posts from subscribed communities.
-
-THE system SHALL update the subscriber count when a new subscription is created.
-
-THE system SHALL update the subscriber count when a subscription is removed.
-
-### Community Member Associations
-
-THE system SHALL associate each community with zero or more subscribers.
-
-THE system SHALL associate each community with zero or more moderators.
-
-THE system SHALL associate each community with zero or more banned users.
-
-THE system SHALL display the subscriber count on the community page.
-
-THE system SHALL allow moderators to view the list of banned users.
-
-THE system SHALL prevent banned users from creating posts in the community.
-
-THE system SHALL prevent banned users from creating comments in the community.
-
-THE system SHALL allow banned users to view community content.
-
-## Lifecycle and Retention
-
-Describe business rules for concept lifecycle and data retention from a user perspective.
-
-### User Account Lifecycle
-
-WHEN a user registers, THE system SHALL require a unique username and valid email address.
-
-WHEN a user registers, THE system SHALL require a password for authentication.
-
-WHEN a user creates an account, THE system SHALL assign an initial karma score of zero.
-
-WHEN a user logs in, THE system SHALL authenticate using email and password.
-
-WHEN a user changes their password, THE system SHALL require the current password for verification.
-
-WHEN a user deletes their account, THE system SHALL remove all posts created by the user.
-
-WHEN a user deletes their account, THE system SHALL remove all comments created by the user.
-
-WHEN a user deletes their account, THE system SHALL remove all votes cast by the user.
-
-WHEN a user deletes their account, THE system SHALL remove all subscriptions associated with the user.
-
-WHEN a user deletes their account, THE system SHALL remove all reports created by the user.
-
-WHEN a user deletes their account, THE system SHALL make their username available for future registration.
-
-IF a user requests account deletion, THE system SHALL permanently remove all associated data without recovery.
-
-WHILE an account exists, THE system SHALL maintain the user's profile information (display name, bio, avatar).
-
-THE system SHALL NOT allow account recovery after deletion is completed.
-
-THE system SHALL NOT allow duplicate usernames during registration.
-
-### Content Lifecycle (Posts and Comments)
-
-WHEN a user creates a post, THE system SHALL require a title.
-
-WHEN a user creates a post, THE system SHALL require the user to be subscribed to the target community.
-
-WHEN a user creates a post, THE system SHALL associate the post with the creating user and community.
-
-WHEN a user creates a post, THE system SHALL record the creation timestamp.
-
-WHEN a user edits their own post, THE system SHALL allow modification of title and content.
-
-WHEN a user deletes their own post, THE system SHALL remove the post and all associated comments.
-
-WHEN a user deletes their own post, THE system SHALL remove all votes associated with the post.
-
-WHEN a moderator deletes a post in their community, THE system SHALL remove the post and all associated comments.
-
-WHEN a moderator deletes a post in their community, THE system SHALL remove all votes associated with the post.
-
-WHEN a user creates a comment, THE system SHALL associate the comment with the target post and creating user.
-
-WHEN a user creates a comment, THE system SHALL record the creation timestamp.
-
-WHEN a user creates a comment, THE system SHALL allow the comment to be a reply to another comment.
-
-WHEN a user edits their own comment, THE system SHALL allow modification of the comment content.
-
-WHEN a user deletes their own comment, THE system SHALL remove the comment and all nested replies.
-
-WHEN a user deletes their own comment, THE system SHALL remove all votes associated with the comment.
-
-WHEN a moderator deletes a comment in their community, THE system SHALL remove the comment and all nested replies.
-
-WHEN a moderator deletes a comment in their community, THE system SHALL remove all votes associated with the comment.
-
-IF a user is banned from a community, THE system SHALL prevent creation of new posts in that community.
-
-IF a user is banned from a community, THE system SHALL prevent creation of new comments in that community.
-
-THE system SHALL NOT allow recovery of deleted posts or comments.
-
-THE system SHALL maintain comment nesting structure with unlimited reply depth.
-
-### Report Lifecycle
-
-WHEN a user reports a post or comment, THE system SHALL require a reason for the report.
-
-WHEN a user reports a post or comment, THE system SHALL record the reporter and the reported content.
-
-WHEN a user reports a post or comment, THE system SHALL assign the report a pending status.
-
-WHEN a moderator reviews a report, THE system SHALL display the reported content, reporter, and reason.
-
-WHEN a moderator approves a report, THE system SHALL delete the reported content.
-
-WHEN a moderator approves a report, THE system SHALL remove all votes associated with the reported content.
-
-WHEN a moderator approves a report, THE system SHALL mark the report as approved.
-
-WHEN a moderator approves a report, THE system SHALL remove the report from the pending list.
-
-WHEN a moderator dismisses a report, THE system SHALL mark the report as dismissed.
-
-WHEN a moderator dismisses a report, THE system SHALL remove the report from the report list.
-
-WHEN a moderator dismisses a report, THE system SHALL retain the reported content.
-
-WHEN content is deleted via report approval, THE system SHALL remove all associated comments (for posts).
-
-WHEN content is deleted via report approval, THE system SHALL remove all nested replies (for comments).
-
-THE system SHALL only allow moderators to approve or dismiss reports for their communities.
-
-THE system SHALL NOT allow recovery of content deleted via approved reports.
-
-THE system SHALL remove dismissed reports from the moderator view.
-
-### Vote Lifecycle
-
-WHEN a user votes on a post, THE system SHALL record the vote type (upvote or downvote).
-
-WHEN a user votes on a post, THE system SHALL associate the vote with the user and post.
-
-WHEN a user upvotes a post, THE system SHALL increase the post vote score by one.
-
-WHEN a user downvotes a post, THE system SHALL decrease the post vote score by one.
-
-WHEN a user upvotes a comment, THE system SHALL increase the comment vote score by one.
-
-WHEN a user downvotes a comment, THE system SHALL decrease the comment vote score by one.
-
-WHEN a user changes their vote from upvote to downvote, THE system SHALL decrease the score by two.
-
-WHEN a user changes their vote from downvote to upvote, THE system SHALL increase the score by two.
-
-WHEN a user removes their vote, THE system SHALL adjust the score based on the previous vote type.
-
-WHEN a user removes their vote, THE system SHALL remove the vote record.
-
-IF a user has already voted on a post, THE system SHALL prevent a second vote without removing the first.
-
-IF a user has already voted on a comment, THE system SHALL prevent a second vote without removing the first.
-
-WHEN a post is deleted, THE system SHALL remove all votes associated with the post.
-
-WHEN a comment is deleted, THE system SHALL remove all votes associated with the comment.
-
-WHEN a user account is deleted, THE system SHALL remove all votes cast by the user.
-
-THE system SHALL calculate vote score as total upvotes minus total downvotes.
-
-THE system SHALL allow vote score to be negative.
-
-### Subscription Lifecycle
-
-WHEN a user subscribes to a community, THE system SHALL record the subscription relationship.
-
-WHEN a user subscribes to a community, THE system SHALL increase the community subscriber count.
-
-WHEN a user subscribes to a community, THE system SHALL allow the user to create posts in that community.
-
-WHEN a user subscribes to a community, THE system SHALL include posts from that community in the user's home feed.
-
-WHEN a user unsubscribes from a community, THE system SHALL remove the subscription relationship.
-
-WHEN a user unsubscribes from a community, THE system SHALL decrease the community subscriber count.
-
-WHEN a user unsubscribes from a community, THE system SHALL prevent the user from creating new posts in that community.
-
-WHEN a user unsubscribes from a community, THE system SHALL remove posts from that community from the user's home feed.
-
-WHEN a user views their subscribed communities, THE system SHALL display all communities they are subscribed to.
-
-WHEN a user deletes their account, THE system SHALL remove all subscriptions associated with the user.
-
-IF a user is banned from a community, THE system SHALL prevent new post creation but retain subscription.
-
-THE system SHALL NOT require subscription to view community content or feeds.
-
-THE system SHALL allow users to subscribe to unlimited communities.
-
-THE system SHALL allow users to unsubscribe from any community at any time.
-
-# Enums and State Machines
-
-Enum type definitions and state transitions.
-
-## Enum Definitions
-
-Define all enum types with their allowed values and descriptions.
-
-### Post Type Enumeration
-
-WHEN a post is created, THE system SHALL assign one of the following post types:
-
-**Text Post**
-- Contains written text content
-- Displayed with full text in the feed (truncated to first 200 characters)
-- Users can read the complete content when viewing the post
-
-**Link Post**
-- Contains a URL to external content
-- Displayed with the domain name in the feed (e.g., "youtube.com")
-- Users can click to navigate to the external URL
-
-**Image Post**
-- Contains an uploaded image file
-- Displayed with a thumbnail preview in the feed
-- Users can view the full image when viewing the post
-
-THE system SHALL enforce that every post has exactly one post type.
-THE system SHALL validate that the content matches the selected post type (text for text posts, URL for link posts, image file for image posts).
-
-### Vote Type Enumeration
-
-WHEN a user casts a vote on a post or comment, THE system SHALL assign one of the following vote types:
-
-**Upvote**
-- Increases the vote score by 1
-- Increases the author's karma by 1
-- Indicates approval or positive sentiment
-
-**Downvote**
-- Decreases the vote score by 1
-- Decreases the author's karma by 1
-- Indicates disapproval or negative sentiment
-
-THE system SHALL allow users to change their vote from upvote to downvote or vice versa.
-THE system SHALL allow users to remove their vote entirely.
-THE system SHALL adjust the vote score and karma when a vote type changes or is removed.
-
-### Report Status Enumeration
-
-WHEN a report is created, THE system SHALL assign a status from the following allowed values:
-
-**Pending**
-- Report has been submitted and awaits moderator review
-- Visible in the moderator reports queue
-- Content remains visible to users
-
-**Approved**
-- Moderator has reviewed and validated the report
-- The reported content is deleted
-- Report is removed from the queue
-
-**Dismissed**
-- Moderator has reviewed but rejected the report
-- The reported content remains visible
-- Report is removed from the queue
-
-WHEN a moderator approves a report, THE system SHALL delete the reported content and update the status to approved.
-WHEN a moderator dismisses a report, THE system SHALL keep the content and update the status to dismissed.
+Reports allow users to flag inappropriate content for moderator review. Reports are submitted on posts or comments and contain a reason text for the flagging.
 
 ```mermaid
 flowchart LR
-    A["pending"] -->|"Review"| B["approved"]
-    A["pending"] -->|"Review"| C["dismissed"]
+    A["User"] -->|"owns"| B["Community"]
+    A -->|"subscribes to"| B
+    A -->|"creates"| C["Post"]
+    A -->|"writes"| D["Comment"]
+    A -->|"votes on"| C
+    A -->|"votes on"| D
+    A -->|"reports"| C
+    A -->|"reports"| D
+    B -->|"contains"| C
+    C -->|"has"| D
 ```
 
-### Feed Sort Options Enumeration
+### User-Community Association
 
-WHEN a user views a post feed, THE system SHALL support the following sort options:
+Users have multiple types of relationships with communities:
 
-**Hot**
-- Posts with recent activity and high upvote counts appear first
-- Balances recency and popularity
-- Default view for active communities
+**Ownership**: The user who creates a community becomes its owner. Ownership is permanent and cannot be transferred. The owner has the highest authority within the community and can manage moderators.
 
-**New**
-- Most recently created posts appear first
-- Chronological order from newest to oldest
-- Shows the latest content regardless of engagement
+**Subscription**: Users can subscribe to any community to access its content feed and create posts within it. Subscribing is optional and users can unsubscribe at any time. A user's subscription list is visible on their profile.
 
-**Top**
-- Posts with highest vote scores appear first
-- Requires time filter selection (today, this week, this month, this year, all time)
-- Shows the most upvoted content within the selected time range
+**Moderation**: Community owners can appoint other users as moderators. Moderators can also appoint additional moderators but cannot remove the owner or other moderators. Moderators share content management responsibilities with the owner.
 
-**Controversial**
-- Posts with many votes but scores close to zero appear first
-- Indicates divisive content with mixed opinions
-- Useful for identifying heated discussions
+**Membership**: All users can view community content, but only subscribers can create posts. Banned users can still view content but cannot participate.
 
-THE system SHALL apply the selected sort option to all feed types (Home, Popular, Community).
-THE system SHALL paginate results based on the selected sort order.
+```mermaid
+flowchart LR
+    A["User"] -->|"creates and owns"| B["Community"]
+    A -->|"subscribes to"| B
+    A -->|"is moderator of"| B
+    A -->|"is banned from"| B
+```
 
-### Comment Sort Options Enumeration
+### Content Ownership and Belongs-To
 
-WHEN a user views comments on a post, THE system SHALL support the following sort options:
+Users maintain ownership over content they create:
 
-**Best**
-- Comments with highest vote scores appear first
-- Prioritizes quality and community agreement
-- Default view for comment threads
+**Post Ownership**: Each post is created by and belongs to a single user. The post author can edit or delete their own posts. When a user deletes their account, all their posts are also deleted.
 
-**New**
-- Most recently created comments appear first
-- Chronological order from newest to oldest
-- Shows the latest discussion activity
+**Comment Ownership**: Each comment is written by and belongs to a single user. The comment author can edit or delete their own comments. When a user deletes their account, all their comments are also deleted.
 
-**Controversial**
-- Comments with many votes but scores close to zero appear first
-- Indicates divisive comments with mixed opinions
-- Useful for identifying heated debates
+**Profile Ownership**: Each user owns their profile information including display name, bio, and avatar. Users can modify their own profile at any time.
 
-THE system SHALL apply the selected sort option to the comment thread.
-THE system SHALL maintain nested reply structure regardless of sort order.
+**Karma Ownership**: Each user has a single karma score that reflects their reputation across the platform. Karma is calculated from votes received on the user's posts and comments.
 
-### Top Sort Time Filter Enumeration
+```mermaid
+flowchart LR
+    A["User"] -->|"owns"| B["Post"]
+    A -->|"owns"| C["Comment"]
+    A -->|"owns"| D["Profile"]
+    A -->|"has"| E["Karma Score"]
+```
 
-WHEN a user selects the Top sort option for a feed, THE system SHALL require one of the following time filters:
+### Post-Comment Hierarchy
 
-**Today**
-- Shows top posts from the current day only
-- Resets at midnight in the user's timezone
+Posts and comments form a hierarchical content structure:
 
-**This Week**
-- Shows top posts from the current week (7 days)
-- Resets at the start of each week
+**Post-Comment Relationship**: Each post can have many comments. Comments are associated with exactly one post. When a post is deleted, all its comments are also deleted.
 
-**This Month**
-- Shows top posts from the current month
-- Resets at the start of each month
+**Comment-Nesting Relationship**: Comments can have replies, and replies can have further replies with no depth limit. Each reply belongs to exactly one parent comment (or directly to a post for top-level comments). This creates an unlimited nesting structure for discussions.
 
-**This Year**
-- Shows top posts from the current year
-- Resets at the start of each year
+**Content Deletion Cascade**: When a post is deleted, all comments and nested replies within that post are also deleted. When a comment is deleted, only that specific comment is removed, but its replies remain attached to the parent.
 
-**All Time**
-- Shows top posts from the entire history of the community or platform
-- No time restriction applied
+```mermaid
+flowchart LR
+    A["Post"] -->|"has many"| B["Comment"]
+    B -->|"has replies"| C["Comment Reply"]
+    C -->|"has replies"| D["Comment Reply"]
+    style A fill:#f9f,stroke:#333
+    style B fill:#bbf,stroke:#333
+    style C fill:#bbf,stroke:#333
+    style D fill:#bbf,stroke:#333
+```
 
-THE system SHALL require time filter selection when Top sort is chosen.
-THE system SHALL apply the time filter before calculating vote scores for ranking.
+### Community-Content Association
+
+Communities serve as containers for posts and organize content by topic:
+
+**Community-Post Relationship**: Each post belongs to exactly one community. A community can have many posts. Posts are visible in the community's feed and can be viewed by anyone.
+
+**Subscriber Relationship**: Each community has many subscribers. Each subscriber is subscribed to one community (but can subscribe to many communities). The subscriber count is displayed on the community page.
+
+**Moderator Relationship**: Each community can have many moderators. Each moderator is assigned to exactly one community (but can moderate multiple communities). Moderators are appointed by the owner or existing moderators.
+
+**Ban Relationship**: A community can ban many users. A banned user is restricted from one specific community (but can participate in other communities). Banned users can still view community content but cannot create posts or comments.
+
+```mermaid
+flowchart LR
+    A["Community"] -->|"contains many"| B["Post"]
+    A -->|"has many"| C["Subscriber"]
+    A -->|"has many"| D["Moderator"]
+    A -->|"bans many"| E["User"]
+```
+
+### Vote and Report Associations
+
+Votes and reports create feedback and moderation associations with content:
+
+**Vote-Content Relationship**: Each vote is cast by one user on one piece of content (either a post or a comment). A user can cast only one vote per piece of content. Votes directly affect the vote score of the content and the karma of the content author.
+
+**Vote-Karma Relationship**: When a user receives an upvote on their post or comment, their karma increases by one. When a user receives a downvote, their karma decreases by one. When a vote is removed or changed, karma adjusts accordingly.
+
+**Report-Content Relationship**: Each report is submitted by one user on one piece of content (either a post or a comment). Reports are reviewed by community moderators. The reported content remains visible until a moderator approves the report.
+
+**Report-Community Relationship**: Reports are associated with the community where the reported content exists. Moderators can only view and act on reports within their own communities.
+
+```mermaid
+flowchart LR
+    A["User"] -->|"casts vote on"| B["Post"]
+    A -->|"casts vote on"| C["Comment"]
+    A -->|"submits report on"| B
+    A -->|"submits report on"| C
+    B -->|"belongs to"| D["Community"]
+    C -->|"on"| B
+```
+
+## Lifecycle and Retention
+
+Describe concept lifecycle states and transitions only. Detailed retention/recovery policies belong in 05-non-functional. Operation details belong in 03-functional-requirements.
+
+### User Account Lifecycle
+
+A user account begins in an active state after successful registration. The account remains active until the user chooses to delete it or the account is otherwise terminated.
+
+When a user deletes their account, the following occurs:
+- The account is permanently removed from the platform
+- All posts created by the user are deleted
+- All comments written by the user are deleted
+- The user's profile information is removed
+- The user's karma score is removed
+
+User account deletion is irreversible. Once deleted, the account and all associated content cannot be recovered.
+
+### Content Deletion and Cascade
+
+Posts and comments exist in an active state while they remain visible on the platform. Content can be removed through deletion.
+
+Content deletion occurs in three scenarios:
+1. **Owner deletion**: The creator of a post or comment can delete their own content
+2. **Moderator deletion**: Community moderators can delete any post or comment within their community
+3. **Account deletion**: When a user deletes their account, all their posts and comments are automatically deleted
+
+When a post is deleted, the post content is removed from all feeds and views. The post no longer contributes to the author's karma.
+
+When a comment is deleted, the comment content is removed from the post. The comment no longer contributes to the author's karma.
+
+Deleted content is permanently removed and cannot be recovered.
+
+### Report Lifecycle
+
+A report begins in a pending state when a user submits it. The report remains pending until a moderator reviews and takes action.
+
+A moderator can take one of two actions:
+- **Approve**: The reported content is deleted, and the report moves to the approved state
+- **Dismiss**: The reported content remains, and the report is removed from the pending report list
+
+Once a report is approved or dismissed, it is no longer visible in the active report queue. Approved reports result in content deletion. Dismissed reports do not affect the reported content.
+
+### Vote Lifecycle
+
+A vote is created when a user upvotes or downvotes a post or comment. The vote remains active until the user changes or removes it.
+
+A user can modify their vote in three ways:
+- **Change vote**: Switch from upvote to downvote, or from downvote to upvote
+- **Remove vote**: Delete their vote entirely, returning the content's score to its previous state
+
+When a vote is removed or changed, the content's vote score adjusts accordingly. The vote is no longer counted in the total.
+
+Vote removal is immediate and the score update is reflected across all views of the content.
+
+### Deletion Policy and Recovery
+
+When content is deleted through any mechanism (owner deletion, moderator deletion, or account deletion), the deletion is permanent. There is no archival state or recovery mechanism for deleted posts, comments, or accounts.
+
+The platform does not maintain deleted content for any retention period. Once deletion occurs, content is immediately removed from all user-visible surfaces.
+
+Users should be aware that deletion is final and irreversible before confirming any deletion action.
+
+# Business Categories and State Flows
+
+Business category classifications and state flow definitions.
+
+## Business Category Definitions
+
+Define all business category classifications with their allowed values and descriptions.
+
+### Post Content Types
+
+Posts can be created in three content formats, each with specific content requirements:
+
+**Text Post**: Contains written text content. The user provides the full text when creating the post.
+
+**Link Post**: Contains a URL to external content. The system extracts and displays the domain name for identification.
+
+**Image Post**: Contains an uploaded image file. The system generates a thumbnail for preview in post lists.
+
+Each post must be exactly one of these three types at creation time. The post type cannot be changed after creation.
+
+### Report Status States
+
+Reports submitted by users progress through the following status states:
+
+**Pending**: The report has been submitted and awaits moderator review. The content remains visible while under review.
+
+**Approved**: The moderator has reviewed and confirmed the report. The reported content is deleted as a result.
+
+**Dismissed**: The moderator has reviewed the report and determined no action is needed. The content remains visible and the report is removed from the moderator's review queue.
+
+Only moderators can change a report's status from pending to either approved or dismissed.
+
+### Vote Types
+
+Users can express their preference on posts and comments using two vote types:
+
+**Upvote**: Indicates approval or agreement with the content. Adds 1 to the vote score.
+
+**Downvote**: Indicates disapproval or disagreement with the content. Subtracts 1 to the vote score.
+
+Each user can cast only one vote per post or comment at a time. Users may change their vote from upvote to downvote or vice versa. Users may also remove their vote entirely, which reverses the score impact.
+
+### Feed Sorting Options
+
+Posts across all feeds can be sorted using four ordering options:
+
+**Hot**: Posts with recent activity and high upvote counts appear first. This emphasizes currently trending content.
+
+**New**: Posts are ordered by creation time, with the most recently created posts appearing first.
+
+**Top**: Posts are ordered by vote score (upvotes minus downvotes), with highest scoring posts appearing first. This sorting requires a time filter selection.
+
+**Controversial**: Posts with many total votes but a score close to zero appear first. This highlights content that has generated divided opinions.
+
+All three feed types (Home, Popular, Community) support these same sorting options.
+
+### Time Filter Categories
+
+When viewing the time filter for Top sorting, users can select from five time periods:
+
+**Today**: Shows top posts from the current day
+
+**This Week**: Shows top posts from the past seven days
+
+**This Month**: Shows top posts from the past thirty days
+
+**This Year**: Shows top posts from the past year
+
+**All Time**: Shows top posts from the entire history of the platform
+
+This filter only applies when the Top sorting option is selected.
+
+### Comment Sorting Options
+
+Comments on a post can be sorted using three ordering options:
+
+**Best**: Comments are ordered by vote score, with highest scoring comments appearing first. This emphasizes the most upvoted content.
+
+**New**: Comments are ordered by creation time, with the most recently created comments appearing first.
+
+**Controversial**: Comments with many total votes but a score close to zero appear first. This highlights comments that have generated divided opinions.
+
+These sorting options apply to all comments on a post, including nested replies.
 
 ## State Transitions
 
 Define valid state transition paths for stateful concepts.
 
-### Report Status Workflow
+### Report Status Lifecycle
 
-WHEN a user reports a post or comment, THE system SHALL create a report with pending status.
+Reports progress through a lifecycle from submission to resolution. When a user reports content, the report starts in a pending status. Moderators review pending reports and take one of two actions: approve or dismiss.
 
-WHEN a moderator reviews a pending report, THE system SHALL allow them to approve the report.
+When a moderator approves a report, the reported content is deleted and the report status changes to approved. When a moderator dismisses a report, the content remains visible and the report is removed from the pending list with a dismissed status.
 
-WHEN a moderator reviews a pending report, THE system SHALL allow them to dismiss the report.
+Approved and dismissed reports are final states and cannot be changed back to pending.
 
-WHEN a report is approved, THE system SHALL delete the reported content.
+### Vote State Transitions
 
-WHEN a report is approved, THE system SHALL remove the report from the pending list.
+Users can cast votes on posts and comments. A user starts with no vote on any piece of content. From this state, a user can either upvote or downvote.
 
-WHEN a report is dismissed, THE system SHALL keep the reported content visible.
+Once a vote is cast, the user can change their vote. An upvote can be changed to a downvote, and a downvote can be changed to an upvote. A user can also remove their vote entirely, returning to the no-vote state.
 
-WHEN a report is dismissed, THE system SHALL remove the report from the pending list.
+Each user maintains only one vote state per post or comment at any time. The system tracks whether a user has upvoted, downvoted, or has no vote on each piece of content.
 
-THE system SHALL track each report's status as pending, approved, or dismissed.
+### Community Subscription State
 
-THE system SHALL display the report reason when moderators review reports.
+Users can subscribe to communities to follow their content. A user starts in a not-subscribed state for each community. When a user subscribes, they transition to the subscribed state.
 
-THE system SHALL display the reporter information when moderators review reports.
+Subscribed users can unsubscribe from any community, returning to the not-subscribed state. Subscribing is required to create posts in a community, but unsubscribing does not delete existing posts.
 
-IF a report is approved, THEN THE system SHALL NOT allow the content to be restored.
+Users can view the list of communities they are currently subscribed to at any time.
 
-IF a report is dismissed, THEN THE system SHALL NOT count it as an active report.
+### Community Ban Status
 
-```mermaid
-flowchart LR
-    A["pending"] -->|"Approve"| B["approved"]
-    A["pending"] -->|"Dismiss"| C["dismissed"]
-```
+Community owners and moderators can ban users from their community. A user starts in a not-banned state for each community. When banned, the user transitions to the banned state for that specific community.
 
-### Vote State Machine
+Banned users cannot create new posts or comments in the banned community, but they can still view all content. Owners and moderators can unban a user, returning them to the not-banned state and restoring their ability to post and comment.
 
-WHEN a user upvotes a post or comment, THE system SHALL record an upvote for that user on that content.
+Ban status is tracked per user per community. A user banned from one community can still participate in other communities.
 
-WHEN a user downvotes a post or comment, THE system SHALL record a downvote for that user on that content.
+### Content Deletion Lifecycle
 
-WHEN a user changes their vote from upvote to downvote, THE system SHALL update the vote and adjust the score.
+Posts and comments exist in an active state when created. Owners can delete their own posts or comments at any time, transitioning them to a deleted state. Moderators can also delete any post or comment in their community.
 
-WHEN a user changes their vote from downvote to upvote, THE system SHALL update the vote and adjust the score.
+When content is deleted, it is removed from all feeds and user profile listings. Deleted content is no longer visible to any users, including the original author.
 
-WHEN a user removes their vote, THE system SHALL clear the vote and adjust the score.
-
-THE system SHALL ensure each user can only have one vote per post at any time.
-
-THE system SHALL ensure each user can only have one vote per comment at any time.
-
-THE system SHALL calculate vote score as total upvotes minus total downvotes.
-
-WHEN a vote is added, THE system SHALL immediately update the vote score.
-
-WHEN a vote is removed, THE system SHALL immediately update the vote score.
-
-WHEN a vote is changed, THE system SHALL immediately update the vote score.
-
-```mermaid
-flowchart LR
-    A["no vote"] -->|"Upvote"| B["upvote"]
-    A["no vote"] -->|"Downvote"| C["downvote"]
-    B["upvote"] -->|"Change to Downvote"| C["downvote"]
-    B["upvote"] -->|"Remove Vote"| A["no vote"]
-    C["downvote"] -->|"Change to Upvote"| B["upvote"]
-    C["downvote"] -->|"Remove Vote"| A["no vote"]
-```
-
-### Subscription State Transitions
-
-WHEN a user subscribes to a community, THE system SHALL record the subscription relationship.
-
-WHEN a user unsubscribes from a community, THE system SHALL remove the subscription relationship.
-
-THE system SHALL allow users to view all communities they are subscribed to.
-
-THE system SHALL require subscription before a user can create posts in a community.
-
-WHEN a user subscribes, THE system SHALL increment the community's subscriber count.
-
-WHEN a user unsubscribes, THE system SHALL decrement the community's subscriber count.
-
-THE system SHALL allow users to subscribe to any community regardless of their current subscription status.
-
-THE system SHALL allow users to unsubscribe from any community they are subscribed to.
-
-IF a user is not subscribed to a community, THEN THE system SHALL prevent them from creating posts in that community.
-
-```mermaid
-flowchart LR
-    A["unsubscribed"] -->|"Subscribe"| B["subscribed"]
-    B["subscribed"] -->|"Unsubscribe"| A["unsubscribed"]
-```
-
-### User Account Lifecycle
-
-WHEN a user registers with email and password, THE system SHALL create an account with active status.
-
-WHEN a user logs in with valid credentials, THE system SHALL establish an authenticated session.
-
-WHEN a user changes their password, THE system SHALL update the password hash.
-
-WHEN a user deletes their account, THE system SHALL remove all posts created by that user.
-
-WHEN a user deletes their account, THE system SHALL remove all comments created by that user.
-
-WHEN a user deletes their account, THE system SHALL remove their profile information.
-
-WHEN a user deletes their account, THE system SHALL invalidate their authentication session.
-
-THE system SHALL prevent login attempts for deleted accounts.
-
-THE system SHALL display the user's display name, bio, and avatar on their profile page.
-
-THE system SHALL display the user's total karma score on their profile page.
-
-THE system SHALL display all posts created by the user on their profile page.
-
-THE system SHALL display all comments created by the user on their profile page.
-
-```mermaid
-flowchart LR
-    A["registered"] -->|"Delete Account"| B["deleted"]
-```
-
-### Community Banning State Transitions
-
-WHEN a moderator bans a user from a community, THE system SHALL record the ban relationship.
-
-WHEN a moderator unbans a user from a community, THE system SHALL remove the ban relationship.
-
-WHEN a user is banned from a community, THE system SHALL prevent them from creating posts in that community.
-
-WHEN a user is banned from a community, THE system SHALL prevent them from creating comments in that community.
-
-WHEN a user is banned from a community, THE system SHALL allow them to view the community content.
-
-THE system SHALL allow moderators to view the list of banned users for their community.
-
-THE system SHALL track the ban status for each user-community pair.
-
-THE system SHALL allow the community owner to add moderators.
-
-THE system SHALL allow the community owner to remove moderators.
-
-THE system SHALL allow moderators to add other moderators.
-
-THE system SHALL prevent moderators from removing the community owner.
-
-THE system SHALL prevent moderators from removing other moderators.
-
-```mermaid
-flowchart LR
-    A["not banned"] -->|"Ban"| B["banned"]
-    B["banned"] -->|"Unban"| A["not banned"]
-```
+Once deleted, posts and comments cannot be restored. The deletion is permanent.

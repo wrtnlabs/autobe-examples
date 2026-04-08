@@ -32,109 +32,80 @@ export async function patchHrmPlatformMemberTimelogs(props: {
   const employee =
     await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
       where: {
-        user_id: props.member.id,
+        member_id: props.member.id,
         deleted_at: null,
       },
       select: {
         id: true,
         organization_id: true,
-        role_id: true,
+        role: {
+          select: {
+            rolePermissions: {
+              select: {
+                permission: {
+                  select: {
+                    code: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
-  const role = await MyGlobal.prisma.hrm_platform_roles.findFirstOrThrow({
-    where: {
-      id: employee.role_id,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      organization_id: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-      name: true,
-      description: true,
-      is_builtin: true,
-    },
-  });
-  const rolePermissions =
-    await MyGlobal.prisma.hrm_platform_role_permissions.findMany({
-      where: {
-        hrm_platform_role_id: role.id,
-        deleted_at: null,
-      },
-      select: {
-        permission: true,
-      },
-    });
-  const hasViewAllPermission = rolePermissions.some(
-    (p: { permission: string }) => p.permission === "time:view_all",
+  const hasTimeViewAll = employee.role.rolePermissions.some(
+    (rp) => rp.permission.code === "time:view_all",
   );
   const whereInput: Prisma.hrm_platform_timelogsWhereInput = {
     deleted_at: null,
     employee: {
       organization_id: employee.organization_id,
-      deleted_at: null,
     },
-    ...(hasViewAllPermission
-      ? {}
-      : {
-          employee_id: employee.id,
-        }),
-    ...(props.body.search !== undefined && {
-      description: {
-        contains: props.body.search,
-      },
+    ...(hasTimeViewAll ? {} : { hrm_platform_employee_id: employee.id }),
+    ...(props.body.dateFrom !== undefined && {
+      date: { gte: new Date(props.body.dateFrom) },
     }),
-    ...(props.body.fromDate !== undefined && {
-      date: {
-        gte: new Date(props.body.fromDate),
-      },
+    ...(props.body.dateTo !== undefined && {
+      date: { lte: new Date(props.body.dateTo) },
     }),
-    ...(props.body.toDate !== undefined && {
-      date: {
-        lte: new Date(props.body.toDate),
-      },
-    }),
-    ...(props.body.project_id !== undefined && {
-      project_id: props.body.project_id,
-    }),
-    ...(props.body.task_id !== undefined && {
-      task_id: props.body.task_id,
-    }),
+    ...(props.body.hrmPlatformProjectId !== undefined &&
+      props.body.hrmPlatformProjectId !== null && {
+        hrm_platform_project_id: props.body.hrmPlatformProjectId,
+      }),
+    ...(props.body.hrmPlatformTaskId !== undefined &&
+      props.body.hrmPlatformTaskId !== null && {
+        hrm_platform_task_id: props.body.hrmPlatformTaskId,
+      }),
     ...(props.body.billable !== undefined && {
       billable: props.body.billable,
     }),
-    ...(props.body.employee_id !== undefined &&
-      hasViewAllPermission && {
-        employee_id: props.body.employee_id,
+    ...(props.body.hrmPlatformTimesheetId !== undefined &&
+      props.body.hrmPlatformTimesheetId !== null && {
+        hrm_platform_timesheet_id: props.body.hrmPlatformTimesheetId,
       }),
   };
-  const sortField = props.body.sort ?? "date";
-  const direction = props.body.direction ?? "desc";
-  const orderByInput: Prisma.hrm_platform_timelogsOrderByWithRelationInput = {
-    [sortField]: direction,
-  };
-  const data = await MyGlobal.prisma.hrm_platform_timelogs.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: orderByInput,
-    ...HrmPlatformTimelogAtSummaryTransformer.select(),
-  });
-  const total = await MyGlobal.prisma.hrm_platform_timelogs.count({
-    where: whereInput,
-  });
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.hrm_platform_timelogs.findMany({
+      where: whereInput,
+      skip,
+      take: limit,
+      orderBy: [{ date: "desc" }, { created_at: "desc" }],
+      ...HrmPlatformTimelogAtSummaryTransformer.select(),
+    }),
+    MyGlobal.prisma.hrm_platform_timelogs.count({
+      where: whereInput,
+    }),
+  ]);
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      HrmPlatformTimelogAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+    },
+    data: await ArrayUtil.asyncMap(
+      data,
+      HrmPlatformTimelogAtSummaryTransformer.transform,
+    ),
   };
 }

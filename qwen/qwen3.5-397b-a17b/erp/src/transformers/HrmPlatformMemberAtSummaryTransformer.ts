@@ -2,8 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace HrmPlatformMemberAtSummaryTransformer {
@@ -14,9 +16,8 @@ export namespace HrmPlatformMemberAtSummaryTransformer {
     return {
       select: {
         id: true,
-        display_name: true,
-        avatar_image: true,
-        phone_number: true,
+        email: true,
+        created_at: true,
       },
     } satisfies Prisma.hrm_platform_membersFindManyArgs;
   }
@@ -25,9 +26,8 @@ export namespace HrmPlatformMemberAtSummaryTransformer {
   ): Promise<IHrmPlatformMember.ISummary> {
     return {
       id: input.id,
-      display_name: input.display_name,
-      avatar_image: input.avatar_image ?? null,
-      phone_number: input.phone_number ?? null,
-    };
+      email: input.email,
+      created_at: input.created_at.toISOString(),
+    } satisfies IHrmPlatformMember.ISummary;
   }
 }

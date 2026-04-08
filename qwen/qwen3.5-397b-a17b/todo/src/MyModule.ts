@@ -1,22 +1,20 @@
 import { Module } from "@nestjs/common";
 
-import { MultiusertodoAuthGuestController } from "./controllers/multiUserTodo/auth/guest/MultiusertodoAuthGuestController";
-import { MultiusertodoAuthMemberController } from "./controllers/multiUserTodo/auth/member/MultiusertodoAuthMemberController";
-import { MultiusertodoGuestSessionsController } from "./controllers/multiUserTodo/guest/sessions/MultiusertodoGuestSessionsController";
-import { MultiusertodoMemberProfileController } from "./controllers/multiUserTodo/member/profile/MultiusertodoMemberProfileController";
-import { MultiusertodoMemberTodosController } from "./controllers/multiUserTodo/member/todos/MultiusertodoMemberTodosController";
-import { MultiusertodoMemberTodosHistoryController } from "./controllers/multiUserTodo/member/todos/history/MultiusertodoMemberTodosHistoryController";
-import { MultiusertodoMemberTodosTrashController } from "./controllers/multiUserTodo/member/todos/trash/MultiusertodoMemberTodosTrashController";
+import { TodoappAuthGuestController } from "./controllers/todoApp/auth/guest/TodoappAuthGuestController";
+import { TodoappAuthMemberController } from "./controllers/todoApp/auth/member/TodoappAuthMemberController";
+import { TodoappGuestSessionsController } from "./controllers/todoApp/guest/sessions/TodoappGuestSessionsController";
+import { TodoappMemberProfileController } from "./controllers/todoApp/member/profile/TodoappMemberProfileController";
+import { TodoappMemberTodosController } from "./controllers/todoApp/member/todos/TodoappMemberTodosController";
+import { TodoappMemberTodosEdit_historiesController } from "./controllers/todoApp/member/todos/edit-histories/TodoappMemberTodosEdit_historiesController";
 
 @Module({
   controllers: [
-    MultiusertodoAuthGuestController,
-    MultiusertodoAuthMemberController,
-    MultiusertodoGuestSessionsController,
-    MultiusertodoMemberProfileController,
-    MultiusertodoMemberTodosController,
-    MultiusertodoMemberTodosTrashController,
-    MultiusertodoMemberTodosHistoryController,
+    TodoappAuthGuestController,
+    TodoappAuthMemberController,
+    TodoappGuestSessionsController,
+    TodoappMemberProfileController,
+    TodoappMemberTodosController,
+    TodoappMemberTodosEdit_historiesController,
   ],
 })
 export class MyModule {}

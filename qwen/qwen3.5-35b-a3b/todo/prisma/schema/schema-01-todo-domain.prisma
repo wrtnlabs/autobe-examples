@@ -1,0 +1,199 @@
+/// Main todo entity with lifecycle tracking including completion status,
+/// soft delete, and date fields.
+///
+/// Business entities representing individual tasks or to-do items that users
+/// can create and manage. Each todo belongs to exactly one member user and
+/// can track its completion state, soft deletion status, and optional date
+/// fields for scheduling.
+///
+/// Lifecycle Management: Todos support a soft-delete pattern where deleted
+/// todos move to trash (is_deleted=true, deleted_at set). They can be
+/// restored from trash (is_deleted=false, deleted_at=null) or permanently
+/// deleted. Completion status is tracked with is_complete boolean flag that
+/// can be toggled.
+///
+/// Date Fields: Optional start_date and due_date fields enable basic
+/// scheduling and filtering. Todos without start_date appear at the end when
+/// sorted by start_date. Todos without due_date appear at the end when
+/// sorted by due_date.
+///
+/// Data Ownership: Each todo is owned by exactly one member user and is
+/// private - users can only access their own todos.
+///
+/// See {@link multi_user_todo_member_sessions} for session management,
+/// {@link multi_user_todo_todos_edits} for edit history audit trail.
+///
+/// @namespace todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_todos {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key identifier for the todo.
+  id String @id
+  
+  /// References the member user who owns this todo.
+  ///
+  /// Cascade delete ensures all todos are removed when a member account is
+  /// deleted. Users can only access their own todos through this foreign key
+  /// relationship.
+  multi_user_todo_member_id String
+  
+  /// Todo title or name.
+  ///
+  /// Required field with a maximum length of 255 characters to ensure concise
+  /// task identification. This is the primary identifier shown in todo lists.
+  title String
+  
+  /// Optional todo description or additional details.
+  ///
+  /// Can be empty or null if no additional context is provided. Supports
+  /// flexible todo item definitions.
+  description String?
+  
+  /// Optional start date when the todo begins.
+  ///
+  /// When sorting by start_date, todos without a start date appear at the end
+  /// of the list. Enables basic task scheduling and chronological
+  /// organization.
+  start_date DateTime?
+  
+  /// Optional due date when the todo should be completed.
+  ///
+  /// When sorting by due_date, todos without a due date appear at the end of
+  /// the list. Enables deadline tracking and priority management.
+  due_date DateTime?
+  
+  /// Completion status flag for the todo.
+  ///
+  /// Defaults to false when created. Can be toggled to true when the todo is
+  /// finished. Users can mark todos as complete or return them to incomplete
+  /// status.
+  is_complete Boolean
+  
+  /// Soft delete flag indicating trash status.
+  ///
+  /// Defaults to false. When true, the todo is in trash but not permanently
+  /// deleted. Enables trash functionality for accidental deletion recovery.
+  is_deleted Boolean
+  
+  /// Timestamp when the todo was soft deleted to trash.
+  ///
+  /// Null when the todo is active. Set to current time when is_deleted becomes
+  /// true. Can be cleared (set to null) when restoring from trash.
+  deleted_at DateTime?
+  
+  /// Timestamp when the todo was created.
+  ///
+  /// Always set to the current time on create. Used for ordering and audit
+  /// purposes.
+  created_at DateTime
+  
+  /// Timestamp when the todo was last updated.
+  ///
+  /// Always set to the current time on create and each update. Enables
+  /// tracking of most recently modified todos.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member multi_user_todo_members @relation(fields: [multi_user_todo_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  editHistories multi_user_todo_todos_edits[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([multi_user_todo_member_id, is_complete, is_deleted, created_at], map: "multi_user_todo_todos_multi_user_todo_member_id_is_com_063f0417")
+  @@index([start_date])
+  @@index([due_date])
+}
+
+/// Audit trail table recording all field changes to todos including old and
+/// new values for title, description, and date fields.
+///
+/// This table provides an immutable history of todo modifications, capturing
+/// what values existed before and after each edit. Each edit record is
+/// created only when at least one field actually changes during a todo
+/// update operation.
+///
+/// @namespace todo
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model multi_user_todo_todos_edits {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key reference to the todo that was edited.
+  ///
+  /// When the referenced todo is permanently deleted, this edit record is
+  /// cascade deleted to maintain referential integrity.
+  todo_id String
+  
+  /// Timestamp when the todo was last edited. Used for sorting edit history
+  /// from most recent to oldest.
+  edited_at DateTime
+  
+  /// The todo title value before the edit. Null if title was not part of this
+  /// edit.
+  old_title String?
+  
+  /// The todo title value after the edit. Null if title was not part of this
+  /// edit.
+  new_title String?
+  
+  /// The todo description value before the edit. Null if description was not
+  /// part of this edit.
+  old_description String?
+  
+  /// The todo description value after the edit. Null if description was not
+  /// part of this edit.
+  new_description String?
+  
+  /// The todo start_date value before the edit. Null if start_date was not
+  /// part of this edit.
+  old_start_date DateTime?
+  
+  /// The todo start_date value after the edit. Null if start_date was not part
+  /// of this edit.
+  new_start_date DateTime?
+  
+  /// The todo due_date value before the edit. Null if due_date was not part of
+  /// this edit.
+  old_due_date DateTime?
+  
+  /// The todo due_date value after the edit. Null if due_date was not part of
+  /// this edit.
+  new_due_date DateTime?
+  
+  /// Timestamp when this edit record was created. Automatically set on insert.
+  created_at DateTime
+  
+  /// Timestamp when this edit record was last updated. Always matches
+  /// created_at for append-only edit records.
+  updated_at DateTime
+  
+  /// Timestamp when this edit record was soft deleted. Null if not deleted.
+  /// Used for soft delete support.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  todo multi_user_todo_todos @relation(fields: [todo_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([todo_id, edited_at])
+}

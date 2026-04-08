@@ -12,14 +12,15 @@ export async function memberAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const member = await MyGlobal.prisma.multi_user_todo_members.findFirst({
+  const session = await MyGlobal.prisma.todo_app_member_sessions.findFirst({
     where: {
-      id: payload.id,
+      todo_app_member_id: payload.id,
       deleted_at: null,
+      expired_at: { gt: new Date() },
     },
   });
 
-  if (member === null) {
+  if (session === null) {
     throw new ForbiddenException("You're not enrolled");
   }
 

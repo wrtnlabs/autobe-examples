@@ -20,7 +20,7 @@ export namespace ErpHrmTimeProjectMembershipCollector {
       updated_at: new Date(),
       deleted_at: null,
       project: { connect: { id: props.project.id } },
-      employee: { connect: { id: props.body.employeeId } },
+      employee: { connect: { id: props.body.erpHrmtimeEmployeeId } },
     } satisfies Prisma.erp_hrm_time_project_membershipsCreateInput;
   }
 }

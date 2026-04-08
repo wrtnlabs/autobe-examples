@@ -12,38 +12,70 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function deleteErpHrmAdminProjectsProjectId(props: {
-  admin: AdminPayload;
+  admin: {
+    id: string & tags.Format<"uuid">;
+    session_id: string & tags.Format<"uuid">;
+    type: "admin";
+  };
   projectId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Verify the project exists
-  await MyGlobal.prisma.erp_hrm_projects.findUniqueOrThrow({
-    where: { id: props.projectId },
-    select: { id: true },
-  });
-  // Check for timelogs associated with this project
+  // Check for timelogs constraint - cannot delete project with time entries
   const timelogCount = await MyGlobal.prisma.erp_hrm_timelogs.count({
     where: { erp_hrm_project_id: props.projectId },
   });
-  // If timelogs exist, reject deletion to preserve historical time tracking data
   if (timelogCount > 0) {
     throw new HttpException(
-      "Cannot delete project. Time entries exist for this project. Please archive the project instead if you wish to prevent new entries.",
+      "Project cannot be deleted because it contains time entries. Consider archiving the project instead.",
       409,
     );
   }
-  // Perform cascade deletion within a transaction
-  await MyGlobal.prisma.$transaction([
-    // Delete all tasks associated with the project
-    MyGlobal.prisma.erp_hrm_tasks.deleteMany({
-      where: { erp_hrm_project_id: props.projectId },
-    }),
-    // Delete all project member assignments
-    MyGlobal.prisma.erp_hrm_project_members.deleteMany({
-      where: { erp_hrm_project_id: props.projectId },
-    }),
-    // Delete the project itself
-    MyGlobal.prisma.erp_hrm_projects.delete({
-      where: { id: props.projectId },
-    }),
-  ]);
+  // Verify project exists and get organization context
+  const project = await MyGlobal.prisma.erp_hrm_projects.findUniqueOrThrow({
+    where: { id: props.projectId },
+    select: { id: true, erp_hrm_organization_id: true },
+  });
+  // Delete tasks belonging to the project
+  await MyGlobal.prisma.erp_hrm_tasks.deleteMany({
+    where: { erp_hrm_project_id: props.projectId },
+  });
+  // Delete project members
+  await MyGlobal.prisma.erp_hrm_project_members.deleteMany({
+    where: { erp_hrm_project_id: props.projectId },
+  });
+  // Delete the project
+  await MyGlobal.prisma.erp_hrm_projects.delete({
+    where: { id: props.projectId },
+  });
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function deleteErpHrmAdminProjectsProjectId(props: {
+//   admin: AdminPayload;
+//   projectId: string & tags.Format<"uuid">;
+// }): Promise<void> {
+//   await MyGlobal.prisma.....delete({
+//     where: { ... },
+//   });
+// }
+// ```
+//--------------------------------------------------------------

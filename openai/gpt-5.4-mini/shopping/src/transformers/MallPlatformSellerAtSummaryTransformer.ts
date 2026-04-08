@@ -17,11 +17,17 @@ export namespace MallPlatformSellerAtSummaryTransformer {
       select: {
         id: true,
         email: true,
+        password_hash: true,
         status: true,
         rejection_reason: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        sessions: true,
+        orderItems: true,
+        shipments: true,
+        refundRequests: true,
+        approvalRequests: true,
       },
     } satisfies Prisma.mall_platform_sellersFindManyArgs;
   }
@@ -36,6 +42,43 @@ export namespace MallPlatformSellerAtSummaryTransformer {
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
       deletedAt: input.deleted_at?.toISOString() ?? null,
-    };
+    } satisfies IMallPlatformSeller.ISummary;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace MallPlatformSellerAtSummaryTransformer {
+//       export type Payload = Prisma.mall_platform_sellersGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             email: true,
+//             password_hash: true,
+//             status: true,
+//             rejection_reason: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//           },
+//         } satisfies Prisma.mall_platform_sellersFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IMallPlatformSeller.ISummary> {
+//         return {
+//   id: {string},
+//   email: {string},
+//   status: {string},
+//   rejectionReason: {string | null},
+//   createdAt: {string},
+//   updatedAt: {string},
+//   deletedAt: {string | null},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

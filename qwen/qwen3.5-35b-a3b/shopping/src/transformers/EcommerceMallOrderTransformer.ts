@@ -1,7 +1,8 @@
-import { IEcommerceMallAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAddress";
-import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import { IEcommerceMallCustomerAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerAddress";
+import { IEcommerceMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallMember";
 import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -11,10 +12,9 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallAddressAtSummaryTransformer } from "./EcommerceMallAddressAtSummaryTransformer";
-import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
+import { EcommerceMallCustomerAddressAtSummaryTransformer } from "./EcommerceMallCustomerAddressAtSummaryTransformer";
+import { EcommerceMallMemberAtSummaryTransformer } from "./EcommerceMallMemberAtSummaryTransformer";
 import { EcommerceMallOrderItemAtSummaryTransformer } from "./EcommerceMallOrderItemAtSummaryTransformer";
-import { EcommerceMallShipmentAtSummaryTransformer } from "./EcommerceMallShipmentAtSummaryTransformer";
 
 export namespace EcommerceMallOrderTransformer {
   export type Payload = Prisma.ecommerce_mall_ordersGetPayload<
@@ -25,18 +25,18 @@ export namespace EcommerceMallOrderTransformer {
       select: {
         id: true,
         order_number: true,
-        total_price: true,
         status: true,
+        total_price: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        customer: EcommerceMallCustomerAtSummaryTransformer.select(),
-        shippingAddress: EcommerceMallAddressAtSummaryTransformer.select(),
-        inventoryRecords: { select: {} },
-        orderItems: EcommerceMallOrderItemAtSummaryTransformer.select(),
-        snapshots: { select: {} },
-        shipments: EcommerceMallShipmentAtSummaryTransformer.select(),
-        reviews: { select: {} },
+        member: EcommerceMallMemberAtSummaryTransformer.select(),
+        shippingAddress:
+          EcommerceMallCustomerAddressAtSummaryTransformer.select(),
+        customerReviews: true,
+        snapshots: true,
+        items: EcommerceMallOrderItemAtSummaryTransformer.select(),
+        cancellationRequests: true,
       },
     } satisfies Prisma.ecommerce_mall_ordersFindManyArgs;
   }
@@ -46,25 +46,67 @@ export namespace EcommerceMallOrderTransformer {
     return {
       id: input.id,
       order_number: input.order_number,
-      total_price: Number(input.total_price),
       status: input.status,
-      customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
-        input.customer,
+      total_price: Number(input.total_price),
+      member: await EcommerceMallMemberAtSummaryTransformer.transform(
+        input.member,
       ),
-      shippingAddress: await EcommerceMallAddressAtSummaryTransformer.transform(
-        input.shippingAddress,
-      ),
-      orderItems: await ArrayUtil.asyncMap(
-        input.orderItems,
+      shippingAddress:
+        await EcommerceMallCustomerAddressAtSummaryTransformer.transform(
+          input.shippingAddress,
+        ),
+      items: await ArrayUtil.asyncMap(
+        input.items,
         EcommerceMallOrderItemAtSummaryTransformer.transform,
       ),
-      shipments: await ArrayUtil.asyncMap(
-        input.shipments,
-        EcommerceMallShipmentAtSummaryTransformer.transform,
-      ),
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
-    };
+      shipments: [],
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+    } satisfies IEcommerceMallOrder;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallOrderTransformer {
+//       export type Payload = Prisma.ecommerce_mall_ordersGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             order_number: true,
+//             status: true,
+//             total_price: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//             member: EcommerceMallMemberAtSummaryTransformer.select(),
+//             shippingAddress: EcommerceMallCustomerAddressAtSummaryTransformer.select(),
+//             items: EcommerceMallOrderItemAtSummaryTransformer.select(),
+//             ...
+//           },
+//         } satisfies Prisma.ecommerce_mall_ordersFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallOrder> {
+//         return {
+//   id: {string},
+//   order_number: {string},
+//   status: {string},
+//   total_price: {number},
+//   member: await EcommerceMallMemberAtSummaryTransformer.transform(input.member),
+//   shippingAddress: await EcommerceMallCustomerAddressAtSummaryTransformer.transform(input.shippingAddress),
+//   items: await ArrayUtil.asyncMap(input.items, EcommerceMallOrderItemAtSummaryTransformer.transform),
+//   shipments: {Array<IEcommerceMallShipment.ISummary>},
+//   created_at: {string},
+//   updated_at: {string},
+//   deleted_at: {string | null},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

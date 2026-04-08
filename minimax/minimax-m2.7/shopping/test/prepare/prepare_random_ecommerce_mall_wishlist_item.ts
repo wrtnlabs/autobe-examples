@@ -9,7 +9,6 @@ export function prepare_random_ecommerce_mall_wishlist_item(
   input?: DeepPartial<IEcommerceMallWishlistItem.ICreate>,
 ): IEcommerceMallWishlistItem.ICreate {
   return {
-    product_id:
-      input?.product_id ?? typia.random<string & tags.Format<"uuid">>(),
+    productId: input?.productId ?? typia.random<string & tags.Format<"uuid">>(),
   };
 }

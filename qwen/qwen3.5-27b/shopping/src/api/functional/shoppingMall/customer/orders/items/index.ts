@@ -9,33 +9,36 @@ import typia, { tags } from "typia";
 import { IPageIShoppingMallOrderItem } from "../../../../../structures/IPageIShoppingMallOrderItem";
 import { IShoppingMallOrderItem } from "../../../../../structures/IShoppingMallOrderItem";
 
+export * as cancellation from "./cancellation/index";
+export * as refund from "./refund/index";
+
 /**
- * Retrieve a filtered and paginated list of order items within a specific customer order.
+ * Search and list order items within a specific order with filtering and pagination support.
  *
- * This operation provides access to individual line items that comprise a customer's order transaction. Each order item represents a purchased product with its quantity, price at time of purchase, and current fulfillment status. The order items are stored in the shopping_mall_order_items table with relationships to the parent order, selling merchant, and various fulfillment entities.
+ * This endpoint retrieves order items belonging to a specified order, allowing users to filter by status (paid, shipped, delivered, cancelled, refunded) and apply pagination for large result sets. Each order item represents a purchased product variant with its own independent fulfillment status.
  *
- * Order items maintain independent status tracking (paid, shipped, delivered, cancelled, refunded) even within the same order, allowing different items to be fulfilled at different times. Purchase-time snapshots (product_snapshot, variant_snapshot, seller_profile_snapshot) preserve the exact state of referenced entities at order placement time, ensuring order history remains accurate even if products or seller profiles are later modified or deleted.
- *
- * Security: Only authenticated customers can access order items from their own orders. The system validates that the requesting customer owns the specified order before returning any items. Sellers can only view order items containing their products through the seller-specific endpoint. Administrators have access to all order items across the platform.
- *
- * Related operations: GET /orders/{orderId} retrieves the parent order summary. POST /orders/{orderId}/items/{itemId}/cancel requests cancellation of a specific item. POST /orders/{orderId}/items/{itemId}/refund requests a refund for a delivered item. GET /products/{productId}/reviews retrieves reviews for products in the order.
+ * Order items can be filtered by their current status in the fulfillment workflow. Customers can view their own order items, sellers can view items for their products, and administrators can view all order items across the platform. The response includes item details such as quantity, price, product information, and current status.
  *
  * @param props.connection
- * @param props.orderId Target order's UUID identifier
- * @param props.body Search filters and pagination parameters for order items
+ * @param props.orderId UUID identifier of the order to retrieve items from
+ * @param props.body Search criteria including status filter and pagination parameters for order items list
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query shopping_mall_order_items table filtering by shopping_mall_order_id path parameter. Apply additional filters from request body (status, seller_id, search terms). Implement cursor-based pagination for large result sets with configurable page size.
+ * @x-autobe-specification Query shopping_mall_order_items table filtering by shopping_mall_order_id (from path parameter) and optional status filter from request body.
  *
- * Authorization: Validate that the authenticated customer's ID matches the shopping_mall_customer_id of the referenced order in shopping_mall_orders table. Deny access if customer doesn't own the order.
+ * Implementation steps:
+ * 1. Validate orderId exists in shopping_mall_orders table
+ * 2. Apply authorization check based on user role (customer can only see their orders, seller can see items for their products, admin can see all)
+ * 3. Filter order items by order_id and optional status criteria from request body
+ * 4. Apply pagination parameters (page, pageSize) from request body
+ * 5. Join with shopping_mall_product_variants to include variant SKU and current product information
+ * 6. Join with shopping_mall_order_item_snapshots to include historical product/seller data at purchase time
+ * 7. Return paginated response with order item summaries
  *
- * Database query: SELECT order items WHERE shopping_mall_order_id = {orderId} AND deleted_at IS NULL, with additional WHERE clauses for status and other filters. JOIN with shopping_mall_orders to verify customer ownership.
- *
- * Response transformation: Map order items to IShoppingMallOrderItem.ISummary format, including id, quantity, price, status, product_snapshot (parsed JSON), variant_snapshot (parsed JSON), and created_at. Exclude seller_profile_snapshot from summary for performance.
- *
- * Pagination: Support page and limit parameters with default page=1, limit=20, max limit=100. Calculate total count for pagination metadata. Return IPageIShoppingMallOrderItem.ISummary with pagination object and data array.
- *
- * Error handling: Return 404 if order not found. Return 403 if customer doesn't own order. Return 400 for invalid filter parameters or pagination values.
+ * Error handling:
+ * - Return 404 if order not found
+ * - Return 403 if user not authorized to view this order
+ * - Validate status filter values against allowed enum (paid, shipped, delivered, cancelled, refunded)
  * @path /shoppingMall/customer/orders/:orderId/items
  * @accessor api.functional.shoppingMall.customer.orders.items.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -65,12 +68,12 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Target order's UUID identifier
+     * UUID identifier of the order to retrieve items from
      */
     orderId: string & tags.Format<"uuid">;
 
     /**
-     * Search filters and pagination parameters for order items
+     * Search criteria including status filter and pagination parameters for order items list
      */
     body: IShoppingMallOrderItem.IRequest;
   };
@@ -121,43 +124,34 @@ export namespace index {
 }
 
 /**
- * Retrieve detailed information about a specific order item within a customer order.
+ * Retrieve detailed information for a specific order item within an order.
  *
- * This operation returns comprehensive details about a single order line item, including the quantity purchased, unit price at time of purchase, current fulfillment status, and complete snapshots of the product, product variant, and seller profile as they existed when the order was placed. The order item status indicates its current state in the fulfillment workflow: paid (order confirmed), shipped (item dispatched), delivered (item received), cancelled (pre-shipment cancellation approved), or refunded (post-delivery return approved).
+ * This operation returns the complete order item record including product variant details, seller information, and the immutable snapshot that preserves the product state at the time of purchase. The snapshot ensures customers and sellers can always reference the exact product name, description, price, and seller profile as they appeared when the order was placed, regardless of any subsequent modifications.
  *
- * Security and authorization are strictly enforced. Customers can only access order items from their own orders. Sellers can only view order items containing their products. Administrators have access to all order items across the platform. This ensures proper data isolation and prevents unauthorized access to purchase information.
+ * Order items include status information (paid, shipped, delivered, cancelled, or refunded) which indicates the current stage in the fulfillment workflow. Each order item has its own independent status, allowing partial order processing where different items can be at different stages.
  *
- * The response includes associated shipment information when available, such as tracking carrier name, tracking number, shipment date, delivery confirmation status, and actual delivery timestamp. This enables customers to track their purchases and sellers to manage their fulfillment operations effectively.
- *
- * Related operations include GET /orders/{orderId} for viewing the complete order with all items, GET /customers/me/orders for listing all customer orders, and GET /sellers/me/orders for sellers to view their order items. For shipment-specific actions, use POST /sellers/me/shipments to create shipments and POST /customers/me/shipments/{shipmentId}/confirm-delivery to confirm delivery.
+ * This endpoint is used by sellers to view order items they need to fulfill, by customers to review their purchase details, and by administrators to oversee order processing across the platform.
  *
  * @param props.connection
- * @param props.orderId UUID of the parent order containing this order item
- * @param props.itemId UUID of the specific order item to retrieve
+ * @param props.orderId UUID of the order containing this item (global scope)
+ * @param props.itemId UUID of the order item to retrieve (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query the shopping_mall_order_items table for the item matching both orderId and itemId parameters.
+ * @x-autobe-specification Query shopping_mall_order_items table by composite key (shopping_mall_order_id = orderId, id = itemId).
  *
- * Authorization validation:
- * - For customer requests: Verify the order belongs to the authenticated customer by checking shopping_mall_customer_id matches the customer's ID
- * - For seller requests: Verify the item belongs to the seller by checking shopping_mall_seller_id matches the seller's ID
- * - For admin requests: Allow access to all order items
+ * Join with shopping_mall_product_variants to get variant details (sku_code, price).
+ * Join with shopping_mall_products to get product name and description.
+ * Join with shopping_mall_sellers to get seller information.
+ * Join with shopping_mall_seller_profiles to get shop name and description.
+ * Join with shopping_mall_order_item_snapshots to get the immutable purchase-time snapshot.
  *
- * Query execution:
- * 1. Fetch the order item record by id = itemId and shopping_mall_order_id = orderId
- * 2. Verify the item exists and is not soft-deleted (deleted_at is NULL)
- * 3. Join with shopping_mall_shipments to retrieve any associated shipment records (tracking carrier, tracking number, shipped at, delivered at, delivery confirmed status)
- * 4. Parse the JSON snapshot fields (product_snapshot, variant_snapshot, seller_profile_snapshot) for structured data access
+ * Verify the order item exists and is not soft-deleted (deleted_at is null).
+ * For seller access: verify the order item's seller_id matches the authenticated seller.
+ * For customer access: verify the order's customer_id matches the authenticated customer.
  *
- * Business logic:
- * - Return 404 if order item not found or if authorization fails
- * - Return 403 if user attempts to access another user's order item
- * - Include shipment information in response if the item has been shipped (status = 'shipped' or 'delivered')
- * - Ensure order item status is included: paid, shipped, delivered, cancelled, or refunded
+ * Return the complete order item with all nested relationships. Include snapshot data showing product state at purchase time.
  *
- * Error handling:
- * - Return appropriate error codes for unauthorized access, not found, or invalid parameters
- * - Log access attempts for audit purposes
+ * Handle cases where related entities (product, variant, seller) may have been soft-deleted - still return them as they exist in the order history.
  * @path /shoppingMall/customer/orders/:orderId/items/:itemId
  * @accessor api.functional.shoppingMall.customer.orders.items.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -186,12 +180,12 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * UUID of the parent order containing this order item
+     * UUID of the order containing this item (global scope)
      */
     orderId: string & tags.Format<"uuid">;
 
     /**
-     * UUID of the specific order item to retrieve
+     * UUID of the order item to retrieve (global scope)
      */
     itemId: string & tags.Format<"uuid">;
   };

@@ -12,39 +12,53 @@ import { IShoppingMallRefundRequest } from "../../../../structures/IShoppingMall
 export * as snapshots from "./snapshots/index";
 
 /**
- * Retrieve a filtered and paginated list of refund requests for the authenticated customer.
+ * Search and list refund requests with filtering, pagination, and sorting capabilities.
  *
- * This operation allows customers to view their refund request history with advanced search capabilities. Customers can filter refund requests by status (pending, approved, or rejected), date ranges for request submission and seller response, and sort results by various criteria. The response includes essential refund request information such as the associated order item, refund reason, current status, and relevant timestamps.
+ * This endpoint retrieves refund requests submitted by customers for delivered order items. Refund requests allow customers to request refunds within 7 days of item delivery. Each request includes a reason and is processed by the seller, with status values of pending, approved, or rejected.
  *
- * Each refund request is tied to a specific order item and requires a reason text explaining why the refund is being requested. The status field tracks the approval workflow: requests start as 'pending' until the seller reviews and responds with either 'approved' or 'rejected'. When approved, the order item status changes to 'refunded' and inventory stock is restored.
+ * Filtering options include status, customer, seller, date ranges, and text search on the reason field. Results are returned in paginated format with sorting support. Customers can view their own refund requests, sellers can view requests for their products, and administrators can view all requests on the platform.
  *
- * Security considerations ensure that customers can only view their own refund requests. The system enforces data isolation at the database query level, preventing unauthorized access to other customers' refund information. All refund requests are preserved for audit trail purposes, including those that have been rejected.
- *
- * This operation is typically used in conjunction with GET /refund-requests/{refundRequestId} to view detailed information about a specific refund request, and POST /refund-requests to create new refund requests for eligible delivered order items.
+ * Authorization is required. Access is scoped based on user role: customers see only their requests, sellers see requests for their products, and administrators have full access.
  *
  * @param props.connection
- * @param props.body Search criteria and pagination parameters for refund requests
+ * @param props.body Search criteria for refund requests including status filter, customer or seller scope, date range filters, reason text search, pagination parameters (limit, cursor), and sorting preferences.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
  * @x-autobe-specification Query shopping_mall_refund_requests table with pagination and filtering support.
  *
- * 1. Apply authentication to identify the requesting customer from the session token.
- * 2. Filter refund requests by customer_id (data isolation - only show requests belonging to authenticated customer).
- * 3. Apply search filters from request body:
- *    - status filter (pending, approved, rejected)
- *    - requested_at date range filter
- *    - responded_at date range filter (for approved/rejected requests)
- * 4. Apply sorting (default: requested_at DESC for newest first).
- * 5. Apply pagination with page and limit parameters (default page=1, limit=20, max limit=100).
- * 6. Join with shopping_mall_order_items to include order item information in response.
- * 7. Join with shopping_mall_customers to validate customer ownership.
- * 8. Return paginated response with data array and pagination metadata.
+ * Filtering:
+ * - Filter by status (pending, approved, rejected)
+ * - Filter by customer_id for customer-specific requests
+ * - Filter by seller_id for seller-specific requests
+ * - Filter by order_item_id for specific item requests
+ * - Filter by created_at date range
+ * - Filter by responded_at date range (nullable, exclude null for responded only)
+ * - Text search on reason field using trigram similarity
  *
- * Error handling:
- * - Return 401 if authentication fails.
- * - Return 403 if customer tries to access another customer's refund requests.
- * - Return 400 for invalid filter parameters or pagination values.
- * - Return 404 if no refund requests match the criteria.
+ * Joining:
+ * - Join with shopping_mall_order_items to access order and customer context
+ * - Join with shopping_mall_customers for customer details
+ * - Join with shopping_mall_sellers for seller details (nullable)
+ * - Join with shopping_mall_products through order items for product context
+ *
+ * Pagination:
+ * - Use cursor-based pagination for large result sets
+ * - Support limit (default 20, max 100) and cursor parameters
+ * - Return pagination metadata (total, hasMore, nextCursor)
+ *
+ * Sorting:
+ * - Default sort by created_at descending (newest first)
+ * - Support custom sorting on created_at, responded_at, status
+ *
+ * Validation:
+ * - Ensure user has permission to view requested refund requests based on role
+ * - Customers see only their own requests
+ * - Sellers see only requests for their products
+ * - Administrators see all requests
+ *
+ * Error Handling:
+ * - Return 403 if user lacks permission to access specific refund requests
+ * - Return 400 for invalid filter parameters or pagination values
  * @path /shoppingMall/seller/refund-requests
  * @accessor api.functional.shoppingMall.seller.refund_requests.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -74,7 +88,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Search criteria and pagination parameters for refund requests
+     * Search criteria for refund requests including status filter, customer or seller scope, date range filters, reason text search, pagination parameters (limit, cursor), and sorting preferences.
      */
     body: IShoppingMallRefundRequest.IRequest;
   };
@@ -125,36 +139,29 @@ export namespace index {
 /**
  * Retrieve detailed information about a specific refund request by its unique identifier.
  *
- * This operation provides complete details of a refund request submitted by a customer for a delivered order item. The response includes the request reason, current status (pending, approved, or rejected), submission timestamp, response timestamp if the seller has acted on it, and references to the related order item and customer.
+ * This operation returns complete refund request details including the customer's reason for requesting the refund, current status (pending, approved, or rejected), seller response information, and associated order item context. The response includes timestamps for request creation, seller response, and any modifications.
  *
- * Security and authorization: Sellers can only view refund requests for order items they are responsible for fulfilling. The system verifies that the authenticated seller's ID matches the seller ID associated with the order item being refunded.
- *
- * The refund request record includes the shopping_mall_order_item_id which references the specific line item being refunded, the shopping_mall_customer_id identifying the requesting customer, and the status field indicating whether the request is pending seller response or has been approved/rejected. The requested_at timestamp is used to validate the seven-day refund eligibility window from the delivery date.
- *
- * Related operations: Use PATCH /shoppingMall/seller/refund-requests to list and search refund requests with filters. Use PUT /shoppingMall/seller/refund-requests/{refundRequestId} to approve or reject pending refund requests.
+ * Customers can view their own refund requests to track the status of their refund submissions. Sellers can view refund requests for their products to review and respond to customer refund requests. The operation preserves the complete audit trail through associated snapshots that record all status transitions and seller responses.
  *
  * @param props.connection
- * @param props.refundRequestId Unique identifier of the refund request to retrieve
+ * @param props.refundRequestId Unique identifier of the refund request to retrieve (UUID format).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the shopping_mall_refund_requests table for a single record by primary key (id field matching refundRequestId parameter).
+ * @x-autobe-specification Query the shopping_mall_refund_requests table by the refundRequestId parameter (UUID primary key).
  *
- * Authorization logic:
- * - If customer actor: verify shopping_mall_customer_id matches the authenticated customer's ID
- * - If seller actor: verify the refund request's order item belongs to the seller's products (join with shopping_mall_order_items to check shopping_mall_seller_id)
- * - If admin actor: allow access to any refund request
+ * Join with shopping_mall_order_items to retrieve order item details including product variant information, quantity, price, and current status.
  *
- * Join with shopping_mall_order_items to include order item details (product_snapshot, variant_snapshot, seller_profile_snapshot, quantity, price, status).
+ * Join with shopping_mall_customers to retrieve customer information for the refund requestor.
  *
- * Join with shopping_mall_customers to include customer information (display_name, phone_number) if needed for the response.
+ * Join with shopping_mall_sellers if seller_id is not null to retrieve seller information who responded to the request.
  *
- * Include related refund snapshots from shopping_mall_refund_snapshots table ordered by created_at descending.
+ * Include related shopping_mall_refund_request_snapshots ordered by created_at descending to show the complete audit trail of status transitions and seller responses.
  *
- * Return 404 Not Found if the refund request does not exist or has been soft deleted (deleted_at is not null).
+ * Verify authorization: customer can only view their own refund requests, seller can only view requests for their products (via order item's seller_id).
  *
- * Return 403 Forbidden if the authenticated user does not have permission to view this specific refund request.
+ * Return 404 if refund request not found or if unauthorized access attempt.
  *
- * Handle soft deletion: exclude records where deleted_at is not null from the query results.
+ * Handle soft-deleted requests by excluding them from results (deleted_at IS NULL).
  * @path /shoppingMall/seller/refund-requests/:refundRequestId
  * @accessor api.functional.shoppingMall.seller.refund_requests.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -183,7 +190,7 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the refund request to retrieve
+     * Unique identifier of the refund request to retrieve (UUID format).
      */
     refundRequestId: string & tags.Format<"uuid">;
   };
@@ -217,134 +224,6 @@ export namespace at {
       assert.param("refundRequestId")(() =>
         typia.assert(props.refundRequestId),
       );
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Approve or reject a customer's refund request for a delivered order item. This operation allows sellers to respond to pending refund requests by setting the status to either 'approved' or 'rejected'.
- *
- * When a seller approves a refund request, the system automatically updates the corresponding order item status to 'refunded', restores the product stock quantity through inventory records, and creates an immutable snapshot of the refund request state for audit purposes. The customer receives notification of the approval.
- *
- * When a seller rejects a refund request, the order item status remains unchanged, no inventory adjustments occur, and the customer is notified of the rejection. The seller may optionally provide a rejection reason that is visible to the customer.
- *
- * Only sellers who own the product associated with the order item can respond to refund requests. The operation validates that the refund request is in 'pending' status and that the order item was delivered within the seven-day refund eligibility window. Refund snapshots are created atomically with the status update to preserve the decision history for dispute resolution and compliance requirements.
- *
- * Related operations include GET /refund-requests/{refundRequestId} to view refund details, GET /refund-requests to list all refund requests, and POST /orders/{orderId}/items/{itemId}/refund to create new refund requests.
- *
- * @param props.connection
- * @param props.refundRequestId Unique identifier of the refund request to approve or reject
- * @param props.body Refund request response with status and optional reason
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Validate seller authentication and extract seller ID from session token.
- * 2. Fetch the refund request by refundRequestId from shopping_mall_refund_requests table.
- * 3. Verify the refund request exists and is not soft deleted (deleted_at is null).
- * 4. Join with shopping_mall_order_items to get the associated order item and seller ID.
- * 5. Validate that the authenticated seller matches the order item's seller (shopping_mall_order_items.sellerId).
- * 6. Validate that the refund request status is 'pending' - reject if already approved or rejected.
- * 7. Validate the new status is either 'approved' or 'rejected' from request body.
- * 8. Begin database transaction.
- * 9. Create a refund snapshot in shopping_mall_refund_snapshots with:
- *    - shopping_mall_refund_request_id: current refund request ID
- *    - snapshot_data: JSON containing reason, status before/after, responded_at timestamp
- *    - created_at: current timestamp
- * 10. Update the refund request:
- *     - status: new status from request body
- *     - responded_at: current timestamp
- *     - updated_at: current timestamp
- * 11. If status is 'approved':
- *     - Update shopping_mall_order_items.status to 'refunded'
- *     - Create inventory record in shopping_mall_inventory_records:
- *       - variantId: from order item
- *       - quantityChange: positive value (restore stock)
- *       - reason: 'Refund approved - stock restored'
- *       - timestamp: current timestamp
- * 12. Commit transaction.
- * 13. Return the updated refund request with joined order item and customer data.
- * 14. Handle errors: throw 404 if not found, 403 if unauthorized, 409 if status not pending, 400 for invalid status value.
- * @path /shoppingMall/seller/refund-requests/:refundRequestId
- * @accessor api.functional.shoppingMall.seller.refund_requests.update
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function update(
-  connection: IConnection,
-  props: update.Props,
-): Promise<update.Response> {
-  return true === connection.simulate
-    ? update.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...update.METADATA,
-          path: update.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace update {
-  export type Props = {
-    /**
-     * Unique identifier of the refund request to approve or reject
-     */
-    refundRequestId: string & tags.Format<"uuid">;
-
-    /**
-     * Refund request response with status and optional reason
-     */
-    body: IShoppingMallRefundRequest.IUpdate;
-  };
-  export type Body = IShoppingMallRefundRequest.IUpdate;
-  export type Response = IShoppingMallRefundRequest;
-
-  export const METADATA = {
-    method: "PUT",
-    path: "/shoppingMall/seller/refund-requests/:refundRequestId",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/shoppingMall/seller/refund-requests/${encodeURIComponent(props.refundRequestId ?? "null")}`;
-  export const random = (): IShoppingMallRefundRequest =>
-    typia.random<IShoppingMallRefundRequest>();
-  export const simulate = (
-    connection: IConnection,
-    props: update.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: update.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("refundRequestId")(() =>
-        typia.assert(props.refundRequestId),
-      );
-      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

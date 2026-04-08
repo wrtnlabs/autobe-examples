@@ -6,53 +6,56 @@ import {
 } from "@nestia/fetcher";
 import typia, { tags } from "typia";
 
-import { IRedditCloneModeratorSnapshot } from "../../../../../structures/IRedditCloneModeratorSnapshot";
+import { IPageIRedditCloneCommunityModerator } from "../../../../../structures/IPageIRedditCloneCommunityModerator";
+import { IRedditCloneCommunityModerator } from "../../../../../structures/IRedditCloneCommunityModerator";
+
+export * as snapshots from "./snapshots/index";
 
 /**
- * Appoint a new moderator for a community.
+ * Assign a new moderator to a community.
  *
- * This endpoint allows the community owner or existing moderators to grant moderation privileges to another member. The appointed member receives content management abilities within the specific community only.
+ * This endpoint allows authorized users to add another member as a moderator to the specified community. The community owner automatically becomes the first moderator with 'owner' role upon community creation. Both community owners and existing moderators can assign additional moderators to help manage the community.
  *
- * **Authorization**: Only the community owner or existing moderators can add new moderators. The requester must have an active moderator role (owner or moderator) in the target community.
+ * The new moderator will receive powers to delete posts, delete comments, ban users, and review reports within that specific community only. The moderator role does not extend to other communities.
  *
- * **Moderator Role**: The newly assigned moderator receives the 'moderator' role, which grants the ability to delete posts and comments, manage bans, and review reports within the community.
- *
- * **Constraints**: A user cannot be appointed as moderator if they already have an active moderator role in the community. The operation creates an immutable role assignment for audit purposes.
- *
- * **Related Operations**: Use GET /communities/{communityName}/moderators to list current moderators, DELETE /communities/{communityName}/moderators/{username} to remove a moderator.
+ * A member can only hold one moderator role per community. Attempting to assign a member who is already a moderator will result in an error.
  *
  * @param props.connection
- * @param props.communityName Unique name of the community (e.g., 'askreddit', 'funny')
- * @param props.body Username of the member to appoint as moderator
+ * @param props.communityId Unique identifier of the community (UUID)
+ * @param props.body Moderator assignment details containing the member ID to be assigned as moderator and optional role (defaults to 'moderator')
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Service Layer Logic:
- * 1. Extract communityName from path parameter
- * 2. Extract memberUsername from request body
- * 3. Validate requester authorization:
- *    a. Query reddit_clone_communities to find community by name
- *    b. Query reddit_clone_moderators to verify requester has active role (owner or moderator) in the community
- *    c. If requester is not authorized, return 403 Forbidden
- * 4. Validate target member:
- *    a. Query reddit_clone_members to find member by username
- *    b. If not found, return 404 Not Found
- * 5. Check for existing active moderator assignment:
- *    a. Query reddit_clone_moderators for existing active role (deleted_at IS NULL) for this member in this community
- *    b. If exists, return 409 Conflict
- * 6. Create moderator assignment:
- *    a. Insert new record in reddit_clone_moderators with:
- *       - id: UUID
- *       - reddit_clone_member_id: target member's ID
- *       - reddit_clone_community_id: community's ID
- *       - assigned_by: requester's ID
- *       - role: 'moderator'
- *       - created_at: current timestamp
- *       - updated_at: current timestamp
- *       - deleted_at: null
- * 7. Return the created moderator assignment
+ * @x-autobe-specification Create a new moderator assignment in the reddit_clone_community_moderators table.
  *
- * Transaction: Wrap steps 6-7 in a database transaction for consistency.
- * @path /redditClone/member/communities/:communityName/moderators
+ * 1. Authorization check: Verify the requesting user is either:
+ *    - The community owner (reddit_clone_members.id matches community's reddit_clone_member_id), OR
+ *    - An existing moderator in this community (query reddit_clone_community_moderators where reddit_clone_community_id = communityId and reddit_clone_member_id = requesterId)
+ *    If neither, return 403 Forbidden.
+ *
+ * 2. Validate communityId exists in reddit_clone_communities. If not, return 404 Not Found.
+ *
+ * 3. Validate memberId exists in reddit_clone_members. If not, return 404 Not Found.
+ *
+ * 4. Check for existing moderator assignment: Query reddit_clone_community_moderators for [community_id, member_id] pair. If exists, return 409 Conflict with message 'Member is already a moderator in this community'.
+ *
+ * 5. Validate role: If provided, must be 'moderator' (not 'owner' - owner role is set only on community creation). Default role is 'moderator'.
+ *
+ * 6. Create new record in reddit_clone_community_moderators:
+ *    - id: UUID
+ *    - reddit_clone_community_id: communityId
+ *    - reddit_clone_member_id: memberId from request
+ *    - assigned_by: requesting user's member ID
+ *    - role: 'moderator'
+ *    - created_at: current timestamp
+ *    - updated_at: current timestamp
+ *
+ * 7. Return the created moderator assignment with full details including assigned_by reference.
+ *
+ * Edge cases:
+ * - Cannot assign owner role through this endpoint (owner is set on community creation)
+ * - Cannot add the same member twice as moderator (unique constraint)
+ * - Moderators can add other moderators but cannot elevate them to owner
+ * @path /redditClone/member/communities/:communityId/moderators
  * @accessor api.functional.redditClone.member.communities.moderators.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -81,21 +84,21 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Unique name of the community (e.g., 'askreddit', 'funny')
+     * Unique identifier of the community (UUID)
      */
-    communityName: string;
+    communityId: string & tags.Format<"uuid">;
 
     /**
-     * Username of the member to appoint as moderator
+     * Moderator assignment details containing the member ID to be assigned as moderator and optional role (defaults to 'moderator')
      */
-    body: IRedditCloneModeratorSnapshot.ICreate;
+    body: IRedditCloneCommunityModerator.ICreate;
   };
-  export type Body = IRedditCloneModeratorSnapshot.ICreate;
-  export type Response = IRedditCloneModeratorSnapshot;
+  export type Body = IRedditCloneCommunityModerator.ICreate;
+  export type Response = IRedditCloneCommunityModerator;
 
   export const METADATA = {
     method: "POST",
-    path: "/redditClone/member/communities/:communityName/moderators",
+    path: "/redditClone/member/communities/:communityId/moderators",
     request: {
       type: "application/json",
       encrypted: false,
@@ -107,9 +110,9 @@ export namespace create {
   } as const;
 
   export const path = (props: Omit<Props, "body">) =>
-    `/redditClone/member/communities/${encodeURIComponent(props.communityName ?? "null")}/moderators`;
-  export const random = (): IRedditCloneModeratorSnapshot =>
-    typia.random<IRedditCloneModeratorSnapshot>();
+    `/redditClone/member/communities/${encodeURIComponent(props.communityId ?? "null")}/moderators`;
+  export const random = (): IRedditCloneCommunityModerator =>
+    typia.random<IRedditCloneCommunityModerator>();
   export const simulate = (
     connection: IConnection,
     props: create.Props,
@@ -121,7 +124,7 @@ export namespace create {
       contentType: "application/json",
     });
     try {
-      assert.param("communityName")(() => typia.assert(props.communityName));
+      assert.param("communityId")(() => typia.assert(props.communityId));
       assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
@@ -137,33 +140,248 @@ export namespace create {
 }
 
 /**
- * Update the role of an existing moderator in a community.
+ * Retrieve a paginated list of moderators for a specific community.
  *
- * This endpoint allows the community owner to modify the role type of an appointed moderator. The role can only be changed to a lower authority level since the owner role is immutable once set during community creation. This operation does not allow removing the last owner or modifying the owner's own role.
+ * This operation lists all moderator role assignments for a community, including both owners and appointed moderators. Moderators are returned with their role level, assignment timestamp, and who assigned them.
  *
- * **Authorization**: Only the community owner can access this endpoint. Existing moderators cannot modify other moderators' roles per the authority hierarchy rules defined in the platform.
+ * Supports filtering by role type (owner or moderator) and pagination for communities with many moderators. The response is sorted by role hierarchy with owners listed first, followed by moderators, then by creation date.
  *
- * **Database relationship**: This operation modifies the reddit_clone_moderators table which links members to communities with moderator roles. The table has a composite unique constraint on [reddit_clone_community_id, reddit_clone_member_id] ensuring one moderator role per member per community.
- *
- * **Request validation**: The moderator must exist and belong to the specified community. The new role value must be valid ('moderator' only, since 'owner' role is assigned at community creation). The authenticated user must be the community owner.
- *
- * **Error handling**: Returns 403 if the authenticated user is not the community owner. Returns 404 if the community or moderator does not exist. Returns 400 if the role value is invalid.
+ * Only accessible to authenticated members who are owners or moderators of the target community.
  *
  * @param props.connection
- * @param props.communityName Unique name identifier of the community (e.g., 'askreddit', 'funny')
- * @param props.moderatorId UUID identifier of the moderator role record to update
- * @param props.body Role update payload specifying the new moderator role type
+ * @param props.communityId Unique identifier of the community (global scope).
+ * @param props.body Search criteria and pagination parameters for filtering moderator listings.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Validate the authenticated user is a member (reject guest requests with 401).
- * 2. Look up the community by communityName using reddit_clone_communities.name (unique index).
- * 3. Verify the authenticated user is the owner of the community (reddit_clone_members.id matches reddit_clone_communities.reddit_clone_member_id).
- * 4. Look up the moderator record by moderatorId from reddit_clone_moderators.id.
- * 5. Verify the moderator belongs to the specified community (reddit_clone_moderators.reddit_clone_community_id matches community.id).
- * 6. Validate the request body contains a valid role value (only 'moderator' allowed for updates).
- * 7. Update the role field in reddit_clone_moderators and set updated_at timestamp.
- * 8. Return the updated moderator record joined with member details (username, display name).
- * @path /redditClone/member/communities/:communityName/moderators/:moderatorId
+ * @x-autobe-specification Query the reddit_clone_community_moderators table filtered by communityId.
+ *
+ * Implement the following:
+ * 1. Filter moderators by reddit_clone_community_id matching the path parameter
+ * 2. Join with reddit_clone_members table to include moderator user details (username, display_name)
+ * 3. Join with reddit_clone_members table for assigner information (who appointed this moderator)
+ * 4. Support filtering by role field (owner/moderator) in the request body
+ * 5. Order results by role (owner first), then by created_at ascending
+ * 6. Apply pagination with page, limit, and cursor-based pagination
+ * 7. Return summary fields: id, role, created_at, member summary, assigner summary
+ *
+ * Edge cases:
+ * - Community does not exist: Return 404 error
+ * - No moderators found: Return empty page with empty array
+ * - Invalid role filter: Ignore invalid values, return all moderators
+ * @path /redditClone/member/communities/:communityId/moderators
+ * @accessor api.functional.redditClone.member.communities.moderators.index
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function index(
+  connection: IConnection,
+  props: index.Props,
+): Promise<index.Response> {
+  return true === connection.simulate
+    ? index.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...index.METADATA,
+          path: index.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace index {
+  export type Props = {
+    /**
+     * Unique identifier of the community (global scope).
+     */
+    communityId: string & tags.Format<"uuid">;
+
+    /**
+     * Search criteria and pagination parameters for filtering moderator listings.
+     */
+    body: IRedditCloneCommunityModerator.IRequest;
+  };
+  export type Body = IRedditCloneCommunityModerator.IRequest;
+  export type Response = IPageIRedditCloneCommunityModerator.ISummary;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/redditClone/member/communities/:communityId/moderators",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/redditClone/member/communities/${encodeURIComponent(props.communityId ?? "null")}/moderators`;
+  export const random = (): IPageIRedditCloneCommunityModerator.ISummary =>
+    typia.random<IPageIRedditCloneCommunityModerator.ISummary>();
+  export const simulate = (
+    connection: IConnection,
+    props: index.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: index.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("communityId")(() => typia.assert(props.communityId));
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve detailed information about a specific moderator in a community.
+ *
+ * This endpoint returns the complete moderator record including their role (owner or moderator), who assigned them, and when they were assigned. The response includes the associated member information for identifying the moderator.
+ *
+ * The moderator must belong to the specified community. If the moderator ID does not correspond to a moderator of that community, the endpoint returns a 404 error.
+ *
+ * This operation is used when viewing community details, displaying moderator lists on community pages, or when verifying a user's moderation status for authorization purposes.
+ *
+ * @param props.connection
+ * @param props.communityId Unique identifier of the community (UUID)
+ * @param props.moderatorId Unique identifier of the moderator assignment (UUID)
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor member
+ * @x-autobe-specification Query reddit_clone_moderators table filtering by id equal to moderatorId and reddit_clone_community_id equal to communityId.
+ *
+ * Verify that the moderator exists and deleted_at is null (only active moderators).
+ *
+ * Join with reddit_clone_members table to include member information (display_name, username, avatar).
+ *
+ * Join with reddit_clone_communities to verify community exists and include community name.
+ *
+ * Return the complete moderator record including: id, role, created_at, updated_at, assigned_by, and nested member/community information.
+ *
+ * Handle 404 error if moderator not found or belongs to different community.
+ * @path /redditClone/member/communities/:communityId/moderators/:moderatorId
+ * @accessor api.functional.redditClone.member.communities.moderators.at
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function at(
+  connection: IConnection,
+  props: at.Props,
+): Promise<at.Response> {
+  return true === connection.simulate
+    ? at.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...at.METADATA,
+          path: at.path(props),
+          status: null,
+        },
+      );
+}
+export namespace at {
+  export type Props = {
+    /**
+     * Unique identifier of the community (UUID)
+     */
+    communityId: string & tags.Format<"uuid">;
+
+    /**
+     * Unique identifier of the moderator assignment (UUID)
+     */
+    moderatorId: string & tags.Format<"uuid">;
+  };
+  export type Response = IRedditCloneCommunityModerator;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/redditClone/member/communities/:communityId/moderators/:moderatorId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/redditClone/member/communities/${encodeURIComponent(props.communityId ?? "null")}/moderators/${encodeURIComponent(props.moderatorId ?? "null")}`;
+  export const random = (): IRedditCloneCommunityModerator =>
+    typia.random<IRedditCloneCommunityModerator>();
+  export const simulate = (
+    connection: IConnection,
+    props: at.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: at.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("communityId")(() => typia.assert(props.communityId));
+      assert.param("moderatorId")(() => typia.assert(props.moderatorId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Update an existing moderator's role within a community.
+ *
+ * This operation allows the community owner or existing moderators to change a moderator's role type. The operation respects the authority hierarchy where the owner holds ultimate control and can modify any moderator's role. Regular moderators can assign new moderators but cannot modify the owner's role or other moderators' roles.
+ *
+ * The role field accepts two values: 'owner' for the community creator with highest authority, and 'moderator' for appointed moderators with content management powers. Role changes are tracked via the updated_at timestamp for audit purposes.
+ *
+ * Moderators cannot modify their own role or promote themselves to owner. The operation validates that the requesting user has appropriate authority within the specified community.
+ *
+ * @param props.connection
+ * @param props.communityId Community identifier (global scope)
+ * @param props.moderatorId Moderator identifier (scoped to community)
+ * @param props.body New role value for the moderator
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor member
+ * @x-autobe-specification Update moderator role in reddit_clone_moderators table.
+ *
+ * 1. Validate moderatorId exists in reddit_clone_moderators for the specified communityId.
+ * 2. Verify requesting user is either the community owner (role='owner') or an existing moderator with authority to manage roles.
+ * 3. Validate the role field is either 'owner' or 'moderator'.
+ * 4. If changing to 'owner', verify the current owner is the one making the request (only owner can transfer ownership).
+ * 5. Prevent moderators from changing other moderators' roles (only owner can modify).
+ * 6. Prevent self-modification of roles.
+ * 7. Update the role field and set updated_at to current timestamp.
+ * 8. Return the updated moderator record with member details.
+ * @path /redditClone/member/communities/:communityId/moderators/:moderatorId
  * @accessor api.functional.redditClone.member.communities.moderators.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -192,26 +410,26 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * Unique name identifier of the community (e.g., 'askreddit', 'funny')
+     * Community identifier (global scope)
      */
-    communityName: string;
+    communityId: string & tags.Format<"uuid">;
 
     /**
-     * UUID identifier of the moderator role record to update
+     * Moderator identifier (scoped to community)
      */
     moderatorId: string & tags.Format<"uuid">;
 
     /**
-     * Role update payload specifying the new moderator role type
+     * New role value for the moderator
      */
-    body: IRedditCloneModeratorSnapshot.IUpdate;
+    body: IRedditCloneCommunityModerator.IUpdate;
   };
-  export type Body = IRedditCloneModeratorSnapshot.IUpdate;
-  export type Response = IRedditCloneModeratorSnapshot;
+  export type Body = IRedditCloneCommunityModerator.IUpdate;
+  export type Response = IRedditCloneCommunityModerator;
 
   export const METADATA = {
     method: "PUT",
-    path: "/redditClone/member/communities/:communityName/moderators/:moderatorId",
+    path: "/redditClone/member/communities/:communityId/moderators/:moderatorId",
     request: {
       type: "application/json",
       encrypted: false,
@@ -223,9 +441,9 @@ export namespace update {
   } as const;
 
   export const path = (props: Omit<Props, "body">) =>
-    `/redditClone/member/communities/${encodeURIComponent(props.communityName ?? "null")}/moderators/${encodeURIComponent(props.moderatorId ?? "null")}`;
-  export const random = (): IRedditCloneModeratorSnapshot =>
-    typia.random<IRedditCloneModeratorSnapshot>();
+    `/redditClone/member/communities/${encodeURIComponent(props.communityId ?? "null")}/moderators/${encodeURIComponent(props.moderatorId ?? "null")}`;
+  export const random = (): IRedditCloneCommunityModerator =>
+    typia.random<IRedditCloneCommunityModerator>();
   export const simulate = (
     connection: IConnection,
     props: update.Props,
@@ -237,7 +455,7 @@ export namespace update {
       contentType: "application/json",
     });
     try {
-      assert.param("communityName")(() => typia.assert(props.communityName));
+      assert.param("communityId")(() => typia.assert(props.communityId));
       assert.param("moderatorId")(() => typia.assert(props.moderatorId));
       assert.body(() => typia.assert(props.body));
     } catch (exp) {
@@ -256,46 +474,31 @@ export namespace update {
 /**
  * Remove a moderator from a community.
  *
- * This endpoint allows the community owner to remove moderator privileges from a user. The action revokes the user's ability to manage content, ban users, and review reports within the specific community.
+ * This operation permanently removes the moderator role assignment for a user in a specific community. Only the community owner can remove moderators.
  *
- * **Authorization Requirements**
- * Only the community owner can remove moderators. The requester must be authenticated as a member and must be the owner of the specified community. Moderators cannot remove other moderators.
+ * Authorization requires the authenticated user to be the owner of the specified community. The system validates that the target user is currently a moderator (not the owner) in that community. Owners cannot be removed from their own communities.
  *
- * **Owner Protection**
- * The community owner cannot be removed from the moderator list. Attempting to remove the owner returns an error indicating the owner cannot be removed.
+ * Upon successful removal, the former moderator immediately loses all moderation capabilities including: ability to delete posts, delete comments, ban users, and manage reports within that community. The user remains a regular subscriber if they have one.
  *
- * **Moderator Removal Effects**
- * Upon successful removal, the former moderator loses all moderation powers in that community immediately:
- * - Cannot delete posts or comments
- * - Cannot ban or unban users
- * - Cannot view or manage reports
- * The user remains a regular subscriber if they have an active subscription.
- *
- * **Soft Delete Behavior**
- * The operation performs a soft delete by setting the deleted_at timestamp. This preserves the moderator assignment history for audit purposes.
- *
- * **Error Scenarios**
- * - User is not the community owner: Returns 403 Forbidden with message indicating only the owner can remove moderators
- * - Target user is the owner: Returns 400 Bad Request with message indicating the owner cannot be removed
- * - Community does not exist: Returns 404 Not Found
- * - Target user is not a moderator: Returns 404 Not Found
- * - Not authenticated: Returns 401 Unauthorized
+ * This action is irreversible. To restore moderator privileges, the owner must re-assign the moderator role using the add moderator operation.
  *
  * @param props.connection
- * @param props.communityName Unique name of the community (e.g., 'askreddit', 'funny')
- * @param props.moderatorId UUID of the member to remove as moderator
+ * @param props.communityId Unique identifier of the community (UUID)
+ * @param props.moderatorId Unique identifier of the member to remove as moderator (UUID)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Retrieve the community by communityName from reddit_clone_communities table
- * 2. Verify the authenticated user is the owner of the community (reddit_clone_member_id matches community owner)
- * 3. If not owner, return 403 Forbidden error
- * 4. Retrieve the moderator record from reddit_clone_moderators where reddit_clone_member_id matches moderatorId and reddit_clone_community_id matches community id
- * 5. Verify the moderator exists and deleted_at is null
- * 6. Check that the moderator's role is not 'owner'
- * 7. If attempting to remove owner, return 400 Bad Request error
- * 8. Set deleted_at to current timestamp for soft delete
- * 9. Return the updated moderator record with deleted_at populated
- * @path /redditClone/member/communities/:communityName/moderators/:moderatorId
+ * @x-autobe-specification Remove a moderator assignment from the reddit_clone_community_moderators table.
+ *
+ * 1. Authorization Check: Verify the authenticated user is the owner of the community (reddit_clone_community_moderators where community_id = {communityId} AND member_id = current_user_id AND role = 'owner'). If not owner, reject with 403 Forbidden.
+ *
+ * 2. Target Validation: Query reddit_clone_community_moderators where reddit_clone_community_id = {communityId} AND reddit_clone_member_id = {moderatorId}. If not found, reject with 404 Not Found.
+ *
+ * 3. Owner Protection: Verify the target moderator's role is NOT 'owner'. If role = 'owner', reject with 400 Bad Request indicating the owner cannot be removed.
+ *
+ * 4. Hard Delete: Remove the record from reddit_clone_community_moderators table where id matches the found record.
+ *
+ * 5. Return 204 No Content on success.
+ * @path /redditClone/member/communities/:communityId/moderators/:moderatorId
  * @accessor api.functional.redditClone.member.communities.moderators.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -323,19 +526,19 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * Unique name of the community (e.g., 'askreddit', 'funny')
+     * Unique identifier of the community (UUID)
      */
-    communityName: string;
+    communityId: string & tags.Format<"uuid">;
 
     /**
-     * UUID of the member to remove as moderator
+     * Unique identifier of the member to remove as moderator (UUID)
      */
     moderatorId: string & tags.Format<"uuid">;
   };
 
   export const METADATA = {
     method: "DELETE",
-    path: "/redditClone/member/communities/:communityName/moderators/:moderatorId",
+    path: "/redditClone/member/communities/:communityId/moderators/:moderatorId",
     request: null,
     response: {
       type: "application/json",
@@ -344,7 +547,7 @@ export namespace erase {
   } as const;
 
   export const path = (props: Props) =>
-    `/redditClone/member/communities/${encodeURIComponent(props.communityName ?? "null")}/moderators/${encodeURIComponent(props.moderatorId ?? "null")}`;
+    `/redditClone/member/communities/${encodeURIComponent(props.communityId ?? "null")}/moderators/${encodeURIComponent(props.moderatorId ?? "null")}`;
   export const random = (): void => typia.random<void>();
   export const simulate = (
     connection: IConnection,
@@ -357,7 +560,7 @@ export namespace erase {
       contentType: "application/json",
     });
     try {
-      assert.param("communityName")(() => typia.assert(props.communityName));
+      assert.param("communityId")(() => typia.assert(props.communityId));
       assert.param("moderatorId")(() => typia.assert(props.moderatorId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;

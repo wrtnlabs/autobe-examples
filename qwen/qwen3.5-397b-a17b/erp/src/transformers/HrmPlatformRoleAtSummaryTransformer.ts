@@ -1,12 +1,12 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
 import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { HrmPlatformOrganizationAtSummaryTransformer } from "./HrmPlatformOrganizationAtSummaryTransformer";
 
 export namespace HrmPlatformRoleAtSummaryTransformer {
   export type Payload = Prisma.hrm_platform_rolesGetPayload<
@@ -17,10 +17,31 @@ export namespace HrmPlatformRoleAtSummaryTransformer {
       select: {
         id: true,
         name: true,
+        is_built_in: true,
         description: true,
-        is_builtin: true,
         created_at: true,
-        organization: HrmPlatformOrganizationAtSummaryTransformer.select(),
+        updated_at: true,
+        deleted_at: true,
+        organization: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_organizationsFindManyArgs,
+        rolePermissions: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_role_permissionsFindManyArgs,
+        employees: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_employeesFindManyArgs,
+        employeeInvitations: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.hrm_platform_employee_invitationsFindManyArgs,
       },
     } satisfies Prisma.hrm_platform_rolesFindManyArgs;
   }
@@ -30,12 +51,10 @@ export namespace HrmPlatformRoleAtSummaryTransformer {
     return {
       id: input.id,
       name: input.name,
-      description: input.description ?? undefined,
-      is_builtin: input.is_builtin,
-      organization: await HrmPlatformOrganizationAtSummaryTransformer.transform(
-        input.organization,
-      ),
+      is_built_in: input.is_built_in,
+      description: input.description ?? null,
+      permission_count: input.rolePermissions.length,
       created_at: input.created_at.toISOString(),
-    };
+    } satisfies IHrmPlatformRole.ISummary;
   }
 }

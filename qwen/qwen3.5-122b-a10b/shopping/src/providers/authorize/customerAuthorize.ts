@@ -12,7 +12,7 @@ export async function customerAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const customer = await MyGlobal.prisma.ecommerce_mall_customers.findFirst({
+  const customer = await MyGlobal.prisma.ecommerce_customers.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,

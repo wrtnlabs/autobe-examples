@@ -1,6 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
@@ -8,6 +9,7 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer } from "./ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer";
 
 export namespace ErpHrmTimeDepartmentAtSummaryTransformer {
   export type Payload = Prisma.erp_hrm_time_departmentsGetPayload<
@@ -19,18 +21,14 @@ export namespace ErpHrmTimeDepartmentAtSummaryTransformer {
         id: true,
         name: true,
         description: true,
+        organization:
+          ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer.select(),
+        parent_department_id: true,
+        employees: { select: {} },
+        childDepartments: { select: {} },
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        erp_hrm_time_organization_id: true,
-        parent_department_id: true,
-        organization: {
-          select: {
-            id: true,
-          },
-        },
-        employees: { select: { id: true } },
-        childDepartments: { select: { id: true } },
       },
     } satisfies Prisma.erp_hrm_time_departmentsFindManyArgs;
   }
@@ -45,22 +43,23 @@ export namespace ErpHrmTimeDepartmentAtSummaryTransformer {
       id: input.id,
       name: input.name,
       description: input.description ?? null,
-      organization: {
-        id: input.organization.id,
-      } as IErpHrmTimeOrganization.ISummary,
+      organization:
+        await ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer.transform(
+          input.organization,
+        ),
       parentDepartment: input.parent_department_id
         ? await cache.get(input.parent_department_id)
         : null,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     };
   }
   export async function transformAll(
     inputs: Payload[],
   ): Promise<IErpHrmTimeDepartment.ISummary[]> {
     const cache = createCache();
-    return await ArrayUtil.asyncMap(inputs, (x) => transform(x, cache));
+    return await ArrayUtil.asyncMap(inputs, (input) => transform(input, cache));
   }
   function createCache() {
     const cache = new VariadicSingleton(

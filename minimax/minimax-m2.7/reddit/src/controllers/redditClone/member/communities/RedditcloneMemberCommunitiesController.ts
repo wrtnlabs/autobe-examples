@@ -1,52 +1,54 @@
 import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia from "typia";
+import typia, { tags } from "typia";
 
-import { IRedditCloneCommunityBan } from "../../../../api/structures/IRedditCloneCommunityBan";
+import { IPageIRedditClonePost } from "../../../../api/structures/IPageIRedditClonePost";
+import { IRedditCloneCommunity } from "../../../../api/structures/IRedditCloneCommunity";
 import { MemberAuth } from "../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
-import { deleteRedditCloneMemberCommunitiesCommunityName } from "../../../../providers/deleteRedditCloneMemberCommunitiesCommunityName";
-import { patchRedditCloneMemberCommunitiesCommunityName } from "../../../../providers/patchRedditCloneMemberCommunitiesCommunityName";
+import { deleteRedditCloneMemberCommunitiesCommunityId } from "../../../../providers/deleteRedditCloneMemberCommunitiesCommunityId";
+import { getRedditCloneMemberCommunitiesCommunityIdFeed } from "../../../../providers/getRedditCloneMemberCommunitiesCommunityIdFeed";
 import { postRedditCloneMemberCommunities } from "../../../../providers/postRedditCloneMemberCommunities";
+import { putRedditCloneMemberCommunitiesCommunityId } from "../../../../providers/putRedditCloneMemberCommunitiesCommunityId";
 
 @Controller("/redditClone/member/communities")
 export class RedditcloneMemberCommunitiesController {
   /**
    * Create a new community on the platform.
    *
-   * This endpoint allows authenticated members to create a new community that serves as a gathering space for users with shared interests. When a community is created, the authenticated user automatically becomes the community owner with full moderation authority.
+   * This operation allows an authenticated member to establish a new community. The requesting member automatically becomes the owner of the created community and is assigned the 'owner' moderator role, granting them full administrative authority over the community.
    *
-   * A community must have a unique name that is used for identification and URLs. The name must be distinctive across the entire platform. The description explains the purpose and rules of the community to potential subscribers.
+   * The community requires a unique name that will be used for identification and URLs. The description explains the purpose and rules of the community to potential subscribers. The icon is an optional visual identifier that represents the community in listings and feeds.
    *
-   * The creating member is automatically assigned as the owner of the community. The subscriber count is initialized to zero and will be updated as users subscribe. Communities track their creation timestamp for display and sorting purposes.
-   *
-   * **Authentication Required**: This endpoint requires an active member session. The creating member's ID is extracted from the authenticated session token and stored as the reddit_clone_member_id foreign key.
-   *
-   * **Unique Name Constraint**: The community name must be unique across all communities on the platform. Duplicate names will result in a validation error.
-   *
-   * **Icon Upload**: If an icon is provided, it should be uploaded separately via the file management system and then associated with the community through the file association mechanism.
-   *
-   * **Response**: Returns the complete community entity including the generated UUID, assigned owner, created timestamp, and initial subscriber count.
+   * Upon successful creation, the community is immediately visible to all users in community listings. The owner can later add additional moderators to help manage the community.
    *
    * @param connection
-   * @param body Community creation data including name, description, and optional icon URI
+   * @param body Community creation data including name, description, and optional icon
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate the request body contains required fields: name, description.
-   * Extract the authenticated member ID from the session token.
-   * Validate community name uniqueness against the name unique constraint.
-   * Validate name length (3-30 characters) and format (alphanumeric, underscores, hyphens).
-   * Insert a new record into reddit_clone_communities with:
-   *   - id: generated UUID
-   *   - reddit_clone_member_id: extracted from session
-   *   - name: provided value
-   *   - description: provided value
-   *   - icon: provided URI or null
-   *   - subscriber_count: 0
-   *   - created_at: current timestamp
-   *   - updated_at: current timestamp
-   *   - deleted_at: null
-   * Return the complete created community entity.
+   * @x-autobe-specification 1. Validate that the requesting user is an authenticated member (from session).
+   * 2. Validate that the community name is unique and meets format requirements (lowercase alphanumeric with underscores, 3-21 characters).
+   * 3. Validate description length (max 500 characters).
+   * 4. Create the community record in reddit_clone_communities table with:
+   *    - id: generate UUID
+   *    - reddit_clone_member_id: from authenticated session
+   *    - name: from request
+   *    - description: from request
+   *    - subscriber_count: 0 (owner not counted as subscriber initially)
+   *    - created_at: current timestamp
+   *    - updated_at: current timestamp
+   *    - deleted_at: null
+   * 5. If icon file is provided, create file association in reddit_clone_file_associations table.
+   * 6. Create moderator record in reddit_clone_moderators with:
+   *    - id: generate UUID
+   *    - reddit_clone_member_id: owner id
+   *    - reddit_clone_community_id: created community id
+   *    - assigned_by: owner id (self-assigned)
+   *    - role: 'owner'
+   *    - created_at: current timestamp
+   *    - updated_at: current timestamp
+   *    - deleted_at: null
+   * 7. Return the created community with owner information.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -54,8 +56,8 @@ export class RedditcloneMemberCommunitiesController {
     @MemberAuth()
     member: MemberPayload,
     @TypedBody()
-    body: IRedditCloneCommunityBan.ICreate,
-  ): Promise<IRedditCloneCommunityBan> {
+    body: IRedditCloneCommunity.ICreate,
+  ): Promise<IRedditCloneCommunity> {
     try {
       return await postRedditCloneMemberCommunities({
         member,
@@ -68,47 +70,43 @@ export class RedditcloneMemberCommunitiesController {
   }
 
   /**
-   * Update an existing community's metadata.
+   * Update an existing community's metadata including its name, description, and icon.
    *
-   * This endpoint allows the community owner to modify the community's description text and icon image. The community name cannot be changed after creation to preserve URL stability and prevent identity confusion.
+   * This operation allows the community owner to modify the community's display information. The community name must remain unique across the platform. Changing the name affects how users search for and reference the community.
    *
-   * Only the community owner can access this operation. The system verifies ownership by matching the authenticated user's member ID with the `reddit_clone_member_id` field in the `reddit_clone_communities` table. Non-owners receive a 403 Forbidden response.
+   * Only the owner of the community can perform this update. The operation supports partial updates where only the fields that need changing must be provided. The icon can be updated by providing a new file reference.
    *
-   * The operation performs a partial update using PATCH semantics. Only the fields provided in the request body are modified; all other fields remain unchanged. If a field is omitted, its current value is preserved.
-   *
-   * The `updated_at` timestamp is automatically set to the current time when the update succeeds. The subscriber count remains unchanged during this operation since it is managed by subscription/unsubscription workflows.
-   *
-   * This operation is part of the community management workflow. After updating, clients may want to retrieve the community details using `GET /communities/{communityName}` to confirm the changes.
+   * If the name is changed, the system validates that the new name is not already taken by another community.
    *
    * @param connection
-   * @param communityName Unique name identifier of the community to update
-   * @param body Partial update fields for community metadata
+   * @param communityId Unique identifier of the community to update (UUID format).
+   * @param body Fields to update for the community. Only provided fields will be modified.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the `reddit_clone_communities` table filtering by the `name` field matching the `communityName` path parameter.
+   * @x-autobe-specification Query reddit_clone_communities table to find the community by id. Verify the authenticated user is the owner (reddit_clone_member_id matches session user). If not owner, return 403 Forbidden.
    *
-   * Verify the authenticated user's member ID matches the `reddit_clone_member_id` of the community. If not matching, return 403 Forbidden.
+   * Validate the provided fields: name must be unique across all communities if provided, description length within limits.
    *
-   * Apply selective update to the `description` and `icon_uri` fields based on provided request body values. Set `updated_at` to current timestamp.
+   * Update the reddit_clone_communities record with provided fields. Update the updated_at timestamp automatically.
    *
-   * If the community is soft-deleted (`deleted_at` is not null), return 404 Not Found.
+   * If icon file is provided, update the reddit_clone_community_icons relationship. If removing icon, delete the icon record.
    *
-   * Return the updated community record with all fields including computed `subscriber_count`.
+   * Return the updated community entity with its associated icon.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch(":communityName")
+  @TypedRoute.Put(":communityId")
   public async update(
     @MemberAuth()
     member: MemberPayload,
-    @TypedParam("communityName")
-    communityName: string,
+    @TypedParam("communityId")
+    communityId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IRedditCloneCommunityBan.IUpdate,
-  ): Promise<IRedditCloneCommunityBan> {
+    body: IRedditCloneCommunity.IUpdate,
+  ): Promise<IRedditCloneCommunity> {
     try {
-      return await patchRedditCloneMemberCommunitiesCommunityName({
+      return await putRedditCloneMemberCommunitiesCommunityId({
         member,
-        communityName,
+        communityId,
         body,
       });
     } catch (error) {
@@ -118,43 +116,95 @@ export class RedditcloneMemberCommunitiesController {
   }
 
   /**
-   * Soft-deletes a community and all its associated content from the platform.
+   * Remove a community from active use on the platform.
    *
-   * This endpoint allows the community owner to mark their community as deleted. When a community is soft-deleted, the `deleted_at` timestamp is set on the community record rather than physically removing the row from the database. This enables potential recovery within the thirty-day retention period defined in data retention policies.
+   * This operation performs a soft delete by setting the deleted_at timestamp on the community record. The community and its associated data remain in the database but are filtered out of all normal queries and become inaccessible to users. Only the community owner has permission to delete a community.
    *
-   * When the soft-delete is applied, all associated posts, comments, votes, and subscriptions are cascade soft-deleted through database relationships. The community icon file also follows the retention policy.
+   * When a community is deleted, existing posts and comments within the community remain in the database but are no longer accessible through normal queries. The community icon image file is scheduled for deletion according to retention policies.
    *
-   * Only the community owner can execute this operation. Moderators and regular members cannot delete communities. The authenticated user must be the owner of the specified community.
-   *
-   * Access Control: Owner of the community (reddit_clone_members.id matching reddit_clone_communities.reddit_clone_member_id). All other users receive 403 Forbidden.
+   * This action cannot be undone through the API. Consider transferring ownership to another user instead of deletion if the community may be needed in the future.
    *
    * @param connection
-   * @param communityName Unique community name identifier used in URL and stored in reddit_clone_communities.name column
+   * @param communityId Unique identifier of the community to delete (global scope)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Extract communityName from path parameter
-   * 2. Authenticate the requesting member via session token
-   * 3. Verify the authenticated member is the owner of the community:
-   *    - Query reddit_clone_communities WHERE name = communityName AND reddit_clone_member_id = authenticated_user_id
-   *    - If not found, return 403 Forbidden
-   * 4. Execute soft delete:
-   *    - UPDATE reddit_clone_communities SET deleted_at = CURRENT_TIMESTAMP WHERE id = community_id
-   *    - Cascade soft-delete or hard-delete associated records per database relationships
-   * 5. Return 204 No Content on success
-   * 6. If community not found or already deleted, return 404 Not Found
+   * @x-autobe-specification Verify the requesting user is the authenticated owner of the community by comparing the current session user ID with the reddit_clone_member_id stored on the community record.
+   *
+   * Set the deleted_at timestamp on the reddit_clone_communities record to the current timestamp to implement soft deletion.
+   *
+   * No cascading hard deletes are required - related posts and comments remain in the database but are filtered out of all queries by the deleted_at condition.
+   *
+   * Schedule the associated community icon file for deletion after the standard retention period (30 days) by setting appropriate deletion flag.
+   *
+   * Return HTTP 204 No Content on success.
+   *
+   * Return HTTP 403 Forbidden if the requesting user is not the community owner.
+   * Return HTTP 404 Not Found if the community does not exist or is already deleted.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Delete(":communityName")
+  @TypedRoute.Delete(":communityId")
   public async erase(
     @MemberAuth()
     member: MemberPayload,
-    @TypedParam("communityName")
-    communityName: string,
+    @TypedParam("communityId")
+    communityId: string & tags.Format<"uuid">,
   ): Promise<void> {
     try {
-      return await deleteRedditCloneMemberCommunitiesCommunityName({
+      return await deleteRedditCloneMemberCommunitiesCommunityId({
         member,
-        communityName,
+        communityId,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a paginated list of posts from a specific community feed.
+   *
+   * This endpoint provides public access to a community's post feed, displaying all posts within the specified community sorted according to the selected criteria. The response includes post summaries optimized for list display, containing title, author username, community name, vote score, comment count, time since posting, and type-specific previews.
+   *
+   * Sorting Modes:
+   * - Hot: Combines vote score and recency using a time-decay algorithm to surface popular recent content
+   * - New: Chronological order from most recent to oldest
+   * - Top: Highest vote scores first, with optional time filter (today/week/month/year/all)
+   * - Controversial: Posts with similar upvote and downvote counts, indicating polarizing content
+   *
+   * Time filters narrow results to posts created within the specified period. Cursor-based pagination ensures stable results when new posts are added during browsing. The community must exist and not be deleted for the feed to be accessible.
+   *
+   * @param connection
+   * @param communityId Unique identifier of the community (UUID format)
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Query reddit_clone_communities to verify the community exists and is not soft-deleted (deleted_at IS NULL). Return 404 if community not found.
+   *
+   * Query reddit_clone_posts filtered by reddit_clone_community_id matching the path parameter. Apply soft-delete filter (deleted_at IS NULL).
+   *
+   * Sorting Logic:
+   * - Hot: Calculate hot_score = vote_score / (hours_age + 2)^1.5, sort descending
+   * - New: Sort by created_at descending
+   * - Top: Filter by created_at >= time_filter_start, sort by vote_score descending
+   * - Controversial: Filter posts where upvotes > 0 AND downvotes > 0 AND abs(upvotes - downvotes) < threshold, sort by (upvotes + downvotes) descending
+   *
+   * Join with reddit_clone_members to get author usernames for the response.
+   *
+   * Apply cursor-based pagination using created_at and id as cursor fields. Default page size: 20, maximum: 100.
+   *
+   * Return empty list if no posts exist in the community (not an error).
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":communityId/feed")
+  public async feed(
+    @MemberAuth()
+    member: MemberPayload,
+    @TypedParam("communityId")
+    communityId: string & tags.Format<"uuid">,
+  ): Promise<IPageIRedditClonePost.ISummary> {
+    try {
+      return await getRedditCloneMemberCommunitiesCommunityIdFeed({
+        member,
+        communityId,
       });
     } catch (error) {
       console.log(error);

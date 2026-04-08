@@ -13,22 +13,36 @@ export namespace MallPlatformWishlistItemCollector {
     wishlist: IEntity;
   }) {
     const id: string = v4();
-    const now: Date = new Date();
     return {
       id,
-      created_at: now,
-      updated_at: now,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
-      wishlist: {
-        connect: {
-          id: props.wishlist.id,
-        },
-      },
-      product: {
-        connect: {
-          id: props.body.mallPlatformProductId,
-        },
-      },
+      wishlist: { connect: { id: props.wishlist.id } },
+      product: { connect: { id: props.body.product_id } },
     } satisfies Prisma.mall_platform_wishlist_itemsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace MallPlatformWishlistItemCollector {
+//         export async function collect(props: {
+//           body: IMallPlatformWishlistItem.ICreate;
+//           mallPlatformWishlists: IEntity; // from authorized actor
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       wishlist: ...,
+//       product: ...,
+//           } satisfies Prisma.mall_platform_wishlist_itemsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

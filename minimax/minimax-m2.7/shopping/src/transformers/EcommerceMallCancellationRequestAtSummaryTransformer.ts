@@ -1,27 +1,18 @@
 import { IEcommerceMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCancellationRequest";
-import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
-import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
-import { IEcommerceMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshot";
-import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
-import { IEcommerceMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfile";
-import { IEcommerceMallSellerProfileSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfileSnapshot";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
-import { EcommerceMallOrderItemAtSummaryTransformer } from "./EcommerceMallOrderItemAtSummaryTransformer";
-import { EcommerceMallSellerAtSummaryTransformer } from "./EcommerceMallSellerAtSummaryTransformer";
 
 export namespace EcommerceMallCancellationRequestAtSummaryTransformer {
-  // 1. Payload type first
-  export type Payload = Prisma.ecommerce_mall_cancellation_requestsGetPayload<
-    ReturnType<typeof select>
-  >;
-  // 2. select() function second
+  export type Payload =
+    Prisma.ecommerce_mall_cancellation_request_snapshotsGetPayload<
+      ReturnType<typeof select>
+    >;
   export function select() {
     return {
       select: {
@@ -29,34 +20,99 @@ export namespace EcommerceMallCancellationRequestAtSummaryTransformer {
         reason: true,
         status: true,
         created_at: true,
-        updated_at: true,
-        customer: EcommerceMallCustomerAtSummaryTransformer.select(),
-        seller: EcommerceMallSellerAtSummaryTransformer.select(),
-        orderItem: EcommerceMallOrderItemAtSummaryTransformer.select(),
-        snapshots: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_cancellation_request_snapshotsFindManyArgs,
+        cancellationRequest: true,
       },
-    } satisfies Prisma.ecommerce_mall_cancellation_requestsFindManyArgs;
+    } satisfies Prisma.ecommerce_mall_cancellation_request_snapshotsFindManyArgs;
   }
-  // 3. transform() function last
   export async function transform(
     input: Payload,
+    cache: VariadicSingleton<
+      Promise<IEcommerceMallCancellationRequest.ISummary>,
+      [string]
+    > = createParentCache(),
   ): Promise<IEcommerceMallCancellationRequest.ISummary> {
-    return {
-      id: input.id,
-      reason: input.reason,
-      status: input.status,
-      created_at: input.created_at.toISOString(),
-      customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
-        input.customer,
-      ),
-      seller: await EcommerceMallSellerAtSummaryTransformer.transform(
-        input.seller,
-      ),
-      orderItem: await EcommerceMallOrderItemAtSummaryTransformer.transform(
-        input.orderItem,
-      ),
-    };
+    const parentId = input.cancellationRequest?.id ?? input.id;
+    const summary = await cache.get(parentId);
+    return typia.assert<IEcommerceMallCancellationRequest.ISummary>(summary);
+  }
+  export async function transformAll(
+    inputs: Payload[],
+  ): Promise<IEcommerceMallCancellationRequest.ISummary[]> {
+    const cache = createParentCache();
+    return await ArrayUtil.asyncMap(inputs, (x) => transform(x, cache));
+  }
+  function createParentCache() {
+    const cache = new VariadicSingleton(
+      async (
+        id: string,
+      ): Promise<IEcommerceMallCancellationRequest.ISummary> => {
+        const record =
+          await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.findFirstOrThrow(
+            {
+              ...select(),
+              where: { id },
+            },
+          );
+        return transform(record, cache);
+      },
+    );
+    return cache;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallCancellationRequestAtSummaryTransformer {
+//       export type Payload = Prisma.ecommerce_mall_cancellation_request_snapshotsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             reason: true,
+//             status: true,
+//             createdAt: true,
+//             cancellationRequest_id: true,
+//             cancellationRequest: undefined, // DO NOT select recursive relation
+//           },
+//         } satisfies Prisma.ecommerce_mall_cancellation_request_snapshotsFindManyArgs;
+//       }
+// 
+//       export async function transform(
+//         input: Payload,
+//         cache: VariadicSingleton<Promise<IEcommerceMallCancellationRequest.ISummary>, [string]> = createParentCache(),
+//       ): Promise<IEcommerceMallCancellationRequest.ISummary> {
+//         return {
+//   id: {string},
+//   reason: {string},
+//   status: {string},
+//   createdAt: {string},
+//   cancellationRequest: input.cancellationRequest_id ? await cache.get(input.cancellationRequest_id) : null,
+//         };
+//       }
+// 
+//       export async function transformAll(
+//         inputs: Payload[],
+//       ): Promise<IEcommerceMallCancellationRequest.ISummary[]> {
+//         const cache = createParentCache();
+//         return await ArrayUtil.asyncMap(inputs, (x) => transform(x, cache));
+//       }
+// 
+//       function createParentCache() {
+//         const cache = new VariadicSingleton(
+//           async (id: string): Promise<IEcommerceMallCancellationRequest.ISummary> => {
+//             const record =
+//               await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.findFirstOrThrow({
+//                 ...select(),
+//                 where: { id },
+//               });
+//             return transform(record, cache);
+//           },
+//         );
+//         return cache;
+//       }
+//     }
+//--------------------------------------------------------------

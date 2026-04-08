@@ -2,8 +2,10 @@ import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IE
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallAdminTransformer {
@@ -30,12 +32,12 @@ export namespace EcommerceMallAdminTransformer {
     return {
       id: input.id,
       email: input.email,
-      grade: input.grade as IEcommerceMallAdmin.IEGrade,
-      status: input.status as IEcommerceMallAdmin.IEStatus,
-      nickname: input.nickname ?? null,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
-      deleted_at: input.deleted_at?.toISOString() ?? null,
+      grade: input.grade,
+      status: input.status,
+      nickname: input.nickname,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

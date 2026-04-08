@@ -1,37 +1,25 @@
 import api from "@ORGANIZATION/PROJECT-api";
-import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IRedditCloneCommunityBan } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunityBan";
-import type { IRedditCloneFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFile";
-import type { IRedditCloneFileAssociation } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileAssociation";
-import type { IRedditCloneMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMemberSession";
-import type { IRedditCloneModeratorSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneModeratorSnapshot";
-import type { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
+import type { IRedditCloneCommunityModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunityModerator";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
-import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
-import { IConnection } from "@nestia/fetcher";
-import { randint } from "tstl";
-import typia, { tags } from "typia";
 
-import { prepare_random_reddit_clone_moderator_snapshot } from "../prepare/prepare_random_reddit_clone_moderator_snapshot";
+import { prepare_random_reddit_clone_community_moderator } from "../prepare/prepare_random_reddit_clone_community_moderator";
 
 export async function generate_random_reddit_clone_member_communities_moderators_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IRedditCloneModeratorSnapshot.ICreate>;
+    body?: DeepPartial<IRedditCloneCommunityModerator.ICreate>;
     params: {
-      communityName: string;
+      communityId: string;
     };
-  },
-): Promise<IRedditCloneModeratorSnapshot> {
-  const prepared: IRedditCloneModeratorSnapshot.ICreate =
-    prepare_random_reddit_clone_moderator_snapshot(props.body);
-  const result: IRedditCloneModeratorSnapshot =
-    await api.functional.redditClone.member.communities.moderators.create(
-      connection,
-      {
-        communityName: props.params.communityName,
-        body: prepared,
-      },
-    );
-  return result;
+  }
+): Promise<IRedditCloneCommunityModerator> {
+  const prepared: IRedditCloneCommunityModerator.ICreate =
+    prepare_random_reddit_clone_community_moderator(props.body);
+  return await api.functional.redditClone.member.communities.moderators.create(
+    connection,
+    {
+      body: prepared,
+      communityId: props.params.communityId,
+    }
+  );
 }

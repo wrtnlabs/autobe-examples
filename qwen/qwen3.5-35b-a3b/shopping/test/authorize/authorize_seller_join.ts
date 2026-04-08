@@ -8,6 +8,11 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+/**
+ * Register and authenticate a new seller for E2E testing.
+ *
+ * Creates a seller account with randomized credentials, mutates the connection with the auth token. The seller receives JWT tokens (access and refresh) for authenticated API access. The account starts with approval_status='pending', awaiting administrator approval before selling privileges are granted.
+ */
 export async function authorize_seller_join(
   connection: api.IConnection,
   props: {
@@ -17,6 +22,7 @@ export async function authorize_seller_join(
   const joinInput = {
     email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
     password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
+    display_name: props.body?.display_name ?? RandomGenerator.name(2),
     href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
     referrer:
       props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),

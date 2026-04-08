@@ -6,13 +6,16 @@ import { GuestPayload } from "../../decorators/payload/GuestPayload";
 export async function guestAuthorize(request: {
   headers: { authorization?: string };
 }): Promise<GuestPayload> {
+  if (!request.headers.authorization) {
+    throw new UnauthorizedException("Guest authorization required");
+  }
+
   const payload: GuestPayload = jwtAuthorize({ request }) as GuestPayload;
 
   if (payload.type !== "guest") {
-    throw new ForbiddenException(`You're not ${payload.type}`);
+    throw new ForbiddenException("You're not a guest");
   }
 
-  // Query using id directly since Guest is a standalone actor
   const guest = await MyGlobal.prisma.ecommerce_mall_guests.findFirst({
     where: {
       id: payload.id,
@@ -21,13 +24,13 @@ export async function guestAuthorize(request: {
   });
 
   if (guest === null) {
-    throw new ForbiddenException("You're not enrolled");
+    throw new ForbiddenException("Guest not found or deleted");
   }
 
-  // Verify session is not expired
   const session = await MyGlobal.prisma.ecommerce_mall_guest_sessions.findFirst({
     where: {
       id: payload.session_id,
+      ecommerce_mall_guest_id: payload.id,
       expired_at: { gt: new Date() },
     },
   });

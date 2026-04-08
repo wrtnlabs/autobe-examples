@@ -9,6 +9,7 @@ import type { IHrmPlatformProject } from "@ORGANIZATION/PROJECT-api/lib/structur
 import type { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
 import type { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTask";
 import type { IHrmPlatformTaskHistory } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTaskHistory";
+import type { IHrmPlatformUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformUserProfile";
 import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import type { IPageIHrmPlatformTaskHistory } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIHrmPlatformTaskHistory";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -20,71 +21,65 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_hrm_platform_member_organizations_create } from "../../../generate/generate_random_hrm_platform_member_organizations_create";
 import { generate_random_hrm_platform_member_projects_create } from "../../../generate/generate_random_hrm_platform_member_projects_create";
 import { generate_random_hrm_platform_member_projects_tasks_create } from "../../../generate/generate_random_hrm_platform_member_projects_tasks_create";
-import { prepare_random_hrm_platform_organization } from "../../../prepare/prepare_random_hrm_platform_organization";
 import { prepare_random_hrm_platform_project } from "../../../prepare/prepare_random_hrm_platform_project";
 import { prepare_random_hrm_platform_task } from "../../../prepare/prepare_random_hrm_platform_task";
 
+/**
+ * Test task history retrieval with status transitions.
+ *
+ * Validates the complete task history workflow including member authentication, project creation, task creation, multiple status updates, and history retrieval. Ensures that the immutable audit trail correctly captures all status transitions with accurate metadata.
+ *
+ * Special attention is given to verifying that history entries are returned in chronological order (newest first), each entry contains all required fields (id, oldStatus, newStatus, createdAt, member), and the number of entries matches the number of status changes performed.
+ *
+ * 1. Member registers and authenticates to obtain access token.
+ * 2. Member creates a project to contain the task.
+ * 3. Member creates a task within the project with initial status 'open'.
+ * 4. Member updates task status from 'open' to 'in-progress' to generate first history entry.
+ * 5. Member updates task status from 'in-progress' to 'completed' to generate second history entry.
+ * 6. Member queries task history endpoint to retrieve all status change records.
+ * 7. Validates history entries are in correct order, contain accurate transition data, and match expected count.
+ */
 export async function test_api_task_history_retrieval_with_status_transitions(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Authenticate as member
+  // 1. Member authentication
   const memberConnection: api.IConnection = { host: connection.host };
   const memberAuth = await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: "TestPassword123!",
-      display_name: RandomGenerator.name(),
+      password: "TestPass123",
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
     } satisfies IHrmPlatformMember.IJoin,
   });
   typia.assert(memberAuth);
-  // 2. Create organization
-  const organization =
-    await generate_random_hrm_platform_member_organizations_create(
-      memberConnection,
-      {
-        body: {
-          name: RandomGenerator.paragraph({ sentences: 2 }),
-          currency: "USD",
-          timezone: "Asia/Seoul",
-          fiscal_start_month: 1,
-        } satisfies IHrmPlatformOrganization.ICreate,
-      },
-    );
-  typia.assert(organization);
-  // 3. Create project
+  // 2. Create project
   const project = await generate_random_hrm_platform_member_projects_create(
     memberConnection,
     {
       body: {
         name: RandomGenerator.paragraph({ sentences: 2 }),
-        color_code: "#3498db",
-        status: "active",
-      } satisfies IHrmPlatformProject.ICreate,
+        color: "#FF5733",
+      },
     },
   );
   typia.assert(project);
-  // 4. Create task with initial status "open"
+  // 3. Create task with initial status 'open'
   const task = await generate_random_hrm_platform_member_projects_tasks_create(
     memberConnection,
     {
-      params: {
-        projectId: project.id,
-      },
+      params: { projectId: project.id },
       body: {
         title: RandomGenerator.paragraph({ sentences: 1 }),
-        status: "open",
         priority: "medium",
-      } satisfies IHrmPlatformTask.ICreate,
+        status: "open",
+      },
     },
   );
   typia.assert(task);
-  // 5. Perform multiple status transitions to generate history entries
-  // Transition 1: open → in-progress
+  // 4. Update task status from 'open' to 'in-progress' (first history entry)
   const taskInProgress =
     await api.functional.hrmPlatform.member.projects.tasks.update(
       memberConnection,
@@ -92,12 +87,13 @@ export async function test_api_task_history_retrieval_with_status_transitions(
         projectId: project.id,
         taskId: task.id,
         body: {
+          title: task.title,
           status: "in-progress",
         } satisfies IHrmPlatformTask.IUpdate,
       },
     );
   typia.assert(taskInProgress);
-  // Transition 2: in-progress → completed
+  // 5. Update task status from 'in-progress' to 'completed' (second history entry)
   const taskCompleted =
     await api.functional.hrmPlatform.member.projects.tasks.update(
       memberConnection,
@@ -105,25 +101,13 @@ export async function test_api_task_history_retrieval_with_status_transitions(
         projectId: project.id,
         taskId: task.id,
         body: {
+          title: task.title,
           status: "completed",
         } satisfies IHrmPlatformTask.IUpdate,
       },
     );
   typia.assert(taskCompleted);
-  // Transition 3: completed → closed
-  const taskClosed =
-    await api.functional.hrmPlatform.member.projects.tasks.update(
-      memberConnection,
-      {
-        projectId: project.id,
-        taskId: task.id,
-        body: {
-          status: "closed",
-        } satisfies IHrmPlatformTask.IUpdate,
-      },
-    );
-  typia.assert(taskClosed);
-  // 6. Retrieve task history list
+  // 6. Query task history endpoint
   const historyResponse =
     await api.functional.hrmPlatform.member.projects.tasks.histories.index(
       memberConnection,
@@ -131,54 +115,74 @@ export async function test_api_task_history_retrieval_with_status_transitions(
         projectId: project.id,
         taskId: task.id,
         body: {
-          sort: "created_at_desc",
           page: 1,
           limit: 20,
+          sort: "created_at",
+          order: "desc",
         } satisfies IHrmPlatformTaskHistory.IRequest,
       },
     );
   typia.assert(historyResponse);
-  // 7. Validate business logic - history entries count
+  // 7. Validate pagination metadata
+  TestValidator.equals("current page", historyResponse.pagination.current, 1);
+  TestValidator.equals("total records", historyResponse.pagination.records, 2);
+  TestValidator.equals("total pages", historyResponse.pagination.pages, 1);
+  // 8. Validate history entries count
+  TestValidator.equals("history entries count", historyResponse.data.length, 2);
+  // 9. Validate history entries are in chronological order (newest first)
+  const firstEntry = historyResponse.data[0];
+  const secondEntry = historyResponse.data[1];
   TestValidator.predicate(
-    "has history entries",
-    historyResponse.data.length >= 3,
+    "newest entry first",
+    () =>
+      new Date(firstEntry.createdAt).getTime() >=
+      new Date(secondEntry.createdAt).getTime(),
+  );
+  // 10. Validate first entry (in-progress → completed)
+  TestValidator.equals(
+    "first entry newStatus",
+    firstEntry.newStatus,
+    "completed",
   );
   TestValidator.equals(
-    "pagination current page",
-    historyResponse.pagination.current,
-    1,
+    "first entry oldStatus",
+    firstEntry.oldStatus,
+    "in-progress",
   );
-  TestValidator.predicate(
-    "pagination limit valid",
-    historyResponse.pagination.limit >= 3,
+  TestValidator.equals(
+    "first entry member id",
+    firstEntry.member.id,
+    memberAuth.id,
   );
-  // Validate status transitions are in correct order (newest first)
-  if (historyResponse.data.length >= 3) {
-    const transitions = historyResponse.data.map((h) => h.new_status);
+  // 11. Validate second entry (open → in-progress)
+  TestValidator.equals(
+    "second entry newStatus",
+    secondEntry.newStatus,
+    "in-progress",
+  );
+  TestValidator.equals("second entry oldStatus", secondEntry.oldStatus, "open");
+  TestValidator.equals(
+    "second entry member id",
+    secondEntry.member.id,
+    memberAuth.id,
+  );
+  // 12. Validate each history entry has required fields
+  historyResponse.data.forEach((entry, index) => {
     TestValidator.predicate(
-      "latest status is closed",
-      transitions[0] === "closed",
+      `entry ${index + 1} has id`,
+      () => entry.id !== undefined,
     );
     TestValidator.predicate(
-      "second latest is completed",
-      transitions[1] === "completed",
+      `entry ${index + 1} has createdAt`,
+      () => entry.createdAt !== undefined,
     );
     TestValidator.predicate(
-      "third latest is in-progress",
-      transitions[2] === "in-progress",
+      `entry ${index + 1} has member`,
+      () => entry.member !== undefined,
     );
-  }
-  // Validate actor information matches authenticated member
-  for (const history of historyResponse.data) {
-    TestValidator.equals(
-      "actor id matches member",
-      history.actor.id,
-      memberAuth.id,
+    TestValidator.predicate(
+      `entry ${index + 1} member has email`,
+      () => entry.member.email !== undefined,
     );
-    TestValidator.equals(
-      "actor display_name matches",
-      history.actor.display_name,
-      memberAuth.display_name,
-    );
-  }
+  });
 }

@@ -1,0 +1,303 @@
+/// Administrator profiles with grade levels extending base member accounts.
+///
+/// Each administrator is linked to exactly one base member account,
+/// establishing a 1:1 relationship. The grade field distinguishes between
+/// regular administrators and super administrators, determining their
+/// permission levels within the platform.
+///
+/// The grade system enables hierarchical administration: super
+/// administrators can promote regular administrators to super administrator
+/// status and demote other super administrators to regular administrator.
+/// However, super administrators cannot demote themselves, preventing
+/// privilege escalation vulnerabilities.
+///
+/// Administrators are created through the admin promotion request workflow
+/// ({@link shopping_mall_admin_promotion_requests}), where users submit
+/// requests and super administrators review and approve them. When an
+/// administrator is removed (demoted or banned), soft delete is used to
+/// preserve audit trails while preventing login access.
+///
+/// Related tables: {@link shopping_mall_members} (base account), {@link
+/// shopping_mall_admin_promotion_requests} (promotion workflow), {@link
+/// shopping_mall_admin_sessions} (authentication sessions).
+///
+/// @namespace administrator
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the base member account that this administrator profile
+  /// extends.
+  ///
+  /// Each administrator must have exactly one base member account for
+  /// authentication. This creates a 1:1 relationship where the member account
+  /// handles login credentials and the administrator profile stores
+  /// grade-level permissions. When the administrator profile is deleted (soft
+  /// delete), the member account remains but loses administrator privileges.
+  shopping_mall_member_id String
+  
+  /// Administrator grade level determining permission scope.
+  ///
+  /// Two grade levels exist: 'regular' for standard administrators who can
+  /// manage seller approvals, categories, products, orders, and users; and
+  /// 'super' for super administrators who have elevated privileges including
+  /// promoting/demoting other administrators and approving admin promotion
+  /// requests. Super administrators cannot demote themselves to prevent
+  /// privilege loss.
+  grade String
+  
+  /// Timestamp when this administrator profile was created.
+  created_at DateTime
+  
+  /// Timestamp when this administrator profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this administrator profile was soft deleted (null if
+  /// active). Used when administrators are demoted or banned while preserving
+  /// the base member account and audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member shopping_mall_members @relation(fields: [shopping_mall_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([shopping_mall_member_id])
+  @@index([grade])
+}
+
+/// Administrator promotion requests submitted by members or sellers to
+/// become regular administrators.
+///
+/// This table tracks the workflow for users requesting administrator
+/// privileges. Any member or seller can submit a request with their reason
+/// for wanting to become an administrator. Super administrators review these
+/// requests and can approve or reject them.
+///
+/// The actor_type field distinguishes between member and seller applicants.
+/// The actual foreign key relationship to the applicant is established
+/// through subtype tables (shopping_mall_admin_promotion_request_of_members
+/// or shopping_mall_admin_promotion_request_of_sellers) following the
+/// polymorphic ownership pattern from Section 2.4.
+///
+/// Status progresses from pending to approved or rejected. When approved,
+/// the applicant becomes a regular administrator in the {@link
+/// shopping_mall_admins} table. Rejected requests include reviewer notes
+/// explaining the decision.
+///
+/// @namespace administrator
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_promotion_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Super administrator who reviewed and decided on this promotion request.
+  ///
+  /// This FK is nullable because the request may be pending review. Once a
+  /// super administrator reviews the request, this field is populated with
+  /// their ID from {@link shopping_mall_super_admins}.
+  reviewed_by_super_admin_id String?
+  
+  /// Type of actor submitting the promotion request.
+  ///
+  /// Distinguishes between member and seller applicants. Valid values are
+  /// 'member' or 'seller'. This field enables polymorphic association with the
+  /// appropriate subtype table.
+  actor_type String
+  
+  /// Applicant's reason for requesting administrator privileges.
+  ///
+  /// Text explanation provided by the member or seller explaining why they
+  /// want to become an administrator. This helps super administrators evaluate
+  /// the request.
+  reason String
+  
+  /// Current status of the promotion request.
+  ///
+  /// Valid values: pending (awaiting review), approved (applicant promoted to
+  /// admin), rejected (request denied). Status transitions: pending → approved
+  /// or pending → rejected.
+  status String
+  
+  /// Optional explanation provided by super administrator when rejecting a
+  /// request.
+  ///
+  /// Populated only when status is 'rejected'. Helps the applicant understand
+  /// why their request was denied and what they might improve for future
+  /// requests.
+  rejection_note String?
+  
+  /// Timestamp when the promotion request was submitted.
+  created_at DateTime
+  
+  /// Timestamp when the promotion request was last modified (e.g., status
+  /// changed).
+  updated_at DateTime
+  
+  /// Timestamp for soft delete. Promotion requests are typically not deleted
+  /// to maintain audit trail.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  reviewer shopping_mall_super_admins? @relation(fields: [reviewed_by_super_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  memberApplicant shopping_mall_admin_promotion_request_of_members?
+  sellerApplicant shopping_mall_admin_promotion_request_of_sellers?
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reviewed_by_super_admin_id], map: "shopping_mall_admin_promotion_requests_reviewed_by_sup_9dab511c")
+  @@index([actor_type, status])
+  @@index([status, created_at])
+}
+
+/// Subtype table linking administrator promotion requests to member
+/// applicants with unique 1:1 constraint on promotion request foreign key.
+///
+/// This table implements the polymorphic ownership pattern for {@link
+/// shopping_mall_admin_promotion_requests}, allowing promotion requests to
+/// originate from either members or sellers. Each record represents a
+/// member's application to become an administrator, with the unique
+/// constraint ensuring exactly one subtype record per promotion request.
+///
+/// The table maintains referential integrity to both the promotion request
+/// and the member applicant, enabling proper workflow tracking and audit
+/// trails for administrator promotion processes.
+///
+/// @namespace administrator
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_promotion_request_of_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the parent {@link shopping_mall_admin_promotion_requests}
+  /// record with 1:1 relationship.
+  ///
+  /// This unique foreign key ensures each promotion request has exactly one
+  /// subtype record (either member or seller). The uniqueness constraint
+  /// enforces the polymorphic ownership pattern where a promotion request
+  /// belongs to exactly one applicant type.
+  shopping_mall_admin_promotion_request_id String
+  
+  /// References the {@link shopping_mall_members} account of the member
+  /// applying for administrator promotion.
+  ///
+  /// This foreign key identifies which member submitted the promotion request,
+  /// enabling authentication and profile lookups during the approval workflow.
+  shopping_mall_member_id String
+  
+  /// Timestamp when this subtype record was created.
+  created_at DateTime
+  
+  /// Timestamp when this subtype record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion, null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  promotionRequest shopping_mall_admin_promotion_requests @relation(fields: [shopping_mall_admin_promotion_request_id], references: [id], onDelete: Cascade)
+  member shopping_mall_members @relation(fields: [shopping_mall_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_admin_promotion_request_id], map: "shopping_mall_admin_promotion_request_of_members_shopp_c07e967c")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_member_id, created_at], map: "shopping_mall_admin_promotion_request_of_members_shopp_27e23490")
+}
+
+/// Subtype table linking administrator promotion requests to seller applicants.
+///
+/// This table implements the polymorphic ownership pattern for admin
+/// promotion requests, allowing sellers to apply for administrator status.
+/// Each record represents exactly one seller's promotion request with a 1:1
+/// relationship to the parent {@link shopping_mall_admin_promotion_requests}
+/// table.
+///
+/// The unique constraint on shopping_mall_admin_promotion_request_id ensures
+/// each promotion request is associated with exactly one applicant type
+/// (either member or seller, not both).
+///
+/// @namespace administrator
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_admin_promotion_request_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the parent admin promotion request.
+  ///
+  /// This foreign key establishes a 1:1 relationship with {@link
+  /// shopping_mall_admin_promotion_requests}. The unique constraint ensures
+  /// each promotion request has exactly one applicant subtype (either member
+  /// or seller).
+  shopping_mall_admin_promotion_request_id String
+  
+  /// References the seller who submitted the promotion request.
+  ///
+  /// This foreign key links to {@link shopping_mall_sellers} identifying the
+  /// applicant. The seller must exist and be in good standing to submit a
+  /// promotion request.
+  shopping_mall_seller_id String
+  
+  /// Timestamp when the subtype record was created.
+  ///
+  /// Automatically set when the promotion request is submitted by the seller.
+  created_at DateTime
+  
+  /// Timestamp when the subtype record was last updated.
+  ///
+  /// Updated whenever the record is modified.
+  updated_at DateTime
+  
+  /// Timestamp when the subtype record was soft deleted.
+  ///
+  /// Null while active. Set when the record is soft deleted for audit trail
+  /// preservation.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  promotionRequest shopping_mall_admin_promotion_requests @relation(fields: [shopping_mall_admin_promotion_request_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [shopping_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_admin_promotion_request_id], map: "shopping_mall_admin_promotion_request_of_sellers_shopp_775f6688")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_id, created_at], map: "shopping_mall_admin_promotion_request_of_sellers_shopp_c8da18a2")
+}

@@ -1,8 +1,17 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallCustomerAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerAddress";
+import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
 import { IShoppingMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallReview";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -11,6 +20,7 @@ import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { ShoppingMallCustomerAtSummaryTransformer } from "./ShoppingMallCustomerAtSummaryTransformer";
 import { ShoppingMallOrderItemAtSummaryTransformer } from "./ShoppingMallOrderItemAtSummaryTransformer";
+import { ShoppingMallProductAtSummaryTransformer } from "./ShoppingMallProductAtSummaryTransformer";
 
 export namespace ShoppingMallReviewTransformer {
   export type Payload = Prisma.shopping_mall_reviewsGetPayload<
@@ -25,8 +35,9 @@ export namespace ShoppingMallReviewTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        orderItem: ShoppingMallOrderItemAtSummaryTransformer.select(),
         customer: ShoppingMallCustomerAtSummaryTransformer.select(),
+        product: ShoppingMallProductAtSummaryTransformer.select(),
+        orderItem: ShoppingMallOrderItemAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_reviewsFindManyArgs;
   }
@@ -35,17 +46,60 @@ export namespace ShoppingMallReviewTransformer {
   ): Promise<IShoppingMallReview> {
     return {
       id: input.id,
-      orderItem: await ShoppingMallOrderItemAtSummaryTransformer.transform(
-        input.orderItem,
-      ),
-      customer: await ShoppingMallCustomerAtSummaryTransformer.transform(
-        input.customer,
-      ),
       rating: input.rating,
-      content: input.content ?? null,
+      content: input.content,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
+      customer: await ShoppingMallCustomerAtSummaryTransformer.transform(
+        input.customer,
+      ),
+      product: await ShoppingMallProductAtSummaryTransformer.transform(
+        input.product,
+      ),
+      orderItem: await ShoppingMallOrderItemAtSummaryTransformer.transform(
+        input.orderItem,
+      ),
     };
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace ShoppingMallReviewTransformer {
+//       export type Payload = Prisma.shopping_mall_reviewsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             rating: true,
+//             content: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//             customer: ShoppingMallCustomerAtSummaryTransformer.select(),
+//             product: ShoppingMallProductAtSummaryTransformer.select(),
+//             orderItem: ShoppingMallOrderItemAtSummaryTransformer.select(),
+//           },
+//         } satisfies Prisma.shopping_mall_reviewsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IShoppingMallReview> {
+//         return {
+//   id: {string},
+//   rating: {integer},
+//   content: {string | null},
+//   created_at: {string},
+//   updated_at: {string},
+//   deleted_at: {string | null},
+//   customer: await ShoppingMallCustomerAtSummaryTransformer.transform(input.customer),
+//   product: await ShoppingMallProductAtSummaryTransformer.transform(input.product),
+//   orderItem: await ShoppingMallOrderItemAtSummaryTransformer.transform(input.orderItem),
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

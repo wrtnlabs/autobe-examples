@@ -1,6 +1,6 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import type { IEcommerceCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCustomer";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -11,10 +11,10 @@ import typia, { tags } from "typia";
 export async function authorize_customer_refresh(
   connection: api.IConnection,
   props: {
-    body: IEcommerceMallCustomer.IRefresh;
+    body: IEcommerceCustomer.IRefresh;
   },
-): Promise<IEcommerceMallCustomer.IAuthorized> {
-  return await api.functional.ecommerceMall.auth.customer.refresh(connection, {
+): Promise<IEcommerceCustomer.IAuthorized> {
+  return await api.functional.ecommerce.auth.customer.refresh(connection, {
     body: props.body,
   });
 }

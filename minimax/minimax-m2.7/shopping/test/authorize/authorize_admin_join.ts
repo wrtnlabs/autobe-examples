@@ -15,17 +15,23 @@ export async function authorize_admin_join(
   },
 ): Promise<IEcommerceMallAdmin.IAuthorized> {
   const joinInput = {
-    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
-    password:
-      props.body?.password ??
-      (RandomGenerator.alphaNumeric(16) as string & tags.Format<"password">),
-    name: props.body?.name ?? RandomGenerator.name(),
+    actorType:
+      props.body?.actorType ??
+      RandomGenerator.pick(["customer", "seller"] as const),
+    requestedGrade:
+      props.body?.requestedGrade ??
+      RandomGenerator.pick(["admin", "super_admin"] as const),
+    reason:
+      props.body?.reason ??
+      RandomGenerator.paragraph({ sentences: 5, wordMin: 3, wordMax: 8 }),
     href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
     referrer:
       props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
-    ip: props.body?.ip,
   } satisfies IEcommerceMallAdmin.IJoin;
-  return await api.functional.ecommerceMall.auth.admin.join(connection, {
-    body: joinInput,
-  });
+  return await api.functional.ecommerceMall.auth.admin.request.join(
+    connection,
+    {
+      body: joinInput,
+    },
+  );
 }

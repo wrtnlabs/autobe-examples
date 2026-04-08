@@ -4,6 +4,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
 import type { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
 import type { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
+import type { IHrmPlatformUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformUserProfile";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -13,85 +14,80 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_hrm_platform_member_departments_create } from "../../../generate/generate_random_hrm_platform_member_departments_create";
+import { generate_random_hrm_platform_member_organizations_create } from "../../../generate/generate_random_hrm_platform_member_organizations_create";
+import { generate_random_hrm_platform_member_organizations_departments_create } from "../../../generate/generate_random_hrm_platform_member_organizations_departments_create";
 import { prepare_random_hrm_platform_department } from "../../../prepare/prepare_random_hrm_platform_department";
+import { prepare_random_hrm_platform_organization } from "../../../prepare/prepare_random_hrm_platform_organization";
 
 /**
  * Test creating a top-level department within an organization.
  *
- * This test validates the primary success path for department creation:
- * 1. Authenticate as a member with org:manage permission
- * 2. Create a top-level department (no parent) with required name and optional description
- * 3. Verify response contains complete department object with all required fields
- * 4. Verify parentDepartment is null for top-level department
- * 5. Verify department name uniqueness constraint (duplicate should fail)
+ * Validates the complete department creation flow including member authentication, organization setup, and top-level department creation without a parent department. Ensures that the department is created successfully with all fields populated correctly including id, name, description (null), parentDepartment (null), and timestamps.
+ *
+ * Special attention is given to verifying that the parentDepartment field is null for top-level departments and that the department name is unique within the organization context.
+ *
+ * 1. Member joins with email and password credentials.
+ * 2. Member creates an organization with name, currency, timezone, and fiscal start month.
+ * 3. Member creates a top-level department within the organization (no parentDepartmentId).
+ * 4. Validate department response structure including id, name, description as null, parentDepartment as null, and timestamps.
+ * 5. Verify the department name matches the input and all required fields are present.
  */
 export async function test_api_department_creation_top_level(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Authenticate as member
+  // 1. Member authentication
   const memberConnection: api.IConnection = { host: connection.host };
-  const memberAuth = await authorize_member_join(memberConnection, {
+  const member = await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: "TestPassword123!",
-      display_name: RandomGenerator.name(),
+      password: RandomGenerator.alphaNumeric(16),
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
     } satisfies IHrmPlatformMember.IJoin,
   });
-  typia.assert(memberAuth);
-  // 2. Create top-level department with required name and optional description
+  typia.assert(member);
+  // 2. Create organization
+  const organization =
+    await generate_random_hrm_platform_member_organizations_create(
+      memberConnection,
+      {
+        body: {
+          name: RandomGenerator.name(),
+          currency: "USD",
+          timezone: "Asia/Seoul",
+          fiscal_start_month: 1,
+        } satisfies IHrmPlatformOrganization.ICreate,
+      },
+    );
+  typia.assert(organization);
+  // 3. Create top-level department (no parent)
   const departmentName = RandomGenerator.paragraph({ sentences: 1 });
-  const departmentDescription = RandomGenerator.content({ paragraphs: 1 });
   const department =
-    await generate_random_hrm_platform_member_departments_create(
+    await generate_random_hrm_platform_member_organizations_departments_create(
       memberConnection,
       {
         body: {
           name: departmentName,
-          description: departmentDescription,
-          parent_department_id: null,
+          description: null,
+          parentDepartmentId: null,
         } satisfies IHrmPlatformDepartment.ICreate,
+        params: {
+          organizationId: organization.id,
+        },
       },
     );
   typia.assert(department);
-  // 3. Verify business logic - name and description match input
+  // 4. Validate department structure
   TestValidator.equals(
     "department name matches",
     department.name,
     departmentName,
   );
+  TestValidator.equals("description is null", department.description, null);
   TestValidator.equals(
-    "department description matches",
-    department.description,
-    departmentDescription,
-  );
-  // 4. Verify top-level department has null parentDepartment
-  TestValidator.equals(
-    "parentDepartment is null for top-level",
+    "parentDepartment is null",
     department.parentDepartment,
     null,
   );
-  // 5. Verify active department has null deleted_at
-  TestValidator.equals(
-    "deleted_at is null for active department",
-    department.deleted_at,
-    null,
-  );
-  // 6. Verify department name uniqueness - duplicate should fail
-  await TestValidator.error(
-    "duplicate department name should fail",
-    async () => {
-      await api.functional.hrmPlatform.member.departments.create(
-        memberConnection,
-        {
-          body: {
-            name: departmentName,
-            description: RandomGenerator.content({ paragraphs: 1 }),
-          } satisfies IHrmPlatformDepartment.ICreate,
-        },
-      );
-    },
-  );
+  TestValidator.equals("deletedAt is null", department.deletedAt, null);
 }

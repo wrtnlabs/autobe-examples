@@ -16,83 +16,74 @@ export async function deleteRedditCommunityMemberPostsPostIdCommentsCommentId(pr
   postId: string & tags.Format<"uuid">;
   commentId: string & tags.Format<"uuid">;
 }): Promise<void> {
+  // 1. Verify comment exists and is not deleted
   const comment =
     await MyGlobal.prisma.reddit_community_comments.findUniqueOrThrow({
-      where: { id: props.commentId },
-      select: {
-        id: true,
-        reddit_community_member_id: true,
-        reddit_community_post_id: true,
-        deleted_at: true,
-        post: {
-          select: {
-            reddit_community_community_id: true,
-          },
-        },
+      where: {
+        id: props.commentId,
+        deleted_at: null,
       },
     });
-  if (comment.deleted_at !== null) {
-    throw new HttpException("Comment already deleted", 404);
-  }
-  if (comment.reddit_community_post_id !== props.postId) {
-    throw new HttpException("Comment not found in this post", 404);
-  }
+  // 2. Verify post exists, is not deleted, and matches postId
+  const post = await MyGlobal.prisma.reddit_community_posts.findUniqueOrThrow({
+    where: {
+      id: props.postId,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      reddit_community_community_id: true,
+    },
+  });
+  // 3. Check authorization: comment author OR community moderator
   const isAuthor = comment.reddit_community_member_id === props.member.id;
   let isModerator = false;
-  let isOwner = false;
   if (!isAuthor) {
     const moderator =
       await MyGlobal.prisma.reddit_community_moderators.findFirst({
         where: {
-          community_id: comment.post.reddit_community_community_id,
-          member_id: props.member.id,
+          reddit_community_member_id: props.member.id,
+          reddit_community_community_id: post.reddit_community_community_id,
           deleted_at: null,
         },
       });
     isModerator = moderator !== null;
-    if (!isModerator) {
-      const community =
-        await MyGlobal.prisma.reddit_community_communities.findUniqueOrThrow({
-          where: { id: comment.post.reddit_community_community_id },
-          select: { reddit_community_member_id: true },
-        });
-      isOwner = community.reddit_community_member_id === props.member.id;
-    }
   }
-  if (!isAuthor && !isModerator && !isOwner) {
+  if (!isAuthor && !isModerator) {
     throw new HttpException("Forbidden", 403);
   }
-  const now = new Date();
-  await MyGlobal.prisma.reddit_community_comments.update({
-    where: { id: props.commentId },
-    data: {
-      deleted_at: now,
-      updated_at: now,
-    },
-  });
-  async function deleteReplies(parentId: string): Promise<void> {
+  // 4. Soft delete the comment and all nested replies
+  async function cascadeDeleteReplies(parentCommentId: string): Promise<void> {
     const replies = await MyGlobal.prisma.reddit_community_comments.findMany({
       where: {
-        parent_comment_id: parentId,
+        reddit_community_comment_id: parentCommentId,
         deleted_at: null,
       },
-      select: { id: true },
+      select: {
+        id: true,
+      },
     });
-    if (replies.length > 0) {
-      await MyGlobal.prisma.reddit_community_comments.updateMany({
+    for (const reply of replies) {
+      await MyGlobal.prisma.reddit_community_comments.update({
         where: {
-          parent_comment_id: parentId,
-          deleted_at: null,
+          id: reply.id,
         },
         data: {
-          deleted_at: now,
-          updated_at: now,
+          deleted_at: toISOStringSafe(new Date()),
         },
       });
-      for (const reply of replies) {
-        await deleteReplies(reply.id);
-      }
+      await cascadeDeleteReplies(reply.id);
     }
   }
-  await deleteReplies(props.commentId);
+  // Delete the target comment
+  await MyGlobal.prisma.reddit_community_comments.update({
+    where: {
+      id: props.commentId,
+    },
+    data: {
+      deleted_at: toISOStringSafe(new Date()),
+    },
+  });
+  // Cascade delete to all nested replies
+  await cascadeDeleteReplies(props.commentId);
 }

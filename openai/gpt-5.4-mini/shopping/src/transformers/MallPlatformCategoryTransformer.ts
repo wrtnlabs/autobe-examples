@@ -13,44 +13,76 @@ export namespace MallPlatformCategoryTransformer {
   export type Payload = Prisma.mall_platform_categoriesGetPayload<
     ReturnType<typeof select>
   >;
-  export async function transform(
-    input: Payload,
-  ): Promise<IMallPlatformCategory> {
-    return {
-      id: input.id,
-      name: input.name,
-      description: input.description,
-      created_at: toISOStringSafe(input.created_at),
-      updated_at: toISOStringSafe(input.updated_at),
-      deleted_at:
-        input.deleted_at !== null ? toISOStringSafe(input.deleted_at) : null,
-      parentCategory: input.parentCategory
-        ? await MallPlatformCategoryAtSummaryTransformer.transform(
-            input.parentCategory,
-          )
-        : null,
-      subcategories: await ArrayUtil.asyncMap(
-        input.subcategories,
-        async (item) =>
-          MallPlatformCategoryAtSummaryTransformer.transform(item),
-      ),
-    };
-  }
   export function select() {
     return {
       select: {
         id: true,
+        parentCategory: MallPlatformCategoryAtSummaryTransformer.select(),
         name: true,
         description: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        parentCategory: MallPlatformCategoryAtSummaryTransformer.select(),
-        products: { select: { id: true } },
-        subcategories: {
-          select: MallPlatformCategoryAtSummaryTransformer.select().select,
-        },
+        products: true,
+        subcategories: MallPlatformCategoryAtSummaryTransformer.select(),
       },
     } satisfies Prisma.mall_platform_categoriesFindManyArgs;
   }
+  export async function transform(
+    input: Payload,
+  ): Promise<IMallPlatformCategory> {
+    return {
+      id: input.id,
+      parentCategory: input.parentCategory
+        ? await MallPlatformCategoryAtSummaryTransformer.transform(
+            input.parentCategory,
+          )
+        : null,
+      name: input.name,
+      description: input.description,
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
+      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      subcategories: await ArrayUtil.asyncMap(input.subcategories, (item) =>
+        MallPlatformCategoryAtSummaryTransformer.transform(item),
+      ),
+    } satisfies IMallPlatformCategory;
+  }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace MallPlatformCategoryTransformer {
+//       export type Payload = Prisma.mall_platform_categoriesGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             name: true,
+//             description: true,
+//             createdAt: true,
+//             updatedAt: true,
+//             deletedAt: true,
+//             ...
+//           },
+//         } satisfies Prisma.mall_platform_categoriesFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IMallPlatformCategory> {
+//         return {
+//   id: {string},
+//   parentCategory: {IMallPlatformCategory.ISummary | null},
+//   name: {string},
+//   description: {string},
+//   createdAt: {string},
+//   updatedAt: {string},
+//   deletedAt: {string | null},
+//   subcategories: {Array<IMallPlatformCategory.ISummary>},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

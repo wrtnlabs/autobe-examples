@@ -4,76 +4,60 @@ import {
   NestiaSimulator,
   PlainFetcher,
 } from "@nestia/fetcher";
-import typia from "typia";
+import typia, { tags } from "typia";
 
 import { IEcommerceMallProduct } from "../../../structures/IEcommerceMallProduct";
 import { IPageIEcommerceMallProduct } from "../../../structures/IPageIEcommerceMallProduct";
 
-export * as images from "./images/index";
-export * as variants from "./variants/index";
-export * as reviews from "./reviews/index";
-
 /**
- * Search and discover products in the marketplace with advanced filtering capabilities.
+ * Retrieve a filtered and paginated list of products from the marketplace.
  *
- * This endpoint allows customers to search for products by entering keywords in the search field. Search results display products from all sellers on the platform. The operation supports comprehensive filtering including category filtering, price range filtering, and stock availability filtering.
+ * This operation supports comprehensive search and filtering capabilities including full-text search on product name and description, category filtering, price range filtering, and stock availability checks. Results are paginated and can be sorted by newest, price ascending, or price descending.
  *
- * Sorting options are provided to help customers find products according to their preferences: newest first, price from low to high, or price from high to low.
+ * Only active (non-deleted) products are returned. Products are joined with their category for category name display, with their seller profile for shop name, and include thumbnail images, price ranges, stock availability, and average ratings for each product summary.
  *
- * The response returns paginated results with essential product information for the discovery process including the main product image as thumbnail, product name, price range (when variants have different prices), the shop name of the seller who created the product, and the average rating from customer reviews.
- *
- * Only products with complete required information (name, description, category, base price) and at least one variant with stock appear as purchasable items in search results. Products that have been deleted by their sellers are not shown in search results.
- *
- * This operation is accessible to all users including guests who can browse and discover products before registering or logging in.
+ * This endpoint is accessible to all users including guests, customers, and sellers for product discovery purposes.
  *
  * @param props.connection
- * @param props.body Search criteria including text query, filters, sorting options, and pagination parameters.
+ * @param props.body Search criteria, filters, and pagination parameters for product listing
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor null
- * @x-autobe-specification Implement product search with the following logic:
+ * @x-autobe-specification Query the ecommerce_mall_products table with filtering and pagination.
  *
- * 1. **Base Query**: Query the ecommerce_mall_products table filtering for products where deleted_at IS NULL (only active products appear in search).
+ * Filter criteria (all optional):
+ * - searchTerm: Apply ILIKE '%term%' on name and description fields
+ * - categoryId: Filter by ecommerce_mall_category_id
+ * - minPrice: Filter base_price >= value
+ * - maxPrice: Filter base_price <= value
+ * - inStock: If true, filter products that have at least one variant with quantity > 0; if false, include all
  *
- * 2. **Text Search**: When search query (q) is provided, perform partial name matching using case-insensitive search on the product name field. The database has GIN index on name for efficient trigram matching.
+ * Join ecommerce_mall_categories for category name in response.
+ * Left join ecommerce_mall_product_images and filter by display_order = 0 for thumbnail.
+ * Left join ecommerce_mall_product_variants to compute min_variant_price and max_variant_price.
  *
- * 3. **Category Filter**: When categoryId is provided, filter products belonging to that category. Additionally, include products from all subcategories of the specified category.
+ * Always filter by deleted_at IS NULL (only active products).
  *
- * 4. **Price Range Filter**: When minPrice is provided, filter products where base_price >= minPrice. When maxPrice is provided, filter products where base_price <= maxPrice.
+ * Sorting:
+ * - sort = 'newest' (default): ORDER BY created_at DESC
+ * - sort = 'price_asc': ORDER BY base_price ASC
+ * - sort = 'price_desc': ORDER BY base_price DESC
  *
- * 5. **Stock Availability Filter**: When inStock is true, filter products that have at least one variant with quantity > 0 and deleted_at IS NULL.
+ * Pagination:
+ * - page: defaults to 1
+ * - limit: defaults to 20, max 100
+ * - Return total count for pagination metadata
  *
- * 6. **Sorting Options**:
- *    - newest: Order by created_at DESC
- *    - price_asc: Order by base_price ASC
- *    - price_desc: Order by base_price DESC
- *    - Default: Order by created_at DESC
- *
- * 7. **Join Requirements**:
- *    - Join with ecommerce_mall_sellers and ecommerce_mall_seller_profiles to get seller shop name
- *    - Join with ecommerce_mall_product_images to get the main image (display_order = 0)
- *    - Left join with ecommerce_mall_reviews to calculate average rating
- *
- * 8. **Response Construction**:
- *    - For price range: Find min and max price from all active variants (deleted_at IS NULL)
- *    - Calculate average rating from reviews (rating field)
- *    - Count total reviews per product
- *
- * 9. **Pagination**: Apply offset-based pagination with page and limit parameters. Default limit is 20, maximum is 100.
- *
- * 10. **Performance Considerations**:
- *     - Use the existing GIN index on name field for text search
- *     - Use composite indexes on category_id and seller_id
- *     - Consider caching frequently searched categories
- * @path /ecommerceMall/products/search
- * @accessor api.functional.ecommerceMall.products.search
+ * Return product summaries with: id, name, base_price, category_name, thumbnail_url, min_variant_price, max_variant_price, has_stock.
+ * @path /ecommerceMall/products
+ * @accessor api.functional.ecommerceMall.products.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function search(
+export async function index(
   connection: IConnection,
-  props: search.Props,
-): Promise<search.Response> {
+  props: index.Props,
+): Promise<index.Response> {
   return true === connection.simulate
-    ? search.simulate(connection, props)
+    ? index.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -83,17 +67,17 @@ export async function search(
           },
         },
         {
-          ...search.METADATA,
-          path: search.path(),
+          ...index.METADATA,
+          path: index.path(),
           status: null,
         },
         props.body,
       );
 }
-export namespace search {
+export namespace index {
   export type Props = {
     /**
-     * Search criteria including text query, filters, sorting options, and pagination parameters.
+     * Search criteria, filters, and pagination parameters for product listing
      */
     body: IEcommerceMallProduct.IRequest;
   };
@@ -102,7 +86,7 @@ export namespace search {
 
   export const METADATA = {
     method: "PATCH",
-    path: "/ecommerceMall/products/search",
+    path: "/ecommerceMall/products",
     request: {
       type: "application/json",
       encrypted: false,
@@ -113,21 +97,128 @@ export namespace search {
     },
   } as const;
 
-  export const path = () => "/ecommerceMall/products/search";
+  export const path = () => "/ecommerceMall/products";
   export const random = (): IPageIEcommerceMallProduct.ISummary =>
     typia.random<IPageIEcommerceMallProduct.ISummary>();
   export const simulate = (
     connection: IConnection,
-    props: search.Props,
+    props: index.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: search.path(),
+      path: index.path(),
       contentType: "application/json",
     });
     try {
       assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve complete product details by product identifier.
+ *
+ * This endpoint returns a single product with all associated information including the seller profile, product images ordered by display order, all active variants with their option key-value pairs, and product reviews ordered by newest first.
+ *
+ * The product detail page displays the full product information including name, description, base price, category, seller shop name and logo, all product images for gallery display, all variant options with individual prices and stock quantities, and customer reviews with ratings.
+ *
+ * Only active products (not soft-deleted) are accessible. Deleted products return 404 Not Found. Products assigned to deleted categories still return their data since the category_id reference is preserved for historical accuracy in orders.
+ *
+ * Variants are returned with their computed prices (variant price if set, otherwise base price) and current stock quantities. Reviews include customer rating and optional text content.
+ *
+ * @param props.connection
+ * @param props.productId Unique identifier of the product to retrieve
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor null
+ * @x-autobe-specification Query ecommerce_mall_products table by id matching the productId path parameter.
+ *
+ * Verify product exists and deleted_at is null. Return 404 if product not found or soft-deleted.
+ *
+ * Join with ecommerce_mall_seller_profiles to retrieve shop name and logo_uri for display.
+ *
+ * Query ecommerce_mall_product_images ordered by display_order ascending. Exclude soft-deleted images.
+ *
+ * Query ecommerce_mall_product_variants where deleted_at is null, ordered by created_at. For each variant, query ecommerce_mall_product_variant_option_values to get key-value pairs.
+ *
+ * Query ecommerce_mall_reviews where deleted_at is null, ordered by created_at descending.
+ *
+ * Compute average rating from reviews for display summary.
+ *
+ * If category_id references a soft-deleted category, still return the product data with category_id intact for historical accuracy.
+ *
+ * Return 404 Not Found if product does not exist or is soft-deleted.
+ *
+ * Return 400 Bad Request if productId format is invalid.
+ * @path /ecommerceMall/products/:productId
+ * @accessor api.functional.ecommerceMall.products.at
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function at(
+  connection: IConnection,
+  props: at.Props,
+): Promise<at.Response> {
+  return true === connection.simulate
+    ? at.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...at.METADATA,
+          path: at.path(props),
+          status: null,
+        },
+      );
+}
+export namespace at {
+  export type Props = {
+    /**
+     * Unique identifier of the product to retrieve
+     */
+    productId: string & tags.Format<"uuid">;
+  };
+  export type Response = IEcommerceMallProduct;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/ecommerceMall/products/:productId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/ecommerceMall/products/${encodeURIComponent(props.productId ?? "null")}`;
+  export const random = (): IEcommerceMallProduct =>
+    typia.random<IEcommerceMallProduct>();
+  export const simulate = (
+    connection: IConnection,
+    props: at.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: at.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("productId")(() => typia.assert(props.productId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

@@ -25,106 +25,77 @@ export async function postErpHrmTimeAuthMemberJoin(props: {
       id: true,
     },
   });
-  if (existing !== null) {
+  if (existing !== null)
     throw new HttpException("Email already registered", 409);
-  }
-  const nowIso: string & tags.Format<"date-time"> = toISOStringSafe(new Date());
-  const accessExpiredAtIso: string & tags.Format<"date-time"> = toISOStringSafe(
-    new Date(new Date(nowIso).getTime() + 60 * 60 * 1000),
-  );
-  const refreshableUntilIso: string & tags.Format<"date-time"> =
-    toISOStringSafe(
-      new Date(new Date(nowIso).getTime() + 7 * 24 * 60 * 60 * 1000),
-    );
-  const memberId: string & tags.Format<"uuid"> = v4();
-  const sessionId: string & tags.Format<"uuid"> = v4();
-  const passwordHash = await PasswordUtil.hash(props.body.password);
-  const saved = await MyGlobal.prisma.$transaction(async (prisma) => {
-    const member = await prisma.erp_hrm_time_members.create({
-      data: {
-        id: memberId,
-        email: props.body.email,
-        password_hash: passwordHash,
-        display_name: props.body.name,
-        avatar_image_url: null,
-        phone_number: null,
-        created_at: new Date(nowIso),
-        updated_at: new Date(nowIso),
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        email: true,
-        display_name: true,
-        avatar_image_url: true,
-        phone_number: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-      },
-    });
-    const session = await prisma.erp_hrm_time_member_sessions.create({
-      data: {
-        id: sessionId,
-        erp_hrm_time_member_id: member.id,
-        ip: props.ip,
-        href: props.body.href,
-        referrer: props.body.referrer,
-        created_at: new Date(nowIso),
-        expired_at: new Date(accessExpiredAtIso),
-      },
-      select: {
-        id: true,
-      },
-    });
-    return {
-      member,
-      session,
-    };
+  const member = await MyGlobal.prisma.erp_hrm_time_members.create({
+    data: {
+      id: v4(),
+      email: props.body.email,
+      password_hash: await PasswordUtil.hash(props.body.password),
+      display_name: props.body.displayName,
+      avatar_image_url: props.body.avatarImageUrl ?? null,
+      phone_number: props.body.phoneNumber ?? null,
+      created_at: toISOStringSafe(new globalThis.Date())
+        ? new globalThis.Date()
+        : new globalThis.Date(),
+      updated_at: toISOStringSafe(new globalThis.Date())
+        ? new globalThis.Date()
+        : new globalThis.Date(),
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      email: true,
+      display_name: true,
+      avatar_image_url: true,
+      phone_number: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+    },
   });
-  const token: IAuthorizationToken = {
-    access: jwt.sign(
-      {
-        type: "member",
-        id: saved.member.id,
-        session_id: saved.session.id,
-        created_at: nowIso,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "1h",
-        issuer: "autobe",
-      },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "member",
-        id: saved.member.id,
-        session_id: saved.session.id,
-        tokenType: "refresh",
-        created_at: nowIso,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      {
-        expiresIn: "7d",
-        issuer: "autobe",
-      },
-    ),
-    expired_at: accessExpiredAtIso,
-    refreshable_until: refreshableUntilIso,
-  };
+  const now = new globalThis.Date();
+  const issuedAt = now.toISOString();
+  const accessExpiredAt = new globalThis.Date(
+    now.getTime() + 60 * 60 * 1000,
+  ).toISOString();
+  const refreshableUntil = new globalThis.Date(
+    now.getTime() + 7 * 24 * 60 * 60 * 1000,
+  ).toISOString();
+  const sessionId = v4();
   return {
-    id: saved.member.id,
-    email: saved.member.email,
-    displayName: saved.member.display_name,
-    avatarImageUrl: saved.member.avatar_image_url,
-    phoneNumber: saved.member.phone_number,
-    createdAt: saved.member.created_at.toISOString(),
-    updatedAt: saved.member.updated_at.toISOString(),
-    deletedAt:
-      saved.member.deleted_at === null
-        ? null
-        : saved.member.deleted_at.toISOString(),
-    token,
+    id: member.id,
+    email: member.email,
+    displayName: member.display_name,
+    avatarImageUrl: member.avatar_image_url,
+    phoneNumber: member.phone_number,
+    createdAt: member.created_at.toISOString(),
+    updatedAt: member.updated_at.toISOString(),
+    deletedAt: member.deleted_at?.toISOString() ?? null,
+    token: {
+      access: jwt.sign(
+        {
+          type: "member",
+          id: member.id,
+          session_id: sessionId,
+          created_at: issuedAt,
+        },
+        MyGlobal.env.JWT_SECRET_KEY,
+        { expiresIn: "1h", issuer: "autobe" },
+      ),
+      refresh: jwt.sign(
+        {
+          type: "member",
+          id: member.id,
+          session_id: sessionId,
+          tokenType: "refresh",
+          created_at: issuedAt,
+        },
+        MyGlobal.env.JWT_SECRET_KEY,
+        { expiresIn: "7d", issuer: "autobe" },
+      ),
+      expired_at: accessExpiredAt,
+      refreshable_until: refreshableUntil,
+    },
   };
 }

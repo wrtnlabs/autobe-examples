@@ -8,596 +8,464 @@ Define all user actor types with their identity, permissions, and access boundar
 
 ## guest Actor
 
-Guests are unauthenticated visitors to the platform who have not yet created an account. The platform requires registration for using any features, meaning guests cannot browse products, view categories, search items, or access any shopping functionality. Guests cannot view product details, access seller profiles, or explore the platform's offerings without an account. The guest role represents a complete access boundary where no platform features are available. Guests must register and log in before they can view any content beyond the registration and login pages. This restriction ensures all platform interactions are traceable to a registered account. The guest actor serves as the entry point that directs all visitors toward creating a customer or seller account.
+The platform does not allow browsing or any feature access without registration. Users must first register as a member before they can view products or interact with the platform. Guests are blocked from searching products, viewing product details, or accessing any platform features. Their access is essentially limited to the registration and login pages only. This restriction ensures that all platform interactions are tied to identifiable accounts for transaction tracking and accountability.
 
-### Guest Access Boundary
+### Unregistered User Access
 
-Guests are unauthenticated visitors who have not created an account on the platform.
+Unregistered users cannot access any platform features or content.
 
-Guests cannot access any shopping features, including product browsing, category navigation, or search functionality.
+The platform requires registration before any interaction is permitted. Users who have not created an account are considered unregistered users and are restricted from viewing products, searching, or browsing the platform.
 
-Guests cannot view product details, including product images, descriptions, prices, variants, or stock information.
+Unregistered users can only access the registration page and the login page. All other platform functionality is blocked until the user registers or logs in with an existing account.
 
-Guests cannot view seller profiles, shop names, or seller ratings.
+If an unregistered user attempts to access any protected page or feature, the system blocks the request and directs them to either the registration page (if they don't have an account) or the login page (if they may have an existing account).
 
-Guests cannot view categories or browse the product catalog.
+### Platform Access Restriction
 
-Guests cannot access wishlists, shopping carts, or order history.
+The platform enforces strict access restrictions on all unregistered users.
 
-Guests cannot place orders or proceed to checkout.
+No browsing or feature access is permitted without a registered account. This restriction applies to all platform functionality including product discovery, shopping, and seller interactions.
 
-Guests cannot view any order information, including order numbers, dates, or statuses.
+Unregistered users cannot:
+- Search for products
+- View product details or images
+- Browse product categories
+- View seller profiles or shops
+- View reviews or ratings
+- Add items to a cart or wishlist
+- Place orders
+- Access order history or tracking
+- Contact sellers or support
 
-The platform access boundary restricts all platform features to registered and authenticated users only.
+The only exceptions are the registration and login pages, which are accessible to anyone without authentication. This restriction ensures all platform interactions are tied to identifiable accounts for transaction tracking, dispute resolution, and accountability.
 
-### Platform Access Restrictions
+### Registration and Login Page Access
 
-Guest visitors must register before accessing any platform content beyond registration and login pages.
+The registration and login pages are the only pages accessible to unregistered users.
 
-No product visibility is allowed for guest users in any form, including search results, category listings, or product detail pages.
+Registration Page Access:
+- Unregistered users can access the registration page to create a new account
+- Registration requires providing an email address and creating a password
+- After successful registration, the user is automatically logged in and gains full platform access
+- Registration is the first step before any platform interaction
 
-Guests cannot access seller profiles or view any seller shop information.
+Login Page Access:
+- Unregistered users can access the login page to sign in with an existing account
+- Login requires providing an email address and password
+- After successful login, the user gains full platform access
+- Users who may have forgotten their registration can use the login page
 
-Guests cannot view reviews, ratings, or customer feedback of any kind.
+If an unregistered user attempts to access any page other than registration or login, they are redirected to one of these two pages based on their intent.
 
-Guests cannot view platform announcements, promotional content, or featured products.
+### No Guest Browsing
 
-Guests cannot access any administrative or seller dashboard functionality.
+The platform does not allow guest browsing in any form.
 
-Guests cannot view inventory levels or stock information.
+Guest users cannot view products, search items, or explore the platform without first registering an account. This restriction is enforced at the page level, preventing any accidental access to product or seller information.
 
-Guests cannot access shipping or tracking information.
+Products and their details are not visible to guests:
+- Product names and descriptions are hidden
+- Product images are not displayed
+- Product prices are not shown
+- Product categories are not browsable
+- Product search results are not accessible
+- Seller shop names and profiles are not visible
 
-Guests cannot view cancellation requests, refund requests, or dispute resolution information.
+Reviews, ratings, and any other user-generated content are also hidden from guest users. The platform's design requires all interactions to be associated with a registered account.
 
-All platform content and features require authentication through a registered customer or seller account.
+If a guest user tries to access a product page directly (for example, through a bookmarked URL or shared link), they are blocked and redirected to the registration or login page.
 
-### Registration Entry Point
+### Feature Access Blocked
 
-The guest visitor role serves as the entry point for all new platform users.
+All platform features are blocked for unregistered users except registration and login.
 
-Guests can access only the registration and login pages to create an account.
+Shopping Features (Blocked for Guests):
+- Shopping cart: Cannot add or view items
+- Wishlist: Cannot add or view wishlisted products
+- Checkout: Cannot proceed to purchase
+- Order placement: Cannot create orders
+- Order history: Cannot view past orders or shipments
 
-Guests must choose between customer registration or seller registration when creating their first account.
+Discovery Features (Blocked for Guests):
+- Product search: Cannot search by name or filters
+- Category browsing: Cannot browse categories or subcategories
+- Product listings: Cannot view product lists or details
+- Product images: Cannot view product image galleries
 
-Guests cannot access any platform features until they complete the registration process.
+Account Features (Blocked for Guests):
+- Profile viewing: Cannot view customer or seller profiles
+- Address management: Cannot add or view shipping addresses
+- Payment: Cannot access payment processing
+- Notifications: Cannot receive platform notifications
 
-The registration process requires guests to provide email and password credentials.
+Reviews and Seller Interactions (Blocked for Guests):
+- Review writing: Cannot write or view reviews
+- Seller contact: Cannot contact sellers
+- Reviews viewing: Cannot view seller shops or reviews
 
-After successful registration, guests transition to the customer actor role.
+The only features available to unregistered users are account creation and authentication (registration and login).
 
-After successful seller registration, guests transition to the seller actor role pending administrator approval.
+## member Actor
 
-Guests are directed to the registration page if they attempt to access any restricted content.
+Customers who register with email and password become members and gain full access to shopping features. Members can search and browse products across all sellers, view detailed product information, and add items to their shopping cart. They manage their own profile including display name and phone number, and can maintain multiple shipping addresses with one set as default. Members create orders, view comprehensive order history, and track shipments through delivery confirmation. They can also build wishlists, write reviews for delivered products, and manage cancellation or refund requests for their purchases.
 
-The platform does not support guest browsing or limited access modes.
+### Member Identity and Registration
 
-All platform interactions must be traceable to a registered account for legal and business record purposes.
+Registered customers who have signed up with email and password become members of the platform. Members can access all shopping features, while unregistered users (guests) cannot browse or use any platform functionality until they complete registration. A member account is required for all platform interactions including product browsing, cart management, order placement, and review writing.
 
-### Access Enforcement
+### Shopping Platform Access
 
-The platform enforces an access boundary that blocks all unauthenticated requests to protected resources.
+Members can search and browse products across all sellers, view detailed product information, and add variants to their shopping cart. Members can view all categories and products within categories. Members can access product detail pages showing images, descriptions, variants, prices, seller information, and reviews. Members can view products in search results with thumbnail images, names, base prices, seller shop names, and average ratings.
 
-Guests attempting to access product pages receive a message requiring registration.
+### Profile Overview
 
-Guests attempting to access category pages receive a message requiring registration.
+Each member has a profile that includes a display name and phone number. These are the only editable profile fields for members. The display name is the name shown to other users on the platform, including in reviews and order information.
 
-Guests attempting to access seller profiles receive a message requiring registration.
+### Display Name Updates
 
-Guests attempting to search products receive a message requiring registration.
+Members can update their display name at any time. The new display name is applied immediately and reflected across the platform in reviews, order information, and seller communications. Previous display names are not preserved.
 
-Guests attempting to view wishlists, carts, or orders receive a message requiring registration.
+### Phone Number Management
 
-The platform does not display partial product information to guests.
+Members can update their phone number at any time. The updated phone number is used for shipping address verification and customer support contact. The new phone number replaces the previous one entirely.
 
-Guests cannot bypass access restrictions through direct URL access or other means.
+### Address Management
 
-All access enforcement redirects guests to the registration page.
+Members can add multiple shipping addresses to their account. Each address includes a recipient name, phone number, street address, city, state/province, postal code, and country. Members can edit any address to update any field. Members can delete addresses they no longer need.
 
-The registration requirement applies to all platform features without exception.
+### Address Selection for Orders
 
-## customer Actor
+When placing an order, members must select one of their saved shipping addresses. The selected address becomes the delivery destination for the order. Once an order is placed, the shipping address cannot be changed.
 
-Customers are registered users who can browse, search, and purchase products from the platform. Customers authenticate using email and password credentials to access their personal account area. After registration, customers gain access to product browsing, category navigation, and search functionality across all sellers. Customers manage their personal profile information including display name and phone number, as well as multiple shipping addresses. Customers can add products to their wishlist and use the shopping cart to prepare purchases. Customers place orders, make payments, and track their order history across the platform. Customers can write reviews for products they have purchased after delivery. Customers can request cancellations for unpaid items and refund requests for delivered items. Customers can delete their accounts while preserving order history and reviews for legal purposes.
+### Default Address Management
 
-### Customer Actor Definition
+Members can designate one address as their default shipping address. When checkout requires address selection, the default address is pre-selected. Members can change which address is default at any time.
 
-Customers are registered users who access the platform using email and password authentication. Only authenticated customers can browse products, navigate categories, and search for items. The platform does not allow guest browsing—access to all features requires a registered customer account.
+### Order Creation Process
 
-A customer account is created when a user completes the registration process with an email and password. After registration, the customer gains access to the full platform functionality.
+Members can create orders by adding variants to their cart, specifying quantities, and proceeding through checkout. During checkout, members review the order summary showing items, prices, shipping address, and total price. Members confirm the order and payment is processed. Orders cannot be placed without successful payment processing.
 
-Customers can access the following platform features after authentication:
-- Browse products from all sellers
-- Navigate through product categories and subcategories
-- Search for products by name and filter by category, price, and stock status
-- View seller profiles and shop information
-- Add products to a personal wishlist
-- Use the shopping cart to prepare purchases
-- Place orders and complete payments
-- View their order history and tracking information
-- Write product reviews for delivered items
-- Submit cancellation and refund requests for their orders
-- Manage their personal profile and shipping addresses
-- Delete their account while preserving order history and reviews
+### Order History Viewing
 
-Customers cannot:
-- View admin or seller dashboards
-- Manage categories or products
-- Approve or reject cancellation and refund requests
-- Access other customers' or sellers' private information
+Members can view a paginated list of all their orders, sorted by newest first. Each order in the list displays the order number, date, total price, and overall order status. Members can view full order details including items with product names, variants, quantities, prices, and individual item statuses. Members can view shipping address, shipments with tracking information, and which items are included in each shipment.
 
-### Email Password Authentication
+### Shipment Tracking
 
-Customers authenticate using email and password credentials. The email address serves as the unique identifier for the customer account.
+Members can view tracking information for each shipment in their orders. Tracking information includes carrier name and tracking number. Members can see which items are included in each shipment.
 
-Registration requires a valid email address and password. The email must be unique across all customer accounts. When a customer attempts to register with an email that is already in use, the registration is rejected.
+### Delivery Confirmation Process
 
-Customers log in by providing their email and password. If the email or password is incorrect, the login attempt is rejected. The system provides appropriate feedback for invalid credentials.
+Members can confirm delivery for each shipment. When delivery is confirmed, all items in that shipment change to delivered status. If members do not confirm delivery, items automatically change to delivered status 14 days after the shipment date.
 
-Customers can change their password at any time. Changing the password requires authentication with the current password. After a password change, the customer must log in again using the new password.
+### Wishlist Management
 
-Customers can delete their account at any time. Account deletion permanently removes the customer profile information. However, order history and reviews are preserved for legal and business purposes. Reviews from deleted customers are shown as 'deleted user' to maintain transparency.
+Members can add products to their wishlist. The wishlist is paginated and shows products (not specific variants). Members can view their entire wishlist. Members can remove products from their wishlist at any time. If a product is deleted by the seller, it is automatically removed from all member wishlists.
 
-Customer accounts can be deleted by the account owner or by an administrator. Administrators can also ban customer accounts, preventing the customer from logging in. Banned customers cannot access any platform features until the ban is lifted.
+### Product Review Process
 
-Customers retain access to their historical data even after account deletion:
-- Orders remain accessible in the order history
-- Reviews remain visible on products but are attributed to 'deleted user'
-- Shipping addresses are preserved in historical order records
+Members can write a review for a product after the corresponding order item status is delivered. Members can write one review per product per order. Reviews include a rating from 1 to 5 stars (required) and optional text content. Reviews are displayed on the product detail page sorted by newest first. Members can edit their own reviews at any time. Each edit creates a snapshot preserving the previous state. Members can delete their own reviews, but snapshots are preserved. Product average rating is calculated from all non-deleted reviews.
 
-### Product Browsing and Category Navigation
+### Cancellation Request Management
 
-Authenticated customers can browse products from all sellers on the platform. Product browsing is available without any additional permissions beyond being a registered customer.
+Members can request cancellation for individual order items with status paid (not yet shipped). Cancellation requests must include a reason in text format. The seller of that item can approve or reject the cancellation request. When a seller responds, a snapshot of the request state is created. If approved, the item is cancelled, refund is processed for that item only, and stock quantities are restored. The remaining items in the order continue processing normally. If all items in an order are cancelled, the entire order status becomes cancelled.
 
-Products are organized into categories, which can have one level of subcategories. Customers can navigate through the category hierarchy to browse products within specific categories or subcategories.
+### Refund Request Management
 
-Customers can view the list of all categories at any time. Categories are managed only by administrators, and customers cannot create or edit categories.
-
-When browsing products in a category, customers see:
-- The main product image (thumbnail)
-- Product name
-- Base price or price range (if variants have different prices)
-- Seller shop name
-- Average rating (if reviews exist)
-
-Customers can filter products within a category by:
-- Price range (minimum and maximum)
-- Stock availability (in-stock only)
-
-Product variants that are out of stock are marked as 'out of stock' and cannot be added to the shopping cart. Out of stock products remain visible in category listings.
-
-When a product is deleted by the seller, it no longer appears in category listings or search results. Deleted products are removed from the platform's active product inventory.
-
-Customers can view the full details of a single product, including:
-- All product images
-- Product name and description
-- Category information
-- Seller shop name (linked to seller profile)
-- All available variants with prices and stock status
-- Average rating and total review count
-- All customer reviews for the product
-
-Product snapshots are preserved even after deletion, allowing administrators to review the product's historical state.
-
-### Product Search Functionality
-
-Customers can search for products across all sellers on the platform. Search is available to all authenticated customers without additional permissions.
-
-Customers can search products by name. The search function looks for the search term in product names and returns matching results.
-
-Search results are paginated to manage result sets. Customers can navigate through multiple pages of search results.
-
-Customers can filter search results by:
-- Category: Show only products within a specific category or subcategory
-- Price range: Set minimum and maximum price boundaries
-- Stock availability: Show only in-stock products
-
-Customers can sort search results by:
-- Newest first: Products sorted by creation date in descending order
-- Price (low to high): Products sorted by base price in ascending order
-- Price (high to low): Products sorted by base price in descending order
-
-Search results display each product with:
-- Main image (thumbnail)
-- Product name
-- Base price or price range (if variants have different prices)
-- Seller shop name
-- Average rating (if reviews exist)
-
-Out of stock variants are marked as 'out of stock' in search results. Customers can view the product details page but cannot add out of stock variants to the shopping cart.
-
-When a product is deleted, it is immediately removed from search results and is no longer searchable by customers.
-
-### Personal Profile Management
-
-Each customer has a personal profile that includes a display name and phone number. Customers can view and edit their profile information.
-
-Customers can set or change their display name. The display name is shown on product reviews and in order history. Display names can be updated at any time by the customer.
-
-Customers can set or change their phone number. The phone number is used for shipping address contact information. Phone numbers can be updated at any time by the customer.
-
-Customers can view their current profile information at any time. Profile information is accessible through the customer account area.
-
-Customers must be authenticated to access and modify their profile information. Unauthenticated visitors cannot view or edit customer profiles.
-
-Profile edits are saved immediately. The updated display name and phone number are reflected across the platform:
-- Reviews authored by the customer show the updated display name
-- Shipping addresses associated with the customer use the updated phone number
-- Order records preserve the profile information at the time of the order
-
-Customers cannot view or edit other customers' profile information. Profile information is private to each account owner.
-
-### Shipping Address Management
-
-Customers can add multiple shipping addresses to their account. Each address is associated with the customer account and can be used for order placement.
-
-Each shipping address includes:
-- Recipient name
-- Phone number
-- Street address
-- City
-- State or province
-- Postal code
-- Country
-
-Customers can add a new shipping address at any time. Adding a new address is available to all authenticated customers.
-
-Customers can edit existing shipping addresses. Edits include updating any field of the address information. Edits are saved immediately.
-
-Customers can delete shipping addresses. Deleted addresses cannot be used for future orders but remain in historical order records.
-
-Customers can set one shipping address as the default. The default address is automatically selected during checkout unless the customer chooses a different address.
-
-Customers can view all their saved shipping addresses. Addresses are displayed with all fields visible to the customer.
-
-Customers must be authenticated to add, edit, or delete shipping addresses. Unauthenticated visitors cannot access address management.
-
-Shipping addresses are used for:
-- Order placement: Customers select an address or use the default
-- Delivery: Addresses are preserved in order records even after address deletion
-- Customer service: Address information is available for order support
-
-### Wishlist and Shopping Cart
-
-Customers can add products to their personal wishlist. The wishlist stores products (not specific variants) for later purchase consideration.
-
-Customers can view their wishlist. The wishlist is paginated to manage product lists.
-
-Customers can remove products from their wishlist. Removing a product deletes it from the wishlist but does not affect the product listing.
-
-If a product is deleted by the seller, it is automatically removed from all customer wishlists. Deleted products cannot appear in wishlists.
-
-Customers can add product variants to their shopping cart. Adding a variant requires selecting a specific option combination (e.g., Red/Large) and specifying the quantity.
-
-When the same variant is already in the cart, adding more of that variant combines the quantities (not added as a separate line item).
-
-Customers can view their shopping cart. The cart displays each item with:
-- Product name
-- Variant options
-- Price
-- Quantity
-- Subtotal (price × quantity)
-
-Customers can change the quantity of items in their cart. Quantity changes are saved immediately.
-
-Customers can remove items from their cart. Removed items are no longer in the cart but remain available for future purchase.
-
-The cart shows the total price of all items. The total is calculated from the sum of all line item subtotals.
-
-If a variant's stock is less than the cart quantity, a warning is shown to the customer. The customer can proceed with the order but is notified of the stock limitation.
-
-If a variant is deleted or goes out of stock, it is marked as unavailable in the cart. Unavailable items cannot be checked out.
-
-### Order Placement and Payment
-
-Customers can proceed to checkout from their shopping cart. Checkout is available to authenticated customers.
-
-Before checkout, customers must resolve any unavailable items (removed or out of stock). Unavailable items cannot be checked out.
-
-During checkout, customers must select a shipping address. Customers can use their default address or choose from their saved addresses.
-
-Customers can review the order summary before placing the order. The order summary includes:
-- List of items with prices
-- Selected shipping address
-- Total price
-
-Once an order is placed, the shipping address cannot be changed. The address at order placement time is locked and preserved.
-
-After reviewing the order summary, customers confirm and place the order. The order is created only after successful confirmation.
-
-Payment is processed through an external payment gateway. Payment can succeed or fail.
-
-If payment fails, the order is not created. Customers can retry the payment process.
-
-If payment succeeds, the order is created successfully. The order is assigned a unique order number and is associated with the customer.
-
-When an order is placed successfully:
-- Stock quantities are decreased for each purchased variant
-- Purchased items are removed from the customer's cart
-- Order records are created with item details
-- Product and variant snapshots are saved with each order item
-- Seller profile snapshots are saved with each order item
-
-### Order History and Tracking
-
-Customers can view a list of all their orders. Order history is accessible only to the account owner.
-
-The order list is paginated and sorted by newest first. Customers can navigate through multiple pages of order history.
-
-Each order in the list shows:
-- Order number
-- Order date
-- Total price
-- Overall order status
-
-Customers can view the full details of an individual order. Order details include:
-- List of items with: product name, variant, quantity, price, and item status
-- Shipping address used for the order
-- List of shipments with tracking information
-- Each shipment shows which items are included
-
-Order items can have the following statuses:
-- Paid: Payment completed, waiting for seller to ship
-- Shipped: Seller has shipped the item
-- Delivered: Item has been delivered
-- Cancelled: Item was cancelled
-- Refunded: Item was refunded
-
-The overall order status is derived from its items:
-- Paid: If all items are paid
-- Shipped: If any item is shipped (and none delivered yet)
-- Delivered: If all items are delivered
-- Cancelled: If all items are cancelled
-- Refunded: If all items are refunded
-- Partially completed: Mixed states (e.g., some delivered, some refunded)
-
-Customers can view tracking information for each shipment. Tracking includes carrier name and tracking number.
-
-Customers can confirm delivery per shipment. When confirmed, all items in that shipment change to 'delivered' status.
-
-If the customer does not confirm delivery, items automatically change to 'delivered' after 14 days from shipping.
-
-### Product Reviews
-
-Customers can write reviews for products they have purchased. Reviews are only allowed after the order item status is 'delivered'.
-
-Customers can write one review per product per order. Additional reviews for the same product in different orders are allowed.
-
-Each review includes:
-- Rating: 1 to 5 stars (required)
-- Text content: Optional written review
-
-Reviews are displayed on the product detail page. Reviews are sorted by newest first.
-
-Customers can edit their own reviews. Editing a review creates a snapshot of the review state.
-
-Customers can delete their own reviews. Deletion preserves a snapshot of the review for dispute resolution purposes.
-
-Product average ratings are calculated from all non-deleted reviews. Deleted reviews are excluded from the average calculation.
-
-Customers can view all reviews written for a product. Reviews show the rating and text content (if written).
-
-Customers must be authenticated to write, edit, or delete reviews. Unauthenticated visitors cannot access review functionality.
-
-Customers can only review products they have purchased. Attempting to review an unpurchased product is not allowed.
-
-### Cancellation and Refund Requests
-
-Customers can request cancellation for individual order items. Cancellation requests are only allowed for items with status 'paid' (not yet shipped).
-
-Cancellation requests include a reason (text description). The reason is provided by the customer when submitting the request.
-
-Cancellation requests are submitted to the seller of that specific item. The seller can approve or reject the request.
-
-When the seller responds, a snapshot of the request state is created. The snapshot preserves the request details at the time of the response.
-
-If a cancellation request is approved, the item is cancelled. The refund is processed for that item only.
-
-Cancelled items restore their stock quantities through an inventory record adjustment.
-
-The remaining items in the order continue processing normally. Cancellation affects only the requested item, not the entire order.
-
-If all items in an order are cancelled, the entire order status becomes 'cancelled'.
-
-Customers can request refunds for individual order items. Refund requests are only allowed for items with status 'delivered'.
-
-Refund requests must be submitted within 7 days of that item being delivered. Requests outside this window are not allowed.
-
-Refund requests include a reason (text description). The reason is provided by the customer when submitting the request.
-
-Refund requests are submitted to the seller of that specific item. The seller can approve or reject the request.
-
-When the seller responds, a snapshot of the request state is created. The snapshot preserves the request details at the time of the response.
-
-If a refund request is approved, the item is refunded. The refund amount is processed for that item only.
-
-Refunded items restore their stock quantities through an inventory record adjustment.
-
-The remaining items in the order are unaffected by a refund. Refunds affect only the requested item, not the entire order.
-
-If all items in an order are refunded, the entire order status becomes 'refunded'.
-
-### Account Deletion
-
-Customers can delete their account at any time. Account deletion is a permanent action that removes the customer from the platform.
-
-When a customer deletes their account:
-- Profile information is deleted (display name, phone number)
-- Shipping addresses are removed from the address book
-- Wishlist items are removed from the wishlist
-- Access to the account area is permanently revoked
-
-However, the following data is preserved:
-- Order history and order records are kept intact
-- Product reviews are preserved but shown as 'deleted user'
-- Order history snapshots are maintained for business and legal purposes
-
-Preserved data remains accessible to:
-- Administrators (full access)
-- Sellers (for their own orders only)
-- The platform (for business operations)
-
-Deleted customer information is not recoverable. Once an account is deleted, it cannot be restored.
-
-Customers must be authenticated to initiate account deletion. The deletion process requires confirmation.
-
-Administrators can also delete customer accounts. Administrator-initiated deletions follow the same preservation rules.
-
-Customers with active pending orders or active cancellation/refund requests can still delete their account. The pending transactions are preserved with the order records.
+Members can request a refund for individual order items with status delivered. Refund requests must include a reason in text format. Refund can only be requested within 7 days of that item being delivered. The seller of that item can approve or reject the refund request. When a seller responds, a snapshot of the request state is created. If approved, the item is refunded, and stock quantities are restored. The remaining items in the order are unaffected. If all items in an order are refunded, the entire order status becomes refunded.
 
 ## seller Actor
 
-Sellers are registered users who can create and manage products on the platform. Sellers authenticate using email and password credentials similar to customers. Seller accounts require administrator approval before they can begin selling products. Sellers manage their shop profile including shop name, description, and logo image. Sellers create products with variants and manage inventory levels for their items. Sellers view and manage their order items from customers who have made purchases. Sellers handle shipping logistics by creating shipments and entering tracking information. Sellers respond to cancellation and refund requests from customers. Sellers can view approval status and rejection reasons for their account registration. Sellers can delete their accounts under specific conditions regarding pending orders. Sellers' products are visible to all customers on the platform marketplace.
+Sellers register with email and password but must wait for administrator approval before they can begin selling. They view their approval status as pending, approved, or rejected, and see rejection reasons if their application was denied. Once approved, sellers create and manage their products with variants, upload product images, and manage inventory levels. They process customer orders by creating shipments with tracking information and respond to cancellation and refund requests from customers. If suspended by an administrator, their products become hidden from search but they can still process existing orders.
 
-### Seller Registration
+### Seller Registration and Approval Process
 
-Individuals can register as sellers by providing an email address and password. The registration process creates a seller account in pending approval status. Sellers cannot access any selling features until their account receives administrator approval.
+Sellers can register for an account using email and password.
 
-### Seller Authentication
+After registration, the seller account enters a pending approval status. In this state, the account exists but cannot be used to create products, manage inventory, or process orders.
 
-Registered sellers can log in to the platform using their email address and password. The authentication process is identical to customer authentication. Sellers maintain separate credentials from customer accounts, though they can use the same email address.
+Administrators review seller registration requests and either approve or reject them.
 
-### Administrative Approval
+Sellers can view their current approval status, which shows one of three possible states: pending, approved, or rejected.
 
-All seller accounts require administrator approval before they can sell products on the platform. Sellers can view their current approval status at any time. When approved, sellers gain access to the seller dashboard and can begin creating products. If rejected, sellers receive a rejection reason and can submit a new registration request with the same email address.
+### Rejection Handling and Re-registration
 
-### Shop Profile
+When a seller registration is rejected, the account remains in rejected status.
 
-Each seller maintains a shop profile containing a shop name, shop description, and logo image. Sellers can edit their shop name, description, and logo at any time. Every edit to the shop profile creates a snapshot that preserves the previous state. Customers can view all seller profiles on the platform.
+Sellers can view the specific reason provided by the administrator for their rejection.
 
-### Product Management
+Sellers with rejected accounts can submit a new registration request to become sellers again.
 
-Sellers can create products for their shop. Each product requires a name, description, category, and base price. Products belong to the seller who created them and appear in the seller's product management interface. Sellers can edit their own products at any time, and every edit creates a snapshot. Sellers can delete their products only if there are no pending order items, cancellation requests, or refund requests for any variant of the product.
+When a new registration is submitted, the process restarts with a pending approval status awaiting administrator review.
 
-### Variant Management
+### Product and Variant Management Permissions
 
-Sellers can add variants to their products. Each variant requires a unique SKU code, option values, stock quantity, and may optionally override the base price. Sellers can edit variant details including SKU code, option values, and price. Every variant edit creates a snapshot. Sellers can delete variants only if there are no pending order items, cancellation requests, or refund requests for that specific variant. A product must have at least one variant to be purchasable.
+Sellers with approved status can create new products for their shop.
 
-### Inventory Management
+Each product requires a name, description, category assignment, and base price to be created.
 
-Each product variant maintains its own stock quantity. Sellers can add inventory (restock) by specifying a quantity and reason. Sellers can subtract inventory (adjustment or loss) by specifying a quantity and reason. The system automatically creates inventory records when orders are placed (negative change) and when orders are cancelled or refunded (positive change). Sellers can view the complete inventory history for each variant. When stock reaches zero, the variant is marked as out of stock and cannot be added to customer carts.
+Sellers can add multiple variants to each product. Each variant represents a specific option combination with its own SKU code, option values, price, and stock quantity.
 
-### Order Management
+Sellers can edit their existing products and variants. Every edit preserves the previous state by creating a snapshot.
 
-Sellers can view order items for products they have sold. Order items can be filtered by status. Sellers see order items grouped by order but maintain separate item statuses. Sellers can view full order details including customer information and shipping address. Order items from the same order may belong to different sellers, and each seller manages only their portion of the order.
+A product must have at least one variant to be purchasable by customers.
 
-### Shipping Operations
+### Inventory Management Responsibilities
 
-Sellers can create shipments for their order items. A shipment can contain one or more order items from the same seller. Sellers enter tracking information for each shipment including the carrier name and tracking number. All items in the same shipment share identical tracking information. When a shipment is created, all order items in that shipment change status to shipped. Sellers can ship items individually or bundle multiple items into a single shipment.
+Each product variant has its own stock quantity that tracks available inventory.
 
-### Cancellation Requests
+Sellers can add stock to a variant by restocking, specifying the quantity and reason for the addition.
 
-Sellers can view cancellation requests submitted by customers for their order items. Customers can request cancellation for order items with status paid that have not yet been shipped. Cancellation requests include a customer-provided reason. Sellers can approve or reject each cancellation request. When sellers respond to a request, a snapshot of the request state is created. If approved, the item is cancelled and its stock quantity is restored. If rejected, the item continues processing normally.
+Sellers can subtract stock from a variant due to adjustments, loss, or other business reasons, specifying the quantity and reason.
 
-### Refund Requests
+When an order is placed, stock is automatically decreased for the purchased variants.
 
-Sellers can view refund requests submitted by customers for their order items. Customers can request refunds for order items with status delivered, within seven days of delivery. Refund requests include a customer-provided reason. Sellers can approve or reject each refund request. When sellers respond to a request, a snapshot of the request state is created. If approved, the item is refunded and its stock quantity is restored. If rejected, the item remains in delivered status.
+When a cancellation or refund is approved, stock is automatically restored for those variants.
 
-### Account Approval Status
+Sellers can view the complete inventory history for each variant, showing all stock changes with their reasons and timestamps.
 
-Sellers can view their account approval status at any time through the seller dashboard. Possible statuses are pending, approved, or rejected. Pending sellers cannot create products or access seller features. Approved sellers have full selling privileges. Rejected sellers can submit a new registration request using the same email address.
+### Order Fulfillment and Shipment Creation
 
-### Account Deletion
+Sellers can view order items for their products that require shipping.
 
-Sellers can delete their seller account under specific conditions. Account deletion is only permitted when the seller has no pending orders with paid or shipped status. Account deletion is only permitted when the seller has no pending cancellation or refund requests. When a seller account is deleted, their products are removed from the marketplace but order history and snapshots are preserved. The seller's shop name is preserved in past orders.
+When shipping items, sellers select one or more order items from their products to include in a single shipment.
 
-### Product Marketplace Access
+Sellers enter tracking information for each shipment, including the carrier name and tracking number.
 
-Approved sellers' products are visible to all customers browsing the platform marketplace. Products appear in search results and category listings once approved. Products from suspended sellers are hidden from search and category listings but remain accessible for existing order processing. Suspended sellers cannot create new products or edit existing products but can continue fulfilling existing orders.
+All items included in the same shipment share identical tracking information and status.
 
-## admin Actor
+When a shipment is created, all order items in that shipment change their status to shipped.
 
-Administrators are users granted elevated privileges to manage platform operations. Regular administrators handle seller management, category management, product oversight, and order oversight. Administrators can approve or reject seller registration requests with provided reasons. Administrators can view all pending seller approval requests on the platform. Administrators can suspend seller accounts when necessary for policy enforcement. Administrators can create and manage product categories and subcategories. Administrators can view all products on the platform and access product snapshots. Administrators can view all customer accounts and order information. Administrators can ban or unban customer and seller accounts. Administrators can force-cancel or force-refund orders when needed for dispute resolution.
+Sellers can choose to ship items individually or bundle multiple items from the same order into one shipment.
 
-### Administrator Privileges
+### Cancellation and Refund Request Response
 
-Administrators are users granted elevated privileges to manage platform operations. These privileges allow oversight of sellers, categories, products, orders, and user accounts across the entire platform. Administrators can access all order information and customer account data. Administrator access is distinct from customer and seller roles, providing management capabilities that extend beyond individual account boundaries.
+Sellers can view cancellation requests submitted by customers for their order items.
 
-### Seller Management
+When a customer requests cancellation, the seller can approve or reject the request.
 
-Administrators can view the list of all seller accounts on the platform. Administrators can suspend seller accounts when necessary for policy enforcement. When a seller is suspended: their products are hidden from search and category listings, their products cannot be purchased, they can still process existing orders by shipping items and responding to cancellation or refund requests, and they cannot create new products or edit existing products. Administrators can unsuspend seller accounts, which makes their products visible again in search and category listings.
+When the seller responds to a cancellation request, a snapshot of the request state is created.
 
-### Category Management
+If approved, the item is cancelled, stock is restored, and the customer receives a refund for that item only.
 
-Administrators can create categories and subcategories on the platform. Administrators can edit category names and descriptions. Administrators can delete categories, and when a category is deleted, products within that category become uncategorized. Administrators are the only users who can create, edit, or delete categories. Customers can browse the list of all categories and view products within categories.
+Sellers can view refund requests submitted by customers for delivered order items.
 
-### Product Oversight
+Refund requests can only be made within 7 days of the item's delivery date.
 
-Administrators can view all products on the platform regardless of which seller created them. Administrators can view snapshots of any product to see its complete history of changes. Administrators can delete products from the platform for policy violations. When an administrator deletes a product, all its variants and inventory records are deleted. Deleted products no longer appear in search or category listings. Product snapshots are preserved even after product deletion for dispute resolution purposes.
+When a customer requests a refund, the seller can approve or reject the request.
 
-### Order Oversight
+When the seller responds to a refund request, a snapshot of the request state is created.
 
-Administrators can view all orders on the platform regardless of which customer or seller created them. Administrators can access full order details including items, shipping information, and tracking data. Administrators can force-cancel individual items or entire orders when necessary. When an order or item is force-cancelled, the customer is refunded and stock quantities are restored. Administrators can force-refund individual items or entire orders for dispute resolution purposes.
+If approved, the item is marked as refunded, stock is restored, and the customer receives a refund.
+
+### Suspended Seller Status Restrictions
+
+Administrators can suspend seller accounts for policy violations or other reasons.
+
+When a seller is suspended, their products are hidden from customer search results and category listings.
+
+Suspended sellers cannot create new products or edit existing products.
+
+Suspended sellers cannot add variants or modify existing variants.
+
+However, suspended sellers can still process existing orders, including creating shipments with tracking information.
+
+Suspended sellers can still respond to customer cancellation and refund requests for their products.
+
+Administrators can unsuspend seller accounts, which makes their products visible in search and category listings again.
+
+### Product and Seller Account Deletion
+
+Sellers can request to delete their account from the platform.
+
+Account deletion is only allowed if the seller has no pending orders with paid or shipped status.
+
+Account deletion is only allowed if the seller has no pending cancellation or refund requests.
+
+If a seller has no orders or requests in progress, the account deletion request can be submitted.
+
+When a seller account is deleted, their products are removed from public listings.
+
+Order history and order snapshots are preserved for legal and record-keeping purposes.
+
+The seller's shop name in past orders is preserved, even after account deletion.
+
+Sellers can also delete their own products only if there are no pending order items with paid or shipped status and no pending cancellation or refund requests. Deleting a product also removes all its variants and inventory records.
+
+## administrator Actor
+
+Administrators manage seller registrations by reviewing and approving or rejecting seller applications with detailed reasons. They can suspend seller accounts to hide products from search while allowing existing order fulfillment to continue. Administrators create and manage categories and subcategories for product organization. They have platform-wide oversight to view all products, orders, and user accounts. They can delete products for policy violations, view snapshots of any product, and take forceful actions on orders including cancellation and refunds.
 
 ### Seller Approval Management
 
-Administrators can view the list of all pending seller approval requests. Administrators can approve or reject seller registration requests. When rejecting a seller registration, administrators must provide a reason that is visible to the seller. Rejected sellers can submit new registration requests. Administrators are the only users who can approve or reject seller registrations. The approval status determines whether a seller can begin selling on the platform.
+Administrators can view a list of all pending seller registration requests.
+Each pending request shows the seller's email address and submission date.
+When reviewing a request, the administrator can approve or reject it.
+If the request is approved, the seller account becomes active and the seller can begin listing products.
+If the request is rejected, the administrator must provide a detailed rejection reason explaining why the application was denied.
+The rejection reason is communicated to the seller and displayed in the seller's account.
+Rejected sellers can submit a new registration request after viewing the rejection reason.
+Once a seller registration is approved or rejected, it cannot be modified; a new request must be submitted for changes.
 
-### Customer Account Management
+### Seller Suspension Management
 
-Administrators can view all customer accounts on the platform. Administrators can ban customers, which prevents them from logging into the system. Banned customers cannot access any platform features. Administrators can unban customers, restoring their access to the platform. When a customer is banned, their existing orders, reviews, and wishlists remain in the system.
+Administrators can suspend seller accounts when policy violations or other serious issues occur.
+When a seller account is suspended:
+- All their products are hidden from search results and category listings
+- Their products cannot be purchased by customers
+- They can still log in to their seller account
+- They can continue processing existing orders (shipping items, responding to cancellation and refund requests)
+- They cannot create new products or edit existing products
+- Their existing orders remain visible to customers
+When the issue is resolved, administrators can unsuspend the seller account.
+Upon unsuspension, all the seller's products become visible in search and category listings again.
+The seller can immediately resume creating and editing products.
+Suspension and unsuspension actions are logged for audit purposes.
 
-### User Banning
+### Product Oversight
 
-Administrators can ban both customer and seller accounts. Banned customers cannot log in to the platform. Banned sellers cannot log in, but their existing orders remain in the system. The ban status is part of the account lifecycle and can be reversed by administrators. When a user is banned, their data is preserved for historical and legal purposes.
+Administrators have platform-wide authority to view all products created by any seller.
+They can view product details including name, description, category, base price, images, and variants.
+Administrators can access and view snapshots of any product at any point in time.
+Snapshot viewing allows administrators to see all changes made to a product over time.
+This includes viewing product variants, option values, and prices at specific moments in history.
+This oversight capability supports dispute resolution and policy enforcement.
+Product oversight does not modify product data; it provides read-only access to all platform products.
 
-### Dispute Resolution Access
+### Product Deletion Authority
 
-Administrators can access snapshots of products, seller profiles, reviews, cancellation requests, and refund requests for dispute resolution. Snapshots record when changes were made, what was changed, and the values before and after the change. Snapshots are immutable and cannot be deleted. Both administrators and regular users can view snapshots relevant to their account (product owners can view product snapshots, customers can view their review snapshots, etc.).
+Administrators have the authority to delete products from the platform.
+This authority is exercised when products violate platform policies or other serious violations occur.
+When an administrator deletes a product:
+- The product no longer appears in search results or category listings
+- The product cannot be purchased
+- The product remains in the seller's product list but is marked as deleted
+- All product variants are also deleted
+- All inventory records for the deleted variants are preserved for historical reference
+- Snapshots of the product are preserved and remain viewable by administrators
+- Any existing order items that reference the product are unaffected
+- Orders containing the deleted product remain valid and fulfillable.
+Deleted products can be reviewed by administrators through snapshot viewing.
 
-## superAdmin Actor
+### Category Management
 
-Super administrators are users with the highest level of administrative privileges on the platform. Super administrators can view and manage all administrator accounts including promotion and demotion capabilities. Super administrators can promote regular administrators to super administrator level. Super administrators can demote other super administrators but cannot demote themselves. Super administrators have access to all administrator functions including seller management, category management, product oversight, and order oversight. Super administrators can view all administrator grade change requests on the platform. Super administrators have full oversight of all platform activities and user management. Super administrators represent the highest tier of administrative authority within the system. Super administrators manage the administrator hierarchy and ensure proper governance of the platform.
+Administrators have exclusive authority to create, edit, and delete categories and subcategories.
+When creating a category, the administrator specifies a name and description.
+When creating a subcategory, the administrator selects a parent category; subcategories can only be one level deep.
+When editing a category, the administrator can update its name and description.
+When deleting a category, any products that were in that category become uncategorized.
+Deleted categories are preserved and cannot be recovered.
+Products that become uncategorized after category deletion remain visible in search results.
+Administrators can view the list of all categories and subcategories on the platform.
 
-### Administrator Privileges
+### Order Oversight
 
-Super administrators hold the highest level of privileges on the platform.
-Super administrators have full authority over all platform operations and user accounts.
-Super administrators can perform all actions available to regular administrators.
-Super administrators have access to all administrative functions without restriction.
-Super administrators oversee all platform governance and enforcement activities.
+Administrators have platform-wide authority to view all orders placed by any customer.
+They can access order details including all order items, shipping addresses, shipments, and tracking information.
+Administrators can view orders across all sellers without restriction.
+This oversight capability supports dispute resolution, policy enforcement, and platform monitoring.
+Administrators can filter and search orders to find specific transactions.
+Order viewing includes access to all order snapshots that preserve transaction state at the time of purchase.
 
-### Administrator Hierarchy Management
+### Order Cancellation Authority
 
-Super administrators manage the administrator hierarchy on the platform.
-The hierarchy consists of two grades: regular administrator and super administrator.
-Super administrators define and maintain the administrative authority structure.
-Super administrators control the tiered administrative access system.
-Super administrators are responsible for the proper distribution of administrative responsibilities.
+Administrators have the authority to force-cancel individual order items or entire orders.
+This authority is exercised for policy violations, fraudulent transactions, or other serious issues.
+When an order item is force-cancelled:
+- The order item status changes to cancelled
+- The customer is refunded for that item
+- Stock quantities are restored through inventory records
+- The cancellation is recorded with the administrator's action
+When an entire order is force-cancelled, all items in the order are cancelled.
+The customer receives a full refund for all items.
+Remaining items in an order continue processing normally when individual items are cancelled.
+Force-cancellation actions are logged for audit purposes.
 
-### Promotion and Demotion
+### Order Refund Authority
 
-Super administrators can promote regular administrators to super administrator level.
-Super administrators can demote other super administrators to regular administrator level.
-Super administrators cannot demote themselves under any circumstances.
-Promotion and demotion require explicit approval by a super administrator.
-Grade changes take effect immediately upon approval by a super administrator.
+Administrators have the authority to force-refund individual order items or entire orders.
+This authority is exercised for policy violations, customer disputes, or other issues requiring intervention.
+When an order item is force-refunded:
+- The order item status changes to refunded
+- The customer receives a refund for that item
+- Stock quantities are restored through inventory records
+- The refund is recorded with the administrator's action
+When an entire order is force-refunded, all items in the order are refunded.
+Remaining items in an order continue processing normally when individual items are refunded.
+Force-refund actions are logged for audit purposes.
 
-### Full Platform Oversight
+### User Account Viewing
 
-Super administrators have complete visibility into all platform activities.
-Super administrators can view all seller accounts and their approval status.
-Super administrators can view all customer accounts and ban status.
-Super administrators can view all orders, cancellations, and refunds across the platform.
-Super administrators can view all product listings and their snapshots.
+Administrators can view all customer accounts on the platform.
+Customer account viewing includes access to customer profile information, order history, and wishlist.
+Administrators can view all seller accounts on the platform.
+Seller account viewing includes access to seller profile information, approval status, and product listings.
+This viewing capability provides platform-wide visibility for monitoring and enforcement.
+User account viewing is read-only and does not modify user data.
+Administrators can search and filter user accounts to find specific users.
 
-### Administrator Functions Access
+### Customer Ban Management
 
-Super administrators have access to all administrator management functions.
-Super administrators can approve or reject seller registration requests.
-Super administrators can suspend or unsuspend seller accounts.
-Super administrators can create, edit, and delete categories.
-Super administrators can view and delete any product on the platform.
-Super administrators can force-cancel or force-refund any order or order item.
-Super administrators can ban or unban customer and seller accounts.
+Administrators have the authority to ban customer accounts.
+When a customer account is banned:
+- The customer cannot log in to their account
+- They retain access to their order history (read-only)
+- They cannot place new orders or add items to their cart
+- Their existing orders and transactions remain valid
+- Their reviews and wishlist remain visible but cannot be modified
+When the issue is resolved, administrators can unban the customer account.
+Upon unbanning, the customer can immediately log in and resume normal platform activity.
+Ban and unban actions are logged for audit purposes.
 
-### Grade Change Governance
+### Seller Ban Management
 
-Super administrators manage all administrator grade change requests on the platform.
-Super administrators review and approve all promotion and demotion decisions.
-Super administrators maintain records of all grade changes for audit purposes.
-Super administrators ensure that grade changes follow platform governance policies.
-Super administrators are responsible for preventing unauthorized grade modifications.
+Administrators have the authority to ban seller accounts.
+When a seller account is banned:
+- The seller cannot log in to their account
+- Their existing orders remain valid and customers can continue purchasing
+- They cannot create new products or edit existing products
+- Their products remain hidden from search and category listings
+- Their seller profile is hidden from customers
+When the issue is resolved, administrators can unban the seller account.
+Upon unbanning, the seller can immediately log in and resume normal platform activity.
+All previously created products become visible again.
+Ban and unban actions are logged for audit purposes.
+
+### Snapshot Viewing
+
+Administrators have the authority to view snapshots of any product on the platform.
+Snapshot viewing provides historical records of all product changes over time.
+Each snapshot captures the complete state of a product at a specific moment in time.
+Snapshots include product name, description, category, base price, images, and all variants.
+Administrators can view snapshots of seller profiles showing shop name, description, and logo changes.
+Administrators can view snapshots of order items showing product and seller state at purchase time.
+Administrators can view snapshots of reviews showing rating and content at creation or edit time.
+Administrators can view snapshots of cancellation requests showing reason and status changes.
+Administrators can view snapshots of refund requests showing reason and status changes.
+All snapshots are immutable and cannot be deleted or modified.
+
+## superAdministrator Actor
+
+Super administrators have elevated privileges above regular administrators including the ability to manage administrator roles and privileges. They approve or reject administrator access requests from both customers and sellers who wish to become administrators. Super administrators can promote regular administrators to super administrator status and demote other super administrators to regular administrator level. They maintain ultimate platform oversight and cannot demote themselves to prevent power concentration. All other administrator functions are available to them with additional authority over the administrator system.
+
+### Administrator Grade Management
+
+Super administrators can promote regular administrators to super administrator status, granting elevated privileges for managing other administrators. Super administrators can demote super administrators back to regular administrator level, reducing their authority. Super administrators cannot demote themselves to prevent a single point of power failure. Grade changes take effect immediately upon approval. The administrative hierarchy consists of regular administrator and super administrator grades only.
+
+### Administrator Request Review
+
+Super administrators can view a complete list of all pending administrator access requests submitted by customers and sellers. Super administrators can approve administrator access requests, converting the requester to regular administrator status. Super administrators can reject administrator access requests and must provide a written reason for the rejection. When a request is rejected, the requester can submit a new administrator access request at any time.
+
+### Self-Demotion Restriction
+
+Super administrators are prohibited from initiating their own demotion to regular administrator status. This restriction applies at all times and cannot be overridden. The system validates this restriction before processing any self-demotion attempt. If a self-demotion is attempted, the system rejects the action and notifies the super administrator of this restriction.
+
+### Platform Oversight Authority
+
+Super administrators have platform-wide authority over all seller management operations including approval, rejection, suspension, and unsuspension of seller accounts. Super administrators have platform-wide authority over category creation, editing, and deletion. Super administrators have platform-wide authority to view and delete any product on the platform. Super administrators have platform-wide authority to view all orders and force-cancel or force-refund individual items and entire orders. Super administrators have platform-wide authority to view all user accounts and ban or unban customers and sellers. All regular administrator functions are available to super administrators with these additional privileges.
+
+### Administrator Access Management
+
+Super administrators have exclusive control over administrator access permissions that regular administrators do not possess. Regular administrators cannot view or approve administrator access requests. Regular administrators cannot promote or demote other administrators. Regular administrators have standard administrative functions limited to their assigned authority scope. Super administrators have full visibility into all administrative actions and decisions. Super administrators maintain control over the administrative hierarchy structure.
 
 # Authentication Flows
 
@@ -609,94 +477,129 @@ Define user registration and login flows including validation and error handling
 
 ### Customer Registration
 
-To access any features on the platform, users must register for a customer account. Guest users cannot browse products or access any functionality.
+Any user may create a customer account by providing an email address and password.
 
-Customers sign up by providing an email address and a password. The email address must be unique and valid. After registration, the customer account is immediately active and can be used for logging in.
+The email address must be in valid email format and will be used as the account identifier for login.
 
-If the email address is already registered, the registration is rejected. If the email format is invalid, the registration is rejected. If the password does not meet security requirements, the registration is rejected.
+The password must be provided during registration.
+
+After registration, the user becomes a customer member with access to shopping features.
+
+### Customer Login
+
+Customer members may log in using their registered email address and password.
+
+The system validates the email and password combination.
+
+Upon successful authentication, the user is granted access to all customer features.
 
 ### Seller Registration
 
-Sellers sign up by providing an email address and a password. The email address must be unique and valid.
+Any user may create a seller account by providing an email address and password.
 
-After registration, the seller account enters a pending approval status. Sellers cannot create products or sell items until an administrator approves their registration.
+The email address must be in valid email format and will be used as the account identifier for login.
 
-Sellers can view their approval status, which can be one of: pending, approved, or rejected.
+The password must be provided during registration.
 
-If the registration is rejected, sellers can view the rejection reason provided by the administrator. Rejected sellers can submit a new registration request using the same email address.
+After registration, the seller account is placed in "pending" status and requires administrator approval before the seller can list products or fulfill orders.
 
-If the email address is already registered, the registration is rejected. If the email format is invalid, the registration is rejected.
-
-### Login
-
-Customers and sellers log in by providing their registered email address and password.
-
-After successful authentication, the user is granted access to the platform and their account features.
-
-Guest users (users who have not logged in) cannot browse products, view categories, or access any platform features. Registration is required before any functionality can be used.
-
-If the email address is not found, the login is rejected. If the password is incorrect, the login is rejected. If the account has been banned by an administrator, the login is rejected.
+The seller may view their approval status at any time.
 
 ### Seller Approval Status
 
-After seller registration, the account status is pending. The seller must wait for administrator approval before they can use seller features.
+Sellers can view their account approval status, which can be one of: pending, approved, or rejected.
 
-Sellers can view their approval status at any time from their dashboard.
+While the status is "pending", the seller cannot list products or fulfill orders.
 
-Once an administrator approves the registration, the seller account status changes to approved and the seller can begin creating products and selling.
+While the status is "approved", the seller may list products and fulfill orders.
 
-If an administrator rejects the registration, the seller account status changes to rejected and the seller cannot access seller features. The rejection reason is shown to the seller.
+While the status is "rejected", the seller cannot list products or fulfill orders, but may view the rejection reason provided by the administrator.
 
-### Password Management
+### Rejected Seller Resubmission
 
-Registered customers and sellers can change their passwords from their account settings.
+If a seller's registration request is rejected, the seller may submit a new registration request.
 
-To change a password, the user must provide their current password and the new password. The new password must meet security requirements.
+The seller must provide new registration credentials (email and password) when resubmitting.
 
-After a successful password change, the user must log in again with the new password.
+The new request will be processed as a pending approval request by an administrator.
 
-If the current password is incorrect, the password change is rejected. If the new password does not meet security requirements, the change is rejected.
+### Seller Login
+
+Seller members may log in using their registered email address and password.
+
+The system validates the email and password combination.
+
+If the seller account status is "approved", the seller is granted access to all seller features.
+
+If the seller account status is "pending" or "rejected", the login attempt is rejected with an appropriate message.
 
 ### Customer Account Deletion
 
-Customers can delete their accounts from their account settings.
+Customer members may delete their account.
 
 When a customer deletes their account:
-- Their profile information is deleted (display name and phone number)
-- Their order history and order records are preserved for legal and seller record purposes
-- Their reviews are preserved but displayed as "deleted user" to maintain product feedback integrity
+- Their profile information is deleted
+- Their orders and order history are preserved for seller records and legal purposes
+- Their reviews are preserved but shown as "deleted user"
 
-The customer account is immediately deactivated and the customer cannot log in after deletion.
-
-There are no restrictions on customer account deletion.
+After account deletion, the customer cannot log in.
 
 ### Seller Account Deletion
 
-Sellers can delete their accounts from their account settings, but only if specific conditions are met.
+Seller members may delete their account only if they have no pending orders (orders with paid or shipped status) and no pending cancellation or refund requests.
 
-A seller can delete their account only if:
-- They have no orders with paid or shipped status
-- They have no pending cancellation requests
-- They have no pending refund requests
-
-If any of these conditions are not met, the deletion is rejected and the seller must resolve the pending items first.
+If there are pending orders or requests, the deletion is rejected.
 
 When a seller deletes their account:
-- Their products are deleted from product listings (no longer visible to customers)
-- Their order history and order snapshots are preserved
+- Their products are deleted from listings
+- Order history and snapshots are preserved
 - Their shop name in past orders is preserved
 
-After deletion, the seller cannot log in or reactivate the account.
+After account deletion, the seller cannot log in.
 
-### Account Ban Management
+### Password Change
 
-Administrators can ban customer accounts. When a customer account is banned, the customer cannot log in.
+Customer members may change their password.
 
-Administrators can unban customer accounts to restore access.
+Seller members may change their password.
 
-Administrators can ban seller accounts. When a seller account is banned, the seller cannot log in. Existing orders from the banned seller remain active and can be fulfilled.
+The user must provide their current password and the new password.
 
-Administrators can unban seller accounts to restore login access.
+The system validates that the new password is accepted and updates the account credentials.
+
+### Administrator Role Request
+
+Any user (customer or seller) may submit a request to become an administrator.
+
+The request includes a reason (text) for the request.
+
+Super administrators can view the list of pending administrator requests.
+
+Super administrators can approve or reject requests.
+
+When approved, the user becomes a regular administrator.
+
+### Administrator Role Promotion
+
+Super administrators may promote regular administrators to super administrator.
+
+Super administrators may demote super administrators to regular administrator.
+
+Super administrators cannot demote themselves.
+
+### Session Management
+
+Upon successful login, the user is granted an active session.
+
+The session remains active until the user logs out or the session expires.
+
+The user may log out to terminate the session and invalidate the authentication credentials.
+
+### Guest Access Restriction
+
+Guests (unregistered users) cannot browse the platform or use any features.
+
+Registration is required before any platform features can be accessed.
 
 ## Session and Logout
 
@@ -704,43 +607,49 @@ Define session behavior and logout from a user perspective.
 
 ### Session Management
 
-Authenticated users establish a session by providing valid email and password credentials through the platform authentication interface.
+A session represents an authenticated user's active access to the platform.
 
-A session maintains the user's authentication state for the duration of their active login period. While a session is active, the user can perform operations within their assigned permission scope.
+A session is created when a customer or seller successfully logs in with their email and password.
 
-Sessions automatically terminate when users explicitly log out or when the session reaches its configured expiration time. After termination, users must re-authenticate to restore their session.
+The session remains active while the user is logged in and using the platform.
 
-Guest users maintain a separate session state that provides read-only access to public content without requiring authentication credentials.
+Users with an active session can access features assigned to their actor role.
 
-Each user type (guest, customer, seller, admin, superadmin) operates within a distinct session that governs their access to platform features and functionality.
+Guests (unregistered users) cannot create sessions and cannot access platform features.
+
+Only registered customers and sellers can create sessions through authentication.
+
+If authentication fails (incorrect email or password), no session is created.
 
 ### Logout
 
-Any authenticated user can end their session by logging out from the platform.
+Customers and sellers can log out of their account at any time.
 
-After logging out, the user's session is terminated and they must log in again to access the platform.
+When a user logs out, their session is terminated.
 
-Logging out invalidates all previous session tokens associated with that user.
+After logout, the user must log in again to access any platform features.
 
-A user with an active session on one device can log out, which terminates the session on that device only.
+Logged-out users are treated as guests and cannot access restricted features.
 
-If a user logs out, they will be redirected to the public homepage after logout completes.
-
-Logged out users cannot access their account-specific features including profile management, order history, and wishlist.
+The system provides a logout option visible to all logged-in users.
 
 ### Account Security
 
-Customers and sellers maintain account security through password-based authentication.
+Customers and sellers can change their account password.
 
-Users can update their password to protect their account from unauthorized access.
+To change a password, the user must provide their current password.
 
-Password changes require verification of the user's identity before updating credentials.
+After successfully changing the password, the user remains logged in with the new password.
 
-After a password change, the system may require re-authentication on active sessions to ensure security.
+Customer accounts can be deleted at any time by the customer.
 
-Registered users must maintain valid credentials to access their account and associated features.
+When a customer deletes their account, their profile information (display name and phone number) is removed, but their orders and order history are preserved for seller records and legal purposes.
 
-Administrators cannot view or reset user passwords to maintain account ownership boundaries.
+Seller accounts can be deleted only if there are no pending orders with paid or shipped status and no pending cancellation or refund requests.
+
+When a seller deletes their account, their products are removed from listings, but order history and snapshots are preserved.
+
+Administrator accounts cannot be deleted by the account holder.
 
 # Account Lifecycle
 
@@ -750,63 +659,221 @@ Account creation, deletion, and password management.
 
 Define how users create accounts, delete accounts, and change passwords.
 
-### Customer Account Registration
+### Customer Registration
 
-Customers can create an account by providing an email address and password. The email address must be unique across all customer accounts on the platform. Each customer account must have a valid email and a password set at registration.
+**Account Creation**
 
-During registration, the customer provides their email address and chooses a password. The system validates that the email address is not already registered by another customer. If the email is already in use, the registration request is rejected with an appropriate message.
+A person can create a customer account by providing an email address and password. The email address must be unique across all users. Upon successful registration, the person becomes a registered customer with shopping privileges.
 
-Upon successful registration, the customer account is created and the customer can immediately log in and begin using the platform.
+**Registration Validation**
 
-### Seller Account Registration
+When a registration request is submitted:
+- If the email address is already in use, the request is rejected
+- If the email address and password are provided, a new customer account is created
+- The customer can immediately log in after successful registration
 
-Sellers can create an account by providing an email address and password. The email address must be unique across all seller accounts on the platform.
+### Seller Registration
 
-During registration, the seller provides their email address and chooses a password. The system validates that the email address is not already registered by another seller. If the email is already in use, the registration request is rejected with an appropriate message.
+**Account Creation with Approval Requirement**
 
-After registration, the seller account is created with a pending approval status. The seller cannot list products or perform any selling activities until their account is approved by an administrator. The seller can view their approval status, which shows as pending, approved, or rejected.
+A person can create a seller account by providing an email address and password. The email address must be unique across all users. Upon registration, the person becomes a seller account with pending approval status.
 
-If the seller's registration is rejected, the system displays the rejection reason provided by the administrator. The seller can submit a new registration request after addressing the issues noted in the rejection reason.
+**Registration Validation**
 
-### Account Deletion - Customer
+When a seller registration request is submitted:
+- If the email address is already in use, the request is rejected
+- If the email address and password are provided, a new seller account is created with pending approval status
 
-Customers can delete their own account through the account settings page.
+**Approval Status Display**
 
-When a customer deletes their account:
-- Their profile information (display name and phone number) is permanently deleted from the platform
-- Their orders and order history are preserved for legal and seller record purposes
-- Their reviews are preserved but displayed as "deleted user" to maintain historical context on products
-- The customer can no longer log in to the platform
+A seller can view their approval status at any time:
+- Pending: the registration request is under administrator review
+- Approved: the seller can list products and receive orders
+- Rejected: the seller cannot sell; the rejection reason is displayed
 
-The account deletion is permanent and cannot be undone. All personal data that identifies the customer is removed, except for data required for legal compliance and transaction history.
+**Rejection Handling**
 
-### Account Deletion - Seller
+If a seller registration is rejected:
+- The seller can view the rejection reason provided by the administrator
+- The seller can submit a new registration request
+- Multiple registration attempts are allowed until approval is granted
 
-Sellers can request to delete their seller account, but certain conditions must be met before deletion is allowed.
+### Customer Login
 
-A seller account can only be deleted if:
-- The seller has no orders with pending statuses (including paid or shipped items)
-- The seller has no pending cancellation requests for any of their products
-- The seller has no pending refund requests for any of their products
+**Authentication**
 
-If any of these conditions are not met, the deletion request is rejected with an explanation of which items are preventing deletion.
+A registered customer can log in to the platform using their email address and password. Upon successful authentication, the customer gains access to all member shopping features.
 
-When a seller account is successfully deleted:
-- The seller's shop name is preserved in all historical order records
-- All products are removed from active listings and search results
-- Order history and product snapshots are preserved for transaction records
-- The seller can no longer log in to the platform
+**Login Validation**
 
-The seller's deletion request is permanent and cannot be undone.
+When login credentials are submitted:
+- If the email address does not exist in the system, the request is rejected
+- If the password is incorrect for the provided email address, the request is rejected
+- If the customer account has been banned by an administrator, the login attempt is rejected
+- If the email address and password are both correct, the customer is logged in
+
+### Seller Login
+
+**Authentication**
+
+A registered seller can log in using their email address and password. Upon successful authentication, the seller gains access to the seller dashboard.
+
+**Login Validation by Status**
+
+When seller login credentials are submitted:
+- If the email address does not exist in the system, the request is rejected
+- If the password is incorrect for the provided email address, the request is rejected
+- If the seller account is in pending approval status, the seller can view approval status but cannot list products or fulfill orders
+- If the seller account is approved, full seller privileges are granted
+- If the seller account is rejected, the seller can log in but cannot sell products
+- If the seller account is suspended by an administrator, the seller can log in but cannot create new products or edit existing products; however, existing orders can still be processed
+- If the seller account is banned by an administrator, the login attempt is rejected
+
+### Administrator Login
+
+**Authentication**
+
+A registered administrator can log in using their email address and password. Upon successful authentication, the administrator gains access to administrative functions.
+
+**Login Validation**
+
+When administrator login credentials are submitted:
+- If the email address does not exist in the system, the request is rejected
+- If the password is incorrect for the provided email address, the request is rejected
+- If the administrator account has been banned, the login attempt is rejected
+- If the email address and password are both correct, the administrator is logged in
+
+**Role-Based Access**
+
+The access granted depends on the administrator grade:
+- Regular administrator: can manage sellers, categories, products, orders, and users
+- Super administrator: has all regular administrator privileges plus administrator role management
 
 ### Password Change
 
-Both customers and sellers can change their account password through the account settings page.
+**Password Modification**
 
-To change a password, the user must provide:
-- Their current password for verification
-- A new password that meets the platform's password requirements
+Any logged-in user (customer, seller, or administrator) can change their password.
 
-The system validates that the current password is correct before allowing the change. If the current password is incorrect, the password change request is rejected.
+**Change Validation**
 
-After a successful password change, the user is logged out from all active sessions for security purposes. The user must log in again with the new password to access their account.
+When a password change request is submitted:
+- The user must provide their current password for verification
+- If the current password is incorrect, the request is rejected
+- If the new password is provided, the password is updated
+- If the new password matches the current password, the request is rejected
+
+**Session Impact**
+
+Upon successful password change:
+- The user remains logged in with their existing session
+- All other active sessions for the same account are invalidated and require re-authentication
+
+### Customer Account Deletion
+
+**Account Termination**
+
+A registered customer can delete their customer account.
+
+**Deletion Validation**
+
+When a customer account deletion request is submitted:
+- The customer must confirm their password for verification
+- If the password is incorrect, the request is rejected
+- If the customer account has been banned, the deletion request is rejected
+- If the password verification succeeds, the customer account is deleted
+
+**Effects of Deletion**
+
+When a customer account is deleted:
+- The customer profile information (display name, phone number) is deleted and cannot be recovered
+- All order records and order history are preserved for business and legal purposes
+- All reviews written by the deleted customer remain visible on products but are displayed as "deleted user" instead of the customer's name
+- The customer cannot log in with the deleted account after deletion
+- The deleted email address cannot be used to create a new account
+- The customer's shipping addresses are deleted
+
+### Seller Account Deletion
+
+**Account Termination with Prerequisites**
+
+A registered seller can delete their seller account only if all deletion prerequisites are met.
+
+**Deletion Prerequisites**
+
+The seller must have no pending conditions:
+- No orders with paid or shipped status in the seller's order items
+- No pending cancellation requests for the seller's order items
+- No pending refund requests for the seller's order items
+
+**Deletion Validation**
+
+When a seller account deletion request is submitted:
+- The system verifies all deletion prerequisites are met
+- If any prerequisite is not met, the request is rejected with a list of blocking conditions
+- The seller must confirm their password for verification
+- If the password is incorrect, the request is rejected
+- If the password verification succeeds and all prerequisites are met, the seller account is deleted
+
+**Effects of Deletion**
+
+When a seller account is deleted:
+- All products owned by the seller are deleted from platform listings
+- All product variants and inventory records for the seller are deleted
+- Order history and order records are preserved for business purposes
+- The seller's shop name in past orders is preserved as it appeared at the time of purchase
+- The seller cannot log in with the deleted account after deletion
+- The deleted email address cannot be used to create a new seller account
+- All seller approval requests are removed
+
+### Administrator Request
+
+**Request to Become Administrator**
+
+Any registered user (customer or seller) can submit a request to become an administrator.
+
+**Request Submission**
+
+When an administrator request is submitted:
+- The user must provide a reason for the request
+- The request is submitted with status pending
+- Super administrators can view the list of pending requests
+- Super administrators can approve or reject requests
+- When approved, the user becomes a regular administrator
+- When rejected, the user can view the rejection and may submit a new request
+
+### Session Management
+
+**Session Lifecycle**
+
+When a user logs in, an active session is created that persists across multiple actions and requests.
+
+**Session Behaviors**
+
+- Sessions are created upon successful authentication
+- Sessions can be explicitly terminated by logging out
+- Sessions are invalidated when the user changes their password
+- Sessions are invalidated when the user account is deleted
+- Sessions are invalidated when the user account is banned
+- Multiple active sessions can exist for the same user across different devices or browsers
+
+**Inactive Session Handling**
+
+When a period of inactivity exceeds the timeout threshold:
+- The session is automatically terminated
+- The user is redirected to the login page
+- Re-authentication is required to continue using the platform
+
+### Logout
+
+**Session Termination**
+
+Any logged-in user can explicitly log out to terminate their session.
+
+**Logout Behavior**
+
+When a logout request is submitted:
+- The active session is terminated immediately
+- The user is redirected to a non-authenticated state
+- The user cannot resume the previous session; re-authentication is required
+- If multiple sessions exist, logout terminates the current session only

@@ -1,8 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallAdminPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdminPromotionRequest";
-import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
-import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
-import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSuperAdmin";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -20,19 +18,18 @@ export async function getShoppingMallSellerAdminPromotionRequestsRequestId(props
   seller: SellerPayload;
   requestId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallAdminPromotionRequest> {
-  const request =
-    await MyGlobal.prisma.shopping_mall_admin_promotion_requests.findUniqueOrThrow(
+  const record =
+    await MyGlobal.prisma.shopping_mall_admin_promotion_requests.findFirstOrThrow(
       {
-        where: { id: props.requestId, deleted_at: null },
+        where: {
+          id: props.requestId,
+          deleted_at: null,
+          sellerApplicant: {
+            shopping_mall_seller_id: props.seller.id,
+          },
+        },
         ...ShoppingMallAdminPromotionRequestTransformer.select(),
       },
     );
-  if (
-    request.actor_type !== "seller" ||
-    !request.sellerRequest ||
-    request.sellerRequest.seller.id !== props.seller.id
-  ) {
-    throw new HttpException("Forbidden", 403);
-  }
-  return await ShoppingMallAdminPromotionRequestTransformer.transform(request);
+  return await ShoppingMallAdminPromotionRequestTransformer.transform(record);
 }

@@ -5,7 +5,6 @@ import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/stru
 import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -24,113 +23,169 @@ export async function putEcommerceMallSellerProductsProductId(props: {
   productId: string & tags.Format<"uuid">;
   body: IEcommerceMallProduct.IUpdate;
 }): Promise<IEcommerceMallProduct> {
-  // Check seller registration status - must be approved
-  const latestRegistration =
-    await MyGlobal.prisma.ecommerce_mall_seller_registrations.findFirst({
-      where: { seller_id: props.seller.id },
-      orderBy: { created_at: "desc" },
+  // Check seller approval status - reject if pending or rejected
+  const sellerRecord =
+    await MyGlobal.prisma.ecommerce_mall_sellers.findUniqueOrThrow({
+      where: { id: props.seller.id },
+      select: { id: true, approval_status: true },
     });
-  if (latestRegistration === null || latestRegistration.status !== "approved") {
-    throw new HttpException("Seller registration is not approved", 403);
+  if (
+    sellerRecord.approval_status === "pending" ||
+    sellerRecord.approval_status === "rejected"
+  ) {
+    throw new HttpException("Seller registration not approved", 403);
   }
-  // Verify product exists, is not deleted, and belongs to requesting seller
-  const existingProduct =
-    await MyGlobal.prisma.ecommerce_mall_products.findFirst({
-      where: {
-        id: props.productId,
-        deleted_at: null,
+  // Find product and verify ownership - product must exist and belong to seller
+  const product = await MyGlobal.prisma.ecommerce_mall_products.findFirst({
+    where: {
+      id: props.productId,
+      seller_id: props.seller.id,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      category_id: true,
+      base_price: true,
+      created_at: true,
+      images: {
+        select: { id: true, image_url: true, display_order: true },
       },
-      select: {
-        id: true,
-        seller_id: true,
-        name: true,
-        description: true,
-        category_id: true,
-        base_price: true,
+      variants: {
+        select: {
+          id: true,
+          sku_code: true,
+          price: true,
+          created_at: true,
+        },
       },
-    });
-  if (existingProduct === null) {
+    },
+  });
+  if (product === null) {
     throw new HttpException("Product not found", 404);
   }
-  if (existingProduct.seller_id !== props.seller.id) {
-    throw new HttpException(
-      "Forbidden - product belongs to another seller",
-      403,
-    );
-  }
-  // Validate category if provided
-  if (props.body.categoryId !== undefined) {
-    const category = await MyGlobal.prisma.ecommerce_mall_categories.findUnique(
-      {
-        where: { id: props.body.categoryId },
-      },
-    );
-    if (category === null) {
-      throw new HttpException("Category not found", 400);
-    }
-  }
-  // Check name uniqueness within target category if name or category changed
-  const nameChanged =
-    props.body.name !== undefined && props.body.name !== existingProduct.name;
-  const categoryChanged =
-    props.body.categoryId !== undefined &&
-    props.body.categoryId !== existingProduct.category_id;
-  if (nameChanged || categoryChanged) {
-    const targetCategoryId =
-      props.body.categoryId ?? existingProduct.category_id;
-    const targetName = props.body.name ?? existingProduct.name;
-    const duplicate = await MyGlobal.prisma.ecommerce_mall_products.findFirst({
+  // Fetch variant options separately by querying the options table directly
+  const variantOptions =
+    await MyGlobal.prisma.ecommerce_mall_product_variant_options.findMany({
       where: {
-        name: targetName,
-        category_id: targetCategoryId,
-        id: { not: props.productId },
-        deleted_at: null,
+        productVariant: {
+          product_id: props.productId,
+          deleted_at: null,
+        },
+      },
+      select: {
+        product_variant_id: true,
+        option_name: true,
+        option_value: true,
       },
     });
-    if (duplicate !== null) {
-      throw new HttpException(
-        "Product name already exists in this category",
-        409,
+  // Group options by product_variant_id
+  const optionsByVariant = new Map<
+    string,
+    {
+      option_name: string;
+      option_value: string;
+    }[]
+  >();
+  for (const opt of variantOptions) {
+    const existing = optionsByVariant.get(opt.product_variant_id) || [];
+    existing.push({
+      option_name: opt.option_name,
+      option_value: opt.option_value,
+    });
+    optionsByVariant.set(opt.product_variant_id, existing);
+  }
+  // Validate new category exists if categoryId is being changed
+  if (
+    props.body.categoryId !== undefined &&
+    props.body.categoryId !== product.category_id
+  ) {
+    const category = await MyGlobal.prisma.ecommerce_mall_categories.findFirst({
+      where: { id: props.body.categoryId, deleted_at: null },
+      select: { id: true },
+    });
+    if (category === null) {
+      throw new HttpException("Category not found", 404);
+    }
+  }
+  // Create product snapshot before making changes
+  const snapshotId: string & tags.Format<"uuid"> = v4();
+  await MyGlobal.prisma.ecommerce_mall_product_snapshots.create({
+    data: {
+      id: snapshotId,
+      product_id: product.id,
+      name: product.name,
+      description: product.description,
+      category_id: product.category_id,
+      base_price: product.base_price,
+      created_at: product.created_at,
+      images: {
+        create: product.images.map(
+          (img: { image_url: string; display_order: number }) => ({
+            id: v4() as string & tags.Format<"uuid">,
+            url: img.image_url,
+            display_order: img.display_order,
+            created_at: new Date(),
+          }),
+        ),
+      },
+    },
+  });
+  // Create variant snapshots with their option values
+  for (const variant of product.variants) {
+    const variantSnapshotId: string & tags.Format<"uuid"> = v4();
+    await MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.create({
+      data: {
+        id: variantSnapshotId,
+        sku_code: variant.sku_code,
+        price: variant.price ?? 0,
+        created_at: variant.created_at,
+        productVariant: { connect: { id: variant.id } },
+      },
+    });
+    // Create option value snapshots for this variant
+    const options = optionsByVariant.get(variant.id) || [];
+    for (const option of options) {
+      await MyGlobal.prisma.ecommerce_mall_product_variant_snapshot_option_values.create(
+        {
+          data: {
+            id: v4() as string & tags.Format<"uuid">,
+            ecommerce_mall_product_variant_snapshot_id: variantSnapshotId,
+            option_name: option.option_name,
+            option_value: option.option_value,
+            created_at: new Date(),
+          },
+        },
       );
     }
   }
-  // Execute snapshot creation and update in a transaction
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    // Create snapshot of current state before update
-    await tx.ecommerce_mall_product_snapshots.create({
-      data: {
-        id: v4(),
-        product_id: existingProduct.id,
-        category_id: existingProduct.category_id,
-        name: existingProduct.name,
-        description: existingProduct.description,
-        base_price: existingProduct.base_price,
-        created_at: new Date(),
-      },
-    });
-    // Update the product
-    await tx.ecommerce_mall_products.update({
-      where: { id: props.productId },
-      data: {
-        ...(props.body.name !== undefined && { name: props.body.name }),
-        ...(props.body.description !== undefined && {
-          description: props.body.description,
-        }),
-        ...(props.body.categoryId !== undefined && {
-          category_id: props.body.categoryId,
-        }),
-        ...(props.body.basePrice !== undefined && {
-          base_price: props.body.basePrice,
-        }),
-        updated_at: new Date(),
-      },
-    });
+  // Build update data from request body - only include fields that are provided
+  const updateData: Prisma.ecommerce_mall_productsUpdateInput = {
+    updated_at: new Date(),
+  };
+  if (props.body.name !== undefined) {
+    updateData.name = props.body.name;
+  }
+  if (props.body.description !== undefined) {
+    updateData.description = props.body.description;
+  }
+  if (props.body.categoryId !== undefined) {
+    updateData.category = { connect: { id: props.body.categoryId } };
+  }
+  if (props.body.basePrice !== undefined) {
+    updateData.base_price = props.body.basePrice;
+  }
+  // Execute the product update
+  await MyGlobal.prisma.ecommerce_mall_products.update({
+    where: { id: props.productId },
+    data: updateData,
   });
-  // Fetch updated product with all relations for response
-  const updatedProduct =
+  // Fetch and return the updated product using transformer
+  const updated =
     await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
       where: { id: props.productId },
       ...EcommerceMallProductTransformer.select(),
     });
-  return await EcommerceMallProductTransformer.transform(updatedProduct);
+  return await EcommerceMallProductTransformer.transform(updated);
 }

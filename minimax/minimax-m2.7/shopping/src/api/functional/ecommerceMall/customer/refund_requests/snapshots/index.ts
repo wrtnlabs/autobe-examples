@@ -6,55 +6,47 @@ import {
 } from "@nestia/fetcher";
 import typia, { tags } from "typia";
 
-import { IEcommerceMallRefundRequestSnapshot } from "../../../../../structures/IEcommerceMallRefundRequestSnapshot";
-import { IPageIEcommerceMallRefundRequestSnapshot } from "../../../../../structures/IPageIEcommerceMallRefundRequestSnapshot";
+import { IEcommerceMallRefundRequest } from "../../../../../structures/IEcommerceMallRefundRequest";
+import { IPageIEcommerceMallRefundRequest } from "../../../../../structures/IPageIEcommerceMallRefundRequest";
 
 /**
- * Retrieve a paginated list of refund request snapshots for a specific refund request.
+ * Retrieve a paginated list of all snapshots for a specific refund request.
  *
- * This endpoint returns all snapshots associated with a specific refund request, ordered by creation date (newest first). Each snapshot preserves the complete state of the refund request at the moment the seller responded, including the reason text, status, and seller response decision.
+ * This endpoint returns the complete audit trail of a refund request, showing the state at each point when the seller responded. Each snapshot captures the reason text submitted by the customer, the status of the refund request at that moment, and the seller's response decision with any rejection reason.
  *
- * **Access Control**: Access is restricted based on user role:
- * - Customers can only view snapshots of refund requests they submitted
- * - Sellers can only view snapshots of refund requests for their products
- * - Administrators (admin/superAdmin) can view any refund request snapshot for oversight and dispute resolution
+ * Snapshots are immutable and serve as authoritative evidence during dispute resolution. They allow the requesting customer to verify what they submitted and what the seller decided at each stage of the refund workflow.
  *
- * **Relationship to Database Schema**: This operation queries the ecommerce_mall_refund_request_snapshots table which stores immutable records. Each snapshot contains the complete state at the time of seller response including: snapshot_reason (customer's submitted reason), snapshot_status (pending/approved/rejected), seller_response (approve/reject decision), and seller_response_reason (optional rejection reason from seller).
- *
- * **Use Cases**:
- * - Customer viewing the history of their refund request processing
- * - Seller reviewing their responses to customer refund requests
- * - Administrator investigating disputes between customers and sellers
- * - Audit trail review for compliance purposes
- *
- * **Ordering**: Results are returned in reverse chronological order by default, showing the most recent snapshot first.
+ * The response includes snapshots in chronological order, with the most recent first. Only the customer who created the refund request can access these snapshots.
  *
  * @param props.connection
- * @param props.requestId Unique identifier of the refund request whose snapshots to retrieve (UUID format)
- * @param props.body Search criteria and pagination parameters for filtering refund request snapshots
+ * @param props.requestId Unique identifier of the refund request (global scope)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification 1. Extract requestId from path parameters
- * 2. Validate requestId is a valid UUID format
- * 3. Query ecommerce_mall_refund_request_snapshots table filtered by ecommerce_mall_refund_request_id
- * 4. Apply authorization checks:
- *    - For customers: verify ecommerce_mall_customer_id matches authenticated user
- *    - For sellers: verify ecommerce_mall_seller_id matches authenticated seller
- *    - For admins: allow unrestricted access
- * 5. Apply optional filtering from request body (createdAt range, status filter)
- * 6. Apply pagination using limit and offset from request body
- * 7. Return paginated results with total count
- * 8. If refund request not found or access denied, return appropriate error response
+ * @x-autobe-specification Query ecommerce_mall_refund_request_snapshots table filtering by the refund_request_id path parameter.
+ *
+ * Validate that the requesting user has permission to view these snapshots:
+ * - The customer who created the refund request can view their own snapshots
+ * - The seller who owns the product can view snapshots of refund requests for their products
+ * - Administrators can view any snapshots regardless of ownership
+ *
+ * Return results paginated with configurable page size and cursor-based pagination for large datasets. Order by created_at descending (most recent first) to show the latest snapshot state first.
+ *
+ * Join with ecommerce_mall_customers table to include customer email for display if needed.
+ *
+ * Handle edge cases:
+ * - If refund request does not exist, return 404 error
+ * - If user lacks permission, return 403 forbidden error
+ * - If no snapshots exist for the refund request, return empty array with 200 success
  * @path /ecommerceMall/customer/refund-requests/:requestId/snapshots
- * @accessor api.functional.ecommerceMall.customer.refund_requests.snapshots.index
+ * @accessor api.functional.ecommerceMall.customer.refund_requests.snapshots.list
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function index(
+export async function list(
   connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
+  props: list.Props,
+): Promise<list.Response> {
   return true === connection.simulate
-    ? index.simulate(connection, props)
+    ? list.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -64,58 +56,47 @@ export async function index(
           },
         },
         {
-          ...index.METADATA,
-          path: index.path(props),
+          ...list.METADATA,
+          path: list.path(props),
           status: null,
         },
-        props.body,
       );
 }
-export namespace index {
+export namespace list {
   export type Props = {
     /**
-     * Unique identifier of the refund request whose snapshots to retrieve (UUID format)
+     * Unique identifier of the refund request (global scope)
      */
     requestId: string & tags.Format<"uuid">;
-
-    /**
-     * Search criteria and pagination parameters for filtering refund request snapshots
-     */
-    body: IEcommerceMallRefundRequestSnapshot.IRequest;
   };
-  export type Body = IEcommerceMallRefundRequestSnapshot.IRequest;
-  export type Response = IPageIEcommerceMallRefundRequestSnapshot.ISummary;
+  export type Response = IPageIEcommerceMallRefundRequest;
 
   export const METADATA = {
-    method: "PATCH",
+    method: "GET",
     path: "/ecommerceMall/customer/refund-requests/:requestId/snapshots",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
+    request: null,
     response: {
       type: "application/json",
       encrypted: false,
     },
   } as const;
 
-  export const path = (props: Omit<Props, "body">) =>
+  export const path = (props: Props) =>
     `/ecommerceMall/customer/refund-requests/${encodeURIComponent(props.requestId ?? "null")}/snapshots`;
-  export const random = (): IPageIEcommerceMallRefundRequestSnapshot.ISummary =>
-    typia.random<IPageIEcommerceMallRefundRequestSnapshot.ISummary>();
+  export const random = (): IPageIEcommerceMallRefundRequest =>
+    typia.random<IPageIEcommerceMallRefundRequest>();
   export const simulate = (
     connection: IConnection,
-    props: index.Props,
+    props: list.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: index.path(props),
+      path: list.path(props),
       contentType: "application/json",
     });
     try {
       assert.param("requestId")(() => typia.assert(props.requestId));
-      assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {
@@ -130,54 +111,29 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific refund request snapshot by its unique identifier.
+ * Retrieve a specific snapshot of a refund request.
  *
- * This endpoint retrieves an immutable snapshot of a refund request that was captured when the seller responded to the request. The snapshot preserves the complete state at that moment including the customer's reason, the status at snapshot time, the seller's response decision, and any rejection reason if applicable.
+ * This endpoint returns an immutable snapshot capturing the complete state of a refund request at the moment of seller response. The snapshot includes the customer's original reason, the status at snapshot time, the seller's decision (approved/rejected), and any rejection reason provided.
  *
- * Access Control:
- * - Administrators can retrieve any refund request snapshot on the platform for oversight and dispute resolution purposes
- * - Sellers can retrieve snapshots of refund requests related to their own products
- * - Customers can retrieve snapshots of refund requests they initiated
+ * Access control: Customers can view snapshots of their own refund requests, sellers can view snapshots of refund requests for their products, and administrators can view any snapshot for oversight and dispute resolution.
  *
- * Security Validation:
- * - The system validates that the requesting actor has permission to access the specified snapshot
- * - For sellers: must own the seller associated with the refund request
- * - For customers: must be the customer who initiated the refund request
- * - Administrators have full access to all snapshots
- *
- * Related Database Entity:
- * - The operation queries the ecommerce_mall_refund_request_snapshots table which stores immutable records
- * - Each snapshot references the original refund request (ecommerce_mall_refund_request_id), the requesting customer (ecommerce_mall_customer_id), and the responding seller (ecommerce_mall_seller_id)
- *
- * Use Cases:
- * - Administrators investigating disputes between customers and sellers
- * - Customers verifying the state of their refund requests at time of seller response
- * - Sellers reviewing the history of refund request responses
- * - Dispute resolution proceedings requiring authoritative evidence
- *
- * Error Handling:
- * - If snapshot not found: return 404 error
- * - If actor lacks permission: return 403 forbidden error
- * - If session expired: return 401 unauthorized error
+ * The snapshot serves as authoritative evidence during dispute resolution proceedings, showing exactly what state the refund request was in when the seller responded.
  *
  * @param props.connection
- * @param props.requestId Unique identifier of the refund request (UUID format)
- * @param props.snapshotId Unique identifier of the refund request snapshot (UUID format)
+ * @param props.requestId The unique identifier of the refund request that this snapshot belongs to.
+ * @param props.snapshotId The unique identifier of the specific snapshot to retrieve.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Retrieve a specific refund request snapshot from the ecommerce_mall_refund_request_snapshots table.
+ * @x-autobe-specification Query the ecommerce_mall_refund_request_snapshots table filtering by both requestId and snapshotId.
  *
- * Implementation Steps:
- * 1. Extract requestId and snapshotId from path parameters
- * 2. Validate user session and authentication token
- * 3. Determine actor type (admin, seller, or customer)
- * 4. Query the snapshot by snapshotId
- * 5. Verify snapshot exists, return 404 if not found
- * 6. For non-admin actors, verify ownership:
- *    - For sellers: verify snapshot's ecommerce_mall_seller_id matches authenticated seller
- *    - For customers: verify snapshot's ecommerce_mall_customer_id matches authenticated customer
- * 7. For admins: allow unrestricted access
- * 8. Return the snapshot data including all fields: id, refundRequestId, customerId, sellerId, snapshotReason, snapshotStatus, sellerResponse, sellerResponseReason, createdAt, updatedAt
+ * Verify the requesting user has access rights:
+ * - If customer: verify ecommerce_mall_customer_id matches the authenticated customer
+ * - If seller: verify ecommerce_mall_seller_id matches the authenticated seller
+ * - If admin/superAdmin: grant full access
+ *
+ * Return the complete snapshot record including all fields: id, ecommerce_mall_refund_request_id, ecommerce_mall_customer_id, ecommerce_mall_seller_id, snapshot_reason, snapshot_status, seller_response, seller_response_reason, created_at, updated_at.
+ *
+ * Handle not found error if snapshot does not exist or if user lacks permission.
  * @path /ecommerceMall/customer/refund-requests/:requestId/snapshots/:snapshotId
  * @accessor api.functional.ecommerceMall.customer.refund_requests.snapshots.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -206,16 +162,16 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the refund request (UUID format)
+     * The unique identifier of the refund request that this snapshot belongs to.
      */
     requestId: string & tags.Format<"uuid">;
 
     /**
-     * Unique identifier of the refund request snapshot (UUID format)
+     * The unique identifier of the specific snapshot to retrieve.
      */
     snapshotId: string & tags.Format<"uuid">;
   };
-  export type Response = IEcommerceMallRefundRequestSnapshot.IInvert;
+  export type Response = IEcommerceMallRefundRequest.IInvert;
 
   export const METADATA = {
     method: "GET",
@@ -229,8 +185,8 @@ export namespace at {
 
   export const path = (props: Props) =>
     `/ecommerceMall/customer/refund-requests/${encodeURIComponent(props.requestId ?? "null")}/snapshots/${encodeURIComponent(props.snapshotId ?? "null")}`;
-  export const random = (): IEcommerceMallRefundRequestSnapshot.IInvert =>
-    typia.random<IEcommerceMallRefundRequestSnapshot.IInvert>();
+  export const random = (): IEcommerceMallRefundRequest.IInvert =>
+    typia.random<IEcommerceMallRefundRequest.IInvert>();
   export const simulate = (
     connection: IConnection,
     props: at.Props,

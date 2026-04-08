@@ -1,67 +1,37 @@
 import { IConnection, PlainFetcher } from "@nestia/fetcher";
 import typia from "typia";
 
-import { IErpHrmMember } from "../../../../structures/IErpHrmMember";
+import { IErpHrmDashboard } from "../../../../structures/IErpHrmDashboard";
 
 /**
- * Retrieve the organization dashboard with aggregate metrics and status overview.
+ * Retrieve the authenticated user's dashboard with personalized metrics and organizational overview.
  *
- * This endpoint returns a comprehensive dashboard view for the current organization context, providing authorized members with an at-a-glance view of organizational health and activity. The dashboard aggregates data from multiple entities including employees, projects, timers, and reports.
+ * This endpoint returns dashboard data scoped to the user's current organization. All authenticated employees receive personal metrics including hours logged today and this week, active timer status, recent time entries, pending timesheet for the current week, and tasks assigned to them with open or in-progress status.
  *
- * The dashboard requires the report:view permission as defined in the role-based access control system. Members without this permission receive a permission denied error and cannot access the dashboard data.
+ * Users with the report:view permission additionally receive organizational metrics showing total active employees in the organization, total hours logged by all employees this week, count of timesheets awaiting approval, projects with budget utilization exceeding 80%, and the top 5 employees by hours logged this week.
  *
- * Dashboard contents include:
- * - Active timer status showing employees with running timers, including project, task, description, and elapsed time since start timestamp
- * - Timer status indicators displayed prominently when timers are present
- * - Aggregate metrics from time reports and project budget reports
- * - Weekly summary statistics
- * - Organization-level project status overview
- *
- * The dashboard is scoped to the currently selected organization context maintained in the active session. All data returned belongs to this organization only, ensuring proper data isolation between organizations.
- *
- * Related operations:
- * - GET /erpHrm/members/{memberId}/timers/{timerId} provides detailed timer information for individual timers
- * - GET /erpHrm/reports/{reportId} provides access to stored report details
- * - PATCH /erpHrm/reports can generate new reports with specific parameters
+ * The dashboard data refreshes automatically as time entries are logged and timesheets are submitted or reviewed. The response structure adapts based on the requesting user's role and permissions within the organization.
  *
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the current member's employee record to determine their organization context and permission level.
+ * @x-autobe-specification Query the database to build dashboard metrics for the authenticated user's organization.
  *
- * Verify the authenticated member has report:view permission within the current organization. If permission check fails, return 403 Forbidden.
- *
- * Aggregate dashboard data:
- *
- * 1. Active Timers Section:
- *    - Query erp_hrm_timers for all timers belonging to employees in the current organization
- *    - Join with erp_hrm_employees to get employee details (name, position)
- *    - Join with erp_hrm_projects to get project name and color
- *    - Join with erp_hrm_tasks to get task title when applicable
- *    - Calculate elapsed time: current_timestamp - started_at for each active timer
- *    - Include description field
- *    - Return empty array if no active timers
- *
- * 2. Project Summary:
- *    - Count projects by status (active, archived, completed)
- *    - Query erp_hrm_projects filtered by organization
- *    - Group by status field
- *
- * 3. Task Overview:
- *    - Count tasks by status (open, in-progress, completed, closed)
- *    - Count tasks by priority (low, medium, high, urgent)
- *    - Query erp_hrm_tasks through erp_hrm_projects
- *
- * 4. Recent Activity Summary:
- *    - Count recent timelogs (last 7 days)
- *    - Calculate total hours logged this week
- *
- * 5. Timer Visibility:
- *    - For each employee with an active timer, display: project name, task (if assigned), description, elapsed time
- *    - If no active timer, indicate no timer is running
- *    - Display timer status indicators prominently
- *
- * Return comprehensive dashboard object with all aggregated metrics. All queries must filter by erp_hrm_organization_id matching the session's current organization.
+ * 1. Load session context to get: current organization ID, current employee ID, user's role permissions
+ * 2. Build personal metrics (always included):
+ *    - Query erp_hrm_timelogs for today's hours: filter by erp_hrm_employee_id and date = today
+ *    - Query erp_hrm_timelogs for this week's hours: filter by erp_hrm_employee_id and week containing current date
+ *    - Query erp_hrm_timers for active timer: filter by erp_hrm_employee_id with no associated timelog (timer not stopped)
+ *    - Query erp_hrm_timelogs for recent entries: last 5 timelogs ordered by created_at DESC
+ *    - Query erp_hrm_timesheets for pending timesheet: find draft or submitted timesheet for current week (week_start_date = current Monday)
+ *    - Query erp_hrm_tasks for assigned tasks: filter by erp_hrm_employee_id and status IN ('open', 'in-progress')
+ * 3. If user has report:view permission, build organizational metrics:
+ *    - Count erp_hrm_employees where status = 'active' for the organization
+ *    - Sum erp_hrm_timelogs hours for current week (all employees)
+ *    - Count erp_hrm_timesheets where status = 'submitted'
+ *    - Query erp_hrm_projects joining erp_hrm_timelogs to find budget utilization > 80% (exclude projects with null budget_hours)
+ *    - Query top 5 employees by total hours logged this week, join employee names
+ * 4. Return aggregated dashboard response with personal section always present, organizational section only if report:view permission exists
  * @path /erpHrm/member/dashboard
  * @accessor api.functional.erpHrm.member.dashboard.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -85,7 +55,7 @@ export async function at(connection: IConnection): Promise<at.Response> {
       );
 }
 export namespace at {
-  export type Response = IErpHrmMember;
+  export type Response = IErpHrmDashboard;
 
   export const METADATA = {
     method: "GET",
@@ -98,7 +68,8 @@ export namespace at {
   } as const;
 
   export const path = () => "/erpHrm/member/dashboard";
-  export const random = (): IErpHrmMember => typia.random<IErpHrmMember>();
+  export const random = (): IErpHrmDashboard =>
+    typia.random<IErpHrmDashboard>();
   export const simulate = (_connection: IConnection): Response => {
     return random();
   };

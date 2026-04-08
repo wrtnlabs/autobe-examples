@@ -1,11 +1,17 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
-import type { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-import type { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReview";
-import type { IEcommerceMallReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReviewSnapshot";
+import type { IEcommerceCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCategory";
+import type { IEcommerceCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceCustomer";
+import type { IEcommerceOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceOrder";
+import type { IEcommerceOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceOrderItem";
+import type { IEcommerceProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceProduct";
+import type { IEcommerceProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceProductVariant";
+import type { IEcommerceReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceReview";
+import type { IEcommerceReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceReviewSnapshot";
+import type { IEcommerceSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import type { IPageIEcommerceMallReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallReviewSnapshot";
+import type { IPageIEcommerceReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceReviewSnapshot";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -15,105 +21,125 @@ import typia, { tags } from "typia";
 import { authorize_customer_join } from "../../../authorize/authorize_customer_join";
 import { authorize_customer_login } from "../../../authorize/authorize_customer_login";
 import { authorize_customer_refresh } from "../../../authorize/authorize_customer_refresh";
+import { generate_random_ecommerce_customer_reviews_create } from "../../../generate/generate_random_ecommerce_customer_reviews_create";
+import { prepare_random_ecommerce_review } from "../../../prepare/prepare_random_ecommerce_review";
 
 /**
- * Test customer review snapshot retrieval after editing a review.
+ * Test customer review snapshot retrieval after multiple edits.
  *
- * This test validates that:
- * 1. Customer can register and authenticate
- * 2. Review snapshots are created when reviews are edited
- * 3. Snapshots contain previousValues and currentValues
- * 4. Snapshots include the customer who made changes and timestamp
- * 5. Pagination metadata is correctly returned
+ * Validates the complete review snapshot creation and retrieval system by testing a customer's ability to edit their review and retrieve the historical snapshot records. The test ensures that each edit triggers proper snapshot creation with accurate rating and content capture.
+ *
+ * This test validates the audit trail functionality for review modifications, ensuring that all historical states are preserved and retrievable in the correct chronological order.
+ *
+ * 1. Customer authenticates via join endpoint.
+ * 2. Customer creates an initial review with rating 3 and content "Initial review".
+ * 3. Customer edits the review to rating 4 with content "Updated review".
+ * 4. Customer edits the review again to rating 5 with null content.
+ * 5. Customer retrieves snapshot history for the review.
+ * 6. Validates multiple snapshots are returned in descending order by created_at.
+ * 7. Validates each snapshot contains correct rating and content values.
+ * 8. Validates pagination metadata shows correct total count.
  */
 export async function test_api_review_snapshot_retrieval_after_edit(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Register and authenticate as customer
+  // 1. Customer authentication
   const customerConnection: api.IConnection = { host: connection.host };
-  const customerAuth = await authorize_customer_join(customerConnection, {
+  const customer = await authorize_customer_join(customerConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
       display_name: RandomGenerator.name(),
-      phone_number: null,
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: null,
-    } satisfies IEcommerceMallCustomer.IJoin,
+    } satisfies IEcommerceCustomer.IJoin,
   });
-  typia.assert(customerAuth);
-  // 2. Retrieve review snapshots
-  // Note: In a real scenario, we would first create a review, edit it, then retrieve snapshots
-  // Since review creation/editing APIs are not available in the provided SDK, we test the snapshot retrieval endpoint
+  typia.assert(customer);
+  // 2. Create initial review (requires a delivered order item - using utility function)
+  const review = await generate_random_ecommerce_customer_reviews_create(
+    customerConnection,
+    {
+      body: {
+        rating: 3,
+        content: "Initial review content",
+      },
+    },
+  );
+  typia.assert(review);
+  // 3. First edit - change rating to 4 and update content
+  await api.functional.ecommerce.customer.reviews.update(customerConnection, {
+    reviewId: review.id,
+    body: {
+      rating: 4,
+      content: "Updated review content",
+    } satisfies IEcommerceReview.IUpdate,
+  });
+  // 4. Second edit - change rating to 5 and set content to null
+  await api.functional.ecommerce.customer.reviews.update(customerConnection, {
+    reviewId: review.id,
+    body: {
+      rating: 5,
+      content: null,
+    } satisfies IEcommerceReview.IUpdate,
+  });
+  // 5. Retrieve snapshot history
   const snapshots =
-    await api.functional.ecommerceMall.customer.reviews.my.snapshots.at(
+    await api.functional.ecommerce.customer.reviews.snapshots.index(
       customerConnection,
+      {
+        reviewId: review.id,
+        body: {} satisfies IEcommerceReviewSnapshot.IRequest,
+      },
     );
   typia.assert(snapshots);
-  // 3. Validate pagination metadata
+  // 6. Validate multiple snapshots returned
+  TestValidator.predicate(
+    "multiple snapshots exist",
+    snapshots.data.length >= 2,
+  );
+  // 7. Validate snapshots ordered by created_at descending (newest first)
+  for (let i = 0; i < snapshots.data.length - 1; i++) {
+    TestValidator.predicate(
+      `snapshot ${i} is newer than snapshot ${i + 1}`,
+      snapshots.data[i].created_at >= snapshots.data[i + 1].created_at,
+    );
+  }
+  // 8. Validate snapshot contents (rating and content values)
+  // The snapshots should contain the historical states before each edit
+  // First snapshot (newest) should have rating 5 and content null
+  // Second snapshot should have rating 4 and content "Updated review content"
+  // Third snapshot (oldest) should have rating 3 and content "Initial review content"
+  if (snapshots.data.length >= 3) {
+    const newest = snapshots.data[0];
+    const middle = snapshots.data[1];
+    const oldest = snapshots.data[2];
+    TestValidator.equals("newest snapshot rating", newest.rating, 5);
+    TestValidator.equals("newest snapshot content", newest.content, null);
+    TestValidator.equals("middle snapshot rating", middle.rating, 4);
+    TestValidator.equals(
+      "middle snapshot content",
+      middle.content,
+      "Updated review content",
+    );
+    TestValidator.equals("oldest snapshot rating", oldest.rating, 3);
+    TestValidator.equals(
+      "oldest snapshot content",
+      oldest.content,
+      "Initial review content",
+    );
+  }
+  // 9. Validate pagination metadata
   TestValidator.equals(
-    "pagination current page",
-    snapshots.pagination.current,
-    1,
+    "pagination records count matches data length",
+    snapshots.pagination.records,
+    snapshots.data.length,
+  );
+  TestValidator.predicate(
+    "pagination current page is 1",
+    snapshots.pagination.current === 1,
   );
   TestValidator.predicate(
     "pagination limit is positive",
     snapshots.pagination.limit > 0,
   );
-  TestValidator.predicate(
-    "pagination records is non-negative",
-    snapshots.pagination.records >= 0,
-  );
-  TestValidator.predicate(
-    "pagination pages is non-negative",
-    snapshots.pagination.pages >= 0,
-  );
-  // 4. Validate snapshot structure if snapshots exist
-  if (snapshots.data.length > 0) {
-    const snapshot = snapshots.data[0];
-    // Validate snapshot ID
-    TestValidator.predicate(
-      "snapshot has valid UUID",
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        snapshot.id,
-      ),
-    );
-    // Validate review information
-    TestValidator.predicate(
-      "review has valid UUID",
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        snapshot.review.id,
-      ),
-    );
-    TestValidator.predicate(
-      "review rating is 1-5",
-      snapshot.review.rating >= 1 && snapshot.review.rating <= 5,
-    );
-    // Validate changedByCustomer information
-    TestValidator.predicate(
-      "changedByCustomer has valid UUID",
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        snapshot.changedByCustomer.id,
-      ),
-    );
-    TestValidator.predicate(
-      "changedByCustomer has valid email",
-      snapshot.changedByCustomer.email.includes("@"),
-    );
-    // Validate timestamp
-    TestValidator.predicate(
-      "createdAt is valid ISO datetime",
-      !isNaN(Date.parse(snapshot.createdAt)),
-    );
-    // Validate previousValues and currentValues exist
-    TestValidator.predicate(
-      "previousValues exists",
-      snapshot.previousValues !== null && snapshot.previousValues !== undefined,
-    );
-    TestValidator.predicate(
-      "currentValues exists",
-      snapshot.currentValues !== null && snapshot.currentValues !== undefined,
-    );
-  }
 }

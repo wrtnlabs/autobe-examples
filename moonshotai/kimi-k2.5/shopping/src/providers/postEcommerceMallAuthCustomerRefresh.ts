@@ -15,117 +15,98 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postEcommerceMallAuthCustomerRefresh(props: {
   body: IEcommerceMallCustomer.IRefresh;
 }): Promise<IEcommerceMallCustomer.IAuthorized> {
-  // 1. Verify refresh token
-  let decoded: {
-    id: string;
-    session_id: string;
-    type: string;
-  };
-  try {
-    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
-      issuer: "autobe",
-    }) as {
-      id: string;
-      session_id: string;
-      type: string;
-    };
-  } catch {
-    throw new HttpException("Invalid or expired refresh token", 401);
-  }
-  // 2. Validate token type is customer
-  if (decoded.type !== "customer") {
-    throw new HttpException("Invalid token type for customer refresh", 403);
-  }
-  const customerId = decoded.id as string & tags.Format<"uuid">;
-  const sessionId = decoded.session_id as string & tags.Format<"uuid">;
-  // 3. Validate session exists and belongs to this customer
+  // 1. Find session by refresh token (which is the session UUID)
   const session =
-    await MyGlobal.prisma.ecommerce_mall_customer_sessions.findFirst({
-      where: {
-        id: sessionId,
-        ecommerce_mall_customer_id: customerId,
-      },
+    await MyGlobal.prisma.ecommerce_mall_customer_sessions.findUnique({
+      where: { id: props.body.refresh },
     });
   if (!session) {
-    throw new HttpException("Session not found or expired", 401);
+    throw new HttpException("Invalid refresh token", 401);
   }
-  // 4. Check session not expired
-  if (session.expired_at < new Date()) {
-    throw new HttpException("Session has expired", 401);
+  // Check if session is expired
+  const now = toISOStringSafe(new Date());
+  if (
+    session.expired_at !== null &&
+    toISOStringSafe(session.expired_at) < now
+  ) {
+    throw new HttpException("Refresh token expired", 401);
   }
-  // 5. Validate customer account is active
-  const customer =
-    await MyGlobal.prisma.ecommerce_mall_customers.findUniqueOrThrow({
-      where: { id: customerId },
-      select: {
-        id: true,
-        email: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-      },
-    });
+  // 2. Verify customer exists and is not deleted
+  const customer = await MyGlobal.prisma.ecommerce_mall_customers.findUnique({
+    where: { id: session.ecommerce_mall_customer_id },
+  });
+  if (!customer) {
+    throw new HttpException("Customer not found", 404);
+  }
   if (customer.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  // 6. Generate new tokens with SAME session_id
-  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
-  const refreshExpires = toISOStringSafe(
+  // 3. Generate new JWT tokens with same session_id
+  const accessExpiresAt = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshExpiresAt = toISOStringSafe(
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   );
   const accessToken = jwt.sign(
     {
-      type: "customer",
-      id: customerId,
-      session_id: sessionId,
+      type: "customer" as const,
+      id: customer.id,
+      session_id: session.id,
       created_at: toISOStringSafe(new Date()),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
   );
-  const newRefreshToken = jwt.sign(
+  const refreshToken = jwt.sign(
     {
-      type: "customer",
-      id: customerId,
-      session_id: sessionId,
-      tokenType: "refresh",
+      type: "customer" as const,
+      id: customer.id,
+      session_id: session.id,
+      tokenType: "refresh" as const,
       created_at: toISOStringSafe(new Date()),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 7. Update session expiration only
+  // 4. Update session expiration
   await MyGlobal.prisma.ecommerce_mall_customer_sessions.update({
-    where: { id: sessionId },
+    where: { id: session.id },
     data: {
-      expired_at: refreshExpires,
+      expired_at: new Date(refreshExpiresAt),
     },
   });
-  // 8. Build and return authorized response
+  // 5. Return IAuthorized response with default values for missing profile/address fields
   return {
     id: customer.id,
-    customerId: customer.id,
-    displayName: null,
-    phoneNumber: null,
+    recipientName: "",
+    phoneNumber: "",
+    streetAddress: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "",
+    isDefault: false,
     createdAt: toISOStringSafe(customer.created_at),
     updatedAt: toISOStringSafe(customer.updated_at),
     email: customer.email,
-    deletedAt: customer.deleted_at
-      ? toISOStringSafe(customer.deleted_at)
-      : null,
-    profile: {
+    displayName: "",
+    customer: {
       id: customer.id,
-      customerId: customer.id,
-      displayName: null,
-      phoneNumber: null,
+      email: customer.email,
+      displayName: "",
       createdAt: toISOStringSafe(customer.created_at),
-      updatedAt: toISOStringSafe(customer.updated_at),
+      deletedAt:
+        customer.deleted_at !== null
+          ? toISOStringSafe(customer.deleted_at)
+          : null,
+      orderCount: 0,
     },
     token: {
       access: accessToken,
-      refresh: newRefreshToken,
-      expired_at: accessExpires,
-      refreshable_until: refreshExpires,
+      refresh: refreshToken,
+      expired_at: accessExpiresAt satisfies string as string,
+      refreshable_until: refreshExpiresAt satisfies string as string,
     },
   };
 }

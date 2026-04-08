@@ -1,6 +1,7 @@
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -21,18 +22,15 @@ export async function putEcommerceMallSellerProductsProductIdVariantsVariantId(p
   variantId: string & tags.Format<"uuid">;
   body: IEcommerceMallProductVariant.IUpdate;
 }): Promise<IEcommerceMallProductVariant> {
-  const existingProduct =
-    await MyGlobal.prisma.ecommerce_mall_products.findFirst({
-      where: {
-        id: props.productId,
-        seller: {
-          id: props.seller.id,
-        },
-        deleted_at: null,
-      },
-    });
-  if (existingProduct === null) {
-    throw new HttpException("Product not found", 404);
+  const product = await MyGlobal.prisma.ecommerce_mall_products.findFirst({
+    where: {
+      id: props.productId,
+      seller_id: props.seller.id,
+      deleted_at: null,
+    },
+  });
+  if (product === null) {
+    throw new HttpException("Product not found or not owned by seller", 404);
   }
   const existingVariant =
     await MyGlobal.prisma.ecommerce_mall_product_variants.findFirst({
@@ -45,93 +43,116 @@ export async function putEcommerceMallSellerProductsProductIdVariantsVariantId(p
   if (existingVariant === null) {
     throw new HttpException("Variant not found", 404);
   }
-  if (props.body.sku !== undefined) {
-    const duplicateVariant =
+  if (props.body.sku_code !== undefined) {
+    const duplicateSku =
       await MyGlobal.prisma.ecommerce_mall_product_variants.findFirst({
         where: {
-          sku: props.body.sku,
-          id: {
-            not: props.variantId,
-          },
+          product_id: props.productId,
+          sku_code: props.body.sku_code,
+          id: { not: props.variantId },
           deleted_at: null,
         },
       });
-    if (duplicateVariant !== null) {
-      throw new HttpException("SKU must be unique", 400);
+    if (duplicateSku !== null) {
+      throw new HttpException("SKU code already exists for this product", 409);
     }
   }
-  if (props.body.base_price !== undefined) {
-    if (props.body.base_price < 0) {
-      throw new HttpException("Base price must be non-negative", 400);
+  if (props.body.stock_quantity !== undefined) {
+    if (props.body.stock_quantity < 0) {
+      throw new HttpException("Stock quantity must be non-negative", 422);
     }
   }
-  if (props.body.sale_price !== undefined) {
-    if (props.body.sale_price !== null && props.body.sale_price < 0) {
-      throw new HttpException("Sale price must be non-negative", 400);
-    }
-    if (props.body.base_price !== undefined && props.body.sale_price !== null) {
-      if (props.body.sale_price > props.body.base_price) {
-        throw new HttpException("Sale price cannot exceed base price", 400);
-      }
+  if (props.body.price !== undefined && props.body.price !== null) {
+    if (props.body.price <= 0) {
+      throw new HttpException("Price must be positive", 422);
     }
   }
-  if (props.body.status !== undefined) {
-    if (!["active", "inactive", "discontinued"].includes(props.body.status)) {
-      throw new HttpException("Invalid status value", 400);
-    }
-  }
-  const snapshotData = {
-    id: v4(),
-    sku_code: existingVariant.sku,
-    options: existingVariant.options,
-    price: existingVariant.base_price,
-    stock_quantity: existingVariant.stock_quantity,
-    status: "active" as const,
-    product: {
-      connect: {
-        id: existingVariant.product_id,
-      },
-    },
-    productVariant: {
-      connect: {
-        id: props.variantId,
-      },
-    },
-    created_at: toISOStringSafe(new Date()),
-  } satisfies Prisma.ecommerce_mall_product_variant_snapshotsCreateInput;
+  const now = toISOStringSafe(new Date());
   await MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.create({
-    data: snapshotData,
+    data: {
+      id: v4(),
+      product_variant_id: props.variantId,
+      product_id: props.productId,
+      seller_id: props.seller.id,
+      sku_code: existingVariant.sku_code,
+      option_values: existingVariant.option_values,
+      price: existingVariant.price,
+      stock_quantity: existingVariant.stock_quantity,
+      created_at: now,
+      updated_at: now,
+    },
   });
-  const updateData: Prisma.ecommerce_mall_product_variantsUpdateInput = {};
-  if (props.body.sku !== undefined) {
-    updateData.sku = props.body.sku;
+  const updateData: Prisma.ecommerce_mall_product_variantsUpdateInput = {
+    updated_at: now,
+  };
+  if (props.body.sku_code !== undefined) {
+    updateData.sku_code = props.body.sku_code;
   }
-  if (props.body.options !== undefined) {
-    updateData.options = JSON.stringify(props.body.options);
+  if (props.body.option_values !== undefined) {
+    updateData.option_values = JSON.stringify(props.body.option_values);
   }
-  if (props.body.base_price !== undefined) {
-    updateData.base_price = props.body.base_price;
+  if (props.body.price !== undefined) {
+    updateData.price = props.body.price;
   }
-  if (props.body.sale_price !== undefined) {
-    updateData.sale_price = props.body.sale_price;
+  if (props.body.stock_quantity !== undefined) {
+    updateData.stock_quantity = props.body.stock_quantity;
   }
-  if (props.body.status !== undefined) {
-    updateData.status = props.body.status;
-  }
-  if (props.body.sort_order !== undefined) {
-    updateData.sort_order = props.body.sort_order;
-  }
-  if (props.body.is_default !== undefined) {
-    updateData.is_default = props.body.is_default;
-  }
-  updateData.updated_at = toISOStringSafe(new Date());
-  const updatedVariant =
-    await MyGlobal.prisma.ecommerce_mall_product_variants.update({
+  await MyGlobal.prisma.ecommerce_mall_product_variants.update({
+    where: {
+      id: props.variantId,
+    },
+    data: updateData,
+  });
+  const updated =
+    await MyGlobal.prisma.ecommerce_mall_product_variants.findUniqueOrThrow({
       where: {
         id: props.variantId,
       },
-      data: updateData,
       ...EcommerceMallProductVariantTransformer.select(),
     });
-  return await EcommerceMallProductVariantTransformer.transform(updatedVariant);
+  return await EcommerceMallProductVariantTransformer.transform(updated);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+// import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+// import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function putEcommerceMallSellerProductsProductIdVariantsVariantId(props: {
+//   seller: SellerPayload;
+//   productId: string & tags.Format<"uuid">;
+//   variantId: string & tags.Format<"uuid">;
+//   body: IEcommerceMallProductVariant.IUpdate;
+// }): Promise<IEcommerceMallProductVariant> {
+//   await MyGlobal.prisma.ecommerce_mall_product_variants.update({
+//     where: { ... },
+//     data: { ... },
+//   });
+//   const updated = await MyGlobal.prisma.ecommerce_mall_product_variants.findUniqueOrThrow({
+//     where: { ... },
+//     ...EcommerceMallProductVariantTransformer.select(),
+//   });
+//   return await EcommerceMallProductVariantTransformer.transform(updated);
+// }
+// ```
+//--------------------------------------------------------------

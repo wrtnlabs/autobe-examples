@@ -3,7 +3,7 @@ import { IErpHrmDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErp
 import { IErpHrmEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmEmployee";
 import { IErpHrmMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmMember";
 import { IErpHrmOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmOrganization";
-import { IErpHrmProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProjectMember";
+import { IErpHrmProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProject";
 import { IErpHrmRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmRole";
 import { IErpHrmTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTask";
 import { IErpHrmTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimelog";
@@ -18,7 +18,9 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { ErpHrmTimelogAtSummaryTransformer } from "../transformers/ErpHrmTimelogAtSummaryTransformer";
+import { ErpHrmEmployeeAtSummaryTransformer } from "../transformers/ErpHrmEmployeeAtSummaryTransformer";
+import { ErpHrmProjectAtSummaryTransformer } from "../transformers/ErpHrmProjectAtSummaryTransformer";
+import { ErpHrmTaskAtSummaryTransformer } from "../transformers/ErpHrmTaskAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -26,7 +28,6 @@ export async function patchErpHrmMemberTimelogs(props: {
   member: MemberPayload;
   body: IErpHrmTimelog.IRequest;
 }): Promise<IPageIErpHrmTimelog.ISummary> {
-  // 1. Get current employee's organization context and role permissions
   const employee = await MyGlobal.prisma.erp_hrm_employees.findFirst({
     where: {
       erp_hrm_member_id: props.member.id,
@@ -34,123 +35,150 @@ export async function patchErpHrmMemberTimelogs(props: {
     },
     select: {
       id: true,
-      status: true,
       erp_hrm_organization_id: true,
       erp_hrm_role_id: true,
     },
   });
-  if (!employee) {
+  if (employee === null) {
     throw new HttpException("Employee not found", 404);
   }
-  if (employee.status !== "active") {
-    throw new HttpException("Employee is not active", 403);
-  }
-  // 2. Check if role has time:view_all permission
-  const rolePermissions =
-    await MyGlobal.prisma.erp_hrm_role_permissions.findMany({
-      where: {
-        erp_hrm_role_id: employee.erp_hrm_role_id,
-      },
-      select: {
-        permission: true,
-      },
-    });
-  const hasTimeViewAll = rolePermissions.some(
-    (p) => p.permission === "time:view_all",
-  );
-  // 3. Get all employee IDs in the organization for view_all permission
-  const organizationEmployees =
-    await MyGlobal.prisma.erp_hrm_employees.findMany({
-      where: {
-        erp_hrm_organization_id: employee.erp_hrm_organization_id,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-      },
-    });
-  const organizationEmployeeIds = organizationEmployees.map((e) => e.id);
-  // 4. Build employee filter based on permission
-  let employeeFilter: Prisma.erp_hrm_timelogsWhereInput;
-  if (hasTimeViewAll) {
-    employeeFilter = {
-      erp_hrm_employee_id: {
-        in: organizationEmployeeIds,
-      },
-    };
-  } else {
-    employeeFilter = {
-      erp_hrm_employee_id: employee.id,
-    };
-  }
-  // 5. Override employee filter if employee_id is provided and user has permission
-  if (props.body.employee_id !== undefined && hasTimeViewAll) {
-    employeeFilter = {
-      erp_hrm_employee_id: props.body.employee_id,
-    };
-  }
-  // 6. Build pagination parameters
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
-  // 7. Build where clause with all filters
+  const permission = await MyGlobal.prisma.erp_hrm_role_permissions.findFirst({
+    where: {
+      erp_hrm_role_id: employee.erp_hrm_role_id,
+      permission: "time:view_all",
+    },
+    select: { id: true },
+  });
+  const canViewAll: boolean = permission !== null;
+  const filterEmployeeId: string | undefined = canViewAll
+    ? (props.body as any).employee_id
+    : employee.id;
+  const page: number = props.body.page ?? 1;
+  const limit: number = Math.min(props.body.limit ?? 20, 100);
+  const skip: number = (page - 1) * limit;
   const whereInput: Prisma.erp_hrm_timelogsWhereInput = {
-    ...employeeFilter,
-    ...(props.body.project_id && {
+    employee: {
+      erp_hrm_organization_id: employee.erp_hrm_organization_id,
+    },
+    ...(filterEmployeeId !== undefined && {
+      erp_hrm_employee_id: filterEmployeeId,
+    }),
+    ...(props.body.project_id !== undefined && {
       erp_hrm_project_id: props.body.project_id,
     }),
-    ...(props.body.task_id && {
+    ...(props.body.task_id !== undefined && {
       erp_hrm_task_id: props.body.task_id,
     }),
     ...(props.body.billable !== undefined && {
       billable: props.body.billable,
     }),
-    ...(props.body.start_date && {
-      date: {
-        gte: props.body.start_date,
-      },
+    ...(props.body.date_from !== undefined && {
+      date: { gte: props.body.date_from },
     }),
-    ...(props.body.end_date && {
-      date: {
-        lte: props.body.end_date,
-      },
+    ...(props.body.date_to !== undefined && {
+      date: { lte: props.body.date_to },
     }),
-    ...(props.body.search && {
-      description: {
-        contains: props.body.search,
-      },
+    ...(props.body.search !== undefined && {
+      description: { contains: props.body.search },
     }),
   };
-  // 8. Query timelogs with full include to satisfy transformer type
-  const rawTimelogs = await MyGlobal.prisma.erp_hrm_timelogs.findMany({
+  const timelogs = await MyGlobal.prisma.erp_hrm_timelogs.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: {
-      date: "desc",
+    orderBy: { date: "desc" },
+    select: {
+      id: true,
+      date: true,
+      duration_minutes: true,
+      description: true,
+      billable: true,
+      employee: ErpHrmEmployeeAtSummaryTransformer.select(),
+      project: ErpHrmProjectAtSummaryTransformer.select(),
+      task: ErpHrmTaskAtSummaryTransformer.select(),
     },
-    include:
-      ErpHrmTimelogAtSummaryTransformer.select() as Prisma.erp_hrm_timelogsInclude,
   });
-  // 9. Get total count for pagination
   const total = await MyGlobal.prisma.erp_hrm_timelogs.count({
     where: whereInput,
   });
-  // 10. Transform results - cast through unknown to satisfy TypeScript
-  const data = await ArrayUtil.asyncMap(
-    rawTimelogs as unknown as Parameters<
-      typeof ErpHrmTimelogAtSummaryTransformer.transform
-    >[0][],
-    ErpHrmTimelogAtSummaryTransformer.transform,
+  const data: IErpHrmTimelog.ISummary[] = await ArrayUtil.asyncMap(
+    timelogs,
+    async (log) => {
+      const durationInt = log.duration_minutes satisfies number &
+        tags.Type<"int32">;
+      const billableInt = (log.billable ? durationInt : 0) satisfies number &
+        tags.Type<"int32">;
+      const nonBillableInt = (
+        !log.billable ? durationInt : 0
+      ) satisfies number & tags.Type<"int32">;
+      return {
+        groupBy: "employee" satisfies "employee",
+        totalMinutes: durationInt,
+        billableMinutes: billableInt,
+        nonBillableMinutes: nonBillableInt,
+        timelogCount: 1 satisfies number & tags.Type<"int32">,
+        employee: await ErpHrmEmployeeAtSummaryTransformer.transform(
+          log.employee,
+        ),
+        project: await ErpHrmProjectAtSummaryTransformer.transform(log.project),
+        task: log.task
+          ? await ErpHrmTaskAtSummaryTransformer.transform(log.task)
+          : undefined,
+      } satisfies IErpHrmTimelog.ISummary;
+    },
   );
-  // 11. Return paginated response
   return {
+    data,
     pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
-    data: data,
+      current: page satisfies number & tags.Type<"int32"> & tags.Minimum<0>,
+      limit: limit satisfies number & tags.Type<"int32"> & tags.Minimum<0>,
+      records: total satisfies number & tags.Type<"int32"> & tags.Minimum<0>,
+      pages: Math.ceil(total / limit) satisfies number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
+    },
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IErpHrmTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimelog";
+// import { IPageIErpHrmTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIErpHrmTimelog";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IErpHrmEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmEmployee";
+// import { IErpHrmMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmMember";
+// import { IErpHrmRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmRole";
+// import { IErpHrmOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmOrganization";
+// import { IErpHrmDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmDepartment";
+// import { IErpHrmProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProject";
+// import { IErpHrmTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTask";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchErpHrmMemberTimelogs(props: {
+//   member: MemberPayload;
+//   body: IErpHrmTimelog.IRequest;
+// }): Promise<IPageIErpHrmTimelog.ISummary> {
+//   // No matching Collector/Transformer found for this operation.
+//     // You MUST call getDatabaseSchemas first to get exact relation property names.
+//     // NEVER guess relation names from table names — always verify against the schema.
+//     ...
+// }
+// ```
+//--------------------------------------------------------------

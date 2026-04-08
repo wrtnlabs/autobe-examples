@@ -8,7 +8,7 @@ export async function superadminAuthorize(request: {
 }): Promise<SuperadminPayload> {
   const payload: SuperadminPayload = jwtAuthorize({ request }) as SuperadminPayload;
 
-  if (payload.type !== "superAdmin") {
+  if (payload.type !== "superadmin") {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 

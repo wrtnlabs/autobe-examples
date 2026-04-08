@@ -2,6 +2,7 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import type { IHrmPlatformUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformUserProfile";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -12,107 +13,67 @@ import { authorize_member_join } from "../../../authorize/authorize_member_join"
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
 
+/**
+ * Test successful member login with valid credentials.
+ *
+ * Validates the complete member authentication flow including account registration, login with valid credentials, and token generation. Ensures that the login response contains all required authentication tokens and member identity information.
+ *
+ * The test verifies that JWT access and refresh tokens are properly generated with correct expiration timestamps. Session context information (href, referrer, ip) is captured for security audit purposes.
+ *
+ * 1. Register a new member account with unique email and password.
+ * 2. Create a new connection for login attempt.
+ * 3. Submit login request with registered credentials and session context.
+ * 4. Verify response contains member id, email, and authorization tokens.
+ * 5. Validate token expiration timestamps are in the future.
+ * 6. Verify member profile is returned (may be null if not created).
+ */
 export async function test_api_member_login_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create member account for login test
+  // 1. Register new member account
   const joinCredentials = {
     email: typia.random<string & tags.Format<"email">>(),
     password: RandomGenerator.alphaNumeric(16),
-    display_name: RandomGenerator.name(),
-    avatar_image: typia.random<string & tags.Format<"uri">>(),
-    phone_number: RandomGenerator.mobile(),
     href: typia.random<string & tags.Format<"uri">>(),
     referrer: typia.random<string & tags.Format<"uri">>(),
     ip: typia.random<string & tags.Format<"ipv4">>(),
-  };
-  const joinConnection: api.IConnection = { host: connection.host };
-  const joinResult = await authorize_member_join(joinConnection, {
+  } satisfies IHrmPlatformMember.IJoin;
+  const joinResult = await authorize_member_join(connection, {
     body: joinCredentials,
   });
   typia.assert(joinResult);
-  // 2. Validate join response contains member profile
-  TestValidator.equals(
-    "email matches join input",
-    joinResult.email,
-    joinCredentials.email,
-  );
-  TestValidator.equals(
-    "display_name matches",
-    joinResult.display_name,
-    joinCredentials.display_name,
-  );
-  TestValidator.predicate(
-    "account is active (not deleted)",
-    joinResult.deleted_at === null,
-  );
-  // 3. Login with the created credentials
-  const loginCredentials: IHrmPlatformMember.ILogin = {
+  // 2. Create new connection for login
+  const loginConnection: api.IConnection = { host: connection.host };
+  // 3. Login with registered credentials
+  const loginCredentials = {
     email: joinCredentials.email,
     password: joinCredentials.password,
     href: typia.random<string & tags.Format<"uri">>(),
     referrer: typia.random<string & tags.Format<"uri">>(),
     ip: typia.random<string & tags.Format<"ipv4">>(),
-  };
-  const loginConnection: api.IConnection = { host: connection.host };
+  } satisfies IHrmPlatformMember.ILogin;
   const loginResult = await authorize_member_login(loginConnection, {
     body: loginCredentials,
   });
   typia.assert(loginResult);
-  // 4. Validate login response matches member profile
+  // 4. Validate member identity matches registration
+  TestValidator.equals("member id matches", loginResult.id, joinResult.id);
   TestValidator.equals(
-    "email matches login input",
+    "email matches",
     loginResult.email,
-    loginCredentials.email,
+    joinCredentials.email,
   );
-  TestValidator.equals(
-    "display_name matches join",
-    loginResult.display_name,
-    joinResult.display_name,
-  );
-  TestValidator.equals("member id matches join", loginResult.id, joinResult.id);
-  TestValidator.equals(
-    "avatar_image matches",
-    loginResult.avatar_image,
-    joinResult.avatar_image,
-  );
-  TestValidator.equals(
-    "phone_number matches",
-    loginResult.phone_number,
-    joinResult.phone_number,
-  );
-  // 5. Validate authentication tokens exist
-  TestValidator.predicate(
-    "access token exists",
-    loginResult.token.access.length > 0,
-  );
-  TestValidator.predicate(
-    "refresh token exists",
-    loginResult.token.refresh.length > 0,
-  );
-  // 6. Validate token expiration logic
+  // 5. Validate token expiration timestamps are in the future
+  const now = new Date();
   const expiredAt = new Date(loginResult.token.expired_at);
   const refreshableUntil = new Date(loginResult.token.refreshable_until);
-  const now = new Date();
-  TestValidator.predicate("expired_at is in the future", expiredAt > now);
+  TestValidator.predicate("expired_at is in future", expiredAt > now);
   TestValidator.predicate(
-    "refreshable_until is in the future",
+    "refreshable_until is in future",
     refreshableUntil > now,
   );
   TestValidator.predicate(
     "refreshable_until is after expired_at",
     refreshableUntil > expiredAt,
   );
-  // 7. Verify the connection was updated with the access token
-  TestValidator.predicate(
-    "loginConnection has Authorization header",
-    loginConnection.headers !== undefined,
-  );
-  if (loginConnection.headers !== undefined) {
-    TestValidator.equals(
-      "Authorization header matches access token",
-      loginConnection.headers.Authorization,
-      loginResult.token.access,
-    );
-  }
 }

@@ -2,7 +2,9 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIRedditCommunityComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIRedditCommunityComment";
 import { IRedditCommunityComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityComment";
+import { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
 import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
+import { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPost";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -11,6 +13,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { RedditCommunityCommentAtSummaryTransformer } from "../transformers/RedditCommunityCommentAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -21,154 +24,74 @@ export async function patchRedditCommunityPostsPostIdComments(props: {
   await MyGlobal.prisma.reddit_community_posts.findUniqueOrThrow({
     where: { id: props.postId },
   });
-  const page = props.body.page ?? 1;
   const limit = Math.min(props.body.limit ?? 20, 100);
+  const page = props.body.page ?? 1;
   const skip = (page - 1) * limit;
-  const whereInput = {
+  const whereInput: Prisma.reddit_community_commentsWhereInput = {
     reddit_community_post_id: props.postId,
     deleted_at: null,
-    ...(props.body.created_at_from && {
-      created_at: {
-        gte: new Date(props.body.created_at_from),
-      },
-    }),
-    ...(props.body.created_at_to && {
-      created_at: {
-        lte: new Date(props.body.created_at_to),
-      },
-    }),
-  } satisfies Prisma.reddit_community_commentsWhereInput;
+    ...(props.body.parentCommentId !== undefined &&
+      props.body.parentCommentId !== null && {
+        reddit_community_comment_id: props.body.parentCommentId,
+      }),
+  };
+  const allComments = await MyGlobal.prisma.reddit_community_comments.findMany({
+    where: whereInput,
+    ...RedditCommunityCommentAtSummaryTransformer.select(),
+  });
   const sort = props.body.sort ?? "new";
-  const orderByInput = (
-    sort === "best"
-      ? { created_at: "desc" as const }
-      : sort === "new"
-        ? { created_at: "desc" as const }
-        : { created_at: "asc" as const }
-  ) satisfies Prisma.reddit_community_commentsOrderByWithRelationInput;
-  const [comments, total] = await Promise.all([
-    MyGlobal.prisma.reddit_community_comments.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: orderByInput,
-      select: {
-        id: true,
-        content: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        member: {
-          select: {
-            id: true,
-            username: true,
-            created_at: true,
-          },
-        },
-        parentComment: {
-          select: {
-            id: true,
-            content: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
-            member: {
-              select: {
-                id: true,
-                username: true,
-                created_at: true,
-              },
-            },
-          },
-        },
-      },
-    }),
-    MyGlobal.prisma.reddit_community_comments.count({
-      where: whereInput,
-    }),
-  ]);
-  const commentIds = comments.map((c) => c.id);
-  const parentCommentIds = comments
-    .filter((c) => c.parentComment !== null)
-    .map((c) => c.parentComment!.id);
-  const allCommentIds = [...new Set([...commentIds, ...parentCommentIds])];
-  const votes =
-    allCommentIds.length > 0
-      ? await MyGlobal.prisma.reddit_community_comment_votes.findMany({
-          where: {
-            reddit_community_comment_id: { in: allCommentIds },
-          },
-          select: {
-            reddit_community_comment_id: true,
-            direction: true,
-          },
-        })
-      : [];
-  const voteScores: Record<string, number> = {};
-  for (const commentId of allCommentIds) {
-    const commentVotes = votes.filter(
-      (v) => v.reddit_community_comment_id === commentId,
-    );
-    const upvotes = commentVotes.filter((v) => v.direction === "UPVOTE").length;
-    const downvotes = commentVotes.filter(
-      (v) => v.direction === "DOWNVOTE",
-    ).length;
-    voteScores[commentId] = upvotes - downvotes;
+  let sortedComments = allComments;
+  if (sort === "best") {
+    sortedComments = [...allComments].sort((a, b) => {
+      const scoreA = a.votes.reduce((sum, vote) => sum + vote.value, 0);
+      const scoreB = b.votes.reduce((sum, vote) => sum + vote.value, 0);
+      return scoreB - scoreA;
+    });
+  } else if (sort === "controversial") {
+    sortedComments = [...allComments].sort((a, b) => {
+      const scoreA = a.votes.reduce((sum, vote) => sum + vote.value, 0);
+      const scoreB = b.votes.reduce((sum, vote) => sum + vote.value, 0);
+      const votesA = a.votes.length;
+      const votesB = b.votes.length;
+      const absA = Math.abs(scoreA);
+      const absB = Math.abs(scoreB);
+      if (absA !== absB) {
+        return absA - absB;
+      }
+      return votesB - votesA;
+    });
+  } else {
+    sortedComments = [...allComments].sort((a, b) => {
+      return b.created_at.getTime() - a.created_at.getTime();
+    });
   }
-  const data = comments.map(
-    (comment) =>
-      ({
-        id: comment.id as string & tags.Format<"uuid">,
-        content: comment.content,
-        author: {
-          id: comment.member.id as string & tags.Format<"uuid">,
-          username: comment.member.username,
-          created_at: toISOStringSafe(comment.member.created_at) as string &
-            tags.Format<"date-time">,
-        } satisfies IRedditCommunityMember.ISummary,
-        parent: comment.parentComment
-          ? ({
-              id: comment.parentComment.id as string & tags.Format<"uuid">,
-              content: comment.parentComment.content,
-              author: {
-                id: comment.parentComment.member.id as string &
-                  tags.Format<"uuid">,
-                username: comment.parentComment.member.username,
-                created_at: toISOStringSafe(
-                  comment.parentComment.member.created_at,
-                ) as string & tags.Format<"date-time">,
-              } satisfies IRedditCommunityMember.ISummary,
-              created_at: toISOStringSafe(
-                comment.parentComment.created_at,
-              ) as string & tags.Format<"date-time">,
-              updated_at: toISOStringSafe(
-                comment.parentComment.updated_at,
-              ) as string & tags.Format<"date-time">,
-              deleted_at: comment.parentComment.deleted_at
-                ? (toISOStringSafe(comment.parentComment.deleted_at) as string &
-                    tags.Format<"date-time">)
-                : null,
-              vote_score: voteScores[comment.parentComment.id] ?? 0,
-            } satisfies IRedditCommunityComment.ISummary)
-          : null,
-        vote_score: voteScores[comment.id] ?? 0,
-        created_at: toISOStringSafe(comment.created_at) as string &
-          tags.Format<"date-time">,
-        updated_at: toISOStringSafe(comment.updated_at) as string &
-          tags.Format<"date-time">,
-        deleted_at: comment.deleted_at
-          ? (toISOStringSafe(comment.deleted_at) as string &
-              tags.Format<"date-time">)
-          : null,
-      }) satisfies IRedditCommunityComment.ISummary,
-  );
+  let paginatedComments = sortedComments;
+  const hasCursor =
+    props.body.created_at !== undefined && props.body.id !== undefined;
+  if (hasCursor && props.body.created_at !== null && props.body.id !== null) {
+    const cursorIndex = sortedComments.findIndex((c) => {
+      const commentCreatedAt = c.created_at.toISOString();
+      return (
+        commentCreatedAt === props.body.created_at && c.id === props.body.id
+      );
+    });
+    if (cursorIndex !== -1) {
+      paginatedComments = sortedComments.slice(cursorIndex + 1);
+    }
+  } else {
+    paginatedComments = sortedComments.slice(skip, skip + limit);
+  }
+  const total = allComments.length;
   return {
-    data,
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  } satisfies IPageIRedditCommunityComment.ISummary;
+    data: await ArrayUtil.asyncMap(
+      paginatedComments,
+      RedditCommunityCommentAtSummaryTransformer.transform,
+    ),
+  };
 }

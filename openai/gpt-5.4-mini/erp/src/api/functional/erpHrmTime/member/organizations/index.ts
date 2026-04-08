@@ -6,40 +6,44 @@ import {
 } from "@nestia/fetcher";
 import typia, { tags } from "typia";
 
-import { IErpHrmTimeOrganization } from "../../../../structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "../../../../structures/IErpHrmTimeOrganizationDashboardSummary";
+import { IPageIErpHrmTimeOrganizationDashboardSummary } from "../../../../structures/IPageIErpHrmTimeOrganizationDashboardSummary";
 
 export * as settings from "./settings/index";
-export * as memberships from "./memberships/index";
-export * as ownership_transfer from "./ownership_transfer/index";
+export * as timeReportRows from "./timeReportRows/index";
+export * as projectBudgetReportRows from "./projectBudgetReportRows/index";
+export * as weeklySummaryReportRows from "./weeklySummaryReportRows/index";
+export * as dashboardSummaries from "./dashboardSummaries/index";
 
 /**
- * Create a new organization tenant for the ERP HRM and time tracking platform.
+ * Retrieve a paginated list of organizations available in the current account context.
  *
- * This operation creates the core organization record that defines an isolated business boundary for employees, projects, time tracking, and related organization-scoped data. The organization is owned by the creating member account, and the new tenant becomes available as an independent context for subsequent work.
+ * This operation is used to browse organization records and locate tenant entries by name, status, and creation range. It is intended for multi-organization workflows where a member may need to review the organizations they own or belong to, and for administrative interfaces that need searchable organization lists.
  *
- * The organization profile includes the organization name, optional description, optional logo image URL, and lifecycle state. The record is the root tenant entity, so validation should ensure the name is unique and the owner member reference is valid. Organization settings such as currency, timezone, and fiscal start month are managed separately in organization settings data and should not be duplicated here.
+ * The result reflects the organization tenant record defined by the organization table, including its identity, ownership, lifecycle state, and profile fields such as description and logo image URL. Organization-specific settings such as currency, timezone, and fiscal start month are maintained in the related settings record and may be projected into summaries when needed for list displays.
  *
- * If creation fails, the service should return a validation or conflict error when the organization name already exists, or a not-found/authorization error when the owner member context is invalid. The created organization should be persisted together with its ownership reference and timestamps so that the new tenant is immediately usable in the selected organization context.
+ * Use this endpoint with pagination and sorting to support UI browsing. If the request does not match an accessible organization scope, the service should return an empty page rather than exposing unrelated tenants. Invalid filters or unsupported sort fields should produce a validation error.
  *
  * @param props.connection
- * @param props.body Data required to create a new organization tenant.
+ * @param props.body Search, pagination, and sorting criteria for organizations.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Insert a new record into erp_hrm_time_organizations with the owner member reference, organization name, optional description, optional logo image URL, and initial lifecycle status.
- *
- * Validate that the owner member exists and is allowed to create the organization in the current authentication context. Enforce the unique organization name constraint before insert. Persist created_at and updated_at at creation time and leave deleted_at null.
- *
- * Return the full created organization record after insert. Do not attempt to manage organization settings in this operation; those belong to the separate organization settings resource. If the unique name constraint is violated, respond with a conflict-style validation error. If the owner member context is invalid or missing, reject the request with an authorization or not-found error as appropriate.
+ * @x-autobe-specification Query the organization table as a paginated search endpoint.
+ * Apply filters for organization name, status, and created-at range when supplied by the request body.
+ * Support sorting by allowed organization fields, and always paginate the result set to prevent unbounded reads.
+ * Join organization settings only when needed for summary projection; do not require settings rows for the base list query because the organization root record is the primary source of identity and lifecycle data.
+ * Enforce tenant visibility rules from the authenticated member context if the application layer restricts organization browsing to owned or accessible organizations.
+ * Return summary objects optimized for list rendering, including only the fields required by the consumer. If no records match, return an empty page.
  * @path /erpHrmTime/member/organizations
- * @accessor api.functional.erpHrmTime.member.organizations.create
+ * @accessor api.functional.erpHrmTime.member.organizations.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function create(
+export async function index(
   connection: IConnection,
-  props: create.Props,
-): Promise<create.Response> {
+  props: index.Props,
+): Promise<index.Response> {
   return true === connection.simulate
-    ? create.simulate(connection, props)
+    ? index.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -49,115 +53,22 @@ export async function create(
           },
         },
         {
-          ...create.METADATA,
-          path: create.path(),
+          ...index.METADATA,
+          path: index.path(),
           status: null,
         },
         props.body,
       );
 }
-export namespace create {
+export namespace index {
   export type Props = {
     /**
-     * Data required to create a new organization tenant.
+     * Search, pagination, and sorting criteria for organizations.
      */
-    body: IErpHrmTimeOrganization.ICreate;
+    body: IErpHrmTimeOrganizationDashboardSummary.IRequest;
   };
-  export type Body = IErpHrmTimeOrganization.ICreate;
-  export type Response = IErpHrmTimeOrganization;
-
-  export const METADATA = {
-    method: "POST",
-    path: "/erpHrmTime/member/organizations",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = () => "/erpHrmTime/member/organizations";
-  export const random = (): IErpHrmTimeOrganization =>
-    typia.random<IErpHrmTimeOrganization>();
-  export const simulate = (
-    connection: IConnection,
-    props: create.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: create.path(),
-      contentType: "application/json",
-    });
-    try {
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Update the settings of the currently selected organization.
- *
- * This operation lets the organization owner maintain the tenant profile that defines the organization’s business identity and operating context. The editable settings include the organization name, description, logo image, currency, timezone, and fiscal start month, and the update applies only to the organization that is currently selected in the user’s context.
- *
- * The endpoint is organization-scoped and owner-managed. The service must verify that the caller is working inside an active organization context and that the caller is the organization owner before persisting changes. If the organization cannot be resolved, if the caller lacks ownership, or if any value fails validation, the request must be rejected with an appropriate client error. The updated organization should be returned so the client can refresh its displayed tenant profile immediately.
- *
- * @param props.connection
- * @param props.body Editable organization settings for the currently selected organization.
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor member
- * @x-autobe-specification Resolve the currently selected organization from the authenticated member context, then verify the requester is the organization owner before applying changes. Load the organization record by the selected organization identifier, update only the editable organization profile columns present in the schema, and persist the changes in a single transaction.
- *
- * Validate the submitted payload against the organization schema and business rules: reject missing or malformed values, reject attempts to modify fields outside the organization profile/settings scope, and ensure tenant isolation so only the selected organization is affected. If the organization is not found, return a not-found error. If the caller is not the owner, return a forbidden error. If the operation requires additional related settings rows in the schema, update them consistently within the same transaction.
- *
- * Return the refreshed organization entity after update. Do not allow cross-organization updates, and do not infer or write fields that are not defined in the loaded organization schema.
- * @path /erpHrmTime/member/organizations
- * @accessor api.functional.erpHrmTime.member.organizations.patch
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function patch(
-  connection: IConnection,
-  props: patch.Props,
-): Promise<patch.Response> {
-  return true === connection.simulate
-    ? patch.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...patch.METADATA,
-          path: patch.path(),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace patch {
-  export type Props = {
-    /**
-     * Editable organization settings for the currently selected organization.
-     */
-    body: IErpHrmTimeOrganization.IUpdate;
-  };
-  export type Body = IErpHrmTimeOrganization.IUpdate;
-  export type Response = IErpHrmTimeOrganization;
+  export type Body = IErpHrmTimeOrganizationDashboardSummary.IRequest;
+  export type Response = IPageIErpHrmTimeOrganizationDashboardSummary.ISummary;
 
   export const METADATA = {
     method: "PATCH",
@@ -173,16 +84,17 @@ export namespace patch {
   } as const;
 
   export const path = () => "/erpHrmTime/member/organizations";
-  export const random = (): IErpHrmTimeOrganization =>
-    typia.random<IErpHrmTimeOrganization>();
+  export const random =
+    (): IPageIErpHrmTimeOrganizationDashboardSummary.ISummary =>
+      typia.random<IPageIErpHrmTimeOrganizationDashboardSummary.ISummary>();
   export const simulate = (
     connection: IConnection,
-    props: patch.Props,
+    props: index.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: patch.path(),
+      path: index.path(),
       contentType: "application/json",
     });
     try {
@@ -201,21 +113,22 @@ export namespace patch {
 }
 
 /**
- * Retrieve a single organization by its identifier.
+ * Retrieve the full organization record for the selected tenant.
  *
- * This endpoint returns the organization record that defines a tenant boundary for employees, projects, departments, roles, timelogs, timesheets, tasks, and activity log entries. It is intended for organization detail views, settings pages, and organization context checks in the authenticated member experience.
+ * This operation returns the organization identity and lifecycle data stored in the organization table, including the owner member reference, display name, optional description, optional logo image URL, status, and audit timestamps. It is intended for authenticated members who are already operating within an organization-scoped session and need to inspect the currently selected organization or a specific organization they are permitted to access.
  *
- * The returned organization must belong to the caller’s accessible scope. If the caller is not a member of the organization, or if the organization does not exist, the request must fail with the appropriate access or not-found error. The organization data is independent from other organizations and should be returned only for the currently authorized context.
+ * The organization is the root boundary for tenant-isolated data, so this response represents only one organization record and does not include employees, projects, departments, or other related collections. If the organization does not exist or the caller is not allowed to access it in the current organization context, the request must fail with the appropriate not-found or authorization error.
  *
  * @param props.connection
- * @param props.organizationId The organization identifier in the current tenant scope.
+ * @param props.organizationId The unique identifier of the organization to retrieve (UUID).
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the organization by its primary identifier within the authenticated user’s accessible organizations.
- * Verify that the caller has access to the organization through membership or ownership before returning the record.
- * Use a single read query against erp_hrm_time_organizations; include related settings only if they are part of the organization detail contract and exist in the schema. Do not expose data from other organizations.
- * Return a standard not-found error when the organization does not exist and a forbidden error when the caller lacks access.
- * If the endpoint is used by organization settings screens, ensure the response includes the fields required to render identity and configuration information for the active tenant boundary.
+ * @x-autobe-specification Load the organization row by its UUID primary key.
+ * Join the owner member relation only if the response schema requires owner details; otherwise return the organization entity fields directly.
+ * Enforce organization-scoped authorization so the caller can only read organizations they are permitted to access.
+ * Validate that the path parameter is a UUID and return a not-found error when no record exists.
+ * Do not expose records from other organizations or infer related tenant data in this endpoint.
+ * Preserve the database values for status and timestamps without transformation.
  * @path /erpHrmTime/member/organizations/:organizationId
  * @accessor api.functional.erpHrmTime.member.organizations.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -244,11 +157,11 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * The organization identifier in the current tenant scope.
+     * The unique identifier of the organization to retrieve (UUID).
      */
     organizationId: string & tags.Format<"uuid">;
   };
-  export type Response = IErpHrmTimeOrganization;
+  export type Response = IErpHrmTimeOrganizationDashboardSummary;
 
   export const METADATA = {
     method: "GET",
@@ -262,8 +175,8 @@ export namespace at {
 
   export const path = (props: Props) =>
     `/erpHrmTime/member/organizations/${encodeURIComponent(props.organizationId ?? "null")}`;
-  export const random = (): IErpHrmTimeOrganization =>
-    typia.random<IErpHrmTimeOrganization>();
+  export const random = (): IErpHrmTimeOrganizationDashboardSummary =>
+    typia.random<IErpHrmTimeOrganizationDashboardSummary>();
   export const simulate = (
     connection: IConnection,
     props: at.Props,
@@ -290,32 +203,36 @@ export namespace at {
 }
 
 /**
- * Update an organization’s editable settings.
+ * Update an organization's profile and tenant settings.
  *
- * This operation lets an organization owner change the organization profile and operating context, including the name, description, logo image, currency, timezone, and fiscal start month. These values define how the tenant is identified and how business data is presented throughout the platform.
+ * This operation lets an organization owner change the organization's display name, description, and logo image, together with the operating settings that define how the tenant behaves across the platform. The organization record is the root tenant boundary, while its settings record stores currency, timezone, and fiscal start month as a dependent 1:1 extension.
  *
- * The update is applied only to the specified organization. It does not affect memberships, employees, projects, or data belonging to other organizations. Callers must be authorized in the selected organization context, and invalid values should be rejected with a clear validation error so the organization remains in a consistent state.
+ * Changes apply only to the organization identified by the path parameter and must not affect other organizations. The service must verify that the caller has permission to manage the selected organization and must preserve ownership, lifecycle state, and audit timestamps. Invalid organization references, unauthorized access, or invalid configuration values should be rejected with a validation or authorization error.
  *
  * @param props.connection
- * @param props.organizationId The unique identifier of the organization to update.
- * @param props.body Editable organization settings to apply to the selected organization.
+ * @param props.organizationId The organization identifier in UUID format.
+ * @param props.body Editable organization profile and tenant settings values.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the target organization by organizationId and verify the caller can manage organization settings in the selected organization context. Reject the request if the organization does not exist or if the caller lacks permission.
+ * @x-autobe-specification Load the organization by id and ensure it belongs to the caller's authorized organization scope. Enforce that only organization owners or members with organization management permission can update it.
  *
- * Apply only the editable organization fields from the update DTO: name, description, logo image, currency, timezone, and fiscal start month. Do not modify ownership, lifecycle state, memberships, employees, or other related tenant data.
+ * Update the organization root fields name, description, and logo_image_url only. Do not allow changes to owner_member_id, status, created_at, updated_at, or deleted_at from this endpoint.
  *
- * Validate required business constraints on the updated values, especially acceptable currency, timezone, and fiscal month values. Persist the changes in a single transaction. If any rule fails, return a validation or authorization error and do not partially update the record.
+ * Update the dependent organization settings row through the unique organization id relation. Editable settings fields are currency_code, timezone, and fiscal_start_month. Preserve the one-to-one relationship and use a single transaction so root and settings changes remain consistent.
+ *
+ * Validate that name is not empty, logo_image_url is a valid URI when provided, currency_code and timezone are valid platform values, and fiscal_start_month is a 1-based month value. If the organization settings row is unexpectedly missing, either create it within the same transaction if the domain allows initialization here, or return a not-found/domain error consistent with the service rules.
+ *
+ * Return the updated organization aggregate including its settings. If the organization does not exist, return 404. If the caller lacks access, return 403. If any editable value fails validation, return 400 with field-level errors.
  * @path /erpHrmTime/member/organizations/:organizationId
- * @accessor api.functional.erpHrmTime.member.organizations.putByOrganizationid
+ * @accessor api.functional.erpHrmTime.member.organizations.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function putByOrganizationid(
+export async function update(
   connection: IConnection,
-  props: putByOrganizationid.Props,
-): Promise<putByOrganizationid.Response> {
+  props: update.Props,
+): Promise<update.Response> {
   return true === connection.simulate
-    ? putByOrganizationid.simulate(connection, props)
+    ? update.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -325,27 +242,27 @@ export async function putByOrganizationid(
           },
         },
         {
-          ...putByOrganizationid.METADATA,
-          path: putByOrganizationid.path(props),
+          ...update.METADATA,
+          path: update.path(props),
           status: null,
         },
         props.body,
       );
 }
-export namespace putByOrganizationid {
+export namespace update {
   export type Props = {
     /**
-     * The unique identifier of the organization to update.
+     * The organization identifier in UUID format.
      */
     organizationId: string & tags.Format<"uuid">;
 
     /**
-     * Editable organization settings to apply to the selected organization.
+     * Editable organization profile and tenant settings values.
      */
-    body: IErpHrmTimeOrganization.IUpdate;
+    body: IErpHrmTimeOrganizationDashboardSummary.IUpdate;
   };
-  export type Body = IErpHrmTimeOrganization.IUpdate;
-  export type Response = IErpHrmTimeOrganization;
+  export type Body = IErpHrmTimeOrganizationDashboardSummary.IUpdate;
+  export type Response = IErpHrmTimeOrganizationDashboardSummary;
 
   export const METADATA = {
     method: "PUT",
@@ -362,16 +279,16 @@ export namespace putByOrganizationid {
 
   export const path = (props: Omit<Props, "body">) =>
     `/erpHrmTime/member/organizations/${encodeURIComponent(props.organizationId ?? "null")}`;
-  export const random = (): IErpHrmTimeOrganization =>
-    typia.random<IErpHrmTimeOrganization>();
+  export const random = (): IErpHrmTimeOrganizationDashboardSummary =>
+    typia.random<IErpHrmTimeOrganizationDashboardSummary>();
   export const simulate = (
     connection: IConnection,
-    props: putByOrganizationid.Props,
+    props: update.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: putByOrganizationid.path(props),
+      path: update.path(props),
       contentType: "application/json",
     });
     try {
@@ -391,25 +308,25 @@ export namespace putByOrganizationid {
 }
 
 /**
- * Permanently deletes an organization from the platform.
+ * Permanently deletes an organization and all organization-owned operational data.
  *
- * This operation is available to the organization owner while operating in the correct organization context. The organization must satisfy lifecycle safeguards before deletion is allowed: all pending timesheets must already be resolved, and there must be no active employee contracts. These checks protect unresolved work records and active employment arrangements from being removed prematurely.
+ * This operation is available only to an organization owner in the current organization context. Before deletion can proceed, the system must verify that every pending timesheet for the organization has been resolved and that there are no active employee contracts remaining. These rules protect unresolved work records and ongoing employment arrangements from being removed prematurely.
  *
- * When deletion succeeds, the organization is removed together with its organization-owned operational data, including employees, projects, tasks, timelogs, and timesheets that belong to that organization. The owner’s account remains active, but it is no longer associated with the deleted organization. Any other organizations the owner belongs to are not affected.
+ * When deletion succeeds, the organization’s employees, projects, tasks, timelogs, and timesheets are permanently removed from the system. The owner’s account remains available, but it is no longer associated with the deleted organization. Because organization data is owned by the tenant, this operation affects only the specified organization and does not impact any other organizations the requester may belong to.
  *
- * If the organization still has unresolved timesheets or active contracts, the request must be rejected. If the caller is not authorized to manage the current organization context, the request must fail with an authorization error.
+ * If the organization does not exist, the requester is not authorized, the organization is not deletable due to unresolved timesheets or active contracts, or the current account violates ownership constraints, the service must reject the request with an appropriate validation or domain error.
  *
  * @param props.connection
- * @param props.organizationId The organization identifier in the current tenant context.
+ * @param props.organizationId The identifier of the organization to delete in the current tenant scope.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification Load the organization by organizationId within the caller's selected organization context and verify the caller has organization ownership/management rights for that tenant. Reject the request if the organization does not exist or does not belong to the current accessible context.
+ * @x-autobe-specification Load the organization by organizationId within the active request context and verify that the caller has organization-owner authority for that organization. Confirm that the organization belongs to the current tenant context and that the request is not attempting cross-tenant deletion.
  *
- * Before deletion, verify two hard constraints: (1) there are no pending timesheets for the organization, and (2) there are no active employee contracts. If either constraint is violated, return a conflict/validation error and do not modify data.
+ * Before deletion, validate the business prerequisites: all pending timesheets must be resolved, and there must be no active employee contracts. Also verify ownership constraints for the caller; if the caller is the sole owner, the deletion must be rejected unless ownership has already been transferred or the organization is being deleted through an allowed organization-deletion flow.
  *
- * On success, delete the organization and all organization-owned dependent records that the domain rules require to be permanently deleted, including employees, projects, tasks, timelogs, and timesheets. Ensure the deletion is executed transactionally so partial removal cannot occur. After the organization is deleted, preserve the owner account and remove its association with the deleted organization as required by the domain rules.
+ * Execute deletion in a transaction. Remove organization-owned data in the required cascading order so that employees, projects, tasks, timelogs, and timesheets are permanently deleted with no recovery path in this specification. Ensure any related membership links and organization settings are removed consistently as part of the same atomic operation. Return the deleted organization payload if the backend supports returning the removed entity; otherwise return no body.
  *
- * Do not expose or infer any soft-delete behavior. This is a permanent deletion workflow. Emit the appropriate activity/audit trail if the system records organization deletions elsewhere in the platform.
+ * Map missing organization to not-found, ownership or permission failures to forbidden, and unresolved business prerequisites to a domain validation error explaining that pending timesheets or active contracts block deletion.
  * @path /erpHrmTime/member/organizations/:organizationId
  * @accessor api.functional.erpHrmTime.member.organizations.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -438,7 +355,7 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * The organization identifier in the current tenant context.
+     * The identifier of the organization to delete in the current tenant scope.
      */
     organizationId: string & tags.Format<"uuid">;
   };

@@ -2,36 +2,70 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IErpHrmTimeTimelog } from "../../../../api/structures/IErpHrmTimeTimelog";
 import { IErpHrmTimeTimer } from "../../../../api/structures/IErpHrmTimeTimer";
+import { IPageIErpHrmTimeTimer } from "../../../../api/structures/IPageIErpHrmTimeTimer";
 import { MemberAuth } from "../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
-import { deleteErpHrmTimeMemberTimersTimerId } from "../../../../providers/deleteErpHrmTimeMemberTimersTimerId";
+import { getErpHrmTimeMemberTimers } from "../../../../providers/getErpHrmTimeMemberTimers";
 import { getErpHrmTimeMemberTimersTimerId } from "../../../../providers/getErpHrmTimeMemberTimersTimerId";
 import { patchErpHrmTimeMemberTimers } from "../../../../providers/patchErpHrmTimeMemberTimers";
 import { postErpHrmTimeMemberTimers } from "../../../../providers/postErpHrmTimeMemberTimers";
-import { postErpHrmTimeMemberTimersStop } from "../../../../providers/postErpHrmTimeMemberTimersStop";
-import { putErpHrmTimeMemberTimersTimerId } from "../../../../providers/putErpHrmTimeMemberTimersTimerId";
 
 @Controller("/erpHrmTime/member/timers")
 export class ErphrmtimeMemberTimersController {
   /**
-   * Start a new running timer for the current employee.
+   * Retrieve the currently running timer for the authenticated employee.
    *
-   * This operation begins a live work session within the selected organization context and stores the timer context, including the chosen project, optional task, and optional description. The timer remains active until the employee stops or discards it, and it is used as the source for later timelog creation when the session ends.
+   * This operation returns the live timer session that is currently active in the selected organization context. The timer includes the start timestamp, the selected project, the optional task, and the optional work description that together represent the employee's current tracked work session.
    *
-   * The timer is tied to the current employee and must respect organization boundaries. The selected project must belong to the same organization, and any task provided must belong to that project. If the employee already has an active timer, the request is rejected. If the employee is deactivated or otherwise not allowed to track time, the request is also rejected.
+   * Because each employee can have at most one active timer, this endpoint is used by the UI to determine whether time is still being captured and to display the current live session state. If no timer is running for the employee, the service should return the appropriate empty or not-found response according to the API's standard read conventions.
+   *
+   * Access is always scoped to the authenticated member and the selected organization context. The timer record itself is backed by the timer table, which stores the employee relation, project relation, optional task relation, start time, description, and lifecycle timestamps used by stop and discard flows.
    *
    * @param connection
-   * @param body Timer start context for the current employee, including the project and optional task to track work against.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Authenticate the member and resolve the current organization context before any database write.
-   * Create a new erp_hrm_time_timers row for the current employee only if there is no existing active timer for that employee. Validate that the referenced project belongs to the selected organization and is eligible for time tracking. If taskId is provided, validate that the task exists, belongs to the same project, and is accessible in the current organization.
+   * @x-autobe-specification Resolve the authenticated member from the request context and then resolve the current selected organization context.
+   * Query erp_hrm_time_timers for the active timer belonging to the current employee/member scope. Use the unique employee_id constraint to fetch at most one record, and ensure the record is not discarded if the implementation treats discarded timers as removed via deleted_at.
    *
-   * Persist the timer start timestamp using the server clock. Store the optional description as provided. If the schema contains only the timer context fields, write only those fields and leave all database-managed fields untouched. Return a conflict-style error when a timer is already active, and a not-found or validation error when the project/task context is invalid.
+   * Return the timer only when it belongs to the current authenticated employee and selected organization context. Populate the related project and optional task references through the timer relations as needed by the response DTO. If no active timer exists, return the service's standard empty-detail behavior for this endpoint.
    *
-   * Do not create a timelog here; timelog creation happens when the timer is stopped. Ensure all queries are constrained by the selected organization and employee identity so timers cannot be created across tenants or on behalf of another employee.
+   * Do not expose timers from other employees or organizations. Do not accept a request body. Preserve the timer fields exactly as stored: member_id, employee_id, project_id, optional task_id, started_at, description, created_at, updated_at, and deleted_at.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get()
+  public async get(
+    @MemberAuth()
+    member: MemberPayload,
+  ): Promise<IErpHrmTimeTimer> {
+    try {
+      return await getErpHrmTimeMemberTimers({
+        member,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Start a new live timer for the current employee.
+   *
+   * This operation creates the running timer record that captures an employee’s active work session within the selected organization. The timer stores the chosen project, an optional task, and an optional free-text description so the live session can be tracked with the correct context while work is in progress.
+   *
+   * A user can have only one active timer at a time for the employee record associated with the authenticated account. The server must reject requests when a timer already exists for that employee, when the selected project is outside the current organization, or when an optional task does not belong to the selected project. The created timer becomes the source for later stop or discard actions, and stopping it will generate a timelog from the elapsed duration.
+   *
+   * This endpoint is scoped to the current organization and employee context. If the employee is deactivated, the request must be rejected. If project or task relationships are invalid, the server must return a validation error rather than creating an inconsistent live session.
+   *
+   * @param connection
+   * @param body Timer start details including the selected project, optional task, and optional running description.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor member
+   * @x-autobe-specification Resolve the authenticated member’s current organization and employee record before creating the timer. Verify the employee belongs to the selected organization and is active. Enforce the one-active-timer rule by checking the unique employee_id constraint / existing timer row for the employee.
+   *
+   * Validate that project_id belongs to the current organization. If task_id is provided, validate that the task belongs to the same project and organization. Persist member_id, employee_id, project_id, task_id, started_at, and optional description. started_at should be set by the server to the current time; do not accept it from the client.
+   *
+   * Return the newly created timer record. Ensure the implementation runs in a transaction if any additional lookup or guard is needed, and surface a conflict error when an active timer already exists for the employee. Do not allow creation for deactivated employees or cross-organization project/task references.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -53,30 +87,36 @@ export class ErphrmtimeMemberTimersController {
   }
 
   /**
-   * Update the currently running timer for the authenticated employee.
+   * Retrieve timer records for the currently selected organization context.
    *
-   * This operation lets an employee adjust the live work session while it is still active. The editable context includes the selected project, an optional task, and the timer description so the running record can stay aligned with the actual work being performed.
+   * This operation lets a member inspect timer data tied to the active organization and, when applicable, their own running timer state. A timer represents a live work session for an employee, including its selected project, optional task, and description while it is active.
    *
-   * The timer remains active after the update. If the timer has already been stopped or discarded, or if the requested project or task is not valid for the employee’s current organization context, the request is rejected. The response returns the updated timer state for use in live tracking interfaces.
+   * The timer resource is organization-scoped and must be evaluated against the authenticated member's current organization context. The service must ensure that the caller only receives timers that belong to employees in the selected organization and that any running timer shown to a member is the one associated with their own employee record.
+   *
+   * If the request includes search or filtering criteria, the service should apply them within the selected organization and preserve the rule that each employee can have at most one active timer. Invalid access, missing organization context, or attempts to read timer data outside the current organization should be rejected.
    *
    * @param connection
-   * @param body Editable context for the active running timer.
+   * @param body Timer search, pagination, and sorting criteria for the selected organization context.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the authenticated employee and current organization context first. Find the employee's active timer; if none exists, return a not-found or conflict-style validation error depending on service conventions. Ensure the timer belongs to the current organization through its employee context.
+   * @x-autobe-specification Implement a PATCH collection endpoint for timers that reads from erp_hrm_time_timers under the authenticated member's selected organization context.
    *
-   * Apply only the fields provided in the update request: project, task, and description. Validate that the selected project is assignable for the employee and that the selected task, when provided, belongs to that same project and is allowed by the project/task rules. Reject changes that would break the running timer invariants or violate one-active-timer-per-employee behavior.
+   * Resolve the current organization from the member session/context and reject the request if no organization is selected. Restrict visibility to timers owned by employees in that organization. If the caller is an employee, default the result set to their own timer records unless the request explicitly targets organization-wide browsing and the caller has sufficient permissions.
    *
-   * Persist the timer update without changing its running status. Do not create a timelog here; timelog creation belongs to the stop flow. If the timer is already stopped or discarded, return an error indicating the timer is no longer editable. Return the current timer entity after persistence so the UI can keep displaying the live session state.
+   * Support pagination, search, and sorting in the request body because this is a collection endpoint. Common filters should include active/running state, employee ownership, project, and date/time boundaries if present in the request contract. When returning a running timer, include the associated project and task references only if they belong to the same organization and are valid for the employee.
+   *
+   * Enforce the business rule that only one active timer may exist per employee. If the implementation exposes the current timer for the logged-in employee, return at most one active record. Do not allow inactive/discarded/stopped timer records to be modified here; this endpoint is read-only.
+   *
+   * Handle authorization strictly: members need organization context, and any organization-wide timer browsing must require the appropriate time-view permission. Return not found or forbidden responses when the timer or organization scope cannot be resolved. Ensure the response shape uses the timer summary or page type expected by the list/search contract.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
-  public async patch(
+  public async index(
     @MemberAuth()
     member: MemberPayload,
     @TypedBody()
-    body: IErpHrmTimeTimer.IUpdate,
-  ): Promise<IErpHrmTimeTimer> {
+    body: IErpHrmTimeTimer.IRequest,
+  ): Promise<IPageIErpHrmTimeTimer.ISummary> {
     try {
       return await patchErpHrmTimeMemberTimers({
         member,
@@ -89,25 +129,28 @@ export class ErphrmtimeMemberTimersController {
   }
 
   /**
-   * Retrieve the currently running timer for a specific employee timer record.
+   * Retrieve the currently running timer for the selected organization and authenticated employee.
    *
-   * This endpoint returns the live timer session context, including the selected project, optional task, start timestamp, and any description captured while the timer is running. It is intended for the employee's active timer view so the client can display the current work session and allow the user to continue, edit, stop, or discard it.
+   * This operation returns the live timer session record, including the selected project, optional task, start timestamp, and description. The timer represents an active work session that continues until it is stopped or discarded, and the response is intended for the employee’s running-timer view and related time-tracking UI.
    *
-   * The timer belongs to the current organization context and is tied to a member account, an employee record, a project, and optionally a task. Consumers should expect the full timer record and use the related identifiers to resolve project and task details in the UI. If the timer does not exist or is not accessible in the current organization scope, the request must fail with a not-found or forbidden response as appropriate.
+   * The timer is organization-scoped and belongs to a specific employee, member account, project, and optionally a task. Consumers should use this operation to display the active session state and confirm which project and task are being tracked. If no timer exists for the requested identifier, or if the timer does not belong to the current organization context, the request must be rejected.
+   *
+   * Because this endpoint exposes live time-tracking data, the implementation must enforce organization context and employee ownership rules. Access should be limited to the authenticated member associated with the timer unless broader administrative access is explicitly granted by the authorization layer.
    *
    * @param connection
-   * @param timerId The timer identifier (UUID).
+   * @param timerId The timer identifier in UUID form.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the timer by its UUID primary key and verify it belongs to the current authenticated member and selected organization context through the linked employee. Join or hydrate the related member, employee, project, and optional task references as needed for the full entity response.
+   * @x-autobe-specification Load the timer by primary key and join its related member, employee, project, and optional task records so the full live-session context can be returned.
+   * Verify that the timer belongs to the authenticated user's current organization context through the linked employee and organization membership. Reject access if the timer is not scoped to the current organization or if the caller is not authorized to view it.
    *
-   * Do not return timers that have been discarded or belong to another organization. Since the table has a unique constraint on employee_id, the service may also use this endpoint to confirm the single running timer for the employee when the caller is authorized. Preserve deleted_at in the payload only if the underlying entity contract exposes it, but do not infer additional lifecycle behavior beyond the schema and timer rules.
+   * Return the full timer entity using the timer DTO, preserving the live fields startedAt and description together with the selected project and optional task references. Do not mutate any state in this operation.
    *
-   * Handle missing timer, cross-organization access, and deleted/discarded records as not found. The operation is read-only and must not mutate the timer state.
+   * Handle not-found and authorization failures explicitly. If the timer has been discarded or otherwise no longer exists in the active dataset, return a not-found response.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":timerId")
-  public async at(
+  public async getByTimerid(
     @MemberAuth()
     member: MemberPayload,
     @TypedParam("timerId")
@@ -117,121 +160,6 @@ export class ErphrmtimeMemberTimersController {
       return await getErpHrmTimeMemberTimersTimerId({
         member,
         timerId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update a running timer's work context.
-   *
-   * This operation allows an employee to correct the project, optional task, or description of an active timer while the live session is still running. The timer remains active after the update, and the edited context is used when the timer is later stopped to create the resulting timelog.
-   *
-   * The timer belongs to the currently selected organization context and is tied to a single employee. Validation must ensure the timer is still running, the selected project is available to the employee, and any task belongs to that project and is valid for the employee's work context. Requests that attempt to modify a stopped or discarded timer, or that violate project/task assignment rules, must be rejected with a validation error.
-   *
-   * This endpoint is closely related to the timer start, stop, and discard operations. Successful updates should preserve the timer's active state and only change the editable fields allowed by the running timer workflow.
-   *
-   * @param connection
-   * @param timerId Identifier of the running timer to update within the current organization context.
-   * @param body Fields used to update the running timer's project, optional task, and description while it is active.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the timer by timerId within the authenticated member's selected organization. Confirm the timer belongs to the current employee context and is still running; reject updates for stopped or discarded timers.
-   *
-   * Apply only mutable running-timer fields from the request body. Validate that the project exists in the same organization and that the employee is allowed to track time against it. If a task is provided, verify that it belongs to the selected project and that the task is compatible with the employee's project membership rules.
-   *
-   * Update the timer atomically without changing its running state. Do not create a timelog here; timelog creation happens only when the timer is stopped. If the timer record cannot be found, return not found. If the project/task combination is invalid or the timer is no longer active, return a domain validation error.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Put(":timerId")
-  public async putByTimerid(
-    @MemberAuth()
-    member: MemberPayload,
-    @TypedParam("timerId")
-    timerId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IErpHrmTimeTimer.IUpdate,
-  ): Promise<IErpHrmTimeTimer> {
-    try {
-      return await putErpHrmTimeMemberTimersTimerId({
-        member,
-        timerId,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Discard a running timer for the current organization context.
-   *
-   * This operation removes a timer entry that is being used for live time tracking. It is intended for employees who want to abandon an active work session without creating a timelog, and for administrators or time managers who need to clean up timer records within their organization scope.
-   *
-   * The timer is always evaluated within the selected organization and the caller's permissions. A normal employee may discard only their own timer, while users with time management permission may remove timers for any employee in the same organization. If the timer cannot be found, does not belong to the current organization, or the caller is not allowed to remove it, the request fails.
-   *
-   * This operation is related to timelog creation because stopping a timer creates a timelog, while discarding it does not. After deletion, the timer is no longer available for editing, stopping, or resuming.
-   *
-   * @param connection
-   * @param timerId Identifier of the timer to discard within the current organization scope.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the timer by timerId within the current organization context. Verify the timer exists and belongs to the organization selected for the request. Enforce authorization so that the owning employee may delete only their own active timer, while users with time management permission may delete any timer in the same organization.
-   *
-   * If the timer is already discarded or otherwise not deletable according to the timer lifecycle, return a not-found or conflict-style error consistent with the service conventions. When deletion succeeds, remove the timer row from the database in a transaction-safe way; no timelog should be created for this endpoint. Do not touch timelogs, timesheets, or other linked records.
-   *
-   * Return the deleted timer entity so the client can update live timer UI state. Ensure cross-organization access is blocked even if the identifier is guessed. Log the action if the system records activity for timer discard events.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Delete(":timerId")
-  public async erase(
-    @MemberAuth()
-    member: MemberPayload,
-    @TypedParam("timerId")
-    timerId: string & tags.Format<"uuid">,
-  ): Promise<void> {
-    try {
-      return await deleteErpHrmTimeMemberTimersTimerId({
-        member,
-        timerId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Stop the currently running timer and convert it into a completed timelog.
-   *
-   * This operation ends the employee’s active live work session in the currently selected organization. When the timer is stopped, the system calculates the elapsed duration, rounds it to the nearest minute, and creates a timelog that preserves the timer’s work context, including the recorded start timestamp, project, task, and description.
-   *
-   * The endpoint is part of the time-tracking workflow for members who are actively tracking work in real time. It enforces organization isolation and employee activity status, so requests are rejected when the caller has no active timer, the timer belongs to another organization, or the employee is deactivated. If the timer cannot be stopped for business reasons, the service must return a validation or conflict error instead of creating a timelog.
-   *
-   * @param connection
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Resolve the caller’s current organization context and active employee identity from the authenticated session.
-   * Load the active timer for that employee within the selected organization only. If no active timer exists, return a conflict or not-found style error consistent with the service conventions.
-   *
-   * Before stopping, verify the employee is still active and that the timer belongs to the current organization. Reject the request if the timer is outside scope or the employee is deactivated.
-   *
-   * Compute the elapsed duration from the timer’s start timestamp to the stop moment, round the result to the nearest minute, and persist a new timelog using the timer’s stored work context. The created timelog must inherit the timer’s project, optional task, and description, and it should capture the timer’s start timestamp as the beginning of the work session.
-   *
-   * Perform the timer stop and timelog creation atomically in a transaction so partial updates cannot occur. After successful creation, mark the timer as stopped/consumed according to the existing persistence model and return the created timelog entity. If the timer has already been stopped concurrently, fail safely with a conflict error.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post("stop")
-  public async stop(
-    @MemberAuth()
-    member: MemberPayload,
-  ): Promise<IErpHrmTimeTimelog> {
-    try {
-      return await postErpHrmTimeMemberTimersStop({
-        member,
       });
     } catch (error) {
       console.log(error);

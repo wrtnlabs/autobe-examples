@@ -1,94 +1,126 @@
 import { Module } from "@nestjs/common";
 
-import { RedditcommunityAuthGuestController } from "./controllers/redditCommunity/auth/guest/RedditcommunityAuthGuestController";
-import { RedditcommunityAuthMemberController } from "./controllers/redditCommunity/auth/member/RedditcommunityAuthMemberController";
-import { RedditcommunityCommentsDeletionsController } from "./controllers/redditCommunity/comments/deletions/RedditcommunityCommentsDeletionsController";
-import { RedditcommunityCommentsSnapshotsController } from "./controllers/redditCommunity/comments/snapshots/RedditcommunityCommentsSnapshotsController";
-import { RedditcommunityCommunitiesController } from "./controllers/redditCommunity/communities/RedditcommunityCommunitiesController";
-import { RedditcommunityCommunitiesBansController } from "./controllers/redditCommunity/communities/bans/RedditcommunityCommunitiesBansController";
-import { RedditcommunityCommunitiesFeedController } from "./controllers/redditCommunity/communities/feed/RedditcommunityCommunitiesFeedController";
-import { RedditcommunityCommunitiesModeratorsController } from "./controllers/redditCommunity/communities/moderators/RedditcommunityCommunitiesModeratorsController";
-import { RedditcommunityFilesController } from "./controllers/redditCommunity/files/RedditcommunityFilesController";
-import { RedditcommunityFilesThumbnailsController } from "./controllers/redditCommunity/files/thumbnails/RedditcommunityFilesThumbnailsController";
-import { RedditcommunityGuestPopularFeedController } from "./controllers/redditCommunity/guest/popular/feed/RedditcommunityGuestPopularFeedController";
-import { RedditcommunityGuestUsersCommentsController } from "./controllers/redditCommunity/guest/users/comments/RedditcommunityGuestUsersCommentsController";
-import { RedditcommunityGuestUsersPostsController } from "./controllers/redditCommunity/guest/users/posts/RedditcommunityGuestUsersPostsController";
-import { RedditcommunityGuestUsersProfileController } from "./controllers/redditCommunity/guest/users/profile/RedditcommunityGuestUsersProfileController";
-import { RedditcommunityMemberCommentsController } from "./controllers/redditCommunity/member/comments/RedditcommunityMemberCommentsController";
-import { RedditcommunityMemberFilesController } from "./controllers/redditCommunity/member/files/RedditcommunityMemberFilesController";
-import { RedditcommunityMemberFilesAccess_logsController } from "./controllers/redditCommunity/member/files/access-logs/RedditcommunityMemberFilesAccess_logsController";
-import { RedditcommunityMemberFilesCdn_logsController } from "./controllers/redditCommunity/member/files/cdn-logs/RedditcommunityMemberFilesCdn_logsController";
-import { RedditcommunityMemberFilesSnapshotsController } from "./controllers/redditCommunity/member/files/snapshots/RedditcommunityMemberFilesSnapshotsController";
-import { RedditcommunityMemberHome_feedController } from "./controllers/redditCommunity/member/home-feed/RedditcommunityMemberHome_feedController";
-import { RedditcommunityMemberHomeFeedController } from "./controllers/redditCommunity/member/home/feed/RedditcommunityMemberHomeFeedController";
-import { RedditcommunityMemberKarma_snapshotsController } from "./controllers/redditCommunity/member/karma-snapshots/RedditcommunityMemberKarma_snapshotsController";
-import { RedditcommunityMemberModerationReportsController } from "./controllers/redditCommunity/member/moderation/reports/RedditcommunityMemberModerationReportsController";
-import { RedditcommunityMemberPopularFeedController } from "./controllers/redditCommunity/member/popular/feed/RedditcommunityMemberPopularFeedController";
-import { RedditcommunityMemberPostsController } from "./controllers/redditCommunity/member/posts/RedditcommunityMemberPostsController";
-import { RedditcommunityMemberPostsCommentsController } from "./controllers/redditCommunity/member/posts/comments/RedditcommunityMemberPostsCommentsController";
-import { RedditcommunityMemberProfileController } from "./controllers/redditCommunity/member/profile/RedditcommunityMemberProfileController";
-import { RedditcommunityMemberReportsController } from "./controllers/redditCommunity/member/reports/RedditcommunityMemberReportsController";
-import { RedditcommunityMemberSessionsController } from "./controllers/redditCommunity/member/sessions/RedditcommunityMemberSessionsController";
-import { RedditcommunityMemberSubscriptionsController } from "./controllers/redditCommunity/member/subscriptions/RedditcommunityMemberSubscriptionsController";
-import { RedditcommunityMemberUsersCommentsController } from "./controllers/redditCommunity/member/users/comments/RedditcommunityMemberUsersCommentsController";
-import { RedditcommunityMemberUsersPostsController } from "./controllers/redditCommunity/member/users/posts/RedditcommunityMemberUsersPostsController";
-import { RedditcommunityMemberUsersProfileController } from "./controllers/redditCommunity/member/users/profile/RedditcommunityMemberUsersProfileController";
-import { RedditcommunityMemberVotesController } from "./controllers/redditCommunity/member/votes/RedditcommunityMemberVotesController";
-import { RedditcommunityMembersController } from "./controllers/redditCommunity/members/RedditcommunityMembersController";
-import { RedditcommunityMembersKarmaController } from "./controllers/redditCommunity/members/karma/RedditcommunityMembersKarmaController";
-import { RedditcommunityMembersProfileController } from "./controllers/redditCommunity/members/profile/RedditcommunityMembersProfileController";
-import { RedditcommunityPopular_feedController } from "./controllers/redditCommunity/popular-feed/RedditcommunityPopular_feedController";
-import { RedditcommunityPostsController } from "./controllers/redditCommunity/posts/RedditcommunityPostsController";
-import { RedditcommunityPostsSnapshotsController } from "./controllers/redditCommunity/posts/snapshots/RedditcommunityPostsSnapshotsController";
-import { RedditcommunityRate_limit_countersController } from "./controllers/redditCommunity/rate-limit-counters/RedditcommunityRate_limit_countersController";
-import { RedditcommunitySystem_logsController } from "./controllers/redditCommunity/system-logs/RedditcommunitySystem_logsController";
-import { RedditcommunitySystem_settingsController } from "./controllers/redditCommunity/system-settings/RedditcommunitySystem_settingsController";
+import { RedditplatformAuthGuestController } from "./controllers/redditPlatform/auth/guest/RedditplatformAuthGuestController";
+import { RedditplatformAuthMemberController } from "./controllers/redditPlatform/auth/member/RedditplatformAuthMemberController";
+import { RedditplatformComment_snapshotsController } from "./controllers/redditPlatform/comment-snapshots/RedditplatformComment_snapshotsController";
+import { RedditplatformCommunitiesController } from "./controllers/redditPlatform/communities/RedditplatformCommunitiesController";
+import { RedditplatformCommunitiesMembersController } from "./controllers/redditPlatform/communities/members/RedditplatformCommunitiesMembersController";
+import { RedditplatformCommunitiesSnapshotsController } from "./controllers/redditPlatform/communities/snapshots/RedditplatformCommunitiesSnapshotsController";
+import { RedditplatformCommunitiesSubscribersController } from "./controllers/redditPlatform/communities/subscribers/RedditplatformCommunitiesSubscribersController";
+import { RedditplatformGuestCommentsController } from "./controllers/redditPlatform/guest/comments/replies/RedditplatformGuestCommentsController";
+import { RedditplatformGuestCommentsVotesController } from "./controllers/redditPlatform/guest/comments/votes/totals/RedditplatformGuestCommentsVotesController";
+import { RedditplatformGuestCommunitiesSearchController } from "./controllers/redditPlatform/guest/communities/search/RedditplatformGuestCommunitiesSearchController";
+import { RedditplatformGuestFeedsCommunityController } from "./controllers/redditPlatform/guest/feeds/community/RedditplatformGuestFeedsCommunityController";
+import { RedditplatformGuestFeedsPopularController } from "./controllers/redditPlatform/guest/feeds/popular/RedditplatformGuestFeedsPopularController";
+import { RedditplatformGuestGuest_sessionsController } from "./controllers/redditPlatform/guest/guest-sessions/RedditplatformGuestGuest_sessionsController";
+import { RedditplatformGuestPost_snapshotsController } from "./controllers/redditPlatform/guest/post-snapshots/RedditplatformGuestPost_snapshotsController";
+import { RedditplatformGuestPostsController } from "./controllers/redditPlatform/guest/posts/RedditplatformGuestPostsController";
+import { RedditplatformGuestPostsCommentsController } from "./controllers/redditPlatform/guest/posts/comments/sort/RedditplatformGuestPostsCommentsController";
+import { RedditplatformGuestPostsMetricsController } from "./controllers/redditPlatform/guest/posts/metrics/RedditplatformGuestPostsMetricsController";
+import { RedditplatformGuestSearchPostsController } from "./controllers/redditPlatform/guest/search/posts/RedditplatformGuestSearchPostsController";
+import { RedditplatformGuestTrendingPostsController } from "./controllers/redditPlatform/guest/trending/posts/RedditplatformGuestTrendingPostsController";
+import { RedditplatformGuestsController } from "./controllers/redditPlatform/guests/RedditplatformGuestsController";
+import { RedditplatformMemberBan_snapshotsController } from "./controllers/redditPlatform/member/ban-snapshots/RedditplatformMemberBan_snapshotsController";
+import { RedditplatformMemberBansController } from "./controllers/redditPlatform/member/bans/RedditplatformMemberBansController";
+import { RedditplatformMemberCommentsController } from "./controllers/redditPlatform/member/comments/RedditplatformMemberCommentsController";
+import { RedditplatformMemberCommentsVoteController } from "./controllers/redditPlatform/member/comments/vote/RedditplatformMemberCommentsVoteController";
+import { RedditplatformMemberCommentsVotesController } from "./controllers/redditPlatform/member/comments/votes/totals/RedditplatformMemberCommentsVotesController";
+import { RedditplatformMemberCommunitiesController } from "./controllers/redditPlatform/member/communities/RedditplatformMemberCommunitiesController";
+import { RedditplatformMemberCommunitiesBansController } from "./controllers/redditPlatform/member/communities/bans/RedditplatformMemberCommunitiesBansController";
+import { RedditplatformMemberCommunitiesModeratorsController } from "./controllers/redditPlatform/member/communities/moderators/RedditplatformMemberCommunitiesModeratorsController";
+import { RedditplatformMemberCommunitiesReportsController } from "./controllers/redditPlatform/member/communities/reports/RedditplatformMemberCommunitiesReportsController";
+import { RedditplatformMemberCommunitiesSearchController } from "./controllers/redditPlatform/member/communities/search/RedditplatformMemberCommunitiesSearchController";
+import { RedditplatformMemberCommunitiesSnapshotsController } from "./controllers/redditPlatform/member/communities/snapshots/RedditplatformMemberCommunitiesSnapshotsController";
+import { RedditplatformMemberCommunities_subscribeController } from "./controllers/redditPlatform/member/communities/subscribe/RedditplatformMemberCommunities_subscribeController";
+import { RedditplatformMemberCommunitiesSubscribedController } from "./controllers/redditPlatform/member/communities/subscribed/RedditplatformMemberCommunitiesSubscribedController";
+import { RedditplatformMemberEmail_verificationsController } from "./controllers/redditPlatform/member/email-verifications/RedditplatformMemberEmail_verificationsController";
+import { RedditplatformMemberFeedsCommunityController } from "./controllers/redditPlatform/member/feeds/community/RedditplatformMemberFeedsCommunityController";
+import { RedditplatformMemberFeedsHomeController } from "./controllers/redditPlatform/member/feeds/home/RedditplatformMemberFeedsHomeController";
+import { RedditplatformMemberFeedsPopularController } from "./controllers/redditPlatform/member/feeds/popular/RedditplatformMemberFeedsPopularController";
+import { RedditplatformMemberPassword_resetsController } from "./controllers/redditPlatform/member/password-resets/RedditplatformMemberPassword_resetsController";
+import { RedditplatformMemberPost_snapshotsController } from "./controllers/redditPlatform/member/post-snapshots/RedditplatformMemberPost_snapshotsController";
+import { RedditplatformMemberPostsController } from "./controllers/redditPlatform/member/posts/RedditplatformMemberPostsController";
+import { RedditplatformMemberPostsCommentsController } from "./controllers/redditPlatform/member/posts/comments/sort/RedditplatformMemberPostsCommentsController";
+import { RedditplatformMemberPostsMetricsController } from "./controllers/redditPlatform/member/posts/metrics/RedditplatformMemberPostsMetricsController";
+import { RedditplatformMemberPosts_voteController } from "./controllers/redditPlatform/member/posts/vote/RedditplatformMemberPosts_voteController";
+import { RedditplatformMemberProfileController } from "./controllers/redditPlatform/member/profile/RedditplatformMemberProfileController";
+import { RedditplatformMemberReportsController } from "./controllers/redditPlatform/member/reports/RedditplatformMemberReportsController";
+import { RedditplatformMemberSearchPostsController } from "./controllers/redditPlatform/member/search/posts/RedditplatformMemberSearchPostsController";
+import { RedditplatformMemberSessionsController } from "./controllers/redditPlatform/member/sessions/RedditplatformMemberSessionsController";
+import { RedditplatformMemberSubscribedController } from "./controllers/redditPlatform/member/subscribed/RedditplatformMemberSubscribedController";
+import { RedditplatformMemberSubscriptionsController } from "./controllers/redditPlatform/member/subscriptions/RedditplatformMemberSubscriptionsController";
+import { RedditplatformMemberTrendingPostsController } from "./controllers/redditPlatform/member/trending/posts/RedditplatformMemberTrendingPostsController";
+import { RedditplatformMemberUsersActivityController } from "./controllers/redditPlatform/member/users/activity/RedditplatformMemberUsersActivityController";
+import { RedditplatformMemberUsersMeActivityController } from "./controllers/redditPlatform/member/users/me/activity/RedditplatformMemberUsersMeActivityController";
+import { RedditplatformMemberUsersMeCommentsController } from "./controllers/redditPlatform/member/users/me/comments/RedditplatformMemberUsersMeCommentsController";
+import { RedditplatformMemberUsersMeController } from "./controllers/redditPlatform/member/users/me/stats/RedditplatformMemberUsersMeController";
+import { RedditplatformMemberUsersController } from "./controllers/redditPlatform/member/users/stats/RedditplatformMemberUsersController";
+import { RedditplatformMemberUsersSubscribed_communitiesController } from "./controllers/redditPlatform/member/users/subscribed-communities/RedditplatformMemberUsersSubscribed_communitiesController";
+import { RedditplatformMembersController } from "./controllers/redditPlatform/members/RedditplatformMembersController";
+import { RedditplatformPostsCommentsController } from "./controllers/redditPlatform/posts/comments/RedditplatformPostsCommentsController";
+import { RedditplatformUsersController } from "./controllers/redditPlatform/users/RedditplatformUsersController";
 
 @Module({
   controllers: [
-    RedditcommunityAuthGuestController,
-    RedditcommunityAuthMemberController,
-    RedditcommunityMemberProfileController,
-    RedditcommunityMemberSessionsController,
-    RedditcommunityMembersController,
-    RedditcommunityMembersProfileController,
-    RedditcommunityMembersKarmaController,
-    RedditcommunityCommunitiesController,
-    RedditcommunityMemberSubscriptionsController,
-    RedditcommunityCommunitiesModeratorsController,
-    RedditcommunityCommunitiesBansController,
-    RedditcommunityPostsController,
-    RedditcommunityMemberPostsController,
-    RedditcommunityPostsSnapshotsController,
-    RedditcommunityMemberPostsCommentsController,
-    RedditcommunityMemberCommentsController,
-    RedditcommunityCommentsSnapshotsController,
-    RedditcommunityCommentsDeletionsController,
-    RedditcommunityMemberVotesController,
-    RedditcommunityMemberKarma_snapshotsController,
-    RedditcommunityMemberReportsController,
-    RedditcommunityMemberHome_feedController,
-    RedditcommunityPopular_feedController,
-    RedditcommunityCommunitiesFeedController,
-    RedditcommunityFilesController,
-    RedditcommunityFilesThumbnailsController,
-    RedditcommunityMemberFilesAccess_logsController,
-    RedditcommunityMemberFilesCdn_logsController,
-    RedditcommunityMemberFilesSnapshotsController,
-    RedditcommunityMemberFilesController,
-    RedditcommunitySystem_logsController,
-    RedditcommunityRate_limit_countersController,
-    RedditcommunitySystem_settingsController,
-    RedditcommunityGuestUsersProfileController,
-    RedditcommunityMemberUsersProfileController,
-    RedditcommunityGuestUsersPostsController,
-    RedditcommunityMemberUsersPostsController,
-    RedditcommunityGuestUsersCommentsController,
-    RedditcommunityMemberUsersCommentsController,
-    RedditcommunityMemberModerationReportsController,
-    RedditcommunityMemberHomeFeedController,
-    RedditcommunityGuestPopularFeedController,
-    RedditcommunityMemberPopularFeedController,
+    RedditplatformAuthGuestController,
+    RedditplatformAuthMemberController,
+    RedditplatformMembersController,
+    RedditplatformMemberProfileController,
+    RedditplatformGuestsController,
+    RedditplatformMemberSessionsController,
+    RedditplatformGuestGuest_sessionsController,
+    RedditplatformMemberPassword_resetsController,
+    RedditplatformMemberEmail_verificationsController,
+    RedditplatformUsersController,
+    RedditplatformCommunitiesController,
+    RedditplatformMemberCommunitiesController,
+    RedditplatformCommunitiesMembersController,
+    RedditplatformCommunitiesSnapshotsController,
+    RedditplatformMemberCommunitiesSnapshotsController,
+    RedditplatformMemberSubscriptionsController,
+    RedditplatformMemberSubscribedController,
+    RedditplatformMemberFeedsHomeController,
+    RedditplatformGuestFeedsPopularController,
+    RedditplatformMemberFeedsPopularController,
+    RedditplatformGuestFeedsCommunityController,
+    RedditplatformMemberFeedsCommunityController,
+    RedditplatformGuestPostsController,
+    RedditplatformMemberPostsController,
+    RedditplatformGuestPost_snapshotsController,
+    RedditplatformMemberPost_snapshotsController,
+    RedditplatformPostsCommentsController,
+    RedditplatformMemberCommentsController,
+    RedditplatformComment_snapshotsController,
+    RedditplatformMemberPosts_voteController,
+    RedditplatformMemberCommentsVoteController,
+    RedditplatformMemberReportsController,
+    RedditplatformMemberBansController,
+    RedditplatformMemberCommunitiesBansController,
+    RedditplatformMemberBan_snapshotsController,
+    RedditplatformMemberUsersController,
+    RedditplatformMemberUsersActivityController,
+    RedditplatformMemberUsersMeController,
+    RedditplatformMemberUsersMeActivityController,
+    RedditplatformGuestCommunitiesSearchController,
+    RedditplatformMemberCommunitiesSearchController,
+    RedditplatformMemberCommunitiesSubscribedController,
+    RedditplatformMemberCommunitiesModeratorsController,
+    RedditplatformMemberCommunities_subscribeController,
+    RedditplatformCommunitiesSubscribersController,
+    RedditplatformMemberUsersSubscribed_communitiesController,
+    RedditplatformGuestPostsMetricsController,
+    RedditplatformMemberPostsMetricsController,
+    RedditplatformGuestSearchPostsController,
+    RedditplatformMemberSearchPostsController,
+    RedditplatformGuestTrendingPostsController,
+    RedditplatformMemberTrendingPostsController,
+    RedditplatformGuestPostsCommentsController,
+    RedditplatformMemberPostsCommentsController,
+    RedditplatformMemberUsersMeCommentsController,
+    RedditplatformGuestCommentsController,
+    RedditplatformGuestCommentsVotesController,
+    RedditplatformMemberCommentsVotesController,
+    RedditplatformMemberCommunitiesReportsController,
   ],
 })
 export class MyModule {}

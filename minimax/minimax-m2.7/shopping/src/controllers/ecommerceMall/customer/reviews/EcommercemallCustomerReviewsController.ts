@@ -11,60 +11,38 @@ import { putEcommerceMallCustomerReviewsReviewId } from "../../../../providers/p
 @Controller("/ecommerceMall/customer/reviews/:reviewId")
 export class EcommercemallCustomerReviewsController {
   /**
-   * Update an existing product review with new rating and/or text content.
+   * Update an existing customer review for a product.
    *
-   * This endpoint allows authenticated customers to modify their own reviews. When a review is updated, the system automatically creates an immutable snapshot of the previous review state (rating and content) before applying the changes. These snapshots are preserved indefinitely for dispute resolution and audit purposes.
+   * This endpoint allows customers to edit their own reviews at any time after creation. Customers can modify the star rating (1-5) and the optional text content. Each edit creates an immutable snapshot of the previous review state for audit and dispute resolution purposes.
    *
-   * The customer must be the original author of the review. Customers cannot edit reviews written by other users, and sellers cannot modify any reviews of their products regardless of their role.
+   * The system validates that the review belongs to the authenticated customer. Customers cannot edit reviews written by other users. Sellers cannot edit any reviews of their products regardless of ownership.
    *
-   * A review can be updated at any time after creation, regardless of how much time has passed. There is no restriction on the number of times a review can be edited.
-   *
-   * When updating, the rating field is required and must be an integer between 1 and 5. The content field is optional and can be updated to add, modify, or remove text feedback.
-   *
-   * The response returns the complete updated review entity including the new rating, content, and updated timestamp. The associated product and order item information are included in the response for reference.
-   *
-   * This operation is commonly used in conjunction with:
-   * - GET /products/{productId}/reviews - to retrieve the list of reviews for a product
-   * - GET /customers/reviews - to list all reviews written by the authenticated customer
-   * - GET /reviews/{reviewId}/snapshots - to view the edit history of a review
+   * Reviews are sorted by newest first on the product detail page. Edits update the review timestamp and preserve the original creation date for reference.
    *
    * @param connection
-   * @param reviewId Unique identifier of the review to update
-   * @param body New rating value (1-5 stars) and optional updated text content
+   * @param reviewId Unique identifier of the review to update (UUID format)
+   * @param body Update payload containing the new rating value (1-5) and optional text content for the review.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Update review by ID with ownership verification and snapshot creation.
+   * @x-autobe-specification Handle review update operation with the following steps:
    *
-   * 1. Authentication: Extract and validate customer session token from Authorization header.
+   * 1. **Authentication Check**: Verify the request includes valid customer authentication token.
    *
-   * 2. Parameter extraction: Parse reviewId from URL path as UUID.
+   * 2. **Authorization Check**: Query the ecommerce_mall_reviews table to verify the review belongs to the authenticated customer. Return 403 Forbidden if the review does not belong to the customer.
    *
-   * 3. Ownership verification:
-   *    - Query ecommerce_mall_reviews table to find the review by id
-   *    - Verify that the authenticated customer's ID matches the review's ecommerce_mall_customer_id
-   *    - If not matching, return 403 Forbidden with error message
+   * 3. **Input Validation**:
+   *    - rating: Required integer between 1 and 5 inclusive
+   *    - content: Optional string, max 5000 characters
    *
-   * 4. Validate request body:
-   *    - rating: Required integer, must be between 1 and 5 (inclusive)
-   *    - content: Optional string, max 2000 characters if provided
+   * 4. **Create Snapshot**: Before updating, create an entry in ecommerce_mall_review_snapshots table capturing the current rating and content with timestamp.
    *
-   * 5. Snapshot creation (within transaction):
-   *    - Create new record in ecommerce_mall_review_snapshots table
-   *    - Set ecommerce_mall_review_id to the review's id
-   *    - Set rating to the current review's rating value
-   *    - Set body to the current review's content value
-   *    - Set created_at to current timestamp
-   *
-   * 6. Review update:
-   *    - Update ecommerce_mall_reviews record
-   *    - Set rating to new value from request
-   *    - Set content to new value from request (or null to clear)
+   * 5. **Update Review**: Update the review record in ecommerce_mall_reviews table:
+   *    - Set rating to the new value
+   *    - Set content to the new value (or null if empty)
    *    - Set updated_at to current timestamp
+   *    - Preserve created_at and original customer_id
    *
-   * 7. Response:
-   *    - Return the updated review entity with all fields
-   *    - Include related product, customer, and order item information
-   *    - Return 200 OK with review data
+   * 6. **Response**: Return the updated review entity including all fields.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put()
@@ -89,40 +67,29 @@ export class EcommercemallCustomerReviewsController {
   }
 
   /**
-   * Delete a product review written by the authenticated customer.
+   * Permanently removes a customer review from the platform.
    *
-   * This endpoint performs a soft delete on the review record. When a review is deleted, the deleted_at timestamp is set to the current time, marking the review as deleted rather than permanently removing it. The review is hidden from public display on the product detail page and excluded from calculations such as average ratings. However, the review data itself is preserved along with any associated snapshots for audit and dispute resolution purposes.
+   * This endpoint allows customers to delete reviews they have written for products. Only the customer who authored the review can delete it. The deletion is a soft delete operation, meaning the review record is preserved in the database with a deleted_at timestamp rather than being permanently removed.
    *
-   * Only the customer who wrote the review can delete it. The system verifies the authenticated customer's ID matches the ecommerce_mall_customer_id stored on the review record. Sellers cannot delete reviews on their products, and customers cannot delete reviews belonging to other users. Attempting to delete a review the user does not own returns a not found error to prevent enumeration.
+   * Soft-deleted reviews are hidden from public display on the product detail page and are excluded from the product's average rating calculation. However, the review data itself remains stored along with any associated review_snapshot records created during previous edit operations.
    *
-   * The review must exist and not already be deleted. Attempting to delete an already-deleted review returns a not found error.
-   *
-   * Related operations:
-   * - POST /ecommerceMall/customers/orders/{orderId}/items/{itemId}/reviews for creating new reviews
-   * - PUT /ecommerceMall/customers/reviews/{reviewId} for editing reviews
-   * - PATCH /ecommerceMall/products/{productId}/reviews for viewing product reviews with filtering
+   * Administrators can retrieve soft-deleted reviews for dispute resolution or audit purposes. The original order item reference and customer association are preserved for audit trail integrity.
    *
    * @param connection
-   * @param reviewId Unique identifier of the review to delete
+   * @param reviewId Unique identifier of the review to delete (UUID format)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implementation steps:
+   * @x-autobe-specification Handle review deletion with the following implementation:
    *
    * 1. Extract reviewId from path parameter
-   * 2. Authenticate the requesting customer via session token
-   * 3. Retrieve the review record by reviewId from ecommerce_mall_reviews table
-   * 4. Verify the review exists and deleted_at is null (not already deleted)
-   * 5. Verify the review's ecommerce_mall_customer_id matches the authenticated customer
-   * 6. If verification fails, return 404 (to prevent enumeration)
-   * 7. Perform soft delete: UPDATE ecommerce_mall_reviews SET deleted_at = NOW() WHERE id = reviewId
-   * 8. Return 204 No Content response without body
-   *
-   * Edge cases:
-   * - Review not found → 404
-   * - Review already deleted → 404
-   * - Customer not authorized (not the owner) → 404
-   * - Invalid reviewId format → 400 Bad Request
-   * - Unauthenticated request → 401 Unauthorized
+   * 2. Authenticate the requesting customer via JWT session token
+   * 3. Verify the review exists and belongs to the authenticated customer
+   * 4. Perform soft delete by setting deleted_at to current timestamp
+   * 5. The review record remains in database; do NOT cascade delete related review_snapshot records
+   * 6. Return 204 No Content on success
+   * 7. Return 403 Forbidden if review belongs to different customer
+   * 8. Return 404 Not Found if review does not exist
+   * 9. Do NOT recalculate product average rating synchronously (can be handled by background job)
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete()

@@ -9,49 +9,30 @@ import { postShoppingMallAuthGuestRefresh } from "../../../../providers/postShop
 @Controller("/shoppingMall/auth/guest")
 export class ShoppingmallAuthGuestController {
   /**
-   * Creates a temporary guest session for unauthenticated users to browse the shopping mall platform without requiring email registration or password authentication.
+   * Creates a temporary guest session for unauthenticated users to access public platform features.
    *
-   * This operation generates a new guest account and associated session tokens that allow limited platform access. Guest sessions are designed for users who want to explore products, view categories, and browse the marketplace before deciding to create a full customer account. The guest identifier is stored in the shopping_mall_guests table as a temporary record, while authentication tokens are managed in the shopping_mall_guest_sessions table.
+   * This operation registers a new guest account identified by device fingerprint and generates JWT tokens for temporary access. Guests can browse public content, view products, and access registration pages without providing email or password credentials.
    *
-   * Guest sessions have shorter expiration periods compared to authenticated user sessions to encourage conversion to registered accounts. The access token provides immediate platform access for browsing operations, while the refresh token allows the client to extend the session without re-authentication. This design balances user convenience with security considerations for unauthenticated access.
+   * The guest session is stored in the shopping_mall_guest_sessions table with associated access and refresh tokens. The guest identity is recorded in the shopping_mall_guests table with device fingerprint tracking.
    *
-   * The operation does not require any input parameters beyond the standard request body structure. Upon successful creation, the response includes both access and refresh tokens that the client must store securely for subsequent API calls. Guest sessions automatically expire and cannot be recovered once expired - users must call this endpoint again to obtain new tokens.
+   * Guests have limited permissions compared to authenticated customers or sellers. They cannot place orders, write reviews, or access protected resources. To perform these actions, guests must register as a customer account.
+   *
+   * The operation returns IShoppingMallGuest.IAuthorized containing both access and refresh tokens. The access token is short-lived for API authentication, while the refresh token allows extending the session without re-joining.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Guest registration request body (empty for guest access)
+   * @param body Guest registration request with device fingerprint for temporary session creation.
    * @x-autobe-authorization-type join
    * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Implementation of guest join operation:
-   *
-   * 1. **Service Layer Logic**:
-   *    - Generate unique guest identifier (UUID)
-   *    - Create guest record in shopping_mall_guests table with minimal data
-   *    - Generate JWT access token with short expiration (e.g., 15 minutes)
-   *    - Generate JWT refresh token with longer expiration (e.g., 24 hours)
-   *    - Create session record in shopping_mall_guest_sessions table
-   *
-   * 2. **Database Operations**:
-   *    - INSERT into shopping_mall_guests: id, created_at
-   *    - INSERT into shopping_mall_guest_sessions: guest_id, access_token, refresh_token, expires_at
-   *
-   * 3. **Business Rules**:
-   *    - No email or password validation required
-   *    - Guest account is temporary and auto-expiring
-   *    - No persistent profile data stored
-   *    - Session tokens are device-bound
-   *
-   * 4. **Error Handling**:
-   *    - Return 400 if request body is invalid
-   *    - Return 500 on database insertion failure
-   *    - Return 500 on token generation failure
-   *
-   * 5. **Security Considerations**:
-   *    - Access token has very short lifetime for security
-   *    - Refresh token allows seamless session extension
-   *    - No sensitive data stored in guest records
-   *    - Tokens are cryptographically signed
+   * @x-autobe-specification 1. Generate a unique device fingerprint from request headers (User-Agent, IP address, or client-provided fingerprint).
+   * 2. Check if a guest account with this device fingerprint already exists in shopping_mall_guests table.
+   * 3. If exists, update the last_activity timestamp; if not, create a new guest record with the device fingerprint.
+   * 4. Generate a new access token (JWT) with short expiration (e.g., 15 minutes) and a refresh token (JWT) with longer expiration (e.g., 24 hours).
+   * 5. Create a new session record in shopping_mall_guest_sessions table with both tokens, guest ID, and expiration timestamps.
+   * 6. Invalidate any existing sessions for this guest device.
+   * 7. Return the tokens in IShoppingMallGuest.IAuthorized format.
+   * 8. Handle edge cases: rate limiting for repeated join attempts, device fingerprint collision handling, and session cleanup for expired tokens.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
@@ -73,52 +54,31 @@ export class ShoppingmallAuthGuestController {
   }
 
   /**
-   * Extends an existing guest session by validating the refresh token and issuing a new access token.
+   * Extends an existing guest session by validating the refresh token and issuing new access and refresh tokens.
    *
-   * This operation allows guest users to maintain their browsing session without re-authenticating. When the short-lived access token expires (typically after 15 minutes), the client application uses this endpoint with the longer-lived refresh token to obtain a new access token. This provides a seamless user experience for guests browsing products and categories.
+   * This operation allows guests to maintain their temporary session without re-joining. The refresh token is validated against the shopping_mall_guest_sessions table to ensure it's valid, not expired, and associated with an active guest account.
    *
-   * The refresh operation validates the provided refresh token against the shopping_mall_guest_sessions table, ensuring the token is valid, not expired, and associated with an active guest session. Upon successful validation, a new access token is generated with a fresh expiration timestamp, and the session record is updated accordingly.
+   * Upon successful validation, the operation generates a new access token with fresh expiration and optionally rotates the refresh token for security. The guest's session record is updated with the new tokens and timestamps.
    *
-   * Guest refresh tokens have longer expiration periods than access tokens (typically 24 hours) but are still shorter than authenticated user sessions to encourage conversion to registered accounts. Once the refresh token expires, guests must call the join endpoint again to create a new session. The refresh operation does not require any additional authentication beyond the refresh token itself.
+   * This operation is essential for maintaining continuous guest browsing sessions without requiring re-authentication. It supports the guest workflow of exploring the platform before deciding to register as a customer.
+   *
+   * The operation returns IShoppingMallGuest.IAuthorized containing the new access and refresh tokens. If the refresh token is invalid or expired, the guest must call join again to create a new session.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Guest session refresh request with refresh token
+   * @param body Guest session refresh request containing the refresh token to extend session validity.
    * @x-autobe-authorization-type refresh
    * @x-autobe-authorization-actor guest
-   * @x-autobe-specification Implementation of guest refresh operation:
-   *
-   * 1. **Service Layer Logic**:
-   *    - Validate the provided refresh token signature and expiration
-   *    - Look up the guest session in shopping_mall_guest_sessions table
-   *    - Verify the refresh token matches the stored value
-   *    - Generate new access token with current timestamp
-   *    - Update session record with new access token and expiration
-   *    - Optionally rotate refresh token for enhanced security
-   *
-   * 2. **Database Operations**:
-   *    - SELECT from shopping_mall_guest_sessions where refresh_token matches
-   *    - UPDATE shopping_mall_guest_sessions: access_token, expires_at
-   *    - Optionally INSERT new refresh token record and DELETE old one
-   *
-   * 3. **Business Rules**:
-   *    - Refresh token must be valid and not expired
-   *    - Guest session must still exist in database
-   *    - New access token has fresh expiration from current time
-   *    - Refresh token rotation prevents replay attacks
-   *
-   * 4. **Error Handling**:
-   *    - Return 401 if refresh token is invalid or expired
-   *    - Return 401 if guest session not found
-   *    - Return 401 if refresh token doesn't match stored value
-   *    - Return 500 on database update failure
-   *
-   * 5. **Security Considerations**:
-   *    - Refresh tokens are single-use (rotated on each refresh)
-   *    - Token validation includes signature verification
-   *    - Session lookup prevents token reuse across devices
-   *    - Failed refresh attempts are logged for security monitoring
+   * @x-autobe-specification 1. Extract and validate the refresh token from the request body.
+   * 2. Look up the session record in shopping_mall_guest_sessions table using the refresh token.
+   * 3. Verify the session exists, is not expired, and is associated with an active guest in shopping_mall_guests.
+   * 4. If validation fails, return 401 Unauthorized error.
+   * 5. Generate a new access token (JWT) with short expiration and a new refresh token (JWT) with extended expiration.
+   * 6. Update the session record in shopping_mall_guest_sessions with the new tokens and current timestamp.
+   * 7. Optionally implement refresh token rotation for enhanced security.
+   * 8. Return the new tokens in IShoppingMallGuest.IAuthorized format.
+   * 9. Handle edge cases: concurrent refresh attempts, token rotation policies, and session cleanup on guest-to-customer conversion.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")

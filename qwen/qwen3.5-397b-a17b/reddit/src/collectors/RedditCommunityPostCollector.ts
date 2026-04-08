@@ -11,24 +11,58 @@ export namespace RedditCommunityPostCollector {
   export async function collect(props: {
     body: IRedditCommunityPost.ICreate;
     redditCommunityMembers: IEntity;
+    redditCommunityMemberSessions: IEntity;
   }) {
     const id: string = v4();
+    const now = new Date();
     return {
       // Scalar fields
       id,
       title: props.body.title,
       post_type: props.body.post_type,
-      text_content: props.body.text_content ?? null,
-      link_url: props.body.link_url ?? null,
-      image_path: props.body.image_path ?? null,
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
       // BelongsTo relations
-      author: { connect: { id: props.redditCommunityMembers.id } },
-      community: { connect: { id: props.body.communityId } },
-      // HasMany relations - not created during post creation
-      // images, snapshots, comments, votes are separate operations
+      member: { connect: { id: props.redditCommunityMembers.id } },
+      community: { connect: { id: props.body.community_id } },
+      // HasOne relations - type-specific content based on post_type discriminator
+      text:
+        props.body.post_type === "text"
+          ? {
+              create: {
+                id: v4(),
+                body: props.body.body ?? "",
+                created_at: now,
+                updated_at: now,
+              },
+            }
+          : undefined,
+      link:
+        props.body.post_type === "link"
+          ? {
+              create: {
+                id: v4(),
+                url: props.body.url ?? "",
+                domain: "",
+                created_at: now,
+                updated_at: now,
+              },
+            }
+          : undefined,
+      image:
+        props.body.post_type === "image"
+          ? {
+              create: {
+                id: v4(),
+                image_url: props.body.image_url ?? "",
+                created_at: now,
+                updated_at: now,
+              },
+            }
+          : undefined,
+      // HasMany relations - not created at post creation time
+      // comments, votes, reports are created separately
     } satisfies Prisma.reddit_community_postsCreateInput;
   }
 }

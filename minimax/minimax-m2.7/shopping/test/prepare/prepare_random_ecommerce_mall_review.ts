@@ -6,22 +6,17 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_ecommerce_mall_review(
-  input?: DeepPartial<IEcommerceMallReview.ICreate>,
+  input?: DeepPartial<IEcommerceMallReview.ICreate> | undefined,
 ): IEcommerceMallReview.ICreate {
   return {
+    content:
+      input?.content !== undefined
+        ? input.content
+        : RandomGenerator.content({ paragraphs: 2 }),
     rating:
       input?.rating ??
       typia.random<
         number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<5>
       >(),
-    content:
-      input?.content ??
-      RandomGenerator.content({
-        paragraphs: 1,
-        sentenceMin: 2,
-        sentenceMax: 5,
-        wordMin: 3,
-        wordMax: 10,
-      }),
   };
 }

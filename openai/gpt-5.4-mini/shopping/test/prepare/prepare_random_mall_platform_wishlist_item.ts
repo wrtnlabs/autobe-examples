@@ -5,12 +5,18 @@ import { ArrayUtil, RandomGenerator } from "@nestia/e2e";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+/**
+ * Prepare random mall platform wishlist item creation data for E2E testing.
+ *
+ * Generates a complete IMallPlatformWishlistItem.ICreate payload with a valid
+ * product UUID. Any provided input overrides the generated default so tests can
+ * target a specific product while keeping the request body valid.
+ */
 export function prepare_random_mall_platform_wishlist_item(
   input?: DeepPartial<IMallPlatformWishlistItem.ICreate> | undefined,
 ): IMallPlatformWishlistItem.ICreate {
   return {
-    mallPlatformProductId:
-      input?.mallPlatformProductId ??
-      typia.random<string & tags.Format<"uuid">>(),
+    product_id:
+      input?.product_id ?? typia.random<string & tags.Format<"uuid">>(),
   };
 }

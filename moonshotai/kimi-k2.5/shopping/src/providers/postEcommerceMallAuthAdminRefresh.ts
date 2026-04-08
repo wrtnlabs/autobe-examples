@@ -20,12 +20,16 @@ export async function postEcommerceMallAuthAdminRefresh(props: {
   let decoded: {
     id: string;
     session_id: string;
-    type: "admin";
+    type: string;
   };
   try {
     decoded = jwt.verify(props.body.refresh, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
-    }) as typeof decoded;
+    }) as {
+      id: string;
+      session_id: string;
+      type: string;
+    };
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
@@ -33,37 +37,37 @@ export async function postEcommerceMallAuthAdminRefresh(props: {
   if (decoded.type !== "admin") {
     throw new HttpException("Invalid token type", 403);
   }
-  // 3. Validate session exists and not expired
-  const now = new Date();
+  // 3. Validate session exists and belongs to admin
   const session = await MyGlobal.prisma.ecommerce_mall_admin_sessions.findFirst(
     {
       where: {
         id: decoded.session_id,
         admin_id: decoded.id,
-        expired_at: { gt: now },
       },
     },
   );
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate admin account exists and is active
+  // 4. Validate admin exists and not deleted
   const admin = await MyGlobal.prisma.ecommerce_mall_admins.findUniqueOrThrow({
     where: { id: decoded.id },
     ...EcommerceMallAdminTransformer.select(),
   });
-  if (admin.status !== "active") {
-    throw new HttpException("Account is not active", 403);
+  if (admin.deleted_at !== null) {
+    throw new HttpException("Account has been deleted", 403);
   }
-  // 5. Generate new tokens (same session_id)
+  // 5. Calculate token expiration times
+  const now = new Date();
   const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
   const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  // 6. Generate new tokens with same session_id
   const accessToken = jwt.sign(
     {
       type: "admin",
       id: decoded.id,
       session_id: decoded.session_id,
-      created_at: now.toISOString(),
+      created_at: toISOStringSafe(now),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
@@ -74,38 +78,32 @@ export async function postEcommerceMallAuthAdminRefresh(props: {
       id: decoded.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: now.toISOString(),
+      created_at: toISOStringSafe(now),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 6. Update session expiration
+  // 7. Update session expiration
   await MyGlobal.prisma.ecommerce_mall_admin_sessions.update({
     where: { id: decoded.session_id },
     data: { expired_at: refreshExpires },
   });
-  // 7. Transform admin data and return
-  const transformedAdmin = await EcommerceMallAdminTransformer.transform(admin);
+  // 8. Transform admin to response format
+  const transformed = await EcommerceMallAdminTransformer.transform(admin);
+  // 9. Return authorized response with properly typed grade and status
+  const { grade, status, ...rest } = transformed;
   return {
-    id: transformedAdmin.id as string & tags.Format<"uuid">,
-    email: transformedAdmin.email as string & tags.Format<"email">,
-    grade: transformedAdmin.grade,
-    status: transformedAdmin.status,
-    nickname: transformedAdmin.nickname,
-    created_at: transformedAdmin.created_at as string &
-      tags.Format<"date-time">,
-    updated_at: transformedAdmin.updated_at as string &
-      tags.Format<"date-time">,
-    deleted_at: transformedAdmin.deleted_at as
-      | (string & tags.Format<"date-time">)
-      | null,
+    ...rest,
+    grade: typia.assert<"regular" | "super_admin">(grade),
+    status: typia.assert<"suspended" | "active" | "banned">(status),
+    access: accessToken,
+    refresh: refreshToken,
+    expired_at: toISOStringSafe(refreshExpires),
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: accessExpires.toISOString() as string &
-        tags.Format<"date-time">,
-      refreshable_until: refreshExpires.toISOString() as string &
-        tags.Format<"date-time">,
+      expired_at: toISOStringSafe(accessExpires),
+      refreshable_until: toISOStringSafe(refreshExpires),
     },
   };
 }

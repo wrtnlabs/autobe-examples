@@ -2,8 +2,10 @@ import { IEcommerceMallOrderItemSellerSnapshot } from "@ORGANIZATION/PROJECT-api
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallOrderItemSellerSnapshotTransformer {
@@ -11,6 +13,16 @@ export namespace EcommerceMallOrderItemSellerSnapshotTransformer {
     Prisma.ecommerce_mall_order_item_seller_snapshotsGetPayload<
       ReturnType<typeof select>
     >;
+  export async function transform(
+    input: Payload,
+  ): Promise<IEcommerceMallOrderItemSellerSnapshot> {
+    return {
+      id: input.id,
+      shopName: input.shop_name,
+      logoUrl: input.logo_url,
+      createdAt: input.created_at.toISOString(),
+    };
+  }
   export function select() {
     return {
       select: {
@@ -20,15 +32,5 @@ export namespace EcommerceMallOrderItemSellerSnapshotTransformer {
         created_at: true,
       },
     } satisfies Prisma.ecommerce_mall_order_item_seller_snapshotsFindManyArgs;
-  }
-  export async function transform(
-    input: Payload,
-  ): Promise<IEcommerceMallOrderItemSellerSnapshot> {
-    return {
-      id: input.id,
-      shopName: input.shop_name,
-      logoUrl: input.logo_url ?? null,
-      createdAt: input.created_at.toISOString(),
-    };
   }
 }

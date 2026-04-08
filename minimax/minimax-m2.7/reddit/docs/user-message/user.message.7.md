@@ -1,1 +1,1 @@
-I already told you to do test process. Never ask me anything, and just do it right now. Go go go!
+Don't ask me to do that, and just do it right now.

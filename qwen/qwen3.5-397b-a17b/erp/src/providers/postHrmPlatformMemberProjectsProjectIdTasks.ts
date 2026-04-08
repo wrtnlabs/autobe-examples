@@ -25,137 +25,136 @@ export async function postHrmPlatformMemberProjectsProjectIdTasks(props: {
   projectId: string & tags.Format<"uuid">;
   body: IHrmPlatformTask.ICreate;
 }): Promise<IHrmPlatformTask> {
-  // Validate project exists and is not deleted
   const project = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
     {
-      where: { id: props.projectId, deleted_at: null },
+      where: {
+        id: props.projectId,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        organization_id: true,
+      },
     },
   );
-  // Check authorization: user must have project:manage permission OR be a project lead
+  const membership =
+    await MyGlobal.prisma.hrm_platform_organization_memberships.findFirst({
+      where: {
+        hrm_platform_member_id: props.member.id,
+        hrm_platform_organization_id: project.organization_id,
+      },
+    });
+  if (!membership) {
+    throw new HttpException("Not a member of this organization", 403);
+  }
   const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
     where: {
-      user_id: props.member.id,
+      member_id: props.member.id,
       organization_id: project.organization_id,
       deleted_at: null,
     },
     select: {
       id: true,
-      role: {
-        select: {
-          id: true,
-          rolePermissions: {
-            select: {
-              permission: true,
-            },
-          },
-        },
-      },
+      role_id: true,
     },
   });
   if (!employee) {
-    throw new HttpException("Employee not found in organization", 403);
+    throw new HttpException("Not an employee of this organization", 403);
   }
-  // Check if user has project:manage permission via role
-  const hasProjectManagePermission = employee.role.rolePermissions.some(
-    (p) => p.permission === "project:manage",
-  );
-  // Check if user is a project lead in this project
-  const projectMembership =
-    await MyGlobal.prisma.hrm_platform_project_members.findFirst({
+  const rolePermissions =
+    await MyGlobal.prisma.hrm_platform_role_permissions.findMany({
       where: {
-        hrm_platform_project_id: props.projectId,
-        hrm_platform_employee_id: employee.id,
-        deleted_at: null,
+        hrm_platform_role_id: employee.role_id,
       },
       select: {
-        role: true,
+        hrm_platform_permission_id: true,
       },
     });
-  const isProjectLead = projectMembership?.role === "project-lead";
-  if (!hasProjectManagePermission && !isProjectLead) {
+  const permissionIds = rolePermissions.map(
+    (rp) => rp.hrm_platform_permission_id,
+  );
+  const permissions = await MyGlobal.prisma.hrm_platform_permissions.findMany({
+    where: {
+      id: { in: permissionIds },
+    },
+    select: {
+      id: true,
+      code: true,
+    },
+  });
+  const hasProjectManage = permissions.some((p) => p.code === "project:manage");
+  const projectLeadMembership =
+    await MyGlobal.prisma.hrm_platform_project_members.findFirst({
+      where: {
+        hrm_platform_employee_id: employee.id,
+        hrm_platform_project_id: props.projectId,
+        role: "project-lead",
+      },
+    });
+  if (!hasProjectManage && !projectLeadMembership) {
     throw new HttpException(
-      "Forbidden: Requires project:manage permission or project-lead role",
+      "Forbidden: Must have project:manage permission or be project-lead",
       403,
     );
   }
-  // Validate assignee if provided - must be a member of this project
-  if (props.body.hrm_platform_employee_id) {
-    const assigneeMembership =
+  if (props.body.assigned_employee_id) {
+    const assignedEmployeeMembership =
       await MyGlobal.prisma.hrm_platform_project_members.findFirst({
         where: {
+          hrm_platform_employee_id: props.body.assigned_employee_id,
           hrm_platform_project_id: props.projectId,
-          hrm_platform_employee_id: props.body.hrm_platform_employee_id,
-          deleted_at: null,
         },
       });
-    if (!assigneeMembership) {
-      throw new HttpException("Assignee must be a member of this project", 400);
+    if (!assignedEmployeeMembership) {
+      throw new HttpException(
+        "Assigned employee must be a project member",
+        400,
+      );
     }
   }
-  // Validate parent_task_id if provided - must belong to same project and not be a subtask
   if (props.body.parent_task_id) {
-    const parentTask =
-      await MyGlobal.prisma.hrm_platform_tasks.findUniqueOrThrow({
-        where: { id: props.body.parent_task_id, deleted_at: null },
-        select: {
-          hrm_platform_project_id: true,
-          parent_task_id: true,
-        },
-      });
-    if (parentTask.hrm_platform_project_id !== props.projectId) {
+    const parentTask = await MyGlobal.prisma.hrm_platform_tasks.findUnique({
+      where: {
+        id: props.body.parent_task_id,
+        hrm_platform_project_id: props.projectId,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        parent_task_id: true,
+      },
+    });
+    if (!parentTask) {
+      throw new HttpException("Parent task not found in this project", 400);
+    }
+    if (parentTask.parent_task_id) {
       throw new HttpException(
-        "Parent task must belong to the same project",
+        "Cannot create subtask of a subtask - only one level nesting allowed",
         400,
       );
     }
-    if (parentTask.parent_task_id !== null) {
-      throw new HttpException(
-        "Cannot create subtask of a subtask (one-level nesting only)",
-        400,
-      );
-    }
   }
-  // Validate status enum
-  const validStatuses = ["open", "in-progress", "completed", "closed"];
-  if (!validStatuses.includes(props.body.status)) {
-    throw new HttpException(
-      `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
-      400,
-    );
-  }
-  // Validate priority enum
-  const validPriorities = ["low", "medium", "high", "urgent"];
-  if (!validPriorities.includes(props.body.priority)) {
-    throw new HttpException(
-      `Invalid priority. Must be one of: ${validPriorities.join(", ")}`,
-      400,
-    );
-  }
-  // Validate estimated_hours is positive if provided
-  if (
-    props.body.estimated_hours !== undefined &&
-    props.body.estimated_hours !== null
-  ) {
-    if (props.body.estimated_hours <= 0) {
-      throw new HttpException("Estimated hours must be positive", 400);
-    }
-  }
-  // Validate due_date is in the future if provided
-  if (props.body.due_date !== undefined && props.body.due_date !== null) {
-    const dueDate = new Date(props.body.due_date);
-    const now = new Date();
-    if (dueDate <= now) {
-      throw new HttpException("Due date must be in the future", 400);
-    }
-  }
-  // Create task using collector
-  const created = await MyGlobal.prisma.hrm_platform_tasks.create({
+  const record = await MyGlobal.prisma.hrm_platform_tasks.create({
     data: await HrmPlatformTaskCollector.collect({
       body: props.body,
       hrmPlatformProjects: { id: props.projectId },
     }),
     ...HrmPlatformTaskTransformer.select(),
   });
-  // Transform and return
-  return await HrmPlatformTaskTransformer.transform(created);
+  await MyGlobal.prisma.hrm_platform_activity_logs.create({
+    data: {
+      id: v4(),
+      hrm_platform_organization_id: project.organization_id,
+      hrm_platform_member_id: props.member.id,
+      action_type: "task:created",
+      target_entity_type: "task",
+      target_entity_id: record.id,
+      details: JSON.stringify({
+        title: record.title,
+        project_id: props.projectId,
+      }),
+      created_at: new Date(),
+    },
+  });
+  return await HrmPlatformTaskTransformer.transform(record);
 }

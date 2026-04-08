@@ -4,91 +4,42 @@ import {
   NestiaSimulator,
   PlainFetcher,
 } from "@nestia/fetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IEcommerceMallProductVariant } from "../../../../../structures/IEcommerceMallProductVariant";
 
-export * as snapshots from "./snapshots/index";
+export * as options from "./options/index";
 
 /**
- * Create a new product variant for an existing product.
+ * Create a new product variant for a specific product.
  *
- * This operation allows sellers to add a purchasable variant configuration to their products. A product must have at least one variant to be available for purchase; products without variants are displayed as unavailable to customers.
+ * This operation allows sellers to add SKU-level variants to their products. Each variant represents a distinct purchasable configuration defined by option combinations such as color and size. Every variant must have a unique SKU code within the product and can optionally specify a price override.
  *
- * A variant represents a specific combination of options (such as color and size) with a unique SKU code that identifies the inventory unit. Each variant can have its own price that overrides the product's base price, and maintains its own stock quantity tracked through inventory records.
+ * The variant becomes immediately available for inventory management and customer purchase once created. Option values (e.g., Color=Red, Size=Large) are specified in the request and stored in a normalized structure for efficient querying.
  *
- * Authorization: Only the seller who owns the product (identified by seller_id) and administrators can create variants. The system validates that the requesting user has ownership of the product before allowing variant creation.
- *
- * Validation rules:
- * - SKU code must be unique across the entire platform
- * - Option values must be provided as key-value pairs (e.g., {"color": "Red", "size": "Large"})
- * - Price is optional; if not provided, the product's base price is used
- * - Stock quantity defaults to 0 if not specified
- *
- * Related operations:
- * - GET /products/{productId}/variants - List all variants for a product
- * - PUT /products/{productId}/variants/{variantId} - Edit an existing variant
- * - DELETE /products/{productId}/variants/{variantId} - Remove a variant
- *
- * Upon successful creation, the variant becomes available for customers to add to their cart and purchase, subject to stock availability.
+ * Authentication required: Seller only. The seller must own the product to create variants for it.
  *
  * @param props.connection
- * @param props.productId The unique identifier of the product to which the variant will be added (global scope)
- * @param props.body Creation data for the new product variant including SKU code, option values, optional price override, and initial stock quantity
+ * @param props.productId The unique identifier of the parent product (UUID format)
+ * @param props.body Variant creation data including SKU code, optional price override, and option values
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implementation details for creating a product variant:
+ * @x-autobe-specification 1. Validate that the requesting seller owns the product identified by productId.
+ * 2. Validate that the SKU code is unique within the product (check against existing non-deleted variants).
+ * 3. Validate that all option names and values are non-empty strings.
+ * 4. Generate a new UUID for the variant id.
+ * 5. Set created_at and updated_at to current timestamp (UTC).
+ * 6. Set deleted_at to null (active variant).
+ * 7. Insert the variant record into ecommerce_mall_product_variants table.
+ * 8. For each option in the request, insert a record into ecommerce_mall_product_variant_options table with the variant id.
+ * 9. Return the complete variant entity including the nested options.
  *
- * **Authorization and Ownership Verification:**
- * 1. Extract authenticated user from JWT token
- * 2. Verify the user is a seller or administrator
- * 3. If seller, verify they own the product by checking product.seller_id matches the authenticated seller's ID
- * 4. If administrator, skip ownership check (admins can manage any product)
- * 5. Return 403 Forbidden if authorization fails
- *
- * **Validation Logic:**
- * 1. Validate productId is a valid UUID and exists in the database
- * 2. Validate IProductVariant.ICreate request body:
- *    - sku: required, unique string (check uniqueness across all variants in the database)
- *    - options: required array of option key-value pairs (e.g., [{"key": "color", "value": "Red"}])
- *    - price: optional decimal, must be positive if provided
- *    - stock: optional integer, defaults to 0, must be non-negative
- * 3. Ensure at least one option value is provided to distinguish this variant
- *
- * **Database Operations:**
- * 1. Begin transaction
- * 2. Insert new record into ecommerce_mall_product_variants table:
- *    - id: auto-generated UUID
- *    - product_id: from path parameter
- *    - sku: from request body
- *    - price: from request body or null
- *    - created_at: current timestamp
- *    - updated_at: current timestamp
- * 3. Insert option values into ecommerce_mall_product_variant_options table:
- *    - For each option in request body, create a record with:
- *      - variant_id: the newly created variant ID
- *      - option_key: the key (e.g., "color")
- *      - option_value: the value (e.g., "Red")
- * 4. If initial stock > 0 is specified, insert initial inventory record:
- *    - variant_id: the newly created variant ID
- *    - quantity_change: initial stock value
- *    - reason: "Initial stock"
- *    - created_at: current timestamp
- * 5. Commit transaction
- * 6. Handle unique constraint violation on SKU (return 409 Conflict with appropriate error message)
- *
- * **Edge Cases:**
- * - Concurrent creation with duplicate SKU: database unique constraint handles this
- * - Product doesn't exist: return 404 Not Found
- * - Seller doesn't own product: return 403 Forbidden
- * - Invalid option format: return 400 Bad Request
- *
- * **Response Construction:**
- * - Return 201 Created status
- * - Include Location header with URL to the newly created variant
- * - Response body contains complete IProductVariant with:
- *   - id, productId, sku, price, stock (calculated from inventory records), options array
- *   - createdAt, updatedAt timestamps
+ * Edge cases:
+ * - Duplicate SKU code within the same product: Return 409 Conflict.
+ * - Product not found or not owned by seller: Return 404 Not Found.
+ * - Empty option array: Allowed (variant with no options).
+ * - Negative price: Return 400 Bad Request (price must be positive if provided).
+ * - Soft-deleted variant with same SKU: Allow creation (treat as new variant).
  * @path /ecommerceMall/seller/products/:productId/variants
  * @accessor api.functional.ecommerceMall.seller.products.variants.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -118,12 +69,12 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * The unique identifier of the product to which the variant will be added (global scope)
+     * The unique identifier of the parent product (UUID format)
      */
     productId: string;
 
     /**
-     * Creation data for the new product variant including SKU code, option values, optional price override, and initial stock quantity
+     * Variant creation data including SKU code, optional price override, and option values
      */
     body: IEcommerceMallProductVariant.ICreate;
   };
@@ -174,55 +125,75 @@ export namespace create {
 }
 
 /**
- * Update an existing product variant with new details.
+ * Update an existing product variant's attributes.
  *
- * This operation allows sellers to modify a variant's SKU code, option values (e.g., color, size combinations), and optional price override. The variant must belong to the specified product, and the seller must be the owner of the product.
+ * This operation allows sellers to modify variant details including the SKU code, option values (such as color and size combinations), and variant-specific price. The variant must belong to the specified product.
  *
- * Following the Snapshot Principle, every successful edit creates a snapshot preserving the previous variant state. This enables audit trails and supports dispute resolution by maintaining a complete history of all changes.
+ * Every successful update creates an immutable snapshot of the previous variant state, preserving the complete configuration for audit trails and dispute resolution. Snapshots record the SKU code, option values, and price at the time of modification.
  *
- * The following fields can be updated:
- * - skuCode: New unique SKU identifier (must be globally unique across the entire platform)
- * - price: Optional variant-specific price that overrides the product's base price (set to null to use base price)
- * - optionValues: The set of option name-value pairs defining this variant's configuration (e.g., [{"optionName": "Color", "optionValue": "Red"}, {"optionName": "Size", "optionValue": "Large"}])
+ * **Authorization**: Only the seller who owns the parent product can update its variants.
  *
- * Soft-deleted variants cannot be updated. If the variant is deleted (deleted_at is set), the operation returns a 404 error.
+ * **Validation Rules**:
+ * - The SKU code must be unique across the entire platform
+ * - Option values must be valid key-value pairs representing product configurations
+ * - Price must be a positive number if provided
+ * - The variant must belong to the specified product
  *
- * This endpoint requires seller authentication. The requesting seller must be the owner of the product that contains this variant.
+ * **Related Operations**:
+ * - `POST /products/{productId}/variants` - Create a new variant
+ * - `DELETE /products/{productId}/variants/{productVariantId}` - Remove a variant
  *
  * @param props.connection
- * @param props.productId UUID of the parent product containing this variant
- * @param props.variantId UUID of the product variant to update
- * @param props.body Updated variant details including SKU code, option values, and optional price
+ * @param props.productId The unique identifier of the parent product (UUID format, global scope)
+ * @param props.productVariantId The unique identifier of the product variant to update (UUID format, scoped to the product)
+ * @param props.body Updated variant attributes including SKU code, option values, and price
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implementation steps for variant update:
+ * @x-autobe-specification Implement variant update with the following logic:
  *
- * 1. **Authorization Check**: Verify the requesting user is a seller and owns the product that contains this variant. Query ecommerce_mall_products to confirm seller_id matches the authenticated seller.
+ * 1. **Authorization Check**: Verify the requesting seller owns the product identified by productId. Return 403 Forbidden if not authorized.
  *
- * 2. **Variant Lookup**: Fetch the variant by variantId and productId. Check that deleted_at is null (not soft-deleted). Return 404 if not found or deleted.
+ * 2. **Existence Validation**:
+ *    - Verify the product exists and is not deleted
+ *    - Verify the variant exists and belongs to the specified product
+ *    - Return 404 Not Found if either doesn't exist
  *
- * 3. **SKU Code Validation**: If skuCode is being changed, verify the new SKU code is unique within this product (exclude the current variant from the check). Query ecommerce_mall_product_variants with @@unique constraint on [product_id, sku_code].
+ * 3. **SKU Uniqueness Check**:
+ *    - If the SKU code is being changed, verify no other variant (under any product) uses the same SKU code
+ *    - Return 409 Conflict if SKU is already in use
  *
- * 4. **Option Values Update**: If optionValues are provided:
- *    - Delete existing option records from ecommerce_mall_product_variant_options where product_variant_id matches
- *    - Insert new option records for each option name-value pair
- *    - Ensure no duplicate option names exist within the same variant (enforced by @@unique([product_variant_id, option_name]) constraint)
+ * 4. **Snapshot Creation** (BEFORE applying changes):
+ *    - Query current variant state (skuCode, option values, price)
+ *    - Insert a new record into ecommerce_mall_product_variant_snapshots with:
+ *      - variant_id = the variant's id
+ *      - sku_code = current SKU
+ *      - price = current price
+ *      - created_at = current timestamp
+ *    - Copy current option values to ecommerce_mall_product_variant_snapshot_option_values
  *
- * 5. **Snapshot Creation**: Before updating the variant, create a snapshot record in ecommerce_mall_product_variant_snapshots capturing the current state (SKU code, price, and option values at that moment).
+ * 5. **Apply Updates**:
+ *    - Update the variant record with new values from request body
+ *    - Update option values in ecommerce_mall_product_variant_options:
+ *      - Delete existing option records for this variant
+ *      - Insert new option records from the request
  *
- * 6. **Variant Update**: Update the variant record in ecommerce_mall_product_variants:
- *    - Set sku_code to the new value
- *    - Set price to the new value (can be null)
- *    - Update updated_at to current timestamp
+ * 6. **Return Updated Variant**:
+ *    - Fetch the complete updated variant with its option values
+ *    - Include current stock quantity calculated from inventory records
  *
- * 7. **Transaction Management**: Wrap all operations (snapshot creation, variant update, option updates) in a database transaction to ensure atomicity.
+ * **Database Transactions**:
+ * - Wrap snapshot creation, variant update, and option updates in a single transaction to ensure atomicity
  *
- * 8. **Response Construction**: Return the updated variant with its current option values joined from ecommerce_mall_product_variant_options.
+ * **Error Handling**:
+ * - 400 Bad Request: Invalid option format, negative price, or missing required fields
+ * - 403 Forbidden: Seller does not own the product
+ * - 404 Not Found: Product or variant not found
+ * - 409 Conflict: SKU code already in use by another variant
  *
- * Edge cases:
- * - If the variant has pending order items with paid or shipped status, update is allowed (unlike deletion which is blocked)
- * - Concurrent updates are handled by optimistic locking via updated_at timestamp checks
- * @path /ecommerceMall/seller/products/:productId/variants/:variantId
+ * **Edge Cases**:
+ * - If the variant is part of pending orders (paid or shipped status), the update is still allowed but sellers should be cautious as customers may have already purchased based on the old configuration
+ * - Stock quantity is managed separately through inventory records and cannot be modified through this endpoint
+ * @path /ecommerceMall/seller/products/:productId/variants/:productVariantId
  * @accessor api.functional.ecommerceMall.seller.products.variants.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -251,17 +222,17 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * UUID of the parent product containing this variant
+     * The unique identifier of the parent product (UUID format, global scope)
      */
     productId: string;
 
     /**
-     * UUID of the product variant to update
+     * The unique identifier of the product variant to update (UUID format, scoped to the product)
      */
-    variantId: string;
+    productVariantId: string;
 
     /**
-     * Updated variant details including SKU code, option values, and optional price
+     * Updated variant attributes including SKU code, option values, and price
      */
     body: IEcommerceMallProductVariant.IUpdate;
   };
@@ -270,7 +241,7 @@ export namespace update {
 
   export const METADATA = {
     method: "PUT",
-    path: "/ecommerceMall/seller/products/:productId/variants/:variantId",
+    path: "/ecommerceMall/seller/products/:productId/variants/:productVariantId",
     request: {
       type: "application/json",
       encrypted: false,
@@ -282,7 +253,7 @@ export namespace update {
   } as const;
 
   export const path = (props: Omit<Props, "body">) =>
-    `/ecommerceMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/variants/${encodeURIComponent(props.variantId ?? "null")}`;
+    `/ecommerceMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/variants/${encodeURIComponent(props.productVariantId ?? "null")}`;
   export const random = (): IEcommerceMallProductVariant =>
     typia.random<IEcommerceMallProductVariant>();
   export const simulate = (
@@ -297,7 +268,9 @@ export namespace update {
     });
     try {
       assert.param("productId")(() => typia.assert(props.productId));
-      assert.param("variantId")(() => typia.assert(props.variantId));
+      assert.param("productVariantId")(() =>
+        typia.assert(props.productVariantId),
+      );
       assert.body(() => typia.assert(props.body));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
@@ -313,75 +286,46 @@ export namespace update {
 }
 
 /**
- * Permanently deletes a specific product variant from the platform.
+ * Permanently removes a product variant from the seller's product catalog.
  *
- * This operation allows sellers to remove a product variant permanently. The operation enforces strict validation to ensure data integrity and prevent disruption to active orders.
+ * This operation deletes a specific variant by its unique identifier. The system validates that no blocking conditions exist before allowing deletion.
  *
- * Before deletion can proceed, the system verifies that:
- * - The requesting user is the owner (seller) of the product containing this variant
- * - There are no pending order items with "paid" or "shipped" status for this variant
- * - There are no pending cancellation requests for this variant
- * - There are no pending refund requests for this variant
+ * Deletion is blocked if:
+ * - There are pending order items with 'paid' or 'shipped' status for this variant
+ * - There are pending cancellation requests for this variant
+ * - There are pending refund requests for this variant
  *
- * When the deletion is permitted:
- * - All inventory records associated with the variant are cascade deleted
- * - The product variant record is permanently removed
- * - If this was the last remaining variant of the product, the product is marked as unavailable for purchase
+ * When the last remaining variant of a product is deleted, the product is automatically marked as unavailable for purchase. Deleted variants no longer appear in customer-facing listings and cannot be added to shopping carts.
  *
- * Blocking validation ensures customers with active orders continue to receive their purchased items, and sellers with pending requests can still process them. Sellers can view existing orders and request status through dedicated endpoints to determine when deletion is safe.
+ * Inventory records associated with the deleted variant are preserved for historical tracking but excluded from current stock calculations. The variant is soft-deleted to maintain referential integrity with historical orders.
  *
- * Products marked unavailable due to deletion of their last variant remain visible in search results and category listings, but are shown as unavailable for purchase. Customers cannot add unavailable products to their cart or proceed to checkout.
+ * This operation can only be performed by the seller who owns the product.
  *
  * @param props.connection
- * @param props.productId The unique identifier of the product containing the variant to delete. Must be owned by the authenticated seller. Must be a valid UUID format.
- * @param props.variantId The unique identifier of the variant to delete. Must belong to the specified product. Must be a valid UUID format.
+ * @param props.productId The unique identifier of the product that owns the variant (global scope)
+ * @param props.productVariantId The unique identifier of the product variant to delete
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Implementation must follow this flow:
+ * @x-autobe-specification Implement the variant deletion with the following logic:
  *
- * 1. **Authentication & Authorization**:
- *    - Verify current user is authenticated as a seller
- *    - Load the product via productId and verify seller ownership (product.sellerId matches current user)
- *    - Load the variant via variantId and verify it belongs to the specified product
- *    - Return 403 Forbidden if authorization fails
+ * 1. **Authorization**: Verify the requesting user is an authenticated seller and owns the product referenced by productId.
  *
- * 2. **Validation: Check Deletion Blockers**:
- *    - Query ecommerce_mall_order_items table for records where variantId matches and status IN ('paid', 'shipped')
- *    - If any found, return 409 Conflict with error message "Cannot delete variant with pending order items"
- *    - Query ecommerce_mall_cancellation_requests table joined with order_items for pending status where variantId matches
- *    - If any found, return 409 Conflict with error message "Cannot delete variant with pending cancellation requests"
- *    - Query ecommerce_mall_refund_requests table joined with order_items for pending status where variantId matches
- *    - If any found, return 409 Conflict with error message "Cannot delete variant with pending refund requests"
+ * 2. **Variant Existence Check**: Verify the productVariantId exists under the specified productId. Return 404 if not found or already deleted (deleted_at is not null).
  *
- * 3. **Cascade Deletion**:
- *    - Delete all inventory records from ecommerce_mall_inventory_records where variantId matches (foreign key constraint may handle this)
- *    - Capture variant count pre-deletion: query remaining variants for this product
+ * 3. **Pending Order Items Validation**: Query ecommerce_mall_order_items for records where variant_id matches productVariantId and status is 'paid' or 'shipped'. If any exist, reject with 409 CONFLICT and error code 'VARIANT_HAS_PENDING_ORDERS'.
  *
- * 4. **Product Availability Check**:
- *    - Count remaining variants for this productId after deletion
- *    - If remaining count is 0, update product's availability status to unavailable (system-managed field indicating "no variants")
+ * 4. **Pending Cancellation Requests Validation**: Query ecommerce_mall_cancellation_requests joined with order_items where variant_id matches productVariantId and status is 'pending'. If any exist, reject with 409 CONFLICT and error code 'VARIANT_HAS_PENDING_CANCELLATIONS'.
  *
- * 5. **Execute Deletion**:
- *    - Delete the variant from ecommerce_mall_product_variants
- *    - Return 204 No Content on success
+ * 5. **Pending Refund Requests Validation**: Query ecommerce_mall_refund_requests joined with order_items where variant_id matches productVariantId and status is 'pending'. If any exist, reject with 409 CONFLICT and error code 'VARIANT_HAS_PENDING_REFUNDS'.
  *
- * **Database Queries**:
- * - SELECT * FROM ecommerce_mall_products WHERE id = {productId} AND seller_id = {currentUserId}
- * - SELECT * FROM ecommerce_mall_product_variants WHERE id = {variantId} AND product_id = {productId}
- * - SELECT COUNT(*) FROM ecommerce_mall_order_items WHERE variant_id = {variantId} AND status IN ('paid', 'shipped')
- * - SELECT COUNT(*) FROM ecommerce_mall_cancellation_requests cr JOIN ecommerce_mall_order_items oi ON cr.order_item_id = oi.id WHERE oi.variant_id = {variantId} AND cr.status = 'pending'
- * - SELECT COUNT(*) FROM ecommerce_mall_refund_requests rr JOIN ecommerce_mall_order_items oi ON rr.order_item_id = oi.id WHERE oi.variant_id = {variantId} AND rr.status = 'pending'
- * - DELETE FROM ecommerce_mall_inventory_records WHERE variant_id = {variantId}
- * - SELECT COUNT(*) FROM ecommerce_mall_product_variants WHERE product_id = {productId} (post-deletion check)
- * - UPDATE ecommerce_mall_products SET available = false WHERE id = {productId} (if last variant)
- * - DELETE FROM ecommerce_mall_product_variants WHERE id = {variantId}
+ * 6. **Soft Delete Execution**: Set the deleted_at field to current timestamp for the variant record.
  *
- * **Edge Cases**:
- * - Concurrency: Use transaction-level locking on variant records during deletion check
- * - Already deleted variant: Return 404 Not Found
- * - Product not owned: Return 403 Forbidden
- * - Variant belongs to different product: Return 404 Not Found
- * @path /ecommerceMall/seller/products/:productId/variants/:variantId
+ * 7. **Last Variant Check**: Query if any other active variants (deleted_at is null) exist for the same product_id. If this was the last variant, mark the product as unavailable in the product record.
+ *
+ * 8. **Response**: Return the soft-deleted variant record including the updated deleted_at timestamp.
+ *
+ * All validation checks must pass in a single transaction to ensure data consistency.
+ * @path /ecommerceMall/seller/products/:productId/variants/:productVariantId
  * @accessor api.functional.ecommerceMall.seller.products.variants.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -409,19 +353,19 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * The unique identifier of the product containing the variant to delete. Must be owned by the authenticated seller. Must be a valid UUID format.
+     * The unique identifier of the product that owns the variant (global scope)
      */
-    productId: string & tags.Format<"uuid">;
+    productId: string;
 
     /**
-     * The unique identifier of the variant to delete. Must belong to the specified product. Must be a valid UUID format.
+     * The unique identifier of the product variant to delete
      */
-    variantId: string & tags.Format<"uuid">;
+    productVariantId: string;
   };
 
   export const METADATA = {
     method: "DELETE",
-    path: "/ecommerceMall/seller/products/:productId/variants/:variantId",
+    path: "/ecommerceMall/seller/products/:productId/variants/:productVariantId",
     request: null,
     response: {
       type: "application/json",
@@ -430,7 +374,7 @@ export namespace erase {
   } as const;
 
   export const path = (props: Props) =>
-    `/ecommerceMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/variants/${encodeURIComponent(props.variantId ?? "null")}`;
+    `/ecommerceMall/seller/products/${encodeURIComponent(props.productId ?? "null")}/variants/${encodeURIComponent(props.productVariantId ?? "null")}`;
   export const random = (): void => typia.random<void>();
   export const simulate = (
     connection: IConnection,
@@ -444,7 +388,9 @@ export namespace erase {
     });
     try {
       assert.param("productId")(() => typia.assert(props.productId));
-      assert.param("variantId")(() => typia.assert(props.variantId));
+      assert.param("productVariantId")(() =>
+        typia.assert(props.productVariantId),
+      );
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

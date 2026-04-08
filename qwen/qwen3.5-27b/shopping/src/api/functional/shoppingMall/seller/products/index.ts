@@ -1,58 +1,46 @@
-import { IConnection, PlainFetcher } from "@nestia/fetcher";
-import typia from "typia";
+import {
+  HttpError,
+  IConnection,
+  NestiaSimulator,
+  PlainFetcher,
+} from "@nestia/fetcher";
+import typia, { tags } from "typia";
 
-import { IShoppingMallProductAnalytic } from "../../../../structures/IShoppingMallProductAnalytic";
+import { IPageIShoppingMallProduct } from "../../../../structures/IPageIShoppingMallProduct";
+import { IShoppingMallProduct } from "../../../../structures/IShoppingMallProduct";
 
-export * as inventory from "./inventory/index";
+export * as images from "./images/index";
+export * as variants from "./variants/index";
+export * as snapshots from "./snapshots/index";
 
 /**
- * Retrieve comprehensive product analytics and statistical insights for the shopping mall platform.
+ * Create a new product for sale on the shopping mall platform. This endpoint is available to authenticated sellers who can create products with name, description, category assignment, and base price. The product is immediately visible in search results and category listings but marked as unavailable until at least one variant with available stock is added.
  *
- * This operation provides aggregated metrics about products, including total product counts, category distribution, customer ratings, review statistics, and sales performance data. The analytics help sellers understand their product performance and enable administrators to monitor platform health and identify trends.
+ * Product creation requires seller authentication. Each product belongs to exactly one seller and cannot be transferred to another seller. Product names must be unique per seller (a seller cannot create two products with the same name). Categories are optional but recommended for better product organization and customer discoverability.
  *
- * For authenticated sellers, this endpoint returns analytics specific to their own products, including their product count, average ratings across their catalog, total units sold, and revenue generated. Sellers can use this data to optimize their product offerings and identify high-performing categories.
- *
- * For administrators, this endpoint returns platform-wide analytics including total products across all sellers, category distribution showing which categories are most popular, overall average ratings, total review counts, and aggregate sales metrics. Administrators can use this data for platform oversight, identifying policy violations, and making strategic decisions about platform features.
- *
- * The analytics include information about product availability (out-of-stock counts), seller status distribution (active vs suspended sellers), and product health metrics. This comprehensive view enables data-driven decision making for both sellers managing their shops and administrators overseeing the entire marketplace.
+ * After creation, sellers can add product images and variants to make the product purchasable. The base price serves as a default for variants that don't have their own specific price. All product modifications create immutable snapshots for audit trail and dispute resolution purposes.
  *
  * @param props.connection
+ * @param props.body Product creation data including name, description, optional category assignment, and base price.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query and aggregate product analytics data from multiple tables.
- *
- * For sellers: Filter products by seller_id from authenticated session. Calculate metrics only for their products.
- *
- * For administrators: Aggregate across all products on the platform without seller filtering.
- *
- * Aggregation logic:
- * 1. Count total products (excluding soft-deleted products with deleted_at null)
- * 2. Group products by category_id and count per category
- * 3. Calculate average rating from shopping_mall_reviews where deleted_at is null
- * 4. Count total reviews (non-deleted)
- * 5. Sum order quantities from shopping_mall_order_items for sold units
- * 6. Calculate total revenue by multiplying order item quantities by prices
- * 7. Count products with zero stock (from variant stock_quantity)
- * 8. Count products from suspended sellers (approval_status = 'suspended')
- *
- * Join shopping_mall_products with shopping_mall_sellers to filter by seller approval status.
- *
- * Join with shopping_mall_categories for category breakdown.
- *
- * Join with shopping_mall_reviews for rating calculations (average, count).
- *
- * Join with shopping_mall_order_items for sales metrics (quantity sold, revenue).
- *
- * Return aggregated metrics in structured response with category breakdowns and time-based trends if applicable.
- * @path /shoppingMall/seller/products/analytics
- * @accessor api.functional.shoppingMall.seller.products.analytics
+ * @x-autobe-specification 1. Extract seller ID from authenticated session context (verify seller is approved and not suspended/banned).
+ * 2. Validate request body: name (required, non-empty string), description (required, non-empty string), base_price (required, positive number), category_id (optional, must exist in shopping_mall_categories and not be deleted).
+ * 3. Check product name uniqueness for this seller: query shopping_mall_products where shopping_mall_seller_id equals seller_id AND name equals input.name AND deleted_at IS NULL. Return 409 Conflict if duplicate found.
+ * 4. If category_id provided, verify it exists in shopping_mall_categories with deleted_at IS NULL. Return 400 Bad Request if invalid.
+ * 5. Insert new record into shopping_mall_products: generate UUID for id, set shopping_mall_seller_id from auth context, set shopping_mall_category_id from input (or null), set name, description, base_price, created_at (current timestamp), updated_at (current timestamp), deleted_at (null).
+ * 6. Return the created product entity with all fields including id, timestamps, and empty arrays for images and variants relationships.
+ * 7. Error handling: 401 Unauthorized if not authenticated, 403 Forbidden if seller not approved/suspended/banned, 400 Bad Request for invalid data, 409 Conflict for duplicate product name.
+ * @path /shoppingMall/seller/products
+ * @accessor api.functional.shoppingMall.seller.products.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function analytics(
+export async function create(
   connection: IConnection,
-): Promise<analytics.Response> {
+  props: create.Props,
+): Promise<create.Response> {
   return true === connection.simulate
-    ? analytics.simulate(connection)
+    ? create.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -62,18 +50,241 @@ export async function analytics(
           },
         },
         {
-          ...analytics.METADATA,
-          path: analytics.path(),
+          ...create.METADATA,
+          path: create.path(),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace create {
+  export type Props = {
+    /**
+     * Product creation data including name, description, optional category assignment, and base price.
+     */
+    body: IShoppingMallProduct.ICreate;
+  };
+  export type Body = IShoppingMallProduct.ICreate;
+  export type Response = IShoppingMallProduct;
+
+  export const METADATA = {
+    method: "POST",
+    path: "/shoppingMall/seller/products",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/shoppingMall/seller/products";
+  export const random = (): IShoppingMallProduct =>
+    typia.random<IShoppingMallProduct>();
+  export const simulate = (
+    connection: IConnection,
+    props: create.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: create.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Search and list products with filtering and pagination support.
+ *
+ * This endpoint allows customers to browse available products on the platform. Products can be filtered by name, category, price range, and stock availability. Results are returned in paginated format optimized for list displays.
+ *
+ * The search supports the following filters:
+ * - Name search: partial matching on product name
+ * - Category filtering: filter by specific category ID
+ * - Price range: minimum and maximum price bounds
+ * - In-stock filter: show only products with available variants
+ *
+ * Results can be sorted by relevance, price (ascending/descending), or creation date (newest/oldest).
+ *
+ * @param props.connection
+ * @param props.body Search criteria including name, category, price range, stock availability filters, sorting options, and pagination parameters.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor seller
+ * @x-autobe-specification Query shopping_mall_products table with pagination and filtering support.
+ *
+ * 1. Apply name search filter using LIKE clause on product name field (case-insensitive partial match).
+ * 2. Apply category filter using equality check on category_id foreign key.
+ * 3. Apply price range filter using base_price field with minimum and maximum bounds.
+ * 4. Apply in-stock filter by joining with shopping_mall_product_variants and checking for variants with positive stock quantity.
+ * 5. Apply sorting based on requested sort field and direction (default: relevance).
+ * 6. Apply cursor-based pagination using page token and page size parameters.
+ * 7. Return product summaries including id, name, description, base_price, category information, image count, variant count, and seller information.
+ * 8. For in-stock filtering, perform LEFT JOIN with shopping_mall_product_variants and filter where exists at least one variant with stock_quantity > 0.
+ * 9. Handle edge cases: empty results return empty array, missing filters use default values, invalid sort fields default to relevance.
+ * 10. Products with no variants should be marked as unpurchasable in the response.
+ * @path /shoppingMall/seller/products
+ * @accessor api.functional.shoppingMall.seller.products.index
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function index(
+  connection: IConnection,
+  props: index.Props,
+): Promise<index.Response> {
+  return true === connection.simulate
+    ? index.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...index.METADATA,
+          path: index.path(),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace index {
+  export type Props = {
+    /**
+     * Search criteria including name, category, price range, stock availability filters, sorting options, and pagination parameters.
+     */
+    body: IShoppingMallProduct.IRequest;
+  };
+  export type Body = IShoppingMallProduct.IRequest;
+  export type Response = IPageIShoppingMallProduct.ISummary;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/shoppingMall/seller/products",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/shoppingMall/seller/products";
+  export const random = (): IPageIShoppingMallProduct.ISummary =>
+    typia.random<IPageIShoppingMallProduct.ISummary>();
+  export const simulate = (
+    connection: IConnection,
+    props: index.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: index.path(),
+      contentType: "application/json",
+    });
+    try {
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieve complete details of a single product by its unique identifier.
+ *
+ * This endpoint returns comprehensive product information including the product's core attributes (name, description, base price, category), all associated product images with display order, all product variants with their SKU codes, prices, and option values, the seller's shop profile information, and aggregated review statistics. The response is optimized for product detail page displays in customer-facing applications.
+ *
+ * Products that have been soft-deleted are not accessible through this endpoint. Variants without available inventory are still included but marked as unavailable. All images are returned sorted by display order with the first image serving as the main thumbnail.
+ *
+ * @param props.connection
+ * @param props.productId Unique identifier of the product to retrieve (global scope).
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor seller
+ * @x-autobe-specification Query shopping_mall_products table by id with UUID parameter.
+ *
+ * Join with shopping_mall_sellers to get seller information.
+ * Join with shopping_mall_seller_profiles to get shop name, description, and logo.
+ * Join with shopping_mall_categories to get category name and description.
+ *
+ * Include all non-deleted shopping_mall_product_images sorted by display_order ascending.
+ * Include all non-deleted shopping_mall_product_variants with their:
+ *   - sku_code
+ *   - price (or use product base_price if null)
+ *   - All shopping_mall_product_variant_options as key-value pairs
+ *   - Current inventory status from shopping_mall_inventory_records (sum of all records)
+ *
+ * Calculate aggregate review statistics from shopping_mall_reviews:
+ *   - Average rating (1-5 stars)
+ *   - Total review count
+ *   - Count per rating level
+ *
+ * Return null if product is soft-deleted (deleted_at is not null).
+ * Return 404 if product not found.
+ *
+ * Do not include shopping_mall_product_snapshots in response (separate endpoint exists).
+ * Do not include shopping_mall_customer_wishlists relationships (privacy).
+ * @path /shoppingMall/seller/products/:productId
+ * @accessor api.functional.shoppingMall.seller.products.at
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function at(
+  connection: IConnection,
+  props: at.Props,
+): Promise<at.Response> {
+  return true === connection.simulate
+    ? at.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...at.METADATA,
+          path: at.path(props),
           status: null,
         },
       );
 }
-export namespace analytics {
-  export type Response = IShoppingMallProductAnalytic;
+export namespace at {
+  export type Props = {
+    /**
+     * Unique identifier of the product to retrieve (global scope).
+     */
+    productId: string & tags.Format<"uuid">;
+  };
+  export type Response = IShoppingMallProduct;
 
   export const METADATA = {
     method: "GET",
-    path: "/shoppingMall/seller/products/analytics",
+    path: "/shoppingMall/seller/products/:productId",
     request: null,
     response: {
       type: "application/json",
@@ -81,10 +292,253 @@ export namespace analytics {
     },
   } as const;
 
-  export const path = () => "/shoppingMall/seller/products/analytics";
-  export const random = (): IShoppingMallProductAnalytic =>
-    typia.random<IShoppingMallProductAnalytic>();
-  export const simulate = (_connection: IConnection): Response => {
+  export const path = (props: Props) =>
+    `/shoppingMall/seller/products/${encodeURIComponent(props.productId ?? "null")}`;
+  export const random = (): IShoppingMallProduct =>
+    typia.random<IShoppingMallProduct>();
+  export const simulate = (
+    connection: IConnection,
+    props: at.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: at.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("productId")(() => typia.assert(props.productId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Update a product's name, description, category, or base price. Creates an immutable snapshot before modification for audit trail and dispute resolution.
+ *
+ * This operation allows sellers to modify their product details. Before applying changes, the system creates a complete snapshot of the previous product state including name, description, category, base price, and images. This ensures full audit compliance and preserves historical data for any future disputes.
+ *
+ * The product name must be unique per seller - a seller cannot have two products with the same name. The base price must be a positive number. Category assignment is optional and can be changed to reorganize products within the catalog.
+ *
+ * @param props.connection
+ * @param props.productId UUID of the product to update.
+ * @param props.body Product update fields including name, description, category ID, and base price. All fields are optional for partial updates.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor seller
+ * @x-autobe-specification 1. Verify the authenticated seller owns the product (shopping_mall_seller_id matches current seller).
+ * 2. Check for pending order items (paid or shipped status) for any variant of this product - if found, reject the update with appropriate error.
+ * 3. Check for pending cancellation or refund requests for any variant - if found, reject the update.
+ * 4. Validate the new product name is unique for this seller (check @@unique constraint on [shopping_mall_seller_id, name]).
+ * 5. Validate base_price is positive (> 0).
+ * 6. Create a snapshot in shopping_mall_product_snapshots capturing before values (name_before, description_before, category_id_before, base_price_before, images_before) and after values.
+ * 7. Update the product fields (name, description, shopping_mall_category_id, base_price) and set updated_at to current timestamp.
+ * 8. Return the updated product entity with all current values.
+ * @path /shoppingMall/seller/products/:productId
+ * @accessor api.functional.shoppingMall.seller.products.update
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function update(
+  connection: IConnection,
+  props: update.Props,
+): Promise<update.Response> {
+  return true === connection.simulate
+    ? update.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...update.METADATA,
+          path: update.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace update {
+  export type Props = {
+    /**
+     * UUID of the product to update.
+     */
+    productId: string & tags.Format<"uuid">;
+
+    /**
+     * Product update fields including name, description, category ID, and base price. All fields are optional for partial updates.
+     */
+    body: IShoppingMallProduct.IUpdate;
+  };
+  export type Body = IShoppingMallProduct.IUpdate;
+  export type Response = IShoppingMallProduct;
+
+  export const METADATA = {
+    method: "PUT",
+    path: "/shoppingMall/seller/products/:productId",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/shoppingMall/seller/products/${encodeURIComponent(props.productId ?? "null")}`;
+  export const random = (): IShoppingMallProduct =>
+    typia.random<IShoppingMallProduct>();
+  export const simulate = (
+    connection: IConnection,
+    props: update.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: update.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("productId")(() => typia.assert(props.productId));
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Delete a product from the shopping mall platform.
+ *
+ * This operation removes a product from active listings by soft-deleting it (setting the deleted_at timestamp). The product remains accessible in order history, snapshots, and audit trails but is hidden from search results and category listings.
+ *
+ * **Deletion Constraints**:
+ * - Sellers can only delete their own products
+ * - Products with pending order items (paid or shipped status) cannot be deleted by sellers
+ * - Products with pending cancellation or refund requests cannot be deleted by sellers
+ * - Administrators can force delete any product regardless of pending orders or requests
+ *
+ * **Cascade Behavior**:
+ * - All product variants are automatically deleted
+ * - All inventory records for variants are automatically deleted
+ * - Product snapshots are preserved for audit purposes
+ * - Products in customer wishlists are automatically removed
+ * - Cart items referencing deleted variants are marked as unavailable
+ *
+ * @param props.connection
+ * @param props.productId UUID of the product to delete. Must reference an existing product that the authenticated user has permission to delete.
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor seller
+ * @x-autobe-specification 1. Validate the authenticated user has permission to delete the product:
+ *    - If seller: verify shopping_mall_seller_id matches the product's seller
+ *    - If administrator: allow deletion regardless of ownership
+ *
+ * 2. Check deletion constraints (for sellers only, skip for administrators):
+ *    - Query shopping_mall_order_items for any items with status 'paid' or 'shipped' where shopping_mall_product_variant_id belongs to this product's variants
+ *    - Query shopping_mall_cancellation_requests for any requests with status 'pending' for variants of this product
+ *    - Query shopping_mall_refund_requests for any requests with status 'pending' for variants of this product
+ *    - If any pending items/requests exist, reject with 409 Conflict error
+ *
+ * 3. Create a product snapshot before deletion:
+ *    - Insert record into shopping_mall_product_snapshots capturing current state
+ *    - Record name, description, category_id, base_price, and images before deletion
+ *    - Set after values to null to indicate deletion
+ *
+ * 4. Perform soft delete:
+ *    - Set deleted_at timestamp on shopping_mall_products record
+ *    - This automatically cascades to variants (shopping_mall_product_variants) via database cascade
+ *    - Variants' deletion cascades to inventory records
+ *
+ * 5. Clean up references:
+ *    - Remove product from customer wishlists (shopping_mall_customer_wishlists)
+ *    - Mark cart items as unavailable (do not delete, just flag)
+ *
+ * 6. Return 204 No Content on success
+ * @path /shoppingMall/seller/products/:productId
+ * @accessor api.functional.shoppingMall.seller.products.erase
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function erase(
+  connection: IConnection,
+  props: erase.Props,
+): Promise<void> {
+  return true === connection.simulate
+    ? erase.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...erase.METADATA,
+          path: erase.path(props),
+          status: null,
+        },
+      );
+}
+export namespace erase {
+  export type Props = {
+    /**
+     * UUID of the product to delete. Must reference an existing product that the authenticated user has permission to delete.
+     */
+    productId: string & tags.Format<"uuid">;
+  };
+
+  export const METADATA = {
+    method: "DELETE",
+    path: "/shoppingMall/seller/products/:productId",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Props) =>
+    `/shoppingMall/seller/products/${encodeURIComponent(props.productId ?? "null")}`;
+  export const random = (): void => typia.random<void>();
+  export const simulate = (
+    connection: IConnection,
+    props: erase.Props,
+  ): void => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: erase.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("productId")(() => typia.assert(props.productId));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
     return random();
   };
 }

@@ -1,13 +1,16 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIShoppingMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallRefundRequest";
-import { IShoppingMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomer";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import { IShoppingMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallMember";
+import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import { IShoppingMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallRefundRequest";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallShipment";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -28,28 +31,27 @@ export async function patchShoppingMallSellerRefundRequests(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const whereInput = {
+  const whereInput: Prisma.shopping_mall_refund_requestsWhereInput = {
     deleted_at: null,
     orderItem: {
       shopping_mall_seller_id: props.seller.id,
     },
     ...(props.body.status && { status: props.body.status }),
-    ...(props.body.requested_at && {
-      requested_at: {
-        ...(props.body.requested_at.from && {
-          gte: new Date(props.body.requested_at.from),
-        }),
-        ...(props.body.requested_at.to && {
-          lte: new Date(props.body.requested_at.to),
-        }),
-      },
+    ...(props.body.created_at_from && {
+      created_at: { gte: new Date(props.body.created_at_from) },
+    }),
+    ...(props.body.created_at_to && {
+      created_at: { lte: new Date(props.body.created_at_to) },
+    }),
+    ...(props.body.search && {
+      reason: { contains: props.body.search, mode: "insensitive" },
     }),
   } satisfies Prisma.shopping_mall_refund_requestsWhereInput;
   const data = await MyGlobal.prisma.shopping_mall_refund_requests.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: { requested_at: "desc" },
+    orderBy: { created_at: "desc" },
     ...ShoppingMallRefundRequestAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.shopping_mall_refund_requests.count({

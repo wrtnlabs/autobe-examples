@@ -12,56 +12,38 @@ import { putShoppingMallCustomerReviewsReviewId } from "../../../../providers/pu
 @Controller("/shoppingMall/customer/reviews")
 export class ShoppingmallCustomerReviewsController {
   /**
-   * Create a new product review for a purchased and delivered order item.
+   * Create a new product review with rating and optional text content.
    *
-   * This operation allows authenticated customers to write reviews for products they have purchased and received. Reviews are essential for helping other buyers make informed purchasing decisions and provide valuable feedback to sellers.
+   * Reviews can only be written for products that have been purchased and delivered. Each customer can write one review per order item, ensuring authentic feedback from verified purchases. The review includes a required star rating from 1 to 5 and optional detailed text content.
    *
-   * Each review is associated with a specific order item, ensuring that only customers who have actually purchased and received the product can write reviews. The system enforces that the order item status must be 'delivered' before allowing review creation, preventing premature reviews on items still in transit or not yet shipped.
+   * Review eligibility is enforced at the order item level - customers must have received the product (order item status must be 'delivered') before writing a review. This prevents fake reviews and ensures all feedback comes from actual purchase experiences.
    *
-   * Reviews consist of a required star rating (1-5 stars) and optional text content describing the customer's experience with the product. The rating helps provide quick visual feedback, while the text content allows customers to share detailed insights about product quality, value, and suitability.
-   *
-   * The system maintains a one-review-per-order-item constraint, meaning each customer can only write one review for a specific order item. If a customer wants to modify their review, they must use the update operation rather than creating a new one. Reviews support soft deletion, allowing customers to remove their feedback while preserving the data for administrative purposes.
-   *
-   * When a customer's account is deleted, their reviews are preserved and displayed with the reviewer identified as "deleted user" to maintain the integrity of product feedback while respecting privacy requirements. Review snapshots are automatically created when reviews are modified, providing an audit trail for dispute resolution.
+   * Once created, reviews can be edited by the customer who wrote them, with all changes tracked in review snapshots for audit purposes. Reviews can also be deleted, but deleted reviews are excluded from average rating calculations while snapshots are preserved for dispute resolution.
    *
    * @param connection
-   * @param body Review creation data including order item reference, rating, and optional text content
+   * @param body Review creation data including product reference, order item reference, star rating, and optional text content.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Service layer implementation for creating a new product review.
+   * @x-autobe-specification Create a new review record in shopping_mall_reviews table.
    *
-   * 1. AUTHENTICATION: Verify the requester is an authenticated customer via JWT token.
+   * Validation steps:
+   * 1. Verify the authenticated customer exists and is not banned or deleted
+   * 2. Verify the order_item_id exists and belongs to an order owned by the authenticated customer
+   * 3. Verify the order item status is 'delivered' (reviews only allowed after delivery)
+   * 4. Verify no existing review exists for this order_item_id (unique constraint)
+   * 5. Verify the product_id matches the product associated with the order item
+   * 6. Validate rating is between 1 and 5 (inclusive)
+   * 7. Validate content length if provided (optional field)
+   * 8. Create review record with current timestamp for created_at and updated_at
+   * 9. Return the created review entity
    *
-   * 2. VALIDATION: Validate the request body contains valid data:
-   *    - orderItemId must be a valid UUID
-   *    - rating must be an integer between 1 and 5 (inclusive)
-   *    - content is optional, if provided must be non-empty string
-   *
-   * 3. ORDER ITEM VERIFICATION: Query shopping_mall_order_items table for the specified orderItemId:
-   *    - Verify the order item exists and is not soft-deleted (deleted_at is null)
-   *    - Verify the order item's status is 'delivered' (customers can only review received items)
-   *    - Verify the order item belongs to the authenticated customer (via shopping_mall_order_id -> shopping_mall_orders -> shopping_mall_customer_id)
-   *
-   * 4. EXISTING REVIEW CHECK: Query shopping_mall_reviews table to ensure no existing review exists for this orderItemId (enforce @@unique constraint on shopping_order_item_id).
-   *
-   * 5. REVIEW CREATION: Insert new record into shopping_mall_reviews table:
-   *    - id: Generate new UUID
-   *    - shopping_order_item_id: From request
-   *    - shopping_customer_id: From authenticated user session
-   *    - rating: From request (1-5)
-   *    - content: From request (nullable)
-   *    - created_at: Current timestamp
-   *    - updated_at: Current timestamp
-   *    - deleted_at: null (active review)
-   *
-   * 6. RESPONSE: Return the created review object with all fields including generated id and timestamps.
-   *
-   * 7. ERROR HANDLING:
-   *    - Return 401 if customer not authenticated
-   *    - Return 404 if order item not found
-   *    - Return 403 if order item does not belong to customer or status is not 'delivered'
-   *    - Return 409 if review already exists for this order item
-   *    - Return 400 for invalid rating range or malformed request
+   * Error handling:
+   * - Return 400 Bad Request if rating is outside 1-5 range
+   * - Return 400 Bad Request if product_id doesn't match order item's product
+   * - Return 403 Forbidden if order item doesn't belong to authenticated customer
+   * - Return 403 Forbidden if order item status is not 'delivered'
+   * - Return 409 Conflict if review already exists for this order item
+   * - Return 404 Not Found if product, order item, or customer not found
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -83,44 +65,31 @@ export class ShoppingmallCustomerReviewsController {
   }
 
   /**
-   * Update an existing product review with new rating and/or text content.
+   * Update an existing review with new rating and/or content.
    *
-   * This operation allows customers to modify their own reviews after submission. The review must be associated with an order item that has been delivered to the customer. Only the original author of the review can update it, and the review must not be in a deleted state.
+   * This operation allows customers to modify their own reviews after submission. The rating (1-5 stars) is required and can be changed. The text content is optional and can be updated independently. Each modification creates an immutable snapshot preserving the previous review state for audit and dispute resolution purposes.
    *
-   * When a review is updated, the system automatically creates an immutable snapshot of the previous review state before applying the changes. This snapshot is preserved for audit trail purposes and dispute resolution. The updated_at timestamp is automatically set to the current time when the review is modified.
-   *
-   * The rating must be an integer between 1 and 5 stars. The text content is optional and can be updated independently of the rating. If the content is omitted in the update request, the existing content is preserved. Reviews from deleted user accounts cannot be updated.
-   *
-   * Related operations include creating a new review (POST /products/{productId}/reviews), retrieving a specific review (GET /reviews/{reviewId}), and deleting a review (DELETE /reviews/{reviewId}). The average rating for the product is recalculated after any review update.
+   * Only the customer who originally wrote the review can edit it. The review must not be deleted. Updates are immediately reflected in the product's average rating calculation.
    *
    * @param connection
-   * @param reviewId Unique identifier of the review to update
-   * @param body Updated review data including rating and/or content
+   * @param reviewId UUID of the review to update (global scope)
+   * @param body Update payload containing the new rating and/or content for the review.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Validate the reviewId exists in shopping_mall_reviews table
-   * 2. Verify the authenticated customer is the owner of the review (shopping_customer_id matches)
-   * 3. Check that deleted_at is NULL (review is not deleted)
-   * 4. Validate rating is between 1-5 if provided
-   * 5. Validate content length if provided (optional field)
-   * 6. Create a ReviewSnapshot record before updating:
-   *    - Copy current review data to snapshotData JSON field
-   *    - Set snapshot timestamp to current time
-   *    - Associate with the reviewId
-   * 7. Update the review record:
-   *    - Set rating if provided in request
-   *    - Set content if provided in request (preserve existing if not provided)
-   *    - Set updated_at to current timestamp
-   * 8. Recalculate the average rating for the associated product
-   *    - Query all non-deleted reviews for the product's order item
-   *    - Compute average rating and update product cache if applicable
-   * 9. Return the updated review with all fields
-   * 10. Handle edge cases:
-   *     - Return 404 if review not found
-   *     - Return 403 if customer is not the review owner
-   *     - Return 400 if review is deleted
-   *     - Return 400 if rating is out of range
-   *     - Return 500 if snapshot creation fails
+   * @x-autobe-specification 1. Validate the authenticated customer owns the review (shopping_mall_customer_id matches current user).
+   * 2. Verify the review exists and is not deleted (deleted_at IS NULL).
+   * 3. Validate rating is an integer between 1 and 5 (inclusive).
+   * 4. Create a snapshot of the current review state in shopping_mall_review_snapshots before modification.
+   * 5. Update the review's rating and content fields.
+   * 6. Set updated_at to current timestamp.
+   * 7. Recalculate the product's average rating based on all non-deleted reviews.
+   * 8. Return the updated review entity.
+   *
+   * Error handling:
+   * - 404 if review not found
+   * - 403 if customer does not own the review
+   * - 400 if rating is not between 1-5
+   * - 400 if review is already deleted
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":reviewId")
@@ -145,21 +114,32 @@ export class ShoppingmallCustomerReviewsController {
   }
 
   /**
-   * Delete a customer review by marking it as soft deleted. This operation removes the review from public display on product detail pages while preserving the review record and all associated snapshots for audit and dispute resolution purposes.
+   * Delete a customer's review for a product.
    *
-   * This operation is restricted to the customer who originally wrote the review. Customers cannot delete reviews written by other customers. The system validates ownership before processing the deletion request.
+   * This operation allows customers to remove their own reviews from the platform. When a review is deleted, it is removed from public display on the product detail page and excluded from the product's average rating calculation. However, the review is not permanently removed from the database - it is soft-deleted by setting the deleted_at timestamp.
    *
-   * When a review is deleted, it is marked with a deleted_at timestamp rather than being permanently removed from the database. This soft deletion approach ensures that historical review data is preserved for order records, dispute resolution, and administrative oversight. All review snapshots associated with the deleted review are retained.
+   * All snapshots of the review are preserved for dispute resolution and audit purposes. This ensures that review modifications and the deletion action itself are tracked in the system. Reviews from deleted customer accounts are displayed with "deleted user" attribution but remain in the rating calculations.
    *
-   * Deleted reviews are excluded from the product's average rating calculation and do not appear in the review list displayed on product detail pages. However, reviews from deleted user accounts remain visible and display "deleted user" as the reviewer identifier, ensuring product feedback history is maintained.
-   *
-   * Related operations include GET /products/{productId}/reviews to view product reviews, POST /products/{productId}/reviews to create a new review, and PUT /reviews/{reviewId} to update an existing review.
+   * Only the customer who wrote the review can delete it. Attempting to delete another customer's review will result in an authorization error.
    *
    * @param connection
-   * @param reviewId Unique identifier of the review to delete (UUID format)
+   * @param reviewId Unique identifier of the review to delete (global scope)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Validate the requesting customer's authentication and authorization. Verify that the customer ID from the authenticated session matches the shopping_customer_id of the target review. Query the shopping_mall_reviews table to locate the review by the provided reviewId. Check that the review exists and is not already deleted (deleted_at is null). Update the review record by setting deleted_at to the current timestamp. Do not physically delete the record from the database. Preserve all associated shopping_mall_review_snapshots records - do not delete any snapshots. Trigger recalculation of the product's average rating by querying all non-deleted reviews for the associated order item's product and computing the arithmetic mean. Update the product's cached average rating if it exists. Return 204 No Content status code on successful deletion. Return 404 Not Found if the review does not exist or is already deleted. Return 403 Forbidden if the customer does not own the review.
+   * @x-autobe-specification Query the shopping_mall_reviews table for the review with the given reviewId. Verify that the authenticated customer owns this review by checking shopping_mall_customer_id matches the current user. If ownership verification fails, return 403 Forbidden.
+   *
+   * Soft-delete the review by setting deleted_at to the current timestamp. Do not hard delete the record - this preserves the audit trail.
+   *
+   * Create a snapshot in shopping_mall_review_snapshots capturing the before state (with deleted_at as null) and after state (with deleted_at set). This snapshot records the deletion action.
+   *
+   * After deletion, the review will be excluded from:
+   * - Product detail page review listings
+   * - Average rating calculations for the product
+   * - Any public review aggregations
+   *
+   * The review and its snapshots remain accessible to administrators for dispute resolution. If the customer's account is deleted, the review will display with "deleted user" attribution but remain in rating calculations.
+   *
+   * Return 204 No Content on successful deletion. Return 404 Not Found if the review does not exist. Return 403 Forbidden if the customer does not own the review.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":reviewId")

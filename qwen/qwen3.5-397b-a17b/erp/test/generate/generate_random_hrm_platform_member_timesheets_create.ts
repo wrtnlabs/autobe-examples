@@ -17,6 +17,23 @@ import typia, { tags } from "typia";
 
 import { prepare_random_hrm_platform_timesheet } from "../prepare/prepare_random_hrm_platform_timesheet";
 
+/**
+ * Generate a random HRM platform timesheet via the API for E2E testing.
+ *
+ * Creates a timesheet record in draft status for the authenticated employee. The timesheet
+ * is created with a random week_start_date (Monday) and automatically includes all timelogs
+ * belonging to the employee within the specified week period. The week_end_date is
+ * automatically calculated as week_start_date + 6 days.
+ *
+ * Uses the prepare function to generate test data, allowing optional customization through
+ * the body parameter. The employee_id is automatically derived from the authenticated user's
+ * context, and the timesheet is created in draft status.
+ *
+ * @param connection API connection information
+ * @param props Optional parameters for customization
+ * @param props.body Optional partial timesheet creation data for test-time customization
+ * @returns The newly created timesheet entity in draft status
+ */
 export async function generate_random_hrm_platform_member_timesheets_create(
   connection: api.IConnection,
   props: {

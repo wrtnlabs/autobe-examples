@@ -1,65 +1,86 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IHrmPlatformAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformAdmin";
-import type { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
-import type { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
-import type { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
-import type { IHrmPlatformOrganizationLogo } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganizationLogo";
-import type { IHrmPlatformOrganizationSetting } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganizationSetting";
+import type { IHrmTimeTrackDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackDepartment";
+import type { IHrmTimeTrackMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackMember";
+import type { IHrmTimeTrackOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackOrganization";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
-import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
-import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
-import { generate_random_hrm_platform_admin_departments_create } from "../../../generate/generate_random_hrm_platform_admin_departments_create";
-import { prepare_random_hrm_platform_department } from "../../../prepare/prepare_random_hrm_platform_department";
+import { authorize_member_join } from "../../../authorize/authorize_member_join";
+import { authorize_member_login } from "../../../authorize/authorize_member_login";
+import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
+import { generate_random_hrm_time_track_member_departments_create } from "../../../generate/generate_random_hrm_time_track_member_departments_create";
+import { prepare_random_hrm_time_track_department } from "../../../prepare/prepare_random_hrm_time_track_department";
 
 /**
- * Test successful creation of a new top-level department within an organization.
- * 1. Authenticate as admin to gain authorization for department creation
- * 2. Create a new department with unique name and optional description
- * 3. Validate the response includes all department fields including auto-generated id, timestamps, and null parent
- * 4. Verify the department is a top-level department (parent is null)
- * 5. Verify employee_count is 0 and childDepartments is empty array initially
+ * Test the primary success path for creating a new department within an organization.
+ *
+ * Validates the complete department creation flow including member authentication and department establishment. Ensures that the department is correctly created with provided name and description, and that top-level departments have no parent reference.
+ *
+ * Special attention is given to verifying that the department name and description match the input values, that the parent department is null for top-level departments, and that the organization context is correctly associated.
+ *
+ * 1. Member registers and authenticates with organization management permissions.
+ * 2. Member creates a new top-level department with name and description.
+ * 3. Validates department details match input and structure is correct.
  */
 export async function test_api_department_creation_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Authenticate as admin
-  const adminConnection: api.IConnection = { host: connection.host };
-  await authorize_admin_join(adminConnection, {});
-  // 2. Create a new top-level department
+  // 1. Member authentication
+  const memberConnection: api.IConnection = { host: connection.host };
+  await authorize_member_join(memberConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+      ip: typia.random<string & tags.Format<"ipv4">>(),
+    } satisfies IHrmTimeTrackMember.IJoin,
+  });
+  // 2. Create department with specific name and description
   const department =
-    await generate_random_hrm_platform_admin_departments_create(
-      adminConnection,
-      {},
+    await generate_random_hrm_time_track_member_departments_create(
+      memberConnection,
+      {
+        body: {
+          name: "Engineering",
+          description: "Software development team",
+          parent_department_id: null,
+        } satisfies IHrmTimeTrackDepartment.ICreate,
+      },
     );
-  // 3. Validate the response structure
   typia.assert(department);
-  // 4. Verify business logic for top-level department
-  TestValidator.predicate("department has name", department.name.length > 0);
-  TestValidator.equals("parent is null for top-level", department.parent, null);
+  // 3. Validate department creation
   TestValidator.equals(
-    "childDepartments is empty",
-    department.childDepartments.length,
-    0,
+    "department name matches input",
+    department.name,
+    "Engineering",
   );
-  TestValidator.equals("employee_count is 0", department.employee_count, 0);
+  TestValidator.equals(
+    "department description matches input",
+    department.description,
+    "Software development team",
+  );
+  TestValidator.equals(
+    "parent department is null",
+    department.parentDepartment,
+    null,
+  );
   TestValidator.predicate(
-    "created_at exists",
-    department.created_at.length > 0,
+    "organization is present",
+    department.organization.id !== undefined,
   );
   TestValidator.predicate(
-    "updated_at exists",
-    department.updated_at.length > 0,
+    "created_at is present",
+    department.created_at !== undefined,
   );
   TestValidator.predicate(
-    "organization exists",
-    department.organization.id.length > 0,
+    "updated_at is present",
+    department.updated_at !== undefined,
   );
+  TestValidator.equals("deleted_at is null", department.deleted_at, null);
 }

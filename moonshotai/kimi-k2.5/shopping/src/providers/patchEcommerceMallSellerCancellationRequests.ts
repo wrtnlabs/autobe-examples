@@ -3,14 +3,12 @@ import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
-import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
 import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
 import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIEcommerceMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallCancellationRequest";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -29,30 +27,60 @@ export async function patchEcommerceMallSellerCancellationRequests(props: {
   body: IEcommerceMallCancellationRequest.IRequest;
 }): Promise<IPageIEcommerceMallCancellationRequest.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
+  const limit = props.body.limit ?? 10;
   const skip = (page - 1) * limit;
-  const whereInput = {
+  // Build where clause
+  const whereInput: Prisma.ecommerce_mall_cancellation_requestsWhereInput = {
     deleted_at: null,
+    // Authorization: seller can only see their own requests
     seller_id: props.seller.id,
-    ...(props.body.status !== undefined && { status: props.body.status }),
-    ...(props.body.orderItemId !== undefined && {
-      order_item_id: props.body.orderItemId,
-    }),
-    ...(props.body.customerId !== undefined && {
-      customer_id: props.body.customerId,
+    // Optional status filter
+    ...(props.body.status && { status: props.body.status }),
+    // Optional orderItemId filter
+    ...(props.body.orderItemId && { order_item_id: props.body.orderItemId }),
+    // Optional customerId filter
+    ...(props.body.customerId && { customer_id: props.body.customerId }),
+    // Optional createdAt date range
+    ...(props.body.createdAtFrom || props.body.createdAtTo
+      ? {
+          created_at: {
+            ...(props.body.createdAtFrom && {
+              gte: new Date(props.body.createdAtFrom),
+            }),
+            ...(props.body.createdAtTo && {
+              lte: new Date(props.body.createdAtTo),
+            }),
+          },
+        }
+      : {}),
+    // Optional respondedAt date range
+    ...(props.body.respondedAtFrom || props.body.respondedAtTo
+      ? {
+          responded_at: {
+            ...(props.body.respondedAtFrom && {
+              gte: new Date(props.body.respondedAtFrom),
+            }),
+            ...(props.body.respondedAtTo && {
+              lte: new Date(props.body.respondedAtTo),
+            }),
+          },
+        }
+      : {}),
+    // Optional search on reason
+    ...(props.body.search && {
+      reason: { contains: props.body.search, mode: "insensitive" },
     }),
   } satisfies Prisma.ecommerce_mall_cancellation_requestsWhereInput;
-  const orderByInput = (() => {
-    const sort = props.body.sort ?? "created_at";
-    const direction = props.body.direction ?? "desc";
-    if (sort === "responded_at") {
-      return { responded_at: direction };
-    }
-    if (sort === "status") {
-      return { status: direction };
-    }
-    return { created_at: direction };
-  })() satisfies Prisma.ecommerce_mall_cancellation_requestsOrderByWithRelationInput;
+  // Build order by clause
+  const sortField = props.body.sortBy ?? "createdAt";
+  const sortOrder = props.body.sortOrder ?? "desc";
+  const orderByInput: Prisma.ecommerce_mall_cancellation_requestsOrderByWithRelationInput =
+    {
+      ...(sortField === "createdAt" && { created_at: sortOrder }),
+      ...(sortField === "updatedAt" && { updated_at: sortOrder }),
+      ...(sortField === "status" && { status: sortOrder }),
+    } satisfies Prisma.ecommerce_mall_cancellation_requestsOrderByWithRelationInput;
+  // Query data and count sequentially
   const data =
     await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findMany({
       where: whereInput,
@@ -65,11 +93,13 @@ export async function patchEcommerceMallSellerCancellationRequests(props: {
     await MyGlobal.prisma.ecommerce_mall_cancellation_requests.count({
       where: whereInput,
     });
+  // Transform results
+  const transformedData = await ArrayUtil.asyncMap(
+    data,
+    EcommerceMallCancellationRequestAtSummaryTransformer.transform,
+  );
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceMallCancellationRequestAtSummaryTransformer.transform,
-    ),
+    data: transformedData,
     pagination: {
       current: page,
       limit: limit,

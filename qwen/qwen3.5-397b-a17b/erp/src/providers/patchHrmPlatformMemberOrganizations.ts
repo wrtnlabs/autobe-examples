@@ -20,60 +20,50 @@ export async function patchHrmPlatformMemberOrganizations(props: {
   body: IHrmPlatformOrganization.IRequest;
 }): Promise<IPageIHrmPlatformOrganization.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
-  const employeeRecords = await MyGlobal.prisma.hrm_platform_employees.findMany(
-    {
-      where: {
-        user_id: props.member.id,
-        deleted_at: null,
-      },
-      select: {
-        organization_id: true,
+  const limit = props.body.take ?? props.body.limit ?? 100;
+  const skip = props.body.skip ?? (page - 1) * limit;
+  const sort = props.body.sort ?? "created_at";
+  const order = props.body.order ?? "desc";
+  const whereInput: Prisma.hrm_platform_organizationsWhereInput = {
+    deleted_at: null,
+    organizationMemberships: {
+      some: {
+        hrm_platform_member_id: props.member.id,
       },
     },
-  );
-  const organizationIds = employeeRecords.map((emp) => emp.organization_id);
-  if (organizationIds.length === 0) {
-    return {
-      pagination: {
-        current: page,
-        limit: limit,
-        records: 0,
-        pages: 0,
-      } satisfies IPage.IPagination,
-      data: [],
+    ...(props.body.search
+      ? {
+          name: {
+            contains: props.body.search,
+            mode: "insensitive",
+          },
+        }
+      : {}),
+  };
+  const orderByInput: Prisma.hrm_platform_organizationsOrderByWithRelationInput =
+    {
+      [sort]: order,
     };
-  }
-  const whereInput = {
-    id: { in: organizationIds },
-    deleted_at: null,
-    ...(props.body.search && {
-      name: { contains: props.body.search, mode: "insensitive" as const },
-    }),
-    ...(props.body.currency && { currency: props.body.currency }),
-    ...(props.body.timezone && { timezone: props.body.timezone }),
-  } satisfies Prisma.hrm_platform_organizationsWhereInput;
   const data = await MyGlobal.prisma.hrm_platform_organizations.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: { created_at: "desc" },
+    orderBy: orderByInput,
     ...HrmPlatformOrganizationAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.hrm_platform_organizations.count({
     where: whereInput,
   });
   return {
+    data: await ArrayUtil.asyncMap(
+      data,
+      HrmPlatformOrganizationAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(
-      data,
-      HrmPlatformOrganizationAtSummaryTransformer.transform,
-    ),
   };
 }

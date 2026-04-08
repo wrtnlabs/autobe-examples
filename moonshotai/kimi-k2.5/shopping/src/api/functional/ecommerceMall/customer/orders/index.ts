@@ -4,30 +4,61 @@ import {
   NestiaSimulator,
   PlainFetcher,
 } from "@nestia/fetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IEcommerceMallOrder } from "../../../../structures/IEcommerceMallOrder";
 import { IPageIEcommerceMallOrder } from "../../../../structures/IPageIEcommerceMallOrder";
 
 export * as items from "./items/index";
-export * as snapshots from "./snapshots/index";
 
 /**
- * Retrieve a paginated list of the authenticated customer's orders with filtering and sorting capabilities.
+ * Retrieve a filtered and paginated list of orders.
  *
- * This operation returns the customer's complete order history, displaying summary information optimized for list views. Each order shows the order number (unique identifier for reference), creation date, total price, and current status.
+ * This operation provides order history browsing capabilities for customers and order management oversight for administrators. Customers can only view their own orders, while administrators can view all orders on the platform.
  *
- * Order statuses are derived from item statuses: 'paid' (all items paid), 'shipped' (any item shipped), 'delivered' (all items delivered), 'cancelled' (all items cancelled), 'refunded' (all items refunded), or 'partially_completed' (mixed states).
+ * Orders can be filtered by various criteria including order status (paid, shipped, delivered, cancelled, refunded, partially_completed), total price range, and creation date range. Results are paginated and support sorting by creation date, total price, and order number.
  *
- * The operation supports filtering by status and date ranges, allowing customers to quickly locate specific orders. Results are paginated and sorted by newest first by default.
+ * The response includes order summary information such as order number, total price, current status, and creation timestamp. For full order details including items, shipments, and address information, use the GET /orders/{orderId} endpoint.
  *
- * Response includes only summary fields - complete order details including item breakdown and shipping information are available via the GET /orders/{orderId} endpoint.
+ * Soft-deleted orders are excluded from results unless explicitly requested by administrators with appropriate permissions.
  *
  * @param props.connection
- * @param props.body Order list filtering criteria including status filters, date range filters, and pagination parameters
+ * @param props.body Search criteria and pagination parameters for filtering orders
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Query ecommerce_mall_orders table filtering by authenticated customer's customer_id. Apply optional filters from request body: status (exact match on status field), date range filters on created_at (after, before). Sort by created_at DESC (newest first) by default. Return paginated results using cursor-based or offset pagination. Include only summary fields: id, order_number, total_price, status, created_at. Validate that requesting customer can only access their own orders - return empty result or unauthorized if customer_id mismatch.
+ * @x-autobe-specification Implement order list query with the following logic:
+ *
+ * **Authorization & Data Isolation:**
+ * - For customers: Filter orders by authenticated customer's customer_id
+ * - For admins: Allow viewing all orders, optionally filtered by specific customer
+ * - Apply soft delete filter (exclude deleted_at IS NOT NULL unless admin with special permission)
+ *
+ * **Query Implementation:**
+ * - Base query on ecommerce_mall_orders table
+ * - Join with ecommerce_mall_customers to get customer information for admin views
+ * - Support the following filters in IRequest:
+ *   - status: Filter by order status enum values
+ *   - customerId: For admin use - filter to specific customer's orders
+ *   - minTotalPrice/maxTotalPrice: Price range filtering
+ *   - createdAfter/createdBefore: Date range filtering
+ *   - orderNumber: Partial matching on order number for search
+ *
+ * **Pagination:**
+ * - Implement cursor-based or offset pagination based on request parameters
+ * - Default page size: 20 items
+ * - Maximum page size: 100 items
+ * - Support sorting by: created_at (default, desc), total_price, order_number
+ *
+ * **Response Construction:**
+ * - Return IPageIEcommerceMallOrder.ISummary with:
+ *   - data: Array of order summaries (id, orderNumber, totalPrice, status, createdAt)
+ *   - pagination: cursor/limit/total information
+ * - For ISummary DTO, include essential fields only (exclude full address details, those are in full entity)
+ *
+ * **Performance Considerations:**
+ * - Add database indexes on (customer_id, created_at) for customer queries
+ * - Add index on status for filter performance
+ * - Consider caching for frequently accessed order lists
  * @path /ecommerceMall/customer/orders
  * @accessor api.functional.ecommerceMall.customer.orders.index
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -57,7 +88,7 @@ export async function index(
 export namespace index {
   export type Props = {
     /**
-     * Order list filtering criteria including status filters, date range filters, and pagination parameters
+     * Search criteria and pagination parameters for filtering orders
      */
     body: IEcommerceMallOrder.IRequest;
   };
@@ -106,36 +137,43 @@ export namespace index {
 }
 
 /**
- * Retrieve complete details of a specific order by its unique identifier.
+ * Retrieve detailed information for a specific order by its unique identifier.
  *
- * This operation returns the full order information including the order number, total price, current status, shipping address details, list of purchased items with their individual statuses, and associated shipment tracking information. The response provides a comprehensive view of the order suitable for order confirmation, customer service inquiries, and shipment tracking purposes.
+ * This operation returns the complete order details including the order number, total price, shipping address, and overall order status. The response includes all order items with their product names, variant specifications, quantities, prices at time of purchase, and individual fulfillment statuses.
  *
- * This endpoint is accessible to both customers viewing their own orders and administrators performing order oversight. Per platform security requirements, customers can only access orders belonging to their own account, while administrators can view orders from any customer for monitoring and intervention purposes.
+ * For each order item, the system preserves the purchase-time product and variant snapshots to ensure historical accuracy even if the original product data changes. Shipment information is included showing carrier names, tracking numbers, and which order items are included in each shipment.
  *
- * The order information includes:
- * - Order header with order number, status, total price, and dates
- * - Shipping address with recipient name, phone, and full address details
- * - Order items list with product names, variant options, quantities, prices, and individual item statuses
- * - Shipment information with carrier names and tracking numbers
- *
- * Orders serve as permanent transaction records that persist even after customer account deletion for legal record preservation and business accountability. Related order items and shipments provide complete fulfillment tracking for each purchase.
+ * Access control: Customers can only retrieve their own orders. Administrators can retrieve any order on the platform for oversight, support, and intervention purposes.
  *
  * @param props.connection
- * @param props.orderId Unique identifier of the order to retrieve (global scope)
+ * @param props.orderId The unique identifier of the order to retrieve
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Implementation requirements:
- * 1. Accept orderId path parameter as UUID string
- * 2. Query ecommerce_mall_orders table to retrieve the order record
- * 3. Join with ecommerce_mall_order_items to get all items in the order
- * 4. Join with ecommerce_mall_shipments and ecommerce_mall_shipment_items for tracking information
- * 5. Authorization check: verify requesting customer owns the order OR requester is administrator
- * 6. Return 404 if order not found or access denied
- * 7. Calculate order status from item statuses if needed
- * 8. Include snapshots for order items (product, variant, seller profile at purchase time) in response
- * 9. Order items should include current status, quantity, price at purchase
- * 10. Shipments should include carrier name, tracking number, shipped timestamp, and associated items
- * 11. Apply row-level security: customers only see own orders, admins see all orders
+ * @x-autobe-specification Retrieve order record from ecommerce_mall_orders table by orderId parameter.
+ *
+ * Join with related tables to assemble complete response:
+ * - ecommerce_mall_order_items for all items in the order, filtered by deleted_at IS NULL
+ * - ecommerce_mall_order_item_product_snapshots for each item's product snapshot
+ * - ecommerce_mall_order_item_variant_snapshots for each item's variant snapshot
+ * - ecommerce_mall_order_item_seller_snapshots for each item's seller profile snapshot
+ * - ecommerce_mall_shipments for all shipments associated with this order
+ * - ecommerce_mall_shipment_items to determine which items belong to each shipment
+ *
+ * Authorization rules:
+ * 1. Extract authenticated user from session
+ * 2. If user is customer: verify order.customer_id matches authenticated customer id, else reject with 403
+ * 3. If user is admin or superAdmin: allow access to any order
+ * 4. If order.deleted_at IS NOT NULL: return 404 (order not found)
+ *
+ * The order status is derived from item statuses following business rules:
+ * - "paid" if all items are paid
+ * - "shipped" if any item is shipped and none delivered
+ * - "delivered" if all items are delivered
+ * - "cancelled" if all items are cancelled
+ * - "refunded" if all items are refunded
+ * - "partially_completed" for mixed states
+ *
+ * Return full order entity with nested order items and shipments populated.
  * @path /ecommerceMall/customer/orders/:orderId
  * @accessor api.functional.ecommerceMall.customer.orders.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -164,9 +202,9 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Unique identifier of the order to retrieve (global scope)
+     * The unique identifier of the order to retrieve
      */
-    orderId: string & tags.Format<"uuid">;
+    orderId: string;
   };
   export type Response = IEcommerceMallOrder;
 

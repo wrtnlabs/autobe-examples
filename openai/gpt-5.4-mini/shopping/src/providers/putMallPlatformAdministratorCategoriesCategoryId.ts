@@ -18,55 +18,85 @@ export async function putMallPlatformAdministratorCategoriesCategoryId(props: {
   categoryId: string & tags.Format<"uuid">;
   body: IMallPlatformCategory.IUpdate;
 }): Promise<IMallPlatformCategory> {
-  void props.administrator;
-  const current =
-    await MyGlobal.prisma.mall_platform_categories.findUniqueOrThrow({
-      where: { id: props.categoryId },
-      select: {
-        id: true,
-        parent_category_id: true,
-      },
-    });
-  const nextParentCategoryId =
-    props.body.parentCategoryId === undefined
-      ? current.parent_category_id
-      : props.body.parentCategoryId;
-  if (nextParentCategoryId === props.categoryId) {
-    throw new HttpException("Category cannot be its own parent", 400);
-  }
-  if (nextParentCategoryId !== null) {
-    const parent =
-      await MyGlobal.prisma.mall_platform_categories.findUniqueOrThrow({
-        where: { id: nextParentCategoryId },
+  const updated = await MyGlobal.prisma.$transaction(async (tx) => {
+    if (
+      props.body.parentCategoryId !== undefined &&
+      props.body.parentCategoryId !== null
+    ) {
+      if (props.body.parentCategoryId === props.categoryId) {
+        throw new HttpException("Invalid category hierarchy", 400);
+      }
+      const parent = await tx.mall_platform_categories.findUnique({
+        where: { id: props.body.parentCategoryId },
         select: {
           id: true,
           parent_category_id: true,
+          deleted_at: true,
         },
       });
-    if (parent.parent_category_id !== null) {
-      throw new HttpException(
-        "Parent category must be a top-level category",
-        400,
-      );
+      if (parent === null || parent.deleted_at !== null) {
+        throw new HttpException("Invalid parent category", 400);
+      }
+      if (parent.parent_category_id !== null) {
+        throw new HttpException("Invalid category hierarchy", 400);
+      }
     }
-  }
-  await MyGlobal.prisma.mall_platform_categories.update({
-    where: { id: props.categoryId },
-    data: {
-      ...(props.body.name !== undefined ? { name: props.body.name } : {}),
-      ...(props.body.description !== undefined
-        ? { description: props.body.description }
-        : {}),
-      ...(props.body.parentCategoryId !== undefined
-        ? { parent_category_id: props.body.parentCategoryId }
-        : {}),
-      updated_at: new Date(),
-    },
-  });
-  const updated =
-    await MyGlobal.prisma.mall_platform_categories.findUniqueOrThrow({
+    await tx.mall_platform_categories.update({
+      where: { id: props.categoryId },
+      data: {
+        ...(props.body.name !== undefined && { name: props.body.name }),
+        ...(props.body.description !== undefined && {
+          description: props.body.description,
+        }),
+        ...(props.body.parentCategoryId !== undefined
+          ? { parent_category_id: props.body.parentCategoryId }
+          : {}),
+      },
+    });
+    return await tx.mall_platform_categories.findUniqueOrThrow({
       where: { id: props.categoryId },
       ...MallPlatformCategoryTransformer.select(),
     });
+  });
   return await MallPlatformCategoryTransformer.transform(updated);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function putMallPlatformAdministratorCategoriesCategoryId(props: {
+//   administrator: AdministratorPayload;
+//   categoryId: string & tags.Format<"uuid">;
+//   body: IMallPlatformCategory.IUpdate;
+// }): Promise<IMallPlatformCategory> {
+//   await MyGlobal.prisma.mall_platform_categories.update({
+//     where: { ... },
+//     data: { ... },
+//   });
+//   const updated = await MyGlobal.prisma.mall_platform_categories.findUniqueOrThrow({
+//     where: { ... },
+//     ...MallPlatformCategoryTransformer.select(),
+//   });
+//   return await MallPlatformCategoryTransformer.transform(updated);
+// }
+// ```
+//--------------------------------------------------------------

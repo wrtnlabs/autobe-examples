@@ -14,17 +14,13 @@ export namespace ShoppingMallCategoryCollector {
     return {
       id: v4(),
       name: props.body.name,
-      description: props.body.description,
+      description: props.body.description ?? null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      parent: props.body.parent_id
-        ? { connect: { id: props.body.parent_id } }
+      parent: props.body.parentId
+        ? { connect: { id: props.body.parentId } }
         : undefined,
-      children: undefined,
-      snapshots: undefined,
-      products: undefined,
-      productSnapshots: undefined,
     } satisfies Prisma.shopping_mall_categoriesCreateInput;
   }
 }

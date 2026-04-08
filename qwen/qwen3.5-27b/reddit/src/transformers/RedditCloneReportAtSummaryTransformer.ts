@@ -4,13 +4,15 @@ import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
 import { IRedditCloneReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneReport";
+import { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCloneCommentAtSummaryTransformer } from "./RedditCloneCommentAtSummaryTransformer";
-import { RedditCloneCommunityAtSummaryTransformer } from "./RedditCloneCommunityAtSummaryTransformer";
 import { RedditCloneMemberAtSummaryTransformer } from "./RedditCloneMemberAtSummaryTransformer";
 import { RedditClonePostAtSummaryTransformer } from "./RedditClonePostAtSummaryTransformer";
 
@@ -22,7 +24,7 @@ export namespace RedditCloneReportAtSummaryTransformer {
     return {
       select: {
         id: true,
-        content_type: true,
+        report_type: true,
         reason: true,
         status: true,
         created_at: true,
@@ -31,7 +33,7 @@ export namespace RedditCloneReportAtSummaryTransformer {
         reporter: RedditCloneMemberAtSummaryTransformer.select(),
         reportedPost: RedditClonePostAtSummaryTransformer.select(),
         reportedComment: RedditCloneCommentAtSummaryTransformer.select(),
-        community: RedditCloneCommunityAtSummaryTransformer.select(),
+        action: true,
       },
     } satisfies Prisma.reddit_clone_reportsFindManyArgs;
   }
@@ -40,6 +42,10 @@ export namespace RedditCloneReportAtSummaryTransformer {
   ): Promise<IRedditCloneReport.ISummary> {
     return {
       id: input.id,
+      report_type: input.report_type,
+      reason: input.reason,
+      status: input.status,
+      created_at: input.created_at.toISOString(),
       reporter: await RedditCloneMemberAtSummaryTransformer.transform(
         input.reporter,
       ),
@@ -53,15 +59,6 @@ export namespace RedditCloneReportAtSummaryTransformer {
             input.reportedComment,
           )
         : null,
-      community: await RedditCloneCommunityAtSummaryTransformer.transform(
-        input.community,
-      ),
-      contentType: input.content_type,
-      reason: input.reason,
-      status: input.status,
-      createdAt: toISOStringSafe(input.created_at),
-      updatedAt: toISOStringSafe(input.updated_at),
-      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
     };
   }
 }

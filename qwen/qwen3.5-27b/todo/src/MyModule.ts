@@ -1,22 +1,26 @@
 import { Module } from "@nestjs/common";
 
-import { MultiusertodoAuthGuestController } from "./controllers/multiUserTodo/auth/guest/MultiusertodoAuthGuestController";
-import { MultiusertodoAuthMemberController } from "./controllers/multiUserTodo/auth/member/MultiusertodoAuthMemberController";
-import { MultiusertodoMemberProfileController } from "./controllers/multiUserTodo/member/profile/MultiusertodoMemberProfileController";
-import { MultiusertodoMemberSessionsController } from "./controllers/multiUserTodo/member/sessions/MultiusertodoMemberSessionsController";
-import { MultiusertodoMemberTodosController } from "./controllers/multiUserTodo/member/todos/MultiusertodoMemberTodosController";
-import { MultiusertodoMemberTodosEdit_historiesController } from "./controllers/multiUserTodo/member/todos/edit-histories/MultiusertodoMemberTodosEdit_historiesController";
-import { MultiusertodoMemberTrashController } from "./controllers/multiUserTodo/member/trash/MultiusertodoMemberTrashController";
+import { TodoappAuthGuestController } from "./controllers/todoApp/auth/guest/TodoappAuthGuestController";
+import { TodoappAuthMemberController } from "./controllers/todoApp/auth/member/TodoappAuthMemberController";
+import { TodoappMemberMemberPassword_resetsController } from "./controllers/todoApp/member/member/password-resets/TodoappMemberMemberPassword_resetsController";
+import { TodoappMemberMemberProfileController } from "./controllers/todoApp/member/member/profile/TodoappMemberMemberProfileController";
+import { TodoappMemberMemberSessionsController } from "./controllers/todoApp/member/member/sessions/TodoappMemberMemberSessionsController";
+import { TodoappMemberTodosController } from "./controllers/todoApp/member/todos/TodoappMemberTodosController";
+import { TodoappMemberTodosEdit_historiesController } from "./controllers/todoApp/member/todos/edit-histories/TodoappMemberTodosEdit_historiesController";
+import { TodoappMemberTrashController } from "./controllers/todoApp/member/trash/TodoappMemberTrashController";
+import { TodoappMembersController } from "./controllers/todoApp/members/TodoappMembersController";
 
 @Module({
   controllers: [
-    MultiusertodoAuthGuestController,
-    MultiusertodoAuthMemberController,
-    MultiusertodoMemberProfileController,
-    MultiusertodoMemberSessionsController,
-    MultiusertodoMemberTodosController,
-    MultiusertodoMemberTodosEdit_historiesController,
-    MultiusertodoMemberTrashController,
+    TodoappAuthGuestController,
+    TodoappAuthMemberController,
+    TodoappMembersController,
+    TodoappMemberMemberProfileController,
+    TodoappMemberMemberSessionsController,
+    TodoappMemberMemberPassword_resetsController,
+    TodoappMemberTodosController,
+    TodoappMemberTrashController,
+    TodoappMemberTodosEdit_historiesController,
   ],
 })
 export class MyModule {}

@@ -4,10 +4,11 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IRedditCommunityComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityComment";
 import type { IRedditCommunityCommentVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommentVote";
 import type { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
-import type { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
 import type { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import type { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPost";
-import type { IRedditCommunityPostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPostImage";
+import type { IRedditCommunityPostImageContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPostImageContent";
+import type { IRedditCommunityPostLinkContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPostLinkContent";
+import type { IRedditCommunityPostTextContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPostTextContent";
 import type { IRedditCommunitySubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunitySubscription";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -18,37 +19,39 @@ import typia, { tags } from "typia";
 import { authorize_member_join } from "../../../authorize/authorize_member_join";
 import { authorize_member_login } from "../../../authorize/authorize_member_login";
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
-import { generate_random_reddit_community_member_comments_vote } from "../../../generate/generate_random_reddit_community_member_comments_vote";
+import { generate_random_reddit_community_member_comments_votes_create } from "../../../generate/generate_random_reddit_community_member_comments_votes_create";
 import { generate_random_reddit_community_member_communities_create } from "../../../generate/generate_random_reddit_community_member_communities_create";
+import { generate_random_reddit_community_member_member_subscriptions_create } from "../../../generate/generate_random_reddit_community_member_member_subscriptions_create";
 import { generate_random_reddit_community_member_posts_comments_create } from "../../../generate/generate_random_reddit_community_member_posts_comments_create";
+import { generate_random_reddit_community_posts_create } from "../../../generate/generate_random_reddit_community_posts_create";
 import { prepare_random_reddit_community_comment } from "../../../prepare/prepare_random_reddit_community_comment";
 import { prepare_random_reddit_community_comment_vote } from "../../../prepare/prepare_random_reddit_community_comment_vote";
 import { prepare_random_reddit_community_community } from "../../../prepare/prepare_random_reddit_community_community";
+import { prepare_random_reddit_community_post } from "../../../prepare/prepare_random_reddit_community_post";
+import { prepare_random_reddit_community_subscription } from "../../../prepare/prepare_random_reddit_community_subscription";
 
 /**
  * Test the primary success path where a member casts their first upvote on a comment.
  *
- * Setup:
- * 1. Create voter member account (authentication)
- * 2. Create comment author member account (authentication)
- * 3. Create a community
- * 4. Subscribe the voter member to the community
- * 5. Create a post in the community (by voter member)
- * 6. Create a comment on the post (by comment author member - different from voter)
+ * Validates the complete comment voting workflow including member authentication, community creation, subscription, post creation, comment creation, and upvote casting. Ensures that the first-time vote creates a new vote record with the correct value and that the comment's vote score is properly updated.
  *
- * Test Steps:
- * 1. Cast an UPVOTE on the comment using POST /redditCommunity/member/comments/{commentId}/vote
- * 2. Verify the response returns the updated comment summary with vote_score increased by 1
- * 3. Verify the voter can update their vote on the same comment (changes UPVOTE to DOWNVOTE)
- * 4. Verify the comment vote_score reflects the vote change
- * 5. Verify the voter can remove their vote (direction: null)
+ * Special attention is given to verifying that the vote record contains all required fields (id, value, member reference, timestamps) and that the comment's vote_score accurately reflects the upvote. The test confirms the vote is created fresh (not updated) by checking timestamps are newly set.
+ *
+ * 1. Member registers and authenticates via join endpoint.
+ * 2. Member creates a community they own.
+ * 3. Member subscribes to their own community.
+ * 4. Member creates a text post in the community.
+ * 5. Member creates a top-level comment on the post.
+ * 6. Member casts an upvote (+1) on the comment.
+ * 7. Validates vote record structure and value.
+ * 8. Validates comment vote_score reflects the upvote.
  */
 export async function test_api_comment_vote_first_upvote(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create voter member account
-  const voterConnection: api.IConnection = { host: connection.host };
-  const voterAuth = await authorize_member_join(voterConnection, {
+  // 1. Member authentication
+  const memberConnection: api.IConnection = { host: connection.host };
+  await authorize_member_join(memberConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
       password: RandomGenerator.alphaNumeric(16),
@@ -58,127 +61,73 @@ export async function test_api_comment_vote_first_upvote(
       ip: typia.random<string & tags.Format<"ipv4">>(),
     } satisfies IRedditCommunityMember.IJoin,
   });
-  typia.assert(voterAuth);
-  // 2. Create comment author member account (different from voter)
-  const authorConnection: api.IConnection = { host: connection.host };
-  const authorAuth = await authorize_member_join(authorConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-      username: RandomGenerator.name(1),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: typia.random<string & tags.Format<"ipv4">>(),
-    } satisfies IRedditCommunityMember.IJoin,
-  });
-  typia.assert(authorAuth);
-  // 3. Create a community using author's connection
+  // 2. Create community
   const community =
     await generate_random_reddit_community_member_communities_create(
-      authorConnection,
-      {
-        body: {
-          name: RandomGenerator.alphabets(10),
-          description: RandomGenerator.paragraph({ sentences: 2 }),
-        },
-      },
+      memberConnection,
+      {},
     );
   typia.assert(community);
-  // 4. Subscribe the voter member to the community
+  // 3. Subscribe to community
   const subscription =
-    await api.functional.redditCommunity.member.communities.subscription.create(
-      voterConnection,
+    await generate_random_reddit_community_member_member_subscriptions_create(
+      memberConnection,
       {
-        communityName: community.name,
+        body: {
+          community_id: community.id,
+        } satisfies IRedditCommunitySubscription.ICreate,
       },
     );
   typia.assert(subscription);
-  // 5. Create a text post in the community using voter's connection
-  const post = await api.functional.redditCommunity.member.posts.create(
-    voterConnection,
+  // 4. Create text post
+  const post = await generate_random_reddit_community_posts_create(
+    memberConnection,
     {
       body: {
-        title: RandomGenerator.paragraph({ sentences: 1 }),
+        title: RandomGenerator.paragraph({ sentences: 2 }),
         post_type: "text",
-        text_content: RandomGenerator.content({ paragraphs: 2 }),
-      },
+        community_id: community.id,
+        body: RandomGenerator.content({ paragraphs: 2 }),
+      } satisfies IRedditCommunityPost.ICreate,
     },
   );
   typia.assert(post);
-  // 6. Create a comment on the post using author's connection
+  // 5. Create comment on post
   const comment =
     await generate_random_reddit_community_member_posts_comments_create(
-      authorConnection,
+      memberConnection,
       {
-        body: {
-          content: RandomGenerator.paragraph({ sentences: 3 }),
-        },
         params: {
           postId: post.id,
         },
+        body: {
+          content: RandomGenerator.paragraph({ sentences: 3 }),
+        } satisfies IRedditCommunityComment.ICreate,
       },
     );
   typia.assert(comment);
-  // Verify initial comment voteScore is 0 (full entity has voteScore property)
-  TestValidator.equals("initial voteScore is 0", comment.voteScore, 0);
-  // 7. Cast an UPVOTE on the comment using voter's connection
-  const upvoteResult =
-    await generate_random_reddit_community_member_comments_vote(
-      voterConnection,
+  // 6. Cast upvote on comment
+  const vote =
+    await generate_random_reddit_community_member_comments_votes_create(
+      memberConnection,
       {
-        body: {
-          direction: "UPVOTE",
-        },
         params: {
           commentId: comment.id,
         },
-      },
-    );
-  typia.assert(upvoteResult);
-  // Verify vote_score increased by 1 (from 0 to 1) - ISummary uses vote_score
-  TestValidator.equals(
-    "vote_score after upvote is 1",
-    upvoteResult.vote_score,
-    1,
-  );
-  // 8. Verify voter can update their vote (change UPVOTE to DOWNVOTE)
-  const downvoteResult =
-    await generate_random_reddit_community_member_comments_vote(
-      voterConnection,
-      {
         body: {
-          direction: "DOWNVOTE",
-        },
-        params: {
-          commentId: comment.id,
-        },
+          value: 1,
+        } satisfies IRedditCommunityCommentVote.ICreate,
       },
     );
-  typia.assert(downvoteResult);
-  // Verify vote_score changed from 1 to -1 (changing from upvote to downvote = -2 from previous state)
+  typia.assert(vote);
+  // 7. Validate vote record
+  TestValidator.equals("vote value is upvote", vote.value, 1);
   TestValidator.equals(
-    "vote_score after changing to downvote is -1",
-    downvoteResult.vote_score,
-    -1,
+    "vote member matches",
+    vote.member.id,
+    community.owner.id,
   );
-  // 9. Verify voter can remove vote (set direction to null)
-  const removeVoteResult =
-    await generate_random_reddit_community_member_comments_vote(
-      voterConnection,
-      {
-        body: {
-          direction: null,
-        },
-        params: {
-          commentId: comment.id,
-        },
-      },
-    );
-  typia.assert(removeVoteResult);
-  // Verify vote_score returned to 0 after removing vote
-  TestValidator.equals(
-    "vote_score after removing vote is 0",
-    removeVoteResult.vote_score,
-    0,
-  );
+  TestValidator.predicate("vote has created_at", vote.created_at !== null);
+  TestValidator.predicate("vote has updated_at", vote.updated_at !== null);
+  TestValidator.predicate("vote is not deleted", vote.deleted_at === null);
 }

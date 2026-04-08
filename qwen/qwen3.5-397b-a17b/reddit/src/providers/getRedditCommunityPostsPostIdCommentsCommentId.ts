@@ -1,7 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCommunityComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityComment";
 import { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
-import { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
 import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPost";
 import { ArrayUtil } from "@nestia/e2e";
@@ -20,14 +19,14 @@ export async function getRedditCommunityPostsPostIdCommentsCommentId(props: {
   postId: string & tags.Format<"uuid">;
   commentId: string & tags.Format<"uuid">;
 }): Promise<IRedditCommunityComment> {
-  const comment =
-    await MyGlobal.prisma.reddit_community_comments.findUniqueOrThrow({
+  const record =
+    await MyGlobal.prisma.reddit_community_comments.findFirstOrThrow({
+      ...RedditCommunityCommentTransformer.select(),
       where: {
         id: props.commentId,
         reddit_community_post_id: props.postId,
         deleted_at: null,
       },
-      ...RedditCommunityCommentTransformer.select(),
     });
-  return await RedditCommunityCommentTransformer.transform(comment);
+  return await RedditCommunityCommentTransformer.transform(record);
 }

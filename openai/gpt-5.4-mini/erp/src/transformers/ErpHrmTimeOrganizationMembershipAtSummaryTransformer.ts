@@ -1,6 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeOrganizationMembership } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationMembership";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -9,6 +9,7 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer } from "./ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer";
 
 export namespace ErpHrmTimeOrganizationMembershipAtSummaryTransformer {
   export type Payload = Prisma.erp_hrm_time_organization_membershipsGetPayload<
@@ -24,15 +25,10 @@ export namespace ErpHrmTimeOrganizationMembershipAtSummaryTransformer {
         updated_at: true,
         deleted_at: true,
         member: {
-          select: {
-            id: true,
-          },
+          select: {},
         },
-        organization: {
-          select: {
-            id: true,
-          },
-        },
+        organization:
+          ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer.select(),
       },
     } satisfies Prisma.erp_hrm_time_organization_membershipsFindManyArgs;
   }
@@ -41,12 +37,11 @@ export namespace ErpHrmTimeOrganizationMembershipAtSummaryTransformer {
   ): Promise<IErpHrmTimeOrganizationMembership.ISummary> {
     return {
       id: input.id,
-      member: {
-        id: input.member.id,
-      } as IErpHrmTimeMember.ISummary,
-      organization: {
-        id: input.organization.id,
-      } as IErpHrmTimeOrganization.ISummary,
+      member: {},
+      organization:
+        await ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer.transform(
+          input.organization,
+        ),
       status: input.status,
       isSelectedContext: input.is_selected_context,
       createdAt: input.created_at.toISOString(),

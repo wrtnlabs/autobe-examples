@@ -1,0 +1,1152 @@
+/// Registered customer accounts with email/password authentication
+/// credentials and profile information.
+///
+/// This table represents the customer actor in the e-commerce platform,
+/// storing authentication credentials and profile data. Each customer can
+/// browse products, manage their shopping cart, place orders, write reviews,
+/// and manage their wishlist and shipping addresses.
+///
+/// **Authentication**
+///
+/// Customers authenticate using email and password_hash. The email field is
+/// unique and serves as the login identifier. Password hashes are stored
+/// securely and never exposed.
+///
+/// **Profile Information**
+///
+/// Customers maintain a profile with a display_name (visible to other users)
+/// and optional phone_number for contact purposes. These fields can be
+/// updated by the customer at any time.
+///
+/// **Account Lifecycle**
+///
+/// Soft delete is supported via deleted_at. When a customer deletes their
+/// account, profile information is removed but orders and reviews are
+/// preserved (shown as "deleted user"). This maintains data integrity for
+/// seller records and legal compliance.
+///
+/// **Relationships**
+///
+/// This actor table is referenced by multiple child tables: {@link
+/// ecommerce_customer_sessions} for login sessions, {@link
+/// ecommerce_customer_password_resets} for account recovery, {@link
+/// ecommerce_customer_email_verifications} for registration confirmation,
+/// {@link ecommerce_addresses} for shipping addresses, {@link
+/// ecommerce_carts} for shopping cart, {@link ecommerce_wishlists} for saved
+/// products, {@link ecommerce_orders} for purchase history, and {@link
+/// ecommerce_reviews} for product feedback.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Unique identifier for each customer account.
+  id String @id
+  
+  /// Customer's email address used for authentication and login.
+  ///
+  /// This field serves as the unique login identifier for the customer
+  /// account. It must be unique across all customer accounts and is used
+  /// during registration and login flows.
+  email String
+  
+  /// Secure hash of the customer's password.
+  ///
+  /// The password is never stored in plain text. This hash is generated using
+  /// a secure password hashing algorithm (e.g., bcrypt) during registration
+  /// and password changes. It is used to verify credentials during login.
+  password_hash String
+  
+  /// Customer's public display name.
+  ///
+  /// This name is shown to other users in reviews, order histories, and other
+  /// customer-facing contexts. Customers can update their display name at any
+  /// time through their profile settings.
+  display_name String
+  
+  /// Customer's contact phone number.
+  ///
+  /// This optional field stores the customer's phone number for shipping
+  /// notifications and customer service contact. It can be updated or cleared
+  /// by the customer through their profile settings.
+  phone_number String?
+  
+  /// Timestamp when the customer account was created.
+  ///
+  /// This field is automatically set during account registration and cannot be
+  /// modified. It is used for auditing and displaying account age.
+  created_at DateTime
+  
+  /// Timestamp when the customer account was last updated.
+  ///
+  /// This field is automatically updated whenever any customer profile field
+  /// is modified. It is used for auditing and conflict detection.
+  updated_at DateTime
+  
+  /// Timestamp when the customer account was soft-deleted.
+  ///
+  /// When a customer deletes their account, this field is set to the deletion
+  /// time. The account is logically removed but preserved for data integrity
+  /// (orders, reviews remain). NULL indicates an active account.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  customerSessions ecommerce_customer_sessions[]
+  passwordResets ecommerce_customer_password_resets[]
+  emailVerifications ecommerce_customer_email_verifications[]
+  addresses ecommerce_addresses[]
+  wishlist ecommerce_wishlists?
+  cart ecommerce_carts?
+  orders ecommerce_orders[]
+  reviews ecommerce_reviews[]
+  adminRequests ecommerce_admin_requests[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([created_at])
+  @@index([deleted_at])
+}
+
+/// JWT session tokens for customer authentication with access and refresh
+/// token support.
+///
+/// This table tracks active login sessions for authenticated customers,
+/// storing JWT tokens and client metadata for security auditing.
+///
+/// **Session Lifecycle**
+/// - Created when a customer successfully logs in
+/// - Access token used for API authentication
+/// - Refresh token used to obtain new access tokens
+/// - Sessions expire based on configured timeout periods
+/// - Sessions are revoked on logout or password change
+///
+/// **Security Considerations**
+/// - Each session is tied to a specific customer via foreign key
+/// - Client metadata (IP, href, referrer) enables anomaly detection
+/// - Expiration times prevent indefinite session validity
+/// - Sessions are append-only audit records of authentication events
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_customer_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the session record.
+  id String @id
+  
+  /// Reference to the customer who owns this session.
+  ///
+  /// This foreign key establishes the relationship to the {@link
+  /// EcommerceCustomers} table, ensuring each session belongs to exactly one
+  /// authenticated customer.
+  ecommerce_customer_id String
+  
+  /// JWT access token for API authentication.
+  ///
+  /// This token is included in the Authorization header of authenticated
+  /// requests. It has a short expiration time (typically 15-30 minutes) to
+  /// minimize security risk if compromised.
+  access_token String
+  
+  /// JWT refresh token for obtaining new access tokens.
+  ///
+  /// This token is used to silently renew access tokens without requiring the
+  /// customer to re-enter credentials. It has a longer expiration time than
+  /// access tokens and is stored securely.
+  refresh_token String
+  
+  /// Client IP address at the time of session creation.
+  ///
+  /// Used for security auditing and detecting suspicious login patterns from
+  /// unusual locations.
+  ip String
+  
+  /// Client href (URL) at the time of session creation.
+  ///
+  /// Tracks the page or endpoint from which the login originated.
+  href String?
+  
+  /// Client referrer URL at the time of session creation.
+  ///
+  /// Tracks the referring page that led to the login attempt.
+  referrer String?
+  
+  /// Timestamp when the session was created.
+  ///
+  /// Used to determine session age and enforce maximum session duration
+  /// policies.
+  created_at DateTime
+  
+  /// Timestamp when the session expires.
+  ///
+  /// Sessions are considered invalid after this time. Set at creation based on
+  /// configured session timeout.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_customer_id, created_at], map: "ecommerce_customer_sessions_ecommerce_customer_id_crea_bc77c226")
+}
+
+/// Password reset tokens for customer account recovery with expiration
+///
+/// Stores temporary, one-time use tokens that allow customers to securely
+/// reset their passwords without knowing their current credentials. Each
+/// token is associated with a specific customer account and has a defined
+/// expiration period after which it becomes invalid.
+///
+/// **Token Lifecycle**
+///
+/// Tokens are generated when a customer requests a password reset and are
+/// sent via email. The customer clicks a link containing the token to verify
+/// ownership and set a new password. Once used or expired, the token is
+/// marked as invalid.
+///
+/// **Security Considerations**
+///
+/// Tokens are cryptographically random strings that cannot be guessed. They
+/// expire automatically after a configured time period (typically 1 hour).
+/// Multiple tokens can exist for the same customer, but only the most recent
+/// one is typically valid.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_customer_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Unique identifier for the password reset token record
+  id String @id
+  
+  /// Reference to the customer account requesting password reset
+  ///
+  /// Links this reset token to the specific customer whose password is being
+  /// reset. The customer must exist and be able to authenticate via email to
+  /// complete the reset process.
+  ///
+  /// {@link ecommerce_customers}
+  ecommerce_customer_id String
+  
+  /// Cryptographically secure random token string
+  ///
+  /// The actual reset token sent to the customer via email. This is a
+  /// high-entropy string that cannot be guessed or brute-forced. The token is
+  /// included in the password reset link and validated when the customer
+  /// submits the reset form.
+  token String
+  
+  /// Token expiration timestamp
+  ///
+  /// The date and time after which this token is no longer valid. Tokens are
+  /// automatically rejected if the current time is past this value. Typical
+  /// expiration is 1 hour from creation.
+  expires_at DateTime
+  
+  /// Timestamp when the token was successfully used
+  ///
+  /// Populated when the customer completes the password reset process. A
+  /// non-null value indicates the token has been consumed and cannot be
+  /// reused. Prevents replay attacks by ensuring one-time use.
+  used_at DateTime?
+  
+  /// Record creation timestamp
+  created_at DateTime
+  
+  /// Record update timestamp
+  updated_at DateTime
+  
+  /// Soft delete timestamp for token cleanup
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_customer_id, expires_at], map: "ecommerce_customer_password_resets_ecommerce_customer__4a3bdc74")
+}
+
+/// Email verification tokens for customer registration confirmation
+///
+/// Stores one-time verification tokens sent to customer email addresses
+/// during registration. Each token expires after a set period and is marked
+/// as verified when the customer confirms their email address.
+///
+/// Related to {@link ecommerce_customers} via foreign key. Tokens are
+/// single-use and become invalid after verification or expiration.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_customer_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the email verification record.
+  id String @id
+  
+  /// Reference to the customer account requesting email verification.
+  ///
+  /// This foreign key links the verification token to the {@link
+  /// ecommerce_customers} table. The customer record exists even before email
+  /// verification is complete.
+  ecommerce_customer_id String
+  
+  /// Cryptographically secure verification token.
+  ///
+  /// This is a unique, single-use token sent to the customer's email address.
+  /// It must be unique across all verification records to prevent token
+  /// collision attacks.
+  token String
+  
+  /// Token expiration timestamp.
+  ///
+  /// Tokens expire after a configured period (typically 24 hours) for
+  /// security. Expired tokens are rejected during verification.
+  expires_at DateTime
+  
+  /// Timestamp when the customer verified their email address.
+  ///
+  /// This field is null until the customer completes email verification. Once
+  /// set, the token is considered used and cannot be reused.
+  verified_at DateTime?
+  
+  /// Record creation timestamp.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for record archival.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer ecommerce_customers @relation(fields: [ecommerce_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_customer_id, created_at], map: "ecommerce_customer_email_verifications_ecommerce_custo_13653349")
+}
+
+/// Registered seller accounts with email/password authentication credentials
+/// and approval workflow status.
+///
+/// This table represents the seller actor identity with authentication
+/// capabilities. Sellers must be approved by administrators before they can
+/// create products and process orders. The approval status tracks the
+/// seller's registration workflow from pending through approved or rejected
+/// states.
+///
+/// **Authentication**
+///
+/// Sellers authenticate using email and password_hash credentials. Each
+/// seller has exactly one account that cannot be duplicated.
+///
+/// **Approval Workflow**
+///
+/// New sellers start with pending approval status. Administrators review and
+/// approve or reject registrations. Rejected sellers can view the
+/// rejection_reason and submit new registration requests. Approved sellers
+/// gain full selling privileges.
+///
+/// **Administrative Control**
+///
+/// Administrators can suspend seller accounts for policy violations
+/// (products hidden but existing orders remain processable). Administrators
+/// can also ban sellers entirely (preventing login while preserving order
+/// history).
+///
+/// **Account Deletion**
+///
+/// Sellers can delete their accounts only when they have no pending orders,
+/// cancellations, or refund requests. Upon deletion, their products are
+/// removed from listings but order history and snapshots are preserved for
+/// legal compliance.
+///
+/// **Relationships**
+///
+/// This table is referenced by {@link ecommerce_seller_sessions}, {@link
+/// ecommerce_seller_password_resets}, {@link
+/// ecommerce_seller_email_verifications}, {@link ecommerce_seller_profiles},
+/// {@link ecommerce_seller_approvals}, and {@link
+/// ecommerce_seller_snapshots} tables.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying each seller account.
+  id String @id
+  
+  /// Unique email address used for seller authentication and account
+  /// identification.
+  ///
+  /// This field serves as the primary login credential for sellers. It must be
+  /// unique across all seller accounts and is used for password reset
+  /// notifications and account communications.
+  email String
+  
+  /// Bcrypt-hashed password credential for seller authentication.
+  ///
+  /// The raw password is never stored. Passwords are hashed using bcrypt
+  /// before storage and verified during login attempts.
+  password_hash String
+  
+  /// Current approval status in the seller registration workflow.
+  ///
+  /// Allowed values: 'pending', 'approved', 'rejected'. New seller accounts
+  /// start as 'pending' until an administrator reviews and approves or rejects
+  /// the registration. Rejected sellers can submit new registration requests.
+  approval_status String
+  
+  /// Administrator-provided reason when a seller registration is rejected.
+  ///
+  /// This field is populated when approval_status is 'rejected' and explains
+  /// why the registration was denied. Sellers can view this reason and address
+  /// the issues before submitting a new registration request.
+  rejection_reason String?
+  
+  /// Flag indicating whether the seller account is suspended by an
+  /// administrator.
+  ///
+  /// Suspended sellers cannot create new products or edit existing products,
+  /// but they can still process existing orders (ship items, respond to
+  /// cancellation/refund requests). Their products are hidden from search and
+  /// category listings. Suspension is typically used for policy violations
+  /// that require temporary restriction rather than permanent ban.
+  is_suspended Boolean
+  
+  /// Flag indicating whether the seller account is banned by an administrator.
+  ///
+  /// Banned sellers cannot log in to the platform. Unlike suspension, banning
+  /// prevents all platform access. Existing orders and their history are
+  /// preserved for legal and customer service purposes.
+  is_banned Boolean
+  
+  /// Timestamp when the seller account was originally created.
+  ///
+  /// This field is automatically set during account registration and cannot be
+  /// modified. It establishes the account's creation date for audit and
+  /// reporting purposes.
+  created_at DateTime
+  
+  /// Timestamp when the seller account was last modified.
+  ///
+  /// This field is automatically updated whenever any account field changes
+  /// (approval status, suspension status, ban status, etc.). It provides a
+  /// record of the most recent account activity.
+  updated_at DateTime
+  
+  /// Timestamp when the seller account was soft-deleted.
+  ///
+  /// When a seller deletes their account, this field is set to the deletion
+  /// time. The account is logically deleted but data is preserved for order
+  /// history and legal compliance. Null indicates the account is active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions ecommerce_seller_sessions[]
+  passwordResets ecommerce_seller_password_resets[]
+  emailVerifications ecommerce_seller_email_verifications[]
+  profile ecommerce_seller_profiles?
+  approvalRequest ecommerce_seller_approvals?
+  snapshots ecommerce_seller_snapshots[]
+  products ecommerce_products[]
+  orderItems ecommerce_order_items[]
+  shipments ecommerce_shipments[]
+  adminRequests ecommerce_admin_requests[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([approval_status])
+  @@index([is_suspended])
+  @@index([is_banned])
+  @@index([created_at])
+}
+
+/// JWT session tokens for seller authentication with access and refresh
+/// token support.
+///
+/// This table tracks all active and expired seller login sessions for
+/// security audit and session management purposes. Each session record
+/// represents a single authenticated login event with associated JWT tokens.
+///
+/// **Session Lifecycle**
+///
+/// Sessions are created automatically when a seller successfully logs in
+/// with email and password credentials. The session remains valid until the
+/// expiration time or until the seller explicitly logs out. Expired sessions
+/// are soft-deleted but preserved for audit trail purposes.
+///
+/// **Security Considerations**
+///
+/// Each session tracks the client IP address, referrer, and href information
+/// for security monitoring and anomaly detection. Sessions are tied to a
+/// specific seller account via foreign key relationship to {@link
+/// ecommerce_sellers}. Multiple concurrent sessions are allowed per seller
+/// account.
+///
+/// **Token Management**
+///
+/// Access tokens and refresh tokens are stored in encrypted form. Access
+/// tokens have shorter expiration times while refresh tokens enable session
+/// renewal without requiring re-authentication.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_seller_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for this session record.
+  id String @id
+  
+  /// References the seller account that owns this session.
+  ///
+  /// This foreign key establishes the relationship between the session and the
+  /// seller actor. Each session belongs to exactly one seller, but a seller
+  /// can have multiple active sessions simultaneously (e.g., logged in from
+  /// multiple devices).
+  ///
+  /// The seller account must exist at the time of session creation. Session
+  /// records are preserved even if the seller account is deleted or suspended
+  /// for audit purposes.
+  ecommerce_seller_id String
+  
+  /// JWT access token for authenticated API requests.
+  ///
+  /// This token is used to authorize API calls on behalf of the seller. It has
+  /// a short expiration time (typically 15-30 minutes) and must be refreshed
+  /// using the refresh token when expired.
+  access_token String
+  
+  /// JWT refresh token for obtaining new access tokens.
+  ///
+  /// This token is used to renew the access token without requiring the seller
+  /// to re-authenticate. It has a longer expiration time than the access token
+  /// and is stored securely.
+  refresh_token String
+  
+  /// IP address of the client that initiated this session.
+  ///
+  /// Used for security monitoring, anomaly detection, and audit trail
+  /// purposes. Helps identify suspicious login patterns or unauthorized access
+  /// attempts.
+  ip String
+  
+  /// Current page URL (href) at the time of session creation.
+  ///
+  /// Tracks the page from which the seller initiated the login. Used for
+  /// analytics and security monitoring.
+  href String?
+  
+  /// Referrer URL at the time of session creation.
+  ///
+  /// Tracks the previous page that led to the login. Used for analytics and
+  /// security monitoring.
+  referrer String?
+  
+  /// Timestamp when this session was created.
+  ///
+  /// Records the exact time when the seller successfully authenticated and
+  /// this session was established.
+  created_at DateTime
+  
+  /// Timestamp when this session was last updated.
+  ///
+  /// Updated when session metadata changes or when tokens are refreshed.
+  updated_at DateTime
+  
+  /// Timestamp when this session was soft-deleted.
+  ///
+  /// Sessions are soft-deleted when the seller logs out or when the session
+  /// expires. Soft deletion preserves the audit trail while marking the
+  /// session as inactive.
+  deleted_at DateTime?
+  
+  /// Timestamp when this session will expire.
+  ///
+  /// Sessions are automatically considered expired after this time. The
+  /// expired_at timestamp is set at session creation based on the refresh
+  /// token lifetime. Sessions with expired_at in the past are considered
+  /// invalid.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([ecommerce_seller_id, created_at])
+}
+
+/// Password reset tokens for seller account recovery with expiration
+///
+/// This table stores one-time use tokens that allow sellers to reset their
+/// password securely. Each token is generated upon password reset request
+/// and expires after a configured time period.
+///
+/// ## Token Lifecycle
+///
+/// - Tokens are created when a seller requests password reset
+/// - Tokens are validated during the reset process
+/// - Tokens are consumed (soft deleted) after successful use or expiration
+///
+/// ## Security Considerations
+///
+/// - Tokens are single-use only
+/// - Tokens have expiration timestamps to limit attack window
+/// - Tokens are associated with specific seller accounts via foreign key
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_seller_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the password reset token record.
+  id String @id
+  
+  /// References the seller account requesting password reset.
+  ///
+  /// This foreign key establishes the relationship to the {@link
+  /// ecommerce_sellers} table, ensuring tokens are associated with valid
+  /// seller accounts.
+  ecommerce_seller_id String
+  
+  /// Cryptographically secure reset token.
+  ///
+  /// This is a one-time use token generated when the seller requests password
+  /// reset. The token is sent to the seller's registered email and must be
+  /// provided to complete the reset process.
+  token String
+  
+  /// Token expiration timestamp.
+  ///
+  /// Tokens expire after a configured time period (typically 1 hour) to limit
+  /// the attack window. Reset requests must be completed before this
+  /// timestamp.
+  expires_at DateTime
+  
+  /// Record creation timestamp.
+  ///
+  /// Tracks when the password reset token was generated.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  ///
+  /// Updated when the token is consumed or status changes.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  ///
+  /// Set when the token is consumed after successful password reset or
+  /// manually invalidated. Soft delete preserves audit trail while marking
+  /// token as unusable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_sellers @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_seller_id, created_at], map: "ecommerce_seller_password_resets_ecommerce_seller_id_c_cbf54ec7")
+  @@index([expires_at])
+}
+
+/// Email verification tokens for seller registration confirmation
+///
+/// Stores one-time verification codes sent to seller email addresses during
+/// the registration process. Each token is linked to a seller record and
+/// expires after verification or time limit.
+///
+/// ## Authentication Flow
+///
+/// Used during seller account registration to verify email ownership before
+/// activating the account. The verification token is generated and sent via
+/// email, then validated when the seller clicks the confirmation link.
+///
+/// ## Security Considerations
+///
+/// Tokens are single-use and expire after a defined period. Once verified,
+/// the token cannot be reused. The table maintains an audit trail of all
+/// verification attempts for security monitoring and dispute resolution.
+///
+/// @link ecommerce_sellers
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_seller_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying this email verification token record.
+  id String @id
+  
+  /// Reference to the seller account requesting email verification.
+  ///
+  /// This field may be nullable during the initial registration phase when the
+  /// token is created before the seller account is fully activated. Once the
+  /// seller record exists, this FK establishes the relationship.
+  ///
+  /// @link ecommerce_sellers
+  ecommerce_seller_id String?
+  
+  /// Cryptographically secure verification token sent to the seller's email
+  /// address.
+  ///
+  /// This is a one-time use token that must match exactly when the seller
+  /// clicks the verification link. Tokens are generated with sufficient
+  /// entropy to prevent guessing attacks.
+  token String
+  
+  /// Timestamp when this verification token expires and becomes invalid.
+  ///
+  /// Tokens typically expire within 24 hours to balance security with user
+  /// convenience. After expiration, a new verification request must be
+  /// initiated.
+  expires_at DateTime
+  
+  /// Timestamp when this token was successfully used to verify the seller's
+  /// email address.
+  ///
+  /// Once verified, the token cannot be reused. This field is null until
+  /// verification is completed.
+  verified_at DateTime?
+  
+  /// Timestamp when this verification token record was created.
+  ///
+  /// Used for audit trail and to calculate token age for expiration checks.
+  created_at DateTime
+  
+  /// Timestamp when this verification token record was last updated.
+  ///
+  /// Updated when the token is verified to record the verified_at timestamp.
+  updated_at DateTime
+  
+  /// Timestamp when this verification token record was soft-deleted.
+  ///
+  /// Used for audit trail preservation while removing active records from
+  /// queries.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_sellers? @relation(fields: [ecommerce_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_seller_id, created_at], map: "ecommerce_seller_email_verifications_ecommerce_seller__bdb0c858")
+  @@index([expires_at])
+}
+
+/// Administrator accounts with email/password authentication and grade-based
+/// privileges (regular/super).
+///
+/// This table represents the core administrator actor entity that
+/// authenticates users and provides access to administrative functions. Each
+/// administrator can have different privilege levels managed through the
+/// {@link ecommerce_administrator_grades} table.
+///
+/// ## Authentication
+///
+/// Administrators authenticate using email and password credentials. The
+/// password is stored as a hash for security. Email must be unique across
+/// all administrators.
+///
+/// ## Lifecycle
+///
+/// Administrators can be soft-deleted to preserve audit history while
+/// preventing login. Deleted administrators cannot authenticate but their
+/// historical actions in {@link ecommerce_admin_audit_logs} remain intact.
+///
+/// ## Grade Management
+///
+/// Administrator privileges (regular vs super) are not stored directly in
+/// this table. Instead, they are managed through the {@link
+/// ecommerce_administrator_grades} table which tracks current grade
+/// assignments and the {@link ecommerce_admin_grade_transitions} table which
+/// maintains a complete history of promotions and demotions.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_admins {
+  //----
+  // COLUMNS
+  //----
+  /// Unique identifier for each administrator account.
+  id String @id
+  
+  /// Email address used for authentication and account identification.
+  ///
+  /// Must be unique across all administrator accounts. Used as the primary
+  /// credential for login alongside the password hash.
+  email String
+  
+  /// Bcrypt or Argon2 hash of the administrator's password.
+  ///
+  /// Stored securely and never exposed in API responses. Used to verify login
+  /// credentials during authentication.
+  password_hash String
+  
+  /// Timestamp when the administrator account was created.
+  ///
+  /// Automatically set upon account creation and cannot be modified.
+  created_at DateTime
+  
+  /// Timestamp when the administrator account was last modified.
+  ///
+  /// Automatically updated on any field changes except deleted_at.
+  updated_at DateTime
+  
+  /// Timestamp when the administrator account was soft-deleted.
+  ///
+  /// Null for active accounts. When set, the administrator cannot authenticate
+  /// but historical audit records remain intact.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  adminSessions ecommerce_admin_sessions[]
+  passwordResets ecommerce_admin_password_resets[]
+  auditLogs ecommerce_admin_audit_logs[]
+  sellerApprovalReviews ecommerce_seller_approvals[]
+  adminRequestsRevieweds ecommerce_admin_requests[]
+  administratorGrade ecommerce_administrator_grades?
+  gradeTransitionsAsTargets ecommerce_admin_grade_transitions[] @relation("ecommerce_admin_grade_transitions_of_ecommerce_admin_id")
+  gradeTransitionsAsPerformers ecommerce_admin_grade_transitions[] @relation("ecommerce_admin_grade_transitions_of_performed_by_admin_id")
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@index([deleted_at])
+}
+
+/// JWT session tokens for administrator authentication with access and
+/// refresh token support
+///
+/// This table tracks active administrator login sessions, storing connection
+/// metadata and token expiration for security auditing and session
+/// management.
+///
+/// **Session Lifecycle**
+///
+/// Sessions are created upon successful administrator login and expire based
+/// on configured token lifetime. Each session records the client connection
+/// details for security monitoring.
+///
+/// **Security Considerations**
+///
+/// Sessions reference {@link EcommerceAdmins} through a foreign key. When an
+/// administrator account is banned or deleted, associated sessions should be
+/// invalidated. The expired_at field ensures automatic session expiration
+/// for security.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_admin_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Unique session identifier for tracking and invalidation.
+  id String @id
+  
+  /// References the administrator account that owns this session.
+  ///
+  /// This foreign key establishes the relationship to {@link EcommerceAdmins}.
+  /// When the administrator account is banned or deleted, all associated
+  /// sessions should be invalidated for security.
+  ecommerce_admin_id String
+  
+  /// Client IP address from which the session was created.
+  ///
+  /// Used for security auditing and detecting unauthorized access attempts
+  /// from unusual locations.
+  ip String
+  
+  /// Full URL of the page where the login occurred.
+  ///
+  /// Provides context for the session origin for audit trail purposes.
+  href String?
+  
+  /// Referrer URL that led to the login page.
+  ///
+  /// Helps track the navigation path before authentication for security
+  /// analysis.
+  referrer String?
+  
+  /// Timestamp when the session was created.
+  ///
+  /// Used for session ordering and determining session age for cleanup
+  /// policies.
+  created_at DateTime
+  
+  /// Timestamp when the session was last refreshed or updated.
+  ///
+  /// Tracks session activity for detecting stale sessions.
+  updated_at DateTime
+  
+  /// Timestamp when the session was invalidated or logged out.
+  ///
+  /// Soft delete allows maintaining audit trail of session lifecycle while
+  /// marking it as inactive.
+  deleted_at DateTime?
+  
+  /// Timestamp when the session token expires.
+  ///
+  /// Sessions are automatically considered invalid after this time. Set during
+  /// login based on token lifetime configuration.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  ecommerceAdmin ecommerce_admins @relation(fields: [ecommerce_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([ecommerce_admin_id, created_at])
+}
+
+/// Password reset tokens for administrator account recovery with expiration
+///
+/// Each record stores a secure token generated when an administrator
+/// requests a password reset. The token is valid until the expiration time,
+/// after which it becomes invalid. These records are append-only and serve
+/// as an audit trail for password recovery attempts.
+///
+/// **Token Lifecycle**
+/// - Generated when administrator requests password reset
+/// - Valid until expires_at timestamp
+/// - Single-use: invalidated after successful password reset
+/// - Automatically expired tokens should be cleaned up periodically
+///
+/// **Security Considerations**
+/// - Tokens are cryptographically secure random strings
+/// - Short expiration window limits attack surface
+/// - Unique constraint prevents token reuse across accounts
+/// - Audit trail enables monitoring of reset attempts
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_admin_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the password reset record.
+  id String @id
+  
+  /// References the administrator account requesting password reset.
+  ///
+  /// This foreign key establishes the relationship to the {@link
+  /// EcommerceAdmin} model, ensuring each reset token is associated with a
+  /// valid administrator account. The relationship is mandatory as a reset
+  /// token cannot exist without an associated admin.
+  ecommerce_admin_id String
+  
+  /// Secure reset token used for authentication.
+  ///
+  /// This token is generated when a password reset is requested and must be
+  /// provided by the administrator to complete the reset process. Tokens are
+  /// single-use and expire after the configured time period. The token should
+  /// be cryptographically secure and sufficiently long to prevent guessing
+  /// attacks.
+  token String
+  
+  /// Expiration timestamp for the reset token.
+  ///
+  /// Tokens become invalid after this time and cannot be used for password
+  /// reset. The system should validate this timestamp when processing reset
+  /// requests. Typical expiration is 1-24 hours depending on security
+  /// requirements.
+  expires_at DateTime
+  
+  /// Timestamp when the password reset token was created.
+  ///
+  /// Used for audit trail and to calculate token age for expiration
+  /// validation. This field is automatically set when the record is inserted
+  /// and cannot be modified.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  ecommerceAdmin ecommerce_admins @relation(fields: [ecommerce_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_admin_id, created_at], map: "ecommerce_admin_password_resets_ecommerce_admin_id_cre_d363e808")
+}
+
+/// Audit trail logging all administrator actions for security compliance and
+/// dispute resolution.
+///
+/// This table maintains an immutable record of every action performed by
+/// administrators across the platform. Each entry captures the administrator
+/// who performed the action, the type of action, the target entity affected,
+/// and the state changes involved.
+///
+/// **Usage**
+///
+/// Administrators and super administrators can view audit logs to
+/// investigate security incidents, resolve disputes, and ensure compliance
+/// with platform policies. The logs are append-only and cannot be modified
+/// or deleted by regular users.
+///
+/// **Audit Coverage**
+///
+/// - Seller approval and rejection actions
+/// - Category creation, modification, and deletion
+/// - Product oversight actions including forced deletion
+/// - Order oversight actions including forced cancellation and refund
+/// - User management actions including bans and unbans
+/// - Administrator grade changes and promotions
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_admin_audit_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the audit log entry.
+  id String @id
+  
+  /// Reference to the administrator who performed the action.
+  ///
+  /// This foreign key links the audit log entry to the {@link
+  /// ecommerce_admins} table, identifying which administrator took the
+  /// recorded action. All administrative actions must be attributable to a
+  /// specific administrator account for accountability and security auditing
+  /// purposes.
+  ecommerce_admin_id String
+  
+  /// The type of action that was performed.
+  ///
+  /// Examples include "seller_approved", "seller_rejected",
+  /// "category_created", "category_updated", "category_deleted",
+  /// "product_deleted", "order_cancelled", "order_refunded", "user_banned",
+  /// "user_unbanned", "admin_promoted", "admin_demoted". This field
+  /// categorizes the action for filtering and reporting purposes.
+  action_type String
+  
+  /// The entity type that was affected by the action.
+  ///
+  /// Examples include "seller", "category", "product", "order", "order_item",
+  /// "customer", "admin". This field indicates which domain entity was the
+  /// target of the administrative action.
+  target_entity String
+  
+  /// The identifier of the target entity that was affected.
+  ///
+  /// This field stores the ID of the affected entity as a string to
+  /// accommodate different ID formats across domain entities. May be null for
+  /// actions that do not target a specific entity.
+  target_id String?
+  
+  /// The state of the target entity before the action was performed.
+  ///
+  /// Stored as a JSON string containing the entity's properties before
+  /// modification. Null for create actions or actions that do not modify
+  /// entity state. Used for audit trail and dispute resolution to understand
+  /// what changed.
+  previous_state String?
+  
+  /// The state of the target entity after the action was performed.
+  ///
+  /// Stored as a JSON string containing the entity's properties after
+  /// modification. Null for delete actions or actions that do not result in a
+  /// new state. Used for audit trail and dispute resolution to understand the
+  /// result of the action.
+  new_state String?
+  
+  /// Timestamp when the audit log entry was created.
+  ///
+  /// This field records the exact moment when the administrative action was
+  /// logged. Used for chronological ordering of audit events and compliance
+  /// reporting.
+  created_at DateTime
+  
+  /// Timestamp when the audit log entry was last updated.
+  ///
+  /// For audit logs, this typically remains the same as created_at since
+  /// entries are append-only. Included for schema consistency with other
+  /// tables.
+  updated_at DateTime
+  
+  /// Timestamp when the audit log entry was soft-deleted.
+  ///
+  /// Audit logs should rarely be deleted. This field is included for schema
+  /// consistency but should typically remain null to maintain audit trail
+  /// integrity.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  ecommerceAdmin ecommerce_admins @relation(fields: [ecommerce_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([ecommerce_admin_id])
+  @@index([target_entity, target_id])
+}

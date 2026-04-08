@@ -10,55 +10,34 @@ import { patchRedditCloneFiles } from "../../../providers/patchRedditCloneFiles"
 @Controller("/redditClone/files")
 export class RedditcloneFilesController {
   /**
-   * Search and retrieve a paginated list of uploaded files with optional filtering criteria.
+   * Search and retrieve a filtered list of uploaded files.
    *
-   * This endpoint allows authenticated members to search through their uploaded files or browse files across the platform. The search supports multiple filter criteria including partial filename matching using full-text search, file status filtering (pending virus scan, processed, or failed), MIME type filtering for specific image formats, and date range filtering for uploads within a specific period.
+   * This operation allows users to browse and search through all uploaded files in the system. Files can be filtered by processing status (pending, processed, failed), uploader, filename patterns, MIME types, and upload date ranges.
    *
-   * The file storage system maintains metadata for all uploaded content including user avatars, community icons, and post images. Each file record tracks its original filename, stored filename, MIME type, file size, storage path, and processing status. Files undergo virus scanning before being marked as processed, with failed scans indicating potential security issues.
+   * The response returns a paginated list of file summaries optimized for display in file management interfaces. Each summary includes essential file metadata such as filename, type, size, and processing status.
    *
-   * Results are paginated with configurable page size and cursor-based navigation for large result sets. The response includes file summaries optimized for list display, showing essential metadata without overwhelming detail.
-   *
-   * **Security Considerations:**
-   * - Only authenticated members can access this endpoint
-   * - Users can view their own uploaded files without restriction
-   * - Soft-deleted files (deleted_at IS NOT NULL) are excluded from results by default
-   * - File content is not directly accessible through this operation; use separate download endpoints
-   *
-   * **Related Operations:**
-   * - POST /files for file upload initiation
-   * - GET /files/{fileId} for retrieving detailed file information including thumbnails
-   * - DELETE /files/{fileId} for removing uploaded files
+   * This endpoint supports viewing files uploaded by any user. The system retains scan records for audit purposes and files remain accessible while associated content exists on the platform.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for filtering uploaded files
+   * @param body Search criteria including pagination parameters, filters by status, uploader, filename, MIME type, and date range
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Implement a search operation for reddit_clone_files table with the following specifications:
+   * @x-autobe-specification Query reddit_clone_files table with pagination and filtering.
    *
-   * **Query Building:**
-   * 1. Base query: SELECT * FROM reddit_clone_files WHERE deleted_at IS NULL
-   * 2. Apply filters from request body:
-   *    - filename: Partial match on original_filename using ILIKE '%' || :filename || '%' (leveraging GIN index)
-   *    - status: Exact match on status column ('pending', 'processed', 'failed')
-   *    - mimeType: Exact match on mime_type column
-   *    - uploaderId: Exact match on uploader_id column
-   *    - createdAfter: created_at >= :createdAfter
-   *    - createdBefore: created_at <= :createdBefore
-   * 3. Apply sorting based on createdAt desc (default) or specified sort field
-   * 4. Apply pagination with cursor or offset-based pagination
+   * Apply search filters:
+   * - Filter by processing status: 'pending', 'processed', 'failed'
+   * - Filter by uploader_id (exact match)
+   * - Search by original_filename using partial matching (case-insensitive)
+   * - Filter by MIME type (exact match)
+   * - Filter by created_at date range (from/to)
    *
-   * **Response Construction:**
-   * - Return IPageIRedditCloneFile.ISummary containing:
-   *   - pagination: { page, limit, total, hasMore }
-   *   - data: Array of file summaries with id, originalFilename, mimeType, fileSize, status, createdAt
-   * - Join with reddit_clone_members for uploader display name if requested
-   * - Exclude storage_path and stored_filename from summary responses for security
+   * Join with reddit_clone_file_thumbnails to include thumbnail information when available.
+   * Join with reddit_clone_members to include uploader username when available.
    *
-   * **Edge Cases:**
-   * - Empty search criteria returns recent uploads
-   * - Invalid status values return 400 Bad Request
-   * - Files with pending status indicate ongoing virus scanning
-   * - Handle timezone conversions for date range filters
+   * Return cursor-based pagination with configurable page sizes.
+   * Sort by created_at descending by default.
+   *
+   * Exclude soft-deleted files (where deleted_at is not null).
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -77,45 +56,40 @@ export class RedditcloneFilesController {
   }
 
   /**
-   * Retrieve detailed metadata and status information for a specific uploaded file.
+   * Retrieve metadata and details for a single uploaded file.
    *
-   * This endpoint provides comprehensive information about a file stored in the platform, including the original filename, MIME type, file size, processing status, and virus scan results. When thumbnails have been generated, their variants are included in the response.
+   * This endpoint returns comprehensive information about a file including its storage metadata, MIME type, processing status, and associated content links. The response includes the uploader information, virus scan results, and available thumbnail variants for image files.
    *
-   * The file must not be soft-deleted. Files with a non-null deleted_at timestamp are considered removed and will return a 404 response.
+   * Files can be associated with multiple entity types (user avatars, community icons, post images) through polymorphic file associations. The scan history provides audit trail information for security compliance.
    *
-   * File metadata includes:
-   * - Original and stored filenames
-   * - MIME type and file size in bytes
-   * - Processing status (pending, processed, or failed)
-   * - Uploader information
-   * - Generated thumbnail variants with dimensions
-   * - Virus scan records with timestamps and threat information
-   *
-   * This operation is publicly accessible. All users, including guests, can retrieve file metadata. The actual file content is served through a separate download mechanism referenced by the storage_path.
-   *
-   * Related operations:
-   * - POST /files - Upload a new file
-   * - DELETE /files/{fileId} - Remove a file
+   * File content (actual image data) is served through separate static asset endpoints using the stored_path reference.
    *
    * @param connection
-   * @param fileId Unique identifier of the file to retrieve
+   * @param fileId Unique identifier of the file to retrieve (global scope)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the reddit_clone_files table by id matching the fileId path parameter.
+   * @x-autobe-specification Query reddit_clone_files table using the provided fileId as the primary key.
    *
-   * 1. SELECT file record WHERE id = :fileId AND deleted_at IS NULL
-   * 2. If not found or soft-deleted, return 404 response
-   * 3. JOIN with reddit_clone_file_thumbnails to get all thumbnail variants
-   * 4. JOIN with reddit_clone_file_scans to get scan history (ordered by scanned_at DESC)
-   * 5. JOIN with reddit_clone_file_associations to get entity association info (target_type, target_id)
-   * 6. Return complete file metadata with related arrays
+   * Validate that the file exists and deleted_at is null (file has not been soft-deleted).
+   *
+   * Join with reddit_clone_file_associations to retrieve any active associations with target_type and target_id.
+   *
+   * Join with reddit_clone_file_scans to retrieve all scan records ordered by scanned_at descending.
+   *
+   * Join with reddit_clone_file_thumbnails to retrieve all thumbnail variants with width, height, and thumbnail_path.
+   *
+   * Join with reddit_clone_members for uploader information (id, username, display_name) if uploader relationship exists.
+   *
+   * Return 404 error if file does not exist or has been soft-deleted.
+   *
+   * Include all status values: pending, processed, failed.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":fileId")
   public async at(
     @TypedParam("fileId")
     fileId: string & tags.Format<"uuid">,
-  ): Promise<IRedditCloneFile> {
+  ): Promise<IRedditCloneFile.IInvert> {
     try {
       return await getRedditCloneFilesFileId({
         fileId,

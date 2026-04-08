@@ -1,0 +1,277 @@
+/// Main project entity containing project identification, description, and
+/// organizational assignment.
+///
+/// Projects represent work containers within organizations that can have
+/// tasks, timelogs, and team members assigned. Each project has a lifecycle
+/// status (active, archived, or completed) that controls whether new work
+/// can be added.
+///
+/// Projects are organization-scoped and cannot be deleted if they have
+/// associated timelogs. Project status transitions follow a defined workflow
+/// where active projects can be archived or completed, and
+/// archived/completed projects can be reactivated.
+///
+/// @namespace project
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_projects {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for project entity.
+  id String @id
+  
+  /// Foreign key referencing the organization that owns this project.
+  ///
+  /// Each project belongs to exactly one organization and cannot exist without
+  /// an organizational parent. The organization provides the multi-tenancy
+  /// boundary and permission context for project access.
+  hrm_time_track_organization_id String
+  
+  /// Project name for identification and display purposes.
+  ///
+  /// The name uniquely identifies the project within the organization context
+  /// and is used in user interfaces and reports.
+  name String
+  
+  /// Optional detailed description of the project scope and objectives.
+  ///
+  /// Provides additional context about the project's purpose and deliverables.
+  description String?
+  
+  /// Color code for visual display purposes in user interfaces.
+  ///
+  /// Used to visually distinguish projects in dashboards and lists.
+  color_code String
+  
+  /// Current lifecycle status of the project.
+  ///
+  /// Allowed values: 'active' (ongoing, can receive new timelogs), 'archived'
+  /// (preserved for reference, no new timelogs), 'completed' (finished, no new
+  /// timelogs). Status controls whether new work can be added to the project.
+  status String
+  
+  /// Optional total estimated hours budget for the project.
+  ///
+  /// Used for tracking and reporting against planned vs actual time investment.
+  budget_hours Float?
+  
+  /// Optional project start date.
+  ///
+  /// Indicates when the project work began or is scheduled to begin.
+  start_date DateTime?
+  
+  /// Optional project end date.
+  ///
+  /// Indicates when the project work is scheduled to complete.
+  end_date DateTime?
+  
+  /// Timestamp when the project was created.
+  created_at DateTime
+  
+  /// Timestamp when the project was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the project was soft deleted.
+  ///
+  /// Projects can only be deleted if they have no associated timelogs. Soft
+  /// delete preserves data for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_time_track_organizations @relation(fields: [hrm_time_track_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  projectMembers hrm_time_track_project_members[]
+  tasks hrm_time_track_tasks[]
+  timelogs hrm_time_track_timelogs[]
+  timers hrm_time_track_timers[]
+  timerSnapshots hrm_time_track_timer_snapshots[]
+  activityLogs hrm_time_track_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([status])
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_organization_id, status], map: "hrm_time_track_projects_hrm_time_track_organization_id_675f8b5e")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_track_organization_id, deleted_at], map: "hrm_time_track_projects_hrm_time_track_organization_id_80f1ec76")
+}
+
+/// Junction table linking employees to projects with assigned roles and
+/// permissions.
+///
+/// This table establishes the assignment relationship between employees and
+/// projects, enabling employees to work on specific projects. Each project
+/// membership includes a role that defines the employee's authority level
+/// within the project context.
+///
+/// Project membership is required for employees to log time, view tasks, and
+/// participate in project activities. The membership relationship enforces
+/// proper data isolation between projects and authorizes employees to
+/// contribute work through timelogs and task assignments.
+///
+/// @namespace project
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_project_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for project member records.
+  id String @id
+  
+  /// Foreign key reference to the employee assigned to the project.
+  ///
+  /// This establishes the employee-project relationship, linking the employee
+  /// record to their project membership. The employee must be a valid member
+  /// of the organization that owns the project.
+  hrm_time_track_employee_id String
+  
+  /// Foreign key reference to the project the employee is assigned to.
+  ///
+  /// This links the project membership to the specific project. The employee
+  /// gains access to project resources, tasks, and time tracking capabilities
+  /// through this association.
+  hrm_time_track_project_id String
+  
+  /// The assigned role defining the employee's authority level within the
+  /// project.
+  ///
+  /// Allowed values are 'member' for standard access to view and contribute to
+  /// the project, or 'project-lead' for elevated authority to manage tasks
+  /// within the assigned project. This role-based control ensures appropriate
+  /// task management permissions are granted.
+  role String
+  
+  /// Timestamp when the project membership was created.
+  created_at DateTime
+  
+  /// Timestamp when the project membership was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the project membership was soft deleted. Null indicates
+  /// active membership.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_time_track_employees @relation(fields: [hrm_time_track_employee_id], references: [id], onDelete: Cascade)
+  project hrm_time_track_projects @relation(fields: [hrm_time_track_project_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_time_track_project_id])
+  // spellchecker: ignore-next-line
+  @@unique([hrm_time_track_employee_id, hrm_time_track_project_id], map: "hrm_time_track_project_members_hrm_time_track_employee_ee9bb0d2")
+}
+
+/// Individual units of work within projects supporting parent-child
+/// hierarchy for task breakdown structures.
+///
+/// Tasks represent discrete pieces of work that belong to projects and can
+/// be assigned to employees. The parent-child hierarchy allows breaking down
+/// complex work into manageable subtasks with only one level of nesting
+/// supported.
+///
+/// @namespace project
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_track_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for unique identification of each task.
+  id String @id
+  
+  /// References the project this task belongs to.
+  ///
+  /// Each task must be associated with exactly one project from {@link
+  /// hrm_time_track_projects}.
+  hrm_time_track_project_id String
+  
+  /// References the employee this task is assigned to.
+  ///
+  /// Optional assignment - tasks may exist without an assignee. References
+  /// {@link hrm_time_track_employees}.
+  hrm_time_track_employee_id String?
+  
+  /// References the parent task for subtask organization.
+  ///
+  /// Only one level of nesting is supported. If set, this task is a subtask of
+  /// the referenced parent task. Self-referencing foreign key to {@link
+  /// hrm_time_track_tasks}.
+  parent_task_id String?
+  
+  /// Short descriptive name for the task.
+  ///
+  /// Required field that provides a concise identifier for the task.
+  title String
+  
+  /// Detailed description of the work to be performed.
+  ///
+  /// Optional field containing comprehensive task details and requirements.
+  description String?
+  
+  /// Priority level: low, medium, high, or critical.
+  ///
+  /// Indicates the urgency and importance of completing the task.
+  priority String
+  
+  /// Current workflow state of the task.
+  ///
+  /// Tracks task progress through its lifecycle stages.
+  status String
+  
+  /// Estimated effort in hours to complete the task.
+  ///
+  /// Optional field for planning and resource allocation.
+  effort_estimate Float?
+  
+  /// Actual effort spent on the task.
+  ///
+  /// Optional field for tracking real time expenditure against estimates.
+  effort_actual Float?
+  
+  /// Timestamp when the task was created.
+  created_at DateTime
+  
+  /// Timestamp when the task was last modified.
+  updated_at DateTime
+  
+  /// Timestamp for soft delete when task is logically removed.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  project hrm_time_track_projects @relation(fields: [hrm_time_track_project_id], references: [id], onDelete: Cascade)
+  employee hrm_time_track_employees? @relation(fields: [hrm_time_track_employee_id], references: [id], onDelete: Cascade)
+  parentTask hrm_time_track_tasks? @relation("recursive", fields: [parent_task_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  subtasks hrm_time_track_tasks[] @relation("recursive")
+  timelogs hrm_time_track_timelogs[]
+  timers hrm_time_track_timers[]
+  timerSnapshots hrm_time_track_timer_snapshots[]
+  activityLogs hrm_time_track_activity_logs[]
+  taskHistories hrm_time_track_task_histories[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_time_track_employee_id])
+  @@index([parent_task_id])
+  @@index([hrm_time_track_project_id, status])
+}

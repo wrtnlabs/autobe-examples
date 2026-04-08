@@ -4,9 +4,6 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import type { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import type { IShoppingMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductImage";
-import type { IShoppingMallProductOptionDefinition } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionDefinition";
-import type { IShoppingMallProductOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductOptionValue";
-import type { IShoppingMallProductRating } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductRating";
 import type { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
 import type { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -19,41 +16,37 @@ import { authorize_seller_join } from "../../../authorize/authorize_seller_join"
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
 import { generate_random_shopping_mall_seller_products_create } from "../../../generate/generate_random_shopping_mall_seller_products_create";
-import { generate_random_shopping_mall_seller_products_option_definitions_create } from "../../../generate/generate_random_shopping_mall_seller_products_option_definitions_create";
-import { generate_random_shopping_mall_seller_products_option_definitions_option_values_create } from "../../../generate/generate_random_shopping_mall_seller_products_option_definitions_option_values_create";
 import { generate_random_shopping_mall_seller_products_variants_create } from "../../../generate/generate_random_shopping_mall_seller_products_variants_create";
 import { prepare_random_shopping_mall_product } from "../../../prepare/prepare_random_shopping_mall_product";
-import { prepare_random_shopping_mall_product_option_definition } from "../../../prepare/prepare_random_shopping_mall_product_option_definition";
-import { prepare_random_shopping_mall_product_option_value } from "../../../prepare/prepare_random_shopping_mall_product_option_value";
 import { prepare_random_shopping_mall_product_variant } from "../../../prepare/prepare_random_shopping_mall_product_variant";
 
 /**
- * Test that a seller can successfully retrieve detailed information about a specific product variant they own.
+ * Test seller product variant retrieval by owner.
  *
- * This test validates the complete workflow:
- * 1. Register and authenticate as a seller
- * 2. Create a product with option definitions (Color, Size)
- * 3. Create option values (Red, Blue for Color; Large, Small for Size)
- * 4. Create a variant with specific option combinations (Color=Red, Size=Large)
- * 5. Retrieve the variant using GET /shoppingMall/seller/products/{productId}/variants/{variantId}
- * 6. Verify response contains complete variant details including SKU code, price override,
- *    parent product reference, and all variant options with their definitions
- * 7. Confirm timestamps are present and deletedAt is null for active variants
+ * Validates that a seller can successfully retrieve detailed information for a variant belonging to their own product. The test verifies the complete workflow from seller registration through variant creation and retrieval, ensuring proper ownership validation and data integrity.
+ *
+ * The test creates a seller account, establishes a product with category and pricing, adds a variant with specific SKU and option values, then retrieves the variant to confirm all fields are correctly populated and the ownership relationship is maintained.
+ *
+ * 1. Register and authenticate a new seller account.
+ * 2. Create a product with name, description, category, and base price.
+ * 3. Create a variant with SKU code, option values, and price override.
+ * 4. Retrieve the variant using GET endpoint with productId and variantId.
+ * 5. Verify variant response contains all required fields with correct values.
+ * 6. Confirm product summary in variant includes seller, category, name, and base_price.
  */
 export async function test_api_product_variant_retrieval_by_owner(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Register and authenticate as seller
+  // 1. Register and authenticate seller
   const sellerConnection: api.IConnection = { host: connection.host };
-  const sellerAuth = await authorize_seller_join(sellerConnection, {
+  await authorize_seller_join(sellerConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
+      password: "TestPassword123!",
       href: typia.random<string & tags.Format<"uri">>(),
       referrer: typia.random<string & tags.Format<"uri">>(),
     } satisfies IShoppingMallSeller.IJoin,
   });
-  typia.assert(sellerAuth);
   // 2. Create a product
   const product = await generate_random_shopping_mall_seller_products_create(
     sellerConnection,
@@ -61,120 +54,30 @@ export async function test_api_product_variant_retrieval_by_owner(
       body: {
         name: RandomGenerator.paragraph({ sentences: 2 }),
         description: RandomGenerator.content({ paragraphs: 2 }),
-        category_id: typia.random<string & tags.Format<"uuid">>(),
         base_price: typia.random<
           number & tags.Type<"uint32"> & tags.Minimum<1000>
         >(),
-      } satisfies IShoppingMallProduct.ICreate,
+      },
     },
   );
   typia.assert(product);
-  // 3. Create option definition for Color
-  const colorOptionDef =
-    await generate_random_shopping_mall_seller_products_option_definitions_create(
-      sellerConnection,
-      {
-        params: {
-          productId: product.id,
-        },
-        body: {
-          name: "Color",
-        } satisfies IShoppingMallProductOptionDefinition.ICreate,
-      },
-    );
-  typia.assert(colorOptionDef);
-  // 4. Create option definition for Size
-  const sizeOptionDef =
-    await generate_random_shopping_mall_seller_products_option_definitions_create(
-      sellerConnection,
-      {
-        params: {
-          productId: product.id,
-        },
-        body: {
-          name: "Size",
-        } satisfies IShoppingMallProductOptionDefinition.ICreate,
-      },
-    );
-  typia.assert(sizeOptionDef);
-  // 5. Create option values for Color (Red, Blue)
-  const redOptionValue =
-    await generate_random_shopping_mall_seller_products_option_definitions_option_values_create(
-      sellerConnection,
-      {
-        params: {
-          productId: product.id,
-          optionDefinitionId: colorOptionDef.id,
-        },
-        body: {
-          name: "Red",
-        } satisfies IShoppingMallProductOptionValue.ICreate,
-      },
-    );
-  typia.assert(redOptionValue);
-  const blueOptionValue =
-    await generate_random_shopping_mall_seller_products_option_definitions_option_values_create(
-      sellerConnection,
-      {
-        params: {
-          productId: product.id,
-          optionDefinitionId: colorOptionDef.id,
-        },
-        body: {
-          name: "Blue",
-        } satisfies IShoppingMallProductOptionValue.ICreate,
-      },
-    );
-  typia.assert(blueOptionValue);
-  // 6. Create option values for Size (Large, Small)
-  const largeOptionValue =
-    await generate_random_shopping_mall_seller_products_option_definitions_option_values_create(
-      sellerConnection,
-      {
-        params: {
-          productId: product.id,
-          optionDefinitionId: sizeOptionDef.id,
-        },
-        body: {
-          name: "Large",
-        } satisfies IShoppingMallProductOptionValue.ICreate,
-      },
-    );
-  typia.assert(largeOptionValue);
-  const smallOptionValue =
-    await generate_random_shopping_mall_seller_products_option_definitions_option_values_create(
-      sellerConnection,
-      {
-        params: {
-          productId: product.id,
-          optionDefinitionId: sizeOptionDef.id,
-        },
-        body: {
-          name: "Small",
-        } satisfies IShoppingMallProductOptionValue.ICreate,
-      },
-    );
-  typia.assert(smallOptionValue);
-  // 7. Create a variant with Color=Red, Size=Large
-  const priceOverride = typia.random<
-    number & tags.Type<"uint32"> & tags.Minimum<1000>
-  >();
+  // 3. Create a variant for the product
   const variant =
     await generate_random_shopping_mall_seller_products_variants_create(
       sellerConnection,
       {
-        params: {
-          productId: product.id,
-        },
+        params: { productId: product.id },
         body: {
-          sku_code: `SKU-${RandomGenerator.alphaNumeric(8)}`,
-          price_override: priceOverride,
-          option_value_ids: [redOptionValue.id, largeOptionValue.id],
-        } satisfies IShoppingMallProductVariant.ICreate,
+          sku_code: RandomGenerator.alphaNumeric(8).toUpperCase(),
+          option_values: `Color: ${RandomGenerator.pick(["Red", "Blue", "Green"])}, Size: ${RandomGenerator.pick(["S", "M", "L", "XL"])}`,
+          price: typia.random<
+            number & tags.Type<"uint32"> & tags.Minimum<1000>
+          >(),
+        },
       },
     );
   typia.assert(variant);
-  // 8. Retrieve the variant using GET endpoint
+  // 4. Retrieve the variant using GET endpoint
   const retrievedVariant =
     await api.functional.shoppingMall.seller.products.variants.at(
       sellerConnection,
@@ -184,55 +87,55 @@ export async function test_api_product_variant_retrieval_by_owner(
       },
     );
   typia.assert(retrievedVariant);
-  // 9. Validate variant details
-  TestValidator.equals("variant ID matches", retrievedVariant.id, variant.id);
+  // 5. Verify variant contains all required fields
+  TestValidator.equals("variant id matches", retrievedVariant.id, variant.id);
   TestValidator.equals(
-    "SKU code matches",
-    retrievedVariant.skuCode,
-    variant.skuCode,
+    "sku_code matches",
+    retrievedVariant.sku_code,
+    variant.sku_code,
   );
   TestValidator.equals(
-    "price override matches",
-    retrievedVariant.priceOverride,
-    priceOverride,
+    "option_values matches",
+    retrievedVariant.option_values,
+    variant.option_values,
   );
+  TestValidator.equals("price matches", retrievedVariant.price, variant.price);
+  TestValidator.predicate(
+    "deleted_at is null for active variant",
+    retrievedVariant.deleted_at === null,
+  );
+  TestValidator.predicate(
+    "created_at is valid date-time",
+    retrievedVariant.created_at !== null,
+  );
+  TestValidator.predicate(
+    "updated_at is valid date-time",
+    retrievedVariant.updated_at !== null,
+  );
+  // 6. Verify product summary in variant
   TestValidator.equals(
-    "product ID matches",
-    typia.assert<IShoppingMallProduct>(retrievedVariant.product).id,
+    "product id matches",
+    retrievedVariant.product.id,
     product.id,
   );
   TestValidator.equals(
-    "variant has 2 options",
-    retrievedVariant.variantOptions.length,
-    2,
+    "product name matches",
+    retrievedVariant.product.name,
+    product.name,
   );
-  // 10. Validate variant options contain correct option values
-  const optionNames = retrievedVariant.variantOptions.map((opt) => opt.name);
-  TestValidator.predicate("contains Red option", optionNames.includes("Red"));
-  TestValidator.predicate(
-    "contains Large option",
-    optionNames.includes("Large"),
+  TestValidator.equals(
+    "product base_price matches",
+    retrievedVariant.product.base_price,
+    product.base_price,
   );
-  // 11. Validate option definitions are correct
-  const optionDefNames = retrievedVariant.variantOptions.map(
-    (opt) => opt.optionDefinition.name,
+  TestValidator.equals(
+    "seller id matches",
+    retrievedVariant.product.seller.id,
+    product.seller.id,
   );
-  TestValidator.predicate(
-    "has Color definition",
-    optionDefNames.includes("Color"),
+  TestValidator.equals(
+    "category id matches",
+    retrievedVariant.product.category.id,
+    product.category.id,
   );
-  TestValidator.predicate(
-    "has Size definition",
-    optionDefNames.includes("Size"),
-  );
-  // 12. Validate timestamps
-  TestValidator.predicate(
-    "createdAt is valid date",
-    !isNaN(Date.parse(retrievedVariant.createdAt)),
-  );
-  TestValidator.predicate(
-    "updatedAt is valid date",
-    !isNaN(Date.parse(retrievedVariant.updatedAt)),
-  );
-  TestValidator.equals("deletedAt is null", retrievedVariant.deletedAt, null);
 }

@@ -2,47 +2,51 @@ import { Module } from "@nestjs/common";
 
 import { RedditcloneAuthGuestController } from "./controllers/redditClone/auth/guest/RedditcloneAuthGuestController";
 import { RedditcloneAuthMemberController } from "./controllers/redditClone/auth/member/RedditcloneAuthMemberController";
-import { RedditcloneCommentsController } from "./controllers/redditClone/comments/RedditcloneCommentsController";
 import { RedditcloneCommunitiesController } from "./controllers/redditClone/communities/RedditcloneCommunitiesController";
-import { RedditcloneCommunitiesIconsController } from "./controllers/redditClone/communities/icons/RedditcloneCommunitiesIconsController";
-import { RedditcloneCommunitiesModeratorsController } from "./controllers/redditClone/communities/moderators/RedditcloneCommunitiesModeratorsController";
-import { RedditcloneFile_associationsController } from "./controllers/redditClone/file-associations/RedditcloneFile_associationsController";
+import { RedditcloneCommunitiesDiscoverController } from "./controllers/redditClone/communities/discover/RedditcloneCommunitiesDiscoverController";
+import { RedditcloneCommunitiesIconController } from "./controllers/redditClone/communities/icon/RedditcloneCommunitiesIconController";
 import { RedditcloneFilesController } from "./controllers/redditClone/files/RedditcloneFilesController";
 import { RedditcloneFilesScansController } from "./controllers/redditClone/files/scans/RedditcloneFilesScansController";
 import { RedditcloneFilesThumbnailsController } from "./controllers/redditClone/files/thumbnails/RedditcloneFilesThumbnailsController";
-import { RedditcloneGuestCommunitiesPostsController } from "./controllers/redditClone/guest/communities/posts/RedditcloneGuestCommunitiesPostsController";
-import { RedditcloneGuestPostsCommentsController } from "./controllers/redditClone/guest/posts/comments/RedditcloneGuestPostsCommentsController";
-import { RedditcloneGuestPostsPopularController } from "./controllers/redditClone/guest/posts/popular/RedditcloneGuestPostsPopularController";
-import { RedditcloneGuestUsersCommentsController } from "./controllers/redditClone/guest/users/comments/RedditcloneGuestUsersCommentsController";
-import { RedditcloneGuestUsersPostsController } from "./controllers/redditClone/guest/users/posts/RedditcloneGuestUsersPostsController";
-import { RedditcloneMemberCommentsController } from "./controllers/redditClone/member/comments/RedditcloneMemberCommentsController";
+import { RedditcloneGuestCommunitiesController } from "./controllers/redditClone/guest/communities/feed/RedditcloneGuestCommunitiesController";
+import { RedditcloneGuestFeedPopularController } from "./controllers/redditClone/guest/feed/popular/RedditcloneGuestFeedPopularController";
+import { RedditcloneGuestGuest_sessionsController } from "./controllers/redditClone/guest/guest-sessions/RedditcloneGuestGuest_sessionsController";
+import { RedditcloneMemberAvatarsController } from "./controllers/redditClone/member/avatars/RedditcloneMemberAvatarsController";
 import { RedditcloneMemberCommunitiesController } from "./controllers/redditClone/member/communities/RedditcloneMemberCommunitiesController";
 import { RedditcloneMemberCommunitiesBansController } from "./controllers/redditClone/member/communities/bans/RedditcloneMemberCommunitiesBansController";
-import { RedditcloneMemberCommunitiesIconsController } from "./controllers/redditClone/member/communities/icons/RedditcloneMemberCommunitiesIconsController";
+import { RedditcloneMemberCommunitiesIconController } from "./controllers/redditClone/member/communities/icon/RedditcloneMemberCommunitiesIconController";
+import { RedditcloneMemberCommunitiesModerationController } from "./controllers/redditClone/member/communities/moderation/RedditcloneMemberCommunitiesModerationController";
 import { RedditcloneMemberCommunitiesModeratorsController } from "./controllers/redditClone/member/communities/moderators/RedditcloneMemberCommunitiesModeratorsController";
-import { RedditcloneMemberCommunitiesPostsController } from "./controllers/redditClone/member/communities/posts/RedditcloneMemberCommunitiesPostsController";
+import { RedditcloneMemberCommunitiesModeratorsSnapshotsController } from "./controllers/redditClone/member/communities/moderators/snapshots/RedditcloneMemberCommunitiesModeratorsSnapshotsController";
 import { RedditcloneMemberCommunitiesReportsController } from "./controllers/redditClone/member/communities/reports/RedditcloneMemberCommunitiesReportsController";
-import { RedditcloneMemberCommunitiesUsersController } from "./controllers/redditClone/member/communities/users/search/RedditcloneMemberCommunitiesUsersController";
-import { RedditcloneMemberFile_associationsController } from "./controllers/redditClone/member/file-associations/RedditcloneMemberFile_associationsController";
+import { RedditcloneMemberCommunitiesSubscribersController } from "./controllers/redditClone/member/communities/subscribers/RedditcloneMemberCommunitiesSubscribersController";
+import { RedditcloneMemberFeedController } from "./controllers/redditClone/member/feed/home/RedditcloneMemberFeedController";
+import { RedditcloneMemberFeedPopularController } from "./controllers/redditClone/member/feed/popular/RedditcloneMemberFeedPopularController";
 import { RedditcloneMemberFilesController } from "./controllers/redditClone/member/files/RedditcloneMemberFilesController";
-import { RedditcloneMemberMembersSessionsController } from "./controllers/redditClone/member/members/sessions/RedditcloneMemberMembersSessionsController";
-import { RedditcloneMemberMembersSessionsAllController } from "./controllers/redditClone/member/members/sessions/all/RedditcloneMemberMembersSessionsAllController";
 import { RedditcloneMemberPostsController } from "./controllers/redditClone/member/posts/RedditcloneMemberPostsController";
-import { RedditcloneMemberPostsCommentsController } from "./controllers/redditClone/member/posts/comments/RedditcloneMemberPostsCommentsController";
-import { RedditcloneMemberPostsHomeController } from "./controllers/redditClone/member/posts/home/RedditcloneMemberPostsHomeController";
-import { RedditcloneMemberPostsPopularController } from "./controllers/redditClone/member/posts/popular/RedditcloneMemberPostsPopularController";
+import { RedditcloneMemberPostsImageController } from "./controllers/redditClone/member/posts/image/RedditcloneMemberPostsImageController";
+import { RedditcloneMemberPostsLinkController } from "./controllers/redditClone/member/posts/link/RedditcloneMemberPostsLinkController";
+import { RedditcloneMemberPostsText_contentController } from "./controllers/redditClone/member/posts/text-content/RedditcloneMemberPostsText_contentController";
 import { RedditcloneMemberPostsVotesController } from "./controllers/redditClone/member/posts/votes/RedditcloneMemberPostsVotesController";
 import { RedditcloneMemberProfileController } from "./controllers/redditClone/member/profile/RedditcloneMemberProfileController";
-import { RedditcloneMemberReportsController } from "./controllers/redditClone/member/reports/RedditcloneMemberReportsController";
-import { RedditcloneMemberReportsHistoryController } from "./controllers/redditClone/member/reports/history/RedditcloneMemberReportsHistoryController";
+import { RedditcloneMemberRedditcloneCommentsRepliesController } from "./controllers/redditClone/member/redditClone/comments/replies/RedditcloneMemberRedditcloneCommentsRepliesController";
+import { RedditcloneMemberRedditcloneCommentsVotesController } from "./controllers/redditClone/member/redditClone/comments/votes/RedditcloneMemberRedditcloneCommentsVotesController";
+import { RedditcloneMemberRedditclonePostsCommentsController } from "./controllers/redditClone/member/redditClone/posts/comments/RedditcloneMemberRedditclonePostsCommentsController";
+import { RedditcloneMemberRedditclonePostsVotesController } from "./controllers/redditClone/member/redditClone/posts/votes/RedditcloneMemberRedditclonePostsVotesController";
 import { RedditcloneMemberSessionsController } from "./controllers/redditClone/member/sessions/RedditcloneMemberSessionsController";
 import { RedditcloneMemberSubscriptionsController } from "./controllers/redditClone/member/subscriptions/RedditcloneMemberSubscriptionsController";
-import { RedditcloneMemberUsersCommentsController } from "./controllers/redditClone/member/users/comments/RedditcloneMemberUsersCommentsController";
-import { RedditcloneMemberUsersPostsController } from "./controllers/redditClone/member/users/posts/RedditcloneMemberUsersPostsController";
 import { RedditcloneMembersController } from "./controllers/redditClone/members/RedditcloneMembersController";
 import { RedditclonePostsController } from "./controllers/redditClone/posts/RedditclonePostsController";
+import { RedditclonePostsImageController } from "./controllers/redditClone/posts/image/RedditclonePostsImageController";
+import { RedditclonePostsLinkController } from "./controllers/redditClone/posts/link/RedditclonePostsLinkController";
+import { RedditclonePostsText_contentController } from "./controllers/redditClone/posts/text-content/RedditclonePostsText_contentController";
 import { RedditclonePostsVotesController } from "./controllers/redditClone/posts/votes/RedditclonePostsVotesController";
-import { RedditcloneUsersController } from "./controllers/redditClone/users/RedditcloneUsersController";
+import { RedditcloneProfilesController } from "./controllers/redditClone/profiles/RedditcloneProfilesController";
+import { RedditcloneRedditcloneCommentsRepliesController } from "./controllers/redditClone/redditClone/comments/replies/RedditcloneRedditcloneCommentsRepliesController";
+import { RedditcloneRedditclonePostsCommentsController } from "./controllers/redditClone/redditClone/posts/comments/RedditcloneRedditclonePostsCommentsController";
+import { RedditcloneRedditclonePostsVotesController } from "./controllers/redditClone/redditClone/posts/votes/RedditcloneRedditclonePostsVotesController";
+import { RedditcloneUsersKarmaController } from "./controllers/redditClone/users/karma/RedditcloneUsersKarmaController";
+import { RedditcloneUsersProfileController } from "./controllers/redditClone/users/profile/RedditcloneUsersProfileController";
 
 @Module({
   controllers: [
@@ -51,44 +55,48 @@ import { RedditcloneUsersController } from "./controllers/redditClone/users/Redd
     RedditcloneMembersController,
     RedditcloneMemberProfileController,
     RedditcloneMemberSessionsController,
-    RedditcloneUsersController,
+    RedditcloneGuestGuest_sessionsController,
+    RedditcloneUsersProfileController,
+    RedditcloneProfilesController,
+    RedditcloneUsersKarmaController,
     RedditcloneCommunitiesController,
     RedditcloneMemberCommunitiesController,
-    RedditcloneCommunitiesIconsController,
-    RedditcloneMemberCommunitiesIconsController,
-    RedditcloneCommunitiesModeratorsController,
-    RedditcloneMemberCommunitiesModeratorsController,
-    RedditcloneMemberCommunitiesBansController,
-    RedditcloneMemberCommunitiesReportsController,
+    RedditcloneCommunitiesIconController,
+    RedditcloneMemberCommunitiesIconController,
     RedditcloneMemberSubscriptionsController,
+    RedditcloneMemberCommunitiesSubscribersController,
     RedditclonePostsController,
     RedditcloneMemberPostsController,
+    RedditclonePostsText_contentController,
+    RedditcloneMemberPostsText_contentController,
+    RedditclonePostsLinkController,
+    RedditcloneMemberPostsLinkController,
+    RedditclonePostsImageController,
+    RedditcloneMemberPostsImageController,
     RedditclonePostsVotesController,
     RedditcloneMemberPostsVotesController,
-    RedditcloneMemberPostsCommentsController,
-    RedditcloneGuestPostsCommentsController,
-    RedditcloneCommentsController,
-    RedditcloneMemberCommentsController,
-    RedditcloneMemberReportsController,
+    RedditcloneRedditclonePostsCommentsController,
+    RedditcloneMemberRedditclonePostsCommentsController,
+    RedditcloneRedditcloneCommentsRepliesController,
+    RedditcloneMemberRedditcloneCommentsRepliesController,
+    RedditcloneRedditclonePostsVotesController,
+    RedditcloneMemberRedditclonePostsVotesController,
+    RedditcloneMemberCommunitiesModeratorsController,
+    RedditcloneMemberCommunitiesModeratorsSnapshotsController,
+    RedditcloneMemberCommunitiesBansController,
+    RedditcloneMemberCommunitiesReportsController,
     RedditcloneFilesController,
     RedditcloneMemberFilesController,
-    RedditcloneFilesScansController,
     RedditcloneFilesThumbnailsController,
-    RedditcloneFile_associationsController,
-    RedditcloneMemberFile_associationsController,
-    RedditcloneMemberMembersSessionsController,
-    RedditcloneMemberMembersSessionsAllController,
-    RedditcloneGuestUsersPostsController,
-    RedditcloneMemberUsersPostsController,
-    RedditcloneGuestUsersCommentsController,
-    RedditcloneMemberUsersCommentsController,
-    RedditcloneMemberCommunitiesUsersController,
-    RedditcloneGuestPostsPopularController,
-    RedditcloneMemberPostsPopularController,
-    RedditcloneMemberPostsHomeController,
-    RedditcloneGuestCommunitiesPostsController,
-    RedditcloneMemberCommunitiesPostsController,
-    RedditcloneMemberReportsHistoryController,
+    RedditcloneFilesScansController,
+    RedditcloneCommunitiesDiscoverController,
+    RedditcloneMemberFeedController,
+    RedditcloneGuestFeedPopularController,
+    RedditcloneMemberFeedPopularController,
+    RedditcloneGuestCommunitiesController,
+    RedditcloneMemberRedditcloneCommentsVotesController,
+    RedditcloneMemberCommunitiesModerationController,
+    RedditcloneMemberAvatarsController,
   ],
 })
 export class MyModule {}

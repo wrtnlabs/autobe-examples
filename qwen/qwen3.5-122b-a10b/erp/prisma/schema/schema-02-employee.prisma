@@ -1,0 +1,403 @@
+/// Employee records linking users to organizations with role, department,
+/// position, employment type, and status.
+///
+/// This table represents the employment relationship between a user and an
+/// organization. Each employee record connects a user account to their role
+/// within a specific organization, capturing their position, employment
+/// type, and current status.
+///
+/// **Relationships**
+///
+/// - {@link hrm_organizations}: Each employee belongs to exactly one
+/// organization. Organization deletion cascades to all employee records.
+/// - {@link hrm_members}: Each employee links to exactly one user account. A
+/// user can have multiple employee records across different organizations.
+/// - {@link hrm_roles}: Each employee has exactly one role within their
+/// organization. Role changes are tracked through role_id updates.
+/// - {@link hrm_departments}: Employees may optionally belong to a
+/// department within their organization. Department is nullable to support
+/// employees without department assignment.
+///
+/// **Business Rules**
+///
+/// - One employee record per user per organization (enforced by unique
+/// constraint on organization_id and user_id)
+/// - Status field controls employee lifecycle: active employees can log time
+/// and access organization resources; deactivated employees lose access but
+/// records are preserved
+/// - Employment type categorizes the nature of employment: full-time,
+/// part-time, contractor, or intern
+/// - Soft delete support via deleted_at field for employee record archival
+///
+/// @namespace employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_employees {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying each employee record.
+  id String @id
+  
+  /// References the organization this employee belongs to.
+  ///
+  /// Each employee is associated with exactly one organization. All employee
+  /// data is scoped to their organization for multi-tenancy isolation.
+  ///
+  /// **Business Rules**
+  ///
+  /// - Required field - every employee must belong to an organization
+  /// - Organization deletion cascades to all employee records
+  /// - Employee can only access data within their organization context
+  organization_id String
+  
+  /// References the user account associated with this employee record.
+  ///
+  /// Links the employee record to the global user account ({@link
+  /// hrm_members}). A single user can have multiple employee records across
+  /// different organizations.
+  ///
+  /// **Business Rules**
+  ///
+  /// - Required field - every employee must be linked to a user account
+  /// - One employee record per user per organization (unique constraint)
+  /// - User account deletion deactivates all associated employee records
+  user_id String
+  
+  /// References the role assigned to this employee within their organization.
+  ///
+  /// Defines the employee's permissions and access level within the
+  /// organization. Each employee has exactly one role at a time.
+  ///
+  /// **Business Rules**
+  ///
+  /// - Required field - every employee must have a role
+  /// - Role changes update this field directly
+  /// - Custom roles cannot be deleted if employees are assigned to them
+  /// - Built-in roles (Owner, Manager, Employee) always available
+  role_id String
+  
+  /// References the department this employee belongs to within their
+  /// organization.
+  ///
+  /// Optional department assignment for organizational hierarchy. Employees
+  /// can exist without department assignment.
+  ///
+  /// **Business Rules**
+  ///
+  /// - Nullable field - employees may not belong to any department
+  /// - Department deletion sets this field to null (does not delete employee)
+  /// - Supports one-level department nesting through department's
+  /// parent_department_id
+  department_id String?
+  
+  /// Job title or position name for this employee.
+  ///
+  /// Captures the employee's specific role or title within the organization
+  /// (e.g., "Senior Developer", "Marketing Manager", "HR Specialist").
+  position String
+  
+  /// Type of employment arrangement for this employee.
+  ///
+  /// **Allowed Values**
+  ///
+  /// - `full-time`: Standard full-time employment
+  /// - `part-time`: Part-time employment with reduced hours
+  /// - `contractor`: Contract-based worker
+  /// - `intern`: Internship position
+  employment_type String
+  
+  /// Current employment status of this employee.
+  ///
+  /// **Allowed Values**
+  ///
+  /// - `active`: Employee is currently active and can access organization
+  /// resources
+  /// - `deactivated`: Employee has been deactivated (loses access but record
+  /// preserved)
+  ///
+  /// **Business Rules**
+  ///
+  /// - Status changes affect employee access to organization features
+  /// - Deactivated employees cannot log time or access protected resources
+  /// - Status can be reactivated for former employees returning to the
+  /// organization
+  status String
+  
+  /// Timestamp when this employee record was created.
+  ///
+  /// Recorded automatically upon employee creation for audit trail purposes.
+  created_at DateTime
+  
+  /// Timestamp when this employee record was last updated.
+  ///
+  /// Updated automatically on any modification to the employee record.
+  updated_at DateTime
+  
+  /// Timestamp when this employee record was soft-deleted.
+  ///
+  /// Null while employee is active or deactivated. Set to current timestamp
+  /// when employee is deleted, enabling soft delete functionality for record
+  /// preservation.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user hrm_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  role hrm_roles @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  department hrm_departments? @relation(fields: [department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots hrm_employee_snapshots[]
+  contracts hrm_contracts[]
+  projectMembers hrm_project_members[]
+  assignedTasks hrm_tasks[]
+  timelogs hrm_timelogs[]
+  timesheets hrm_timesheets[]
+  activeTimers hrm_active_timers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([user_id])
+  @@index([role_id])
+  @@index([department_id])
+  @@unique([organization_id, user_id])
+  @@index([status])
+  @@index([organization_id, status])
+}
+
+/// Pending invitations for users to join organizations with email, role, and
+/// invitation status tracking
+///
+/// Invitations are created by organization members to invite new employees
+/// to join their organization. Each invitation specifies the target
+/// organization, the role to assign upon acceptance, and an expiration date.
+/// When an invited user signs up with the matching email address, they can
+/// accept the invitation and be automatically added as an employee with the
+/// specified role.
+///
+/// Invitation Lifecycle:
+/// - Pending: Invitation sent, awaiting user acceptance via email token
+/// - Accepted: User has signed up and accepted the invitation, employee
+/// record created
+/// - Expired: Invitation past expiration date, cannot be accepted
+/// - Cancelled: Manually cancelled by the inviter before acceptance
+///
+/// The invited_by field tracks which member sent the invitation for audit
+/// purposes. The member_id field is populated when the invited user accepts
+/// the invitation, creating the link between the invitation and the actual
+/// member account.
+///
+/// @namespace employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_employee_invitations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the invitation record.
+  id String @id
+  
+  /// Organization the invited user will join.
+  ///
+  /// Each invitation is scoped to a specific organization and cannot be
+  /// transferred between organizations. The organization must exist and be
+  /// active when the invitation is created.
+  organization_id String
+  
+  /// Role assigned to the invited user upon acceptance.
+  ///
+  /// The role must exist within the target organization. Both built-in roles
+  /// (Owner, Manager, Employee) and custom roles defined by the organization
+  /// are supported. The role determines the permissions the new employee will
+  /// have.
+  role_id String
+  
+  /// Member who created and sent this invitation.
+  ///
+  /// Tracks which organization member initiated the invitation for audit and
+  /// accountability purposes. This references the hrm_members table,
+  /// representing the authenticated user who sent the invitation.
+  invited_by_id String
+  
+  /// Member who accepted this invitation.
+  ///
+  /// Remains null while the invitation is pending. Populated with the member
+  /// ID when the invited user signs up and accepts the invitation via the
+  /// unique token. This creates the link between the invitation and the actual
+  /// member account.
+  member_id String?
+  
+  /// Email address of the invited user.
+  ///
+  /// Used to match the invitation when the user signs up. The invited user
+  /// must register with this exact email address to accept the invitation.
+  /// Combined with organization_id and status, ensures only one pending
+  /// invitation per email per organization.
+  email String
+  
+  /// Current status of the invitation.
+  ///
+  /// Allowed values:
+  /// - pending: Invitation sent, awaiting acceptance via email token
+  /// - accepted: User has signed up and accepted the invitation, employee
+  /// record created
+  /// - expired: Invitation past expiration date, cannot be accepted
+  /// - cancelled: Manually cancelled by the inviter before acceptance
+  ///
+  /// Status transitions: pending → accepted, pending → expired, pending →
+  /// cancelled. Once accepted, expired, or cancelled, the invitation cannot be
+  /// reactivated.
+  status String
+  
+  /// Unique token for invitation acceptance.
+  ///
+  /// Generated when the invitation is created and sent to the invited user's
+  /// email address. Used to verify and accept the invitation securely. Must be
+  /// unique across all invitations to prevent token collision attacks.
+  token String
+  
+  /// Expiration date and time for the invitation.
+  ///
+  /// Invitations become invalid after this timestamp and cannot be accepted.
+  /// Expired invitations remain in the database for audit purposes but are
+  /// filtered out from active invitation lists. Typical expiration is 7-30
+  /// days from creation.
+  expires_at DateTime
+  
+  /// Timestamp when the invitation was created.
+  created_at DateTime
+  
+  /// Timestamp when the invitation was last updated, such as when status
+  /// changed or member_id was populated.
+  updated_at DateTime
+  
+  /// Timestamp when the invitation was soft-deleted.
+  ///
+  /// Soft deletes allow audit trail preservation while hiding invitations from
+  /// active queries. Typically used for compliance or data retention policies.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  role hrm_roles @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  inviter hrm_members @relation("hrm_employee_invitations_of_invited_by_id", fields: [invited_by_id], references: [id], onDelete: Cascade)
+  member hrm_members? @relation("hrm_employee_invitations_of_member_id", fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([role_id])
+  @@index([invited_by_id])
+  @@unique([member_id])
+  @@unique([token])
+  @@unique([organization_id, email, status])
+  @@index([email, status])
+  @@index([organization_id, status])
+  @@index([expires_at])
+  @@index([member_id])
+}
+
+/// Point-in-time snapshots of employee records for audit trail and change
+/// tracking
+///
+/// This table captures historical states of employee records at specific
+/// moments in time. Each snapshot represents the complete state of an
+/// employee record when it was created, enabling audit trails and change
+/// tracking across the organization.
+///
+/// Snapshots are immutable once created and serve as a read-only historical
+/// record. They reference the original employee record through a foreign key
+/// relationship, allowing reconstruction of employee states at any point in
+/// time.
+///
+/// @namespace employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_employee_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the snapshot record
+  id String @id
+  
+  /// Reference to the employee record being snapshot
+  ///
+  /// This foreign key links the snapshot to its source employee record in
+  /// {@link HrmEmployees}. The relationship is one-to-many, as an employee can
+  /// have multiple snapshots over time.
+  hrm_employee_id String
+  
+  /// Organization identifier denormalized from the employee record
+  ///
+  /// This field captures the organization context at the time of the snapshot,
+  /// enabling historical queries even if the employee's organization changes.
+  organization_id String
+  
+  /// User identifier denormalized from the employee record
+  ///
+  /// This field captures the user association at the time of the snapshot,
+  /// enabling historical queries even if the employee's user association
+  /// changes.
+  user_id String?
+  
+  /// Role identifier denormalized from the employee record
+  ///
+  /// This field captures the role assignment at the time of the snapshot,
+  /// enabling historical queries even if the employee's role changes.
+  role_id String?
+  
+  /// Department identifier denormalized from the employee record
+  ///
+  /// This field captures the department assignment at the time of the
+  /// snapshot, enabling historical queries even if the employee's department
+  /// changes.
+  department_id String?
+  
+  /// Employee position/title denormalized from the employee record
+  ///
+  /// Captures the position at the time of snapshot for historical tracking.
+  position String?
+  
+  /// Employment type denormalized from the employee record
+  ///
+  /// Values: full-time, part-time, contractor, intern. Captures the employment
+  /// type at the time of snapshot.
+  employment_type String
+  
+  /// Employee status denormalized from the employee record
+  ///
+  /// Values: active, deactivated. Captures the status at the time of snapshot.
+  status String
+  
+  /// Timestamp when this snapshot was created
+  ///
+  /// Records the point-in-time when this historical record was captured.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  hrmEmployee hrm_employees @relation(fields: [hrm_employee_id], references: [id], onDelete: Cascade)
+  organization hrm_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user hrm_members? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  role hrm_roles? @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  department hrm_departments? @relation(fields: [department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([user_id])
+  @@index([role_id])
+  @@index([department_id])
+  @@index([hrm_employee_id, created_at])
+  @@index([organization_id, created_at])
+}

@@ -15,36 +15,28 @@ import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refr
 export async function test_api_admin_login_wrong_password(
   connection: api.IConnection,
 ): Promise<void> {
-  // Generate valid credentials for admin registration
-  const validEmail = typia.random<string & tags.Format<"email">>();
-  const correctPassword = RandomGenerator.alphaNumeric(16) as string &
-    tags.Format<"password">;
-  // Create a new administrator account using admin join
+  // Create admin account with known credentials using utility function
   const adminConnection: api.IConnection = { host: connection.host };
-  await authorize_admin_join(adminConnection, {
-    body: {
-      email: validEmail,
-      password: correctPassword,
-      name: RandomGenerator.name(),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-    },
-  });
-  // Attempt to login with correct email but WRONG password
-  // Should fail and return an error
-  const wrongPassword = RandomGenerator.alphaNumeric(16) as string &
-    tags.Format<"password">;
-  await TestValidator.error(
-    "login with wrong password should fail",
+  const registered = await authorize_admin_join(adminConnection, {});
+  // Attempt login with correct email but wrong password
+  const wrongPasswordConnection: api.IConnection = { host: connection.host };
+  const wrongPassword = "WrongPassword123";
+  // Verify HTTP 401 error with generic message
+  await TestValidator.httpError(
+    "admin login fails with wrong password",
+    401,
     async () => {
-      await api.functional.ecommerceMall.auth.admin.login(connection, {
-        body: {
-          email: validEmail,
-          password: wrongPassword,
-          href: typia.random<string & tags.Format<"uri">>(),
-          referrer: typia.random<string & tags.Format<"uri">>(),
+      await api.functional.ecommerceMall.auth.admin.login(
+        wrongPasswordConnection,
+        {
+          body: {
+            email: registered.email,
+            password: wrongPassword,
+            href: "https://example.com/login",
+            referrer: "https://example.com/",
+          } satisfies IEcommerceMallAdmin.ILogin,
         },
-      });
+      );
     },
   );
 }

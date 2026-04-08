@@ -2,14 +2,17 @@ import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IE
 import { IEcommerceMallAdminPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminPromotionRequest";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+import { IEcommerceMallSellerProfileSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfileSnapshot";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallAdminAtSummaryTransformer } from "./EcommerceMallAdminAtSummaryTransformer";
-import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
+import { EcommerceMallSellerTransformer } from "./EcommerceMallSellerTransformer";
 
 export namespace EcommerceMallAdminPromotionRequestTransformer {
   export type Payload =
@@ -29,21 +32,21 @@ export namespace EcommerceMallAdminPromotionRequestTransformer {
         reviewer: EcommerceMallAdminAtSummaryTransformer.select(),
         customerSubtype: {
           select: {
-            customer: EcommerceMallCustomerAtSummaryTransformer.select(),
-          },
-        } satisfies Prisma.ecommerce_mall_admin_promotion_request_customersFindManyArgs,
-        sellerRequest: {
-          select: {
-            seller: {
+            customer: {
               select: {
                 id: true,
                 email: true,
-                approval_status: true,
+                password_hash: true,
                 created_at: true,
                 updated_at: true,
                 deleted_at: true,
               },
-            } satisfies Prisma.ecommerce_mall_sellersFindManyArgs,
+            } satisfies Prisma.ecommerce_mall_customersFindManyArgs,
+          },
+        } satisfies Prisma.ecommerce_mall_admin_promotion_request_customersFindManyArgs,
+        sellerRequest: {
+          select: {
+            seller: EcommerceMallSellerTransformer.select(),
           },
         } satisfies Prisma.ecommerce_mall_admin_promotion_request_sellersFindManyArgs,
       },
@@ -52,28 +55,29 @@ export namespace EcommerceMallAdminPromotionRequestTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallAdminPromotionRequest> {
-    // Handle polymorphic requester
-    let requester:
-      | IEcommerceMallCustomer.ISummary
-      | IEcommerceMallSeller.ISummary;
-    if (input.customerSubtype) {
-      requester = await EcommerceMallCustomerAtSummaryTransformer.transform(
-        input.customerSubtype.customer,
-      );
-    } else if (input.sellerRequest?.seller) {
-      const seller = input.sellerRequest.seller;
+    let requester: IEcommerceMallCustomer | IEcommerceMallSeller;
+    if (input.customerSubtype?.customer) {
+      const customer = input.customerSubtype.customer;
       requester = {
-        id: seller.id,
-        email: seller.email,
-        shopName: "", // No profile data available in this context
-        approvalStatus: seller.approval_status,
-        createdAt: seller.created_at.toISOString(),
-        updatedAt: seller.updated_at.toISOString(),
-        deletedAt: seller.deleted_at?.toISOString() ?? null,
-      } satisfies IEcommerceMallSeller.ISummary;
+        id: customer.id,
+        recipientName: "",
+        phoneNumber: "",
+        streetAddress: "",
+        city: "",
+        state: "",
+        postalCode: "",
+        country: "",
+        isDefault: false,
+        createdAt: customer.created_at.toISOString(),
+        updatedAt: customer.updated_at.toISOString(),
+      };
+    } else if (input.sellerRequest?.seller) {
+      requester = await EcommerceMallSellerTransformer.transform(
+        input.sellerRequest.seller,
+      );
     } else {
       throw new Error(
-        "Invalid promotion request: neither customer nor seller requester found",
+        "Neither customer nor seller found for promotion request",
       );
     }
     return {
@@ -81,13 +85,13 @@ export namespace EcommerceMallAdminPromotionRequestTransformer {
       status: input.status,
       reason: input.reason,
       rejectionReason: input.rejection_reason ?? null,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
       reviewer: input.reviewer
         ? await EcommerceMallAdminAtSummaryTransformer.transform(input.reviewer)
         : null,
       requester,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

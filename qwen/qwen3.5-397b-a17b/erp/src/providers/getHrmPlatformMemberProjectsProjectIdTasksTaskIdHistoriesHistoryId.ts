@@ -1,5 +1,9 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
+import { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
 import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
+import { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
+import { IHrmPlatformTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTask";
 import { IHrmPlatformTaskHistory } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTaskHistory";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -20,29 +24,16 @@ export async function getHrmPlatformMemberProjectsProjectIdTasksTaskIdHistoriesH
   taskId: string & tags.Format<"uuid">;
   historyId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformTaskHistory> {
-  const history =
-    await MyGlobal.prisma.hrm_platform_task_histories.findUniqueOrThrow({
-      where: { id: props.historyId },
+  const record =
+    await MyGlobal.prisma.hrm_platform_task_histories.findFirstOrThrow({
       ...HrmPlatformTaskHistoryTransformer.select(),
+      where: {
+        id: props.historyId,
+        hrm_platform_task_id: props.taskId,
+        task: {
+          hrm_platform_project_id: props.projectId,
+        },
+      },
     });
-  if (history.task.id !== props.taskId) {
-    throw new HttpException("Not Found", 404);
-  }
-  if (history.task.hrm_platform_project_id !== props.projectId) {
-    throw new HttpException("Not Found", 404);
-  }
-  const project = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
-    {
-      where: { id: props.projectId },
-      select: { organization_id: true },
-    },
-  );
-  await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
-    where: {
-      user_id: props.member.id,
-      organization_id: project.organization_id,
-      deleted_at: null,
-    },
-  });
-  return await HrmPlatformTaskHistoryTransformer.transform(history);
+  return await HrmPlatformTaskHistoryTransformer.transform(record);
 }

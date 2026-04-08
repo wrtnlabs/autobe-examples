@@ -1,0 +1,238 @@
+/// Seller shop profiles containing shop name, description, and logo image
+/// URL for approved sellers.
+///
+/// Each approved seller has exactly one profile that stores their shop
+/// information. The profile is created when a seller's approval request is
+/// accepted and can be edited by the seller. All edits create snapshots in
+/// {@link shopping_mall_seller_profile_snapshots} for audit trail.
+///
+/// The shop_name and shop_description are displayed to customers viewing the
+/// seller's storefront. The logo_image_url references the seller's brand
+/// image. This table has a 1:1 relationship with {@link
+/// shopping_mall_sellers} through a unique foreign key constraint.
+///
+/// @namespace seller
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the seller account that owns this profile.
+  ///
+  /// Each seller has exactly one profile, enforced by the unique constraint on
+  /// this foreign key. The profile is created when the seller's approval
+  /// request is approved and is deleted when the seller account is deleted.
+  seller_id String
+  
+  /// The seller's shop or store name displayed to customers.
+  ///
+  /// This is the public-facing name of the seller's business on the platform.
+  /// Sellers can edit this field, and each edit creates a snapshot for audit
+  /// purposes.
+  shop_name String
+  
+  /// A description of the seller's shop and business.
+  ///
+  /// Provides customers with information about the seller's business,
+  /// products, and values. Sellers can edit this field to update their
+  /// storefront presentation.
+  shop_description String
+  
+  /// URL to the seller's shop logo image.
+  ///
+  /// The logo is displayed on the seller's storefront and in order
+  /// confirmations. This field is nullable to allow sellers to create profiles
+  /// without immediately uploading a logo.
+  logo_image_url String?
+  
+  /// Timestamp when the seller profile was created.
+  ///
+  /// Automatically set when the seller's approval request is approved and the
+  /// profile is initialized.
+  created_at DateTime
+  
+  /// Timestamp when the seller profile was last updated.
+  ///
+  /// Updated on every edit to shop_name, shop_description, or logo_image_url.
+  /// Used to track when snapshots should be created.
+  updated_at DateTime
+  
+  /// Timestamp when the seller profile was soft deleted.
+  ///
+  /// Set when the seller account is deleted. The profile is soft deleted to
+  /// preserve historical data in order items that reference seller profile
+  /// snapshots.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_seller_profile_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([seller_id])
+}
+
+/// Seller registration approval requests tracking workflow status,
+/// administrator review decisions, and rejection reasons.
+///
+/// This table manages the approval workflow for seller account
+/// registrations. When a user registers as a seller, an approval request is
+/// created with pending status. Administrators review requests and either
+/// approve (enabling selling capabilities) or reject (with a reason that the
+/// seller can view).
+///
+/// Each seller can have multiple historical approval requests if they
+/// re-apply after rejection. Only one request should be pending at a time,
+/// enforced at the application layer. The {@link shopping_mall_sellers}
+/// table references the most recent approved request to track approval
+/// status.
+///
+/// @namespace seller
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_approval_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the seller who submitted this approval request.
+  ///
+  /// Links to {@link shopping_mall_sellers} to identify the applicant. A
+  /// seller can have multiple historical requests if they re-apply after
+  /// rejection, but should only have one pending request at a time.
+  seller_id String
+  
+  /// References the administrator who reviewed and made a decision on this
+  /// request.
+  ///
+  /// Links to {@link shopping_mall_admins}. This field is NULL when the
+  /// request is still pending review, and populated with the reviewing admin's
+  /// ID when the request is approved or rejected.
+  reviewed_by_admin_id String?
+  
+  /// Current workflow status of the approval request.
+  ///
+  /// Allowed values: 'pending' (awaiting admin review), 'approved' (seller can
+  /// sell), 'rejected' (seller cannot sell, can re-apply with new request).
+  /// Status transitions: pending → approved or pending → rejected.
+  status String
+  
+  /// Reason provided by the administrator when rejecting this request.
+  ///
+  /// This field is NULL for pending and approved requests. Only populated when
+  /// status is 'rejected', allowing the seller to understand why their
+  /// application was denied and what they need to address in a re-application.
+  rejection_reason String?
+  
+  /// Timestamp when the approval request was created.
+  created_at DateTime
+  
+  /// Timestamp when the approval request was last updated (e.g., when status
+  /// changed).
+  updated_at DateTime
+  
+  /// Timestamp when the approval request was soft deleted (NULL if active).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  reviewedByAdmin shopping_mall_admins? @relation(fields: [reviewed_by_admin_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([seller_id, status])
+  @@index([status])
+  // spellchecker: ignore-next-line
+  @@index([reviewed_by_admin_id, status], map: "shopping_mall_seller_approval_requests_reviewed_by_adm_839f7f98")
+}
+
+/// Immutable historical snapshots of seller profile changes preserving shop
+/// name, description, and logo at each modification point.
+///
+/// Snapshots are created automatically whenever a seller edits their profile
+/// (shop name, description, or logo). Each snapshot captures the complete
+/// state of the profile at that moment, enabling order items to reference
+/// the exact seller profile that existed at the time of purchase.
+///
+/// This table is append-only and immutable. Snapshots cannot be deleted or
+/// modified, ensuring a complete audit trail for dispute resolution.
+/// Referenced by {@link shopping_mall_order_item_snapshots} to preserve
+/// seller profile state at purchase time.
+///
+/// @namespace seller
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_seller_profile_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the seller profile that this snapshot belongs to.
+  ///
+  /// Each snapshot is linked to exactly one seller profile, establishing the
+  /// ownership relationship. Multiple snapshots can exist for a single
+  /// profile, forming a chronological history of all profile changes.
+  shopping_mall_seller_profile_id String
+  
+  /// The shop name at the time this snapshot was created.
+  ///
+  /// Denormalized from the parent seller profile to preserve the exact value
+  /// that was visible to customers at this point in time. Used by order item
+  /// snapshots to display the seller's shop name as it appeared when the
+  /// purchase was made.
+  shop_name String
+  
+  /// The shop description at the time this snapshot was created.
+  ///
+  /// Denormalized from the parent seller profile to preserve the exact
+  /// description that was visible to customers at this point in time. Captures
+  /// the seller's business description, policies, or other information
+  /// displayed on their shop page.
+  shop_description String
+  
+  /// The logo image URL at the time this snapshot was created.
+  ///
+  /// Denormalized from the parent seller profile to preserve the exact logo
+  /// that was visible to customers at this point in time. May be null if the
+  /// seller had not uploaded a logo when this snapshot was created.
+  logo_image_url String?
+  
+  /// The timestamp when this snapshot was created.
+  ///
+  /// Records the exact moment when the seller profile was modified and this
+  /// snapshot was generated. Used to establish chronological order of profile
+  /// changes and to determine which snapshot was active at the time of a
+  /// purchase.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  sellerProfile shopping_mall_seller_profiles @relation(fields: [shopping_mall_seller_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_seller_profile_id, created_at], map: "shopping_mall_seller_profile_snapshots_shopping_mall_s_dc4fe99a")
+}

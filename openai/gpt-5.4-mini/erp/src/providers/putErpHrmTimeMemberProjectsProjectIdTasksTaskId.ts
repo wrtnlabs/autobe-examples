@@ -1,11 +1,11 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
+import { IErpHrmTimeEmployeeDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployeeDashboardSummary";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
 import { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
-import { IErpHrmTimeTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTask";
+import { IErpHrmTimeTaskHistoryEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTaskHistoryEntry";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -15,7 +15,9 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { ErpHrmTimeTaskTransformer } from "../transformers/ErpHrmTimeTaskTransformer";
+import { ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer } from "../transformers/ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer";
+import { ErpHrmTimeProjectAtSummaryTransformer } from "../transformers/ErpHrmTimeProjectAtSummaryTransformer";
+import { ErpHrmTimeTaskHistoryEntryAtSummaryTransformer } from "../transformers/ErpHrmTimeTaskHistoryEntryAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -23,81 +25,149 @@ export async function putErpHrmTimeMemberProjectsProjectIdTasksTaskId(props: {
   member: MemberPayload;
   projectId: string & tags.Format<"uuid">;
   taskId: string & tags.Format<"uuid">;
-  body: IErpHrmTimeTask.IUpdate;
-}): Promise<IErpHrmTimeTask> {
-  const projectAccess =
-    await MyGlobal.prisma.erp_hrm_time_project_memberships.findFirst({
-      where: {
-        erp_hrm_time_project_id: props.projectId,
-        erp_hrm_time_employee_id: props.member.id,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        project_role: true,
-        deleted_at: true,
-      },
-    });
-  if (projectAccess === null) throw new HttpException("Forbidden", 403);
-  const task = await MyGlobal.prisma.erp_hrm_time_tasks.findUniqueOrThrow({
-    where: { id: props.taskId },
+  body: IErpHrmTimeTaskHistoryEntry.IUpdate;
+}): Promise<IErpHrmTimeTaskHistoryEntry> {
+  const current = await MyGlobal.prisma.erp_hrm_time_tasks.findFirstOrThrow({
+    where: {
+      id: props.taskId,
+      erp_hrm_time_project_id: props.projectId,
+      deleted_at: null,
+    },
     select: {
       id: true,
       erp_hrm_time_project_id: true,
       erp_hrm_time_employee_id: true,
       parent_task_id: true,
+      title: true,
+      description: true,
       status: true,
+      priority: true,
+      estimated_hours: true,
+      due_date: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+      project: ErpHrmTimeProjectAtSummaryTransformer.select(),
+      employee: ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer.select(),
+      parentTask: ErpHrmTimeTaskHistoryEntryAtSummaryTransformer.select(),
+      subTasks: { select: {} },
     },
   });
-  if (task.erp_hrm_time_project_id !== props.projectId)
-    throw new HttpException("Not Found", 404);
-  const canManageProject =
-    projectAccess.project_role === "project-lead" ||
-    projectAccess.project_role === "manager" ||
-    projectAccess.project_role === "owner";
-  if (!canManageProject) throw new HttpException("Forbidden", 403);
-  if (props.body.employeeId !== undefined && props.body.employeeId !== null) {
-    const assignee = await MyGlobal.prisma.erp_hrm_time_employees.findFirst({
-      where: {
-        id: props.body.employeeId,
-        erp_hrm_time_member_id: props.member.id,
-        deleted_at: null,
-      },
-      select: { id: true },
-    });
-    if (assignee === null)
-      throw new HttpException("Invalid task assignee", 400);
+  if (
+    props.body.erp_hrm_time_employee_id !== undefined &&
+    props.body.erp_hrm_time_employee_id !== null
+  ) {
+    const employee =
+      await MyGlobal.prisma.erp_hrm_time_employees.findFirstOrThrow({
+        where: {
+          id: props.body.erp_hrm_time_employee_id,
+        },
+        select: {
+          id: true,
+        },
+      });
+    if (employee.id !== props.body.erp_hrm_time_employee_id) {
+      throw new HttpException("Forbidden", 403);
+    }
   }
   if (
-    props.body.parentTaskId !== undefined &&
-    props.body.parentTaskId !== null
+    props.body.parent_task_id !== undefined &&
+    props.body.parent_task_id !== null
   ) {
-    const parentTask = await MyGlobal.prisma.erp_hrm_time_tasks.findUnique({
-      where: { id: props.body.parentTaskId },
-      select: {
-        id: true,
-        erp_hrm_time_project_id: true,
-        parent_task_id: true,
-      },
-    });
-    if (
-      parentTask === null ||
-      parentTask.erp_hrm_time_project_id !== props.projectId
-    ) {
-      throw new HttpException("Invalid parent task", 400);
+    const parentTask =
+      await MyGlobal.prisma.erp_hrm_time_tasks.findFirstOrThrow({
+        where: {
+          id: props.body.parent_task_id,
+          erp_hrm_time_project_id: props.projectId,
+          deleted_at: null,
+        },
+        select: {
+          id: true,
+          parent_task_id: true,
+        },
+      });
+    if (parentTask.parent_task_id !== null) {
+      throw new HttpException("Bad Request", 400);
     }
-    if (parentTask.parent_task_id !== null)
-      throw new HttpException("Invalid parent task nesting", 400);
-    if (parentTask.id === props.taskId)
-      throw new HttpException("Invalid parent task nesting", 400);
+  }
+  const nextStatus: string =
+    props.body.status === undefined ? current.status : props.body.status;
+  const nextDescription: string | null | undefined =
+    props.body.description === undefined
+      ? current.description
+      : props.body.description;
+  const nextDueDate: string | null | undefined =
+    props.body.due_date === undefined
+      ? current.due_date === null
+        ? null
+        : current.due_date.toISOString()
+      : props.body.due_date;
+  const nextUpdatedAt: string & tags.Format<"date-time"> =
+    new Date().toISOString() as string & tags.Format<"date-time">;
+  const hasChanges: boolean =
+    (props.body.erp_hrm_time_employee_id !== undefined &&
+      props.body.erp_hrm_time_employee_id !==
+        current.erp_hrm_time_employee_id) ||
+    (props.body.parent_task_id !== undefined &&
+      props.body.parent_task_id !== current.parent_task_id) ||
+    (props.body.title !== undefined && props.body.title !== current.title) ||
+    (props.body.description !== undefined &&
+      props.body.description !== current.description) ||
+    (props.body.status !== undefined && props.body.status !== current.status) ||
+    (props.body.priority !== undefined &&
+      props.body.priority !== current.priority) ||
+    (props.body.estimated_hours !== undefined &&
+      props.body.estimated_hours !== current.estimated_hours) ||
+    (props.body.due_date !== undefined &&
+      ((props.body.due_date === null && current.due_date !== null) ||
+        (props.body.due_date !== null && current.due_date === null) ||
+        (props.body.due_date !== null &&
+          current.due_date !== null &&
+          props.body.due_date !== current.due_date.toISOString())));
+  if (hasChanges === false) {
+    return {
+      id: current.id,
+      project: await ErpHrmTimeProjectAtSummaryTransformer.transform(
+        current.project,
+      ),
+      employee:
+        current.employee === null
+          ? null
+          : await ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer.transform(
+              current.employee,
+            ),
+      parentTask:
+        current.parentTask === null
+          ? null
+          : await ErpHrmTimeTaskHistoryEntryAtSummaryTransformer.transform(
+              current.parentTask,
+            ),
+      title: current.title,
+      description: current.description ?? null,
+      status: current.status,
+      priority: current.priority,
+      estimatedHours:
+        current.estimated_hours === null
+          ? null
+          : Number(current.estimated_hours),
+      dueDate: current.due_date?.toISOString() ?? null,
+      created_at: current.created_at.toISOString(),
+      updated_at: current.updated_at.toISOString(),
+      deleted_at: current.deleted_at?.toISOString() ?? null,
+    };
   }
   const updated = await MyGlobal.prisma.$transaction(async (prisma) => {
-    const nextStatus = props.body.status;
-    const nextStatusChanged =
-      nextStatus !== undefined && nextStatus !== task.status;
     await prisma.erp_hrm_time_tasks.update({
-      where: { id: props.taskId },
+      where: {
+        id: props.taskId,
+      },
       data: {
+        ...(props.body.erp_hrm_time_employee_id !== undefined && {
+          erp_hrm_time_employee_id: props.body.erp_hrm_time_employee_id,
+        }),
+        ...(props.body.parent_task_id !== undefined && {
+          parent_task_id: props.body.parent_task_id,
+        }),
         ...(props.body.title !== undefined && { title: props.body.title }),
         ...(props.body.description !== undefined && {
           description: props.body.description,
@@ -106,44 +176,65 @@ export async function putErpHrmTimeMemberProjectsProjectIdTasksTaskId(props: {
         ...(props.body.priority !== undefined && {
           priority: props.body.priority,
         }),
-        ...(props.body.estimatedHours !== undefined && {
-          estimated_hours: props.body.estimatedHours,
+        ...(props.body.estimated_hours !== undefined && {
+          estimated_hours: props.body.estimated_hours,
         }),
-        ...(props.body.dueDate !== undefined && {
+        ...(props.body.due_date !== undefined && {
           due_date:
-            props.body.dueDate === null ? null : new Date(props.body.dueDate),
-        }),
-        ...(props.body.employeeId !== undefined && {
-          employee:
-            props.body.employeeId === null
-              ? { disconnect: true }
-              : { connect: { id: props.body.employeeId } },
-        }),
-        ...(props.body.parentTaskId !== undefined && {
-          parentTask:
-            props.body.parentTaskId === null
-              ? { disconnect: true }
-              : { connect: { id: props.body.parentTaskId } },
+            props.body.due_date === null ? null : new Date(props.body.due_date),
         }),
         updated_at: new Date(),
       },
     });
-    if (nextStatusChanged) {
-      await prisma.erp_hrm_time_task_history_entries.create({
-        data: {
-          id: v4(),
-          erp_hrm_time_task_id: props.taskId,
-          old_status: task.status,
-          new_status: nextStatus,
-          changed_at: new Date(),
-          erp_hrm_time_member_id: props.member.id,
-        },
-      });
-    }
-    return await prisma.erp_hrm_time_tasks.findUniqueOrThrow({
-      where: { id: props.taskId },
-      ...ErpHrmTimeTaskTransformer.select(),
+    const result = await prisma.erp_hrm_time_tasks.findUniqueOrThrow({
+      where: {
+        id: props.taskId,
+      },
+      select: {
+        id: true,
+        project: ErpHrmTimeProjectAtSummaryTransformer.select(),
+        employee:
+          ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer.select(),
+        parentTask: ErpHrmTimeTaskHistoryEntryAtSummaryTransformer.select(),
+        title: true,
+        description: true,
+        status: true,
+        priority: true,
+        estimated_hours: true,
+        due_date: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
     });
+    return result;
   });
-  return await ErpHrmTimeTaskTransformer.transform(updated);
+  return {
+    id: updated.id,
+    project: await ErpHrmTimeProjectAtSummaryTransformer.transform(
+      updated.project,
+    ),
+    employee:
+      updated.employee === null
+        ? null
+        : await ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer.transform(
+            updated.employee,
+          ),
+    parentTask:
+      updated.parentTask === null
+        ? null
+        : await ErpHrmTimeTaskHistoryEntryAtSummaryTransformer.transform(
+            updated.parentTask,
+          ),
+    title: updated.title,
+    description: updated.description ?? null,
+    status: updated.status,
+    priority: updated.priority,
+    estimatedHours:
+      updated.estimated_hours === null ? null : Number(updated.estimated_hours),
+    dueDate: updated.due_date?.toISOString() ?? null,
+    created_at: updated.created_at.toISOString(),
+    updated_at: updated.updated_at.toISOString(),
+    deleted_at: updated.deleted_at?.toISOString() ?? null,
+  };
 }

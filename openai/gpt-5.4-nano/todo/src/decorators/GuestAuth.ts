@@ -14,6 +14,7 @@ export const GuestAuth =
       props.route.security ??= [];
       props.route.security.push({ bearer: [] });
     })(target, propertyKey as string, undefined!);
+
     singleton.get()(target, propertyKey, parameterIndex);
   };
 

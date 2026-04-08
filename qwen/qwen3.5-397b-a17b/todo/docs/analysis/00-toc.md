@@ -1,17 +1,17 @@
 ### Table of Contents
 
-**multiUserTodo** is a backend service with the following actors and domain entities.
+**todoApp** is a backend service with the following actors and domain entities.
 
 **Actors**: guest, member
-**Entities**: User, Todo, EditHistory
+**Entities**: User, Todo, TodoEditHistory
 
 ---
 
 **Scope**
 
-- **User** — owns many Todos
-- **Todo** — owned by User, has many EditHistory entries
-- **EditHistory** — belongs to Todo
+- **User** — owns many Todo
+- **Todo** — owned by User, has many TodoEditHistory
+- **TodoEditHistory** — belongs to Todo
 
 - **guest** (guest)
 - **member** (member)
@@ -47,7 +47,7 @@
 - [Domain Concepts](./02-domain-model.md#domain-concepts)
   - [6] [User Concept](./02-domain-model.md#user-concept) — Describe what User represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
   - [7] [Todo Concept](./02-domain-model.md#todo-concept) — Describe what Todo represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [8] [EditHistory Concept](./02-domain-model.md#edithistory-concept) — Describe what EditHistory represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [8] [TodoEditHistory Concept](./02-domain-model.md#todoedithistory-concept) — Describe what TodoEditHistory represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
 - [Domain Relationships](./02-domain-model.md#domain-relationships)
   - [9] [Conceptual Relationships](./02-domain-model.md#conceptual-relationships) — Describe how concepts relate to each other in business terms.
   - [10] [Lifecycle and Retention](./02-domain-model.md#lifecycle-and-retention) — Describe concept lifecycle states and transitions only. Detailed retention/recovery policies belong in 05-non-functional. Operation details belong in 03-functional-requirements.
@@ -59,11 +59,11 @@
 - [Core Business Operations](./03-functional-requirements.md#core-business-operations)
   - [13] [User Operations](./03-functional-requirements.md#user-operations) — Define business operations for User: what create, read, update, delete, and list operations must accomplish from a business perspective.
   - [14] [Todo Operations](./03-functional-requirements.md#todo-operations) — Define business operations for Todo: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [15] [EditHistory Operations](./03-functional-requirements.md#edithistory-operations) — Define business operations for EditHistory: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [15] [TodoEditHistory Operations](./03-functional-requirements.md#todoedithistory-operations) — Define business operations for TodoEditHistory: what create, read, update, delete, and list operations must accomplish from a business perspective.
 - [Error Scenarios and Edge Cases](./03-functional-requirements.md#error-scenarios-and-edge-cases)
   - [16] [User Error Scenarios](./03-functional-requirements.md#user-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all User operations.
   - [17] [Todo Error Scenarios](./03-functional-requirements.md#todo-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Todo operations.
-  - [18] [EditHistory Error Scenarios](./03-functional-requirements.md#edithistory-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all EditHistory operations.
+  - [18] [TodoEditHistory Error Scenarios](./03-functional-requirements.md#todoedithistory-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all TodoEditHistory operations.
 - [End-to-End User Scenarios](./03-functional-requirements.md#end-to-end-user-scenarios)
   - [19] [Cross-Domain User Scenarios](./03-functional-requirements.md#cross-domain-user-scenarios) — Define end-to-end user scenarios that span multiple concepts, describing complete user journeys from start to finish.
 
@@ -71,7 +71,7 @@
 - [Domain Business Rules](./04-business-rules.md#domain-business-rules)
   - [20] [User Rules](./04-business-rules.md#user-rules) — Define validation rules and domain constraints for User. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
   - [21] [Todo Rules](./04-business-rules.md#todo-rules) — Define validation rules and domain constraints for Todo. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
-  - [22] [EditHistory Rules](./04-business-rules.md#edithistory-rules) — Define validation rules and domain constraints for EditHistory. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
+  - [22] [TodoEditHistory Rules](./04-business-rules.md#todoedithistory-rules) — Define validation rules and domain constraints for TodoEditHistory. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
 - [Data Browsing Expectations](./04-business-rules.md#data-browsing-expectations)
   - [23] [List Browsing Expectations](./04-business-rules.md#list-browsing-expectations) — Define business expectations for how users find, filter, and browse lists.
 - [Error Conditions](./04-business-rules.md#error-conditions)
@@ -101,9 +101,9 @@ Each type of information has one authoritative location. Other files should refe
 
 **Glossary**
 
-- **User** — owns many Todos
-- **Todo** — owned by User, has many EditHistory entries
-- **EditHistory** — belongs to Todo
+- **User** — owns many Todo
+- **Todo** — owned by User, has many TodoEditHistory
+- **TodoEditHistory** — belongs to Todo
 
 ---
 

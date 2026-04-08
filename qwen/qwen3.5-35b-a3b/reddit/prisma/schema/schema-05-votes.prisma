@@ -1,264 +1,145 @@
-/// Main voting entity that tracks member votes on posts or comments. Each
-/// vote record represents a single vote action (upvote or downvote) from a
-/// member on either a post or a comment. The vote_type field indicates the
-/// current vote state ('upvote' or 'downvote').
+/// Tracks user votes on posts (upvote/downvote) with single vote constraint
+/// per user per post.
 ///
-/// Each member can cast exactly one vote per target (post or comment), and
-/// can change or remove their vote at any time. Vote changes automatically
-/// adjust karma scores, which is tracked separately.
+/// ### Entity Relationship
 ///
-/// Key relationships:
-/// - Belongs to a {@link reddit_community_members} who cast the vote
-/// - Targets either a {@link reddit_community_posts} or {@link
-/// reddit_community_comments} via subtype tables
-/// - Triggers karma adjustments tracked in {@link
-/// reddit_community_karma_snapshots}
+/// Each vote links a {@link reddit_platform_members} member to a {@link
+/// reddit_platform_posts} post, recording the vote direction and timestamp.
+/// The composite unique index on (user_id, post_id) ensures members can only
+/// vote once per post, with the ability to change or remove their vote by
+/// deleting and recreating the record.
 ///
-/// Business rules:
-/// - One vote per member per target (enforced by unique constraint on
-/// subtype tables)
-/// - Vote type can be changed (upvote ↔ downvote) or removed (deleted_at)
-/// - Vote score = total upvotes minus total downvotes
-///
-/// @namespace Votes
+/// @namespace votes
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_community_votes {
+model reddit_platform_post_votes {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Voting member's {@link reddit_community_members.id}.
-  member_id String
+  /// Reference to the member account who cast this vote.
+  ///
+  /// Links {@link reddit_platform_post_votes} to {@link
+  /// reddit_platform_members} (Authorization group). The {@link
+  /// reddit_platform_member_id} foreign key enables efficient queries to
+  /// retrieve all votes cast by a specific member across posts.
+  reddit_platform_member_id String
   
-  /// Target post's {@link reddit_community_posts.id}. Null when voting on a
-  /// comment.
-  target_post_id String?
+  /// Reference to the post that received this vote.
+  ///
+  /// Links {@link reddit_platform_post_votes} to {@link reddit_platform_posts}
+  /// (Posts group). The {@link reddit_platform_post_id} foreign key enables
+  /// efficient queries to retrieve all votes received by a specific post for
+  /// calculating aggregate scores.
+  reddit_platform_post_id String
   
-  /// Target comment's {@link reddit_community_comments.id}. Null when voting
-  /// on a post.
-  target_comment_id String?
+  /// Direction of the vote: 'up' for upvote, 'down' for downvote.
+  ///
+  /// Allowed values:
+  /// - 'up': Represents an upvote (positive vote)
+  /// - 'down': Represents a downvote (negative vote)
+  ///
+  /// If null, the vote is considered removed or withdrawn.
+  vote_type String?
   
-  /// Type of vote cast: 'upvote' or 'downvote'. Can be changed or removed by
-  /// the voter.
-  vote_type String
-  
-  /// Timestamp when the vote was initially cast.
+  /// Timestamp when this vote was first cast.
+  ///
+  /// Used for ordering votes chronologically and tracking vote history.
   created_at DateTime
   
-  /// Timestamp when the vote was last modified (e.g., vote type changed or
-  /// removed).
+  /// Timestamp when this vote record was last modified.
+  ///
+  /// Useful for tracking when a member changed their vote (e.g., from upvote
+  /// to downvote or vice versa).
   updated_at DateTime
-  
-  /// Timestamp when the vote was deleted (soft delete). Null means vote is
-  /// active.
-  deleted_at DateTime?
   
   //----
   // BELONGED RELATIONS,
   //   - format: (propertyKey targetModel constraint)
   //----
-  member reddit_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
-  targetPost reddit_community_posts? @relation(fields: [target_post_id], references: [id], onDelete: Cascade)
-  targetComment reddit_community_comments? @relation(fields: [target_comment_id], references: [id], onDelete: Cascade)
-  
-  //----
-  // HAS RELATIONS
-  //   - format: (propertyKey targetModel)
-  //----
-  karmaSnapshots reddit_community_karma_snapshots[]
-  postTarget reddit_community_vote_of_posts?
-  commentVote reddit_community_vote_of_comments?
-  
-  //----
-  // INDEXES
-  //----
-  @@unique([member_id, target_post_id])
-  @@unique([member_id, target_comment_id])
-  @@index([target_post_id, created_at])
-  @@index([target_comment_id, created_at])
-  @@index([created_at])
-  @@index([updated_at])
-}
-
-/// Historical audit trail tracking karma score changes triggered by vote
-/// operations.
-///
-/// This table captures each time a user's karma score changes due to someone
-/// voting on their post or comment. Each record represents a point-in-time
-/// snapshot of the karma delta and resulting score, enabling historical
-/// analysis and audit of karma changes throughout the system.
-///
-/// Key relationships:
-/// - {@link reddit_community_users.id} - The user whose karma changed
-/// (receiver of the karma impact)
-/// - {@link reddit_community_votes.id} - The vote that triggered this karma
-/// change
-///
-/// This snapshot table is append-only for audit purposes, allowing the
-/// system to reconstruct karma history, identify patterns in karma changes,
-/// and provide transparency about how users earned or lost reputation.
-///
-/// @namespace Votes
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_community_karma_snapshots {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// User whose karma score changed due to this vote. {@link
-  /// reddit_community_users.id}
-  reddit_community_user_id String
-  
-  /// The vote that triggered this karma change. {@link
-  /// reddit_community_votes.id}
-  reddit_community_vote_id String
-  
-  /// The change in karma score caused by this vote: +1 for upvote, -1 for
-  /// downvote
-  karma_delta Int
-  
-  /// The user's total karma score after applying this delta
-  karma_after_change Int
-  
-  /// When this karma change was recorded
-  created_at DateTime
-  
-  /// When this record was last updated
-  updated_at DateTime
-  
-  /// Soft deletion timestamp for audit retention
-  deleted_at DateTime?
-  
-  //----
-  // BELONGED RELATIONS,
-  //   - format: (propertyKey targetModel constraint)
-  //----
-  user reddit_community_users @relation(fields: [reddit_community_user_id], references: [id], onDelete: Cascade)
-  vote reddit_community_votes @relation(fields: [reddit_community_vote_id], references: [id], onDelete: Cascade)
+  member reddit_platform_members @relation(fields: [reddit_platform_member_id], references: [id], onDelete: Cascade)
+  post reddit_platform_posts @relation(fields: [reddit_platform_post_id], references: [id], onDelete: Cascade)
   
   //----
   // INDEXES
   //----
   // spellchecker: ignore-next-line
-  @@index([reddit_community_user_id, created_at], map: "reddit_community_karma_snapshots_reddit_community_user_85c941fd")
-  @@index([reddit_community_vote_id])
-  @@index([created_at])
+  @@unique([reddit_platform_member_id, reddit_platform_post_id], map: "reddit_platform_post_votes_reddit_platform_member_id_r_2949aa0d")
+  // spellchecker: ignore-next-line
+  @@index([reddit_platform_post_id, created_at], map: "reddit_platform_post_votes_reddit_platform_post_id_cre_3afe0404")
 }
 
-/// Subtype table for votes targeting posts, implementing the polymorphic
-/// ownership pattern.
+/// Tracks user votes on comments with upvote/downvote support and single
+/// vote constraint per user per comment.
 ///
-/// This table enforces a 1:1 relationship with the main
-/// reddit_community_votes table, ensuring each vote record has exactly one
-/// post target. It contains the foreign key vote_id (unique constraint)
-/// linking back to the vote and post_id referencing the
-/// reddit_community_posts table.
+/// This table enables the Reddit-style voting system for comments, allowing
+/// users to express approval (upvote) or disapproval (downvote) on comment
+/// content. Each user can cast only one vote per comment, which can be
+/// changed or removed at any time. The vote score for each comment is
+/// calculated from the aggregate of all votes stored in this table.
 ///
-/// Business context:
-/// - Used to separate vote targeting logic between posts and comments
-/// - Eliminates nullable FK columns that would be required for polymorphic
-/// references
-/// - Each vote_id appears at most once, guaranteeing one-to-one correspondence
-/// - Enables efficient queries: "What posts has a specific vote been cast on?"
-///
-/// Key relationships:
-/// - {@link reddit_community_votes} - The parent vote record (1:1 via unique
-/// vote_id)
-/// - {@link reddit_community_posts} - The target post for this vote
-///
-/// This table is subsidiary, meaning it's always managed indirectly through
-/// the main votes table. Users never directly create or delete vote_of_posts
-/// records; they only create/delete votes, and the system routes them to the
-/// appropriate subtype table.
-///
-/// @namespace Votes
+/// @namespace votes
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_community_vote_of_posts {
+model reddit_platform_comment_votes {
   //----
   // COLUMNS
   //----
-  /// Primary Key.
+  /// Primary key for the comment vote record.
   id String @id
   
-  /// The parent vote's {@link reddit_community_votes.id}. Unique constraint
-  /// ensures 1:1 relationship with votes.
-  vote_id String
+  /// References the member account that cast this vote.
+  ///
+  /// Establishes the relationship between the vote and the voting user. Each
+  /// vote must be attributed to a specific member who has cast the upvote or
+  /// downvote.
+  reddit_platform_member_id String
   
-  /// The target post's {@link reddit_community_posts.id} for this vote.
-  post_id String
+  /// References the comment that received this vote.
+  ///
+  /// Establishes the relationship between the vote and the target comment.
+  /// This FK enables retrieving all votes for a specific comment and
+  /// calculating its vote score.
+  reddit_platform_comment_id String
   
-  /// When this vote-of-post relationship was created.
+  /// The type of vote cast: 'up' for upvote or 'down' for downvote.
+  ///
+  /// A value of NULL indicates the user has removed their vote from the
+  /// comment. When a user votes, this field is set to 'up' or 'down'. When
+  /// they remove their vote entirely, it is set to NULL. This nullable design
+  /// allows the single vote constraint to support vote removal without
+  /// requiring a separate delete operation.
+  vote_type String?
+  
+  /// Timestamp when this vote was first cast.
+  ///
+  /// Records the original vote submission time for audit purposes and display
+  /// in vote history.
   created_at DateTime
   
-  /// Last update timestamp for this vote-of-post relationship.
+  /// Timestamp when this vote was last modified.
+  ///
+  /// Updates whenever the user changes their vote (up to down, down to up) or
+  /// removes their vote (setting vote_type to NULL).
   updated_at DateTime
+  
+  /// Timestamp when this vote was soft-deleted, if applicable.
+  ///
+  /// Currently unused as votes are managed via vote_type NULL for removal, but
+  /// included for future soft-delete requirements.
+  deleted_at DateTime?
   
   //----
   // BELONGED RELATIONS,
   //   - format: (propertyKey targetModel constraint)
   //----
-  vote reddit_community_votes @relation(fields: [vote_id], references: [id], onDelete: Cascade)
-  post reddit_community_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  member reddit_platform_members @relation(fields: [reddit_platform_member_id], references: [id], onDelete: Cascade)
+  comment reddit_platform_comments @relation(fields: [reddit_platform_comment_id], references: [id], onDelete: Cascade)
   
   //----
   // INDEXES
   //----
-  @@unique([vote_id])
-  @@index([post_id])
-}
-
-/// Subtype table for votes targeting comments, implementing polymorphic
-/// ownership pattern.
-///
-/// This table contains vote_id (foreign key to reddit_community_votes) and
-/// comment_id (foreign key to reddit_community_comments). The vote_id field
-/// has a unique constraint, enforcing a 1:1 relationship with the main votes
-/// table. This design avoids nullable comment_id fields in the parent table,
-/// following normalization best practices.
-///
-/// Users can upvote or downvote comments through these vote records. The
-/// comment_id establishes which comment received the vote, while the vote_id
-/// links back to the vote record containing voter information (via the
-/// parent reddit_community_votes table). Comments can receive multiple votes
-/// from different users, but each vote record targets exactly one comment.
-///
-/// @namespace Votes
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_community_vote_of_comments {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// Associated vote's {@link reddit_community_votes.id}. Establishes 1:1
-  /// relationship with vote table.
-  vote_id String
-  
-  /// Target comment's {@link reddit_community_comments.id}. Many votes can
-  /// target one comment.
-  comment_id String
-  
-  /// When this vote-target relationship was created.
-  created_at DateTime
-  
-  /// When this vote-target relationship was last modified.
-  updated_at DateTime
-  
-  //----
-  // BELONGED RELATIONS,
-  //   - format: (propertyKey targetModel constraint)
-  //----
-  vote reddit_community_votes @relation(fields: [vote_id], references: [id], onDelete: Cascade)
-  comment reddit_community_comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
-  
-  //----
-  // INDEXES
-  //----
-  @@unique([vote_id])
-  @@index([comment_id, created_at])
+  @@index([reddit_platform_comment_id])
+  // spellchecker: ignore-next-line
+  @@unique([reddit_platform_member_id, reddit_platform_comment_id], map: "reddit_platform_comment_votes_reddit_platform_member_i_2ecc8e2a")
 }

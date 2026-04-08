@@ -12,61 +12,33 @@ import { patchEcommerceMallSellerProductsProductIdSnapshots } from "../../../../
 @Controller("/ecommerceMall/seller/products/:productId/snapshots")
 export class EcommercemallSellerProductsSnapshotsController {
   /**
-   * Retrieve a filtered and paginated list of snapshots for a specific product.
+   * Retrieve a paginated list of product snapshots for a specific product.
    *
-   * This endpoint provides access to historical product state records preserved as immutable snapshots. Each snapshot captures the complete product data including name, description, base price, category name, and seller reference at the moment it was created.
+   * This endpoint allows sellers to view historical snapshots of their own products and administrators to view snapshots of any product on the platform for oversight and dispute resolution purposes.
    *
-   * Access Control:
-   * - Sellers: Can only view snapshots of products they own. The system verifies product ownership before returning any data.
-   * - Administrators: Can view snapshots of any product on the platform for oversight and dispute resolution purposes.
+   * Each snapshot preserves the complete product state including name, description, base price, and category name as they appeared at the time the snapshot was created. The list is sorted by creation date with newest snapshots first, and supports filtering by creation date range and snapshot source type.
    *
-   * The operation supports filtering by creation date range to narrow down results to specific time periods. Results are returned in descending order by creation timestamp (newest first) for convenient access to recent changes.
-   *
-   * This endpoint complements the product detail view by providing historical context. When customers reference product snapshots in disputes or when sellers need to audit changes, this operation retrieves the authoritative historical records from the ecommerce_mall_product_snapshots table.
-   *
-   * Related Operations:
-   * - GET /seller/products/{id}/snapshots - Direct seller access to their product snapshots
-   * - GET /admin/products/{id}/snapshots - Administrator access to any product snapshot
-   * - GET /snapshots/products/{id} - Alternative snapshot viewing endpoint
+   * Sellers can only access snapshots for products they own. Administrators have unrestricted access to view snapshots for any product on the platform.
    *
    * @param connection
-   * @param productId Unique identifier of the product whose snapshots to retrieve
-   * @param body Pagination and filter parameters for product snapshot search
+   * @param productId Unique identifier of the product (global scope)
+   * @param body Search criteria and pagination parameters for filtering product snapshots
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Implement a list operation for product snapshots filtered by product ID.
+   * @x-autobe-specification Query the ecommerce_mall_product_snapshots table filtered by product_id. Apply pagination using limit and offset/page parameters. Sort by created_at in descending order (newest first).
    *
-   * 1. Authentication and Authorization:
-   *    - Extract authenticated user from session/token
-   *    - If actor is seller: Verify the product belongs to the requesting seller by joining ecommerce_mall_products table and checking ecommerce_mall_seller_id
-   *    - If actor is admin or superAdmin: Allow access to any product snapshot
-   *    - For unauthorized access (seller accessing another seller's product): Return 403 Forbidden error
+   * Filter criteria:
+   * - created_at_from and created_at_to for date range filtering
+   * - source_type indicating whether snapshot was created from product edit or variant edit
    *
-   * 2. Query Parameters from Request Body:
-   *    - productId from path parameter (required)
-   *    - Pagination: page, limit (with sensible defaults)
-   *    - Filtering: createdFrom, createdTo (optional date filters)
+   * Authorization check:
+   * - If authenticated user is the product owner (seller), allow access
+   * - If authenticated user is administrator or super administrator, allow access for any product
+   * - Otherwise, deny access with 403 Forbidden
    *
-   * 3. Database Query:
-   *    - Query ecommerce_mall_product_snapshots table filtered by ecommerce_mall_product_id = productId
-   *    - Apply date range filters if provided (created_at >= createdFrom AND created_at <= createdTo)
-   *    - Order by created_at DESC
-   *    - Apply pagination with limit and offset
+   * Join with ecommerce_mall_products to verify product exists even if soft-deleted.
    *
-   * 4. Response Construction:
-   *    - Build IPageIEcommerceMallProductSnapshot.ISummary containing:
-   *      - Snapshot id
-   *      - Product name at snapshot time
-   *      - Description at snapshot time
-   *      - Base price at snapshot time
-   *      - Category name at snapshot time
-   *      - Created timestamp
-   *    - Include pagination metadata: total count, current page, page size
-   *
-   * 5. Edge Cases:
-   *    - If product does not exist: Return 404 error
-   *    - If no snapshots exist for product: Return empty page with total=0
-   *    - If seller attempts to access another seller's product: Return 403 error
+   * Return paginated results with snapshot summary including id, name, base_price, category_name, created_at, and source_type indicator.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -93,33 +65,32 @@ export class EcommercemallSellerProductsSnapshotsController {
   /**
    * Retrieve a specific product snapshot by its unique identifier.
    *
-   * This endpoint returns the complete snapshot record capturing the product state at a specific point in time. The snapshot includes the product name, description, base price, category name, and creation timestamp as they existed when the snapshot was created.
+   * This endpoint returns the complete state of a product at the time the snapshot was created, including the product name, description, base price, category name, and all associated variants with their option values and images.
    *
-   * **Authorization**: Access is restricted to the seller who owns the product or platform administrators. Sellers can only view snapshots of their own products. Administrators (both regular admins and super admins) can view any product snapshot on the platform for oversight and dispute resolution.
+   * Access control: Sellers can view snapshots of their own products. Administrators can view any product snapshot on the platform for oversight and dispute resolution purposes. The system validates viewer authorization before displaying snapshot data.
    *
-   * **Relationship to Database**: This operation queries the ecommerce_mall_product_snapshots table, joining with ecommerce_mall_products to verify product ownership and with ecommerce_mall_sellers to validate seller identity.
-   *
-   * **Use Cases**: This endpoint is typically used alongside the product snapshot listing endpoint to retrieve the full details of a specific historical product state. It supports dispute resolution when customers claim product details were different at the time of purchase. Administrators use this for policy enforcement and platform oversight.
-   *
-   * **Response Data**: Returns the snapshot ID, associated product ID, seller ID, product name, description, base price, category name, and creation timestamp.
+   * The snapshot is immutable once created and serves as the authoritative record of product state at that point in time. This is particularly useful when sellers need to verify what was advertised when a customer placed an order.
    *
    * @param connection
    * @param productId Unique identifier of the product (UUID)
-   * @param snapshotId Unique identifier of the snapshot (UUID)
+   * @param snapshotId Unique identifier of the product snapshot (UUID)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Retrieve a single product snapshot by verifying authorization and returning complete snapshot data.
+   * @x-autobe-specification Query ecommerce_mall_product_snapshots table using snapshotId as the primary key.
    *
-   * 1. Extract productId and snapshotId from path parameters.
-   * 2. Validate that snapshotId exists in ecommerce_mall_product_snapshots table.
-   * 3. Verify snapshot belongs to the specified productId (ecommerce_mall_product_id must match).
-   * 4. For sellers: validate the authenticated seller owns the product (snapshot's ecommerce_mall_seller_id must match authenticated seller ID). Return 403 if not authorized.
-   * 5. For administrators: allow access regardless of ownership.
-   * 6. For unauthenticated users or unauthorized customers: return 403 Forbidden.
-   * 7. Join with ecommerce_mall_products table to include product context if needed.
-   * 8. Return all snapshot fields: id, ecommerce_mall_product_id, ecommerce_mall_seller_id, name, description, base_price, category_name, created_at.
-   * 9. If snapshot not found: return 404 Not Found.
-   * 10. Log all access attempts by administrators for security audit purposes.
+   * Join with ecommerce_mall_product_snapshot_variants using snapshot_id foreign key to retrieve all variant records.
+   *
+   * For each variant, join with ecommerce_mall_product_snapshot_variant_option_values using variant_id to retrieve option key-value pairs.
+   *
+   * Join with ecommerce_mall_product_snapshot_images using snapshot_id to retrieve all image records.
+   *
+   * Authorization check: If requester is a seller, verify that ecommerce_mall_seller_id matches the authenticated seller's ID. If requester is an admin, allow access to any snapshot. Return 403 Forbidden for unauthorized access.
+   *
+   * Return 404 Not Found if snapshot does not exist or if productId does not match the snapshot's ecommerce_mall_product_id.
+   *
+   * Sort variant option values by created_at to maintain consistent ordering.
+   *
+   * Sort images by display_order for proper presentation.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":snapshotId")
@@ -130,7 +101,7 @@ export class EcommercemallSellerProductsSnapshotsController {
     productId: string & tags.Format<"uuid">,
     @TypedParam("snapshotId")
     snapshotId: string & tags.Format<"uuid">,
-  ): Promise<IEcommerceMallProductSnapshot.IAt> {
+  ): Promise<IEcommerceMallProductSnapshot> {
     try {
       return await getEcommerceMallSellerProductsProductIdSnapshotsSnapshotId({
         seller,

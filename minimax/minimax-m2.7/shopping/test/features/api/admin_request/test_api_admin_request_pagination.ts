@@ -1,11 +1,16 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
 import type { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
-import type { IEcommerceMallAdminRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminRequest";
+import type { IEcommerceMallAdminRequestOfCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminRequestOfCustomer";
+import type { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import type { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
+import type { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import type { IEcommerceMallSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSuperAdmin";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import type { IPageIEcommerceMallAdminRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallAdminRequest";
+import type { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
+import type { IPageIEcommerceMallAdminRequestOfCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallAdminRequestOfCustomer";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -15,191 +20,228 @@ import typia, { tags } from "typia";
 import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
 import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
 import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
+import { authorize_super_admin_join } from "../../../authorize/authorize_super_admin_join";
+import { authorize_super_admin_login } from "../../../authorize/authorize_super_admin_login";
+import { authorize_super_admin_refresh } from "../../../authorize/authorize_super_admin_refresh";
 
 export async function test_api_admin_request_pagination(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create admin account and authenticate
-  const adminConnection: api.IConnection = { host: connection.host };
-  await authorize_admin_join(adminConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: "Admin1234!",
-      name: RandomGenerator.name(),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-    },
+  // 1. Create super admin for authentication
+  const superAdminConnection: api.IConnection = { host: connection.host };
+  await authorize_super_admin_join(superAdminConnection, {});
+  // 2. Create multiple admin requests (test data for pagination)
+  const requestCount = 12;
+  await ArrayUtil.asyncRepeat(requestCount, async () => {
+    const requestConnection: api.IConnection = { host: connection.host };
+    await authorize_admin_join(requestConnection, {
+      body: {
+        actorType: "customer",
+        requestedGrade: "admin",
+        reason: RandomGenerator.paragraph({
+          sentences: 3,
+          wordMin: 5,
+          wordMax: 10,
+        }),
+        href: typia.random<string & tags.Format<"uri">>(),
+        referrer: typia.random<string & tags.Format<"uri">>(),
+      },
+    });
   });
-  // 2. Test pagination with page=1 and limit=10
+  // 3. Test pagination with limit=5, page=1
   const page1Response =
-    await api.functional.ecommerceMall.admin.admin.requests.index(
-      adminConnection,
+    await api.functional.ecommerceMall.superAdmin.admin.requests.index(
+      superAdminConnection,
       {
         body: {
-          page: 1 satisfies number & tags.Type<"int32"> & tags.Minimum<1>,
-          limit: 10 satisfies number &
+          page: 1 as number & tags.Type<"int32"> & tags.Minimum<1>,
+          limit: 5 as number &
             tags.Type<"int32"> &
             tags.Minimum<1> &
             tags.Maximum<100>,
-        } satisfies IEcommerceMallAdminRequest.IRequest,
+        },
       },
     );
   typia.assert(page1Response);
-  // Validate pagination metadata for page 1
   TestValidator.equals(
-    "page 1 current is 1",
-    page1Response.pagination.current,
+    "page 1 current should be 1",
+    page1Response.pagination.pagination.current,
     1,
   );
   TestValidator.equals(
-    "page 1 limit is 10",
-    page1Response.pagination.limit,
-    10,
+    "page 1 limit should be 5",
+    page1Response.pagination.pagination.limit,
+    5,
   );
-  TestValidator.predicate(
-    "page 1 records >= 0",
-    page1Response.pagination.records >= 0,
+  TestValidator.equals(
+    "page 1 records should be 12",
+    page1Response.pagination.pagination.records,
+    12,
   );
-  TestValidator.predicate(
-    "page 1 pages >= 0",
-    page1Response.pagination.pages >= 0,
+  TestValidator.equals(
+    "page 1 pages should be 3",
+    page1Response.pagination.pagination.pages,
+    3,
   );
-  TestValidator.predicate(
-    "page 1 data length <= 10",
-    page1Response.data.length <= 10,
+  TestValidator.equals(
+    "page 1 data length should be 5",
+    page1Response.data.length,
+    5,
   );
-  // 3. Test pagination with page=2
+  // 4. Test pagination with limit=5, page=2
   const page2Response =
-    await api.functional.ecommerceMall.admin.admin.requests.index(
-      adminConnection,
+    await api.functional.ecommerceMall.superAdmin.admin.requests.index(
+      superAdminConnection,
       {
         body: {
-          page: 2 satisfies number & tags.Type<"int32"> & tags.Minimum<1>,
-          limit: 10 satisfies number &
+          page: 2 as number & tags.Type<"int32"> & tags.Minimum<1>,
+          limit: 5 as number &
             tags.Type<"int32"> &
             tags.Minimum<1> &
             tags.Maximum<100>,
-        } satisfies IEcommerceMallAdminRequest.IRequest,
+        },
       },
     );
   typia.assert(page2Response);
-  // Validate pagination metadata for page 2
   TestValidator.equals(
-    "page 2 current is 2",
-    page2Response.pagination.current,
+    "page 2 current should be 2",
+    page2Response.pagination.pagination.current,
     2,
   );
   TestValidator.equals(
-    "page 2 limit is 10",
-    page2Response.pagination.limit,
-    10,
+    "page 2 limit should be 5",
+    page2Response.pagination.pagination.limit,
+    5,
   );
   TestValidator.equals(
-    "page 2 records matches page 1",
-    page2Response.pagination.records,
-    page1Response.pagination.records,
+    "page 2 records should be 12",
+    page2Response.pagination.pagination.records,
+    12,
   );
   TestValidator.equals(
-    "page 2 pages matches page 1",
-    page2Response.pagination.pages,
-    page1Response.pagination.pages,
+    "page 2 pages should be 3",
+    page2Response.pagination.pagination.pages,
+    3,
   );
-  // 4. Test different page size (limit=5)
-  const pageSize5Response =
-    await api.functional.ecommerceMall.admin.admin.requests.index(
-      adminConnection,
+  TestValidator.equals(
+    "page 2 data length should be 5",
+    page2Response.data.length,
+    5,
+  );
+  // 5. Test pagination with limit=5, page=3 (last page)
+  const page3Response =
+    await api.functional.ecommerceMall.superAdmin.admin.requests.index(
+      superAdminConnection,
       {
         body: {
-          page: 1 satisfies number & tags.Type<"int32"> & tags.Minimum<1>,
-          limit: 5 satisfies number &
+          page: 3 as number & tags.Type<"int32"> & tags.Minimum<1>,
+          limit: 5 as number &
             tags.Type<"int32"> &
             tags.Minimum<1> &
             tags.Maximum<100>,
-        } satisfies IEcommerceMallAdminRequest.IRequest,
+        },
       },
     );
-  typia.assert(pageSize5Response);
-  // Validate pagination metadata for limit=5
+  typia.assert(page3Response);
   TestValidator.equals(
-    "limit 5 current is 1",
-    pageSize5Response.pagination.current,
+    "page 3 current should be 3",
+    page3Response.pagination.pagination.current,
+    3,
+  );
+  TestValidator.equals(
+    "page 3 limit should be 5",
+    page3Response.pagination.pagination.limit,
+    5,
+  );
+  TestValidator.equals(
+    "page 3 records should be 12",
+    page3Response.pagination.pagination.records,
+    12,
+  );
+  TestValidator.equals(
+    "page 3 pages should be 3",
+    page3Response.pagination.pagination.pages,
+    3,
+  );
+  TestValidator.equals(
+    "page 3 data length should be 2 (remaining items)",
+    page3Response.data.length,
+    2,
+  );
+  // 6. Test pagination with limit=10
+  const page10Response =
+    await api.functional.ecommerceMall.superAdmin.admin.requests.index(
+      superAdminConnection,
+      {
+        body: {
+          page: 1 as number & tags.Type<"int32"> & tags.Minimum<1>,
+          limit: 10 as number &
+            tags.Type<"int32"> &
+            tags.Minimum<1> &
+            tags.Maximum<100>,
+        },
+      },
+    );
+  typia.assert(page10Response);
+  TestValidator.equals(
+    "limit 10 current should be 1",
+    page10Response.pagination.pagination.current,
     1,
   );
   TestValidator.equals(
-    "limit 5 limit is 5",
-    pageSize5Response.pagination.limit,
-    5,
+    "limit 10 limit should be 10",
+    page10Response.pagination.pagination.limit,
+    10,
   );
-  TestValidator.predicate(
-    "limit 5 data length <= 5",
-    pageSize5Response.data.length <= 5,
+  TestValidator.equals(
+    "limit 10 records should be 12",
+    page10Response.pagination.pagination.records,
+    12,
   );
-  // 5. Test page beyond available data (empty data array)
-  const beyondPageResponse =
-    await api.functional.ecommerceMall.admin.admin.requests.index(
-      adminConnection,
+  TestValidator.equals(
+    "limit 10 pages should be 2",
+    page10Response.pagination.pagination.pages,
+    2,
+  );
+  TestValidator.equals(
+    "limit 10 data length should be 10",
+    page10Response.data.length,
+    10,
+  );
+  // 7. Test pagination with limit=10, page=2 (last page)
+  const page10Page2Response =
+    await api.functional.ecommerceMall.superAdmin.admin.requests.index(
+      superAdminConnection,
       {
         body: {
-          page: 9999 satisfies number & tags.Type<"int32"> & tags.Minimum<1>,
-          limit: 10 satisfies number &
+          page: 2 as number & tags.Type<"int32"> & tags.Minimum<1>,
+          limit: 10 as number &
             tags.Type<"int32"> &
             tags.Minimum<1> &
             tags.Maximum<100>,
-        } satisfies IEcommerceMallAdminRequest.IRequest,
+        },
       },
     );
-  typia.assert(beyondPageResponse);
-  // Validate empty page
+  typia.assert(page10Page2Response);
   TestValidator.equals(
-    "beyond page data is empty",
-    beyondPageResponse.data.length,
-    0,
-  );
-  TestValidator.equals(
-    "beyond page current is 9999",
-    beyondPageResponse.pagination.current,
-    9999,
+    "page 2 limit 10 current should be 2",
+    page10Page2Response.pagination.pagination.current,
+    2,
   );
   TestValidator.equals(
-    "beyond page records matches total",
-    beyondPageResponse.pagination.records,
-    page1Response.pagination.records,
+    "page 2 limit 10 data length should be 2 (remaining items)",
+    page10Page2Response.data.length,
+    2,
   );
-  // 6. Test default pagination (no page/limit specified)
-  const defaultResponse =
-    await api.functional.ecommerceMall.admin.admin.requests.index(
-      adminConnection,
-      {
-        body: {} satisfies IEcommerceMallAdminRequest.IRequest,
-      },
-    );
-  typia.assert(defaultResponse);
-  // Validate default pagination metadata
-  TestValidator.predicate(
-    "default current >= 1",
-    defaultResponse.pagination.current >= 1,
+  // 8. Validate that different pages return different data (no overlap)
+  const page1Ids = page1Response.data.map((r) => r.id);
+  const page2Ids = page2Response.data.map((r) => r.id);
+  const page3Ids = page3Response.data.map((r) => r.id);
+  const allIds = [...page1Ids, ...page2Ids, ...page3Ids];
+  const uniqueIds = new Set(allIds);
+  TestValidator.equals(
+    "all page IDs should be unique",
+    allIds.length,
+    uniqueIds.size,
   );
-  TestValidator.predicate(
-    "default limit >= 1",
-    defaultResponse.pagination.limit >= 1,
-  );
-  TestValidator.predicate(
-    "default records >= 0",
-    defaultResponse.pagination.records >= 0,
-  );
-  TestValidator.predicate(
-    "default pages >= 0",
-    defaultResponse.pagination.pages >= 0,
-  );
-  // 7. Verify pages calculation is correct
-  if (page1Response.pagination.records > 0) {
-    const expectedPages = Math.ceil(
-      page1Response.pagination.records / page1Response.pagination.limit,
-    );
-    TestValidator.equals(
-      "pages calculation is correct",
-      page1Response.pagination.pages,
-      expectedPages,
-    );
-  }
 }

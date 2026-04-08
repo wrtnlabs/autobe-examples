@@ -11,7 +11,6 @@ export namespace EcommerceMallCartItemCollector {
   export async function collect(props: {
     body: IEcommerceMallCartItem.ICreate;
     ecommerceMallCustomers: IEntity;
-    ecommerceMallCustomerSessions: IEntity;
   }) {
     const id: string = v4();
     return {

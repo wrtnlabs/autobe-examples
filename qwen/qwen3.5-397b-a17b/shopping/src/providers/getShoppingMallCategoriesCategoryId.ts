@@ -16,7 +16,7 @@ export async function getShoppingMallCategoriesCategoryId(props: {
   categoryId: string & tags.Format<"uuid">;
 }): Promise<IShoppingMallCategory> {
   const category =
-    await MyGlobal.prisma.shopping_mall_categories.findUniqueOrThrow({
+    await MyGlobal.prisma.shopping_mall_categories.findFirstOrThrow({
       where: {
         id: props.categoryId,
         deleted_at: null,

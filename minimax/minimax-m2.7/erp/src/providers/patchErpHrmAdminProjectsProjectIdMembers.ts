@@ -1,6 +1,4 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IErpHrmMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmMember";
-import { IErpHrmOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmOrganization";
 import { IErpHrmProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProjectMember";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIErpHrmProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIErpHrmProjectMember";
@@ -13,7 +11,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
-import { ErpHrmProjectMemberAtSummaryTransformer } from "../transformers/ErpHrmProjectMemberAtSummaryTransformer";
+import { ErpHrmEmployeeAtSummaryTransformer } from "../transformers/ErpHrmEmployeeAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -22,78 +20,130 @@ export async function patchErpHrmAdminProjectsProjectIdMembers(props: {
   projectId: string & tags.Format<"uuid">;
   body: IErpHrmProjectMember.IRequest;
 }): Promise<IPageIErpHrmProjectMember.ISummary> {
-  // Validate project exists
   await MyGlobal.prisma.erp_hrm_projects.findUniqueOrThrow({
     where: { id: props.projectId },
     select: { id: true },
   });
-  // Build where clause from request filters
-  const whereInput = {
-    id: props.projectId,
-    ...(props.body.name && { name: { contains: props.body.name } }),
-    ...(props.body.status && { status: props.body.status }),
-    ...(props.body.start_date_from && {
-      start_date: { gte: new Date(props.body.start_date_from) },
+  const createdAtRange = {
+    ...(props.body.createdAtStart !== undefined && {
+      gte: new Date(props.body.createdAtStart),
     }),
-    ...(props.body.start_date_to && {
-      start_date: {
-        ...(props.body.start_date_from
-          ? { gte: new Date(props.body.start_date_from) }
-          : {}),
-        lte: new Date(props.body.start_date_to),
+    ...(props.body.createdAtEnd !== undefined && {
+      lte: new Date(props.body.createdAtEnd),
+    }),
+  } satisfies {
+    gte?: Date;
+    lte?: Date;
+  };
+  const whereConditions: Prisma.erp_hrm_project_membersWhereInput = {
+    erp_hrm_project_id: props.projectId,
+    ...(props.body.assignedRole !== undefined && {
+      assigned_role: props.body.assignedRole,
+    }),
+    ...(props.body.employeeStatus !== undefined && {
+      employee: {
+        status: props.body.employeeStatus,
       },
     }),
-    ...(props.body.end_date_from && {
-      end_date: { gte: new Date(props.body.end_date_from) },
-    }),
-    ...(props.body.end_date_to && {
-      end_date: {
-        ...(props.body.end_date_from
-          ? { gte: new Date(props.body.end_date_from) }
-          : {}),
-        lte: new Date(props.body.end_date_to),
+    ...(props.body.employeeSearch !== undefined && {
+      employee: {
+        member: {
+          OR: [
+            {
+              display_name: {
+                contains: props.body.employeeSearch,
+                mode: "insensitive",
+              },
+            },
+            {
+              email: {
+                contains: props.body.employeeSearch,
+                mode: "insensitive",
+              },
+            },
+          ],
+        },
       },
     }),
-    ...(props.body.budget_hours_min !== undefined && {
-      budget_hours: { gte: props.body.budget_hours_min },
+    ...(Object.keys(createdAtRange).length > 0 && {
+      created_at: createdAtRange,
     }),
-    ...(props.body.budget_hours_max !== undefined && {
-      budget_hours: {
-        ...(props.body.budget_hours_min !== undefined
-          ? { gte: props.body.budget_hours_min }
-          : {}),
-        lte: props.body.budget_hours_max,
-      },
-    }),
-  } satisfies Prisma.erp_hrm_projectsWhereInput;
-  // Pagination parameters
+  };
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Query projects with transformer
-  const data = await MyGlobal.prisma.erp_hrm_projects.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: { created_at: "desc" },
-    ...ErpHrmProjectMemberAtSummaryTransformer.select(),
+  const totalCount = await MyGlobal.prisma.erp_hrm_project_members.count({
+    where: whereConditions,
   });
-  // Query total count
-  const total = await MyGlobal.prisma.erp_hrm_projects.count({
-    where: whereInput,
-  });
-  // Transform results
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    ErpHrmProjectMemberAtSummaryTransformer.transform,
+  const projectMembers = await MyGlobal.prisma.erp_hrm_project_members.findMany(
+    {
+      where: whereConditions,
+      skip,
+      take: limit,
+      orderBy: { created_at: "desc" },
+      select: {
+        id: true,
+        assigned_role: true,
+        created_at: true,
+        updated_at: true,
+        employee: ErpHrmEmployeeAtSummaryTransformer.select(),
+      },
+    },
+  );
+  const data = await ArrayUtil.asyncMap(projectMembers, async (pm) =>
+    typia.assert<IErpHrmProjectMember.ISummary>({
+      id: pm.id as string & tags.Format<"uuid">,
+      assignedRole: pm.assigned_role as "member" | "project_lead",
+      createdAt: toISOStringSafe(pm.created_at),
+      employee: await ErpHrmEmployeeAtSummaryTransformer.transform(pm.employee),
+    }),
   );
   return {
-    data: transformedData,
     pagination: {
-      current: page,
-      limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
+      current: page as number & tags.Type<"int32"> & tags.Minimum<0>,
+      limit: limit as number & tags.Type<"int32"> & tags.Minimum<0>,
+      records: totalCount as number & tags.Type<"int32"> & tags.Minimum<0>,
+      pages: Math.ceil(totalCount / limit) as number &
+        tags.Type<"int32"> &
+        tags.Minimum<0>,
     } satisfies IPage.IPagination,
-  };
+    data,
+  } satisfies IPageIErpHrmProjectMember.ISummary;
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IErpHrmProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProjectMember";
+// import { IPageIErpHrmProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIErpHrmProjectMember";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchErpHrmAdminProjectsProjectIdMembers(props: {
+//   admin: AdminPayload;
+//   projectId: string & tags.Format<"uuid">;
+//   body: IErpHrmProjectMember.IRequest;
+// }): Promise<IPageIErpHrmProjectMember.ISummary> {
+//   // No matching Collector/Transformer found for this operation.
+//     // You MUST call getDatabaseSchemas first to get exact relation property names.
+//     // NEVER guess relation names from table names — always verify against the schema.
+//     ...
+// }
+// ```
+//--------------------------------------------------------------

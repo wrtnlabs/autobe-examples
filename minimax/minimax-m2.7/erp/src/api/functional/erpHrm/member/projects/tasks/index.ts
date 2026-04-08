@@ -7,67 +7,47 @@ import {
 import typia, { tags } from "typia";
 
 import { IErpHrmTask } from "../../../../../structures/IErpHrmTask";
-import { IPageIErpHrmTask } from "../../../../../structures/IPageIErpHrmTask";
-
-export * as histories from "./histories/index";
 
 /**
- * Create a new task within a specific project.
+ * Retrieve comprehensive analytics and statistics about tasks within a specific project.
  *
- * This endpoint creates a task under a project identified by the projectId path parameter. The task is linked to the project via erp_hrm_project_id foreign key.
+ * This endpoint provides aggregated metrics that help project leads and managers understand task distribution, progress, and workload within the project. The analytics include status breakdowns showing how many tasks are open, in-progress, completed, and closed, as well as priority distribution across low, medium, high, and urgent levels.
  *
- * Task creation requires the requesting user to have project:manage permission at the organization level, or the project-lead role on the specific project. Project leads can create tasks within their assigned projects but cannot manage tasks in other projects.
+ * The response includes completion metrics calculated from total versus completed tasks, average estimated hours for tasks with estimates, and overdue task counts based on due date comparison with current timestamp. Temporal trends show task creation patterns over the last 30 days.
  *
- * The task requires a title (mandatory) and priority level (mandatory). Optional fields include description, estimated hours, due date, and assignee. When an assignee is specified, the system validates that the employee is a member of the project (erp_hrm_project_members). If the assignee is not a project member, the system rejects the request with an error explaining that only project members can be assigned to tasks.
- *
- * The task status defaults to 'open' if not specified. Valid status values are: open, in-progress, completed, closed. Valid priority values are: low, medium, high, urgent.
- *
- * Task status changes are recorded in erp_hrm_task_histories for audit trail. The task supports one level of subtasking via optional parent_id reference.
+ * This operation requires the requesting user to have project:view or project:manage permission for the specified project. Users can only access analytics for projects they are members of or have organization-level project management permissions.
  *
  * @param props.connection
- * @param props.projectId Target project's unique identifier (UUID)
- * @param props.body Task creation data including required title and priority, optional description, assignee, estimated hours, due date, and parent task reference
+ * @param props.projectId Unique identifier of the project to retrieve task analytics for (UUID format)
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Extract projectId from path parameter
- * 2. Validate user authorization:
- *    - User has project:manage permission at organization level, OR
- *    - User holds project-lead role on the specified project
- * 3. Validate request body:
- *    - title: required, non-empty string, max 255 characters
- *    - priority: required, must be one of: low, medium, high, urgent
- *    - status: optional, defaults to 'open', must be one of: open, in-progress, completed, closed
- *    - description: optional string, max 2000 characters
- *    - erp_hrm_employee_id: optional, if provided must be a project member
- *    - estimated_hours: optional, positive number
- *    - due_date: optional, valid ISO 8601 datetime
- *    - parent_id: optional, if provided must exist and belong to same project
- * 4. If erp_hrm_employee_id is provided:
- *    - Query erp_hrm_project_members to verify employee is assigned to project
- *    - If not found, return 400 error: 'Only project members can be assigned to tasks'
- * 5. If parent_id is provided:
- *    - Query erp_hrm_tasks to verify parent task exists and belongs to same project
- *    - Verify parent has no existing parent_id (one level nesting only)
- * 6. Insert new record into erp_hrm_tasks with:
- *    - id: generated UUID
- *    - erp_hrm_project_id: from path
- *    - title: from request
- *    - priority: from request
- *    - status: from request or default 'open'
- *    - created_at: current timestamp
- *    - updated_at: current timestamp
- *    - remaining fields from request or null
- * 7. Return created task with 201 status
- * @path /erpHrm/member/projects/:projectId/tasks
- * @accessor api.functional.erpHrm.member.projects.tasks.create
+ * @x-autobe-specification Query erp_hrm_projects table to verify project exists and user has access permission. Return 404 if project not found.
+ *
+ * Query erp_hrm_tasks table filtered by erp_hrm_project_id matching the path parameter.
+ *
+ * Execute the following aggregations:
+ * 1. Status breakdown: COUNT tasks grouped by status field (open, in-progress, completed, closed)
+ * 2. Priority breakdown: COUNT tasks grouped by priority field (low, medium, high, urgent)
+ * 3. Completion rate: total_tasks > 0 ? (completed_tasks + closed_tasks) / total_tasks * 100 : 0
+ * 4. Average estimated hours: AVG(estimated_hours) WHERE estimated_hours IS NOT NULL
+ * 5. Overdue tasks: COUNT WHERE due_date < CURRENT_TIMESTAMP AND status NOT IN ('completed', 'closed')
+ * 6. Temporal trend: COUNT tasks created in last 30 days, grouped by date
+ *
+ * Join with erp_hrm_employees table for assignee information if needed for detailed breakdowns.
+ *
+ * Apply organization context filtering via erp_hrm_projects.erp_hrm_organization_id matching the authenticated user's organization scope.
+ *
+ * Return computed analytics object with all aggregated metrics. Handle empty project (no tasks) by returning zero counts for all metrics.
+ * @path /erpHrm/member/projects/:projectId/tasks/analytics
+ * @accessor api.functional.erpHrm.member.projects.tasks.analytics
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function create(
+export async function analytics(
   connection: IConnection,
-  props: create.Props,
-): Promise<create.Response> {
+  props: analytics.Props,
+): Promise<analytics.Response> {
   return true === connection.simulate
-    ? create.simulate(connection, props)
+    ? analytics.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -77,281 +57,24 @@ export async function create(
           },
         },
         {
-          ...create.METADATA,
-          path: create.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace create {
-  export type Props = {
-    /**
-     * Target project's unique identifier (UUID)
-     */
-    projectId: string & tags.Format<"uuid">;
-
-    /**
-     * Task creation data including required title and priority, optional description, assignee, estimated hours, due date, and parent task reference
-     */
-    body: IErpHrmTask.ICreate;
-  };
-  export type Body = IErpHrmTask.ICreate;
-  export type Response = IErpHrmTask;
-
-  export const METADATA = {
-    method: "POST",
-    path: "/erpHrm/member/projects/:projectId/tasks",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/erpHrm/member/projects/${encodeURIComponent(props.projectId ?? "null")}/tasks`;
-  export const random = (): IErpHrmTask => typia.random<IErpHrmTask>();
-  export const simulate = (
-    connection: IConnection,
-    props: create.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: create.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("projectId")(() => typia.assert(props.projectId));
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Retrieve a filtered and paginated list of tasks within a specific project.
- *
- * This endpoint provides advanced search capabilities for tasks scoped to the specified project. The operation supports filtering by task status, priority, and assigned employee using exact match semantics.
- *
- * Tasks are work items that belong to a project and can optionally be assigned to employees who are members of that project. Each task has a status (open, in-progress, completed, closed) and priority (low, medium, high, urgent) for workflow management.
- *
- * The response includes paginated task summaries optimized for list displays, containing essential task information such as title, status, priority, due date, and assignee details.
- *
- * Only tasks within the specified project are returned. If the project does not exist or no tasks match the filter criteria, an empty list is returned.
- *
- * @param props.connection
- * @param props.projectId Unique identifier of the project whose tasks to retrieve
- * @param props.body Search criteria and pagination parameters for filtering tasks
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor member
- * @x-autobe-specification Query the erp_hrm_tasks table filtered by erp_hrm_project_id matching the path parameter projectId.
- *
- * Apply exact match filters from the request body:
- * - Filter by status field if provided (values: open, in-progress, completed, closed)
- * - Filter by priority field if provided (values: low, medium, high, urgent)
- * - Filter by erp_hrm_employee_id if provided (exact match on assigned employee)
- *
- * Join with erp_hrm_employees table to include assignee information in response.
- *
- * Support pagination with configurable page size and sorting by created_at descending (most recent first).
- *
- * Return empty array if no tasks match the criteria - this is not an error condition.
- *
- * Verify the project exists before querying tasks. If project not found, return empty array.
- * @path /erpHrm/member/projects/:projectId/tasks
- * @accessor api.functional.erpHrm.member.projects.tasks.index
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function index(
-  connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
-  return true === connection.simulate
-    ? index.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...index.METADATA,
-          path: index.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace index {
-  export type Props = {
-    /**
-     * Unique identifier of the project whose tasks to retrieve
-     */
-    projectId: string & tags.Format<"uuid">;
-
-    /**
-     * Search criteria and pagination parameters for filtering tasks
-     */
-    body: IErpHrmTask.IRequest;
-  };
-  export type Body = IErpHrmTask.IRequest;
-  export type Response = IPageIErpHrmTask.ISummary;
-
-  export const METADATA = {
-    method: "PATCH",
-    path: "/erpHrm/member/projects/:projectId/tasks",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/erpHrm/member/projects/${encodeURIComponent(props.projectId ?? "null")}/tasks`;
-  export const random = (): IPageIErpHrmTask.ISummary =>
-    typia.random<IPageIErpHrmTask.ISummary>();
-  export const simulate = (
-    connection: IConnection,
-    props: index.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: index.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("projectId")(() => typia.assert(props.projectId));
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Retrieve a specific task within a project by its unique identifier.
- *
- * This endpoint returns detailed information about a single task, including its title, description, status, priority, estimated hours, due date, assignee information, and timestamps. The task must belong to the specified project.
- *
- * **Authorization Requirements:**
- * The requesting user must be a member of the project containing the task, OR hold the project:manage permission at the organization level. Project leads can view tasks within their assigned projects. Users with organization-level project manage permission can access any task across all projects in the organization.
- *
- * **Resource Relationships:**
- * The task is linked to its parent project via erp_hrm_project_id. If the task has an assignee (erp_hrm_employee_id is not null), the response includes the assigned employee information. Tasks may have subtasks (children) via the optional parent_id reference, but these are not included in the response - use the subtasks relationship separately.
- *
- * **Task Status Values:**
- * - open: Initial status when task is created
- * - in-progress: Task has been started
- * - completed: Task work is finished
- * - closed: Task is finalized and no changes allowed
- *
- * **Task Priority Values:**
- * - low, medium, high, urgent
- *
- * **Error Scenarios:**
- * - Returns 404 if the task does not exist
- * - Returns 404 if the task exists but belongs to a different project than specified in the path
- * - Returns 403 if the user is not a project member and does not have project:manage permission
- * - Returns 403 if the user is a project lead but the task belongs to a different project
- *
- * @param props.connection
- * @param props.projectId UUID of the project containing the task (scoped to organization)
- * @param props.taskId UUID of the task to retrieve
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor member
- * @x-autobe-specification Service layer implementation:
- *
- * 1. **Parameter Validation**
- *    - Validate projectId is a valid UUID format
- *    - Validate taskId is a valid UUID format
- *
- * 2. **Authorization Check**
- *    - Get current authenticated user and their employee record for the organization
- *    - Check if user has project:manage permission at organization level
- *    - If not, verify user is a project member of the specified project (check erp_hrm_project_members table)
- *    - If user is a project lead, verify the task belongs to their project
- *
- * 3. **Task Retrieval**
- *    - Query erp_hrm_tasks table with taskId as primary key
- *    - Verify erp_hrm_project_id matches the projectId path parameter
- *    - Join with erp_hrm_projects to verify project exists and belongs to user's organization
- *    - Join with erp_hrm_employees for assignee information (when erp_hrm_employee_id is not null)
- *
- * 4. **Response Construction**
- *    - Map all task fields to IErpHrmTask DTO
- *    - Include nested project summary if needed
- *    - Include assignee summary if assigned
- *    - Return 404 if task not found or project mismatch
- *    - Return 403 if authorization fails
- * @path /erpHrm/member/projects/:projectId/tasks/:taskId
- * @accessor api.functional.erpHrm.member.projects.tasks.at
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function at(
-  connection: IConnection,
-  props: at.Props,
-): Promise<at.Response> {
-  return true === connection.simulate
-    ? at.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...at.METADATA,
-          path: at.path(props),
+          ...analytics.METADATA,
+          path: analytics.path(props),
           status: null,
         },
       );
 }
-export namespace at {
+export namespace analytics {
   export type Props = {
     /**
-     * UUID of the project containing the task (scoped to organization)
+     * Unique identifier of the project to retrieve task analytics for (UUID format)
      */
     projectId: string & tags.Format<"uuid">;
-
-    /**
-     * UUID of the task to retrieve
-     */
-    taskId: string & tags.Format<"uuid">;
   };
   export type Response = IErpHrmTask;
 
   export const METADATA = {
     method: "GET",
-    path: "/erpHrm/member/projects/:projectId/tasks/:taskId",
+    path: "/erpHrm/member/projects/:projectId/tasks/analytics",
     request: null,
     response: {
       type: "application/json",
@@ -360,275 +83,20 @@ export namespace at {
   } as const;
 
   export const path = (props: Props) =>
-    `/erpHrm/member/projects/${encodeURIComponent(props.projectId ?? "null")}/tasks/${encodeURIComponent(props.taskId ?? "null")}`;
+    `/erpHrm/member/projects/${encodeURIComponent(props.projectId ?? "null")}/tasks/analytics`;
   export const random = (): IErpHrmTask => typia.random<IErpHrmTask>();
   export const simulate = (
     connection: IConnection,
-    props: at.Props,
+    props: analytics.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: at.path(props),
+      path: analytics.path(props),
       contentType: "application/json",
     });
     try {
       assert.param("projectId")(() => typia.assert(props.projectId));
-      assert.param("taskId")(() => typia.assert(props.taskId));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Update an existing task within a specific project.
- *
- * This operation modifies the attributes of a task identified by its unique ID within a project. The task must belong to the specified project, and the requesting user must have appropriate authorization.
- *
- * **Authorization Requirements**:
- * The user must have either the project:manage permission at the organization level, or the project-lead role on the specific project containing the task. Project leads can only modify tasks within projects where they hold that role. A user with project-lead role on Project A cannot modify tasks on Project B.
- *
- * **Mutable Attributes**:
- * The task title, description, status, priority, estimated hours, due date, and assigned employee can be updated. Status transitions follow the defined workflow states (open, in-progress, completed, closed). When changing the assigned employee, the system verifies the employee is a member of the project.
- *
- * **Task History Recording**:
- * When a project lead changes a task status, the system records the lead's identity in the task history entry. This creates an audit trail for status transitions.
- *
- * **Validation Rules**:
- * - Title is required and cannot be empty
- * - Status must be a valid workflow state (open, in-progress, completed, closed)
- * - Priority must be a valid priority level (low, medium, high, urgent)
- * - Estimated hours must be non-negative if provided
- * - If assigning an employee, they must be a member of the project
- * - If the task has subtasks, parent_id cannot be changed
- *
- * **Error Responses**:
- * Returns 403 Forbidden if the user lacks authorization. Returns 404 Not Found if the task does not exist or belongs to a different project. Returns 400 Bad Request for validation failures.
- *
- * @param props.connection
- * @param props.projectId Unique identifier of the project containing the task
- * @param props.taskId Unique identifier of the task to update
- * @param props.body Updated task attributes including title, description, status, priority, estimated_hours, due_date, and assigned employee
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Extract projectId from path and validate UUID format.
- * 2. Extract taskId from path and validate UUID format.
- * 3. Verify the task exists and belongs to the specified project.
- * 4. Verify user authorization:
- *    - Check if user has project:manage permission at organization level (via employee's role permissions)
- *    - If not, check if user holds project-lead role on the specific project via erp_hrm_project_members
- * 5. If user is a project-lead (not org-level admin), ensure the task belongs to a project where they are lead.
- * 6. Parse and validate the request body (IErpHrmTask.IUpdate).
- * 7. If erp_hrm_employee_id is being changed:
- *    - Verify the new employee is a member of the project (check erp_hrm_project_members)
- *    - Reject if the employee is not a project member
- * 8. If parent_id is being changed on a task that has subtasks, reject the operation.
- * 9. Validate status transitions according to business rules.
- * 10. Update the task record with provided fields.
- * 11. If status changed by a project-lead, create a task history entry recording the status change and the lead's identity.
- * 12. Return the complete updated task entity with all related data.
- * @path /erpHrm/member/projects/:projectId/tasks/:taskId
- * @accessor api.functional.erpHrm.member.projects.tasks.update
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function update(
-  connection: IConnection,
-  props: update.Props,
-): Promise<update.Response> {
-  return true === connection.simulate
-    ? update.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...update.METADATA,
-          path: update.path(props),
-          status: null,
-        },
-        props.body,
-      );
-}
-export namespace update {
-  export type Props = {
-    /**
-     * Unique identifier of the project containing the task
-     */
-    projectId: string & tags.Format<"uuid">;
-
-    /**
-     * Unique identifier of the task to update
-     */
-    taskId: string & tags.Format<"uuid">;
-
-    /**
-     * Updated task attributes including title, description, status, priority, estimated_hours, due_date, and assigned employee
-     */
-    body: IErpHrmTask.IUpdate;
-  };
-  export type Body = IErpHrmTask.IUpdate;
-  export type Response = IErpHrmTask;
-
-  export const METADATA = {
-    method: "PUT",
-    path: "/erpHrm/member/projects/:projectId/tasks/:taskId",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Omit<Props, "body">) =>
-    `/erpHrm/member/projects/${encodeURIComponent(props.projectId ?? "null")}/tasks/${encodeURIComponent(props.taskId ?? "null")}`;
-  export const random = (): IErpHrmTask => typia.random<IErpHrmTask>();
-  export const simulate = (
-    connection: IConnection,
-    props: update.Props,
-  ): Response => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: update.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("projectId")(() => typia.assert(props.projectId));
-      assert.param("taskId")(() => typia.assert(props.taskId));
-      assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Permanently removes a task from the system.
- *
- * This endpoint deletes a specific task identified by its ID within a project. The task must belong to the specified project; requests for tasks belonging to different projects will be rejected. Upon deletion, all subtasks (tasks with parent_id referencing the deleted task) are also permanently removed since they cannot exist independently.
- *
- * The system verifies that the requesting user holds the project:manage permission in the current organization. Users with project lead status in the specific project can also delete tasks within that project but cannot delete tasks from other projects. Regular project members cannot delete tasks.
- *
- * When a task is deleted, its associated task history records are also removed as part of the cascade deletion. Timelogs associated with the task are unaffected and remain in the system since timelogs record actual work performed.
- *
- * This operation is irreversible. Deleted tasks cannot be recovered. The system does not implement soft deletion for tasks.
- *
- * @param props.connection
- * @param props.projectId Unique identifier of the project containing the task (global scope)
- * @param props.taskId Unique identifier of the task to delete (scoped to project)
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor member
- * @x-autobe-specification 1. Authorization Check:
- *    - Verify the requesting user has project:manage permission in the current organization
- *    - Alternative: Verify user is a project lead for the specified project
- *    - If neither condition is met, return 403 Forbidden
- *
- * 2. Input Validation:
- *    - Validate projectId is a valid UUID format
- *    - Validate taskId is a valid UUID format
- *
- * 3. Existence Verification:
- *    - Query erp_hrm_tasks table to find the task by taskId
- *    - Verify the task.erp_hrm_project_id matches the provided projectId
- *    - If task not found or project mismatch, return 404 Not Found
- *
- * 4. Deletion Process:
- *    - Begin database transaction
- *    - Delete the task from erp_hrm_tasks table
- *    - Cascade delete automatically removes:
- *      - All subtasks (tasks where parent_id = taskId)
- *      - All task_history records for the deleted tasks
- *    - Commit transaction
- *
- * 5. Response:
- *    - Return 204 No Content on successful deletion
- *    - No response body
- * @path /erpHrm/member/projects/:projectId/tasks/:taskId
- * @accessor api.functional.erpHrm.member.projects.tasks.erase
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function erase(
-  connection: IConnection,
-  props: erase.Props,
-): Promise<void> {
-  return true === connection.simulate
-    ? erase.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...erase.METADATA,
-          path: erase.path(props),
-          status: null,
-        },
-      );
-}
-export namespace erase {
-  export type Props = {
-    /**
-     * Unique identifier of the project containing the task (global scope)
-     */
-    projectId: string & tags.Format<"uuid">;
-
-    /**
-     * Unique identifier of the task to delete (scoped to project)
-     */
-    taskId: string & tags.Format<"uuid">;
-  };
-
-  export const METADATA = {
-    method: "DELETE",
-    path: "/erpHrm/member/projects/:projectId/tasks/:taskId",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Props) =>
-    `/erpHrm/member/projects/${encodeURIComponent(props.projectId ?? "null")}/tasks/${encodeURIComponent(props.taskId ?? "null")}`;
-  export const random = (): void => typia.random<void>();
-  export const simulate = (
-    connection: IConnection,
-    props: erase.Props,
-  ): void => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: erase.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("projectId")(() => typia.assert(props.projectId));
-      assert.param("taskId")(() => typia.assert(props.taskId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

@@ -10,32 +10,26 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallProductImageCollector {
   export async function collect(props: {
     body: IEcommerceMallProductImage.ICreate;
-    ecommerceMallProducts: IEntity;
+    product: IEntity;
+    seller: IEntity;
   }) {
     const id: string = v4();
-    // Query existing images to determine next display_order
-    const existingImages =
-      await MyGlobal.prisma.ecommerce_mall_product_images.findMany({
+    // Calculate next display order for this product
+    const existingCount =
+      await MyGlobal.prisma.ecommerce_mall_product_images.count({
         where: {
-          product_id: props.ecommerceMallProducts.id,
+          product_id: props.product.id,
           deleted_at: null,
         },
-        select: {
-          display_order: true,
-        },
       });
-    const displayOrder =
-      existingImages.length > 0
-        ? Math.max(...existingImages.map((img) => img.display_order)) + 1
-        : 0;
     return {
       id,
       image_url: props.body.imageUrl,
-      display_order: displayOrder,
+      display_order: existingCount,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      product: { connect: { id: props.ecommerceMallProducts.id } },
+      product: { connect: { id: props.product.id } },
     } satisfies Prisma.ecommerce_mall_product_imagesCreateInput;
   }
 }

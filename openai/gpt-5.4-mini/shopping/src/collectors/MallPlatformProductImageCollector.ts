@@ -13,7 +13,7 @@ export namespace MallPlatformProductImageCollector {
     product: IEntity;
   }) {
     const id: string = v4();
-    const now = new Date();
+    const now: Date = new Date();
     return {
       id,
       image_url: props.body.imageUrl,
@@ -30,3 +30,28 @@ export namespace MallPlatformProductImageCollector {
     } satisfies Prisma.mall_platform_product_imagesCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace MallPlatformProductImageCollector {
+//         export async function collect(props: {
+//           body: IMallPlatformProductImage.ICreate;
+//           mallPlatformProducts: IEntity; // from path parameter productId
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       image_url: ...,
+//       sort_order: ...,
+//       is_main: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       product: ...,
+//           } satisfies Prisma.mall_platform_product_imagesCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

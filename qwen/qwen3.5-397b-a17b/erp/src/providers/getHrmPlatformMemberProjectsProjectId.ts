@@ -18,42 +18,28 @@ export async function getHrmPlatformMemberProjectsProjectId(props: {
   member: MemberPayload;
   projectId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformProject> {
-  const project = await MyGlobal.prisma.hrm_platform_projects.findUniqueOrThrow(
-    {
+  const memberships =
+    await MyGlobal.prisma.hrm_platform_organization_memberships.findMany({
       where: {
-        id: props.projectId,
+        hrm_platform_member_id: props.member.id,
         deleted_at: null,
       },
       select: {
-        organization_id: true,
-        ...HrmPlatformProjectTransformer.select().select,
-      },
-    },
-  );
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      user_id: props.member.id,
-      organization_id: project.organization_id,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      role_id: true,
-    },
-  });
-  if (!employee) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const permission =
-    await MyGlobal.prisma.hrm_platform_role_permissions.findFirst({
-      where: {
-        hrm_platform_role_id: employee.role_id,
-        permission: "project:view",
-        deleted_at: null,
+        hrm_platform_organization_id: true,
       },
     });
-  if (!permission) {
-    throw new HttpException("Forbidden", 403);
-  }
+  const organizationIds = memberships.map(
+    (m) => m.hrm_platform_organization_id,
+  );
+  const project = await MyGlobal.prisma.hrm_platform_projects.findFirstOrThrow({
+    where: {
+      id: props.projectId,
+      deleted_at: null,
+      organization_id: {
+        in: organizationIds,
+      },
+    },
+    ...HrmPlatformProjectTransformer.select(),
+  });
   return await HrmPlatformProjectTransformer.transform(project);
 }

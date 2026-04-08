@@ -1,0 +1,767 @@
+/// Active timer sessions that track elapsed time spent on projects and tasks
+/// by employees.
+///
+/// Timer records represent user-initiated time tracking sessions where an
+/// employee starts, pauses, or stops tracking time for work performed on a
+/// specific project and/or task. Each timer captures the start time, current
+/// status, and last tick timestamp to calculate elapsed time accurately.
+///
+/// ### Lifecycle
+///
+/// Timers follow a state machine pattern: a timer is created when an
+/// employee starts tracking time (status: `started`), transitions to
+/// `paused` when the user pauses tracking, and finally reaches `stopped`
+/// when time tracking is completed. Stopped timers become read-only
+/// historical records that cannot be modified.
+///
+/// ### Data Retention
+///
+/// Stopped timers with zero elapsed time may be automatically purged after
+/// 24 hours to reduce storage. Active timers and completed timers with
+/// logged time are retained indefinitely as part of timesheet data.
+///
+/// @namespace timetracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_timers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the employee who owns this timer session.
+  ///
+  /// An employee can have multiple timers over time (e.g., multiple sessions
+  /// per day across different projects). Each timer belongs to exactly one
+  /// employee, and the employee record is never deleted while timers exist
+  /// (soft delete only). This foreign key enforces organization boundaries as
+  /// employees are scoped to a single organization.
+  ///
+  /// **Relation**: One employee owns many timers. The inverse relation on
+  /// `hrm_platform_employees` is named `timers`.
+  hrm_platform_employee_id String
+  
+  /// References the project that the timer is tracking time for.
+  ///
+  /// When a timer is associated with a project, all timelog entries derived
+  /// from this timer will be attributed to the same project. This relationship
+  /// is optional because an employee may track time without associating it
+  /// with a specific project (e.g., administrative work or meetings).
+  ///
+  /// **Relation**: One project can have many timers from various employees.
+  /// The inverse relation on `hrm_platform_projects` is named `timers`.
+  hrm_platform_project_id String?
+  
+  /// References the specific task within a project that the timer is tracking
+  /// time for.
+  ///
+  /// Tasks represent granular work items within a project. When a timer is
+  /// associated with a task, the time is attributed to that specific task
+  /// rather than the project as a whole. This relationship is optional and may
+  /// be null if the employee is tracking time at the project level only.
+  ///
+  /// **Relation**: One task can have many timers from various employees. The
+  /// inverse relation on `hrm_platform_tasks` is named `timers`.
+  hrm_platform_task_id String?
+  
+  /// Current state of the timer indicating its lifecycle phase.
+  ///
+  /// Allowed values:
+  /// - `started`: Timer is actively running and counting elapsed time
+  /// - `paused`: Timer has been paused by the user, elapsed time is frozen
+  /// - `stopped`: Timer has been stopped, elapsed time is finalized
+  ///
+  /// Status transitions follow the path: started → paused → started → stopped.
+  /// Once stopped, the timer becomes read-only and cannot be modified. This
+  /// field is required and must always have one of the three allowed values.
+  status String
+  
+  /// Timestamp of the most recent elapsed time calculation tick.
+  ///
+  /// The system periodically updates this field (e.g., every 10 seconds) while
+  /// the timer is in `started` or `paused` status to accurately calculate
+  /// elapsed time. For stopped timers, this field represents the time when the
+  /// timer was stopped. This enables the system to display real-time elapsed
+  /// time to users and calculate total duration when a timer is stopped.
+  last_tick_at DateTime
+  
+  /// Total elapsed time in seconds accumulated while the timer was in
+  /// `started` or `paused` status.
+  ///
+  /// This value is calculated by summing all intervals between `last_tick_at`
+  /// updates. The duration accumulates across pause/resume cycles. For stopped
+  /// timers, this value becomes final and cannot be modified. For active
+  /// timers, this value is continuously updated to reflect current elapsed
+  /// time.
+  duration_seconds Int
+  
+  /// Timestamp when this timer was created and time tracking was initiated.
+  created_at DateTime
+  
+  /// Timestamp of the most recent modification to this timer record.
+  updated_at DateTime
+  
+  /// Timestamp when this timer was soft-deleted.
+  ///
+  /// If null, the timer is active and visible in the system. A non-null value
+  /// indicates the timer has been removed and should be excluded from active
+  /// queries. Soft deletion preserves historical data for timesheet reports
+  /// and audit trails.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_platform_employees @relation(fields: [hrm_platform_employee_id], references: [id], onDelete: Cascade)
+  project hrm_platform_projects? @relation(fields: [hrm_platform_project_id], references: [id], onDelete: Cascade)
+  task hrm_platform_tasks? @relation(fields: [hrm_platform_task_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_platform_task_id])
+  @@index([hrm_platform_employee_id, created_at])
+  @@index([status])
+  @@index([hrm_platform_project_id])
+}
+
+/// Individual work entries recording time spent on projects and tasks by
+/// employees.
+///
+/// This is the core entity in the time tracking workflow, representing
+/// discrete work sessions that employees perform. Each timelog entry
+/// captures when work started and ended, what project and task were worked
+/// on, how long it took, and whether the work is billable.
+///
+/// Timelogs are aggregated into timesheets for periodic approval. They form
+/// the foundation of time reporting, project cost analysis, and billable
+/// hour calculations. Multiple timelogs can be associated with the same
+/// project and task, representing different work sessions over time.
+///
+/// @namespace timetracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_timelogs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the employee who performed this work.
+  ///
+  /// This establishes the employee's association with the time entry. The
+  /// employee owns this timelog and is responsible for its accuracy. Used for
+  /// filtering timelogs by employee when browsing time records or generating
+  /// employee-specific reports.
+  employee_id String
+  
+  /// References the project that this work was performed on.
+  ///
+  /// This establishes the project context for the timelog. All timelogs must
+  /// be associated with a project to enable project cost tracking and time
+  /// reports. Used for filtering timelogs by project when analyzing project
+  /// progress or calculating project costs.
+  project_id String
+  
+  /// References the specific task within the project that this work was
+  /// performed on.
+  ///
+  /// This provides granular tracking of work at the task level. The task is
+  /// optional because some work may not be tied to a specific task but still
+  /// needs to be recorded against a project. When present, enables detailed
+  /// task-level time analysis.
+  task_id String?
+  
+  /// The timestamp when the work session started.
+  ///
+  /// This marks the beginning of the work period and is used to calculate
+  /// duration and organize timelogs chronologically. Combined with
+  /// end_datetime, it determines the actual time spent on work.
+  start_datetime DateTime
+  
+  /// The timestamp when the work session ended.
+  ///
+  /// This marks the completion of the work period. Together with
+  /// start_datetime, it defines the exact time window for this work entry.
+  end_datetime DateTime
+  
+  /// The total duration of work in minutes.
+  ///
+  /// This is a calculated field derived from (end_datetime - start_datetime)
+  /// and represents the actual time spent on work. Stored as an integer to
+  /// avoid floating-point precision issues and enable efficient aggregation in
+  /// reports.
+  duration_minutes Int
+  
+  /// A brief description of the work performed during this session.
+  ///
+  /// Provides context for what work was done. This field is optional and can
+  /// be left empty if no specific description is needed. Used for reference
+  /// when reviewing past work entries.
+  description String?
+  
+  /// Indicates whether this work is billable to a client or customer.
+  ///
+  /// Billable work can be charged to clients and is typically tracked
+  /// separately from internal work. This flag is used in financial reports and
+  /// client billing calculations.
+  billable Boolean
+  
+  /// Timestamp when this timelog was created.
+  ///
+  /// Records the exact time the work entry was first recorded in the system.
+  /// Used for audit purposes and to track when time entries were logged.
+  created_at DateTime
+  
+  /// Timestamp when this timelog was last modified.
+  ///
+  /// Records the last time this work entry was updated. Used to track
+  /// modifications to timelog data for audit purposes.
+  updated_at DateTime
+  
+  /// Timestamp when this timelog was soft-deleted.
+  ///
+  /// Used for soft-delete pattern to preserve historical records while
+  /// indicating the entry is no longer active. When not null, the timelog is
+  /// considered deleted but retained for historical reference.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_platform_employees @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  project hrm_platform_projects @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  task hrm_platform_tasks? @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  timesheetTimelogs hrm_platform_timesheet_timelogs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([task_id])
+  @@index([employee_id, start_datetime])
+  @@index([project_id, start_datetime])
+  @@index([start_datetime, end_datetime])
+  @@index([billable])
+}
+
+/// Weekly collections of timelogs submitted by employees for approval workflow.
+///
+/// Each timesheet represents a work week's time tracking data, aggregated
+/// from individual timelogs. Employees submit their timesheets weekly, and
+/// managers review and approve or reject them. The table tracks the complete
+/// workflow lifecycle with status transitions and timestamps for audit
+/// purposes.
+///
+/// @namespace timetracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_timesheets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key reference to the employee who owns this timesheet.
+  ///
+  /// Employees are responsible for submitting their own timesheets. This field
+  /// establishes the 1:N relationship where one employee can have multiple
+  /// timesheets over time, each covering a different work week.
+  hrm_platform_employee_id String
+  
+  /// The start date of the work week covered by this timesheet.
+  ///
+  /// Typically represents the Monday of the work week. Used for date range
+  /// filtering, reporting, and calculating weekly totals.
+  start_date DateTime
+  
+  /// The end date of the work week covered by this timesheet.
+  ///
+  /// Typically represents the Sunday of the work week. Combined with
+  /// start_date, it defines the exact 7-day period this timesheet covers.
+  end_date DateTime
+  
+  /// Current workflow status of the timesheet.
+  ///
+  /// Allowed values:
+  /// - `pending`: Initial state after creation, not yet submitted
+  /// - `submitted`: Employee has submitted for approval, awaiting manager
+  /// review
+  /// - `approved`: Manager has approved the timesheet
+  /// - `rejected`: Manager has rejected the timesheet with feedback
+  /// - `cancelled`: Employee or manager has cancelled the timesheet
+  ///
+  /// This field drives the approval workflow and access control rules.
+  status String
+  
+  /// Timestamp when the employee submitted the timesheet for approval.
+  ///
+  /// NULL when status is `pending`. Updated when status transitions from
+  /// `pending` to `submitted`.
+  submitted_at DateTime?
+  
+  /// Timestamp when the timesheet was approved by a manager.
+  ///
+  /// NULL when status is not `approved`. Updated when status transitions to
+  /// `approved`.
+  approved_at DateTime?
+  
+  /// Timestamp when the timesheet was rejected by a manager.
+  ///
+  /// NULL when status is not `rejected`. Updated when status transitions to
+  /// `rejected`.
+  rejected_at DateTime?
+  
+  /// Timestamp when the timesheet was cancelled.
+  ///
+  /// NULL when status is not `cancelled`. Updated when status transitions to
+  /// `cancelled`.
+  cancelled_at DateTime?
+  
+  /// Optional notes or comments on the timesheet.
+  ///
+  /// Can contain employee explanations, manager feedback, or other contextual
+  /// information about the timesheet contents.
+  notes String?
+  
+  /// Sum of all hours from timelogs included in this timesheet.
+  ///
+  /// Calculated aggregate value for quick reference. Can be recalculated from
+  /// constituent timelogs if needed.
+  total_hours Float?
+  
+  /// Record creation timestamp.
+  ///
+  /// Automatically set when the timesheet record is first created.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  ///
+  /// Automatically updated on every modification to the timesheet record.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  ///
+  /// NULL when the record is active. Set when the timesheet is soft-deleted
+  /// for archival and audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_platform_employees @relation(fields: [hrm_platform_employee_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  timelogs hrm_platform_timesheet_timelogs[]
+  actions hrm_platform_timesheet_actions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([hrm_platform_employee_id, start_date])
+  @@index([status])
+  @@index([hrm_platform_employee_id, status])
+  @@index([start_date])
+}
+
+/// Junction table linking timesheets to their constituent timelogs for the
+/// timesheet approval workflow.
+///
+/// This table implements the many-to-many relationship between
+/// hrm_platform_timesheets and hrm_platform_timelogs, enabling each
+/// timesheet to aggregate multiple timelogs while maintaining referential
+/// integrity. The unique composite constraint prevents duplicate
+/// associations between the same timesheet and timelog.
+///
+/// The table supports soft delete through deleted_at, preserving historical
+/// data for audit and reporting purposes. It is a subsidiary entity managed
+/// through its parent tables rather than having standalone CRUD operations.
+///
+/// @namespace timetracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_timesheet_timelogs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the timesheet that this timelog belongs to. Each record links
+  /// a specific timelog to its parent timesheet for aggregation and approval
+  /// workflow.
+  ///
+  /// The relationship enables querying all timelogs included in a timesheet,
+  /// which is essential for calculating total hours and processing timesheet
+  /// approval.
+  hrm_platform_timesheet_id String
+  
+  /// References the timelog entry that is included in this timesheet. Each
+  /// timelog can only appear in one timesheet at a time, ensuring clean
+  /// separation between weekly reporting periods.
+  ///
+  /// This relationship maintains the link between the detailed work entry
+  /// (timelog) and its aggregated period (timesheet) for timesheet lifecycle
+  /// tracking and approval workflows.
+  hrm_platform_timelog_id String
+  
+  /// Timestamp when this timesheet-timelog association record was created.
+  ///
+  /// This provides audit trail for when timelogs were first included in
+  /// timesheets during the timesheet creation or approval process.
+  created_at DateTime
+  
+  /// Timestamp when this timesheet-timelog association record was last
+  /// modified.
+  ///
+  /// Tracks changes to the association, such as when a timelog is moved
+  /// between timesheets or when the relationship is updated during timesheet
+  /// approval workflows.
+  updated_at DateTime
+  
+  /// Timestamp when this timesheet-timelog association was soft deleted.
+  ///
+  /// If present, indicates the association has been removed. Soft delete
+  /// preserves historical data for audit and reporting while allowing the
+  /// record to be excluded from active queries.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  timesheet hrm_platform_timesheets @relation(fields: [hrm_platform_timesheet_id], references: [id], onDelete: Cascade)
+  timelog hrm_platform_timelogs @relation(fields: [hrm_platform_timelog_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrm_platform_timesheet_id, hrm_platform_timelog_id], map: "hrm_platform_timesheet_timelogs_hrm_platform_timesheet_d0bfa42a")
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_timesheet_id, deleted_at], map: "hrm_platform_timesheet_timelogs_hrm_platform_timesheet_6f2b1b8b")
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_timelog_id, deleted_at], map: "hrm_platform_timesheet_timelogs_hrm_platform_timelog_i_f55a3791")
+}
+
+/// Audit log for timesheet lifecycle actions (submit, approve, reject).
+///
+/// Tracks all state changes to timesheets from creation through approval or
+/// rejection. Each entry records the actor who performed the action,
+/// timestamp, and optional notes. This provides complete audit trail for
+/// compliance and dispute resolution.
+///
+/// @namespace timetracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_timesheet_actions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the timesheet this action belongs to.
+  ///
+  /// Foreign key to hrm_platform_timesheets, establishing the timesheet
+  /// context for each lifecycle event.
+  hrm_platform_timesheet_id String
+  
+  /// References the member who performed this action.
+  ///
+  /// Foreign key to hrm_platform_members, identifying who submitted, approved,
+  /// or rejected the timesheet. This enables full audit trail attribution.
+  actor_id String
+  
+  /// The type of action performed on the timesheet.
+  ///
+  /// Enum values: submit (employee submits for approval), approve (manager
+  /// approves), reject (manager rejects with feedback). Each status change
+  /// generates an action record.
+  action String
+  
+  /// Optional notes or feedback accompanying the action.
+  ///
+  /// Used for rejection reasons, approval comments, or additional context.
+  /// Managers may provide feedback when rejecting a timesheet, explaining what
+  /// needs revision.
+  notes String?
+  
+  /// Timestamp when this action record was created.
+  ///
+  /// Records when the action occurred, used for audit trail chronological
+  /// ordering and reporting.
+  created_at DateTime
+  
+  /// Timestamp when this record was last updated.
+  ///
+  /// Maintained for consistency with other business entity tables, though
+  /// snapshot tables are typically append-only.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  timesheet hrm_platform_timesheets @relation(fields: [hrm_platform_timesheet_id], references: [id], onDelete: Cascade)
+  actor hrm_platform_members @relation(fields: [actor_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_timesheet_id, created_at], map: "hrm_platform_timesheet_actions_hrm_platform_timesheet__8df0eb84")
+  @@index([actor_id, created_at])
+}
+
+/// Organization timezone configuration for time calculations.
+///
+/// This table stores the timezone setting for each organization to ensure
+/// consistent time tracking and timesheet calculations across different
+/// geographical regions.
+///
+/// @namespace timetracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_time_tracking_timezones {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the organization this timezone configuration belongs to.
+  ///
+  /// Each organization has exactly one timezone setting that applies to all
+  /// time tracking operations (timers, timelogs, timesheets) within that
+  /// organization.
+  organization_id String
+  
+  /// IANA timezone identifier used for time calculations.
+  ///
+  /// Stores standard timezone strings like 'Asia/Seoul', 'America/New_York',
+  /// 'Europe/London'. Used to convert timestamps between storage UTC and local
+  /// time for display, reporting, and timesheet calculations.
+  timezone String
+  
+  /// Creation timestamp of this timezone configuration record.
+  created_at DateTime
+  
+  /// Last update timestamp of this timezone configuration record.
+  updated_at DateTime
+  
+  /// Soft delete timestamp when this timezone configuration is removed. NULL
+  /// when active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_id])
+}
+
+/// Precomputed weekly aggregated statistics for timesheet dashboards
+/// providing efficient read access to timesheet metrics.
+///
+/// This materialized view aggregates timesheet and timelog data by employee
+/// and week period, storing computed statistics that would otherwise require
+/// expensive JOINs and aggregations at query time. It is designed
+/// specifically for dashboard performance, enabling fast retrieval of weekly
+/// timesheet summaries for any organization or employee.
+///
+/// **Aggregation Scope**
+///
+/// Each record represents one employee's timesheet activity for a single
+/// week (Monday to Sunday). The view pre-computes total hours, status
+/// counts, and other metrics across all timesheets within that week for the
+/// employee. This eliminates the need for runtime aggregation queries.
+///
+/// **Refresh Strategy**
+///
+/// The view is refreshed periodically (e.g., nightly or on-demand) to
+/// reflect changes to underlying timesheets and timelogs. Administrators can
+/// force refresh when immediate accuracy is required after bulk operations.
+///
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_timesheet_weekly_stats {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the organization that owns the employee and timesheets in this
+  /// weekly aggregation.
+  ///
+  /// All timesheets aggregated in this record belong to employees within this
+  /// organization. This enables organization-scoped dashboard queries and
+  /// multi-tenant data isolation. When an organization is deleted, these
+  /// statistics are cascadingly removed to maintain referential integrity.
+  ///
+  /// {@link hrm_platform_organizations}
+  organization_id String
+  
+  /// References the employee who owns the timesheets aggregated in this weekly
+  /// record.
+  ///
+  /// Each record represents timesheet activity for exactly one employee during
+  /// one week. The employee must belong to the referenced organization. If the
+  /// employee is deleted or deactivated, the weekly statistics are cascadingly
+  /// removed to maintain data consistency.
+  ///
+  /// {@link hrm_platform_employees}
+  employee_id String
+  
+  /// The Monday of the week covered by this aggregation (in organization's
+  /// timezone).
+  ///
+  /// This defines the start of the weekly period (inclusive) for which the
+  /// aggregated statistics apply. The week runs from Monday 00:00 to Sunday
+  /// 23:59:59. This field is used for time-based filtering, grouping, and
+  /// dashboard date range selection.
+  ///
+  /// Timesheets are created for specific week periods starting from the Monday
+  /// date. This week_start value corresponds to that period and enables users
+  /// to filter timesheet statistics by date range.
+  week_start DateTime
+  
+  /// The Sunday of the week covered by this aggregation (in organization's
+  /// timezone).
+  ///
+  /// This defines the end of the weekly period (inclusive) that corresponds to
+  /// the week_start Monday. Together, week_start and week_end define the exact
+  /// time range covered by this aggregated statistics record. The week_end is
+  /// always exactly 6 days after week_start.
+  week_end DateTime
+  
+  /// Total number of timesheets for this employee within the week period.
+  ///
+  /// Counts all timesheets (regardless of status) that fall within the
+  /// week_start to week_end range. This includes draft, submitted, approved,
+  /// and rejected timesheets. A single employee can have multiple timesheets
+  /// for the same week if they were submitted and rejected, then resubmitted
+  /// (though typically only the latest exists in most scenarios).
+  ///
+  /// This count is used in dashboards to indicate how many timesheet
+  /// submissions exist for the week and can help identify employees with
+  /// multiple submission attempts.
+  timesheet_count Int
+  
+  /// Sum of all timelog durations (in hours) across all timesheets in this
+  /// week.
+  ///
+  /// Calculated by summing the duration field from all timelogs included in
+  /// timesheets that fall within the week period. The duration is stored in
+  /// minutes in the source timelogs table and converted to hours for this
+  /// aggregated view (rounded to 2 decimal places for readability). This is
+  /// the primary metric used for payroll calculations, reporting, and
+  /// dashboard visualizations.
+  ///
+  /// Total hours represents actual worked time and is the key metric for
+  /// timesheet approval and compensation processing.
+  total_hours Float
+  
+  /// Sum of billable timelog durations (in hours) across all timesheets in
+  /// this week.
+  ///
+  /// Calculated by summing the duration of only those timelogs where the
+  /// billable flag is true. Billable hours represent time that can be charged
+  /// to clients or projects and are typically used for billing calculations
+  /// and project profitability analysis. Non-billable hours (project work,
+  /// internal meetings, training) are excluded from this count but included in
+  /// total_hours.
+  ///
+  /// This field enables distinction between billable and non-billable work in
+  /// dashboards and financial reports.
+  billable_hours Float
+  
+  /// Number of timesheets in draft status within this week period.
+  ///
+  /// Counts timesheets that are currently being prepared and not yet submitted
+  /// for approval. Draft timesheets can still be modified by the employee and
+  /// are not included in total_hours for approval purposes until submitted.
+  /// This count helps managers identify employees who have not yet submitted
+  /// their timesheets for the week.
+  ///
+  /// In a weekly workflow, this count being greater than zero indicates
+  /// pending employee action.
+  draft_timesheet_count Int
+  
+  /// Number of timesheets in submitted status within this week period.
+  ///
+  /// Counts timesheets that have been submitted by the employee and are
+  /// awaiting manager approval. Submitted timesheets cannot be modified by the
+  /// employee and their total_hours are included in the weekly metrics. This
+  /// count is used in dashboards to track pending approvals and manager
+  /// workload.
+  ///
+  /// A high submitted_timesheet_count may indicate a manager needs to review
+  /// multiple timesheets.
+  submitted_timesheet_count Int
+  
+  /// Number of timesheets in approved status within this week period.
+  ///
+  /// Counts timesheets that have been reviewed and approved by authorized
+  /// personnel. Approved timesheets are locked from modification and their
+  /// hours are considered final for payroll and reporting purposes. This is
+  /// the primary metric for completed timesheet work.
+  ///
+  /// Approved timesheets contribute their total_hours to payroll calculations
+  /// and organizational reporting. Multiple approved timesheets for the same
+  /// week should not occur in normal workflow.
+  approved_timesheet_count Int
+  
+  /// Number of timesheets in rejected status within this week period.
+  ///
+  /// Counts timesheets that have been rejected and returned to draft status.
+  /// Rejected timesheets contain a rejection reason and must be modified and
+  /// resubmitted. This count helps identify timesheets that require employee
+  /// attention and manager follow-up.
+  ///
+  /// Rejected timesheets are not included in payroll calculations until they
+  /// are resubmitted and approved. This count can be used to track rejection
+  /// rates and identify problematic timesheet patterns.
+  rejected_timesheet_count Int
+  
+  /// Timestamp indicating when this aggregated record was last computed or
+  /// refreshed.
+  ///
+  /// This timestamp is used to determine the freshness of the aggregated data
+  /// and whether a refresh is needed. Materialized views are typically
+  /// refreshed on a schedule (e.g., nightly) or on-demand after bulk data
+  /// operations. Dashboard queries can use this timestamp to decide whether to
+  /// trust the cached data or trigger a refresh.
+  ///
+  /// The refresh strategy is managed externally and this field is updated by
+  /// the refresh process, not by direct user operations.
+  last_refreshed_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  employee hrm_platform_employees @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([organization_id, employee_id, week_start], map: "hrm_platform_timesheet_weekly_stats_organization_id_em_f6944428")
+  // spellchecker: ignore-next-line
+  @@index([organization_id, week_start], map: "hrm_platform_timesheet_weekly_stats_organization_id_we_66cecced")
+  @@index([employee_id, week_start])
+}

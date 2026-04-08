@@ -1,7 +1,15 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallOrderItem";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+import { IShoppingMallCustomerAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerAddress";
+import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
 import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+import { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -20,96 +28,96 @@ export async function patchShoppingMallCustomerOrdersOrderIdItems(props: {
   orderId: string & tags.Format<"uuid">;
   body: IShoppingMallOrderItem.IRequest;
 }): Promise<IPageIShoppingMallOrderItem.ISummary> {
-  // Verify order exists and belongs to customer
+  // Validate order exists and belongs to customer
   await MyGlobal.prisma.shopping_mall_orders.findUniqueOrThrow({
     where: {
       id: props.orderId,
       shopping_mall_customer_id: props.customer.id,
-      deleted_at: null,
     },
-    select: { id: true },
   });
-  // Extract pagination parameters
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build WHERE clause
-  const whereInput: Prisma.shopping_mall_order_itemsWhereInput = {
+  // Build where clause with optional status filter
+  const whereInput = {
     shopping_mall_order_id: props.orderId,
     deleted_at: null,
-    ...(props.body.status && { status: props.body.status }),
-    ...(props.body.productId && {
-      product_snapshot: props.body.productId,
-    }),
-    ...(props.body.variantId && {
-      variant_snapshot: props.body.variantId,
-    }),
-    ...(props.body.createdAtFrom && {
-      created_at: {
-        gte: new Date(props.body.createdAtFrom),
-      },
-    }),
-    ...(props.body.createdAtTo && {
-      created_at: {
-        lte: new Date(props.body.createdAtTo),
-      },
-    }),
-    ...(props.body.priceMin !== undefined && {
-      price: {
-        gte: props.body.priceMin,
-      },
-    }),
-    ...(props.body.priceMax !== undefined && {
-      price: {
-        lte: props.body.priceMax,
-      },
-    }),
-    ...(props.body.quantityMin !== undefined && {
-      quantity: {
-        gte: props.body.quantityMin,
-      },
-    }),
-    ...(props.body.quantityMax !== undefined && {
-      quantity: {
-        lte: props.body.quantityMax,
-      },
-    }),
+    ...(props.body.status !== undefined && { status: props.body.status }),
   } satisfies Prisma.shopping_mall_order_itemsWhereInput;
-  // Build ORDER BY clause
-  const orderByInput: Prisma.shopping_mall_order_itemsOrderByWithRelationInput =
-    props.body.sortBy === "created_at"
-      ? { created_at: props.body.sortOrder ?? "desc" }
-      : props.body.sortBy === "updated_at"
-        ? { updated_at: props.body.sortOrder ?? "desc" }
-        : props.body.sortBy === "price"
-          ? { price: props.body.sortOrder ?? "desc" }
-          : props.body.sortBy === "quantity"
-            ? { quantity: props.body.sortOrder ?? "desc" }
-            : { created_at: "desc" };
-  // Query order items
   const data = await MyGlobal.prisma.shopping_mall_order_items.findMany({
     where: whereInput,
     skip,
     take: limit,
-    orderBy: orderByInput,
+    orderBy: { created_at: "desc" },
     ...ShoppingMallOrderItemAtSummaryTransformer.select(),
   });
-  // Get total count
   const total = await MyGlobal.prisma.shopping_mall_order_items.count({
     where: whereInput,
   });
-  // Transform results
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    ShoppingMallOrderItemAtSummaryTransformer.transform,
-  );
   return {
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
-    data: transformedData,
+    } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      data,
+      ShoppingMallOrderItemAtSummaryTransformer.transform,
+    ),
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrderItem";
+// import { IPageIShoppingMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallOrderItem";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IShoppingMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallOrder";
+// import { IShoppingMallCustomerAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerAddress";
+// import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+// import { IShoppingMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariantOption";
+// import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
+// import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
+// import { IShoppingMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerProfile";
+// import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchShoppingMallCustomerOrdersOrderIdItems(props: {
+//   customer: CustomerPayload;
+//   orderId: string & tags.Format<"uuid">;
+//   body: IShoppingMallOrderItem.IRequest;
+// }): Promise<IPageIShoppingMallOrderItem.ISummary> {
+//   const records = await MyGlobal.prisma.shopping_mall_order_items.findMany({
+//     ...ShoppingMallOrderItemAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, ShoppingMallOrderItemAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

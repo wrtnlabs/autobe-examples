@@ -1,0 +1,465 @@
+/// Main organization entity that serves as the tenant boundary for the HRM
+/// platform.
+///
+/// Organizations represent independent business entities with their own
+/// employees, projects, roles, settings, and data isolation. Each
+/// organization is owned by a member and has a unique name within that
+/// owner's context.
+///
+/// The organization provides the foundational business structure for all
+/// other entities including departments, employees, projects, tasks, and
+/// time tracking records.
+///
+/// @namespace organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_organizations {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who owns this organization.
+  ///
+  /// Only one member can be the owner of an organization. The owner has full
+  /// access to all organization features and can transfer ownership to another
+  /// member in the organization. This relation enables organization-level
+  /// ownership tracking and ownership transfer operations.
+  ///
+  /// The inverse relation is accessed through the member's ownedOrganizations
+  /// field.
+  owner_id String
+  
+  /// The organization's display name.
+  ///
+  /// Must be unique within the owner's context. Users can have multiple
+  /// organizations with different names. This name is used throughout the
+  /// platform for identification purposes.
+  name String
+  
+  /// A brief description of the organization's business or purpose.
+  ///
+  /// Optional text field that provides context about the organization. Can be
+  /// used in directory listings and organizational overviews.
+  description String?
+  
+  /// The organization's primary currency classification.
+  ///
+  /// Determines the monetary units for all financial data including pay rates
+  /// and budget calculations. Common values include USD, EUR, and KRW. This
+  /// setting applies to all financial operations within the organization.
+  currency String
+  
+  /// The organization's timezone identifier.
+  ///
+  /// Used for time tracking, timesheet calculations, and display formatting.
+  /// Follows IANA timezone database format (e.g., 'Asia/Seoul',
+  /// 'America/New_York').
+  timezone String
+  
+  /// The starting month of the organization's fiscal year.
+  ///
+  /// Used for financial reporting and fiscal period calculations. Must be a
+  /// value between 1 (January) and 12 (December). This value helps organize
+  /// the organization's financial cycles.
+  fiscal_start_month Int
+  
+  /// The timestamp when this organization record was created.
+  ///
+  /// Automatically set to the current time when the organization is first
+  /// created. This provides an audit trail for organizational lifecycle.
+  created_at DateTime
+  
+  /// The timestamp when this organization record was last updated.
+  ///
+  /// Automatically updated on every modification to the organization. Used to
+  /// track the most recent changes and support soft delete workflows.
+  updated_at DateTime
+  
+  /// The timestamp when this organization was soft-deleted.
+  ///
+  /// Nullable field that is set when the organization is deleted. When
+  /// present, indicates the organization is marked for deletion. Soft delete
+  /// preserves historical data while preventing active access.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  owner hrm_platform_members @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  memberSessions hrm_platform_member_sessions[]
+  snapshots hrm_platform_organizations_snapshots[]
+  files hrm_platform_organization_files[]
+  departments hrm_platform_departments[]
+  employees hrm_platform_employees[]
+  employeeSnapshots hrm_platform_employees_snapshots[]
+  contracts hrm_platform_contracts[]
+  roles hrm_platform_roles[]
+  permissions hrm_platform_permissions[]
+  projects hrm_platform_projects[]
+  timeTrackingTimezones hrm_platform_time_tracking_timezones[]
+  timesheetWeeklyStats hrm_platform_timesheet_weekly_stats[]
+  activityLogs hrm_platform_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([owner_id, name])
+  @@index([owner_id])
+}
+
+/// Point-in-time snapshots of organization records for audit trail and
+/// historical analysis.
+///
+/// ---
+///
+/// ### Purpose
+///
+/// This table captures the complete state of an organization at specific
+/// points in time, providing an immutable audit trail of organizational
+/// changes. Each snapshot represents a frozen moment showing exactly what
+/// the organization's data looked like at that time, including name,
+/// description, settings, and status.
+///
+/// @namespace organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_organizations_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the organization this snapshot belongs to.
+  ///
+  /// Enables retrieval of an organization's complete snapshot history for
+  /// audit purposes.
+  hrm_platform_organization_id String
+  
+  /// Organization name at the time of snapshot.
+  name String
+  
+  /// Organization description at the time of snapshot.
+  description String?
+  
+  /// URL to organization logo at the time of snapshot.
+  logo_uri String?
+  
+  /// Organization currency code (e.g., USD, EUR, KRW) at the time of snapshot.
+  currency String
+  
+  /// Organization timezone at the time of snapshot.
+  timezone String?
+  
+  /// First month of organization's fiscal year (1-12) at the time of snapshot.
+  fiscal_start_month Int?
+  
+  /// Organization status at the time of snapshot (active, suspended, archived).
+  status String
+  
+  /// Additional JSON metadata stored at the time of snapshot.
+  metadata String?
+  
+  /// Timestamp when this snapshot was created, representing the point in time
+  /// this snapshot represents.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_organization_id, created_at], map: "hrm_platform_organizations_snapshots_hrm_platform_orga_a71c4512")
+}
+
+/// Stores file metadata (logos, documents) for organizations with external
+/// storage references.
+///
+/// Each record tracks a file's location, properties, and lifecycle status.
+/// Files are subsidiary to organizations and are managed through the
+/// organization context rather than standalone endpoints.
+///
+/// @namespace organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_organization_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for unique file identification.
+  id String @id
+  
+  /// Reference to the organization this file belongs to.
+  ///
+  /// Files are subsidiary to organizations and cannot exist without an owning
+  /// organization. This creates a one-to-many relationship where one
+  /// organization can have multiple associated files.
+  ///
+  /// The inverse relation is accessed through the organization's files field.
+  hrm_platform_organization_id String
+  
+  /// Reference to the member who uploaded this file.
+  ///
+  /// Provides audit trail for file ownership and modification tracking.
+  hrm_platform_member_id String
+  
+  /// Unique storage key for the file in external object storage (e.g., S3 key).
+  ///
+  /// This key is unique per organization and used to retrieve the actual file
+  /// content.
+  file_key String
+  
+  /// Original filename as uploaded by the user.
+  ///
+  /// Preserves user-provided naming for display purposes.
+  file_name String
+  
+  /// MIME type or file category (e.g., 'image/png', 'application/pdf', 'logo',
+  /// 'document').
+  ///
+  /// Used for content validation and rendering decisions.
+  file_type String
+  
+  /// File size in bytes.
+  ///
+  /// Used for storage quota calculations and upload validation.
+  file_size Int
+  
+  /// Storage backend type (e.g., 's3', 'local', 'gcs').
+  ///
+  /// Indicates which storage system hosts the file.
+  storage_type String
+  
+  /// Public or pre-signed URL for accessing the file.
+  ///
+  /// May be an absolute URL or relative path depending on storage
+  /// configuration.
+  url String?
+  
+  /// File lifecycle status with allowed values: 'active', 'deleted',
+  /// 'archived'.
+  ///
+  /// 'active' = file is currently in use
+  /// 'deleted' = file marked for deletion (soft delete)
+  /// 'archived' = file retained for compliance but not actively used
+  status String
+  
+  /// Timestamp when this file record was created.
+  ///
+  /// Used for ordering and auditing file creation.
+  created_at DateTime
+  
+  /// Timestamp when this file record was last updated.
+  ///
+  /// Used for detecting changes and caching invalidation.
+  updated_at DateTime
+  
+  /// Timestamp when this file record was soft-deleted.
+  ///
+  /// Null when file is active, set when file is deleted or archived.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  member hrm_platform_members @relation(fields: [hrm_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrm_platform_organization_id, file_key], map: "hrm_platform_organization_files_hrm_platform_organizat_9edc83ea")
+  @@index([hrm_platform_member_id])
+  @@index([file_type])
+  @@index([status])
+  @@index([created_at])
+}
+
+/// Department with hierarchical parent-child structure within an organization.
+///
+/// Departments organize employees into functional groups within an
+/// organization. Each department can have a parent department to form a
+/// hierarchical tree structure, enabling multi-level organizational
+/// subdivisions.
+///
+/// {\@link hrm_platform_organizations} owns departments and enforces data
+/// isolation boundaries.
+///
+/// @namespace organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_departments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization that owns this department.
+  ///
+  /// Departments belong to an organization and inherit its data isolation
+  /// boundaries. All department operations are scoped to the organization.
+  organization_id String
+  
+  /// Optional parent department for hierarchical structure.
+  ///
+  /// When set, creates a parent-child relationship enabling multi-level
+  /// organizational tree. Departments without a parent are root-level
+  /// departments.
+  parent_department_id String?
+  
+  /// Unique name of the department within its organization.
+  ///
+  /// The name must be unique within the organization but can be duplicated
+  /// across different organizations.
+  name String
+  
+  /// Timestamp when the department was created.
+  created_at DateTime
+  
+  /// Timestamp when the department was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the department was soft-deleted.
+  ///
+  /// Null indicates the department is active. Soft deletion preserves
+  /// historical references.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  parentDepartment hrm_platform_departments? @relation("recursive", fields: [parent_department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  childDepartments hrm_platform_departments[] @relation("recursive")
+  snapshots hrm_platform_departments_snapshots[]
+  employees hrm_platform_employees[]
+  employeeSnapshots hrm_platform_employees_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_id, name])
+  @@index([organization_id])
+  @@index([parent_department_id])
+}
+
+/// Point-in-time snapshots of department records for audit trail and
+/// historical analysis.
+///
+/// This table stores immutable snapshots of department state at specific
+/// moments in time, enabling historical queries and audit capabilities. Each
+/// snapshot captures all department fields as they existed when the snapshot
+/// was created, denormalized for efficient read operations.
+///
+/// {@link hrm_platform_departments} is the source table from which snapshots
+/// are generated. The organization can query this table to understand how
+/// department names, structures, and attributes have evolved over time.
+///
+/// @namespace organization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_departments_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the department this snapshot belongs to.
+  ///
+  /// Enables querying all historical snapshots for a specific department. The
+  /// foreign key relationship ensures referential integrity with the {@link
+  /// hrm_platform_departments} table.
+  hrm_platform_department_id String
+  
+  /// Department name recorded at snapshot time.
+  ///
+  /// This is the department name as it existed when the snapshot was created.
+  /// It may differ from the current department name if the name has been
+  /// updated since this snapshot.
+  name String
+  
+  /// Department description recorded at snapshot time.
+  ///
+  /// Optional descriptive text about the department's purpose, scope, or
+  /// function. May differ from current description if updated since snapshot.
+  description String?
+  
+  /// Department color code recorded at snapshot time.
+  ///
+  /// Visual identifier used in UI to distinguish departments, stored as a hex
+  /// color code (e.g., #3B82F6). May differ from current color if updated
+  /// since snapshot.
+  color String?
+  
+  /// Parent department ID recorded at snapshot time.
+  ///
+  /// References the parent department in the organizational hierarchy at the
+  /// time of snapshot. NULL if the department has no parent (root-level
+  /// department). This value may differ from current parent if the department
+  /// was reorganized.
+  parent_department_id String?
+  
+  /// Fiscal start month recorded at snapshot time.
+  ///
+  /// Optional month (1-12) indicating when the department's fiscal year
+  /// begins. NULL if not set. May differ from current value if fiscal period
+  /// was changed since snapshot.
+  fiscal_start_month Int?
+  
+  /// Department timezone recorded at snapshot time.
+  ///
+  /// Optional timezone string (e.g., 'Asia/Seoul', 'America/New_York') for
+  /// department scheduling. NULL if not set. May differ from current timezone
+  /// if changed since snapshot.
+  timezone String?
+  
+  /// Department status recorded at snapshot time.
+  ///
+  /// Current status of the department: 'active' or 'inactive'. This reflects
+  /// the department's operational state at the time of snapshot and may differ
+  /// from current status.
+  status String
+  
+  /// Snapshot creation timestamp.
+  ///
+  /// When this snapshot was created, capturing the point in time when this
+  /// department state was recorded.
+  created_at DateTime
+  
+  /// Department state update timestamp.
+  ///
+  /// The updated_at value from the {@link hrm_platform_departments} table at
+  /// the time this snapshot was created. Represents when the department state
+  /// being captured was last modified.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  department hrm_platform_departments @relation(fields: [hrm_platform_department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_platform_department_id, created_at], map: "hrm_platform_departments_snapshots_hrm_platform_depart_06d16988")
+}

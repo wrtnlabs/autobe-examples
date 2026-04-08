@@ -1,6 +1,6 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IRedditCloneGuestSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneGuestSession";
+import { IRedditCloneGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneGuest";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -14,72 +14,116 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postRedditCloneAuthGuestJoin(props: {
   ip: string;
-  body: IRedditCloneGuestSession.IJoin;
-}): Promise<IRedditCloneGuestSession.IAuthorized> {
-  // 1. Check for existing guest by fingerprint
+  body: IRedditCloneGuest.IJoin;
+}): Promise<IRedditCloneGuest.IAuthorized> {
+  // 1. Check if guest already exists by fingerprint
   const existingGuest = await MyGlobal.prisma.reddit_clone_guests.findFirst({
     where: { fingerprint: props.body.fingerprint },
-    select: { id: true },
   });
-  // 2. Create new guest if not exists, otherwise reuse existing
-  const guestId = existingGuest
-    ? existingGuest.id
-    : (
-        await MyGlobal.prisma.reddit_clone_guests.create({
-          data: {
-            id: v4(),
-            fingerprint: props.body.fingerprint,
-            created_at: new Date(),
-            updated_at: new Date(),
-          },
-        })
-      ).id;
-  // 3. Generate token expiration times (shorter than member tokens per spec)
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  // 4. Create session record
-  const session = await MyGlobal.prisma.reddit_clone_guest_sessions.create({
+  // 2. Create guest if not exists (idempotent for same fingerprint)
+  const guestId: string & tags.Format<"uuid"> = v4();
+  const createdAt: string & tags.Format<"date-time"> =
+    new Date().toISOString() as string & tags.Format<"date-time">;
+  const guest =
+    existingGuest ??
+    (await MyGlobal.prisma.reddit_clone_guests.create({
+      data: {
+        id: guestId,
+        fingerprint: props.body.fingerprint,
+        created_at: createdAt,
+        updated_at: createdAt,
+      },
+    }));
+  // 3. Calculate token expiration times
+  const now: string & tags.Format<"date-time"> =
+    new Date().toISOString() as string & tags.Format<"date-time">;
+  const accessExpiresMs: number = 15 * 60 * 1000;
+  const refreshExpiresMs: number = 7 * 24 * 60 * 60 * 1000;
+  const accessExpires: string & tags.Format<"date-time"> = new Date(
+    Date.now() + accessExpiresMs,
+  ).toISOString() as string & tags.Format<"date-time">;
+  const refreshExpires: string & tags.Format<"date-time"> = new Date(
+    Date.now() + refreshExpiresMs,
+  ).toISOString() as string & tags.Format<"date-time">;
+  // 4. Create guest session
+  const sessionId: string & tags.Format<"uuid"> = v4();
+  const sessionIp: string = props.body.ip ?? props.ip;
+  await MyGlobal.prisma.reddit_clone_guest_sessions.create({
     data: {
-      id: v4(),
-      reddit_clone_guest_id: guestId,
-      ip: props.body.ip ?? props.ip,
+      id: sessionId,
+      reddit_clone_guest_id: guest.id,
+      ip: sessionIp,
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: new Date(),
-      expired_at: accessExpires,
+      created_at: now,
+      expired_at: refreshExpires,
     },
   });
-  // 5. Generate JWT tokens with guest actor claim
-  const token: IAuthorizationToken = {
-    access: jwt.sign(
-      {
-        type: "guest",
-        id: guestId,
-        session_id: session.id,
-        created_at: new Date().toISOString(),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "guest",
-        id: guestId,
-        session_id: session.id,
-        tokenType: "refresh",
-        created_at: new Date().toISOString(),
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1d", issuer: "autobe" },
-    ),
-    expired_at:
-      accessExpires.toISOString() as IAuthorizationToken["expired_at"],
-    refreshable_until:
-      refreshExpires.toISOString() as IAuthorizationToken["refreshable_until"],
-  };
-  // 6. Return IAuthorized with guest id and token
+  // 5. Generate JWT tokens
+  const accessToken: string = jwt.sign(
+    {
+      type: "guest",
+      id: guest.id,
+      session_id: sessionId,
+      created_at: now,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "15m", issuer: "autobe" },
+  );
+  const refreshToken: string = jwt.sign(
+    {
+      type: "guest",
+      id: guest.id,
+      session_id: sessionId,
+      tokenType: "refresh",
+      created_at: now,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
+  // 6. Return IAuthorized response
   return {
-    id: guestId as IRedditCloneGuestSession.IAuthorized["id"],
-    token,
+    id: guest.id,
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
+    },
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IRedditCloneGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneGuest";
+// import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function postRedditCloneAuthGuestJoin(props: {
+//   ip: string;
+//   body: IRedditCloneGuest.IJoin;
+// }): Promise<IRedditCloneGuest.IAuthorized> {
+//   // No matching Collector/Transformer found for this operation.
+//     // You MUST call getDatabaseSchemas first to get exact relation property names.
+//     // NEVER guess relation names from table names — always verify against the schema.
+//     ...
+// }
+// ```
+//--------------------------------------------------------------

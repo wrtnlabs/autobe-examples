@@ -2,7 +2,7 @@ import { TypedBody, TypedRoute } from "@nestia/core";
 import { Controller, Ip } from "@nestjs/common";
 import typia from "typia";
 
-import { IRedditCloneMemberSession } from "../../../../api/structures/IRedditCloneMemberSession";
+import { IRedditCloneMember } from "../../../../api/structures/IRedditCloneMember";
 import { postRedditCloneAuthMemberJoin } from "../../../../providers/postRedditCloneAuthMemberJoin";
 import { postRedditCloneAuthMemberLogin } from "../../../../providers/postRedditCloneAuthMemberLogin";
 import { postRedditCloneAuthMemberRefresh } from "../../../../providers/postRedditCloneAuthMemberRefresh";
@@ -10,39 +10,15 @@ import { postRedditCloneAuthMemberRefresh } from "../../../../providers/postRedd
 @Controller("/redditClone/auth/member")
 export class RedditcloneAuthMemberController {
   /**
-   * Registration endpoint for creating a new member account in the Reddit-like community platform.
-   *
-   * This endpoint handles new member registration by accepting email, password, and username credentials. The email field (reddit_clone_members.email) must be unique across all member accounts as enforced by the database unique constraint. The username field (reddit_clone_members.username) serves as the unique display name for user identification in posts, comments, and profiles.
-   *
-   * The password_hash field stores the securely hashed password using bcrypt - plain text passwords are never stored. Password validation rules should enforce minimum length, complexity requirements, and prevent commonly used passwords.
-   *
-   * Upon successful registration, the system creates a new member record in the reddit_clone_members table with the provided credentials, generates a JWT access token for immediate authentication, generates a refresh token for token renewal, and creates a session record in reddit_clone_member_sessions to track the login session with IP address, HTTP referrer, and session metadata.
-   *
-   * The response includes the authenticated member's ID, username, access token, and refresh token. The access token should be used for subsequent authenticated API requests, while the refresh token enables token renewal when the access token expires.
-   *
-   * Related operations:
-   * - POST /auth/member/login - For existing members to authenticate
-   * - POST /auth/member/refresh - For renewing expired access tokens
+   * Register a new member account on the Reddit-like platform. This endpoint creates a new member record in the reddit_clone_members table with the provided email, password_hash (securely hashed), and unique username. Upon successful registration, the system creates an email verification record in reddit_clone_member_email_verifications table with a unique token that expires after a configurable window. The member must verify their email before gaining full access. The response returns an IAuthorized object containing a short-lived access_token for immediate API authentication and a refresh_token for obtaining new access tokens. Both tokens are stored in the reddit_clone_member_sessions table with client metadata (IP, href, referrer) for security auditing. Session expiration is tracked via the expired_at field. The username field must be unique across all members and is used for display purposes in posts and comments.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Member registration request containing email, password, and username credentials for creating a new member account.
+   * @param body Request body containing email, password, and username for member registration.
    * @x-autobe-authorization-type join
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Extract email, password, and username from request body
-   * 2. Validate email format and uniqueness (check reddit_clone_members.email unique constraint)
-   * 3. Validate username format and uniqueness (check reddit_clone_members.username unique constraint)
-   * 4. Validate password strength requirements
-   * 5. Hash password using bcrypt with appropriate cost factor
-   * 6. Create new member record in reddit_clone_members table with:
-   *    - Generate UUID for id
-   *    - Set email, password_hash (hashed), username
-   *    - Set created_at and updated_at timestamps
-   * 7. Generate JWT access token with member ID claims
-   * 8. Generate JWT refresh token
-   * 9. Create session record in reddit_clone_member_sessions table
-   * 10. Return authorized response with both tokens
+   * @x-autobe-specification Handle member registration with email, password, and username. Validate email uniqueness and username uniqueness against reddit_clone_members table. Hash password using bcrypt. Create member record with soft-delete support (deleted_at null). Create email verification record with token and expiration. Send verification email to user. Return IAuthorized response with access_token (short-lived JWT) and refresh_token (long-lived) stored in reddit_clone_member_sessions.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
@@ -50,8 +26,8 @@ export class RedditcloneAuthMemberController {
     @Ip()
     ip: string,
     @TypedBody()
-    body: IRedditCloneMemberSession.IJoin,
-  ): Promise<IRedditCloneMemberSession.IAuthorized> {
+    body: IRedditCloneMember.IJoin,
+  ): Promise<IRedditCloneMember.IAuthorized> {
     try {
       return await postRedditCloneAuthMemberJoin({
         ip,
@@ -64,41 +40,15 @@ export class RedditcloneAuthMemberController {
   }
 
   /**
-   * Login endpoint for authenticated member session creation in the Reddit-like community platform.
-   *
-   * This endpoint validates member credentials (email and password) against the reddit_clone_members table. The email field uniquely identifies the member account, while the password_hash field stores the bcrypt-hashed password for secure comparison.
-   *
-   * Upon successful credential validation, the system creates a new session record in the reddit_clone_member_sessions table. This session stores the JWT access token for API authentication and the refresh token for token renewal. The session also records security metadata including the client IP address, request URL path (href), and HTTP referrer header for audit and security purposes.
-   *
-   * The access token expiration is tracked via the expired_at field in the session record. When the access token expires, the client should use the refresh token with POST /auth/member/refresh to obtain a new access token without requiring re-authentication.
-   *
-   * Soft-deleted accounts (where deleted_at is not null) cannot authenticate - they must contact support for account recovery.
-   *
-   * The response includes the authenticated member's ID, username, access token, and refresh token for establishing the authenticated session.
-   *
-   * Related operations:
-   * - POST /auth/member/join - For new members to create an account
-   * - POST /auth/member/refresh - For renewing expired access tokens
+   * Authenticate a registered member with email and password credentials. This endpoint validates the provided email against the reddit_clone_members table, verifies the password_hash matches the submitted password, and confirms the account is active (deleted_at is null). Upon successful authentication, a new session record is created in reddit_clone_member_sessions containing a short-lived JWT access_token and a long-lived refresh_token. Client metadata including IP address, request href, and HTTP referrer are stored for security auditing purposes. The session tracks creation time and expiration via created_at and expired_at fields. The response returns an IAuthorized object containing both tokens for use in subsequent authenticated requests. Failed authentication attempts return appropriate error responses without revealing whether the email or password was incorrect.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Member login request containing email and password credentials for authentication.
+   * @param body Request body containing email and password for member authentication.
    * @x-autobe-authorization-type login
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Extract email and password from request body
-   * 2. Query reddit_clone_members table to find member by email
-   * 3. Verify member exists and is not soft-deleted (deleted_at is null)
-   * 4. Compare provided password with stored password_hash using bcrypt
-   * 5. If credentials valid, generate JWT access token with member ID claims
-   * 6. Generate JWT refresh token
-   * 7. Create session record in reddit_clone_member_sessions table with:
-   *    - Generate UUID for id
-   *    - Set reddit_clone_member_id reference
-   *    - Store access_token and refresh_token
-   *    - Record IP address, href, referrer from request context
-   *    - Set created_at and expired_at timestamps
-   * 8. Return authorized response with both tokens
+   * @x-autobe-specification Authenticate existing member with email and password credentials. Validate email exists in reddit_clone_members table and password matches stored hash. Check deleted_at is null (account not soft-deleted). Create new session record in reddit_clone_member_sessions with access_token and refresh_token. Store client metadata (ip, href, referrer) for security. Return IAuthorized response with tokens. Return appropriate error if credentials invalid or account deleted.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
@@ -106,8 +56,8 @@ export class RedditcloneAuthMemberController {
     @Ip()
     ip: string,
     @TypedBody()
-    body: IRedditCloneMemberSession.ILogin,
-  ): Promise<IRedditCloneMemberSession.IAuthorized> {
+    body: IRedditCloneMember.ILogin,
+  ): Promise<IRedditCloneMember.IAuthorized> {
     try {
       return await postRedditCloneAuthMemberLogin({
         ip,
@@ -120,46 +70,22 @@ export class RedditcloneAuthMemberController {
   }
 
   /**
-   * Token refresh endpoint for renewing expired access tokens using a valid refresh token.
-   *
-   * This endpoint supports stateless JWT token renewal without requiring the member to re-authenticate with their email and password. The refresh token (stored in reddit_clone_member_sessions.refresh_token) is used to obtain a new access token.
-   *
-   * The session record tracks token expiration via the expired_at field. When the access token expires, clients should call this endpoint to receive a new access token. The refresh token remains valid for a longer period, enabling persistent sessions across multiple access token renewals.
-   *
-   * Security considerations:
-   * - Refresh tokens should be securely stored by the client
-   * - Token rotation is recommended (invalidating old refresh token when issuing new one)
-   * - Expired sessions cannot be refreshed - member must re-authenticate
-   * - Soft-deleted members cannot refresh tokens
-   *
-   * The session table also tracks session metadata (IP address, href, referrer) for security auditing purposes.
-   *
-   * Related operations:
-   * - POST /auth/member/login - Initial authentication that provides refresh token
-   * - POST /auth/member/join - Registration that also provides refresh token
+   * Renew authentication tokens using a valid refresh_token. This endpoint accepts a refresh_token from the reddit_clone_member_sessions table and issues a new access_token for continued API authentication. The refresh_token serves as proof of an existing valid session and must not be expired (validated against the expired_at timestamp). For enhanced security, the system may validate that the requesting IP address matches the original session IP. Upon successful validation, a new access_token is generated and stored in the sessions table. The new token follows the same JWT structure with appropriate claims (member_id, session_id, expiration). The response returns an IAuthorized object containing the new access_token and the original refresh_token (or a new refresh_token if token rotation is implemented). Session expiration tracking continues via the updated expired_at field.
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Token refresh request containing the refresh token to obtain a new access token.
+   * @param body Request body containing refresh_token for token renewal.
    * @x-autobe-authorization-type refresh
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Extract refresh token from request body
-   * 2. Validate refresh token format and signature
-   * 3. Query reddit_clone_member_sessions table to find session by refresh_token
-   * 4. Verify session has not expired (check expired_at against current time)
-   * 5. Verify associated member is not soft-deleted (check reddit_clone_members.deleted_at is null)
-   * 6. Generate new JWT access token with updated expiration
-   * 7. Optionally rotate refresh token (generate new one and invalidate old)
-   * 8. Update session record with new tokens and potentially new expiration
-   * 9. Return new authorized response with fresh tokens
+   * @x-autobe-specification Renew authentication tokens using a valid refresh_token. Validate refresh_token exists in reddit_clone_member_sessions table and has not expired (expired_at > now). Optionally validate ip matches original session for enhanced security. Create new access_token (and optionally new refresh_token) in reddit_clone_member_sessions. Mark old session as expired or keep for refresh token rotation. Return IAuthorized response with new tokens. Return appropriate error if refresh_token invalid or expired.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")
   public async refresh(
     @TypedBody()
-    body: IRedditCloneMemberSession.IRefresh,
-  ): Promise<IRedditCloneMemberSession.IAuthorized> {
+    body: IRedditCloneMember.IRefresh,
+  ): Promise<IRedditCloneMember.IAuthorized> {
     try {
       return await postRedditCloneAuthMemberRefresh({
         body,

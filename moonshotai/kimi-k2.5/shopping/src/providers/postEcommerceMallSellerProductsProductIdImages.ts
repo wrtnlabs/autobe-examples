@@ -3,7 +3,6 @@ import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -23,35 +22,31 @@ export async function postEcommerceMallSellerProductsProductIdImages(props: {
   productId: string & tags.Format<"uuid">;
   body: IEcommerceMallProductImage.ICreate;
 }): Promise<IEcommerceMallProductImage> {
-  // Verify product exists and get ID
-  const product =
-    await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
-      where: { id: props.productId },
-      select: { id: true, seller_id: true, deleted_at: true },
-    });
-  // Verify seller owns the product (cross-seller protection)
+  // Verify product exists and seller owns it
+  const product = await MyGlobal.prisma.ecommerce_mall_products.findFirst({
+    where: {
+      id: props.productId,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      seller_id: true,
+    },
+  });
+  if (product === null) {
+    throw new HttpException("Product not found", 404);
+  }
   if (product.seller_id !== props.seller.id) {
-    throw new HttpException("Forbidden - you do not own this product", 403);
+    throw new HttpException("Forbidden", 403);
   }
-  // Verify product is not deleted
-  if (product.deleted_at !== null) {
-    throw new HttpException("Product has been deleted", 404);
-  }
-  // Collect data using Collector pattern
-  const data = await EcommerceMallProductImageCollector.collect({
-    body: props.body,
-    ecommerceMallProducts: { id: product.id },
-  });
-  // Create the image record
+  // Create image using collector
   const created = await MyGlobal.prisma.ecommerce_mall_product_images.create({
-    data,
+    data: await EcommerceMallProductImageCollector.collect({
+      body: props.body,
+      product: { id: product.id as string & tags.Format<"uuid"> },
+      seller: { id: props.seller.id },
+    }),
+    ...EcommerceMallProductImageTransformer.select(),
   });
-  // Reload with complete relations for transformer
-  const complete =
-    await MyGlobal.prisma.ecommerce_mall_product_images.findUniqueOrThrow({
-      where: { id: created.id },
-      ...EcommerceMallProductImageTransformer.select(),
-    });
-  // Transform and return
-  return await EcommerceMallProductImageTransformer.transform(complete);
+  return await EcommerceMallProductImageTransformer.transform(created);
 }

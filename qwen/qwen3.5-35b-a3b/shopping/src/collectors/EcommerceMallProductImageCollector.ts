@@ -17,7 +17,6 @@ export namespace EcommerceMallProductImageCollector {
       id,
       image_url: props.body.image_url,
       display_order: props.body.display_order,
-      alt_text: props.body.alt_text ?? null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
@@ -25,3 +24,29 @@ export namespace EcommerceMallProductImageCollector {
     } satisfies Prisma.ecommerce_mall_product_imagesCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallProductImageCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallProductImage.ICreate;
+//           ecommerceMallProducts: IEntity; // from path parameter productId
+// ecommerceMallSellers: IEntity; // from authorized actor
+// ecommerceMallSellerSessions: IEntity; // from authorized session
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       image_url: ...,
+//       display_order: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       product: ...,
+//           } satisfies Prisma.ecommerce_mall_product_imagesCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

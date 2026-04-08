@@ -15,7 +15,6 @@ export async function deleteHrmPlatformMemberTimelogsTimelogId(props: {
   member: MemberPayload;
   timelogId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Retrieve timelog - findUniqueOrThrow handles 404 automatically
   const timelog = await MyGlobal.prisma.hrm_platform_timelogs.findUniqueOrThrow(
     {
       where: {
@@ -24,68 +23,67 @@ export async function deleteHrmPlatformMemberTimelogsTimelogId(props: {
       },
       select: {
         id: true,
-        employee_id: true,
-        timesheet_id: true,
+        hrm_platform_employee_id: true,
+        hrm_platform_timesheet_id: true,
       },
     },
   );
-  // Get requester's employee record
-  const requesterEmployee =
-    await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
+  const employee =
+    await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
       where: {
-        user_id: props.member.id,
+        id: timelog.hrm_platform_employee_id,
         deleted_at: null,
       },
       select: {
         id: true,
-        role_id: true,
+        member_id: true,
+        role: {
+          select: {
+            id: true,
+            organization_id: true,
+            rolePermissions: {
+              select: {
+                permission: {
+                  select: {
+                    id: true,
+                    code: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
-  // Check if requester is the timelog owner
-  const isOwner = requesterEmployee.id === timelog.employee_id;
-  // Check if requester has time:manage permission
-  const rolePermissions =
-    await MyGlobal.prisma.hrm_platform_role_permissions.findMany({
-      where: {
-        hrm_platform_role_id: requesterEmployee.role_id,
-        permission: "time:manage",
-        deleted_at: null,
-      },
-    });
-  const hasTimeManagePermission = rolePermissions.length > 0;
-  // Authorization check: must be owner OR have time:manage permission
-  if (!isOwner && !hasTimeManagePermission) {
+  const isOwner = employee.member_id === props.member.id;
+  const hasTimeManage = employee.role.rolePermissions.some(
+    (rp) => rp.permission.code === "time:manage",
+  );
+  if (!isOwner && !hasTimeManage) {
     throw new HttpException("Forbidden", 403);
   }
-  // For non-managers, check timesheet status
-  if (!hasTimeManagePermission && timelog.timesheet_id !== null) {
-    const timesheet = await MyGlobal.prisma.hrm_platform_timesheets.findUnique({
-      where: {
-        id: timelog.timesheet_id,
-        deleted_at: null,
-      },
-      select: {
-        status: true,
-      },
-    });
-    // Reject if timesheet is submitted or approved
-    if (
-      timesheet &&
-      (timesheet.status === "submitted" || timesheet.status === "approved")
-    ) {
-      throw new HttpException(
-        "Cannot delete timelog in submitted or approved timesheet",
-        403,
-      );
+  if (!hasTimeManage && timelog.hrm_platform_timesheet_id !== null) {
+    const timesheet =
+      await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
+        where: {
+          id: timelog.hrm_platform_timesheet_id,
+          deleted_at: null,
+        },
+        select: {
+          id: true,
+          status: true,
+        },
+      });
+    if (timesheet.status === "submitted" || timesheet.status === "approved") {
+      throw new HttpException("Conflict", 409);
     }
   }
-  // Perform soft delete
   await MyGlobal.prisma.hrm_platform_timelogs.update({
     where: {
       id: props.timelogId,
     },
     data: {
-      deleted_at: new Date().toISOString() as string & tags.Format<"date-time">,
+      deleted_at: new Date(),
     },
   });
 }

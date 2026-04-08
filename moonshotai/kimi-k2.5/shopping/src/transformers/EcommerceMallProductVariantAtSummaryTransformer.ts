@@ -3,8 +3,10 @@ import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/li
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallProductVariantOptionAtSummaryTransformer } from "./EcommerceMallProductVariantOptionAtSummaryTransformer";
 
@@ -19,35 +21,25 @@ export namespace EcommerceMallProductVariantAtSummaryTransformer {
         sku_code: true,
         price: true,
         created_at: true,
-        deleted_at: true,
+        updated_at: true,
         variantOptions:
           EcommerceMallProductVariantOptionAtSummaryTransformer.select(),
-        inventoryRecords: {
-          select: {
-            quantity_change: true,
-          },
-        } satisfies Prisma.ecommerce_mall_product_variants$inventoryRecordsArgs,
       },
     } satisfies Prisma.ecommerce_mall_product_variantsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallProductVariant.ISummary> {
-    const currentStock = input.inventoryRecords.reduce(
-      (sum, record) => sum + record.quantity_change,
-      0,
-    );
     return {
       id: input.id,
       skuCode: input.sku_code,
-      price: input.price ?? null,
+      price: input.price,
       options: await ArrayUtil.asyncMap(
         input.variantOptions,
         EcommerceMallProductVariantOptionAtSummaryTransformer.transform,
       ),
-      currentStock,
-      isAvailable: currentStock > 0 && input.deleted_at === null,
       createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
     };
   }
 }

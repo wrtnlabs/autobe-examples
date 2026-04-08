@@ -1,5 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -18,12 +19,16 @@ export async function getErpHrmTimeMemberProjectsProjectId(props: {
   member: MemberPayload;
   projectId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeProject> {
-  const project = await MyGlobal.prisma.erp_hrm_time_projects.findFirstOrThrow({
-    where: {
-      id: props.projectId,
-      deleted_at: null,
+  const project = await MyGlobal.prisma.erp_hrm_time_projects.findUniqueOrThrow(
+    {
+      where: {
+        id: props.projectId,
+      },
+      ...ErpHrmTimeProjectTransformer.select(),
     },
-    ...ErpHrmTimeProjectTransformer.select(),
-  });
+  );
+  if (project.deleted_at !== null) {
+    throw new HttpException("Not Found", 404);
+  }
   return await ErpHrmTimeProjectTransformer.transform(project);
 }

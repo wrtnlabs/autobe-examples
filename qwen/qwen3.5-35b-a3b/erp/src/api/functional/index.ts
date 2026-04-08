@@ -1,1 +1,1 @@
-export * as hrms from "./hrms/index";
+export * as hrmPlatform from "./hrmPlatform/index";

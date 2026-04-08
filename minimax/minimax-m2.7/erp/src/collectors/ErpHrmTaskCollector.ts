@@ -16,19 +16,52 @@ export namespace ErpHrmTaskCollector {
       id: v4(),
       title: props.body.title,
       description: props.body.description ?? null,
-      status: props.body.status ?? "open",
-      priority: props.body.priority,
-      estimated_hours: props.body.estimated_hours ?? null,
-      due_date: props.body.due_date ? new Date(props.body.due_date) : null,
+      status: "open",
+      priority: "medium",
+      estimated_hours: props.body.estimatedHours ?? null,
+      due_date: props.body.dueDate ? new Date(props.body.dueDate) : null,
       created_at: new Date(),
       updated_at: new Date(),
       project: { connect: { id: props.erpHrmProjects.id } },
-      assignee: props.body.erp_hrm_employee_id
-        ? { connect: { id: props.body.erp_hrm_employee_id } }
+      assignee: props.body.erpHrmEmployeeId
+        ? { connect: { id: props.body.erpHrmEmployeeId } }
         : undefined,
-      parent: props.body.parent_id
-        ? { connect: { id: props.body.parent_id } }
+      parent: props.body.parentId
+        ? { connect: { id: props.body.parentId } }
         : undefined,
     } satisfies Prisma.erp_hrm_tasksCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace ErpHrmTaskCollector {
+//         export async function collect(props: {
+//           body: IErpHrmTask.ICreate;
+//           erpHrmProjects: IEntity; // from path parameter projectId
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       title: ...,
+//       description: ...,
+//       status: ...,
+//       priority: ...,
+//       estimated_hours: ...,
+//       due_date: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       project: ...,
+//       assignee: ...,
+//       parent: ...,
+//       subtasks: ...,
+//       taskHistories: ...,
+//       timelogs: ...,
+//       timers: ...,
+//           } satisfies Prisma.erp_hrm_tasksCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

@@ -1,11 +1,11 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
+import { IErpHrmTimeEmployeeDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployeeDashboardSummary";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
 import { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
-import { IErpHrmTimeTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTask";
+import { IErpHrmTimeTaskHistoryEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTaskHistoryEntry";
 import { IErpHrmTimeTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimelog";
 import { IErpHrmTimeTimesheet } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimesheet";
 import { IErpHrmTimeTimesheetTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimesheetTimelog";
@@ -26,83 +26,73 @@ export async function postErpHrmTimeMemberTimesheetsTimesheetIdSubmit(props: {
   member: MemberPayload;
   timesheetId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeTimesheet> {
-  return await MyGlobal.prisma.$transaction(async (prisma) => {
-    const employee = await prisma.erp_hrm_time_employees.findFirstOrThrow({
+  const currentAt: string & tags.Format<"date-time"> = new Date().toISOString();
+  const timesheet =
+    await MyGlobal.prisma.erp_hrm_time_timesheets.findUniqueOrThrow({
       where: {
-        erp_hrm_time_member_id: props.member.id,
-        deleted_at: null,
+        id: props.timesheetId,
       },
       select: {
         id: true,
-        erp_hrm_time_organization_id: true,
         status: true,
-      },
-    });
-    if (employee.status !== "active") {
-      throw new HttpException(
-        "Deactivated employees cannot submit timesheets",
-        403,
-      );
-    }
-    const timesheet = await prisma.erp_hrm_time_timesheets.findUniqueOrThrow({
-      where: { id: props.timesheetId },
-      select: {
-        id: true,
         erp_hrm_time_employee_id: true,
-        status: true,
+        employee: {
+          select: {
+            id: true,
+            status: true,
+            erp_hrm_time_member_id: true,
+          },
+        },
         timesheetTimelogs: {
+          where: {
+            deleted_at: null,
+          },
           select: {
             id: true,
           },
         },
       },
     });
-    const selectedEmployee =
-      await prisma.erp_hrm_time_employees.findUniqueOrThrow({
-        where: { id: timesheet.erp_hrm_time_employee_id },
-        select: {
-          id: true,
-          erp_hrm_time_member_id: true,
-          erp_hrm_time_organization_id: true,
-          status: true,
-        },
-      });
-    if (
-      selectedEmployee.erp_hrm_time_organization_id !==
-      employee.erp_hrm_time_organization_id
-    ) {
-      throw new HttpException("Forbidden", 403);
-    }
-    if (timesheet.status !== "draft") {
-      throw new HttpException("Only draft timesheets can be submitted", 400);
-    }
-    if (timesheet.timesheetTimelogs.length === 0) {
-      throw new HttpException(
-        "Timesheet must include at least one timelog",
-        400,
-      );
-    }
-    if (selectedEmployee.status !== "active") {
-      throw new HttpException(
-        "Deactivated employees cannot submit timesheets",
-        403,
-      );
-    }
-    if (selectedEmployee.erp_hrm_time_member_id !== props.member.id) {
-      throw new HttpException("Forbidden", 403);
-    }
-    await prisma.erp_hrm_time_timesheets.update({
-      where: { id: props.timesheetId },
-      data: {
-        status: "submitted",
-        submitted_at: new Date(toISOStringSafe(new Date())),
-        updated_at: new Date(toISOStringSafe(new Date())),
+  if (timesheet.employee.erp_hrm_time_member_id !== props.member.id) {
+    throw new HttpException(
+      "This timesheet does not belong to the current member.",
+      403,
+    );
+  }
+  if (timesheet.employee.status !== "active") {
+    throw new HttpException(
+      "Deactivated employees cannot submit timesheets.",
+      400,
+    );
+  }
+  if (timesheet.status !== "draft") {
+    throw new HttpException("Only draft timesheets can be submitted.", 400);
+  }
+  if (timesheet.timesheetTimelogs.length === 0) {
+    throw new HttpException(
+      "A timesheet must include at least one timelog before submission.",
+      400,
+    );
+  }
+  await MyGlobal.prisma.erp_hrm_time_timesheets.update({
+    where: {
+      id: props.timesheetId,
+    },
+    data: {
+      status: "submitted",
+      submitted_at: currentAt,
+      reviewed_by_member_id: null,
+      reviewed_at: null,
+      rejection_reason: null,
+      updated_at: currentAt,
+    },
+  });
+  const updated =
+    await MyGlobal.prisma.erp_hrm_time_timesheets.findUniqueOrThrow({
+      where: {
+        id: props.timesheetId,
       },
-    });
-    const updated = await prisma.erp_hrm_time_timesheets.findUniqueOrThrow({
-      where: { id: props.timesheetId },
       ...ErpHrmTimeTimesheetTransformer.select(),
     });
-    return await ErpHrmTimeTimesheetTransformer.transform(updated);
-  });
+  return await ErpHrmTimeTimesheetTransformer.transform(updated);
 }

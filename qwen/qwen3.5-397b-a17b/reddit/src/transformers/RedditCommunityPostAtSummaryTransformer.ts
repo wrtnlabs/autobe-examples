@@ -1,12 +1,13 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
-import { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
 import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPost";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityCommunityAtSummaryTransformer } from "./RedditCommunityCommunityAtSummaryTransformer";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
@@ -21,23 +22,46 @@ export namespace RedditCommunityPostAtSummaryTransformer {
         id: true,
         title: true,
         post_type: true,
-        text_content: true,
-        link_url: true,
-        image_path: true,
         created_at: true,
-        author: RedditCommunityMemberAtSummaryTransformer.select(),
+        updated_at: true,
+        deleted_at: true,
+        member: RedditCommunityMemberAtSummaryTransformer.select(),
         community: RedditCommunityCommunityAtSummaryTransformer.select(),
+        text: {
+          select: {
+            body: true,
+          },
+        } satisfies Prisma.reddit_community_post_textsFindManyArgs,
+        link: {
+          select: {
+            domain: true,
+          },
+        } satisfies Prisma.reddit_community_post_linksFindManyArgs,
+        image: {
+          select: {
+            thumbnail_url: true,
+          },
+        } satisfies Prisma.reddit_community_post_imagesFindManyArgs,
         votes: {
           select: {
-            direction: true,
+            value: true,
           },
         } satisfies Prisma.reddit_community_post_votesFindManyArgs,
         comments: {
           select: {
             id: true,
-            deleted_at: true,
           },
         } satisfies Prisma.reddit_community_commentsFindManyArgs,
+        reports: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.reddit_community_report_of_postsFindManyArgs,
+        _count: {
+          select: {
+            comments: true,
+          },
+        },
       },
     } satisfies Prisma.reddit_community_postsFindManyArgs;
   }
@@ -47,37 +71,24 @@ export namespace RedditCommunityPostAtSummaryTransformer {
     return {
       id: input.id,
       title: input.title,
+      post_type: input.post_type as "text" | "link" | "image",
       author: await RedditCommunityMemberAtSummaryTransformer.transform(
-        input.author,
+        input.member,
       ),
       community: await RedditCommunityCommunityAtSummaryTransformer.transform(
         input.community,
       ),
-      vote_score: input.votes.reduce((sum, vote) => {
-        return (
-          sum +
-          (vote.direction === "UPVOTE"
-            ? 1
-            : vote.direction === "DOWNVOTE"
-              ? -1
-              : 0)
-        );
-      }, 0),
-      comments_count: input.comments.filter(
-        (comment) => comment.deleted_at === null,
-      ).length,
-      created_at: input.created_at.toISOString(),
-      post_type: input.post_type,
+      vote_score: input.votes.reduce((sum, vote) => sum + vote.value, 0),
+      comment_count: input._count.comments,
+      created_at: toISOStringSafe(input.created_at),
       text_preview:
-        input.post_type === "text" && input.text_content
-          ? input.text_content.slice(0, 200)
-          : null,
+        input.post_type === "text" ? (input.text?.body ?? null) : undefined,
+      thumbnail_url:
+        input.post_type === "image"
+          ? (input.image?.thumbnail_url ?? null)
+          : undefined,
       link_domain:
-        input.post_type === "link" && input.link_url
-          ? new URL(input.link_url).hostname
-          : null,
-      image_thumbnail:
-        input.post_type === "image" ? (input.image_path ?? null) : null,
-    };
+        input.post_type === "link" ? (input.link?.domain ?? null) : undefined,
+    } satisfies IRedditCommunityPost.ISummary;
   }
 }

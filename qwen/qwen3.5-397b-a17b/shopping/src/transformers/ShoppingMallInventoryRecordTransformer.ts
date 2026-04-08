@@ -1,7 +1,9 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IShoppingMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCategory";
 import { IShoppingMallInventoryRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallInventoryRecord";
 import { IShoppingMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProduct";
 import { IShoppingMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallProductVariant";
+import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
@@ -19,7 +21,7 @@ export namespace ShoppingMallInventoryRecordTransformer {
     return {
       select: {
         id: true,
-        quantity_change: true,
+        quantity_delta: true,
         reason: true,
         created_at: true,
         productVariant: ShoppingMallProductVariantAtSummaryTransformer.select(),
@@ -35,9 +37,9 @@ export namespace ShoppingMallInventoryRecordTransformer {
         await ShoppingMallProductVariantAtSummaryTransformer.transform(
           input.productVariant,
         ),
-      quantity_change: input.quantity_change,
+      quantityDelta: input.quantity_delta,
       reason: input.reason,
-      created_at: input.created_at.toISOString(),
-    };
+      createdAt: toISOStringSafe(input.created_at),
+    } satisfies IShoppingMallInventoryRecord;
   }
 }

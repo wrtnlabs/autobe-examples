@@ -14,14 +14,18 @@ export async function authorize_guest_join(
     body?: DeepPartial<IErpHrmGuest.IJoin>;
   },
 ): Promise<IErpHrmGuest.IAuthorized> {
+  const password = props.body?.password ?? RandomGenerator.alphaNumeric(16);
   const joinInput = {
-    deviceId:
-      props.body?.deviceId ?? typia.random<string & tags.Format<"uuid">>(),
+    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
+    password: password,
+    passwordConfirmation: props.body?.passwordConfirmation ?? password,
+    organizationName: props.body?.organizationName ?? RandomGenerator.name(),
     href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
     referrer:
       props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
-    temporaryEmail: props.body?.temporaryEmail,
-    ip: props.body?.ip,
+    currency: props.body?.currency ?? "USD",
+    timezone: props.body?.timezone ?? "UTC",
+    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
   } satisfies IErpHrmGuest.IJoin;
   return await api.functional.erpHrm.auth.guest.join(connection, {
     body: joinInput,

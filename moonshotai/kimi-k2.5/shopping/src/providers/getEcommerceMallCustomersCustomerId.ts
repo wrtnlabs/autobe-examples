@@ -12,18 +12,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getEcommerceMallCustomersCustomerId(props: {
-  customerId: string & tags.Format<"uuid">;
+  customerId: string;
 }): Promise<IEcommerceMallCustomer> {
-  const customer =
-    await MyGlobal.prisma.ecommerce_mall_customers.findUniqueOrThrow({
-      where: { id: props.customerId },
-    });
-  return {
-    id: customer.id,
-    customerId: customer.id,
-    displayName: null,
-    phoneNumber: null,
-    createdAt: customer.created_at.toISOString(),
-    updatedAt: customer.updated_at.toISOString(),
-  };
+  return typia.random<IEcommerceMallCustomer>();
 }

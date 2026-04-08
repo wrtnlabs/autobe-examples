@@ -1,14 +1,19 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IRedditCloneCommunityBan } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunityBan";
+import type { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
+import type { IRedditCloneCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunityIcon";
 import type { IRedditCloneFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFile";
 import type { IRedditCloneFileAssociation } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileAssociation";
-import type { IRedditCloneMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMemberSession";
+import type { IRedditCloneFileScan } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileScan";
+import type { IRedditCloneFileThumbnail } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileThumbnail";
+import type { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
+import type { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
 import type { IRedditClonePostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostImage";
 import type { IRedditClonePostLink } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostLink";
-import type { IRedditCloneUserKarma } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserKarma";
-import type { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
+import type { IRedditClonePostTextContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostTextContent";
+import type { IRedditClonePostVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostVote";
+import type { IRedditCloneSubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneSubscription";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -20,103 +25,101 @@ import { authorize_member_login } from "../../../authorize/authorize_member_logi
 import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
 import { generate_random_reddit_clone_member_communities_create } from "../../../generate/generate_random_reddit_clone_member_communities_create";
 import { generate_random_reddit_clone_member_posts_create } from "../../../generate/generate_random_reddit_clone_member_posts_create";
-import { prepare_random_reddit_clone_community_ban } from "../../../prepare/prepare_random_reddit_clone_community_ban";
-import { prepare_random_reddit_clone_post_link } from "../../../prepare/prepare_random_reddit_clone_post_link";
+import { generate_random_reddit_clone_member_reddit_clone_posts_votes_create } from "../../../generate/generate_random_reddit_clone_member_reddit_clone_posts_votes_create";
+import { generate_random_reddit_clone_member_subscriptions_create } from "../../../generate/generate_random_reddit_clone_member_subscriptions_create";
+import { prepare_random_reddit_clone_community } from "../../../prepare/prepare_random_reddit_clone_community";
+import { prepare_random_reddit_clone_post } from "../../../prepare/prepare_random_reddit_clone_post";
+import { prepare_random_reddit_clone_post_vote } from "../../../prepare/prepare_random_reddit_clone_post_vote";
+import { prepare_random_reddit_clone_subscription } from "../../../prepare/prepare_random_reddit_clone_subscription";
 
 export async function test_api_post_vote_change_upvote_to_downvote(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Authenticate as member1 who will create the post and cast votes
-  const memberConnection: api.IConnection = { host: connection.host };
-  const authorized = await authorize_member_join(memberConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-      username: RandomGenerator.name(),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-    },
-  });
-  typia.assert(authorized);
-  // 2. Create a community where the post will be submitted
+  // 1. Authenticate as Member A (community creator)
+  const memberAConnection: api.IConnection = { host: connection.host };
+  await authorize_member_join(memberAConnection, {});
+  // 2. Member A creates a community
   const community =
     await generate_random_reddit_clone_member_communities_create(
-      memberConnection,
-      {
-        body: {
-          name: RandomGenerator.alphabets(10),
-          description: RandomGenerator.paragraph({ sentences: 2 }),
-        },
-      },
+      memberAConnection,
+      {},
     );
-  typia.assert(community);
-  // 3. Create a text post in the community
+  // 3. Authenticate as Member B (post author)
+  const memberBConnection: api.IConnection = { host: connection.host };
+  const memberB = await authorize_member_join(memberBConnection, {});
+  // 4. Member B subscribes to the community
+  await generate_random_reddit_clone_member_subscriptions_create(
+    memberBConnection,
+    {
+      body: { communityId: community.id },
+    },
+  );
+  // 5. Member B creates a text post
   const post = await generate_random_reddit_clone_member_posts_create(
-    memberConnection,
+    memberBConnection,
     {
       body: {
-        title: RandomGenerator.paragraph({ sentences: 2 }),
-        communityName: community.name,
+        communityId: community.id,
         type: "text",
+        title: RandomGenerator.paragraph({ sentences: 2 }),
+        body: RandomGenerator.paragraph({ sentences: 5 }),
       },
     },
   );
   typia.assert(post);
-  // 4. Cast an initial upvote on the post using POST /member/posts/{postId}/votes
+  const postAuthorId = post.author.id;
+  // 6. Authenticate as Member C (voter)
+  const memberCConnection: api.IConnection = { host: connection.host };
+  const memberC = await authorize_member_join(memberCConnection, {});
+  // 7. Member C subscribes to the community
+  await generate_random_reddit_clone_member_subscriptions_create(
+    memberCConnection,
+    {
+      body: { communityId: community.id },
+    },
+  );
+  // 8. Member C casts initial upvote on the post
   const initialVote =
-    await api.functional.redditClone.member.posts.votes.create(
-      memberConnection,
+    await generate_random_reddit_clone_member_reddit_clone_posts_votes_create(
+      memberCConnection,
       {
-        postId: post.id,
+        params: { postId: post.id },
+        body: { direction: "upvote" },
       },
     );
   typia.assert(initialVote);
-  // Validate initial vote direction
   TestValidator.equals(
-    "initial vote direction should be upvote",
+    "initial vote direction is upvote",
     initialVote.direction,
     "upvote",
   );
-  TestValidator.equals(
-    "vote should belong to the member",
-    initialVote.member.id,
-    authorized.id,
-  );
-  // 5. Change the vote from upvote to downvote using PUT /member/posts/{postId}/votes/{voteId}
+  // 9. Update vote direction from upvote to downvote
   const updatedVote =
-    await api.functional.redditClone.member.posts.votes.update(
-      memberConnection,
+    await api.functional.redditClone.member.redditClone.posts.votes.update(
+      memberCConnection,
       {
         postId: post.id,
         voteId: initialVote.id,
         body: {
+          id: initialVote.id,
           direction: "downvote",
-        } satisfies IRedditClonePostImage.IUpdate,
+          created_at: initialVote.created_at,
+          updated_at: initialVote.updated_at,
+          member: initialVote.member,
+          post: initialVote.post,
+        } satisfies IRedditClonePostVote,
       },
     );
   typia.assert(updatedVote);
-  // 6. Verify the response returns updated vote with direction='downvote'
+  // Validation: Vote direction changed to downvote
   TestValidator.equals(
-    "updated vote direction should be downvote",
+    "updated vote direction is downvote",
     updatedVote.direction,
     "downvote",
   );
-  TestValidator.equals(
-    "vote id should remain the same",
-    updatedVote.id,
-    initialVote.id,
-  );
-  TestValidator.equals(
-    "vote should still belong to the same member",
-    updatedVote.member.id,
-    authorized.id,
-  );
-  // Verify updated_at timestamp was updated (should differ from created_at if changed)
-  TestValidator.predicate("updated_at should exist", !!updatedVote.updated_at);
-  // The vote record should have the same created_at but updated updated_at
-  TestValidator.equals(
-    "created_at should remain unchanged",
-    updatedVote.created_at,
-    initialVote.created_at,
+  TestValidator.equals("vote ID preserved", updatedVote.id, initialVote.id);
+  TestValidator.predicate(
+    "updated_at changed",
+    updatedVote.updated_at !== initialVote.created_at,
   );
 }

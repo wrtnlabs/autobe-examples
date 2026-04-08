@@ -3,17 +3,18 @@ import { IErpHrmDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErp
 import { IErpHrmEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmEmployee";
 import { IErpHrmMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmMember";
 import { IErpHrmOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmOrganization";
-import { IErpHrmProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProjectMember";
+import { IErpHrmProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProject";
 import { IErpHrmRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmRole";
 import { IErpHrmTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTask";
 import { IErpHrmTimer } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimer";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ErpHrmEmployeeAtSummaryTransformer } from "./ErpHrmEmployeeAtSummaryTransformer";
-import { ErpHrmProjectMemberAtSummaryTransformer } from "./ErpHrmProjectMemberAtSummaryTransformer";
+import { ErpHrmProjectAtSummaryTransformer } from "./ErpHrmProjectAtSummaryTransformer";
 import { ErpHrmTaskAtSummaryTransformer } from "./ErpHrmTaskAtSummaryTransformer";
 
 export namespace ErpHrmTimerAtSummaryTransformer {
@@ -28,8 +29,12 @@ export namespace ErpHrmTimerAtSummaryTransformer {
         description: true,
         created_at: true,
         updated_at: true,
-        employee: ErpHrmEmployeeAtSummaryTransformer.select(),
-        project: ErpHrmProjectMemberAtSummaryTransformer.select(),
+        employee: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.erp_hrm_employeesFindManyArgs,
+        project: ErpHrmProjectAtSummaryTransformer.select(),
         task: ErpHrmTaskAtSummaryTransformer.select(),
       },
     } satisfies Prisma.erp_hrm_timersFindManyArgs;
@@ -40,13 +45,46 @@ export namespace ErpHrmTimerAtSummaryTransformer {
     return {
       id: input.id,
       startedAt: input.started_at.toISOString(),
-      description: input.description ?? undefined,
-      project: await ErpHrmProjectMemberAtSummaryTransformer.transform(
-        input.project,
-      ),
+      project: await ErpHrmProjectAtSummaryTransformer.transform(input.project),
       task: input.task
         ? await ErpHrmTaskAtSummaryTransformer.transform(input.task)
-        : undefined,
-    };
+        : null,
+      description: input.description ?? null,
+    } satisfies IErpHrmTimer.ISummary;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace ErpHrmTimerAtSummaryTransformer {
+//       export type Payload = Prisma.erp_hrm_timersGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             started_at: true,
+//             description: true,
+//             created_at: true,
+//             updated_at: true,
+//             erp_hrm_employee_id: true,
+//             project: ErpHrmProjectAtSummaryTransformer.select(),
+//             task: ErpHrmTaskAtSummaryTransformer.select(),
+//           },
+//         } satisfies Prisma.erp_hrm_timersFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IErpHrmTimer.ISummary> {
+//         return {
+//   id: {string},
+//   startedAt: {string},
+//   project: await ErpHrmProjectAtSummaryTransformer.transform(input.project),
+//   task: input.task ? await ErpHrmTaskAtSummaryTransformer.transform(input.task) : null,
+//   description: {string | null},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

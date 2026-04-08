@@ -17,17 +17,24 @@ export async function postRedditCommunityAuthMemberLogin(props: {
   body: IRedditCommunityMember.ILogin;
 }): Promise<IRedditCommunityMember.IAuthorized> {
   const member = await MyGlobal.prisma.reddit_community_members.findFirst({
-    where: {
-      email: props.body.email,
-      deleted_at: null,
-    },
+    where: { email: props.body.email },
     select: {
       id: true,
+      email: true,
       password_hash: true,
+      username: true,
+      display_name: true,
+      bio: true,
+      avatar: true,
+      karma: true,
+      deleted_at: true,
     },
   });
   if (!member) {
     throw new HttpException("Invalid credentials", 401);
+  }
+  if (member.deleted_at !== null) {
+    throw new HttpException("Account deleted", 403);
   }
   const isValid = await PasswordUtil.verify(
     props.body.password,
@@ -36,52 +43,61 @@ export async function postRedditCommunityAuthMemberLogin(props: {
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  const accessExpires = new Date(Date.now() + 15 * 60 * 1000);
+  const now = new Date();
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const sessionId = v4();
-  const memberId = member.id;
-  const session = await MyGlobal.prisma.reddit_community_member_sessions.create(
-    {
-      data: {
-        id: sessionId,
-        reddit_community_member_id: memberId,
-        access_token: jwt.sign(
-          {
-            type: "member",
-            id: memberId,
-            session_id: sessionId,
-            created_at: new Date().toISOString(),
-          },
-          MyGlobal.env.JWT_SECRET_KEY,
-          { expiresIn: "15m", issuer: "autobe" },
-        ),
-        refresh_token: jwt.sign(
-          {
-            type: "member",
-            id: memberId,
-            session_id: sessionId,
-            tokenType: "refresh",
-            created_at: new Date().toISOString(),
-          },
-          MyGlobal.env.JWT_SECRET_KEY,
-          { expiresIn: "7d", issuer: "autobe" },
-        ),
-        ip: props.ip,
-        href: "",
-        referrer: "",
-        created_at: new Date(),
-        expired_at: accessExpires,
-      },
+  const sessionId: string & tags.Format<"uuid"> = v4();
+  const nowIso = toISOStringSafe(now);
+  const accessExpiresIso = toISOStringSafe(accessExpires);
+  const refreshExpiresIso = toISOStringSafe(refreshExpires);
+  const accessPayload = {
+    type: "member",
+    id: member.id,
+    session_id: sessionId,
+    created_at: nowIso,
+  };
+  const refreshPayload = {
+    type: "member",
+    id: member.id,
+    session_id: sessionId,
+    tokenType: "refresh",
+    created_at: nowIso,
+  };
+  const accessToken = jwt.sign(accessPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    expiresIn: "1h",
+    issuer: "autobe",
+  });
+  const refreshToken = jwt.sign(refreshPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    expiresIn: "7d",
+    issuer: "autobe",
+  });
+  await MyGlobal.prisma.reddit_community_member_sessions.create({
+    data: {
+      id: sessionId,
+      reddit_community_member_id: member.id,
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      ip: props.body.ip ?? props.ip,
+      href: props.body.href,
+      referrer: props.body.referrer,
+      created_at: now,
+      expired_at: accessExpires,
     },
-  );
+  });
   const token: IAuthorizationToken = {
-    access: session.access_token,
-    refresh: session.refresh_token,
-    expired_at: toISOStringSafe(session.expired_at),
-    refreshable_until: toISOStringSafe(refreshExpires),
+    access: accessToken,
+    refresh: refreshToken,
+    expired_at: accessExpiresIso,
+    refreshable_until: refreshExpiresIso,
   };
   return {
-    id: memberId,
+    id: member.id,
+    email: member.email,
+    username: member.username,
+    display_name: member.display_name,
+    bio: member.bio,
+    avatar: member.avatar,
+    karma: member.karma,
     token,
   } satisfies IRedditCommunityMember.IAuthorized;
 }

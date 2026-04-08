@@ -1,7 +1,9 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIShoppingMallSellerApprovalRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIShoppingMallSellerApprovalRequest";
-import { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
+import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
+import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import { IShoppingMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallMember";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { IShoppingMallSellerApprovalRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerApprovalRequest";
 import { ArrayUtil } from "@nestia/e2e";
@@ -22,18 +24,22 @@ export async function patchShoppingMallSellerApprovalRequests(props: {
   body: IShoppingMallSellerApprovalRequest.IRequest;
 }): Promise<IPageIShoppingMallSellerApprovalRequest.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const whereInput: Prisma.shopping_mall_seller_approval_requestsWhereInput = {
+  const whereInput = {
     deleted_at: null,
-    ...(props.body.status && { status: props.body.status }),
-    ...(props.body.submitted_from && {
-      submitted_at: { gte: new Date(props.body.submitted_from) },
+    ...(props.body.status !== undefined && { status: props.body.status }),
+    ...(props.body.created_at_from !== undefined && {
+      created_at: {
+        gte: new Date(props.body.created_at_from),
+      },
     }),
-    ...(props.body.submitted_to && {
-      submitted_at: { lte: new Date(props.body.submitted_to) },
+    ...(props.body.created_at_to !== undefined && {
+      created_at: {
+        lte: new Date(props.body.created_at_to),
+      },
     }),
-    ...(props.body.search && {
+    ...(props.body.search !== undefined && {
       seller: {
         email: {
           contains: props.body.search,
@@ -42,23 +48,18 @@ export async function patchShoppingMallSellerApprovalRequests(props: {
       },
     }),
   } satisfies Prisma.shopping_mall_seller_approval_requestsWhereInput;
-  const sortField = props.body.sort ?? "submitted_at";
-  const direction = props.body.direction ?? "desc";
-  const orderByInput = {
-    [sortField]: direction,
-  } satisfies Prisma.shopping_mall_seller_approval_requestsOrderByWithRelationInput;
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.shopping_mall_seller_approval_requests.findMany({
+  const records =
+    await MyGlobal.prisma.shopping_mall_seller_approval_requests.findMany({
       where: whereInput,
       skip,
       take: limit,
-      orderBy: orderByInput,
+      orderBy: { created_at: "desc" },
       ...ShoppingMallSellerApprovalRequestAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.shopping_mall_seller_approval_requests.count({
+    });
+  const total =
+    await MyGlobal.prisma.shopping_mall_seller_approval_requests.count({
       where: whereInput,
-    }),
-  ]);
+    });
   return {
     pagination: {
       current: page,
@@ -67,7 +68,7 @@ export async function patchShoppingMallSellerApprovalRequests(props: {
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
-      data,
+      records,
       ShoppingMallSellerApprovalRequestAtSummaryTransformer.transform,
     ),
   };

@@ -10,23 +10,53 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallShippingAddressCollector {
   export async function collect(props: {
     body: IEcommerceMallShippingAddress.ICreate;
-    ecommerceMallCustomers: IEntity;
-    ecommerceMallCustomerSessions: IEntity;
+    customer: IEntity;
   }) {
     return {
       id: v4(),
-      recipient_name: props.body.recipient_name,
+      recipient_name: props.body.recipientName,
       phone: props.body.phone,
-      street_address: props.body.street_address,
+      street_address: props.body.streetAddress,
       city: props.body.city,
       state: props.body.state,
-      postal_code: props.body.postal_code,
+      postal_code: props.body.postalCode,
       country: props.body.country,
-      is_default: props.body.is_default ?? false,
+      is_default: props.body.isDefault ?? false,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      customer: { connect: { id: props.ecommerceMallCustomers.id } },
+      customer: { connect: { id: props.customer.id } },
     } satisfies Prisma.ecommerce_mall_shipping_addressesCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallShippingAddressCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallShippingAddress.ICreate;
+//           ecommerceMallCustomers: IEntity; // from authorized actor
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       recipient_name: ...,
+//       phone: ...,
+//       street_address: ...,
+//       city: ...,
+//       state: ...,
+//       postal_code: ...,
+//       country: ...,
+//       is_default: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       customer: ...,
+//       orders: ...,
+//           } satisfies Prisma.ecommerce_mall_shipping_addressesCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

@@ -12,19 +12,6 @@ export namespace MallPlatformAdministratorTransformer {
   export type Payload = Prisma.mall_platform_administratorsGetPayload<
     ReturnType<typeof select>
   >;
-  export async function transform(
-    input: Payload,
-  ): Promise<IMallPlatformAdministrator> {
-    return {
-      id: input.id,
-      email: input.email,
-      grade: input.grade,
-      status: input.status,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-    };
-  }
   export function select() {
     return {
       select: {
@@ -45,4 +32,54 @@ export namespace MallPlatformAdministratorTransformer {
       },
     } satisfies Prisma.mall_platform_administratorsFindManyArgs;
   }
+  export async function transform(
+    input: Payload,
+  ): Promise<IMallPlatformAdministrator> {
+    return {
+      id: input.id,
+      email: input.email,
+      grade: input.grade,
+      status: input.status,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
+    } satisfies IMallPlatformAdministrator;
+  }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace MallPlatformAdministratorTransformer {
+//       export type Payload = Prisma.mall_platform_administratorsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             email: true,
+//             password_hash: true,
+//             grade: true,
+//             status: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//           },
+//         } satisfies Prisma.mall_platform_administratorsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IMallPlatformAdministrator> {
+//         return {
+//   id: {string},
+//   email: {string},
+//   grade: {string},
+//   status: {string},
+//   createdAt: {string},
+//   updatedAt: {string},
+//   deletedAt: {string | null},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

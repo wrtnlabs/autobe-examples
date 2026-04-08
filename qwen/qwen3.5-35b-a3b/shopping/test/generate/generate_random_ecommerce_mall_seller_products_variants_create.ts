@@ -2,6 +2,7 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import type { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import type { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+import type { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
@@ -14,7 +15,7 @@ import { prepare_random_ecommerce_mall_product_variant } from "../prepare/prepar
 export async function generate_random_ecommerce_mall_seller_products_variants_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IEcommerceMallProductVariant.ICreate>;
+    body?: DeepPartial<IEcommerceMallProductVariant.ICreate> | undefined;
     params: {
       productId: string;
     };
@@ -22,13 +23,11 @@ export async function generate_random_ecommerce_mall_seller_products_variants_cr
 ): Promise<IEcommerceMallProductVariant> {
   const prepared: IEcommerceMallProductVariant.ICreate =
     prepare_random_ecommerce_mall_product_variant(props.body);
-  const result: IEcommerceMallProductVariant =
-    await api.functional.ecommerceMall.seller.products.variants.create(
-      connection,
-      {
-        body: prepared,
-        productId: props.params.productId,
-      },
-    );
-  return result;
+  return await api.functional.ecommerceMall.seller.products.variants.create(
+    connection,
+    {
+      productId: props.params.productId,
+      body: prepared,
+    },
+  );
 }

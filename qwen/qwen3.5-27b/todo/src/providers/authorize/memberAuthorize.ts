@@ -12,10 +12,16 @@ export async function memberAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const member = await MyGlobal.prisma.multi_user_todo_members.findFirst({
+  const member = await MyGlobal.prisma.todo_app_members.findFirst({
     where: {
       id: payload.id,
       deleted_at: null,
+      memberSessions: {
+        some: {
+          id: payload.session_id,
+          expired_at: { gt: new Date() },
+        },
+      },
     },
   });
 

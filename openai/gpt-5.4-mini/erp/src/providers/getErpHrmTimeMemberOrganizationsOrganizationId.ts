@@ -1,6 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -10,34 +10,42 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { ErpHrmTimeOrganizationTransformer } from "../transformers/ErpHrmTimeOrganizationTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getErpHrmTimeMemberOrganizationsOrganizationId(props: {
   member: MemberPayload;
   organizationId: string & tags.Format<"uuid">;
-}): Promise<IErpHrmTimeOrganization> {
-  const membership =
-    await MyGlobal.prisma.erp_hrm_time_organization_memberships.findFirst({
-      where: {
-        erp_hrm_time_member_id: props.member.id,
-        erp_hrm_time_organization_id: props.organizationId,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-      },
-    });
-  if (membership === null) {
-    throw new HttpException("Forbidden", 403);
-  }
-  return await ErpHrmTimeOrganizationTransformer.transform(
+}): Promise<IErpHrmTimeOrganizationDashboardSummary> {
+  const organization =
     await MyGlobal.prisma.erp_hrm_time_organizations.findUniqueOrThrow({
       where: {
         id: props.organizationId,
       },
-      ...ErpHrmTimeOrganizationTransformer.select(),
-    }),
-  );
+      select: {
+        id: true,
+        owner_member_id: true,
+        name: true,
+        description: true,
+        logo_image_url: true,
+        status: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+      },
+    });
+  if (organization.owner_member_id !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  return {
+    id: organization.id,
+    ownerMember: {} satisfies IErpHrmTimeMember.ISummary,
+    name: organization.name,
+    description: organization.description,
+    logoImageUrl: organization.logo_image_url,
+    status: organization.status,
+    createdAt: organization.created_at.toISOString(),
+    updatedAt: organization.updated_at.toISOString(),
+    deletedAt: organization.deleted_at?.toISOString() ?? null,
+  };
 }

@@ -6,11 +6,9 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 export function prepare_random_erp_hrm_time_timesheet_timelog(
-  input?: DeepPartial<IErpHrmTimeTimesheetTimelog.ICreate> | undefined,
+  input?: DeepPartial<IErpHrmTimeTimesheetTimelog.ICreate>,
 ): IErpHrmTimeTimesheetTimelog.ICreate {
   return {
-    erp_hrm_time_timelog_id:
-      input?.erp_hrm_time_timelog_id ??
-      typia.random<string & tags.Format<"uuid">>(),
+    timelogId: input?.timelogId ?? typia.random<string & tags.Format<"uuid">>(),
   };
 }

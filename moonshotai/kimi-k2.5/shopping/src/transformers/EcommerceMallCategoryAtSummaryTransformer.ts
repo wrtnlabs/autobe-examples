@@ -1,10 +1,11 @@
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export namespace EcommerceMallCategoryAtSummaryTransformer {
@@ -17,30 +18,53 @@ export namespace EcommerceMallCategoryAtSummaryTransformer {
         id: true,
         name: true,
         description: true,
-        created_at: true,
-        parent: {
+        parent_id: true,
+        parent: undefined,
+        subcategories: {
           select: {
             id: true,
-            name: true,
           },
         } satisfies Prisma.ecommerce_mall_categoriesFindManyArgs,
+        created_at: true,
+        updated_at: true,
       },
     } satisfies Prisma.ecommerce_mall_categoriesFindManyArgs;
   }
   export async function transform(
     input: Payload,
+    cache: VariadicSingleton<
+      Promise<IEcommerceMallCategory.ISummary>,
+      [string]
+    > = createCache(),
   ): Promise<IEcommerceMallCategory.ISummary> {
     return {
       id: input.id,
       name: input.name,
-      description: input.description,
+      description: input.description ?? undefined,
+      parentId: input.parent_id,
+      parent: input.parent_id ? await cache.get(input.parent_id) : null,
+      subcategoryCount: input.subcategories.length,
       createdAt: input.created_at.toISOString(),
-      parent: input.parent
-        ? {
-            id: input.parent.id,
-            name: input.parent.name,
-          }
-        : null,
+      updatedAt: input.updated_at.toISOString(),
     };
+  }
+  export async function transformAll(
+    inputs: Payload[],
+  ): Promise<IEcommerceMallCategory.ISummary[]> {
+    const cache = createCache();
+    return await ArrayUtil.asyncMap(inputs, (x) => transform(x, cache));
+  }
+  function createCache() {
+    const cache = new VariadicSingleton(
+      async (id: string): Promise<IEcommerceMallCategory.ISummary> => {
+        const record =
+          await MyGlobal.prisma.ecommerce_mall_categories.findFirstOrThrow({
+            ...select(),
+            where: { id },
+          });
+        return transform(record, cache);
+      },
+    );
+    return cache;
   }
 }

@@ -5,22 +5,22 @@ import { ArrayUtil, RandomGenerator } from "@nestia/e2e";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+/**
+ * Prepare random e-commerce mall product image creation data for E2E testing.
+ *
+ * Generates a complete IEcommerceMallProductImage.ICreate with randomized values for
+ * product image upload scenarios. Includes image URL pointing to valid storage
+ * location and display order for positioning in product carousel.
+ */
 export function prepare_random_ecommerce_mall_product_image(
   input?: DeepPartial<IEcommerceMallProductImage.ICreate>,
 ): IEcommerceMallProductImage.ICreate {
   return {
     image_url:
       input?.image_url ??
-      RandomGenerator.content({
-        paragraphs: 1,
-        sentenceMin: 5,
-        sentenceMax: 10,
-      }),
+      typia.random<string & tags.Format<"uri"> & tags.MaxLength<80000>>(),
     display_order:
       input?.display_order ??
-      typia.random<number & tags.Type<"int32"> & tags.Minimum<0>>(),
-    alt_text:
-      input?.alt_text ??
-      (typia.random<boolean>() ? RandomGenerator.alphabets(20) : null),
+      typia.random<number & tags.Type<"int32"> & tags.Minimum<1>>(),
   };
 }

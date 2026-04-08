@@ -15,12 +15,11 @@ export async function authorize_guest_join(
   },
 ): Promise<IEcommerceMallGuest.IAuthorized> {
   const joinInput = {
-    fingerprint: props.body?.fingerprint ?? RandomGenerator.alphaNumeric(16),
+    fingerprint: props.body?.fingerprint ?? RandomGenerator.alphaNumeric(32),
     href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
-    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
     referrer:
       props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
-    user_agent: props.body?.user_agent ?? RandomGenerator.name(),
+    ip: props.body?.ip ?? typia.random<string & tags.Format<"ipv4">>(),
   } satisfies IEcommerceMallGuest.IJoin;
   return await api.functional.ecommerceMall.auth.guest.join(connection, {
     body: joinInput,

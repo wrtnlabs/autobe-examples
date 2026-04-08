@@ -2,7 +2,7 @@ import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IRedditClonePostLink } from "../../../../api/structures/IRedditClonePostLink";
+import { IRedditClonePost } from "../../../../api/structures/IRedditClonePost";
 import { MemberAuth } from "../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
 import { deleteRedditCloneMemberPostsPostId } from "../../../../providers/deleteRedditCloneMemberPostsPostId";
@@ -12,43 +12,38 @@ import { putRedditCloneMemberPostsPostId } from "../../../../providers/putReddit
 @Controller("/redditClone/member/posts")
 export class RedditcloneMemberPostsController {
   /**
-   * Create a new post in the Reddit-like platform.
+   * Create a new post in a community the authenticated user is subscribed to.
    *
-   * This endpoint allows authenticated members to create posts within communities they have subscribed to. Posts support three content types determined by the required type field: text posts contain body text, link posts contain an external URL, and image posts contain a reference to an uploaded image file.
+   * This endpoint allows members to publish content to a community. The post must include a title and belong to one of three types: text, link, or image. Text posts contain body content, link posts contain an external URL, and image posts reference an uploaded image file.
    *
-   * The request must include the target community name, post title, content type, and type-specific content data. The system validates that the authenticated user is subscribed to the target community before allowing post creation. If the user is banned from the community, post creation is denied.
+   * The authenticated user must have an active subscription to the target community before creating a post. The system automatically initializes the vote score to 0 and comment count to 0 upon creation.
    *
-   * On successful creation, the system returns the complete post object including the generated UUID identifier, authorship information linking to the creating member, community association, post metadata (vote score initialized to 0, comment count initialized to 0), and timestamps. The response includes the full content appropriate to the post type.
-   *
-   * Related operations include viewing the created post via GET /posts/{postId}, editing via PATCH /posts/{postId}, deleting via DELETE /posts/{postId}, and voting via POST /posts/{postId}/vote.
+   * Post creation is subject to community-specific rules including potential moderator oversight. Posts that violate community guidelines may be subject to moderation actions.
    *
    * @param connection
-   * @param body Post creation data including title, community name, type, and type-specific content
+   * @param body Post creation payload containing title, target community, post type, and type-specific content
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Extract and validate authenticated member from request session
-   * 2. Parse request body with title, communityName, type, and type-specific content
-   * 3. Validate title is non-empty string (required field for all post types)
-   * 4. Validate type is one of: 'text', 'link', 'image'
-   * 5. Validate communityName is non-empty and community exists
-   * 6. Check member is subscribed to the target community using reddit_clone_subscriptions
-   * 7. Check member is not banned from the target community
-   * 8. Create post record in reddit_clone_posts with:
-   *    - id: generated UUID
-   *    - reddit_clone_member_id: authenticated member ID
-   *    - reddit_clone_community_id: resolved community ID
-   *    - title: provided title
-   *    - type: provided post type
-   *    - vote_score: 0
-   *    - comment_count: 0
-   *    - created_at: current timestamp
-   *    - updated_at: current timestamp
-   *    - deleted_at: null
-   * 9. Create type-specific content record:
-   *    - For 'text': create reddit_clone_post_text_contents with body field
-   *    - For 'link': create reddit_clone_post_links with url field
-   *    - For 'image': create reddit_clone_post_images with file reference
-   * 10. Return created post with full content based on type discriminator
+   * @x-autobe-specification 1. Validate the authenticated member exists and session is valid.
+   * 2. Validate required fields: title (non-empty string), communityId (valid UUID), type (enum: text|link|image).
+   * 3. Verify the member has an active subscription to the target community by checking reddit_clone_subscriptions table.
+   * 4. For type=text: validate body field is present and non-empty.
+   * 5. For type=link: validate url field is a valid URL format.
+   * 6. For type=image: validate fileId references a valid uploaded image in reddit_clone_files table.
+   * 7. Create the post record in reddit_clone_posts with:
+   *    - reddit_clone_member_id from authenticated session
+   *    - reddit_clone_community_id from request
+   *    - title from request
+   *    - type from request
+   *    - vote_score = 0
+   *    - comment_count = 0
+   *    - created_at = current timestamp
+   *    - updated_at = current timestamp
+   * 8. Create corresponding content record:
+   *    - For text: insert into reddit_clone_post_text_contents with body
+   *    - For link: insert into reddit_clone_post_links with url
+   *    - For image: insert into reddit_clone_post_images with file_id
+   * 9. Return the complete post with joined author, community, and content data.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -56,8 +51,8 @@ export class RedditcloneMemberPostsController {
     @MemberAuth()
     member: MemberPayload,
     @TypedBody()
-    body: IRedditClonePostLink.ICreate,
-  ): Promise<IRedditClonePostLink> {
+    body: IRedditClonePost.ICreate,
+  ): Promise<IRedditClonePost> {
     try {
       return await postRedditCloneMemberPosts({
         member,
@@ -70,46 +65,36 @@ export class RedditcloneMemberPostsController {
   }
 
   /**
-   * Update an existing post that the authenticated user has authored.
+   * Update an existing post with new content.
    *
-   * This endpoint allows members to modify their own posts. Users can only edit posts they created - attempting to edit another user's post returns a 403 Forbidden error.
+   * This endpoint allows authenticated users to modify their own posts. Users can update the post title (which is required) and the type-specific content depending on the post type:
    *
-   * When updating a text post, the textBody field can be modified. When updating a link post, the linkUrl field can be changed. When updating an image post, the imageFileId can be replaced with a different uploaded image file before submission.
+   * - Text posts: Update the body content
+   * - Link posts: Update the URL
+   * - Image posts: Replace the uploaded image with a different one
    *
-   * The title is always required when updating any post type. The system automatically updates the updated_at timestamp when modifications are made.
+   * Users can only edit posts they have authored. Posts created by other users cannot be modified. The system records the timestamp when a post is updated.
    *
-   * Related Operations:
-   * - POST /communities/{communityName}/posts - Create a new post
-   * - GET /posts/{postId} - Retrieve the post after update
-   * - DELETE /posts/{postId} - Delete the post permanently
-   *
-   * Security:
-   * - Requires authenticated member session
-   * - Only the post author can modify the post
-   * - Users banned from the post's community cannot edit that post
+   * When updating an image post, the new image must be uploaded separately via the file upload endpoint before being referenced in this update.
    *
    * @param connection
    * @param postId Unique identifier of the post to update
-   * @param body Fields to update on the post. Title is required; content fields are optional based on post type.
+   * @param body Update request containing the new title and optional type-specific content
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query the reddit_clone_posts table to verify the post exists and belongs to the authenticated user. If post not found, return 404. If user is not the author, return 403.
-   *
-   * Retrieve the current post type from the database. Based on type:
-   * - For 'text' posts: Update reddit_clone_post_text_contents.body with textBody from request
-   * - For 'link' posts: Update reddit_clone_post_links.url with linkUrl from request
-   * - For 'image' posts: Update reddit_clone_post_images.reddit_clone_file_id with imageFileId from request
-   *
-   * Always update the title field in reddit_clone_posts. Set updated_at to current timestamp.
-   *
-   * Return the updated post with all related data:
-   * - Join with reddit_clone_members for author information
-   * - Join with reddit_clone_communities for community information
-   * - Join with reddit_clone_post_text_contents for text posts
-   * - Join with reddit_clone_post_links for link posts
-   * - Join with reddit_clone_post_images and reddit_clone_files for image posts
-   *
-   * Use database transaction for atomic updates across post and content tables.
+   * @x-autobe-specification 1. Extract postId from path parameter.
+   * 2. Verify user is authenticated (member session required).
+   * 3. Fetch the existing post from reddit_clone_posts by postId.
+   * 4. Verify the authenticated user is the author of the post (reddit_clone_member_id matches session user).
+   * 5. If post not found or soft-deleted (deleted_at is not null), return 404.
+   * 6. Validate title is provided and meets length requirements (1-300 characters).
+   * 7. Update the title field in reddit_clone_posts.
+   * 8. Based on post type:
+   *    - For 'text' posts: Update or insert body in reddit_clone_post_text_contents (use upsert with reddit_clone_post_id).
+   *    - For 'link' posts: Update or insert url in reddit_clone_post_links (use upsert with reddit_clone_post_id). Validate URL format.
+   *    - For 'image' posts: Update reddit_clone_file_id in reddit_clone_post_images (use upsert with reddit_clone_post_id). Verify the referenced file exists and is an image type.
+   * 9. Update the updated_at timestamp on the post.
+   * 10. Return the full updated post entity including resolved author, community, and type-specific content.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":postId")
@@ -119,8 +104,8 @@ export class RedditcloneMemberPostsController {
     @TypedParam("postId")
     postId: string & tags.Format<"uuid">,
     @TypedBody()
-    body: IRedditClonePostLink.IUpdate,
-  ): Promise<IRedditClonePostLink> {
+    body: IRedditClonePost.IUpdate,
+  ): Promise<IRedditClonePost> {
     try {
       return await putRedditCloneMemberPostsPostId({
         member,
@@ -134,64 +119,32 @@ export class RedditcloneMemberPostsController {
   }
 
   /**
-   * Permanently removes a post created by the authenticated member from the platform.
+   * Remove a post created by the authenticated member from the platform.
    *
-   * This endpoint allows authenticated members to delete posts they have authored. When a post is deleted, the system performs a soft delete by setting the deleted_at timestamp, which removes the post from all feeds and search results while preserving the record for data integrity.
+   * This endpoint allows authenticated members to delete posts they have authored. The deletion is a soft-delete operation that sets the deleted_at timestamp, immediately hiding the post from all feeds, search results, and individual views.
    *
-   * The deletion cascades to all comments associated with the post - all comments on the deleted post are also soft deleted. Vote records on the deleted post are removed, and the author's karma is adjusted accordingly.
+   * When a post is deleted, all comments attached to that post and all votes cast on that post are also permanently removed from the database. The post author's karma is adjusted to reflect the removal of votes.
    *
-   * Authorization: Only the authenticated member who authored the post can delete it. Attempting to delete another user's post returns a 403 Forbidden error. Attempting to delete a non-existent post returns a 404 Not Found error.
+   * Only the post author can delete a post. Attempting to delete a post authored by another member returns a 403 Forbidden error. Attempting to delete a non-existent post returns a 404 Not Found.
    *
-   * Related Operations:
-   * - POST /communities/{communityName}/posts - Create a new post before deletion
-   * - GET /posts/{postId} - Retrieve post details before deletion
-   * - PATCH /posts/{postId} - Edit post content instead of deleting
-   *
-   * Database Relationships:
-   * - reddit_clone_posts (reddit_clone_member_id -> reddit_clone_members)
-   * - reddit_clone_posts (reddit_clone_community_id -> reddit_clone_communities)
-   * - reddit_clone_comments (cascades from post deletion)
-   * - reddit_clone_post_votes (removed on deletion)
+   * Note: Posts are retained in the database for 30 days before permanent deletion, during which they remain inaccessible.
    *
    * @param connection
    * @param postId Unique identifier of the post to delete
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Authorization Check:
-   *    - Extract authenticated member from request context
-   *    - Verify member is authenticated (reject if guest/unauthenticated)
+   * @x-autobe-specification Delete a post by setting its deleted_at timestamp to current time.
    *
-   * 2. Post Existence Check:
-   *    - Query reddit_clone_posts table by postId
-   *    - Return 404 Not Found if post does not exist
-   *    - Return 404 if post is already soft deleted (deleted_at is not null)
-   *
-   * 3. Ownership Verification:
-   *    - Compare authenticated member's id with post's reddit_clone_member_id
-   *    - Return 403 Forbidden if member is not the post author
-   *    - Moderators cannot delete posts via this endpoint (only via report review)
-   *
-   * 4. Cascade Deletion (within transaction):
-   *    a. Soft delete the post:
-   *       - Set deleted_at to current timestamp
-   *       - Set vote_score to 0
-   *       - Update updated_at timestamp
-   *
-   *    b. Soft delete all comments on the post:
-   *       - Query reddit_clone_comments where reddit_clone_post_id = postId
-   *       - Set deleted_at on all found comments
-   *       - Zero vote scores on all comments
-   *
-   *    c. Remove all votes on the post:
-   *       - Delete from reddit_clone_post_votes where reddit_clone_post_id = postId
-   *
-   * 5. Karma Adjustment:
-   *    - Recalculate author's karma score in reddit_clone_user_karmas
-   *    - Remove contributions from deleted post's votes
-   *
-   * 6. Response:
-   *    - Return 200 OK with the deleted post data including deleted_at timestamp
-   *    - Response body: IRedditClonePost showing soft-deleted state
+   * 1. Query reddit_clone_posts table to find post by postId
+   * 2. Verify the authenticated user (from session/JWT) matches the post's reddit_clone_member_id
+   * 3. If user is not the author, return 403 Forbidden with message indicating insufficient permissions
+   * 4. If post not found, return 404 Not Found
+   * 5. Set deleted_at = NOW() on the post record (soft delete)
+   * 6. Database cascade automatically deletes:
+   *    - All rows in reddit_clone_comments where reddit_clone_post_id = postId
+   *    - All rows in reddit_clone_post_votes where reddit_clone_post_id = postId
+   * 7. Update author karma: subtract the post's vote_score from author's user_karma
+   * 8. Return 204 No Content on success
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":postId")

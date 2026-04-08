@@ -3,22 +3,20 @@ import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
-import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
 import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
 import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
-import { IEcommerceMallShipmentDelivery } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentDelivery";
 import { IEcommerceMallShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentItem";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
-import { EcommerceMallOrderItemAtSummaryTransformer } from "./EcommerceMallOrderItemAtSummaryTransformer";
+import { EcommerceMallOrderItemTransformer } from "./EcommerceMallOrderItemTransformer";
 import { EcommerceMallShipmentTransformer } from "./EcommerceMallShipmentTransformer";
 
 export namespace EcommerceMallOrderTransformer {
@@ -42,8 +40,13 @@ export namespace EcommerceMallOrderTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        customer: EcommerceMallCustomerAtSummaryTransformer.select(),
-        orderItems: EcommerceMallOrderItemAtSummaryTransformer.select(),
+        customer: {
+          select: {
+            id: true,
+            email: true,
+          },
+        } satisfies Prisma.ecommerce_mall_customersFindManyArgs,
+        orderItems: EcommerceMallOrderItemTransformer.select(),
         shipments: EcommerceMallShipmentTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_ordersFindManyArgs;
@@ -55,7 +58,7 @@ export namespace EcommerceMallOrderTransformer {
       id: input.id,
       orderNumber: input.order_number,
       totalPrice: input.total_price,
-      status: input.status,
+      status: input.status as IEcommerceMallOrder["status"],
       recipientName: input.recipient_name,
       recipientPhone: input.recipient_phone,
       streetAddress: input.street_address,
@@ -63,20 +66,21 @@ export namespace EcommerceMallOrderTransformer {
       state: input.state,
       postalCode: input.postal_code,
       country: input.country,
-      customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
-        input.customer,
-      ),
-      createdAt: toISOStringSafe(input.created_at),
-      updatedAt: toISOStringSafe(input.updated_at),
-      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      customer: {
+        id: input.customer.id,
+        email: input.customer.email,
+      } satisfies IEcommerceMallCustomer.ISummary,
       orderItems: await ArrayUtil.asyncMap(
         input.orderItems,
-        EcommerceMallOrderItemAtSummaryTransformer.transform,
+        EcommerceMallOrderItemTransformer.transform,
       ),
       shipments: await ArrayUtil.asyncMap(
         input.shipments,
         EcommerceMallShipmentTransformer.transform,
       ),
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
     };
   }
 }

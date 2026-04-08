@@ -21,31 +21,11 @@ export namespace ShoppingMallCategoryAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        parent: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.shopping_mall_categoriesFindManyArgs,
-        children: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.shopping_mall_categoriesFindManyArgs,
-        snapshots: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.shopping_mall_category_snapshotsFindManyArgs,
-        products: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.shopping_mall_productsFindManyArgs,
-        productSnapshots: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.shopping_mall_product_snapshotsFindManyArgs,
+        parent_id: true,
+        parent: undefined,
+        children: undefined,
+        products: undefined,
+        productSnapshots: undefined,
       },
     } satisfies Prisma.shopping_mall_categoriesFindManyArgs;
   }
@@ -54,23 +34,23 @@ export namespace ShoppingMallCategoryAtSummaryTransformer {
     cache: VariadicSingleton<
       Promise<IShoppingMallCategory.ISummary>,
       [string]
-    > = createCache(),
+    > = createParentCache(),
   ): Promise<IShoppingMallCategory.ISummary> {
     return {
       id: input.id,
       name: input.name,
-      description: input.description,
-      parent: input.parent ? await cache.get(input.parent.id) : null,
-      hasChildren: input.children.length > 0,
-    };
+      description: input.description ?? undefined,
+      parent: input.parent_id ? await cache.get(input.parent_id) : null,
+      created_at: toISOStringSafe(input.created_at),
+    } satisfies IShoppingMallCategory.ISummary;
   }
   export async function transformAll(
     inputs: Payload[],
   ): Promise<IShoppingMallCategory.ISummary[]> {
-    const cache = createCache();
+    const cache = createParentCache();
     return await ArrayUtil.asyncMap(inputs, (x) => transform(x, cache));
   }
-  function createCache() {
+  function createParentCache() {
     const cache = new VariadicSingleton(
       async (id: string): Promise<IShoppingMallCategory.ISummary> => {
         const record =

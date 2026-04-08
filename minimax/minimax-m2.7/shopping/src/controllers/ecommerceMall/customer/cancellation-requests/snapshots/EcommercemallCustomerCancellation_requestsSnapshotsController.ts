@@ -1,13 +1,13 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IEcommerceMallCancellationRequestSnapshot } from "../../../../../api/structures/IEcommerceMallCancellationRequestSnapshot";
-import { IPageIEcommerceMallCancellationRequestSnapshot } from "../../../../../api/structures/IPageIEcommerceMallCancellationRequestSnapshot";
+import { IEcommerceMallCancellationRequest } from "../../../../../api/structures/IEcommerceMallCancellationRequest";
+import { IPageIEcommerceMallCancellationRequest } from "../../../../../api/structures/IPageIEcommerceMallCancellationRequest";
 import { CustomerAuth } from "../../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../../decorators/payload/CustomerPayload";
+import { getEcommerceMallCustomerCancellationRequestsRequestIdSnapshots } from "../../../../../providers/getEcommerceMallCustomerCancellationRequestsRequestIdSnapshots";
 import { getEcommerceMallCustomerCancellationRequestsRequestIdSnapshotsSnapshotId } from "../../../../../providers/getEcommerceMallCustomerCancellationRequestsRequestIdSnapshotsSnapshotId";
-import { patchEcommerceMallCustomerCancellationRequestsRequestIdSnapshots } from "../../../../../providers/patchEcommerceMallCustomerCancellationRequestsRequestIdSnapshots";
 
 @Controller(
   "/ecommerceMall/customer/cancellation-requests/:requestId/snapshots",
@@ -16,76 +16,38 @@ export class EcommercemallCustomerCancellation_requestsSnapshotsController {
   /**
    * Retrieve a paginated list of snapshots for a specific cancellation request.
    *
-   * This endpoint provides access to the immutable historical records of state changes for a cancellation request. Each snapshot captures the reason text and status at the moment when the seller responded (approved or rejected) to the cancellation request.
+   * Each snapshot captures the cancellation request state at the moment when a seller approved or rejected the request, preserving the reason text and response status for audit trail and dispute resolution purposes.
    *
-   * ## Access Control
+   * This endpoint is accessible to the customer who submitted the cancellation request, the seller who received the request, and administrators for oversight purposes. The snapshots are immutable records that cannot be modified or deleted.
    *
-   * Access to cancellation request snapshots is determined by user role:
-   *
-   * - Customers can view snapshots of cancellation requests they submitted
-   * - Sellers can view snapshots of cancellation requests for their products
-   * - Administrators can view any cancellation request snapshot for oversight and dispute resolution
-   *
-   * ## Usage Patterns
-   *
-   * This operation is typically used in the following scenarios:
-   *
-   * - Customers reviewing the history of their cancellation request and seller's response
-   * - Sellers auditing the response history of cancellation requests
-   * - Administrators resolving disputes involving cancellation request state changes
-   * - System displaying audit trail for order dispute resolution
-   *
-   * ## Related Operations
-   *
-   * The following related operations may be used in conjunction with this endpoint:
-   *
-   * - `POST /cancellation-requests` - Create a new cancellation request (customer action)
-   * - `POST /seller/cancellations/{id}/approve` - Approve cancellation (creates snapshot)
-   * - `POST /seller/cancellations/{id}/reject` - Reject cancellation (creates snapshot)
-   * - `GET /cancellation-requests/{requestId}` - View current cancellation request state
-   *
-   * ## Snapshot Data Source
-   *
-   * The snapshots are automatically created when a seller responds to a cancellation request, as defined in the ecommerce_mall_cancellation_request_snapshots table schema. These records preserve the reason text and status at snapshot creation time for permanent audit trail purposes.
+   * The response includes snapshot identifiers, timestamps, and the captured reason and status values for each historical snapshot.
    *
    * @param connection
-   * @param requestId Unique identifier of the cancellation request (UUID format)
-   * @param body Pagination and optional ordering parameters for retrieving snapshot list
+   * @param requestId Unique identifier of the cancellation request (global scope)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Query the ecommerce_mall_cancellation_request_snapshots table filtered by the cancellation request ID.
-   *
-   * 1. Validate that the cancellation request exists in ecommerce_mall_cancellation_requests table
-   * 2. Verify user authorization based on role:
-   *    - If customer: verify ecommerce_mall_customer_id matches authenticated customer
-   *    - If seller: verify ecommerce_mall_seller_id matches authenticated seller
-   *    - If admin: allow access
-   * 3. Query cancellation_request_snapshots where ecommerce_mall_cancellation_request_id equals the requestId path parameter
-   * 4. Order results by created_at descending (most recent first)
-   * 5. Apply pagination with page size and cursor/offset as specified in request body
-   * 6. Return snapshot records including: id, reason, status, created_at
-   *
-   * Edge Cases:
-   * - If cancellation request not found: return 404 error
-   * - If user not authorized: return 403 error
-   * - If no snapshots exist: return empty array with pagination info
+   * @x-autobe-specification Query ecommerce_mall_cancellation_request_snapshots table filtering by the provided cancellation request ID.
+   * Join with ecommerce_mall_cancellation_requests to verify the request exists.
+   * Verify the requesting user has permission: must be the customer who created the request, the seller assigned to the request, or an administrator.
+   * Apply pagination using page and limit query parameters (default page 1, limit 20, max 100).
+   * Order snapshots by created_at descending (newest first).
+   * Return snapshot id, ecommerce_mall_cancellation_request_id, reason, status, and created_at for each record.
+   * Handle case where cancellation request does not exist - return 404 error.
+   * Handle unauthorized access - return 403 error if user lacks permission.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
-  public async index(
+  @TypedRoute.Get()
+  public async list(
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedParam("requestId")
     requestId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IEcommerceMallCancellationRequestSnapshot.IRequest,
-  ): Promise<IPageIEcommerceMallCancellationRequestSnapshot> {
+  ): Promise<IPageIEcommerceMallCancellationRequest.ISummary> {
     try {
-      return await patchEcommerceMallCustomerCancellationRequestsRequestIdSnapshots(
+      return await getEcommerceMallCustomerCancellationRequestsRequestIdSnapshots(
         {
           customer,
           requestId,
-          body,
         },
       );
     } catch (error) {
@@ -97,35 +59,33 @@ export class EcommercemallCustomerCancellation_requestsSnapshotsController {
   /**
    * Retrieve a specific cancellation request snapshot by its unique identifier.
    *
-   * This endpoint retrieves the immutable snapshot record that was automatically created when a seller approved or rejected a cancellation request. Each snapshot preserves the reason text and status ('approved' or 'rejected') at the moment of seller response, serving as a permanent audit trail for dispute resolution.
+   * This endpoint returns an immutable snapshot of a cancellation request that was captured when the seller responded (approved or rejected) to the request. The snapshot preserves the reason text and status at that moment for audit and dispute resolution purposes.
    *
-   * The cancellation request snapshot belongs to the ecommerce_mall_cancellation_request_snapshots table which stores the preserved state of cancellation requests. The snapshot captures the ecommerce_mall_cancellation_request_id, reason, status, and created_at timestamp.
+   * Access is restricted to: the customer who submitted the original cancellation request, the seller who received and responded to the request, or platform administrators. The requestId path parameter establishes the authorization context - users can only view snapshots for cancellation requests they are involved in.
    *
-   * Access is restricted to the customer who submitted the original cancellation request, the seller who owns the order item and received the request, or administrators with appropriate permissions. Guests and other unrelated users cannot access this endpoint.
-   *
-   * This operation is part of the snapshot viewing system where snapshots are immutable and cannot be modified or deleted. The endpoint returns the complete snapshot data including the captured reason and status values.
-   *
-   * For listing all snapshots of a cancellation request, use the list endpoint. For viewing the current state of a cancellation request, use the main cancellation request detail endpoint.
+   * The snapshot record is immutable and cannot be modified or deleted. It provides a permanent audit trail linked to its parent cancellation request.
    *
    * @param connection
-   * @param requestId Unique identifier of the original cancellation request that this snapshot belongs to.
-   * @param snapshotId Unique identifier of the snapshot record to retrieve.
+   * @param requestId Unique identifier of the parent cancellation request (provides authorization context).
+   * @param snapshotId Unique identifier of the cancellation request snapshot.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement the snapshot retrieval with the following steps:
+   * @x-autobe-specification Retrieve the cancellation request snapshot from ecommerce_mall_cancellation_request_snapshots table using the snapshotId.
    *
-   * 1. **Authentication & Authorization**: Verify the requester is authenticated (customer, seller, or admin). Check that the user has permission to view this snapshot:
-   *    - If customer: verify they own the original cancellation request
-   *    - If seller: verify they own the cancellation request
-   *    - If admin/superAdmin: allow access
+   * Verify authorization: Check that the authenticated user is either:
+   * 1. The customer who submitted the cancellation request (ecommerce_mall_cancellation_requests.ecommerce_mall_customer_id)
+   * 2. The seller who received the cancellation request (ecommerce_mall_cancellation_requests.ecommerce_mall_seller_id)
+   * 3. An administrator or super administrator
    *
-   * 2. **Parameter Validation**: Validate both requestId and snapshotId are valid UUIDs.
+   * If requestId does not match any existing cancellation request, return 404 Not Found.
    *
-   * 3. **Database Query**: Query the ecommerce_mall_cancellation_request_snapshots table filtering by id = snapshotId AND ecommerce_mall_cancellation_request_id = requestId.
+   * If snapshotId does not match any snapshot for this request, return 404 Not Found.
    *
-   * 4. **Result Handling**: If not found, return 404 error. If found, return the snapshot data.
+   * If user is not authorized to view this snapshot, return 403 Forbidden.
    *
-   * 5. **Response**: Return IEcommerceMallCancellationRequestSnapshot with id, ecommerce_mall_cancellation_request_id, reason, status, and created_at.
+   * Return the complete snapshot record including: id, ecommerce_mall_cancellation_request_id, reason, status, and created_at.
+   *
+   * No pagination required - returns single snapshot record.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":snapshotId")
@@ -136,7 +96,7 @@ export class EcommercemallCustomerCancellation_requestsSnapshotsController {
     requestId: string & tags.Format<"uuid">,
     @TypedParam("snapshotId")
     snapshotId: string & tags.Format<"uuid">,
-  ): Promise<IEcommerceMallCancellationRequestSnapshot> {
+  ): Promise<IEcommerceMallCancellationRequest> {
     try {
       return await getEcommerceMallCustomerCancellationRequestsRequestIdSnapshotsSnapshotId(
         {

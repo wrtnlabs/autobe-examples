@@ -1,99 +1,40 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IEcommerceMallReview } from "../../../api/structures/IEcommerceMallReview";
-import { IPageIEcommerceMallReview } from "../../../api/structures/IPageIEcommerceMallReview";
 import { getEcommerceMallReviewsReviewId } from "../../../providers/getEcommerceMallReviewsReviewId";
-import { patchEcommerceMallReviews } from "../../../providers/patchEcommerceMallReviews";
 
-@Controller("/ecommerceMall/reviews")
+@Controller("/ecommerceMall/reviews/:reviewId")
 export class EcommercemallReviewsController {
   /**
-   * Retrieve a filtered and paginated list of product reviews.
+   * Retrieve a single review by its unique identifier.
    *
-   * This endpoint allows searching and filtering reviews across the platform. Reviews can be filtered by product, customer, rating range, date range, and content keywords. Results are returned in a paginated format sorted by creation date (newest first by default).
+   * This endpoint retrieves the complete details of a specific review including the rating, text content, creation and update timestamps, and related information about the reviewer and product. Soft-deleted reviews are not accessible and return a 404 response.
    *
-   * Review data is sourced from the ecommerce_mall_reviews table which stores customer feedback for purchased products. Each review contains a star rating (1-5) and optional text content. The reviews table links to customers who wrote them, products being reviewed, and order items that verify the purchase.
+   * The response includes a summary of the customer who wrote the review. If the customer has been deleted, the customer name displays as 'deleted user' while preserving the rating and content. The product summary provides context about which product was reviewed.
    *
-   * Security considerations: Active reviews (where deleted_at is null) are displayed publicly. Soft-deleted reviews are hidden from display but preserved with snapshots for audit purposes.
-   *
-   * Related operations:
-   * - GET /products/{productId}/reviews - List reviews for a specific product (simplified)
-   * - POST /customers/orders/{orderId}/items/{itemId}/review - Create new review
-   * - PUT /customers/reviews/{reviewId} - Update own review
-   * - DELETE /customers/reviews/{reviewId} - Delete own review
+   * This operation is useful for displaying individual reviews in admin dashboards, customer service contexts, or when deep-linking to specific review pages.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters
+   * @param reviewId Unique identifier of the review (UUID format)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_reviews table with the following implementation steps:
+   * @x-autobe-specification Query the ecommerce_mall_reviews table using the provided reviewId.
    *
-   * 1. Base Query: Start with SELECT * FROM ecommerce_mall_reviews WHERE deleted_at IS NULL
-   *
-   * 2. Apply Filters:
-   *    - productId: Filter by ecommerce_mall_product_id equality
-   *    - customerId: Filter by ecommerce_mall_customer_id equality
-   *    - ratingMin: Filter by rating >= specified value
-   *    - ratingMax: Filter by rating <= specified value
-   *    - createdAtFrom: Filter by created_at >= specified datetime
-   *    - createdAtTo: Filter by created_at <= specified datetime
-   *    - contentSearch: Full-text search on content field using ILIKE or GIN index
-   *
-   * 3. Sorting:
-   *    - Default sort: created_at DESC (newest first)
-   *    - Optional sortBy parameter: newest, oldest, rating_high, rating_low, relevance
-   *
-   * 4. Pagination:
-   *    - Use cursor-based or offset pagination with limit and offset parameters
-   *    - Return total count for pagination UI
-   *
-   * 5. Response Assembly:
-   *    - Join with ecommerce_mall_customers for customer display name
-   *    - Join with ecommerce_mall_products for product name (if filtering by product)
-   *    - Return summary data optimized for list display
+   * 1. Validate that reviewId is a valid UUID format.
+   * 2. Query the review by id where deleted_at IS NULL (exclude soft-deleted reviews).
+   * 3. If not found or soft-deleted, return 404 with error message 'Review not found'.
+   * 4. Join with ecommerce_mall_customers table to get customer information (id, email).
+   * 5. Join with ecommerce_mall_products table to get product information (id, name).
+   * 6. Build the response with:
+   *    - Review: id, rating, content, created_at, updated_at
+   *    - Customer summary: id, displayName (or 'deleted user' if customer deleted_at is not null)
+   *    - Product summary: id, name
+   * 7. Return 200 with the complete review object.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
-  public async index(
-    @TypedBody()
-    body: IEcommerceMallReview.IRequest,
-  ): Promise<IPageIEcommerceMallReview.ISummary> {
-    try {
-      return await patchEcommerceMallReviews({
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve a single product review by its unique identifier.
-   *
-   * This endpoint returns detailed information about a specific review including the star rating, text content, creation timestamp, and information about the customer who wrote it. The review must not be deleted to be accessible through this endpoint.
-   *
-   * Reviews serve as social proof mechanisms that help customers make informed purchasing decisions by sharing their experiences with products. Each review is linked to the customer who wrote it and the product being reviewed. The review also references the specific order item that verified the purchase, ensuring reviews come from verified buyers.
-   *
-   * When a customer deletes their account, their reviews are preserved but the reviewer name is displayed as "deleted user" to protect privacy while maintaining the review content for other customers' reference.
-   *
-   * Related Operations:
-   * - GET /products/{productId}/reviews - List all reviews for a specific product
-   * - PUT /reviews/{reviewId} - Update a review (customer's own reviews only)
-   * - DELETE /reviews/{reviewId} - Delete a review (customer's own reviews only)
-   *
-   * Response includes the associated product information for context about what product this review is for.
-   *
-   * @param connection
-   * @param reviewId Unique identifier of the review to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query ecommerce_mall_reviews table using the provided reviewId. Verify the review exists and deleted_at is null. Join with ecommerce_mall_customers table to get customer display name (from customer_profiles) or return 'deleted user' if customer.deleted_at is not null. Join with ecommerce_mall_products table to include product name for context. Return 404 error if review is not found or has been deleted.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":reviewId")
+  @TypedRoute.Get()
   public async at(
     @TypedParam("reviewId")
     reviewId: string & tags.Format<"uuid">,

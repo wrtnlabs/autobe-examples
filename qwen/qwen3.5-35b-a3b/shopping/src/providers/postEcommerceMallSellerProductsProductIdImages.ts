@@ -19,29 +19,79 @@ export async function postEcommerceMallSellerProductsProductIdImages(props: {
   productId: string & tags.Format<"uuid">;
   body: IEcommerceMallProductImage.ICreate;
 }): Promise<IEcommerceMallProductImage> {
-  // Verify product exists and is not soft-deleted
   const product =
     await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
-      where: { id: props.productId },
-      select: { id: true, seller_id: true, deleted_at: true },
+      where: { id: props.productId, deleted_at: null },
+      select: {
+        id: true,
+        seller_id: true,
+      },
     });
-  if (product.deleted_at !== null) {
-    throw new HttpException("Product not found", 404);
-  }
-  // Verify product owner matches authenticated seller
   if (product.seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Collect data using the collector
-  const collectedData = await EcommerceMallProductImageCollector.collect({
-    body: props.body,
-    ecommerceMallProducts: { id: product.id },
-  });
-  // Create the image record
-  const created = await MyGlobal.prisma.ecommerce_mall_product_images.create({
-    data: collectedData,
+  const existingImageCount =
+    await MyGlobal.prisma.ecommerce_mall_product_images.count({
+      where: {
+        product_id: props.productId,
+        deleted_at: null,
+      },
+    });
+  if (props.body.display_order === 1 && existingImageCount > 0) {
+    await MyGlobal.prisma.ecommerce_mall_product_images.updateMany({
+      where: {
+        product_id: props.productId,
+        display_order: 1,
+        deleted_at: null,
+      },
+      data: { display_order: 2 },
+    });
+  }
+  const record = await MyGlobal.prisma.ecommerce_mall_product_images.create({
+    data: await EcommerceMallProductImageCollector.collect({
+      body: props.body,
+      ecommerceMallProducts: { id: props.productId },
+    }),
     ...EcommerceMallProductImageTransformer.select(),
   });
-  // Transform and return
-  return await EcommerceMallProductImageTransformer.transform(created);
+  return await EcommerceMallProductImageTransformer.transform(record);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function postEcommerceMallSellerProductsProductIdImages(props: {
+//   seller: SellerPayload;
+//   productId: string & tags.Format<"uuid">;
+//   body: IEcommerceMallProductImage.ICreate;
+// }): Promise<IEcommerceMallProductImage> {
+//   const record = await MyGlobal.prisma.ecommerce_mall_product_images.create({
+//     data: await EcommerceMallProductImageCollector.collect({
+//       body: props.body,
+//       ...
+//     }),
+//     ...EcommerceMallProductImageTransformer.select(),
+//   });
+//   return await EcommerceMallProductImageTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

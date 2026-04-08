@@ -10,7 +10,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace MallPlatformProductCollector {
   export async function collect(props: {
     body: IMallPlatformProduct.ICreate;
-    sellerAccount: IEntity;
+    seller: IEntity;
   }) {
     const id: string = v4();
     const now: Date = new Date();
@@ -23,18 +23,46 @@ export namespace MallPlatformProductCollector {
       updated_at: now,
       deleted_at: null,
       sellerAccount: {
-        connect: { id: props.sellerAccount.id },
+        connect: { id: props.seller.id },
       },
       category: props.body.categoryId
-        ? { connect: { id: props.body.categoryId } }
+        ? {
+            connect: { id: props.body.categoryId },
+          }
         : undefined,
-      images: undefined,
-      variants: undefined,
-      productImageSnapshots: undefined,
-      variantSnapshots: undefined,
-      wishlistItems: undefined,
-      reviews: undefined,
-      snapshots: undefined,
     } satisfies Prisma.mall_platform_productsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace MallPlatformProductCollector {
+//         export async function collect(props: {
+//           body: IMallPlatformProduct.ICreate;
+//           mallPlatformSellers: IEntity; // from authorized actor
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       name: ...,
+//       description: ...,
+//       base_price: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       sellerAccount: ...,
+//       category: ...,
+//       images: ...,
+//       variants: ...,
+//       productImageSnapshots: ...,
+//       variantSnapshots: ...,
+//       wishlistItems: ...,
+//       reviews: ...,
+//       snapshots: ...,
+//           } satisfies Prisma.mall_platform_productsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

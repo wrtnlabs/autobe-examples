@@ -28,56 +28,57 @@ export async function postHrmPlatformMemberTimers(props: {
   const employee =
     await MyGlobal.prisma.hrm_platform_employees.findFirstOrThrow({
       where: {
-        user_id: props.member.id,
+        member_id: props.member.id,
         deleted_at: null,
       },
     });
-  const existingTimer = await MyGlobal.prisma.hrm_platform_timers.findFirst({
-    where: {
-      employee_id: employee.id,
-      deleted_at: null,
-    },
-  });
-  if (existingTimer !== null) {
-    throw new HttpException("Active timer already exists", 409);
-  }
-  const projectMember =
-    await MyGlobal.prisma.hrm_platform_project_members.findFirst({
+  const existingActiveTimer =
+    await MyGlobal.prisma.hrm_platform_timers.findFirst({
       where: {
-        employee: {
-          id: employee.id,
-        },
-        project: { id: props.body.project_id },
+        hrm_platform_employee_id: employee.id,
+        stopped_at: null,
       },
     });
-  if (projectMember === null) {
+  if (existingActiveTimer !== null) {
+    throw new HttpException("Conflict: An active timer already exists", 409);
+  }
+  const projectMembership =
+    await MyGlobal.prisma.hrm_platform_project_members.findFirst({
+      where: {
+        hrm_platform_employee_id: employee.id,
+        hrm_platform_project_id: props.body.hrm_platform_project_id,
+      },
+    });
+  if (projectMembership === null) {
     throw new HttpException(
-      "Employee is not a member of the specified project",
-      400,
+      "Forbidden: Employee is not assigned to this project",
+      403,
     );
   }
-  if (props.body.task_id !== undefined && props.body.task_id !== null) {
+  if (
+    props.body.hrm_platform_task_id !== undefined &&
+    props.body.hrm_platform_task_id !== null
+  ) {
     const task = await MyGlobal.prisma.hrm_platform_tasks.findFirst({
       where: {
-        id: props.body.task_id,
-        hrm_platform_project_id: props.body.project_id,
+        id: props.body.hrm_platform_task_id,
+        hrm_platform_project_id: props.body.hrm_platform_project_id,
       },
     });
     if (task === null) {
       throw new HttpException(
-        "Task does not belong to the specified project",
+        "Bad Request: Task does not belong to the specified project",
         400,
       );
     }
   }
-  const created = await MyGlobal.prisma.hrm_platform_timers.create({
+  const record = await MyGlobal.prisma.hrm_platform_timers.create({
     data: await HrmPlatformTimerCollector.collect({
       body: props.body,
-      hrmPlatformEmployees: {
-        id: employee.id,
-      },
+      hrmPlatformEmployees: { id: employee.id },
+      hrmPlatformMemberSessions: { id: props.member.session_id },
     }),
     ...HrmPlatformTimerTransformer.select(),
   });
-  return await HrmPlatformTimerTransformer.transform(created);
+  return await HrmPlatformTimerTransformer.transform(record);
 }

@@ -1,0 +1,203 @@
+/// Role definitions within organizations, including built-in roles (Owner,
+/// Manager, Employee) and custom roles with configurable permission sets.
+///
+/// Roles define access control boundaries within an organization. Built-in
+/// roles (Owner, Manager, Employee) are system-provided and cannot be
+/// deleted. Custom roles can be created by organization owners with specific
+/// permission combinations.
+///
+/// Each role belongs to exactly one {@link hrm_platform_organizations} and
+/// has a unique name within that organization. Employees are assigned
+/// exactly one role through the {@link hrm_platform_employees} table. Role
+/// permissions are defined through the {@link hrm_platform_role_permissions}
+/// junction table.
+///
+/// @namespace roles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the organization that owns this role.
+  ///
+  /// All roles belong to exactly one {@link hrm_platform_organizations}. This
+  /// foreign key enforces organization scoping for role definitions. Built-in
+  /// roles are created automatically when an organization is created.
+  organization_id String
+  
+  /// Role name displayed in the UI and used for identification.
+  ///
+  /// For built-in roles, this is one of: 'Owner', 'Manager', or 'Employee'.
+  /// For custom roles, organization owners define the name. Must be unique
+  /// within the organization.
+  name String
+  
+  /// Flag indicating whether this is a system-provided built-in role.
+  ///
+  /// Built-in roles (Owner, Manager, Employee) are created automatically for
+  /// each organization and cannot be deleted. Custom roles have this flag set
+  /// to false and can be deleted if no employees are assigned to them.
+  is_built_in Boolean
+  
+  /// Optional description explaining the role's purpose and typical use cases.
+  ///
+  /// Primarily used for custom roles to document their intended permissions
+  /// and responsibilities. Built-in roles may have null descriptions as their
+  /// purposes are well-defined.
+  description String?
+  
+  /// Timestamp when this role was created.
+  created_at DateTime
+  
+  /// Timestamp when this role was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this role was soft-deleted (null for active roles).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  rolePermissions hrm_platform_role_permissions[]
+  employees hrm_platform_employees[]
+  employeeInvitations hrm_platform_employee_invitations[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_id, name])
+}
+
+/// Master list of available permission codes such as org:manage,
+/// employee:manage, project:view, time:approve, and report:view.
+///
+/// This table defines the complete set of permissions that can be assigned
+/// to roles within the hrm_platform system. Each permission code represents
+/// a specific capability or access right, such as managing organization
+/// settings, viewing employee lists, or approving timesheets.
+///
+/// Permissions are referenced by {@link hrm_platform_role_permissions}
+/// junction table to establish which permissions belong to each role. This
+/// table is system-managed and populated during initial setup.
+///
+/// @namespace roles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Permission code identifier in format 'domain:action' such as org:manage,
+  /// employee:view, or time:approve.
+  ///
+  /// This code uniquely identifies the permission and is used throughout the
+  /// system for authorization checks. The format follows a consistent pattern
+  /// where the domain represents the resource area and the action represents
+  /// the allowed operation.
+  code String
+  
+  /// Human-readable explanation of what this permission allows.
+  ///
+  /// This description helps administrators understand the purpose of each
+  /// permission when creating or editing custom roles. It should clearly state
+  /// what actions or resources the permission grants access to.
+  description String
+  
+  /// Timestamp when this permission record was created.
+  created_at DateTime
+  
+  /// Timestamp when this permission record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this permission record was soft deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  assignedRoles hrm_platform_role_permissions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([code])
+}
+
+/// Junction table mapping roles to their assigned permissions, enabling
+/// flexible permission sets per role.
+///
+/// This table implements the many-to-many relationship between {@link
+/// hrm_platform_roles} and {@link hrm_platform_permissions}. Each row
+/// represents a single permission assignment to a role, allowing roles to
+/// have multiple permissions and permissions to be assigned to multiple
+/// roles.
+///
+/// The unique constraint on role_id and permission_id prevents duplicate
+/// permission assignments. This table is managed through the role entity -
+/// when creating or editing a role, its permissions are managed by inserting
+/// or deleting rows in this junction table.
+///
+/// @namespace roles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_role_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the role that is granted this permission.
+  ///
+  /// This foreign key establishes the relationship to {@link
+  /// hrm_platform_roles}. Each role can have multiple permission assignments
+  /// through this junction table. When a role is deleted, all its permission
+  /// assignments are cascade deleted.
+  hrm_platform_role_id String
+  
+  /// References the permission being granted to the role.
+  ///
+  /// This foreign key establishes the relationship to {@link
+  /// hrm_platform_permissions}. Each permission can be assigned to multiple
+  /// roles through this junction table. Permissions are master data and should
+  /// not be deleted while assigned to roles.
+  hrm_platform_permission_id String
+  
+  /// Timestamp when this permission assignment was created.
+  ///
+  /// Records when the permission was granted to the role. Used for audit
+  /// purposes to track when role configurations were modified.
+  created_at DateTime
+  
+  /// Timestamp when this permission assignment was last modified.
+  ///
+  /// Updated whenever the permission assignment record is modified. Used for
+  /// audit purposes to track recent changes to role configurations.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  role hrm_platform_roles @relation(fields: [hrm_platform_role_id], references: [id], onDelete: Cascade)
+  permission hrm_platform_permissions @relation(fields: [hrm_platform_permission_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_platform_permission_id])
+  // spellchecker: ignore-next-line
+  @@unique([hrm_platform_role_id, hrm_platform_permission_id], map: "hrm_platform_role_permissions_hrm_platform_role_id_hrm_13211dc7")
+}

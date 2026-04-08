@@ -1,192 +1,210 @@
 import { Module } from "@nestjs/common";
 
-import { ShoppingmallAdministratorApproval_requestsController } from "./controllers/shoppingMall/administrator/approval-requests/ShoppingmallAdministratorApproval_requestsController";
-import { ShoppingmallAdministratorApproval_requestsSnapshotsController } from "./controllers/shoppingMall/administrator/approval-requests/snapshots/ShoppingmallAdministratorApproval_requestsSnapshotsController";
-import { ShoppingmallAdministratorCartsController } from "./controllers/shoppingMall/administrator/carts/ShoppingmallAdministratorCartsController";
-import { ShoppingmallAdministratorCartsItemsController } from "./controllers/shoppingMall/administrator/carts/items/ShoppingmallAdministratorCartsItemsController";
-import { ShoppingmallAdministratorCategoriesController } from "./controllers/shoppingMall/administrator/categories/ShoppingmallAdministratorCategoriesController";
-import { ShoppingmallAdministratorCategoriesSnapshotsController } from "./controllers/shoppingMall/administrator/categories/snapshots/ShoppingmallAdministratorCategoriesSnapshotsController";
-import { ShoppingmallAdministratorCustomersController } from "./controllers/shoppingMall/administrator/customers/ShoppingmallAdministratorCustomersController";
-import { ShoppingmallAdministratorCustomersProfileController } from "./controllers/shoppingMall/administrator/customers/profile/ShoppingmallAdministratorCustomersProfileController";
-import { ShoppingmallAdministratorCustomersProfileSnapshotsController } from "./controllers/shoppingMall/administrator/customers/profile/snapshots/ShoppingmallAdministratorCustomersProfileSnapshotsController";
-import { ShoppingmallAdministratorCustomersProfilesController } from "./controllers/shoppingMall/administrator/customers/profiles/ShoppingmallAdministratorCustomersProfilesController";
-import { ShoppingmallAdministratorCustomersProfilesSnapshotsController } from "./controllers/shoppingMall/administrator/customers/profiles/snapshots/ShoppingmallAdministratorCustomersProfilesSnapshotsController";
-import { ShoppingmallAdministratorProductsController } from "./controllers/shoppingMall/administrator/products/ShoppingmallAdministratorProductsController";
-import { ShoppingmallAdministratorProductsSnapshotsController } from "./controllers/shoppingMall/administrator/products/snapshots/ShoppingmallAdministratorProductsSnapshotsController";
-import { ShoppingmallAdministratorProductsSnapshotsVariantsController } from "./controllers/shoppingMall/administrator/products/snapshots/variants/ShoppingmallAdministratorProductsSnapshotsVariantsController";
-import { ShoppingmallAdministratorProductsVariantsSnapshotsController } from "./controllers/shoppingMall/administrator/products/variants/snapshots/ShoppingmallAdministratorProductsVariantsSnapshotsController";
-import { ShoppingmallAdministratorSellersController } from "./controllers/shoppingMall/administrator/sellers/ShoppingmallAdministratorSellersController";
-import { ShoppingmallAdministratorSellersProfileSnapshotsController } from "./controllers/shoppingMall/administrator/sellers/profile/snapshots/ShoppingmallAdministratorSellersProfileSnapshotsController";
-import { ShoppingmallAdministratorShipment_logsController } from "./controllers/shoppingMall/administrator/shipment-logs/ShoppingmallAdministratorShipment_logsController";
-import { ShoppingmallAuthAdministratorController } from "./controllers/shoppingMall/auth/administrator/ShoppingmallAuthAdministratorController";
-import { ShoppingmallAuthCustomerController } from "./controllers/shoppingMall/auth/customer/ShoppingmallAuthCustomerController";
+import { ShoppingmallAdminAdminApproval_requestsController } from "./controllers/shoppingMall/admin/admin/approval-requests/ShoppingmallAdminAdminApproval_requestsController";
+import { ShoppingmallAdminAdminAudit_logsController } from "./controllers/shoppingMall/admin/admin/audit-logs/ShoppingmallAdminAdminAudit_logsController";
+import { ShoppingmallAdminAdminOrder_item_snapshotsController } from "./controllers/shoppingMall/admin/admin/order-item-snapshots/ShoppingmallAdminAdminOrder_item_snapshotsController";
+import { ShoppingmallAdminAdminOrder_item_snapshotsOptionsController } from "./controllers/shoppingMall/admin/admin/order-item-snapshots/options/ShoppingmallAdminAdminOrder_item_snapshotsOptionsController";
+import { ShoppingmallAdminAdminOrdersController } from "./controllers/shoppingMall/admin/admin/orders/ShoppingmallAdminAdminOrdersController";
+import { ShoppingmallAdminAdminSeller_profile_snapshotsController } from "./controllers/shoppingMall/admin/admin/seller-profile-snapshots/ShoppingmallAdminAdminSeller_profile_snapshotsController";
+import { ShoppingmallAdminAdminSellersController } from "./controllers/shoppingMall/admin/admin/sellers/ShoppingmallAdminAdminSellersController";
+import { ShoppingmallAdminAdminShipmentsController } from "./controllers/shoppingMall/admin/admin/shipments/ShoppingmallAdminAdminShipmentsController";
+import { ShoppingmallAdminAdministratorsController } from "./controllers/shoppingMall/admin/administrators/ShoppingmallAdminAdministratorsController";
+import { ShoppingmallAdminApproval_requestsController } from "./controllers/shoppingMall/admin/approval-requests/ShoppingmallAdminApproval_requestsController";
+import { ShoppingmallAdminCancellation_requestsController } from "./controllers/shoppingMall/admin/cancellation-requests/ShoppingmallAdminCancellation_requestsController";
+import { ShoppingmallAdminCancellation_requestsSnapshotsController } from "./controllers/shoppingMall/admin/cancellation-requests/snapshots/ShoppingmallAdminCancellation_requestsSnapshotsController";
+import { ShoppingmallAdminCategoriesController } from "./controllers/shoppingMall/admin/categories/ShoppingmallAdminCategoriesController";
+import { ShoppingmallAdminCustomersController } from "./controllers/shoppingMall/admin/customers/ShoppingmallAdminCustomersController";
+import { ShoppingmallAdminCustomersAddressesController } from "./controllers/shoppingMall/admin/customers/addresses/ShoppingmallAdminCustomersAddressesController";
+import { ShoppingmallAdminCustomersProfileController } from "./controllers/shoppingMall/admin/customers/profile/ShoppingmallAdminCustomersProfileController";
+import { ShoppingmallAdminGuestsController } from "./controllers/shoppingMall/admin/guests/ShoppingmallAdminGuestsController";
+import { ShoppingmallAdminMembersController } from "./controllers/shoppingMall/admin/members/ShoppingmallAdminMembersController";
+import { ShoppingmallAdminPost_purchaseCancellation_requestsController } from "./controllers/shoppingMall/admin/post-purchase/cancellation-requests/ShoppingmallAdminPost_purchaseCancellation_requestsController";
+import { ShoppingmallAdminPost_purchaseCancellation_requestsSnapshotsController } from "./controllers/shoppingMall/admin/post-purchase/cancellation-requests/snapshots/ShoppingmallAdminPost_purchaseCancellation_requestsSnapshotsController";
+import { ShoppingmallAdminPost_purchaseRefund_requestsController } from "./controllers/shoppingMall/admin/post-purchase/refund-requests/ShoppingmallAdminPost_purchaseRefund_requestsController";
+import { ShoppingmallAdminPost_purchaseRefund_requestsSnapshotsController } from "./controllers/shoppingMall/admin/post-purchase/refund-requests/snapshots/ShoppingmallAdminPost_purchaseRefund_requestsSnapshotsController";
+import { ShoppingmallAdminProductsController } from "./controllers/shoppingMall/admin/products/ShoppingmallAdminProductsController";
+import { ShoppingmallAdminProductsVariantsController } from "./controllers/shoppingMall/admin/products/variants/ShoppingmallAdminProductsVariantsController";
+import { ShoppingmallAdminRefund_requestsController } from "./controllers/shoppingMall/admin/refund-requests/ShoppingmallAdminRefund_requestsController";
+import { ShoppingmallAdminRefund_requestsSnapshotsController } from "./controllers/shoppingMall/admin/refund-requests/snapshots/ShoppingmallAdminRefund_requestsSnapshotsController";
+import { ShoppingmallAdminReviewsSnapshotsController } from "./controllers/shoppingMall/admin/reviews/snapshots/ShoppingmallAdminReviewsSnapshotsController";
+import { ShoppingmallAdminSellersController } from "./controllers/shoppingMall/admin/sellers/ShoppingmallAdminSellersController";
+import { ShoppingmallAdminSellersProductsController } from "./controllers/shoppingMall/admin/sellers/products/ShoppingmallAdminSellersProductsController";
+import { ShoppingmallAdminVariantsInventory_recordsController } from "./controllers/shoppingMall/admin/variants/inventory-records/ShoppingmallAdminVariantsInventory_recordsController";
+import { ShoppingmallAuthAdminController } from "./controllers/shoppingMall/auth/admin/ShoppingmallAuthAdminController";
+import { ShoppingmallAuthGuestController } from "./controllers/shoppingMall/auth/guest/ShoppingmallAuthGuestController";
+import { ShoppingmallAuthMemberController } from "./controllers/shoppingMall/auth/member/ShoppingmallAuthMemberController";
 import { ShoppingmallAuthSellerController } from "./controllers/shoppingMall/auth/seller/ShoppingmallAuthSellerController";
-import { ShoppingmallAuthSuperadministratorController } from "./controllers/shoppingMall/auth/superAdministrator/ShoppingmallAuthSuperadministratorController";
+import { ShoppingmallAuthSuper_adminController } from "./controllers/shoppingMall/auth/super-admin/ShoppingmallAuthSuper_adminController";
 import { ShoppingmallCategoriesController } from "./controllers/shoppingMall/categories/ShoppingmallCategoriesController";
-import { ShoppingmallCustomerAddressesController } from "./controllers/shoppingMall/customer/addresses/ShoppingmallCustomerAddressesController";
-import { ShoppingmallCustomerAddressesSnapshotsController } from "./controllers/shoppingMall/customer/addresses/snapshots/ShoppingmallCustomerAddressesSnapshotsController";
-import { ShoppingmallCustomerAdmin_promotion_requestsController } from "./controllers/shoppingMall/customer/admin-promotion-requests/ShoppingmallCustomerAdmin_promotion_requestsController";
-import { ShoppingmallCustomerAdmin_promotion_requestsMeController } from "./controllers/shoppingMall/customer/admin-promotion-requests/me/ShoppingmallCustomerAdmin_promotion_requestsMeController";
-import { ShoppingmallCustomerAdmin_promotion_requestsSnapshotsController } from "./controllers/shoppingMall/customer/admin-promotion-requests/snapshots/ShoppingmallCustomerAdmin_promotion_requestsSnapshotsController";
-import { ShoppingmallCustomerCartController } from "./controllers/shoppingMall/customer/cart/ShoppingmallCustomerCartController";
-import { ShoppingmallCustomerCartItemsController } from "./controllers/shoppingMall/customer/cart/items/ShoppingmallCustomerCartItemsController";
-import { ShoppingmallCustomerOrder_itemsCancellation_requestsController } from "./controllers/shoppingMall/customer/order-items/cancellation-requests/ShoppingmallCustomerOrder_itemsCancellation_requestsController";
-import { ShoppingmallCustomerOrder_itemsCancellation_requestsSnapshotsController } from "./controllers/shoppingMall/customer/order-items/cancellation-requests/snapshots/ShoppingmallCustomerOrder_itemsCancellation_requestsSnapshotsController";
-import { ShoppingmallCustomerOrder_itemsRefund_requestsController } from "./controllers/shoppingMall/customer/order-items/refund-requests/ShoppingmallCustomerOrder_itemsRefund_requestsController";
-import { ShoppingmallCustomerOrder_itemsRefund_requestsSnapshotsController } from "./controllers/shoppingMall/customer/order-items/refund-requests/snapshots/ShoppingmallCustomerOrder_itemsRefund_requestsSnapshotsController";
-import { ShoppingmallCustomerOrdersController } from "./controllers/shoppingMall/customer/orders/ShoppingmallCustomerOrdersController";
-import { ShoppingmallCustomerOrdersItemsController } from "./controllers/shoppingMall/customer/orders/items/ShoppingmallCustomerOrdersItemsController";
-import { ShoppingmallCustomerOrdersItemsSnapshotVariant_optionsController } from "./controllers/shoppingMall/customer/orders/items/snapshot/variant-options/ShoppingmallCustomerOrdersItemsSnapshotVariant_optionsController";
-import { ShoppingmallCustomerOrdersItemsSnapshotsController } from "./controllers/shoppingMall/customer/orders/items/snapshots/ShoppingmallCustomerOrdersItemsSnapshotsController";
-import { ShoppingmallCustomerOrdersItemsSnapshotsVariant_optionsController } from "./controllers/shoppingMall/customer/orders/items/snapshots/variant-options/ShoppingmallCustomerOrdersItemsSnapshotsVariant_optionsController";
-import { ShoppingmallCustomerProductsRatingsController } from "./controllers/shoppingMall/customer/products/ratings/ShoppingmallCustomerProductsRatingsController";
-import { ShoppingmallCustomerProductsReviewsController } from "./controllers/shoppingMall/customer/products/reviews/ShoppingmallCustomerProductsReviewsController";
-import { ShoppingmallCustomerProductsController } from "./controllers/shoppingMall/customer/products/search/ShoppingmallCustomerProductsController";
-import { ShoppingmallCustomerProfileController } from "./controllers/shoppingMall/customer/profile/ShoppingmallCustomerProfileController";
-import { ShoppingmallCustomerProfileSnapshotsController } from "./controllers/shoppingMall/customer/profile/snapshots/ShoppingmallCustomerProfileSnapshotsController";
-import { ShoppingmallCustomerReviewsController } from "./controllers/shoppingMall/customer/reviews/ShoppingmallCustomerReviewsController";
-import { ShoppingmallCustomerReviewsSnapshotsController } from "./controllers/shoppingMall/customer/reviews/snapshots/ShoppingmallCustomerReviewsSnapshotsController";
-import { ShoppingmallCustomerSessionsController } from "./controllers/shoppingMall/customer/sessions/ShoppingmallCustomerSessionsController";
-import { ShoppingmallCustomerShipmentsConfirm_deliveryController } from "./controllers/shoppingMall/customer/shipments/confirm-delivery/ShoppingmallCustomerShipmentsConfirm_deliveryController";
-import { ShoppingmallCustomerWishlist_itemsController } from "./controllers/shoppingMall/customer/wishlist-items/ShoppingmallCustomerWishlist_itemsController";
-import { ShoppingmallProductsController } from "./controllers/shoppingMall/products/ShoppingmallProductsController";
+import { ShoppingmallCategoriesChildrenController } from "./controllers/shoppingMall/categories/children/ShoppingmallCategoriesChildrenController";
+import { ShoppingmallGuestCategoriesController } from "./controllers/shoppingMall/guest/categories/tree/ShoppingmallGuestCategoriesController";
+import { ShoppingmallGuestProductsController } from "./controllers/shoppingMall/guest/products/ShoppingmallGuestProductsController";
+import { ShoppingmallGuestSessionsController } from "./controllers/shoppingMall/guest/sessions/ShoppingmallGuestSessionsController";
+import { ShoppingmallMemberAddressesController } from "./controllers/shoppingMall/member/addresses/ShoppingmallMemberAddressesController";
+import { ShoppingmallMemberAdmin_promotion_requestsController } from "./controllers/shoppingMall/member/admin-promotion-requests/ShoppingmallMemberAdmin_promotion_requestsController";
+import { ShoppingmallMemberAdmin_promotion_requestsMineController } from "./controllers/shoppingMall/member/admin-promotion-requests/mine/ShoppingmallMemberAdmin_promotion_requestsMineController";
+import { ShoppingmallMemberCancellation_requestsController } from "./controllers/shoppingMall/member/cancellation-requests/ShoppingmallMemberCancellation_requestsController";
+import { ShoppingmallMemberCancellation_requestsSnapshotsController } from "./controllers/shoppingMall/member/cancellation-requests/snapshots/ShoppingmallMemberCancellation_requestsSnapshotsController";
+import { ShoppingmallMemberCartController } from "./controllers/shoppingMall/member/cart/ShoppingmallMemberCartController";
+import { ShoppingmallMemberCartItemsController } from "./controllers/shoppingMall/member/cart/items/ShoppingmallMemberCartItemsController";
+import { ShoppingmallMemberDashboardController } from "./controllers/shoppingMall/member/dashboard/ShoppingmallMemberDashboardController";
+import { ShoppingmallMemberOrdersController } from "./controllers/shoppingMall/member/orders/ShoppingmallMemberOrdersController";
+import { ShoppingmallMemberOrdersItemsController } from "./controllers/shoppingMall/member/orders/items/ShoppingmallMemberOrdersItemsController";
+import { ShoppingmallMemberOrdersItemsSnapshotController } from "./controllers/shoppingMall/member/orders/items/snapshot/ShoppingmallMemberOrdersItemsSnapshotController";
+import { ShoppingmallMemberOrdersItemsSnapshotOptionsController } from "./controllers/shoppingMall/member/orders/items/snapshot/options/ShoppingmallMemberOrdersItemsSnapshotOptionsController";
+import { ShoppingmallMemberOrdersShipmentsController } from "./controllers/shoppingMall/member/orders/shipments/ShoppingmallMemberOrdersShipmentsController";
+import { ShoppingmallMemberPost_purchaseCancellation_requestsController } from "./controllers/shoppingMall/member/post-purchase/cancellation-requests/ShoppingmallMemberPost_purchaseCancellation_requestsController";
+import { ShoppingmallMemberPost_purchaseCancellation_requestsSnapshotsController } from "./controllers/shoppingMall/member/post-purchase/cancellation-requests/snapshots/ShoppingmallMemberPost_purchaseCancellation_requestsSnapshotsController";
+import { ShoppingmallMemberPost_purchaseRefund_requestsController } from "./controllers/shoppingMall/member/post-purchase/refund-requests/ShoppingmallMemberPost_purchaseRefund_requestsController";
+import { ShoppingmallMemberPost_purchaseRefund_requestsSnapshotsController } from "./controllers/shoppingMall/member/post-purchase/refund-requests/snapshots/ShoppingmallMemberPost_purchaseRefund_requestsSnapshotsController";
+import { ShoppingmallMemberProductsController } from "./controllers/shoppingMall/member/products/ShoppingmallMemberProductsController";
+import { ShoppingmallMemberProfileController } from "./controllers/shoppingMall/member/profile/ShoppingmallMemberProfileController";
+import { ShoppingmallMemberRefund_requestsController } from "./controllers/shoppingMall/member/refund-requests/ShoppingmallMemberRefund_requestsController";
+import { ShoppingmallMemberRefund_requestsSnapshotsController } from "./controllers/shoppingMall/member/refund-requests/snapshots/ShoppingmallMemberRefund_requestsSnapshotsController";
+import { ShoppingmallMemberReviewsController } from "./controllers/shoppingMall/member/reviews/ShoppingmallMemberReviewsController";
+import { ShoppingmallMemberReviewsSnapshotsController } from "./controllers/shoppingMall/member/reviews/snapshots/ShoppingmallMemberReviewsSnapshotsController";
+import { ShoppingmallMemberWishlist_itemsController } from "./controllers/shoppingMall/member/wishlist-items/ShoppingmallMemberWishlist_itemsController";
+import { ShoppingmallProductsReviewsController } from "./controllers/shoppingMall/products/reviews/ShoppingmallProductsReviewsController";
 import { ShoppingmallReviewsController } from "./controllers/shoppingMall/reviews/ShoppingmallReviewsController";
+import { ShoppingmallSeller_profilesController } from "./controllers/shoppingMall/seller-profiles/ShoppingmallSeller_profilesController";
 import { ShoppingmallSellerAdmin_promotion_requestsController } from "./controllers/shoppingMall/seller/admin-promotion-requests/ShoppingmallSellerAdmin_promotion_requestsController";
-import { ShoppingmallSellerAdmin_promotion_requestsMeController } from "./controllers/shoppingMall/seller/admin-promotion-requests/me/ShoppingmallSellerAdmin_promotion_requestsMeController";
-import { ShoppingmallSellerAdmin_promotion_requestsSnapshotsController } from "./controllers/shoppingMall/seller/admin-promotion-requests/snapshots/ShoppingmallSellerAdmin_promotion_requestsSnapshotsController";
-import { ShoppingmallSellerAnalyticsOrdersController } from "./controllers/shoppingMall/seller/analytics/orders/ShoppingmallSellerAnalyticsOrdersController";
+import { ShoppingmallSellerAdmin_promotion_requestsMineController } from "./controllers/shoppingMall/seller/admin-promotion-requests/mine/ShoppingmallSellerAdmin_promotion_requestsMineController";
 import { ShoppingmallSellerApproval_requestsController } from "./controllers/shoppingMall/seller/approval-requests/ShoppingmallSellerApproval_requestsController";
-import { ShoppingmallSellerApproval_requestsSnapshotsController } from "./controllers/shoppingMall/seller/approval-requests/snapshots/ShoppingmallSellerApproval_requestsSnapshotsController";
 import { ShoppingmallSellerCancellation_requestsController } from "./controllers/shoppingMall/seller/cancellation-requests/ShoppingmallSellerCancellation_requestsController";
-import { ShoppingmallSellerDashboardController } from "./controllers/shoppingMall/seller/dashboard/ShoppingmallSellerDashboardController";
-import { ShoppingmallSellerDashboard_summaryController } from "./controllers/shoppingMall/seller/dashboard/summary/ShoppingmallSellerDashboard_summaryController";
-import { ShoppingmallSellerInventory_recordsController } from "./controllers/shoppingMall/seller/inventory-records/ShoppingmallSellerInventory_recordsController";
-import { ShoppingmallSellerInventoryHistoryController } from "./controllers/shoppingMall/seller/inventory/history/ShoppingmallSellerInventoryHistoryController";
-import { ShoppingmallSellerOrder_itemsController } from "./controllers/shoppingMall/seller/order-items/ShoppingmallSellerOrder_itemsController";
-import { ShoppingmallSellerOrder_itemsCancellation_requestsController } from "./controllers/shoppingMall/seller/order-items/cancellation-requests/ShoppingmallSellerOrder_itemsCancellation_requestsController";
-import { ShoppingmallSellerOrder_itemsCancellation_requestsSnapshotsController } from "./controllers/shoppingMall/seller/order-items/cancellation-requests/snapshots/ShoppingmallSellerOrder_itemsCancellation_requestsSnapshotsController";
-import { ShoppingmallSellerOrder_itemsRefund_requestsController } from "./controllers/shoppingMall/seller/order-items/refund-requests/ShoppingmallSellerOrder_itemsRefund_requestsController";
-import { ShoppingmallSellerOrder_itemsRefund_requestsSnapshotsController } from "./controllers/shoppingMall/seller/order-items/refund-requests/snapshots/ShoppingmallSellerOrder_itemsRefund_requestsSnapshotsController";
-import { ShoppingmallSellerOrdersItemsController } from "./controllers/shoppingMall/seller/orders/items/ShoppingmallSellerOrdersItemsController";
-import { ShoppingmallSellerOrdersItemsSnapshotsController } from "./controllers/shoppingMall/seller/orders/items/snapshots/ShoppingmallSellerOrdersItemsSnapshotsController";
-import { ShoppingmallSellerOrdersItemsSnapshotsVariant_optionsController } from "./controllers/shoppingMall/seller/orders/items/snapshots/variant-options/ShoppingmallSellerOrdersItemsSnapshotsVariant_optionsController";
+import { ShoppingmallSellerCancellation_requestsSnapshotsController } from "./controllers/shoppingMall/seller/cancellation-requests/snapshots/ShoppingmallSellerCancellation_requestsSnapshotsController";
+import { ShoppingmallSellerDashboardCancellation_refundController } from "./controllers/shoppingMall/seller/dashboard/cancellation-refund/ShoppingmallSellerDashboardCancellation_refundController";
+import { ShoppingmallSellerOrdersShipmentsController } from "./controllers/shoppingMall/seller/orders/shipments/ShoppingmallSellerOrdersShipmentsController";
+import { ShoppingmallSellerPost_purchaseCancellation_requestsController } from "./controllers/shoppingMall/seller/post-purchase/cancellation-requests/ShoppingmallSellerPost_purchaseCancellation_requestsController";
+import { ShoppingmallSellerPost_purchaseCancellation_requestsSnapshotsController } from "./controllers/shoppingMall/seller/post-purchase/cancellation-requests/snapshots/ShoppingmallSellerPost_purchaseCancellation_requestsSnapshotsController";
+import { ShoppingmallSellerPost_purchaseRefund_requestsController } from "./controllers/shoppingMall/seller/post-purchase/refund-requests/ShoppingmallSellerPost_purchaseRefund_requestsController";
+import { ShoppingmallSellerPost_purchaseRefund_requestsSnapshotsController } from "./controllers/shoppingMall/seller/post-purchase/refund-requests/snapshots/ShoppingmallSellerPost_purchaseRefund_requestsSnapshotsController";
+import { ShoppingmallSellerProductsnapshotsVariantsnapshotsController } from "./controllers/shoppingMall/seller/productSnapshots/variantSnapshots/ShoppingmallSellerProductsnapshotsVariantsnapshotsController";
 import { ShoppingmallSellerProductsController } from "./controllers/shoppingMall/seller/products/ShoppingmallSellerProductsController";
 import { ShoppingmallSellerProductsImagesController } from "./controllers/shoppingMall/seller/products/images/ShoppingmallSellerProductsImagesController";
-import { ShoppingmallSellerProductsInventoryLow_stockController } from "./controllers/shoppingMall/seller/products/inventory/low-stock/ShoppingmallSellerProductsInventoryLow_stockController";
-import { ShoppingmallSellerProductsOption_definitionsController } from "./controllers/shoppingMall/seller/products/option-definitions/ShoppingmallSellerProductsOption_definitionsController";
-import { ShoppingmallSellerProductsOption_definitionsOption_valuesController } from "./controllers/shoppingMall/seller/products/option-definitions/option-values/ShoppingmallSellerProductsOption_definitionsOption_valuesController";
 import { ShoppingmallSellerProductsSnapshotsController } from "./controllers/shoppingMall/seller/products/snapshots/ShoppingmallSellerProductsSnapshotsController";
-import { ShoppingmallSellerProductsSnapshotsVariantsController } from "./controllers/shoppingMall/seller/products/snapshots/variants/ShoppingmallSellerProductsSnapshotsVariantsController";
+import { ShoppingmallSellerProductsSnapshotsImagesController } from "./controllers/shoppingMall/seller/products/snapshots/images/ShoppingmallSellerProductsSnapshotsImagesController";
+import { ShoppingmallSellerProductsSnapshotsVariant_snapshotsController } from "./controllers/shoppingMall/seller/products/snapshots/variant-snapshots/ShoppingmallSellerProductsSnapshotsVariant_snapshotsController";
 import { ShoppingmallSellerProductsVariantsController } from "./controllers/shoppingMall/seller/products/variants/ShoppingmallSellerProductsVariantsController";
-import { ShoppingmallSellerProductsVariantsInventoryController } from "./controllers/shoppingMall/seller/products/variants/inventory/ShoppingmallSellerProductsVariantsInventoryController";
-import { ShoppingmallSellerProductsVariantsSnapshotsController } from "./controllers/shoppingMall/seller/products/variants/snapshots/ShoppingmallSellerProductsVariantsSnapshotsController";
-import { ShoppingmallSellerProductsVariantsStockController } from "./controllers/shoppingMall/seller/products/variants/stock/ShoppingmallSellerProductsVariantsStockController";
+import { ShoppingmallSellerProfile_snapshotsController } from "./controllers/shoppingMall/seller/profile-snapshots/ShoppingmallSellerProfile_snapshotsController";
 import { ShoppingmallSellerRefund_requestsController } from "./controllers/shoppingMall/seller/refund-requests/ShoppingmallSellerRefund_requestsController";
-import { ShoppingmallSellerShipment_logsController } from "./controllers/shoppingMall/seller/shipment-logs/ShoppingmallSellerShipment_logsController";
-import { ShoppingmallSellerShipmentsController } from "./controllers/shoppingMall/seller/shipments/ShoppingmallSellerShipmentsController";
-import { ShoppingmallSellersProfileController } from "./controllers/shoppingMall/sellers/profile/ShoppingmallSellersProfileController";
-import { ShoppingmallSuperadministratorAdmin_promotion_requestsController } from "./controllers/shoppingMall/superAdministrator/admin-promotion-requests/ShoppingmallSuperadministratorAdmin_promotion_requestsController";
-import { ShoppingmallSuperadministratorAdmin_promotion_requestsSnapshotsController } from "./controllers/shoppingMall/superAdministrator/admin-promotion-requests/snapshots/ShoppingmallSuperadministratorAdmin_promotion_requestsSnapshotsController";
-import { ShoppingmallSuperadministratorAdministrator_grade_changesController } from "./controllers/shoppingMall/superAdministrator/administrator-grade-changes/ShoppingmallSuperadministratorAdministrator_grade_changesController";
-import { ShoppingmallSuperadministratorAdministratorsController } from "./controllers/shoppingMall/superAdministrator/administrators/ShoppingmallSuperadministratorAdministratorsController";
-import { ShoppingmallSuperadministratorCustomersController } from "./controllers/shoppingMall/superAdministrator/customers/ShoppingmallSuperadministratorCustomersController";
-import { ShoppingmallSuperadministratorSellersController } from "./controllers/shoppingMall/superAdministrator/sellers/ShoppingmallSuperadministratorSellersController";
-import { ShoppingmallSuperadministratorSuper_administratorsController } from "./controllers/shoppingMall/superAdministrator/super-administrators/ShoppingmallSuperadministratorSuper_administratorsController";
+import { ShoppingmallSellerRefund_requestsSnapshotsController } from "./controllers/shoppingMall/seller/refund-requests/snapshots/ShoppingmallSellerRefund_requestsSnapshotsController";
+import { ShoppingmallSellerReviewsSnapshotsController } from "./controllers/shoppingMall/seller/reviews/snapshots/ShoppingmallSellerReviewsSnapshotsController";
+import { ShoppingmallSellerSellerOrder_itemsController } from "./controllers/shoppingMall/seller/seller/order-items/ShoppingmallSellerSellerOrder_itemsController";
+import { ShoppingmallSellerSellerOrder_itemsSnapshotController } from "./controllers/shoppingMall/seller/seller/order-items/snapshot/ShoppingmallSellerSellerOrder_itemsSnapshotController";
+import { ShoppingmallSellerSellerOrder_itemsSnapshotOptionsController } from "./controllers/shoppingMall/seller/seller/order-items/snapshot/options/ShoppingmallSellerSellerOrder_itemsSnapshotOptionsController";
+import { ShoppingmallSellerSellerShipmentsController } from "./controllers/shoppingMall/seller/seller/shipments/ShoppingmallSellerSellerShipmentsController";
+import { ShoppingmallSellerVariantsController } from "./controllers/shoppingMall/seller/variants/ShoppingmallSellerVariantsController";
+import { ShoppingmallSellerVariantsInventory_recordsController } from "./controllers/shoppingMall/seller/variants/inventory-records/ShoppingmallSellerVariantsInventory_recordsController";
+import { ShoppingmallSuperadminAdmin_promotion_requestsController } from "./controllers/shoppingMall/superAdmin/admin-promotion-requests/ShoppingmallSuperadminAdmin_promotion_requestsController";
+import { ShoppingmallSuperadminAdminAudit_logsController } from "./controllers/shoppingMall/superAdmin/admin/audit-logs/ShoppingmallSuperadminAdminAudit_logsController";
+import { ShoppingmallSuperadminAdministratorsController } from "./controllers/shoppingMall/superAdmin/administrators/ShoppingmallSuperadminAdministratorsController";
+import { ShoppingmallSuperadminAdminsController } from "./controllers/shoppingMall/superAdmin/admins/ShoppingmallSuperadminAdminsController";
+import { ShoppingmallSuperadminSuper_adminAudit_logsController } from "./controllers/shoppingMall/superAdmin/super-admin/audit-logs/ShoppingmallSuperadminSuper_adminAudit_logsController";
+import { ShoppingmallSuperadminSuper_adminsController } from "./controllers/shoppingMall/superAdmin/super-admins/ShoppingmallSuperadminSuper_adminsController";
 
 @Module({
   controllers: [
-    ShoppingmallAuthCustomerController,
+    ShoppingmallAuthGuestController,
+    ShoppingmallAuthMemberController,
     ShoppingmallAuthSellerController,
-    ShoppingmallAuthAdministratorController,
-    ShoppingmallAuthSuperadministratorController,
-    ShoppingmallAdministratorCustomersController,
-    ShoppingmallSuperadministratorCustomersController,
-    ShoppingmallCustomerProfileController,
-    ShoppingmallAdministratorSellersController,
-    ShoppingmallSuperadministratorSellersController,
-    ShoppingmallSuperadministratorAdministratorsController,
-    ShoppingmallSuperadministratorSuper_administratorsController,
-    ShoppingmallCustomerSessionsController,
-    ShoppingmallAdministratorCustomersProfilesController,
-    ShoppingmallAdministratorCustomersProfileController,
-    ShoppingmallCustomerProfileSnapshotsController,
-    ShoppingmallAdministratorCustomersProfilesSnapshotsController,
-    ShoppingmallAdministratorCustomersProfileSnapshotsController,
-    ShoppingmallSellersProfileController,
-    ShoppingmallAdministratorSellersProfileSnapshotsController,
-    ShoppingmallCustomerAddressesController,
-    ShoppingmallCustomerAddressesSnapshotsController,
-    ShoppingmallCategoriesController,
-    ShoppingmallAdministratorCategoriesController,
-    ShoppingmallAdministratorCategoriesSnapshotsController,
-    ShoppingmallProductsController,
-    ShoppingmallSellerProductsController,
-    ShoppingmallAdministratorProductsController,
-    ShoppingmallSellerProductsVariantsController,
-    ShoppingmallSellerProductsOption_definitionsController,
-    ShoppingmallSellerProductsOption_definitionsOption_valuesController,
-    ShoppingmallSellerProductsImagesController,
-    ShoppingmallSellerProductsSnapshotsController,
-    ShoppingmallAdministratorProductsSnapshotsController,
-    ShoppingmallSellerProductsSnapshotsVariantsController,
-    ShoppingmallAdministratorProductsSnapshotsVariantsController,
-    ShoppingmallSellerProductsVariantsSnapshotsController,
-    ShoppingmallAdministratorProductsVariantsSnapshotsController,
-    ShoppingmallSellerProductsVariantsInventoryController,
-    ShoppingmallSellerInventory_recordsController,
-    ShoppingmallCustomerWishlist_itemsController,
-    ShoppingmallCustomerCartController,
-    ShoppingmallAdministratorCartsController,
-    ShoppingmallCustomerCartItemsController,
-    ShoppingmallAdministratorCartsItemsController,
-    ShoppingmallCustomerOrdersController,
-    ShoppingmallCustomerOrdersItemsController,
-    ShoppingmallSellerOrdersItemsController,
-    ShoppingmallCustomerOrdersItemsSnapshotsController,
-    ShoppingmallSellerOrdersItemsSnapshotsController,
-    ShoppingmallCustomerOrdersItemsSnapshotsVariant_optionsController,
-    ShoppingmallCustomerOrdersItemsSnapshotVariant_optionsController,
-    ShoppingmallSellerOrdersItemsSnapshotsVariant_optionsController,
-    ShoppingmallSellerShipmentsController,
-    ShoppingmallCustomerShipmentsConfirm_deliveryController,
-    ShoppingmallAdministratorShipment_logsController,
-    ShoppingmallSellerShipment_logsController,
-    ShoppingmallReviewsController,
-    ShoppingmallCustomerReviewsController,
-    ShoppingmallCustomerReviewsSnapshotsController,
-    ShoppingmallCustomerOrder_itemsCancellation_requestsController,
-    ShoppingmallSellerOrder_itemsCancellation_requestsController,
-    ShoppingmallCustomerOrder_itemsCancellation_requestsSnapshotsController,
-    ShoppingmallSellerOrder_itemsCancellation_requestsSnapshotsController,
-    ShoppingmallCustomerOrder_itemsRefund_requestsController,
-    ShoppingmallSellerOrder_itemsRefund_requestsController,
-    ShoppingmallCustomerOrder_itemsRefund_requestsSnapshotsController,
-    ShoppingmallSellerOrder_itemsRefund_requestsSnapshotsController,
+    ShoppingmallAuthAdminController,
+    ShoppingmallAuthSuper_adminController,
+    ShoppingmallAdminGuestsController,
+    ShoppingmallGuestSessionsController,
+    ShoppingmallAdminMembersController,
+    ShoppingmallAdminSellersController,
+    ShoppingmallSuperadminAdminsController,
+    ShoppingmallSuperadminSuper_adminsController,
+    ShoppingmallAdminAdminAudit_logsController,
+    ShoppingmallSuperadminAdminAudit_logsController,
+    ShoppingmallSuperadminSuper_adminAudit_logsController,
+    ShoppingmallAdminCustomersController,
+    ShoppingmallMemberProfileController,
+    ShoppingmallAdminCustomersProfileController,
+    ShoppingmallMemberAddressesController,
+    ShoppingmallAdminCustomersAddressesController,
+    ShoppingmallAdminAdminSellersController,
+    ShoppingmallSeller_profilesController,
     ShoppingmallSellerApproval_requestsController,
-    ShoppingmallAdministratorApproval_requestsController,
-    ShoppingmallSellerApproval_requestsSnapshotsController,
-    ShoppingmallAdministratorApproval_requestsSnapshotsController,
-    ShoppingmallCustomerAdmin_promotion_requestsController,
+    ShoppingmallAdminAdminApproval_requestsController,
+    ShoppingmallAdminApproval_requestsController,
+    ShoppingmallSellerProfile_snapshotsController,
+    ShoppingmallAdminAdminSeller_profile_snapshotsController,
+    ShoppingmallAdminAdministratorsController,
+    ShoppingmallSuperadminAdministratorsController,
+    ShoppingmallMemberAdmin_promotion_requestsController,
     ShoppingmallSellerAdmin_promotion_requestsController,
-    ShoppingmallSuperadministratorAdmin_promotion_requestsController,
-    ShoppingmallCustomerAdmin_promotion_requestsSnapshotsController,
-    ShoppingmallSellerAdmin_promotion_requestsSnapshotsController,
-    ShoppingmallSuperadministratorAdmin_promotion_requestsSnapshotsController,
-    ShoppingmallSuperadministratorAdministrator_grade_changesController,
-    ShoppingmallSellerOrder_itemsController,
+    ShoppingmallSuperadminAdmin_promotion_requestsController,
+    ShoppingmallCategoriesController,
+    ShoppingmallCategoriesChildrenController,
+    ShoppingmallAdminCategoriesController,
+    ShoppingmallGuestProductsController,
+    ShoppingmallMemberProductsController,
+    ShoppingmallSellerProductsController,
+    ShoppingmallAdminProductsController,
+    ShoppingmallAdminSellersProductsController,
+    ShoppingmallSellerProductsImagesController,
+    ShoppingmallSellerProductsVariantsController,
+    ShoppingmallAdminProductsVariantsController,
+    ShoppingmallSellerProductsSnapshotsController,
+    ShoppingmallSellerProductsnapshotsVariantsnapshotsController,
+    ShoppingmallSellerProductsSnapshotsVariant_snapshotsController,
+    ShoppingmallSellerProductsSnapshotsImagesController,
+    ShoppingmallSellerVariantsController,
+    ShoppingmallSellerVariantsInventory_recordsController,
+    ShoppingmallAdminVariantsInventory_recordsController,
+    ShoppingmallMemberWishlist_itemsController,
+    ShoppingmallMemberCartController,
+    ShoppingmallMemberCartItemsController,
+    ShoppingmallMemberOrdersController,
+    ShoppingmallAdminAdminOrdersController,
+    ShoppingmallMemberOrdersItemsController,
+    ShoppingmallSellerSellerOrder_itemsController,
+    ShoppingmallMemberOrdersItemsSnapshotController,
+    ShoppingmallMemberOrdersItemsSnapshotOptionsController,
+    ShoppingmallSellerSellerOrder_itemsSnapshotController,
+    ShoppingmallSellerSellerOrder_itemsSnapshotOptionsController,
+    ShoppingmallAdminAdminOrder_item_snapshotsController,
+    ShoppingmallAdminAdminOrder_item_snapshotsOptionsController,
+    ShoppingmallMemberOrdersShipmentsController,
+    ShoppingmallSellerOrdersShipmentsController,
+    ShoppingmallSellerSellerShipmentsController,
+    ShoppingmallAdminAdminShipmentsController,
+    ShoppingmallMemberCancellation_requestsController,
     ShoppingmallSellerCancellation_requestsController,
+    ShoppingmallAdminCancellation_requestsController,
+    ShoppingmallMemberCancellation_requestsSnapshotsController,
+    ShoppingmallSellerCancellation_requestsSnapshotsController,
+    ShoppingmallAdminCancellation_requestsSnapshotsController,
+    ShoppingmallMemberRefund_requestsController,
     ShoppingmallSellerRefund_requestsController,
-    ShoppingmallSellerDashboardController,
-    ShoppingmallCustomerProductsController,
-    ShoppingmallSellerProductsInventoryLow_stockController,
-    ShoppingmallSellerProductsVariantsStockController,
-    ShoppingmallCustomerProductsReviewsController,
-    ShoppingmallCustomerProductsRatingsController,
-    ShoppingmallSellerDashboard_summaryController,
-    ShoppingmallCustomerAdmin_promotion_requestsMeController,
-    ShoppingmallSellerAdmin_promotion_requestsMeController,
-    ShoppingmallSellerAnalyticsOrdersController,
-    ShoppingmallSellerInventoryHistoryController,
+    ShoppingmallAdminRefund_requestsController,
+    ShoppingmallMemberRefund_requestsSnapshotsController,
+    ShoppingmallSellerRefund_requestsSnapshotsController,
+    ShoppingmallAdminRefund_requestsSnapshotsController,
+    ShoppingmallMemberPost_purchaseCancellation_requestsController,
+    ShoppingmallSellerPost_purchaseCancellation_requestsController,
+    ShoppingmallAdminPost_purchaseCancellation_requestsController,
+    ShoppingmallMemberPost_purchaseCancellation_requestsSnapshotsController,
+    ShoppingmallSellerPost_purchaseCancellation_requestsSnapshotsController,
+    ShoppingmallAdminPost_purchaseCancellation_requestsSnapshotsController,
+    ShoppingmallMemberPost_purchaseRefund_requestsController,
+    ShoppingmallSellerPost_purchaseRefund_requestsController,
+    ShoppingmallAdminPost_purchaseRefund_requestsController,
+    ShoppingmallMemberPost_purchaseRefund_requestsSnapshotsController,
+    ShoppingmallSellerPost_purchaseRefund_requestsSnapshotsController,
+    ShoppingmallAdminPost_purchaseRefund_requestsSnapshotsController,
+    ShoppingmallReviewsController,
+    ShoppingmallMemberReviewsController,
+    ShoppingmallMemberReviewsSnapshotsController,
+    ShoppingmallSellerReviewsSnapshotsController,
+    ShoppingmallAdminReviewsSnapshotsController,
+    ShoppingmallMemberDashboardController,
+    ShoppingmallMemberAdmin_promotion_requestsMineController,
+    ShoppingmallSellerAdmin_promotion_requestsMineController,
+    ShoppingmallGuestCategoriesController,
+    ShoppingmallSellerDashboardCancellation_refundController,
+    ShoppingmallProductsReviewsController,
   ],
 })
 export class MyModule {}

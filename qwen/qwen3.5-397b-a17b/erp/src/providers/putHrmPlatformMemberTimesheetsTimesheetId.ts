@@ -28,83 +28,141 @@ export async function putHrmPlatformMemberTimesheetsTimesheetId(props: {
 }): Promise<IHrmPlatformTimesheet> {
   const timesheet =
     await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
-      where: { id: props.timesheetId },
+      where: {
+        id: props.timesheetId,
+        deleted_at: null,
+      },
       select: {
         id: true,
         employee_id: true,
         status: true,
-        deleted_at: true,
-        week_start_date: true,
-        week_end_date: true,
-        employee: {
-          select: {
-            user_id: true,
-          },
+        timelogs: {
+          select: { id: true },
         },
       },
     });
-  if (timesheet.deleted_at !== null) {
-    throw new HttpException("Timesheet not found", 404);
+  const currentStatus = timesheet.status;
+  const newStatus = props.body.status ?? currentStatus;
+  // Check if timesheet is approved - locked, no modifications allowed
+  if (currentStatus === "approved") {
+    throw new HttpException("Approved timesheets cannot be modified", 403);
   }
-  if (timesheet.status !== "draft" && timesheet.status !== "rejected") {
-    throw new HttpException(
-      "Cannot update timesheet with status: " + timesheet.status,
-      400,
-    );
-  }
-  if (timesheet.employee.user_id !== props.member.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  if (
-    props.body.week_start_date !== undefined ||
-    props.body.week_end_date !== undefined
-  ) {
-    const weekStartDate =
-      props.body.week_start_date ?? timesheet.week_start_date;
-    const weekEndDate = props.body.week_end_date ?? timesheet.week_end_date;
-    const startDate = new Date(weekStartDate + "T00:00:00Z");
-    const endDate = new Date(weekEndDate + "T00:00:00Z");
-    if (startDate.getUTCDay() !== 1) {
-      throw new HttpException("week_start_date must be a Monday", 400);
-    }
-    if (endDate.getUTCDay() !== 0) {
-      throw new HttpException("week_end_date must be a Sunday", 400);
-    }
-    const expectedEndDate = new Date(startDate);
-    expectedEndDate.setUTCDate(startDate.getUTCDate() + 6);
-    if (endDate.getTime() !== expectedEndDate.getTime()) {
-      throw new HttpException(
-        "week_end_date must be the Sunday of the same week as week_start_date",
-        400,
-      );
-    }
-    const existing = await MyGlobal.prisma.hrm_platform_timesheets.findFirst({
+  // Get employee record to check ownership
+  const employee =
+    await MyGlobal.prisma.hrm_platform_employees.findUniqueOrThrow({
       where: {
-        employee_id: timesheet.employee_id,
-        week_start_date: weekStartDate,
-        id: { not: props.timesheetId },
+        id: timesheet.employee_id,
         deleted_at: null,
       },
+      select: {
+        id: true,
+        member_id: true,
+        role_id: true,
+      },
     });
-    if (existing !== null) {
-      throw new HttpException("A timesheet for this week already exists", 400);
+  const isOwner = employee.member_id === props.member.id;
+  // Check permissions based on status
+  if (currentStatus === "draft" || currentStatus === "rejected") {
+    // Only owner can update draft or rejected timesheets
+    if (!isOwner) {
+      throw new HttpException(
+        "Only the timesheet owner can update draft or rejected timesheets",
+        403,
+      );
+    }
+  } else if (currentStatus === "submitted") {
+    // Only users with time:approve permission can update submitted timesheets
+    const rolePermissions =
+      await MyGlobal.prisma.hrm_platform_role_permissions.findMany({
+        where: {
+          hrm_platform_role_id: employee.role_id,
+        },
+        select: {
+          permission: {
+            select: {
+              code: true,
+            },
+          },
+        },
+      });
+    const hasTimeApprove = rolePermissions.some(
+      (rp) => rp.permission.code === "time:approve",
+    );
+    if (!hasTimeApprove) {
+      throw new HttpException(
+        "Only users with time:approve permission can update submitted timesheets",
+        403,
+      );
     }
   }
-  const updated = await MyGlobal.prisma.hrm_platform_timesheets.update({
-    where: { id: props.timesheetId },
-    data: {
-      ...(props.body.week_start_date !== undefined && {
-        week_start_date: props.body.week_start_date,
-      }),
-      ...(props.body.week_end_date !== undefined && {
-        week_end_date: props.body.week_end_date,
-      }),
-      ...(props.body.rejection_reason !== undefined && {
-        rejection_reason: props.body.rejection_reason,
-      }),
-      updated_at: new Date(),
+  // Validate status transitions
+  if (newStatus !== currentStatus) {
+    // draft → submitted: require at least one timelog
+    if (currentStatus === "draft" && newStatus === "submitted") {
+      if (timesheet.timelogs.length === 0) {
+        throw new HttpException(
+          "Cannot submit timesheet without any timelogs",
+          400,
+        );
+      }
+    }
+    // submitted → rejected: require rejection_reason
+    if (currentStatus === "submitted" && newStatus === "rejected") {
+      if (!props.body.rejection_reason) {
+        throw new HttpException(
+          "Rejection reason is required when rejecting a timesheet",
+          400,
+        );
+      }
+    }
+  }
+  // Build update data
+  const updateData: Prisma.hrm_platform_timesheetsUpdateInput = {
+    updated_at: new Date(),
+  };
+  if (props.body.status !== undefined) {
+    updateData.status = props.body.status;
+    // Handle status-specific fields
+    if (props.body.status === "submitted" && currentStatus === "draft") {
+      updateData.submitted_at = new Date();
+    }
+    if (props.body.status === "approved" && currentStatus === "submitted") {
+      updateData.reviewed_at = new Date();
+      updateData.reviewer = { connect: { id: props.member.id } };
+      updateData.rejection_reason = null;
+    }
+    if (props.body.status === "rejected" && currentStatus === "submitted") {
+      updateData.reviewed_at = new Date();
+      updateData.reviewer = { connect: { id: props.member.id } };
+      if (props.body.rejection_reason !== undefined) {
+        updateData.rejection_reason = props.body.rejection_reason;
+      }
+    }
+    if (props.body.status === "draft" && currentStatus === "rejected") {
+      updateData.rejection_reason = null;
+      updateData.reviewed_at = null;
+      updateData.reviewer = { disconnect: true };
+    }
+  }
+  if (
+    props.body.rejection_reason !== undefined &&
+    props.body.status !== "rejected"
+  ) {
+    updateData.rejection_reason = props.body.rejection_reason;
+  }
+  await MyGlobal.prisma.hrm_platform_timesheets.update({
+    where: {
+      id: props.timesheetId,
     },
-    ...HrmPlatformTimesheetTransformer.select(),
+    data: updateData,
   });
+  const updated =
+    await MyGlobal.prisma.hrm_platform_timesheets.findUniqueOrThrow({
+      where: {
+        id: props.timesheetId,
+        deleted_at: null,
+      },
+      ...HrmPlatformTimesheetTransformer.select(),
+    });
   return await HrmPlatformTimesheetTransformer.transform(updated);
 }

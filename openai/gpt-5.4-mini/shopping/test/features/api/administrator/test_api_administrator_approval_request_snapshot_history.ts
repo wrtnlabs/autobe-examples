@@ -16,58 +16,88 @@ import { authorize_administrator_join } from "../../../authorize/authorize_admin
 import { authorize_administrator_login } from "../../../authorize/authorize_administrator_login";
 import { authorize_administrator_refresh } from "../../../authorize/authorize_administrator_refresh";
 
+/**
+ * Test administrator approval request snapshot history retrieval.
+ *
+ * Validates that an authenticated administrator can read the immutable
+ * administrator approval request snapshot history as a paginated audit list.
+ *
+ * 1. Authenticate as an administrator using an isolated connection.
+ * 2. Retrieve the snapshot history.
+ * 3. Validate pagination metadata and response structure.
+ * 4. Verify items are ordered newest first when multiple snapshots exist.
+ * 5. Confirm repeated reads return a consistent result shape.
+ */
 export async function test_api_administrator_approval_request_snapshot_history(
   connection: api.IConnection,
 ): Promise<void> {
-  const administratorConnection: api.IConnection = { host: connection.host };
-  await authorize_administrator_join(administratorConnection, {
+  const adminConnection: api.IConnection = { host: connection.host };
+  await authorize_administrator_join(adminConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
+      password: "Aa1234!@#",
     } satisfies IMallPlatformAdministrator.IJoin,
   });
-  const administratorApprovalRequestId = typia.random<
-    string & tags.Format<"uuid">
-  >();
-  const request: IMallPlatformAdministratorApprovalRequestSnapshot.IRequest = {
-    page: 1,
-    limit: 1,
-  };
-  const first =
-    await api.functional.mallPlatform.administrator.administrator_approval_requests.snapshots.index(
-      administratorConnection,
-      {
-        administratorApprovalRequestId,
-        body: request,
-      },
+  const output =
+    await api.functional.mallPlatform.administrator.administratorApprovalRequestSnapshots.history(
+      adminConnection,
     );
-  typia.assert(first);
-  const second =
-    await api.functional.mallPlatform.administrator.administrator_approval_requests.snapshots.index(
-      administratorConnection,
-      {
-        administratorApprovalRequestId,
-        body: request,
-      },
-    );
-  typia.assert(second);
-  TestValidator.equals(
-    "snapshot history should be stable for repeated reads",
-    first,
-    second,
+  typia.assert(output);
+  TestValidator.predicate(
+    "history pagination metadata is non-negative",
+    output.pagination.current >= 0 &&
+      output.pagination.limit >= 0 &&
+      output.pagination.records >= 0 &&
+      output.pagination.pages >= 0,
   );
-  TestValidator.equals(
-    "requested page should be reflected in pagination",
-    first.pagination.current,
-    request.page,
+  TestValidator.predicate(
+    "history data length does not exceed page limit when limit is set",
+    output.pagination.limit === 0 ||
+      output.data.length <= output.pagination.limit,
   );
-  TestValidator.equals(
-    "requested page size should be reflected in pagination",
-    first.pagination.limit,
-    request.limit,
-  );
-  for (const snapshot of first.data) {
-    typia.assert(snapshot);
-    typia.assert(snapshot.administratorApprovalRequest);
+  if (output.data.length > 0) {
+    for (let index = 0; index < output.data.length; index++) {
+      const snapshot = output.data[index];
+      typia.assert(snapshot);
+      TestValidator.predicate(
+        "snapshot has identifier",
+        snapshot.id.length > 0,
+      );
+      TestValidator.predicate(
+        "snapshot has related approval request summary",
+        snapshot.administratorApprovalRequest !== null &&
+          snapshot.administratorApprovalRequest !== undefined,
+      );
+      TestValidator.predicate(
+        "snapshot has preserved reason",
+        snapshot.snapshotReason.length >= 0,
+      );
+      TestValidator.predicate(
+        "snapshot has creation timestamp",
+        snapshot.createdAt.length > 0,
+      );
+      if (index > 0) {
+        const previous = output.data[index - 1];
+        TestValidator.predicate(
+          "snapshots are sorted newest first",
+          previous.createdAt >= snapshot.createdAt,
+        );
+      }
+    }
   }
+  const repeated =
+    await api.functional.mallPlatform.administrator.administratorApprovalRequestSnapshots.history(
+      adminConnection,
+    );
+  typia.assert(repeated);
+  TestValidator.equals(
+    "repeated history read preserves pagination metadata",
+    repeated.pagination,
+    output.pagination,
+  );
+  TestValidator.equals(
+    "repeated history read preserves data",
+    repeated.data,
+    output.data,
+  );
 }

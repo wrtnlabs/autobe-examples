@@ -7,44 +7,61 @@ import {
 import typia, { tags } from "typia";
 
 import { IEcommerceMallProduct } from "../../../../structures/IEcommerceMallProduct";
+import { IEcommerceMallProductOverview } from "../../../../structures/IEcommerceMallProductOverview";
 
-export * as variants from "./variants/index";
 export * as images from "./images/index";
+export * as variants from "./variants/index";
 export * as snapshots from "./snapshots/index";
 
 /**
- * Create a new product for the seller's catalog in the e-commerce marketplace.
+ * Create a new product for the seller's catalog.
  *
- * This operation allows registered sellers to add new products to their shop's product catalog. The product must include a display name, detailed description, category classification, and base price. Products serve as the core inventory items that customers can browse and purchase.
+ * Requires seller approval status to be "approved". Product must have a name, description, category assignment, and base price. Each product is immediately associated with the creating seller and becomes visible in search results and category listings.
  *
- * Each product requires a unique slug for SEO-friendly URLs, which is automatically generated from the product name but can be customized. The product status defaults to 'active' when created, making it immediately visible in customer browsing and search results.
+ * **Product Ownership**:
+ * Products are owned exclusively by the seller who created them. Ownership grants the seller rights to modify, delete, or manage the product. Products remain associated with the creator seller even if the account is suspended or deleted.
  *
- * Products belong exclusively to the creating seller and can only be managed by that seller. Every product edit creates a snapshot for audit trail purposes. Products cannot be deleted if they have associated order items, cancellation requests, or refund requests.
+ * **Validation**:
+ * - Product name is required and must be non-empty
+ * - Category must exist and be active
+ * - Base price must be positive
+ * - Seller must have approved status
+ *
+ * **Snapshot Creation**:
+ * Product creation triggers snapshot creation for audit trail and historical tracking.
  *
  * @param props.connection
- * @param props.body Product creation data including name, description, category, base price, and optional slug
+ * @param props.body Product creation data including name, description, category assignment, and base price. The seller identity is automatically derived from the authenticated session.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Create a new product record in the ecommerce_mall_products table.
+ * @x-autobe-specification Create a new product for the authenticated seller's catalog.
  *
- * 1. Extract seller_id from the authenticated seller's session context (do not allow manual specification)
- * 2. Validate that name is provided and non-empty
- * 3. Validate that description is provided and non-empty
- * 4. Validate that category_id references an existing active category
- * 5. Validate that base_price is positive
- * 6. Generate slug from name if not provided, or use provided slug if unique
- * 7. Set status to 'active' by default
- * 8. Set created_at and updated_at to current timestamp
- * 9. Insert the product record into ecommerce_mall_products
- * 10. Return the complete product record with all fields populated
+ * **Preconditions**:
+ * 1. Verify seller authentication and that seller approval_status = "approved"
+ * 2. Validate category_id references an active (not soft-deleted) category
+ * 3. Validate base_price > 0
+ * 4. Validate name is non-empty string
  *
- * Error handling:
- * - 400 if name, description, category_id, or base_price is missing/invalid
- * - 400 if slug already exists
- * - 401 if seller is not authenticated
- * - 404 if category_id does not reference an existing category
+ * **Business Logic**:
+ * 1. Create product record with provided fields, seller_id from authentication context
+ * 2. Set created_at and updated_at to current timestamp
+ * 3. Create initial snapshot in ecommerce_mall_product_snapshots table capturing:
+ *    - Product state at creation
+ *    - Variant snapshot (null for new product)
+ *    - Seller profile snapshot
+ *    - Category reference
+ * 4. Associate product with seller_id and category_id
  *
- * Note: Products without variants will be created but marked as unavailable for purchase. Sellers should create at least one variant after product creation.
+ * **Error Handling**:
+ * - Return 403 if seller approval_status != "approved"
+ * - Return 404 if category does not exist or is soft-deleted
+ * - Return 400 if base_price <= 0 or name is empty/whitespace
+ * - Return 409 if product with same name exists (optional uniqueness constraint)
+ *
+ * **Post-Conditions**:
+ * - Product is visible in category listings immediately
+ * - Product appears in seller's product dashboard
+ * - Snapshot record created with created_at = product.created_at
  * @path /ecommerceMall/seller/products
  * @accessor api.functional.ecommerceMall.seller.products.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -74,7 +91,7 @@ export async function create(
 export namespace create {
   export type Props = {
     /**
-     * Product creation data including name, description, category, base price, and optional slug
+     * Product creation data including name, description, category assignment, and base price. The seller identity is automatically derived from the authenticated session.
      */
     body: IEcommerceMallProduct.ICreate;
   };
@@ -123,38 +140,50 @@ export namespace create {
 }
 
 /**
- * Update an existing product's details. This operation allows the product owner (seller) to modify product attributes including name, description, base price, status, and slug. Every update operation automatically creates a snapshot to preserve the previous state for audit trails and dispute resolution.
+ * Update product information including name, description, category, base price, and images.
  *
- * The product must belong to the authenticated seller making the update request. Cross-ownership updates are not permitted - sellers can only modify products they own.
+ * This operation allows sellers to modify their product listings. All changes are recorded through the snapshot mechanism to preserve the previous state for audit purposes and dispute resolution.
  *
- * This operation supports partial updates by including only the fields that need to be changed. Any fields omitted from the request body will retain their current values. The updated product immediately reflects in search results and category listings.
+ * **Allowed Modifications**:
+ * - Product name
+ * - Product description
+ * - Product category assignment
+ * - Base price
+ * - Product images (add, remove, reorder)
  *
- * Product status changes (active, inactive, out_of_stock) affect product visibility to customers. Status transitions are validated against business rules regarding variant inventory and orders.
+ * **Constraints**:
+ * - Only the product owner (seller) can update the product
+ * - Category must exist and not be soft-deleted
+ * - Image URLs must be valid
+ * - Product must have at least one variant to remain purchasable
  *
  * @param props.connection
- * @param props.productId The UUID of the product to update.
- * @param props.body Partial update fields for the product. Only include fields that need to be changed.
+ * @param props.productId Unique identifier of the product to update
+ * @param props.body Product update data including name, description, category, base price, and image operations. The product owner (seller) must be authenticated. Image operations can add new images, remove existing ones, or reorder by updating display_order values.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Validate productId exists and is valid UUID format
- * 2. Fetch product record from ecommerce_mall_products table
- * 3. Verify ownership: authenticated seller_id must match product.seller_id
- * 4. Create snapshot of current product state before applying changes
- * 5. Update only provided fields in request body:
- *    - name: String, required validation for non-empty
- *    - description: String?, nullable
- *    - base_price: Float, must be positive
- *    - slug: String, must be unique across platform
- *    - status: String, must be one of: 'active', 'inactive', 'out_of_stock'
- * 6. Validate no variants have pending order items, cancellation requests, or refund requests (if deleting variants)
- * 7. Apply UPDATE query with new values and updated_at timestamp
- * 8. Return complete updated product entity with all relationships
- *
- * Error handling:
- * - 404 if product not found
- * - 403 if seller does not own the product
- * - 400 if validation fails (empty name, invalid status, duplicate slug)
- * - 400 if product cannot be modified due to pending orders/requests
+ * @x-autobe-specification 1. Validate that the authenticated seller owns the product (seller_id matches)
+ * 2. Verify the product is not soft-deleted (deleted_at is null)
+ * 3. For each update field:
+ *    - name: string, max length validation
+ *    - description: string
+ *    - category_id: verify category exists and is not soft-deleted
+ *    - base_price: positive number, valid currency format
+ * 4. For images:
+ *    - validate URL format
+ *    - ensure display_order uniqueness per product
+ * 5. Create a snapshot before applying changes:
+ *    - Capture current product state
+ *    - Capture variant snapshot state
+ *    - Capture seller snapshot state
+ *    - Store in ecommerce_mall_product_snapshots
+ * 6. Apply the updates to ecommerce_mall_products table
+ * 7. Handle image updates:
+ *    - Insert new images with appropriate display_order
+ *    - Mark deleted images with soft delete timestamp
+ *    - Reorder existing images (update display_order values)
+ * 8. Verify product still has at least one variant (if all variants are soft-deleted, mark product as unavailable)
+ * 9. Return the updated product with all current variant information
  * @path /ecommerceMall/seller/products/:productId
  * @accessor api.functional.ecommerceMall.seller.products.update
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -184,12 +213,12 @@ export async function update(
 export namespace update {
   export type Props = {
     /**
-     * The UUID of the product to update.
+     * Unique identifier of the product to update
      */
     productId: string & tags.Format<"uuid">;
 
     /**
-     * Partial update fields for the product. Only include fields that need to be changed.
+     * Product update data including name, description, category, base price, and image operations. The product owner (seller) must be authenticated. Image operations can add new images, remove existing ones, or reorder by updating display_order values.
      */
     body: IEcommerceMallProduct.IUpdate;
   };
@@ -197,7 +226,7 @@ export namespace update {
   export type Response = IEcommerceMallProduct;
 
   export const METADATA = {
-    method: "PUT",
+    method: "PATCH",
     path: "/ecommerceMall/seller/products/:productId",
     request: {
       type: "application/json",
@@ -240,47 +269,37 @@ export namespace update {
 }
 
 /**
- * Soft delete a product from the marketplace, removing it from active product listings while preserving historical data.
+ * Delete a product from the seller's catalog.
  *
- * This operation marks the specified product as deleted using soft deletion, removing it from the platform's active product catalog without permanently erasing the data. The product will no longer appear in search results, category listings, or any customer-facing product browsing interfaces.
+ * This operation permanently removes the product and all its variants from active listings. The deletion is soft-deleted via the deleted_at timestamp, preserving the entity for audit purposes. The product will no longer appear in search results, category listings, or customer-facing views.
  *
- * Before deletion succeeds, the system validates that the product meets all deletion criteria:
- * - The requesting user must own the product (if a seller) or have administrator privileges
- * - No variants of the product may have order items with paid or shipped status
- * - No variants may have pending cancellation requests
- * - No variants may have pending refund requests
+ * **Deletion Constraints:**
+ * - Product can only be deleted if no variants have pending order items with paid or shipped status
+ * - Product can only be deleted if no variants have pending cancellation requests
+ * - Product can only be deleted if no variants have pending refund requests
+ * - Deleted products are automatically removed from all customer wishlists
  *
- * When validation passes, the operation performs soft deletion:
- * - The Product record is marked as deleted by setting the deleted_at timestamp
- * - The product is removed from active listings and search results
- * - Product snapshots are preserved permanently for dispute resolution, audit trails, and historical reference
- * - The product's deletion is logged for compliance tracking
- *
- * Important: Soft deletion preserves the product data in the database for legal and business requirements. The product can be referenced in existing orders through its snapshot data even though it no longer appears in the active catalog.
+ * **Cascade Behavior:**
+ * - All product variants are deleted
+ * - All inventory records for variants are deleted
+ * - Product snapshots remain viewable by administrators for audit purposes
  *
  * @param props.connection
- * @param props.productId UUID of the product to be deleted from the marketplace
+ * @param props.productId The unique identifier of the product to delete. The authenticated seller must own this product.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification 1. Validate authentication and extract user identity and role
- * 2. Query ecommerce_mall_products table for the product by productId (UUID)
- * 3. If not found, return 404 Not Found
- * 4. Validate ownership/authorization:
- *    - If user is a seller: verify product.ownerId equals user's seller ID
- *    - If user is admin/superAdmin: allow deletion
- *    - Otherwise return 403 Forbidden
- * 5. Check deletion constraints (must all pass):
- *    - Query ecommerce_mall_product_variants for any variant where productId = target and that has orderItems with status IN ('paid', 'shipped')
- *    - Query ecommerce_mall_product_variants for any variant that has cancellationRequests with status != 'completed' and status != 'rejected'
- *    - Query ecommerce_mall_product_variants for any variant that has refundRequests with status != 'completed' and status != 'rejected'
- *    - If any constraint fails, return 409 Conflict with error message
- * 6. Begin database transaction
- * 7. Delete all InventoryRecord records where productVariant.id is in the set of variant IDs
- * 8. Delete all ProductVariant records where productId = target
- * 9. Delete the Product record
- * 10. Commit transaction
- * 11. Return 200 OK with deleted product data (name, category, basePrice, and variant count)
- * 12. Log deletion event for compliance tracking
+ * @x-autobe-specification 1. Validate the authenticated user is the seller who owns this product (seller_id match)
+ * 2. Check for ANY product variants of this product
+ * 3. For each variant, query:
+ *    - Order items with status in ['PAID', 'SHIPPED'] - if any exist, reject with error
+ *    - Cancellation requests with status = 'PENDING' - if any exist, reject with error
+ *    - Refund requests with status = 'PENDING' - if any exist, reject with error
+ * 4. If any blocking conditions found, return 409 Conflict with specific error details
+ * 5. Execute soft delete: SET deleted_at = CURRENT_TIMESTAMP for the product
+ * 6. Cascade delete all product variants (on delete cascade)
+ * 7. Cascade delete all inventory records for deleted variants (on delete cascade)
+ * 8. Remove product from all customer wishlists (update wishlist_items WHERE product_id = deleted_product_id)
+ * 9. Return the deleted product with deleted_at timestamp set
  * @path /ecommerceMall/seller/products/:productId
  * @accessor api.functional.ecommerceMall.seller.products.erase
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -309,7 +328,7 @@ export async function erase(
 export namespace erase {
   export type Props = {
     /**
-     * UUID of the product to be deleted from the marketplace
+     * The unique identifier of the product to delete. The authenticated seller must own this product.
      */
     productId: string & tags.Format<"uuid">;
   };
@@ -348,6 +367,101 @@ export namespace erase {
         data: exp.toJSON().message,
       } as any;
     }
+    return random();
+  };
+}
+
+/**
+ * Provides administrators with comprehensive platform-wide product statistics and oversight metrics.
+ *
+ * This endpoint aggregates product data across the entire catalog to deliver:
+ *
+ * - Total product counts and status distribution
+ * - Category-based product distribution
+ * - Review statistics including average ratings and review counts
+ * - Seller activity metrics with product counts per seller
+ * - Recent product additions and modifications
+ * - Product status breakdown (active, deleted, suspended seller products)
+ *
+ * The overview enables administrators to monitor platform health, identify trends, detect policy violations, and take corrective actions when necessary. All data is derived from the product catalog, review statistics, and associated tables.
+ *
+ * @param props.connection
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor seller
+ * @x-autobe-specification Query ecommerce_mall_products with JOINs to ecommerce_mall_categories, ecommerce_mall_sellers, and ecommerce_mall_product_review_stats.
+ *
+ * Aggregations to perform:
+ * 1. Count active products (deleted_at IS NULL) - totalProducts
+ * 2. Count deleted products - deletedProducts
+ * 3. Count of categories with at least one active product
+ * 4. Calculate average rating from all non-NULL average_rating values in review stats
+ * 5. Sum total review counts across all products
+ * 6. Group products by category_id: {category_id, name, product_count} ordered by product_count DESC
+ * 7. Group products by seller_id: {seller_id, display_name, product_count} ordered by product_count DESC
+ * 8. Recent products: select {id, name, category_id, base_price, created_at} ordered by created_at DESC, limit 10
+ * 9. Status breakdown: {active: count, deleted: count}
+ *
+ * Apply soft delete filtering: exclude products where deleted_at IS NOT NULL for active counts.
+ * Handle NULL average_rating values gracefully (products without reviews should be excluded from average calculation).
+ * Join with ecommerce_mall_categories for category names.
+ * Join with ecommerce_mall_sellers for seller display names.
+ *
+ * Return single aggregated statistics object with:
+ * - totalProducts: number - count of active products
+ * - deletedProducts: number - count of deleted products
+ * - totalCategoriesWithProducts: number - count of categories containing products
+ * - averageRating: number | null - mean of all average_rating values (NULL if no reviews exist)
+ * - totalReviews: number - sum of all review_count values
+ * - productsByCategory: array of {category_id: string, name: string, product_count: number}
+ * - productsBySeller: array of {seller_id: string, display_name: string, product_count: number}
+ * - recentProducts: array of {id: string, name: string, category_id: string, base_price: number, created_at: DateTime}
+ * - statusBreakdown: {active: number, deleted: number}
+ *
+ * Sort productsByCategory and productsBySeller by product_count DESC.
+ * Sort recentProducts by created_at DESC (most recent first).
+ * Ensure all numeric values are non-negative integers.
+ * Round averageRating to 2 decimal places if not NULL.
+ * @path /ecommerceMall/seller/products/overview
+ * @accessor api.functional.ecommerceMall.seller.products.overview
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function overview(
+  connection: IConnection,
+): Promise<overview.Response> {
+  return true === connection.simulate
+    ? overview.simulate(connection)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...overview.METADATA,
+          path: overview.path(),
+          status: null,
+        },
+      );
+}
+export namespace overview {
+  export type Response = IEcommerceMallProductOverview;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/ecommerceMall/seller/products/overview",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = () => "/ecommerceMall/seller/products/overview";
+  export const random = (): IEcommerceMallProductOverview =>
+    typia.random<IEcommerceMallProductOverview>();
+  export const simulate = (_connection: IConnection): Response => {
     return random();
   };
 }

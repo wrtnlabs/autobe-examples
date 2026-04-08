@@ -12,17 +12,6 @@ export async function sellerAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const session = await MyGlobal.prisma.ecommerce_mall_seller_sessions.findFirst({
-    where: {
-      id: payload.session_id,
-      expired_at: { gt: new Date() },
-    },
-  });
-
-  if (session === null) {
-    throw new ForbiddenException("Session has expired");
-  }
-
   const seller = await MyGlobal.prisma.ecommerce_mall_sellers.findFirst({
     where: {
       id: payload.id,

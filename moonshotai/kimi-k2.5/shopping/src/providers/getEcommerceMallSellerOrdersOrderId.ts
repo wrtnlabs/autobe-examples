@@ -3,15 +3,12 @@ import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
-import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
 import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
 import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
-import { IEcommerceMallShipmentDelivery } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentDelivery";
 import { IEcommerceMallShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentItem";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -27,22 +24,8 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getEcommerceMallSellerOrdersOrderId(props: {
   seller: SellerPayload;
-  orderId: string & tags.Format<"uuid">;
+  orderId: string;
 }): Promise<IEcommerceMallOrder> {
-  // Verify seller has items in this order (authorization check)
-  const sellerItem = await MyGlobal.prisma.ecommerce_mall_order_items.findFirst(
-    {
-      where: {
-        order_id: props.orderId,
-        seller_id: props.seller.id,
-      },
-      select: { id: true },
-    },
-  );
-  if (sellerItem === null) {
-    throw new HttpException("Order not found or access denied", 404);
-  }
-  // Retrieve complete order with all relations using transformer
   const order = await MyGlobal.prisma.ecommerce_mall_orders.findFirstOrThrow({
     where: {
       id: props.orderId,
@@ -50,5 +33,12 @@ export async function getEcommerceMallSellerOrdersOrderId(props: {
     },
     ...EcommerceMallOrderTransformer.select(),
   });
+  // Verify seller has at least one order item in this order
+  const hasSellerItem = order.orderItems.some(
+    (item) => item.seller.id === props.seller.id,
+  );
+  if (!hasSellerItem) {
+    throw new HttpException("Forbidden", 403);
+  }
   return await EcommerceMallOrderTransformer.transform(order);
 }

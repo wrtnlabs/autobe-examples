@@ -1,0 +1,396 @@
+/// Requests from users to become administrators, tracked until approved or
+/// rejected by super administrators.
+///
+/// This table stores the core metadata for administrator promotion requests
+/// submitted by customers or sellers. Each request includes the reason for
+/// wanting administrator access, the current status (pending, approved, or
+/// rejected), and if rejected, the reason for rejection.
+///
+/// The request is linked to the specific user through subtype tables
+/// (shopping_mall_administrator_promotion_request_of_customers or
+/// shopping_mall_administrator_promotion_request_of_sellers) following the
+/// polymorphic ownership pattern. This ensures proper normalization and
+/// prevents multiple nullable foreign keys.
+///
+/// Super administrators can view all pending requests and approve or reject
+/// them. When approved, the requesting user becomes a regular administrator.
+/// When rejected, the rejection reason is stored and the user can submit a
+/// new request.
+///
+/// @namespace administrator
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrator_promotion_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Unique identifier for each administrator promotion request.
+  id String @id
+  
+  /// References the super administrator who approved or rejected this
+  /// promotion request.
+  ///
+  /// This field is populated when a super administrator responds to the
+  /// request. It provides an audit trail of which administrator made the
+  /// approval or rejection decision.
+  ///
+  /// The relationship is optional (nullable) because pending requests have not
+  /// yet been processed by any administrator.
+  processed_by_administrator_id String?
+  
+  /// Discriminator indicating whether the request is from a customer or seller.
+  ///
+  /// This field enables the polymorphic ownership pattern by distinguishing
+  /// between different actor types. Valid values are 'customer' or 'seller'.
+  /// The actual user reference is stored in the corresponding subtype table.
+  actor_type String
+  
+  /// The reason provided by the user for wanting to become an administrator.
+  ///
+  /// This text field captures the user's justification for requesting
+  /// administrator privileges. It is required when creating a promotion
+  /// request and helps super administrators evaluate the request.
+  reason String
+  
+  /// Current status of the promotion request.
+  ///
+  /// Valid values are 'pending' (awaiting review), 'approved' (user became
+  /// administrator), or 'rejected' (request denied). The status transitions
+  /// from 'pending' to either 'approved' or 'rejected' when a super
+  /// administrator responds.
+  status String
+  
+  /// The reason provided by the super administrator when rejecting this
+  /// promotion request.
+  ///
+  /// This field is populated only when the status is 'rejected'. It explains
+  /// why the request was denied and is visible to the requesting user. This
+  /// field is null for pending or approved requests.
+  rejected_reason String?
+  
+  /// Timestamp when this promotion request was created.
+  created_at DateTime
+  
+  /// Timestamp when this promotion request was last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this promotion request was soft deleted. Null indicates
+  /// the request is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  processedByAdministrator shopping_mall_administrators? @relation(fields: [processed_by_administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots shopping_mall_administrator_promotion_request_snapshots[]
+  customerRequest shopping_mall_administrator_promotion_request_of_customers?
+  ofSeller shopping_mall_administrator_promotion_request_of_sellers?
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([processed_by_administrator_id], map: "shopping_mall_administrator_promotion_requests_process_e1b97cab")
+  // spellchecker: ignore-next-line
+  @@index([actor_type, status], map: "shopping_mall_administrator_promotion_requests_actor_t_d8f05e7d")
+}
+
+/// Immutable audit log recording all administrator grade changes including
+/// promotions and demotions with complete state transition information.
+///
+/// This table provides a permanent, tamper-proof record of every grade
+/// modification performed on administrator accounts. Each entry captures the
+/// administrator whose grade was changed, the super administrator who
+/// performed the action, the previous and new grade values, and the type of
+/// change (promotion or demotion).
+///
+/// Used for accountability, security auditing, and dispute resolution
+/// regarding administrator privilege changes.
+///
+/// @namespace administrator
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrator_grade_changes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for the grade change audit record.
+  id String @id
+  
+  /// References the {@link shopping_mall_administrators} account whose grade
+  /// was changed.
+  ///
+  /// This is the target administrator who received the promotion or demotion.
+  administrator_id String
+  
+  /// References the {@link shopping_mall_administrators} super administrator
+  /// who performed the grade change action.
+  ///
+  /// Only super administrators can modify administrator grades.
+  performed_by_id String
+  
+  /// The grade level before the change occurred.
+  ///
+  /// Allowed values: 'regular' or 'super'.
+  previous_grade String
+  
+  /// The grade level after the change was applied.
+  ///
+  /// Allowed values: 'regular' or 'super'.
+  new_grade String
+  
+  /// The type of grade modification performed.
+  ///
+  /// Allowed values: 'promotion' (regular to super) or 'demotion' (super to
+  /// regular).
+  change_type String
+  
+  /// Timestamp when the grade change was executed and recorded.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  administrator shopping_mall_administrators @relation("shopping_mall_administrator_grade_changes_of_administrator_id", fields: [administrator_id], references: [id], onDelete: Cascade)
+  performedBy shopping_mall_administrators @relation("shopping_mall_administrator_grade_changes_of_performed_by_id", fields: [performed_by_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([performed_by_id])
+  @@index([administrator_id])
+  @@index([created_at])
+}
+
+/// Immutable audit snapshots capturing promotion request state at each
+/// status transition.
+///
+/// These snapshots preserve the complete state of administrator promotion
+/// requests whenever the status changes (pending to approved, pending to
+/// rejected). Each snapshot records the request details including the
+/// submitting user's identity and reason, the current status, and any
+/// administrator response information. Snapshots enable dispute resolution
+/// and audit trail for the administrator promotion workflow.
+///
+/// Snapshots are created automatically when a promotion request status
+/// changes. They are immutable and cannot be deleted or modified after
+/// creation.
+///
+/// @namespace administrator
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrator_promotion_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key for the promotion request snapshot record.
+  id String @id
+  
+  /// Reference to the promotion request being snapshot.
+  ///
+  /// This foreign key links the snapshot to the specific administrator
+  /// promotion request whose state is being captured. Multiple snapshots exist
+  /// for each request, one for each status transition.
+  shopping_mall_administrator_promotion_request_id String
+  
+  /// ID of the user who submitted the promotion request.
+  ///
+  /// This captures the user identity at the time of snapshot. The user can be
+  /// either a customer or seller requesting administrator privileges.
+  user_id String
+  
+  /// Type of user who submitted the request (customer or seller).
+  ///
+  /// This field identifies whether the requesting user is a customer or
+  /// seller, as both actor types can request administrator privileges.
+  user_type String
+  
+  /// Promotion reason provided by the user when submitting the request.
+  ///
+  /// This text explains why the user believes they should be granted
+  /// administrator privileges. Preserved in snapshots for audit purposes.
+  reason String
+  
+  /// Status of the promotion request at snapshot time (pending, approved, or
+  /// rejected).
+  ///
+  /// This captures the request status at the moment the snapshot was taken.
+  /// Status transitions trigger snapshot creation.
+  status String
+  
+  /// ID of the super administrator who approved or rejected the request.
+  ///
+  /// This field is populated when a super administrator responds to the
+  /// request. Null for initial pending status snapshots.
+  approved_by String?
+  
+  /// Reason provided by the administrator when rejecting the request.
+  ///
+  /// This text explains why the promotion request was rejected. Null for
+  /// approved requests or pending status snapshots.
+  response_reason String?
+  
+  /// Timestamp when this snapshot was created.
+  ///
+  /// Records the exact moment the promotion request state was captured. Used
+  /// to establish chronological order of state transitions.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  promotionRequest shopping_mall_administrator_promotion_requests @relation(fields: [shopping_mall_administrator_promotion_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_administrator_promotion_request_id, created_at], map: "shopping_mall_administrator_promotion_request_snapshot_4718a9c7")
+}
+
+/// Links administrator promotion requests to customer accounts, establishing
+/// a 1:1 relationship between each request and the customer who submitted
+/// it.
+///
+/// This subtype table implements the polymorphic ownership pattern for
+/// administrator promotion requests. Customers can submit requests to become
+/// administrators, and this table tracks which customer account submitted
+/// each request along with the session used for submission.
+///
+/// The table maintains a 1:1 relationship with both
+/// shopping_mall_administrator_promotion_requests and
+/// shopping_mall_customers, ensuring each promotion request is associated
+/// with exactly one customer account.
+///
+/// @namespace administrator
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrator_promotion_request_of_customers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id(map: "shopping_mall_administrator_promotion_request_of_custo_6c86b9c2")
+  
+  /// Foreign key referencing the administrator promotion request this customer
+  /// submitted.
+  ///
+  /// This establishes a 1:1 relationship with {@link
+  /// shopping_mall_administrator_promotion_requests}, ensuring each promotion
+  /// request is linked to exactly one customer account through this subtype
+  /// table.
+  shopping_mall_administrator_promotion_request_id String
+  
+  /// Foreign key referencing the customer account that submitted this
+  /// promotion request.
+  ///
+  /// This establishes a 1:1 relationship with {@link shopping_mall_customers},
+  /// ensuring each customer can have at most one active promotion request at a
+  /// time.
+  shopping_mall_customer_id String
+  
+  /// Foreign key referencing the customer session used when submitting the
+  /// promotion request.
+  ///
+  /// This provides an audit trail linking the request to the specific
+  /// authentication session, useful for security monitoring and dispute
+  /// resolution. Nullable to accommodate edge cases.
+  shopping_mall_customer_session_id String?
+  
+  /// Timestamp when this promotion request subtype record was created.
+  ///
+  /// Records the exact time the customer submitted their administrator
+  /// promotion request through this subtype link.
+  created_at DateTime
+  
+  /// Timestamp when this promotion request subtype record was last updated.
+  ///
+  /// Tracks modifications to the relationship between the customer and their
+  /// promotion request.
+  updated_at DateTime
+  
+  /// Timestamp when this promotion request subtype record was soft deleted.
+  ///
+  /// Nullable field for soft delete functionality. When set, the record is
+  /// marked as deleted but preserved for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  promotionRequest shopping_mall_administrator_promotion_requests @relation(fields: [shopping_mall_administrator_promotion_request_id], references: [id], onDelete: Cascade)
+  customer shopping_mall_customers @relation(fields: [shopping_mall_customer_id], references: [id], onDelete: Cascade)
+  customerSession shopping_mall_customer_sessions? @relation(fields: [shopping_mall_customer_session_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_session_id], map: "shopping_mall_administrator_promotion_request_of_custo_80ead356")
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_administrator_promotion_request_id], map: "shopping_mall_administrator_promotion_request_of_custo_134901fd")
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_customer_id], map: "shopping_mall_administrator_promotion_request_of_custo_a286112a")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_id, created_at], map: "shopping_mall_administrator_promotion_request_of_custo_5a729034")
+}
+
+/// Links administrator promotion requests to seller accounts, establishing a
+/// 1:1 relationship between each request and the seller who submitted it.
+///
+/// This table is part of the polymorphic ownership pattern where promotion
+/// requests can be submitted by either customers or sellers. Each request is
+/// owned by exactly one actor type, and this table handles the seller-owned
+/// subset.
+///
+/// The table enforces data integrity by maintaining a unique foreign key to
+/// the main promotion request table, ensuring each request is linked to
+/// exactly one seller account.
+///
+/// @namespace administrator
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_administrator_promotion_request_of_sellers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the main administrator promotion request entity.
+  ///
+  /// This establishes a 1:1 relationship where each seller-specific record
+  /// corresponds to exactly one promotion request in the main table.
+  shopping_mall_administrator_promotion_requests_id String
+  
+  /// Foreign key to the seller account that submitted this promotion request.
+  ///
+  /// This creates a 1:N relationship where one seller can submit multiple
+  /// promotion requests over time.
+  seller_id String
+  
+  /// Timestamp when this seller-specific promotion request record was created.
+  created_at DateTime
+  
+  /// Timestamp when this record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  request shopping_mall_administrator_promotion_requests @relation(fields: [shopping_mall_administrator_promotion_requests_id], references: [id], onDelete: Cascade)
+  seller shopping_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([shopping_mall_administrator_promotion_requests_id], map: "shopping_mall_administrator_promotion_request_of_selle_268c0903")
+  // spellchecker: ignore-next-line
+  @@index([seller_id, created_at], map: "shopping_mall_administrator_promotion_request_of_selle_ea3fcf6c")
+}

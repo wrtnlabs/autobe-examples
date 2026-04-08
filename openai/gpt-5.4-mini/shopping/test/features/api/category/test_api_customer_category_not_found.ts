@@ -20,11 +20,14 @@ export async function test_api_customer_category_not_found(
   await authorize_customer_join(customerConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
+      password: "1234",
+      href: "https://example.com/join",
+      referrer: "https://example.com/landing",
+      ip: "127.0.0.1",
     } satisfies IMallPlatformCustomer.IJoin,
   });
   await TestValidator.httpError(
-    "customer category lookup should fail with not found for missing category",
+    "customer category detail should return not found for a missing category",
     404,
     async () => {
       await api.functional.mallPlatform.customer.categories.at(

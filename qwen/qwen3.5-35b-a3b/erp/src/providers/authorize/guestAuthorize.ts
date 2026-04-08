@@ -12,27 +12,15 @@ export async function guestAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const guest = await MyGlobal.prisma.hrms_guests.findFirst({
-    where: {
-      id: payload.id,
-      deleted_at: null,
-    },
-  });
-
-  if (guest === null) {
-    throw new ForbiddenException("You're not enrolled");
-  }
-
-  const session = await MyGlobal.prisma.hrms_guest_sessions.findFirst({
+  const guestSession = await MyGlobal.prisma.hrm_platform_guest_sessions.findFirst({
     where: {
       id: payload.session_id,
-      hrms_guest_id: payload.id,
       expired_at: { gt: new Date() },
     },
   });
 
-  if (session === null) {
-    throw new ForbiddenException("Session expired");
+  if (guestSession === null) {
+    throw new ForbiddenException("You're not enrolled");
   }
 
   return payload;

@@ -21,99 +21,128 @@ export async function patchEcommerceMallSellerProductsProductIdVariantsVariantId
   variantId: string & tags.Format<"uuid">;
   body: IEcommerceMallProductVariantSnapshot.IRequest;
 }): Promise<IPageIEcommerceMallProductVariantSnapshot.ISummary> {
-  // Verify variant ownership through product ownership
-  const product = await MyGlobal.prisma.ecommerce_mall_products.findFirst({
-    where: {
-      id: props.productId,
-      seller_id: props.seller.id,
-      deleted_at: null,
-    },
-    select: { id: true },
-  });
-  if (product === null) {
-    throw new HttpException("Product not found or access denied", 403);
-  }
-  // Verify variant exists and belongs to the product
-  const variant =
-    await MyGlobal.prisma.ecommerce_mall_product_variants.findFirst({
-      where: {
-        id: props.variantId,
-        product_id: props.productId,
-        deleted_at: null,
-      },
-      select: { id: true },
-    });
-  if (variant === null) {
-    throw new HttpException("Variant not found or access denied", 403);
-  }
-  // Build query filters
-  const filters: Prisma.ecommerce_mall_product_variant_snapshotsWhereInput = {
-    product_id: props.productId,
-    product_variant_id: props.variantId,
-  };
-  // Search filter on SKU code
-  if (
-    props.body.search !== undefined &&
-    props.body.search !== null &&
-    props.body.search.trim().length > 0
-  ) {
-    filters.sku_code = { contains: props.body.search, mode: "insensitive" };
-  }
-  // Date range filters
-  if (
-    props.body.fromDate !== undefined &&
-    props.body.fromDate !== null &&
-    props.body.toDate !== undefined &&
-    props.body.toDate !== null
-  ) {
-    const fromDate = new Date(props.body.fromDate);
-    const toDate = new Date(props.body.toDate);
-    filters.created_at = { gte: fromDate, lt: toDate };
-  } else if (
-    props.body.fromDate !== undefined &&
-    props.body.fromDate !== null
-  ) {
-    const fromDate = new Date(props.body.fromDate);
-    filters.created_at = { gte: fromDate };
-  } else if (props.body.toDate !== undefined && props.body.toDate !== null) {
-    const toDate = new Date(props.body.toDate);
-    filters.created_at = { lt: toDate };
-  }
-  // Pagination parameters
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
-  const skip = (page - 1) * limit;
-  // Ensure page and limit are within valid ranges
-  const validatedPage = page < 1 ? 1 : page;
-  const validatedLimit = limit < 1 ? 1 : limit > 100 ? 100 : limit;
-  // Query snapshots ordered by created_at descending (newest first)
-  const snapshots =
+  const limit = props.body.limit ?? 20;
+  const sortedPage = Math.max(1, page);
+  const sortedLimit = Math.min(100, Math.max(1, limit));
+  const skip = (sortedPage - 1) * sortedLimit;
+  const product =
+    await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
+      where: { id: props.productId, deleted_at: null },
+      select: { id: true, seller_id: true },
+    });
+  if (product.seller_id !== props.seller.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const variant =
+    await MyGlobal.prisma.ecommerce_mall_product_variants.findUniqueOrThrow({
+      where: { id: props.variantId },
+      select: { id: true, product_id: true },
+    });
+  if (variant.product_id !== props.productId) {
+    throw new HttpException("Not Found", 404);
+  }
+  const sort = props.body.sort ?? "created_at_desc";
+  const orderBy =
+    sort === "created_at_asc"
+      ? { created_at: "asc" as const }
+      : { created_at: "desc" as const };
+  const whereInput: Prisma.ecommerce_mall_product_variant_snapshotsWhereInput =
+    {
+      product_id: props.productId,
+      product_variant_id: props.variantId,
+      ...(props.body.createdAtFrom && {
+        created_at: { gte: new Date(props.body.createdAtFrom) },
+      }),
+      ...(props.body.createdAtTo && {
+        created_at: { lte: new Date(props.body.createdAtTo) },
+      }),
+      ...(props.body.skuSearch && {
+        sku_code: { contains: props.body.skuSearch, mode: "insensitive" },
+      }),
+      ...(props.body.priceRange?.min !== undefined ||
+      props.body.priceRange?.max !== undefined
+        ? {
+            price: {
+              ...(props.body.priceRange?.min !== undefined && {
+                gte: props.body.priceRange.min,
+              }),
+              ...(props.body.priceRange?.max !== undefined && {
+                lte: props.body.priceRange.max,
+              }),
+            },
+          }
+        : undefined),
+    };
+  const records =
     await MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.findMany({
-      where: filters,
-      orderBy: { created_at: "desc" },
+      where: whereInput,
       skip,
-      take: validatedLimit,
+      take: sortedLimit,
+      orderBy,
       ...EcommerceMallProductVariantSnapshotAtSummaryTransformer.select(),
     });
-  // Count total records for pagination metadata
   const total =
     await MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.count({
-      where: filters,
+      where: whereInput,
     });
-  // Transform snapshots to ISummary format
-  const transformedData = await ArrayUtil.asyncMap(
-    snapshots,
-    EcommerceMallProductVariantSnapshotAtSummaryTransformer.transform,
-  );
-  // Build paginated response
-  const totalPages = total === 0 ? 0 : Math.ceil(total / validatedLimit);
   return {
-    data: transformedData,
     pagination: {
-      current: validatedPage,
-      limit: validatedLimit,
+      current: sortedPage,
+      limit: sortedLimit,
       records: total,
-      pages: totalPages,
+      pages: Math.ceil(total / sortedLimit),
     } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      records,
+      EcommerceMallProductVariantSnapshotAtSummaryTransformer.transform,
+    ),
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantSnapshot";
+// import { IPageIEcommerceMallProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallProductVariantSnapshot";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallSellerProductsProductIdVariantsVariantIdSnapshots(props: {
+//   seller: SellerPayload;
+//   productId: string & tags.Format<"uuid">;
+//   variantId: string & tags.Format<"uuid">;
+//   body: IEcommerceMallProductVariantSnapshot.IRequest;
+// }): Promise<IPageIEcommerceMallProductVariantSnapshot.ISummary> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.findMany({
+//     ...EcommerceMallProductVariantSnapshotAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallProductVariantSnapshotAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

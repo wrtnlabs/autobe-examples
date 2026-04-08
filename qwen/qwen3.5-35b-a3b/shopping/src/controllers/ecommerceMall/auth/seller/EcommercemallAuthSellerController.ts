@@ -10,21 +10,29 @@ import { postEcommerceMallAuthSellerRefresh } from "../../../../providers/postEc
 @Controller("/ecommerceMall/auth/seller")
 export class EcommercemallAuthSellerController {
   /**
-   * Register a new seller account on the ecommerce platform. This operation creates a seller account using an email address and password combination. The seller account is created with a pending approval status, meaning the seller cannot access selling features until an administrator approves the registration.
+   * Register a new seller account on the ecommerce platform.
    *
-   * The registration process validates that the email address follows proper format standards and is not already registered in the system. The password must meet minimum complexity requirements to ensure account security. Upon successful registration, the seller account is inserted into the ecommerce_mall_sellers table with the hashed password and pending_approval status.
+   * Creates a new seller account with email and password credentials. The seller must provide a display_name for their public-facing identity. Upon successful registration, the seller receives JWT tokens (access_token and refresh_token) for authenticated API access. The account starts with approval_status='pending', meaning the seller must wait for administrator approval before they can list products or fulfill orders.
    *
-   * After registration, the seller receives initial authentication tokens that allow them to access their account dashboard and view their approval status. However, the seller cannot list products, manage inventory, or process orders until their account receives administrator approval. The seller can track their registration status through the approval workflow.
+   * Email verification is required: a verification token is sent to the provided email address. The seller must verify their email to activate the account. The token expires after 24 hours.
    *
-   * If the email address is already registered, the operation fails with a conflict error. If the email format is invalid, the operation fails with a validation error. If the password does not meet complexity requirements, the operation fails with a validation error. Rejected registrations can be resubmitted using the same email address after any issues are resolved.
+   * The seller's approval status can be checked via the approval-status endpoint. Administrators review pending sellers and either approve them to start selling or reject with a reason.
+   *
+   * ## Security Considerations
+   *
+   * - Passwords are hashed with BCrypt before storage
+   * - Email verification prevents abuse with fake accounts
+   * - Approval workflow ensures platform quality control
+   * - JWT tokens have limited expiration and require refresh
+   * - IP address and referrer are logged for session auditing
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Seller registration credentials including email address and password
+   * @param body Seller registration data
    * @x-autobe-authorization-type join
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Create a new seller account by validating email uniqueness and password strength. Store hashed password and create initial session token. Seller account created with pending_approval status. Insert record into ecommerce_mall_sellers table with email, hashed password, and default status. Validate email format per RFC 5322. Validate password meets minimum complexity requirements (8+ characters, uppercase, lowercase, digit, special char). Check ecommerce_mall_sellers for existing email uniqueness. On success, create initial session in ecommerce_mall_seller_sessions with access and refresh tokens. Set seller status to pending_approval awaiting admin review.
+   * @x-autobe-specification 1. Receive registration data: email, password, display_name. 2. Validate email format and uniqueness in ecommerce_mall_sellers table (check deleted_at IS NULL). 3. Validate password complexity (min length requirements). 4. Validate display_name format and uniqueness if required. 5. Hash password with BCrypt (cost factor >= 12). 6. Create new ecommerce_mall_seller record with: email, password_hash (hashed), display_name, approval_status='pending', is_suspended=false. 7. Generate email verification token: create ecommerce_mall_seller_email_verifications record with unique token, token_hash, email, expires_at (24 hours from now), verified=false. 8. Send verification email to provided email address. 9. Return IAuthorized response with access_token and refresh_token from new session. 10. Create ecommerce_mall_seller_sessions record with access_token, refresh_token, ip, href, referrer, expired_at. 11. Return JWT tokens in response. Error handling: 409 Conflict for duplicate email, 400 Bad Request for invalid data format or password too weak, 500 Internal Server Error for system failures.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("join")
@@ -46,21 +54,34 @@ export class EcommercemallAuthSellerController {
   }
 
   /**
-   * Authenticate a seller account using email address and password credentials. This operation validates the seller's identity by checking the provided credentials against the stored values in the ecommerce_mall_sellers table.
+   * Authenticate a seller and obtain access tokens.
    *
-   * The authentication process involves looking up the seller by email address, verifying the password matches the stored hash, and checking the account status. Only sellers with approved status or pending approval status can successfully authenticate. Rejected accounts cannot log in until they submit a new registration request.
+   * Validates seller credentials (email and password) against the database. Upon successful authentication, issues new JWT tokens (access_token and refresh_token) that grant access to authenticated API endpoints. The seller must have approval_status='approved' and is_suspended=false to login.
    *
-   * Upon successful authentication, new JWT access and refresh tokens are generated and stored in the ecommerce_mall_seller_sessions table. The access token grants temporary access to seller operations, while the refresh token allows obtaining new access tokens without re-authenticating. The seller receives these tokens along with their account information.
+   * The session record includes the client IP address, original URL, and referrer for security auditing and session management. Tokens have expiration times and must be refreshed before expiry.
    *
-   * If the email address is not found in the system, the login fails with a not found error. If the password is incorrect, the login fails with an authentication error. If the account has been banned or rejected by an administrator, the login is denied. Successful login provides the seller with full platform access appropriate to their approval status.
+   * ## Authentication Flow
+   *
+   * 1. Submit email and password in request body
+   * 2. System validates credentials against stored password_hash
+   * 3. If valid, check account status (not suspended, approved)
+   * 4. Generate new JWT tokens for access and refresh
+   * 5. Return tokens in response for use in Authorization header
+   *
+   * ## Security Considerations
+   *
+   * - Failed login attempts should be rate-limited to prevent brute force attacks
+   * - Password verification uses secure BCrypt comparison
+   * - Session tracking enables detection of suspicious login activity from different IPs
+   * - Token expiration enforces re-authentication after session timeout
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Seller login credentials including email address and password
+   * @param body Seller login credentials
    * @x-autobe-authorization-type login
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Authenticate seller by validating email and password against stored credentials. Verify seller account exists and is not banned. Generate new JWT access and refresh tokens. Store session in ecommerce_mall_seller_sessions. On validation failure, reject login with appropriate error. Check seller status in ecommerce_mall_sellers - only allow login for approved accounts or accounts in pending status. If account is rejected, deny login. Generate cryptographically secure JWT tokens with appropriate expiration. Hash password comparison using same algorithm as registration.
+   * @x-autobe-specification 1. Receive login credentials: email and password. 2. Find seller in ecommerce_mall_sellers table by email (check deleted_at IS NULL). 3. Return 404 Not Found if no active seller found with that email. 4. Check if seller is suspended: if is_suspended=true, return 403 Forbidden. 5. Check approval status: if approval_status='pending' or 'rejected', return 403 Forbidden with reason. 6. Verify password: compare provided password with password_hash using BCrypt verification. 7. If password is invalid, return 401 Unauthorized. 8. Create new session: generate access_token and refresh_token JWTs. 9. Create ecommerce_mall_seller_sessions record with tokens, ip, href, referrer, expired_at. 10. If seller has existing active session (deleted_at IS NULL), consider revoking or allowing multiple sessions based on business rules. 11. Return IAuthorized response with new tokens. Error handling: 401 Unauthorized for invalid credentials, 403 Forbidden for suspended or unapproved sellers, 404 Not Found for non-existent account, 500 Internal Server Error for system failures.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("login")
@@ -82,21 +103,35 @@ export class EcommercemallAuthSellerController {
   }
 
   /**
-   * Refresh an expired access token using a valid refresh token. This operation allows sellers to extend their authenticated session without needing to re-enter their email and password credentials. The refresh token is validated against the ecommerce_mall_seller_sessions table to ensure it exists and has not expired.
+   * Renew expired access tokens using a valid refresh token.
    *
-   * Upon successful validation, a new pair of JWT access and refresh tokens is generated. The old refresh token is invalidated to prevent token replay attacks, and a new session record is created in the ecommerce_mall_seller_sessions table. The seller receives the new token pair which grants continued access to seller operations.
+   * When an access_token expires, sellers can obtain new tokens without re-entering their credentials by using the refresh_token. This operation validates the refresh_token, verifies the seller account is still in good standing, and issues a new pair of JWT tokens.
    *
-   * The refresh operation is designed to maintain seamless user experience by allowing tokens to be renewed before expiration. Sellers should implement automatic token refresh logic in their client applications to avoid authentication interruptions during prolonged usage. The refresh token has a longer validity period than the access token to reduce the frequency of re-authentication.
+   * The refresh token is session-bound and can only be used once. After successful refresh, the old session is marked as deleted to prevent replay attacks. This ensures each session has a unique, non-reusable refresh token.
    *
-   * If the refresh token is invalid, expired, or has already been used, the operation fails. If the seller account has been banned or deleted since the token was issued, the refresh fails. The seller will need to perform a full login operation to obtain new credentials.
+   * ## Refresh Flow
+   *
+   * 1. Submit refresh_token in request body
+   * 2. System validates token exists and has not expired
+   * 3. Verify seller account is still active and approved
+   * 4. Generate new access_token and refresh_token
+   * 5. Invalidate old session (soft delete)
+   * 6. Return new tokens for continued API access
+   *
+   * ## Security Considerations
+   *
+   * - Refresh tokens have limited lifetime for security
+   * - Each refresh invalidates the previous token
+   * - Token rotation prevents token theft from being used indefinitely
+   * - Account status is re-validated to prevent access to suspended/deleted accounts
    *
    * @setHeader token.access Authorization
    *
    * @param connection
-   * @param body Seller refresh token for obtaining new access tokens
+   * @param body Refresh token for token renewal
    * @x-autobe-authorization-type refresh
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Refresh seller's access token using valid refresh token. Validate refresh token exists in ecommerce_mall_seller_sessions and has not expired. Generate new access token and refresh token pair. Update or insert new session record in ecommerce_mall_seller_sessions. Invalidate old refresh token to prevent reuse. Validate seller account still exists and is not banned. Return new token pair to seller for continued session access. Token refresh allows sellers to maintain authenticated sessions without re-entering credentials.
+   * @x-autobe-specification 1. Extract refresh_token from request body. 2. Find the refresh_token in ecommerce_mall_seller_sessions table. 3. Verify token exists and is not soft-deleted (deleted_at IS NULL). 4. Check token expiration: verify current time < expired_at. Return 401 Unauthorized if expired. 5. Find the associated seller in ecommerce_mall_sellers table using ecommerce_mall_seller_id from session. 6. Verify seller account is still active (deleted_at IS NULL), not suspended (is_suspended=false), and approved (approval_status='approved'). 7. Generate new access_token and refresh_token JWTs with fresh expiration. 8. Create new session record in ecommerce_mall_seller_sessions with new tokens. 9. Mark old session as deleted (soft delete) for audit trail. 10. Return IAuthorized response with new tokens. Error handling: 401 Unauthorized for invalid/missing/expired tokens, 403 Forbidden if seller account is suspended or deleted, 404 Not Found if session record not found, 500 Internal Server Error for system failures.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post("refresh")

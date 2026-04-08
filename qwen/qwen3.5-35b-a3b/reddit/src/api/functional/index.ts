@@ -1,1 +1,1 @@
-export * as redditCommunity from "./redditCommunity/index";
+export * as redditPlatform from "./redditPlatform/index";

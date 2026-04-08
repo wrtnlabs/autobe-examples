@@ -11,18 +11,20 @@ export namespace HrmPlatformTimerCollector {
   export async function collect(props: {
     body: IHrmPlatformTimer.ICreate;
     hrmPlatformEmployees: IEntity;
+    hrmPlatformMemberSessions: IEntity;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
+      id,
       started_at: new Date(),
+      stopped_at: null,
       description: props.body.description ?? null,
       created_at: new Date(),
       updated_at: new Date(),
-      deleted_at: null,
       employee: { connect: { id: props.hrmPlatformEmployees.id } },
-      project: { connect: { id: props.body.project_id } },
-      task: props.body.task_id
-        ? { connect: { id: props.body.task_id } }
+      project: { connect: { id: props.body.hrm_platform_project_id } },
+      task: props.body.hrm_platform_task_id
+        ? { connect: { id: props.body.hrm_platform_task_id } }
         : undefined,
     } satisfies Prisma.hrm_platform_timersCreateInput;
   }

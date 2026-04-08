@@ -1,104 +1,124 @@
 import { Module } from "@nestjs/common";
 
-import { MallplatformAdministratorAdministrator_approval_requestsSnapshotsController } from "./controllers/mallPlatform/administrator/administrator-approval-requests/snapshots/MallplatformAdministratorAdministrator_approval_requestsSnapshotsController";
-import { MallplatformAdministratorAdministratorapprovalrequestsController } from "./controllers/mallPlatform/administrator/administratorApprovalRequests/MallplatformAdministratorAdministratorapprovalrequestsController";
+import { MallplatformAdministratorAdministratorapprovalrequestsnapshotsController } from "./controllers/mallPlatform/administrator/administratorApprovalRequestSnapshots/MallplatformAdministratorAdministratorapprovalrequestsnapshotsController";
+import { MallplatformAdministratorAdministratorapprovalrequestsApproveController } from "./controllers/mallPlatform/administrator/administratorApprovalRequests/approve/MallplatformAdministratorAdministratorapprovalrequestsApproveController";
+import { MallplatformAdministratorAdministratorapprovalrequestsController } from "./controllers/mallPlatform/administrator/administratorApprovalRequests/reject/MallplatformAdministratorAdministratorapprovalrequestsController";
 import { MallplatformAdministratorAdministratorsController } from "./controllers/mallPlatform/administrator/administrators/MallplatformAdministratorAdministratorsController";
+import { MallplatformAdministratorApproval_requestsController } from "./controllers/mallPlatform/administrator/approval-requests/MallplatformAdministratorApproval_requestsController";
+import { MallplatformAdministratorApprovalrequestsController } from "./controllers/mallPlatform/administrator/approvalRequests/MallplatformAdministratorApprovalrequestsController";
 import { MallplatformAdministratorCategoriesController } from "./controllers/mallPlatform/administrator/categories/MallplatformAdministratorCategoriesController";
-import { MallplatformAdministratorCategoriesSubcategoriesController } from "./controllers/mallPlatform/administrator/categories/subcategories/MallplatformAdministratorCategoriesSubcategoriesController";
 import { MallplatformAdministratorCustomersController } from "./controllers/mallPlatform/administrator/customers/MallplatformAdministratorCustomersController";
-import { MallplatformAdministratorOrder_itemsSnapshotsController } from "./controllers/mallPlatform/administrator/order-items/snapshots/MallplatformAdministratorOrder_itemsSnapshotsController";
-import { MallplatformAdministratorOrder_itemsSnapshotsVariant_optionsController } from "./controllers/mallPlatform/administrator/order-items/snapshots/variant-options/MallplatformAdministratorOrder_itemsSnapshotsVariant_optionsController";
+import { MallplatformAdministratorOrderitemsnapshotsController } from "./controllers/mallPlatform/administrator/orderItemSnapshots/MallplatformAdministratorOrderitemsnapshotsController";
+import { MallplatformAdministratorOrderitemsnapshotsVariantoptionsController } from "./controllers/mallPlatform/administrator/orderItemSnapshots/variantOptions/MallplatformAdministratorOrderitemsnapshotsVariantoptionsController";
 import { MallplatformAdministratorOrderitemsCancellationrequestsController } from "./controllers/mallPlatform/administrator/orderItems/cancellationRequests/MallplatformAdministratorOrderitemsCancellationrequestsController";
+import { MallplatformAdministratorOrderitemsCancellationrequestsApproveController } from "./controllers/mallPlatform/administrator/orderItems/cancellationRequests/approve/MallplatformAdministratorOrderitemsCancellationrequestsApproveController";
 import { MallplatformAdministratorOrderitemsCancellationrequestsSnapshotsController } from "./controllers/mallPlatform/administrator/orderItems/cancellationRequests/snapshots/MallplatformAdministratorOrderitemsCancellationrequestsSnapshotsController";
-import { MallplatformAdministratorPassword_resetsController } from "./controllers/mallPlatform/administrator/password-resets/MallplatformAdministratorPassword_resetsController";
-import { MallplatformAdministratorProduct_variantsAvailabilityController } from "./controllers/mallPlatform/administrator/product-variants/availability/MallplatformAdministratorProduct_variantsAvailabilityController";
-import { MallplatformAdministratorProductvariantsInventoryrecordsController } from "./controllers/mallPlatform/administrator/productVariants/inventoryRecords/MallplatformAdministratorProductvariantsInventoryrecordsController";
-import { MallplatformAdministratorProductvariantsSnapshotsController } from "./controllers/mallPlatform/administrator/productVariants/snapshots/MallplatformAdministratorProductvariantsSnapshotsController";
-import { MallplatformAdministratorProductsController } from "./controllers/mallPlatform/administrator/products/MallplatformAdministratorProductsController";
-import { MallplatformAdministratorProducts_imagesnapshotsController } from "./controllers/mallPlatform/administrator/products/imageSnapshots/MallplatformAdministratorProducts_imagesnapshotsController";
+import { MallplatformAdministratorOrderitemsRefundrequestsController } from "./controllers/mallPlatform/administrator/orderItems/refundRequests/MallplatformAdministratorOrderitemsRefundrequestsController";
+import { MallplatformAdministratorOrderitemsRefundrequestsSnapshotsController } from "./controllers/mallPlatform/administrator/orderItems/refundRequests/snapshots/MallplatformAdministratorOrderitemsRefundrequestsSnapshotsController";
+import { MallplatformAdministratorOrderitemsSnapshotsController } from "./controllers/mallPlatform/administrator/orderItems/snapshots/MallplatformAdministratorOrderitemsSnapshotsController";
+import { MallplatformAdministratorOrderitemsSnapshotsVariantoptionsController } from "./controllers/mallPlatform/administrator/orderItems/snapshots/variantOptions/MallplatformAdministratorOrderitemsSnapshotsVariantoptionsController";
+import { MallplatformAdministratorOrdersForce_cancelController } from "./controllers/mallPlatform/administrator/orders/force-cancel/MallplatformAdministratorOrdersForce_cancelController";
+import { MallplatformAdministratorOrdersForce_refundController } from "./controllers/mallPlatform/administrator/orders/force-refund/MallplatformAdministratorOrdersForce_refundController";
+import { MallplatformAdministratorProductsnapshotsController } from "./controllers/mallPlatform/administrator/productSnapshots/MallplatformAdministratorProductsnapshotsController";
+import { MallplatformAdministratorProductsnapshotsHistoryController } from "./controllers/mallPlatform/administrator/productSnapshots/history/MallplatformAdministratorProductsnapshotsHistoryController";
+import { MallplatformAdministratorProductsnapshotsImagesController } from "./controllers/mallPlatform/administrator/productSnapshots/images/MallplatformAdministratorProductsnapshotsImagesController";
+import { MallplatformAdministratorProductsnapshotsVariantsController } from "./controllers/mallPlatform/administrator/productSnapshots/variants/MallplatformAdministratorProductsnapshotsVariantsController";
 import { MallplatformAdministratorProductsImagesController } from "./controllers/mallPlatform/administrator/products/images/MallplatformAdministratorProductsImagesController";
-import { MallplatformAdministratorProductsImagesReorderController } from "./controllers/mallPlatform/administrator/products/images/reorder/MallplatformAdministratorProductsImagesReorderController";
-import { MallplatformAdministratorProductsSnapshotsController } from "./controllers/mallPlatform/administrator/products/snapshots/MallplatformAdministratorProductsSnapshotsController";
-import { MallplatformAdministratorProductsSnapshotsImagesController } from "./controllers/mallPlatform/administrator/products/snapshots/images/MallplatformAdministratorProductsSnapshotsImagesController";
-import { MallplatformAdministratorProductsSnapshotsVariantsController } from "./controllers/mallPlatform/administrator/products/snapshots/variants/MallplatformAdministratorProductsSnapshotsVariantsController";
-import { MallplatformAdministratorProductsVariantsnapshotsController } from "./controllers/mallPlatform/administrator/products/variantSnapshots/MallplatformAdministratorProductsVariantsnapshotsController";
-import { MallplatformAdministratorProductsVariantsnapshotsOptionsController } from "./controllers/mallPlatform/administrator/products/variantSnapshots/options/MallplatformAdministratorProductsVariantsnapshotsOptionsController";
+import { MallplatformAdministratorProductsReviewsummaryController } from "./controllers/mallPlatform/administrator/products/reviewSummary/MallplatformAdministratorProductsReviewsummaryController";
+import { MallplatformAdministratorProductsReviewsController } from "./controllers/mallPlatform/administrator/products/reviews/MallplatformAdministratorProductsReviewsController";
 import { MallplatformAdministratorProductsVariantsController } from "./controllers/mallPlatform/administrator/products/variants/MallplatformAdministratorProductsVariantsController";
-import { MallplatformAdministratorRefundrequestsSnapshotsController } from "./controllers/mallPlatform/administrator/refundRequests/snapshots/MallplatformAdministratorRefundrequestsSnapshotsController";
-import { MallplatformAdministratorReviewsnapshotsController } from "./controllers/mallPlatform/administrator/reviewSnapshots/MallplatformAdministratorReviewsnapshotsController";
+import { MallplatformAdministratorProductsVariantsInventoryrecordsController } from "./controllers/mallPlatform/administrator/products/variants/inventoryRecords/MallplatformAdministratorProductsVariantsInventoryrecordsController";
+import { MallplatformAdministratorProductsVariantsSnapshotsController } from "./controllers/mallPlatform/administrator/products/variants/snapshots/MallplatformAdministratorProductsVariantsSnapshotsController";
+import { MallplatformAdministratorProductsVariantsSnapshotsOptionsController } from "./controllers/mallPlatform/administrator/products/variants/snapshots/options/MallplatformAdministratorProductsVariantsSnapshotsOptionsController";
+import { MallplatformAdministratorReviewsController } from "./controllers/mallPlatform/administrator/reviews/MallplatformAdministratorReviewsController";
+import { MallplatformAdministratorReviewsHistoryController } from "./controllers/mallPlatform/administrator/reviews/history/MallplatformAdministratorReviewsHistoryController";
 import { MallplatformAdministratorReviewsSnapshotsController } from "./controllers/mallPlatform/administrator/reviews/snapshots/MallplatformAdministratorReviewsSnapshotsController";
-import { MallplatformAdministratorSeller_approval_requestsController } from "./controllers/mallPlatform/administrator/seller-approval-requests/MallplatformAdministratorSeller_approval_requestsController";
-import { MallplatformAdministratorSeller_profilesSnapshotsController } from "./controllers/mallPlatform/administrator/seller-profiles/snapshots/MallplatformAdministratorSeller_profilesSnapshotsController";
-import { MallplatformAdministratorSelleraccountsController } from "./controllers/mallPlatform/administrator/sellerAccounts/MallplatformAdministratorSelleraccountsController";
-import { MallplatformAdministratorSellerprofilesController } from "./controllers/mallPlatform/administrator/sellerProfiles/MallplatformAdministratorSellerprofilesController";
+import { MallplatformAdministratorSellerprofilesnapshotsController } from "./controllers/mallPlatform/administrator/sellerProfileSnapshots/MallplatformAdministratorSellerprofilesnapshotsController";
+import { MallplatformAdministratorSellerprofilesnapshotsHistoryController } from "./controllers/mallPlatform/administrator/sellerProfileSnapshots/history/MallplatformAdministratorSellerprofilesnapshotsHistoryController";
 import { MallplatformAdministratorSellersController } from "./controllers/mallPlatform/administrator/sellers/MallplatformAdministratorSellersController";
+import { MallplatformAdministratorSellersStorefront_identitySnapshotsController } from "./controllers/mallPlatform/administrator/sellers/storefront-identity/snapshots/MallplatformAdministratorSellersStorefront_identitySnapshotsController";
+import { MallplatformAdministratorShipmentsController } from "./controllers/mallPlatform/administrator/shipments/MallplatformAdministratorShipmentsController";
+import { MallplatformAdministratorShipmentsShipmentitemsController } from "./controllers/mallPlatform/administrator/shipments/shipmentItems/MallplatformAdministratorShipmentsShipmentitemsController";
 import { MallplatformAuthAdministratorController } from "./controllers/mallPlatform/auth/administrator/MallplatformAuthAdministratorController";
 import { MallplatformAuthCustomerController } from "./controllers/mallPlatform/auth/customer/MallplatformAuthCustomerController";
 import { MallplatformAuthSellerController } from "./controllers/mallPlatform/auth/seller/MallplatformAuthSellerController";
-import { MallplatformCustomerAccountsController } from "./controllers/mallPlatform/customer/accounts/MallplatformCustomerAccountsController";
-import { MallplatformCustomerCartsController } from "./controllers/mallPlatform/customer/carts/MallplatformCustomerCartsController";
-import { MallplatformCustomerCartsCheckout_previewController } from "./controllers/mallPlatform/customer/carts/checkout-preview/MallplatformCustomerCartsCheckout_previewController";
-import { MallplatformCustomerCartsItemsController } from "./controllers/mallPlatform/customer/carts/items/MallplatformCustomerCartsItemsController";
-import { MallplatformCustomerCartsSummaryController } from "./controllers/mallPlatform/customer/carts/summary/MallplatformCustomerCartsSummaryController";
+import { MallplatformCustomerAccountStatusController } from "./controllers/mallPlatform/customer/account/status/MallplatformCustomerAccountStatusController";
+import { MallplatformCustomerApprovalrequestsController } from "./controllers/mallPlatform/customer/approvalRequests/MallplatformCustomerApprovalrequestsController";
 import { MallplatformCustomerCategoriesController } from "./controllers/mallPlatform/customer/categories/MallplatformCustomerCategoriesController";
 import { MallplatformCustomerCategoriesProductsController } from "./controllers/mallPlatform/customer/categories/products/MallplatformCustomerCategoriesProductsController";
-import { MallplatformCustomerOrder_itemsSnapshotsController } from "./controllers/mallPlatform/customer/order-items/snapshots/MallplatformCustomerOrder_itemsSnapshotsController";
-import { MallplatformCustomerOrder_itemsSnapshotsVariant_optionsController } from "./controllers/mallPlatform/customer/order-items/snapshots/variant-options/MallplatformCustomerOrder_itemsSnapshotsVariant_optionsController";
+import { MallplatformCustomerOrderitemsnapshotsController } from "./controllers/mallPlatform/customer/orderItemSnapshots/MallplatformCustomerOrderitemsnapshotsController";
+import { MallplatformCustomerOrderitemsnapshotsVariantoptionsController } from "./controllers/mallPlatform/customer/orderItemSnapshots/variantOptions/MallplatformCustomerOrderitemsnapshotsVariantoptionsController";
 import { MallplatformCustomerOrderitemsCancellationrequestsController } from "./controllers/mallPlatform/customer/orderItems/cancellationRequests/MallplatformCustomerOrderitemsCancellationrequestsController";
 import { MallplatformCustomerOrderitemsCancellationrequestsSnapshotsController } from "./controllers/mallPlatform/customer/orderItems/cancellationRequests/snapshots/MallplatformCustomerOrderitemsCancellationrequestsSnapshotsController";
 import { MallplatformCustomerOrderitemsRefundrequestsController } from "./controllers/mallPlatform/customer/orderItems/refundRequests/MallplatformCustomerOrderitemsRefundrequestsController";
-import { MallplatformCustomerOrderitemsReviewController } from "./controllers/mallPlatform/customer/orderItems/review/MallplatformCustomerOrderitemsReviewController";
+import { MallplatformCustomerOrderitemsRefundrequestsSnapshotsController } from "./controllers/mallPlatform/customer/orderItems/refundRequests/snapshots/MallplatformCustomerOrderitemsRefundrequestsSnapshotsController";
+import { MallplatformCustomerOrderitemsSnapshotsController } from "./controllers/mallPlatform/customer/orderItems/snapshots/MallplatformCustomerOrderitemsSnapshotsController";
+import { MallplatformCustomerOrderitemsSnapshotsVariantoptionsController } from "./controllers/mallPlatform/customer/orderItems/snapshots/variantOptions/MallplatformCustomerOrderitemsSnapshotsVariantoptionsController";
 import { MallplatformCustomerOrdersController } from "./controllers/mallPlatform/customer/orders/MallplatformCustomerOrdersController";
-import { MallplatformCustomerOrdersHistoryController } from "./controllers/mallPlatform/customer/orders/history/MallplatformCustomerOrdersHistoryController";
-import { MallplatformCustomerOrdersHistoryItemsController } from "./controllers/mallPlatform/customer/orders/history/items/MallplatformCustomerOrdersHistoryItemsController";
-import { MallplatformCustomerOrdersItemsController } from "./controllers/mallPlatform/customer/orders/items/MallplatformCustomerOrdersItemsController";
-import { MallplatformCustomerOrdersShipmentsController } from "./controllers/mallPlatform/customer/orders/shipments/MallplatformCustomerOrdersShipmentsController";
-import { MallplatformCustomerPassword_resetsController } from "./controllers/mallPlatform/customer/password-resets/MallplatformCustomerPassword_resetsController";
-import { MallplatformCustomerProductsController } from "./controllers/mallPlatform/customer/products/MallplatformCustomerProductsController";
+import { MallplatformCustomerPasswordresetsController } from "./controllers/mallPlatform/customer/passwordResets/MallplatformCustomerPasswordresetsController";
+import { MallplatformCustomerProductsImagesController } from "./controllers/mallPlatform/customer/products/images/MallplatformCustomerProductsImagesController";
+import { MallplatformCustomerProductsReviewsummaryController } from "./controllers/mallPlatform/customer/products/reviewSummary/MallplatformCustomerProductsReviewsummaryController";
+import { MallplatformCustomerProductsReviewsController } from "./controllers/mallPlatform/customer/products/reviews/MallplatformCustomerProductsReviewsController";
+import { MallplatformCustomerProductsVariantsController } from "./controllers/mallPlatform/customer/products/variants/MallplatformCustomerProductsVariantsController";
 import { MallplatformCustomerProfileController } from "./controllers/mallPlatform/customer/profile/MallplatformCustomerProfileController";
-import { MallplatformCustomerRefundrequestsController } from "./controllers/mallPlatform/customer/refundRequests/MallplatformCustomerRefundrequestsController";
-import { MallplatformCustomerRefundrequestsSnapshotsController } from "./controllers/mallPlatform/customer/refundRequests/snapshots/MallplatformCustomerRefundrequestsSnapshotsController";
 import { MallplatformCustomerReviewsController } from "./controllers/mallPlatform/customer/reviews/MallplatformCustomerReviewsController";
+import { MallplatformCustomerReviewsHistoryController } from "./controllers/mallPlatform/customer/reviews/history/MallplatformCustomerReviewsHistoryController";
+import { MallplatformCustomerReviewsOwnershipController } from "./controllers/mallPlatform/customer/reviews/ownership/MallplatformCustomerReviewsOwnershipController";
 import { MallplatformCustomerReviewsSnapshotsController } from "./controllers/mallPlatform/customer/reviews/snapshots/MallplatformCustomerReviewsSnapshotsController";
-import { MallplatformCustomerSellerprofilesController } from "./controllers/mallPlatform/customer/sellerProfiles/MallplatformCustomerSellerprofilesController";
+import { MallplatformCustomerSellersStorefront_identityController } from "./controllers/mallPlatform/customer/sellers/storefront-identity/MallplatformCustomerSellersStorefront_identityController";
 import { MallplatformCustomerSessionsController } from "./controllers/mallPlatform/customer/sessions/MallplatformCustomerSessionsController";
+import { MallplatformCustomerSessionsLogoutController } from "./controllers/mallPlatform/customer/sessions/logout/MallplatformCustomerSessionsLogoutController";
 import { MallplatformCustomerShipmentsController } from "./controllers/mallPlatform/customer/shipments/MallplatformCustomerShipmentsController";
-import { MallplatformCustomerShipmentsItemsController } from "./controllers/mallPlatform/customer/shipments/items/MallplatformCustomerShipmentsItemsController";
+import { MallplatformCustomerShipmentsConfirm_deliveryController } from "./controllers/mallPlatform/customer/shipments/confirm-delivery/MallplatformCustomerShipmentsConfirm_deliveryController";
+import { MallplatformCustomerShipmentsShipmentitemsController } from "./controllers/mallPlatform/customer/shipments/shipmentItems/MallplatformCustomerShipmentsShipmentitemsController";
+import { MallplatformCustomerShipmentsTrackingController } from "./controllers/mallPlatform/customer/shipments/tracking/MallplatformCustomerShipmentsTrackingController";
 import { MallplatformCustomerShipping_addressesController } from "./controllers/mallPlatform/customer/shipping-addresses/MallplatformCustomerShipping_addressesController";
 import { MallplatformCustomerShipping_addresses_defaultController } from "./controllers/mallPlatform/customer/shipping-addresses/default/MallplatformCustomerShipping_addresses_defaultController";
+import { MallplatformCustomerShopping_cartsController } from "./controllers/mallPlatform/customer/shopping-carts/MallplatformCustomerShopping_cartsController";
+import { MallplatformCustomerShopping_cartsCart_itemsController } from "./controllers/mallPlatform/customer/shopping-carts/cart-items/MallplatformCustomerShopping_cartsCart_itemsController";
 import { MallplatformCustomerWishlistsController } from "./controllers/mallPlatform/customer/wishlists/MallplatformCustomerWishlistsController";
-import { MallplatformCustomerWishlistsItemsController } from "./controllers/mallPlatform/customer/wishlists/items/MallplatformCustomerWishlistsItemsController";
+import { MallplatformCustomerWishlistsWishlist_itemsController } from "./controllers/mallPlatform/customer/wishlists/wishlist-items/MallplatformCustomerWishlistsWishlist_itemsController";
+import { MallplatformProductsController } from "./controllers/mallPlatform/products/MallplatformProductsController";
 import { MallplatformProductsReviewsController } from "./controllers/mallPlatform/products/reviews/MallplatformProductsReviewsController";
 import { MallplatformSellerAccountController } from "./controllers/mallPlatform/seller/account/MallplatformSellerAccountController";
-import { MallplatformSellerOrder_itemsSnapshotsController } from "./controllers/mallPlatform/seller/order-items/snapshots/MallplatformSellerOrder_itemsSnapshotsController";
-import { MallplatformSellerOrder_itemsSnapshotsVariant_optionsController } from "./controllers/mallPlatform/seller/order-items/snapshots/variant-options/MallplatformSellerOrder_itemsSnapshotsVariant_optionsController";
+import { MallplatformSellerApproval_requestsController } from "./controllers/mallPlatform/seller/approval-requests/MallplatformSellerApproval_requestsController";
+import { MallplatformSellerApprovalrequestsController } from "./controllers/mallPlatform/seller/approvalRequests/MallplatformSellerApprovalrequestsController";
+import { MallplatformSellerOrderitemsnapshotsController } from "./controllers/mallPlatform/seller/orderItemSnapshots/MallplatformSellerOrderitemsnapshotsController";
+import { MallplatformSellerOrderitemsnapshotsVariantoptionsController } from "./controllers/mallPlatform/seller/orderItemSnapshots/variantOptions/MallplatformSellerOrderitemsnapshotsVariantoptionsController";
+import { MallplatformSellerOrderitemsController } from "./controllers/mallPlatform/seller/orderItems/MallplatformSellerOrderitemsController";
 import { MallplatformSellerOrderitemsCancellationrequestsController } from "./controllers/mallPlatform/seller/orderItems/cancellationRequests/MallplatformSellerOrderitemsCancellationrequestsController";
+import { MallplatformSellerOrderitemsCancellationrequestsApproveController } from "./controllers/mallPlatform/seller/orderItems/cancellationRequests/approve/MallplatformSellerOrderitemsCancellationrequestsApproveController";
 import { MallplatformSellerOrderitemsCancellationrequestsSnapshotsController } from "./controllers/mallPlatform/seller/orderItems/cancellationRequests/snapshots/MallplatformSellerOrderitemsCancellationrequestsSnapshotsController";
-import { MallplatformSellerProduct_variantsAvailabilityController } from "./controllers/mallPlatform/seller/product-variants/availability/MallplatformSellerProduct_variantsAvailabilityController";
-import { MallplatformSellerProductvariantsInventoryrecordsController } from "./controllers/mallPlatform/seller/productVariants/inventoryRecords/MallplatformSellerProductvariantsInventoryrecordsController";
-import { MallplatformSellerProductvariantsInventoryrecordsAdjustmentController } from "./controllers/mallPlatform/seller/productVariants/inventoryRecords/adjustment/MallplatformSellerProductvariantsInventoryrecordsAdjustmentController";
-import { MallplatformSellerProductvariantsInventoryrecordsRestockController } from "./controllers/mallPlatform/seller/productVariants/inventoryRecords/restock/MallplatformSellerProductvariantsInventoryrecordsRestockController";
-import { MallplatformSellerProductvariantsSnapshotsController } from "./controllers/mallPlatform/seller/productVariants/snapshots/MallplatformSellerProductvariantsSnapshotsController";
+import { MallplatformSellerOrderitemsRefundrequestsController } from "./controllers/mallPlatform/seller/orderItems/refundRequests/MallplatformSellerOrderitemsRefundrequestsController";
+import { MallplatformSellerOrderitemsRefundrequestsSnapshotsController } from "./controllers/mallPlatform/seller/orderItems/refundRequests/snapshots/MallplatformSellerOrderitemsRefundrequestsSnapshotsController";
+import { MallplatformSellerOrderitemsSnapshotsController } from "./controllers/mallPlatform/seller/orderItems/snapshots/MallplatformSellerOrderitemsSnapshotsController";
+import { MallplatformSellerOrderitemsSnapshotsVariantoptionsController } from "./controllers/mallPlatform/seller/orderItems/snapshots/variantOptions/MallplatformSellerOrderitemsSnapshotsVariantoptionsController";
+import { MallplatformSellerProductsnapshotsController } from "./controllers/mallPlatform/seller/productSnapshots/MallplatformSellerProductsnapshotsController";
+import { MallplatformSellerProductsnapshotsHistoryController } from "./controllers/mallPlatform/seller/productSnapshots/history/MallplatformSellerProductsnapshotsHistoryController";
+import { MallplatformSellerProductsnapshotsImagesController } from "./controllers/mallPlatform/seller/productSnapshots/images/MallplatformSellerProductsnapshotsImagesController";
+import { MallplatformSellerProductsnapshotsVariantsController } from "./controllers/mallPlatform/seller/productSnapshots/variants/MallplatformSellerProductsnapshotsVariantsController";
 import { MallplatformSellerProductsController } from "./controllers/mallPlatform/seller/products/MallplatformSellerProductsController";
-import { MallplatformSellerProducts_imagesnapshotsController } from "./controllers/mallPlatform/seller/products/imageSnapshots/MallplatformSellerProducts_imagesnapshotsController";
 import { MallplatformSellerProductsImagesController } from "./controllers/mallPlatform/seller/products/images/MallplatformSellerProductsImagesController";
-import { MallplatformSellerProductsImagesReorderController } from "./controllers/mallPlatform/seller/products/images/reorder/MallplatformSellerProductsImagesReorderController";
+import { MallplatformSellerProductsReviewsummaryController } from "./controllers/mallPlatform/seller/products/reviewSummary/MallplatformSellerProductsReviewsummaryController";
+import { MallplatformSellerProductsReviewsController } from "./controllers/mallPlatform/seller/products/reviews/MallplatformSellerProductsReviewsController";
 import { MallplatformSellerProductsSnapshotsController } from "./controllers/mallPlatform/seller/products/snapshots/MallplatformSellerProductsSnapshotsController";
-import { MallplatformSellerProductsSnapshotsImagesController } from "./controllers/mallPlatform/seller/products/snapshots/images/MallplatformSellerProductsSnapshotsImagesController";
-import { MallplatformSellerProductsSnapshotsVariantsController } from "./controllers/mallPlatform/seller/products/snapshots/variants/MallplatformSellerProductsSnapshotsVariantsController";
-import { MallplatformSellerProductsVariantsnapshotsController } from "./controllers/mallPlatform/seller/products/variantSnapshots/MallplatformSellerProductsVariantsnapshotsController";
-import { MallplatformSellerProductsVariantsnapshotsOptionsController } from "./controllers/mallPlatform/seller/products/variantSnapshots/options/MallplatformSellerProductsVariantsnapshotsOptionsController";
 import { MallplatformSellerProductsVariantsController } from "./controllers/mallPlatform/seller/products/variants/MallplatformSellerProductsVariantsController";
-import { MallplatformSellerProductsVariantsInventoryhistoryController } from "./controllers/mallPlatform/seller/products/variants/inventoryHistory/MallplatformSellerProductsVariantsInventoryhistoryController";
-import { MallplatformSellerProfileController } from "./controllers/mallPlatform/seller/profile/MallplatformSellerProfileController";
-import { MallplatformSellerRefundrequestsController } from "./controllers/mallPlatform/seller/refundRequests/MallplatformSellerRefundrequestsController";
-import { MallplatformSellerRefundrequestsApproveController } from "./controllers/mallPlatform/seller/refundRequests/approve/MallplatformSellerRefundrequestsApproveController";
-import { MallplatformSellerRefundrequestsSnapshotsController } from "./controllers/mallPlatform/seller/refundRequests/snapshots/MallplatformSellerRefundrequestsSnapshotsController";
-import { MallplatformSellerSeller_approval_requestsController } from "./controllers/mallPlatform/seller/seller-approval-requests/MallplatformSellerSeller_approval_requestsController";
-import { MallplatformSellerSeller_profilesSnapshotsController } from "./controllers/mallPlatform/seller/seller-profiles/snapshots/MallplatformSellerSeller_profilesSnapshotsController";
+import { MallplatformSellerProductsVariantsInventoryrecordsController } from "./controllers/mallPlatform/seller/products/variants/inventoryRecords/MallplatformSellerProductsVariantsInventoryrecordsController";
+import { MallplatformSellerProductsVariantsSnapshotsController } from "./controllers/mallPlatform/seller/products/variants/snapshots/MallplatformSellerProductsVariantsSnapshotsController";
+import { MallplatformSellerProductsVariantsSnapshotsOptionsController } from "./controllers/mallPlatform/seller/products/variants/snapshots/options/MallplatformSellerProductsVariantsSnapshotsOptionsController";
+import { MallplatformSellerProfileSnapshotsController } from "./controllers/mallPlatform/seller/profile/snapshots/MallplatformSellerProfileSnapshotsController";
+import { MallplatformSellerReviewsController } from "./controllers/mallPlatform/seller/reviews/MallplatformSellerReviewsController";
+import { MallplatformSellerReviewsHistoryController } from "./controllers/mallPlatform/seller/reviews/history/MallplatformSellerReviewsHistoryController";
+import { MallplatformSellerReviewsSnapshotsController } from "./controllers/mallPlatform/seller/reviews/snapshots/MallplatformSellerReviewsSnapshotsController";
+import { MallplatformSellerSellerprofilesnapshotsController } from "./controllers/mallPlatform/seller/sellerProfileSnapshots/MallplatformSellerSellerprofilesnapshotsController";
+import { MallplatformSellerSellerprofilesnapshotsHistoryController } from "./controllers/mallPlatform/seller/sellerProfileSnapshots/history/MallplatformSellerSellerprofilesnapshotsHistoryController";
 import { MallplatformSellerShipmentsController } from "./controllers/mallPlatform/seller/shipments/MallplatformSellerShipmentsController";
-import { MallplatformSellerShipmentsItemsController } from "./controllers/mallPlatform/seller/shipments/items/MallplatformSellerShipmentsItemsController";
-import { MallplatformSellerStatusController } from "./controllers/mallPlatform/seller/status/MallplatformSellerStatusController";
+import { MallplatformSellerShipmentsEligible_order_itemsController } from "./controllers/mallPlatform/seller/shipments/eligible-order-items/MallplatformSellerShipmentsEligible_order_itemsController";
+import { MallplatformSellerShipmentsPendingController } from "./controllers/mallPlatform/seller/shipments/pending/MallplatformSellerShipmentsPendingController";
+import { MallplatformSellerShipmentsShipmentitemsController } from "./controllers/mallPlatform/seller/shipments/shipmentItems/MallplatformSellerShipmentsShipmentitemsController";
+import { MallplatformSellerShipmentsTrackingController } from "./controllers/mallPlatform/seller/shipments/tracking/MallplatformSellerShipmentsTrackingController";
+import { MallplatformSellerStorefront_identityController } from "./controllers/mallPlatform/seller/storefront-identity/MallplatformSellerStorefront_identityController";
+import { MallplatformSellerStorefront_identitySnapshotsController } from "./controllers/mallPlatform/seller/storefront-identity/snapshots/MallplatformSellerStorefront_identitySnapshotsController";
 
 @Module({
   controllers: [
@@ -106,49 +126,52 @@ import { MallplatformSellerStatusController } from "./controllers/mallPlatform/s
     MallplatformAuthSellerController,
     MallplatformAuthAdministratorController,
     MallplatformAdministratorCustomersController,
-    MallplatformCustomerAccountsController,
+    MallplatformCustomerProfileController,
+    MallplatformCustomerSessionsController,
+    MallplatformCustomerPasswordresetsController,
     MallplatformAdministratorSellersController,
     MallplatformAdministratorAdministratorsController,
-    MallplatformCustomerSessionsController,
-    MallplatformCustomerPassword_resetsController,
-    MallplatformAdministratorPassword_resetsController,
-    MallplatformCustomerProfileController,
+    MallplatformAdministratorApprovalrequestsController,
     MallplatformCustomerShipping_addressesController,
     MallplatformCustomerShipping_addresses_defaultController,
-    MallplatformAdministratorSelleraccountsController,
     MallplatformSellerAccountController,
-    MallplatformCustomerSellerprofilesController,
-    MallplatformAdministratorSellerprofilesController,
-    MallplatformSellerProfileController,
+    MallplatformSellerProfileSnapshotsController,
     MallplatformCustomerCategoriesController,
     MallplatformCustomerCategoriesProductsController,
     MallplatformAdministratorCategoriesController,
-    MallplatformAdministratorCategoriesSubcategoriesController,
-    MallplatformCustomerProductsController,
+    MallplatformProductsController,
     MallplatformSellerProductsController,
-    MallplatformAdministratorProductsController,
+    MallplatformSellerProductsSnapshotsController,
+    MallplatformCustomerProductsVariantsController,
     MallplatformSellerProductsVariantsController,
     MallplatformAdministratorProductsVariantsController,
+    MallplatformCustomerProductsImagesController,
     MallplatformSellerProductsImagesController,
     MallplatformAdministratorProductsImagesController,
-    MallplatformSellerProducts_imagesnapshotsController,
-    MallplatformAdministratorProducts_imagesnapshotsController,
-    MallplatformSellerProductsVariantsnapshotsController,
-    MallplatformAdministratorProductsVariantsnapshotsController,
-    MallplatformSellerProductsVariantsnapshotsOptionsController,
-    MallplatformAdministratorProductsVariantsnapshotsOptionsController,
-    MallplatformSellerProductvariantsInventoryrecordsController,
-    MallplatformAdministratorProductvariantsInventoryrecordsController,
-    MallplatformCustomerCartsController,
-    MallplatformCustomerCartsItemsController,
+    MallplatformSellerProductsVariantsInventoryrecordsController,
+    MallplatformAdministratorProductsVariantsInventoryrecordsController,
+    MallplatformSellerProductsVariantsSnapshotsController,
+    MallplatformAdministratorProductsVariantsSnapshotsController,
+    MallplatformSellerProductsVariantsSnapshotsOptionsController,
+    MallplatformAdministratorProductsVariantsSnapshotsOptionsController,
+    MallplatformCustomerShopping_cartsController,
+    MallplatformCustomerShopping_cartsCart_itemsController,
     MallplatformCustomerWishlistsController,
-    MallplatformCustomerWishlistsItemsController,
+    MallplatformCustomerWishlistsWishlist_itemsController,
     MallplatformCustomerOrdersController,
-    MallplatformCustomerOrdersItemsController,
+    MallplatformSellerOrderitemsController,
+    MallplatformCustomerOrderitemsSnapshotsController,
+    MallplatformSellerOrderitemsSnapshotsController,
+    MallplatformAdministratorOrderitemsSnapshotsController,
+    MallplatformCustomerOrderitemsSnapshotsVariantoptionsController,
+    MallplatformSellerOrderitemsSnapshotsVariantoptionsController,
+    MallplatformAdministratorOrderitemsSnapshotsVariantoptionsController,
     MallplatformSellerShipmentsController,
+    MallplatformAdministratorShipmentsController,
     MallplatformCustomerShipmentsController,
-    MallplatformSellerShipmentsItemsController,
-    MallplatformCustomerShipmentsItemsController,
+    MallplatformSellerShipmentsShipmentitemsController,
+    MallplatformAdministratorShipmentsShipmentitemsController,
+    MallplatformCustomerShipmentsShipmentitemsController,
     MallplatformCustomerOrderitemsCancellationrequestsController,
     MallplatformSellerOrderitemsCancellationrequestsController,
     MallplatformAdministratorOrderitemsCancellationrequestsController,
@@ -156,51 +179,68 @@ import { MallplatformSellerStatusController } from "./controllers/mallPlatform/s
     MallplatformSellerOrderitemsCancellationrequestsSnapshotsController,
     MallplatformAdministratorOrderitemsCancellationrequestsSnapshotsController,
     MallplatformCustomerOrderitemsRefundrequestsController,
-    MallplatformCustomerRefundrequestsController,
-    MallplatformSellerRefundrequestsController,
-    MallplatformCustomerRefundrequestsSnapshotsController,
-    MallplatformSellerRefundrequestsSnapshotsController,
-    MallplatformAdministratorRefundrequestsSnapshotsController,
+    MallplatformSellerOrderitemsRefundrequestsController,
+    MallplatformAdministratorOrderitemsRefundrequestsController,
+    MallplatformCustomerOrderitemsRefundrequestsSnapshotsController,
+    MallplatformSellerOrderitemsRefundrequestsSnapshotsController,
+    MallplatformAdministratorOrderitemsRefundrequestsSnapshotsController,
     MallplatformProductsReviewsController,
-    MallplatformCustomerOrderitemsReviewController,
     MallplatformCustomerReviewsController,
+    MallplatformSellerReviewsController,
+    MallplatformAdministratorReviewsController,
     MallplatformCustomerReviewsSnapshotsController,
+    MallplatformSellerReviewsSnapshotsController,
     MallplatformAdministratorReviewsSnapshotsController,
-    MallplatformAdministratorReviewsnapshotsController,
-    MallplatformSellerProductsSnapshotsController,
-    MallplatformAdministratorProductsSnapshotsController,
-    MallplatformSellerProductsSnapshotsImagesController,
-    MallplatformAdministratorProductsSnapshotsImagesController,
-    MallplatformSellerProductsSnapshotsVariantsController,
-    MallplatformAdministratorProductsSnapshotsVariantsController,
-    MallplatformSellerSeller_profilesSnapshotsController,
-    MallplatformAdministratorSeller_profilesSnapshotsController,
-    MallplatformCustomerOrder_itemsSnapshotsController,
-    MallplatformSellerOrder_itemsSnapshotsController,
-    MallplatformAdministratorOrder_itemsSnapshotsController,
-    MallplatformCustomerOrder_itemsSnapshotsVariant_optionsController,
-    MallplatformSellerOrder_itemsSnapshotsVariant_optionsController,
-    MallplatformAdministratorOrder_itemsSnapshotsVariant_optionsController,
-    MallplatformAdministratorAdministrator_approval_requestsSnapshotsController,
+    MallplatformSellerProductsnapshotsController,
+    MallplatformAdministratorProductsnapshotsController,
+    MallplatformSellerSellerprofilesnapshotsController,
+    MallplatformAdministratorSellerprofilesnapshotsController,
+    MallplatformCustomerOrderitemsnapshotsController,
+    MallplatformSellerOrderitemsnapshotsController,
+    MallplatformAdministratorOrderitemsnapshotsController,
+    MallplatformAdministratorAdministratorapprovalrequestsnapshotsController,
+    MallplatformSellerProductsnapshotsImagesController,
+    MallplatformAdministratorProductsnapshotsImagesController,
+    MallplatformSellerProductsnapshotsVariantsController,
+    MallplatformAdministratorProductsnapshotsVariantsController,
+    MallplatformCustomerOrderitemsnapshotsVariantoptionsController,
+    MallplatformSellerOrderitemsnapshotsVariantoptionsController,
+    MallplatformAdministratorOrderitemsnapshotsVariantoptionsController,
+    MallplatformCustomerApprovalrequestsController,
+    MallplatformSellerApprovalrequestsController,
+    MallplatformSellerApproval_requestsController,
+    MallplatformAdministratorApproval_requestsController,
+    MallplatformCustomerSessionsLogoutController,
+    MallplatformCustomerAccountStatusController,
+    MallplatformSellerStorefront_identityController,
+    MallplatformCustomerSellersStorefront_identityController,
+    MallplatformSellerStorefront_identitySnapshotsController,
+    MallplatformAdministratorSellersStorefront_identitySnapshotsController,
+    MallplatformCustomerShipmentsConfirm_deliveryController,
+    MallplatformAdministratorOrdersForce_cancelController,
+    MallplatformAdministratorOrdersForce_refundController,
+    MallplatformSellerShipmentsEligible_order_itemsController,
+    MallplatformSellerShipmentsPendingController,
+    MallplatformCustomerShipmentsTrackingController,
+    MallplatformSellerShipmentsTrackingController,
+    MallplatformSellerOrderitemsCancellationrequestsApproveController,
+    MallplatformAdministratorOrderitemsCancellationrequestsApproveController,
+    MallplatformCustomerProductsReviewsController,
+    MallplatformSellerProductsReviewsController,
+    MallplatformAdministratorProductsReviewsController,
+    MallplatformCustomerReviewsOwnershipController,
+    MallplatformCustomerProductsReviewsummaryController,
+    MallplatformSellerProductsReviewsummaryController,
+    MallplatformAdministratorProductsReviewsummaryController,
+    MallplatformCustomerReviewsHistoryController,
+    MallplatformSellerReviewsHistoryController,
+    MallplatformAdministratorReviewsHistoryController,
+    MallplatformSellerProductsnapshotsHistoryController,
+    MallplatformAdministratorProductsnapshotsHistoryController,
+    MallplatformSellerSellerprofilesnapshotsHistoryController,
+    MallplatformAdministratorSellerprofilesnapshotsHistoryController,
+    MallplatformAdministratorAdministratorapprovalrequestsApproveController,
     MallplatformAdministratorAdministratorapprovalrequestsController,
-    MallplatformAdministratorSeller_approval_requestsController,
-    MallplatformSellerSeller_approval_requestsController,
-    MallplatformSellerProductsImagesReorderController,
-    MallplatformAdministratorProductsImagesReorderController,
-    MallplatformSellerProduct_variantsAvailabilityController,
-    MallplatformAdministratorProduct_variantsAvailabilityController,
-    MallplatformSellerProductvariantsSnapshotsController,
-    MallplatformAdministratorProductvariantsSnapshotsController,
-    MallplatformSellerProductsVariantsInventoryhistoryController,
-    MallplatformSellerProductvariantsInventoryrecordsRestockController,
-    MallplatformSellerProductvariantsInventoryrecordsAdjustmentController,
-    MallplatformCustomerCartsSummaryController,
-    MallplatformCustomerCartsCheckout_previewController,
-    MallplatformCustomerOrdersHistoryController,
-    MallplatformCustomerOrdersHistoryItemsController,
-    MallplatformCustomerOrdersShipmentsController,
-    MallplatformSellerRefundrequestsApproveController,
-    MallplatformSellerStatusController,
   ],
 })
 export class MyModule {}

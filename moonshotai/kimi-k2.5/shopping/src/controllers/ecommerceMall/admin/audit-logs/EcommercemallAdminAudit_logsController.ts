@@ -1,6 +1,6 @@
 import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IEcommerceMallAdminAuditLog } from "../../../../api/structures/IEcommerceMallAdminAuditLog";
 import { IPageIEcommerceMallAdminAuditLog } from "../../../../api/structures/IPageIEcommerceMallAdminAuditLog";
@@ -12,56 +12,55 @@ import { patchEcommerceMallAdminAuditLogs } from "../../../../providers/patchEco
 @Controller("/ecommerceMall/admin/audit-logs")
 export class EcommercemallAdminAudit_logsController {
   /**
-   * Retrieve a filtered and paginated list of administrator audit logs.
+   * Retrieve a filtered and paginated list of audit log entries from the platform's governance audit trail.
    *
-   * This operation provides comprehensive access to the platform's audit trail, recording all significant actions performed by administrators and super administrators. Audit logs capture who performed an action, what action was taken, which resource was affected, and when the action occurred.
+   * This operation provides comprehensive access to the audit logs that record all significant administrative actions performed on the platform. The audit trail captures who performed an action, what action was taken, which resource was affected, and contextual metadata including IP address, user agent, and timestamp.
    *
-   * The audit log system serves multiple critical purposes:
-   * - Security monitoring and forensic analysis
-   * - Compliance tracking for regulatory requirements
-   * - Accountability for administrative actions
-   * - Troubleshooting and dispute resolution
+   * The platform maintains two types of audit records:
+   * 1. Administrator audit logs - tracking seller approvals, category management, product oversight, order management, and user ban/unban actions by regular administrators
+   * 2. Super administrator audit logs - tracking critical security events including administrator promotions/demotions, system-level configuration changes, and force actions
    *
-   * Each audit log entry includes the administrator identifier, action type (e.g., 'approve_seller', 'suspend_user', 'delete_product'), affected resource details, contextual metadata including IP address and user agent, and precise timestamp.
+   * This endpoint supports advanced filtering by administrator, action type, resource type, resource ID, date ranges, and IP address. Results are sorted chronologically with newest entries first, supporting cursor-based pagination for efficient handling of large audit datasets.
    *
-   * Search capabilities support filtering by:
-   * - Administrator who performed the action
-   * - Action type or pattern
-   * - Resource type and identifier
-   * - Date and time ranges
-   * - IP address patterns
-   *
-   * Results are returned as paginated summaries with essential fields optimized for browsing and monitoring purposes. Full audit log details can be retrieved via the GET /audit-logs/{auditLogId} endpoint.
-   *
-   * This endpoint is restricted to administrators and super administrators only. Regular customers and sellers cannot access audit log information.
+   * Only administrators (admin and superAdmin roles) can access audit logs. Super administrators can view all audit records including those from other super administrators. Regular administrators have access to administrator audit logs but cannot access super administrator audit logs unless specifically authorized.
    *
    * @param connection
    * @param body Search criteria and pagination parameters for filtering audit logs
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the ecommerce_mall_admin_audit_logs table with support for complex filtering and pagination.
+   * @x-autobe-specification Query both ecommerce_mall_admin_audit_logs and ecommerce_mall_super_admin_audit_logs tables based on the requester's privilege level.
    *
-   * **Database Query Logic:**
-   * 1. Apply filters from request body to WHERE clause:
-   *    - Filter by admin_id if provided
-   *    - Filter by action type if provided (exact match or LIKE for partial)
-   *    - Filter by resource_type if provided
-   *    - Filter by resource_id if provided
-   *    - Filter by created_at date range if provided
-   *    - Filter by IP address if provided
-   * 2. Apply sorting based on sort_by and sort_order parameters
-   * 3. Execute count query for pagination metadata
-   * 4. Fetch paginated results with cursor-based or offset pagination
+   * For superAdmin requesters:
+   * - Query both tables and aggregate results
+   * - Include all fields: id, adminId/superAdminId, action/actionType, resourceType/targetType, resourceId/targetId, details/description, ip/ipAddress, userAgent, createdAt
    *
-   * **Security Considerations:**
-   * - Verify authenticated user has admin or superAdmin role
-   * - Audit logs are read-only - no modification operations permitted
-   * - Sensitive data (IPs, user agents) included as they're essential for security analysis
+   * For regular admin requesters:
+   * - Query only ecommerce_mall_admin_audit_logs
+   * - Restrict to records where admin_id matches requesting admin OR where resource involves accessible entities
    *
-   * **Response Structure:**
-   * - Return paginated list of IEcommerceMallAdminAuditLog.ISummary objects
-   * - Include pagination metadata (total count, page info)
-   * - Summary includes: id, action, resource_type, resource_id, admin info, created_at
+   * Implementation logic:
+   * 1. Validate requester is authenticated as admin or superAdmin
+   * 2. Build WHERE conditions based on request body filters:
+   *    - adminId: filter by specific administrator
+   *    - actionTypes: array of action type strings (partial match supported)
+   *    - resourceTypes: array of resource type strings
+   *    - resourceId: exact resource ID match
+   *    - dateFrom/dateTo: created_at timestamp range
+   *    - ipAddress: exact or partial IP match
+   * 3. Apply sorting by created_at DESC (newest first)
+   * 4. Apply cursor-based pagination using created_at + id
+   * 5. Return paginated response with IEcommerceMallAuditLog.ISummary items
+   *
+   * Edge cases:
+   * - Empty result set when no logs match criteria
+   * - Date range validation (dateFrom must be before dateTo)
+   * - IP address format validation
+   * - Action type case-insensitive matching
+   *
+   * Error handling:
+   * - Return 401/403 if requester lacks admin privileges
+   * - Return 400 for invalid date formats or ranges
+   * - Return 400 for malformed resource IDs
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -83,19 +82,25 @@ export class EcommercemallAdminAudit_logsController {
   }
 
   /**
-   * Retrieve a specific audit log entry by its unique identifier.
+   * Retrieve a single audit log entry by its unique identifier.
    *
-   * This operation returns detailed information about a single audit log record, capturing who performed an action, what action was taken, which resource was affected, and contextual metadata including IP address and user agent for forensic analysis.
+   * This operation returns the complete audit log record including all captured details about an administrator action. Audit logs are immutable records that preserve the exact state of administrative actions for security monitoring and compliance purposes.
    *
-   * Audit logs form an immutable trail of administrator actions for security monitoring and compliance purposes. Each entry preserves the complete context of system changes and administrative decisions.
+   * The returned audit log contains: the administrator who performed the action, the specific action taken, the affected resource type and ID, detailed action context, the IP address and user agent from which the action originated, and the precise timestamp of the action.
    *
-   * Access to this endpoint is restricted to authorized administrators who have appropriate permissions to review security audit trails. The operation returns null if the requested log ID does not exist or is not accessible to the requesting administrator.
+   * This endpoint is typically used by administrators and super administrators to review specific audit trail entries during security investigations, compliance audits, or forensic analysis of platform activities.
    *
    * @param connection
-   * @param logId Target audit log entry's unique identifier (UUID)
+   * @param logId Unique identifier of the audit log entry (global scope)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Validate the logId parameter is a valid UUID format. Query the ecommerce_mall_admin_audit_logs table by the provided logId. Join with the ecommerce_mall_admins table to include administrator details in the response. Verify that the requesting user has administrative privileges before returning the data. If the log entry is not found or the user lacks permissions, return an appropriate error response. Return the complete audit log object including all fields: id, adminId, action, resourceType, resourceId, details, ip, userAgent, and createdAt.
+   * @x-autobe-specification Query the ecommerce_mall_admin_audit_logs table by the provided logId parameter.
+   *
+   * Validate that the requesting user has permission to view audit logs (administrator or super administrator role required).
+   *
+   * Return 404 if no audit log exists with the given ID. The response includes all fields from the audit log record including related admin information through the belonged relation.
+   *
+   * The audit log data is immutable and served directly from the database without transformation. Ensure proper authorization checks prevent unauthorized access to audit trail data.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":logId")
@@ -103,7 +108,7 @@ export class EcommercemallAdminAudit_logsController {
     @AdminAuth()
     admin: AdminPayload,
     @TypedParam("logId")
-    logId: string & tags.Format<"uuid">,
+    logId: string,
   ): Promise<IEcommerceMallAdminAuditLog> {
     try {
       return await getEcommerceMallAdminAuditLogsLogId({

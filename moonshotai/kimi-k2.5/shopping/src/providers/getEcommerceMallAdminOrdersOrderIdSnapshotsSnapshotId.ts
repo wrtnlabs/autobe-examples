@@ -1,4 +1,3 @@
-import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderSnapshot";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -16,20 +15,16 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getEcommerceMallAdminOrdersOrderIdSnapshotsSnapshotId(props: {
   admin: AdminPayload;
-  orderId: string & tags.Format<"uuid">;
-  snapshotId: string & tags.Format<"uuid">;
+  orderId: string;
+  snapshotId: string;
 }): Promise<IEcommerceMallOrderSnapshot> {
   const snapshot =
-    await MyGlobal.prisma.ecommerce_mall_order_snapshots.findUniqueOrThrow({
-      where: { id: props.snapshotId },
+    await MyGlobal.prisma.ecommerce_mall_order_snapshots.findFirstOrThrow({
+      where: {
+        id: props.snapshotId,
+        order_id: props.orderId,
+      },
       ...EcommerceMallOrderSnapshotTransformer.select(),
     });
-  // Validate snapshot belongs to the specified order
-  if (snapshot.order_id !== props.orderId) {
-    throw new HttpException(
-      "Snapshot does not belong to the specified order",
-      404,
-    );
-  }
   return await EcommerceMallOrderSnapshotTransformer.transform(snapshot);
 }

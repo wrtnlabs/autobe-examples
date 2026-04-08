@@ -12,19 +12,24 @@ import { authorize_guest_join } from "../../../authorize/authorize_guest_join";
 import { authorize_guest_refresh } from "../../../authorize/authorize_guest_refresh";
 
 /**
- * Test successful guest session token refresh using a valid refresh token.
- * 1. Create initial guest account to obtain refresh token
- * 2. Call refresh endpoint with valid refresh token
- * 3. Verify new tokens and extended expiration
- * 4. Validate guest ID consistency across refresh
- * 5. Confirm new access token is set in connection headers
+ * Test guest session refresh success path with token renewal validation.
+ *
+ * Validates the complete guest session refresh workflow including initial guest registration, token acquisition, session refresh with valid refresh token, and verification of new token issuance. Ensures that the guest ID remains consistent across refresh operations and that new tokens have appropriate expiration times.
+ *
+ * The refresh operation allows guests to maintain continuous access to public content without re-authenticating with their device fingerprint. This test verifies that the refresh endpoint correctly validates the refresh token and issues new credentials.
+ *
+ * 1. Create initial guest session with unique device fingerprint.
+ * 2. Capture guest ID and refresh token from join response.
+ * 3. Call refresh endpoint with valid refresh token.
+ * 4. Validate new tokens are issued with correct guest ID.
+ * 5. Verify new expiration time is set in the future.
  */
 export async function test_api_guest_session_refresh_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create initial guest account
+  // 1. Create initial guest session
   const guestConnection: api.IConnection = { host: connection.host };
-  const initialAuth = await authorize_guest_join(guestConnection, {
+  const joinResult = await authorize_guest_join(guestConnection, {
     body: {
       deviceFingerprint: RandomGenerator.alphaNumeric(32),
       href: typia.random<string & tags.Format<"uri">>(),
@@ -32,48 +37,52 @@ export async function test_api_guest_session_refresh_success(
       ip: typia.random<string & tags.Format<"ipv4">>(),
     } satisfies IRedditCommunityGuest.IJoin,
   });
-  typia.assert(initialAuth);
-  // Store initial guest ID and refresh token
-  const initialGuestId = initialAuth.id;
-  const initialRefreshToken = initialAuth.token.refresh;
-  const initialRefreshableUntil = initialAuth.token.refreshable_until;
-  // 2. Refresh the session with valid refresh token
+  typia.assert(joinResult);
+  // 2. Capture guest ID and refresh token
+  const guestId = joinResult.id;
+  const refreshToken = joinResult.token.refresh;
+  // 3. Refresh the session with valid refresh token
   const refreshConnection: api.IConnection = { host: connection.host };
-  const refreshedAuth = await authorize_guest_refresh(refreshConnection, {
+  const refreshResult = await authorize_guest_refresh(refreshConnection, {
     body: {
-      refresh_token: initialRefreshToken,
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: typia.random<string & tags.Format<"ipv4">>(),
+      refresh_token: refreshToken,
     } satisfies IRedditCommunityGuest.IRefresh,
   });
-  typia.assert(refreshedAuth);
-  // 3. Validate guest ID remains consistent
+  typia.assert(refreshResult);
+  // 4. Validate guest ID remains consistent
   TestValidator.equals(
-    "guest ID consistent after refresh",
-    refreshedAuth.id,
-    initialGuestId,
+    "guest ID matches after refresh",
+    refreshResult.id,
+    guestId,
   );
-  // 4. Validate new tokens are different from initial
+  // 5. Validate device fingerprint is preserved
+  TestValidator.equals(
+    "device fingerprint matches",
+    refreshResult.device_fingerprint,
+    joinResult.device_fingerprint,
+  );
+  // 6. Verify new tokens are issued
   TestValidator.notEquals(
-    "access token refreshed",
-    refreshedAuth.token.access,
-    initialAuth.token.access,
+    "new access token issued",
+    refreshResult.token.access,
+    joinResult.token.access,
   );
   TestValidator.notEquals(
-    "refresh token refreshed",
-    refreshedAuth.token.refresh,
-    initialRefreshToken,
+    "new refresh token issued",
+    refreshResult.token.refresh,
+    refreshToken,
   );
-  // 5. Validate refreshable_until is extended (compare as Date objects)
+  // 7. Verify new expiration time is set in the future
+  const newExpiredAt = new Date(refreshResult.token.expired_at);
+  const now = new Date();
   TestValidator.predicate(
-    "refreshable_until extended",
-    new Date(refreshedAuth.token.refreshable_until).getTime() >=
-      new Date(initialRefreshableUntil).getTime(),
+    "new expiration is in the future",
+    newExpiredAt > now,
   );
-  // 6. Confirm new access token is set in connection headers
+  // 8. Validate refreshable_until is also set correctly
+  const refreshableUntil = new Date(refreshResult.token.refreshable_until);
   TestValidator.predicate(
-    "new access token in headers",
-    refreshConnection.headers?.Authorization !== undefined,
+    "refreshable_until is in the future",
+    refreshableUntil > now,
   );
 }

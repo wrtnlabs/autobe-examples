@@ -10,28 +10,46 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace RedditCloneCommunityBanCollector {
   export async function collect(props: {
     body: IRedditCloneCommunityBan.ICreate;
+    redditCloneCommunities: IEntity;
     redditCloneMembers: IEntity;
-    redditCloneMemberSessions: IEntity;
   }) {
     return {
       id: v4(),
-      name: props.body.name,
-      description: props.body.description,
-      subscriber_count: 0,
+      reason: props.body.reason,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      member: { connect: { id: props.redditCloneMembers.id } },
-      icon: undefined,
-      communityModerators: undefined,
-      communityBans: undefined,
-      communityReports: undefined,
-      subscriptions: undefined,
-      posts: undefined,
-      moderators: undefined,
-      moderatorSnapshots: undefined,
-      bans: undefined,
-      reports: undefined,
-    } satisfies Prisma.reddit_clone_communitiesCreateInput;
+      expires_at: props.body.expiresAt ?? null,
+      community: { connect: { id: props.redditCloneCommunities.id } },
+      bannedUser: { connect: { id: props.body.redditCloneUserId } },
+      issuer: { connect: { id: props.redditCloneMembers.id } },
+    } satisfies Prisma.reddit_clone_bansCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace RedditCloneCommunityBanCollector {
+//         export async function collect(props: {
+//           body: IRedditCloneCommunityBan.ICreate;
+//           redditCloneCommunities: IEntity; // from path parameter communityCode
+// redditCloneMembers: IEntity; // from authorized actor
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       reason: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       expires_at: ...,
+//       community: ...,
+//       bannedUser: ...,
+//       issuer: ...,
+//           } satisfies Prisma.reddit_clone_bansCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

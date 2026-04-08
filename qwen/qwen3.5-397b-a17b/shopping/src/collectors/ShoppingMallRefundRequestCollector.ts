@@ -10,22 +10,22 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ShoppingMallRefundRequestCollector {
   export async function collect(props: {
     body: IShoppingMallRefundRequest.ICreate;
-    shoppingMallOrderItems: IEntity;
-    shoppingMallCustomers: IEntity;
+    member: IEntity;
   }) {
+    const id: string = v4();
     return {
-      id: v4(),
+      // Scalar fields
+      id,
       reason: props.body.reason,
       status: "pending",
-      response_reason: null,
-      requested_at: new Date(),
-      responded_at: null,
+      reviewed_at: null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      orderItem: { connect: { id: props.shoppingMallOrderItems.id } },
-      customer: { connect: { id: props.shoppingMallCustomers.id } },
-      seller: undefined,
+      // BelongsTo relations
+      member: { connect: { id: props.member.id } },
+      orderItem: { connect: { id: props.body.order_item_id } },
+      // HasMany relations - not creating snapshots on initial create
     } satisfies Prisma.shopping_mall_refund_requestsCreateInput;
   }
 }

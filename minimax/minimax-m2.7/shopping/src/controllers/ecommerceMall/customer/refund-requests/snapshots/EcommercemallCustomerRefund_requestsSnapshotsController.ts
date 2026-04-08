@@ -1,68 +1,57 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
-import { IEcommerceMallRefundRequestSnapshot } from "../../../../../api/structures/IEcommerceMallRefundRequestSnapshot";
-import { IPageIEcommerceMallRefundRequestSnapshot } from "../../../../../api/structures/IPageIEcommerceMallRefundRequestSnapshot";
+import { IEcommerceMallRefundRequest } from "../../../../../api/structures/IEcommerceMallRefundRequest";
+import { IPageIEcommerceMallRefundRequest } from "../../../../../api/structures/IPageIEcommerceMallRefundRequest";
 import { CustomerAuth } from "../../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../../decorators/payload/CustomerPayload";
+import { getEcommerceMallCustomerRefundRequestsRequestIdSnapshots } from "../../../../../providers/getEcommerceMallCustomerRefundRequestsRequestIdSnapshots";
 import { getEcommerceMallCustomerRefundRequestsRequestIdSnapshotsSnapshotId } from "../../../../../providers/getEcommerceMallCustomerRefundRequestsRequestIdSnapshotsSnapshotId";
-import { patchEcommerceMallCustomerRefundRequestsRequestIdSnapshots } from "../../../../../providers/patchEcommerceMallCustomerRefundRequestsRequestIdSnapshots";
 
 @Controller("/ecommerceMall/customer/refund-requests/:requestId/snapshots")
 export class EcommercemallCustomerRefund_requestsSnapshotsController {
   /**
-   * Retrieve a paginated list of refund request snapshots for a specific refund request.
+   * Retrieve a paginated list of all snapshots for a specific refund request.
    *
-   * This endpoint returns all snapshots associated with a specific refund request, ordered by creation date (newest first). Each snapshot preserves the complete state of the refund request at the moment the seller responded, including the reason text, status, and seller response decision.
+   * This endpoint returns the complete audit trail of a refund request, showing the state at each point when the seller responded. Each snapshot captures the reason text submitted by the customer, the status of the refund request at that moment, and the seller's response decision with any rejection reason.
    *
-   * **Access Control**: Access is restricted based on user role:
-   * - Customers can only view snapshots of refund requests they submitted
-   * - Sellers can only view snapshots of refund requests for their products
-   * - Administrators (admin/superAdmin) can view any refund request snapshot for oversight and dispute resolution
+   * Snapshots are immutable and serve as authoritative evidence during dispute resolution. They allow the requesting customer to verify what they submitted and what the seller decided at each stage of the refund workflow.
    *
-   * **Relationship to Database Schema**: This operation queries the ecommerce_mall_refund_request_snapshots table which stores immutable records. Each snapshot contains the complete state at the time of seller response including: snapshot_reason (customer's submitted reason), snapshot_status (pending/approved/rejected), seller_response (approve/reject decision), and seller_response_reason (optional rejection reason from seller).
-   *
-   * **Use Cases**:
-   * - Customer viewing the history of their refund request processing
-   * - Seller reviewing their responses to customer refund requests
-   * - Administrator investigating disputes between customers and sellers
-   * - Audit trail review for compliance purposes
-   *
-   * **Ordering**: Results are returned in reverse chronological order by default, showing the most recent snapshot first.
+   * The response includes snapshots in chronological order, with the most recent first. Only the customer who created the refund request can access these snapshots.
    *
    * @param connection
-   * @param requestId Unique identifier of the refund request whose snapshots to retrieve (UUID format)
-   * @param body Search criteria and pagination parameters for filtering refund request snapshots
+   * @param requestId Unique identifier of the refund request (global scope)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification 1. Extract requestId from path parameters
-   * 2. Validate requestId is a valid UUID format
-   * 3. Query ecommerce_mall_refund_request_snapshots table filtered by ecommerce_mall_refund_request_id
-   * 4. Apply authorization checks:
-   *    - For customers: verify ecommerce_mall_customer_id matches authenticated user
-   *    - For sellers: verify ecommerce_mall_seller_id matches authenticated seller
-   *    - For admins: allow unrestricted access
-   * 5. Apply optional filtering from request body (createdAt range, status filter)
-   * 6. Apply pagination using limit and offset from request body
-   * 7. Return paginated results with total count
-   * 8. If refund request not found or access denied, return appropriate error response
+   * @x-autobe-specification Query ecommerce_mall_refund_request_snapshots table filtering by the refund_request_id path parameter.
+   *
+   * Validate that the requesting user has permission to view these snapshots:
+   * - The customer who created the refund request can view their own snapshots
+   * - The seller who owns the product can view snapshots of refund requests for their products
+   * - Administrators can view any snapshots regardless of ownership
+   *
+   * Return results paginated with configurable page size and cursor-based pagination for large datasets. Order by created_at descending (most recent first) to show the latest snapshot state first.
+   *
+   * Join with ecommerce_mall_customers table to include customer email for display if needed.
+   *
+   * Handle edge cases:
+   * - If refund request does not exist, return 404 error
+   * - If user lacks permission, return 403 forbidden error
+   * - If no snapshots exist for the refund request, return empty array with 200 success
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
-  public async index(
+  @TypedRoute.Get()
+  public async list(
     @CustomerAuth()
     customer: CustomerPayload,
     @TypedParam("requestId")
     requestId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IEcommerceMallRefundRequestSnapshot.IRequest,
-  ): Promise<IPageIEcommerceMallRefundRequestSnapshot.ISummary> {
+  ): Promise<IPageIEcommerceMallRefundRequest> {
     try {
-      return await patchEcommerceMallCustomerRefundRequestsRequestIdSnapshots({
+      return await getEcommerceMallCustomerRefundRequestsRequestIdSnapshots({
         customer,
         requestId,
-        body,
       });
     } catch (error) {
       console.log(error);
@@ -71,54 +60,29 @@ export class EcommercemallCustomerRefund_requestsSnapshotsController {
   }
 
   /**
-   * Retrieve a specific refund request snapshot by its unique identifier.
+   * Retrieve a specific snapshot of a refund request.
    *
-   * This endpoint retrieves an immutable snapshot of a refund request that was captured when the seller responded to the request. The snapshot preserves the complete state at that moment including the customer's reason, the status at snapshot time, the seller's response decision, and any rejection reason if applicable.
+   * This endpoint returns an immutable snapshot capturing the complete state of a refund request at the moment of seller response. The snapshot includes the customer's original reason, the status at snapshot time, the seller's decision (approved/rejected), and any rejection reason provided.
    *
-   * Access Control:
-   * - Administrators can retrieve any refund request snapshot on the platform for oversight and dispute resolution purposes
-   * - Sellers can retrieve snapshots of refund requests related to their own products
-   * - Customers can retrieve snapshots of refund requests they initiated
+   * Access control: Customers can view snapshots of their own refund requests, sellers can view snapshots of refund requests for their products, and administrators can view any snapshot for oversight and dispute resolution.
    *
-   * Security Validation:
-   * - The system validates that the requesting actor has permission to access the specified snapshot
-   * - For sellers: must own the seller associated with the refund request
-   * - For customers: must be the customer who initiated the refund request
-   * - Administrators have full access to all snapshots
-   *
-   * Related Database Entity:
-   * - The operation queries the ecommerce_mall_refund_request_snapshots table which stores immutable records
-   * - Each snapshot references the original refund request (ecommerce_mall_refund_request_id), the requesting customer (ecommerce_mall_customer_id), and the responding seller (ecommerce_mall_seller_id)
-   *
-   * Use Cases:
-   * - Administrators investigating disputes between customers and sellers
-   * - Customers verifying the state of their refund requests at time of seller response
-   * - Sellers reviewing the history of refund request responses
-   * - Dispute resolution proceedings requiring authoritative evidence
-   *
-   * Error Handling:
-   * - If snapshot not found: return 404 error
-   * - If actor lacks permission: return 403 forbidden error
-   * - If session expired: return 401 unauthorized error
+   * The snapshot serves as authoritative evidence during dispute resolution proceedings, showing exactly what state the refund request was in when the seller responded.
    *
    * @param connection
-   * @param requestId Unique identifier of the refund request (UUID format)
-   * @param snapshotId Unique identifier of the refund request snapshot (UUID format)
+   * @param requestId The unique identifier of the refund request that this snapshot belongs to.
+   * @param snapshotId The unique identifier of the specific snapshot to retrieve.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Retrieve a specific refund request snapshot from the ecommerce_mall_refund_request_snapshots table.
+   * @x-autobe-specification Query the ecommerce_mall_refund_request_snapshots table filtering by both requestId and snapshotId.
    *
-   * Implementation Steps:
-   * 1. Extract requestId and snapshotId from path parameters
-   * 2. Validate user session and authentication token
-   * 3. Determine actor type (admin, seller, or customer)
-   * 4. Query the snapshot by snapshotId
-   * 5. Verify snapshot exists, return 404 if not found
-   * 6. For non-admin actors, verify ownership:
-   *    - For sellers: verify snapshot's ecommerce_mall_seller_id matches authenticated seller
-   *    - For customers: verify snapshot's ecommerce_mall_customer_id matches authenticated customer
-   * 7. For admins: allow unrestricted access
-   * 8. Return the snapshot data including all fields: id, refundRequestId, customerId, sellerId, snapshotReason, snapshotStatus, sellerResponse, sellerResponseReason, createdAt, updatedAt
+   * Verify the requesting user has access rights:
+   * - If customer: verify ecommerce_mall_customer_id matches the authenticated customer
+   * - If seller: verify ecommerce_mall_seller_id matches the authenticated seller
+   * - If admin/superAdmin: grant full access
+   *
+   * Return the complete snapshot record including all fields: id, ecommerce_mall_refund_request_id, ecommerce_mall_customer_id, ecommerce_mall_seller_id, snapshot_reason, snapshot_status, seller_response, seller_response_reason, created_at, updated_at.
+   *
+   * Handle not found error if snapshot does not exist or if user lacks permission.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":snapshotId")
@@ -129,7 +93,7 @@ export class EcommercemallCustomerRefund_requestsSnapshotsController {
     requestId: string & tags.Format<"uuid">,
     @TypedParam("snapshotId")
     snapshotId: string & tags.Format<"uuid">,
-  ): Promise<IEcommerceMallRefundRequestSnapshot.IInvert> {
+  ): Promise<IEcommerceMallRefundRequest.IInvert> {
     try {
       return await getEcommerceMallCustomerRefundRequestsRequestIdSnapshotsSnapshotId(
         {

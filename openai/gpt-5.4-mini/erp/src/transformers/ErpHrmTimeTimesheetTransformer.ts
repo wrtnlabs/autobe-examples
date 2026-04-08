@@ -1,11 +1,11 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
+import { IErpHrmTimeEmployeeDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployeeDashboardSummary";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
 import { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
-import { IErpHrmTimeTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTask";
+import { IErpHrmTimeTaskHistoryEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTaskHistoryEntry";
 import { IErpHrmTimeTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimelog";
 import { IErpHrmTimeTimesheet } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimesheet";
 import { IErpHrmTimeTimesheetTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimesheetTimelog";
@@ -16,7 +16,7 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ErpHrmTimeEmployeeAtSummaryTransformer } from "./ErpHrmTimeEmployeeAtSummaryTransformer";
+import { ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer } from "./ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer";
 import { ErpHrmTimeTimesheetTimelogTransformer } from "./ErpHrmTimeTimesheetTimelogTransformer";
 
 export namespace ErpHrmTimeTimesheetTransformer {
@@ -36,8 +36,9 @@ export namespace ErpHrmTimeTimesheetTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        employee: ErpHrmTimeEmployeeAtSummaryTransformer.select(),
-        reviewedByMember: true,
+        employee:
+          ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer.select(),
+        reviewedByMember: { select: { id: true } },
         timesheetTimelogs: ErpHrmTimeTimesheetTimelogTransformer.select(),
       },
     } satisfies Prisma.erp_hrm_time_timesheetsFindManyArgs;
@@ -47,10 +48,13 @@ export namespace ErpHrmTimeTimesheetTransformer {
   ): Promise<IErpHrmTimeTimesheet> {
     return {
       id: input.id,
-      employee: await ErpHrmTimeEmployeeAtSummaryTransformer.transform(
-        input.employee,
-      ),
-      reviewedByMember: null,
+      employee:
+        await ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer.transform(
+          input.employee,
+        ),
+      reviewedByMember: input.reviewedByMember
+        ? ({ id: input.reviewedByMember.id } as IErpHrmTimeMember.ISummary)
+        : null,
       weekStartDate: input.week_start_date.toISOString(),
       weekEndDate: input.week_end_date.toISOString(),
       status: input.status,

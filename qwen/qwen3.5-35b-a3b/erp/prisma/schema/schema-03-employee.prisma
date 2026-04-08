@@ -1,0 +1,694 @@
+/// Employee records representing individuals employed by an organization.
+///
+/// Employees are the core workforce entity with role, department, and
+/// project assignments. Each employee has a unique global identity through
+/// their member account and is scoped to their organization. The table
+/// tracks employment details including job title, employment type, and
+/// status.
+///
+/// The employee lifecycle includes pending invitation (awaiting role
+/// assignment), active employment, on-leave status, and resigned status.
+/// Historical contracts are tracked separately in {@link
+/// hrm_platform_contracts} to maintain employment history. Project
+/// assignments are managed through {@link hrm_platform_project_memberships}.
+///
+/// @namespace employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_employees {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The organization to which this employee belongs. All employee data is
+  /// scoped to their organization.
+  ///
+  /// Employees can only access and manage data within their own organization.
+  /// This foreign key enforces data isolation boundaries.
+  hrm_platform_organization_id String
+  
+  /// The global member account that owns this employee record.
+  ///
+  /// Employees are linked to member accounts for authentication. A single
+  /// member account can have multiple employee records across different
+  /// organizations. The member's global profile (display name, avatar) is
+  /// shared across all organizations.
+  hrm_platform_member_id String
+  
+  /// The role assignment that defines this employee's permissions and access
+  /// level.
+  ///
+  /// Roles determine what operations the employee can perform within their
+  /// organization. Employees inherit all permissions from their assigned role.
+  hrm_platform_role_id String
+  
+  /// The department this employee belongs to, if applicable.
+  ///
+  /// Departments organize employees by functional area. An employee may not
+  /// have a department assignment if they are newly hired or between
+  /// department assignments. The optional relationship allows employees
+  /// without department to exist.
+  hrm_platform_department_id String?
+  
+  /// Unique employee identifier code assigned by the organization for internal
+  /// tracking.
+  ///
+  /// This code is human-readable and can be used for quick identification
+  /// (e.g., EMP-001, DEV-042). It is unique within the organization but may be
+  /// duplicated across different organizations.
+  employee_code String
+  
+  /// Display name for the employee, shown in UI elements like task
+  /// assignments, timesheet entries, and activity logs.
+  ///
+  /// This is separate from the global member profile name. Employees can have
+  /// different display names per organization if needed, though typically it
+  /// mirrors their global profile.
+  display_name String
+  
+  /// Email address of the employee.
+  ///
+  /// This is the email address associated with the member account used for
+  /// login. It is used as the primary identifier for authentication and
+  /// password recovery.
+  email String
+  
+  /// Phone number of the employee.
+  ///
+  /// Used for emergency contacts and organizational communication. Can be
+  /// updated as the employee's contact information changes.
+  phone_number String?
+  
+  /// Job title or position of the employee.
+  ///
+  /// Describes the employee's role or position (e.g., 'Software Engineer',
+  /// 'Product Manager'). This is optional and can be updated as the employee's
+  /// role changes.
+  job_title String?
+  
+  /// Job level or seniority designation of the employee.
+  ///
+  /// Indicates the employee's level within the organization (e.g., 'junior',
+  /// 'mid-level', 'senior', 'principal'). Used for organizational hierarchy
+  /// and compensation planning.
+  job_level String
+  
+  /// Employment type classification of the employee.
+  ///
+  /// Determines the employee's work arrangement: full-time, part-time, or
+  /// contract. This affects benefits eligibility, work hour expectations, and
+  /// compensation structure.
+  employment_type String
+  
+  /// The date when the employee started working for the organization.
+  ///
+  /// Required for active and resigned employees. Used for calculating tenure,
+  /// benefits eligibility, and employment history.
+  start_date DateTime
+  
+  /// The date when the employee's employment ended (if applicable).
+  ///
+  /// Nullable for active employees. When populated, indicates the employee has
+  /// resigned or been terminated. Used for employment history and compliance.
+  end_date DateTime?
+  
+  /// Current employment status of the employee.
+  ///
+  /// Indicates the employee's current state: active (currently employed),
+  /// on-leave (temporary absence), resigned (employment ended), or invited
+  /// (pending acceptance).
+  status String
+  
+  /// Flag indicating if the employee record is pending role assignment.
+  ///
+  /// When true, the employee has been invited to the organization but not yet
+  /// accepted or assigned a role. When false, the employee is an active member
+  /// with a confirmed role.
+  is_pending Boolean
+  
+  /// Timestamp when this employee record was created.
+  ///
+  /// Automatically set by the database on insert. Immutable after creation.
+  created_at DateTime
+  
+  /// Timestamp when this employee record was last updated.
+  ///
+  /// Automatically set by the database on each update. Used for tracking
+  /// record modifications.
+  updated_at DateTime
+  
+  /// Timestamp when this employee record was soft-deleted.
+  ///
+  /// Nullable for active records. When populated, indicates the employee has
+  /// been deleted but retained for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  member hrm_platform_members @relation(fields: [hrm_platform_member_id], references: [id], onDelete: Cascade)
+  role hrm_platform_roles @relation(fields: [hrm_platform_role_id], references: [id], onDelete: Cascade)
+  department hrm_platform_departments? @relation(fields: [hrm_platform_department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots hrm_platform_employees_snapshots[]
+  contracts hrm_platform_contracts[]
+  projectMemberships hrm_platform_project_memberships[]
+  assignedTasks hrm_platform_tasks[]
+  timers hrm_platform_timers[]
+  timelogs hrm_platform_timelogs[]
+  timesheets hrm_platform_timesheets[]
+  timesheetWeeklyStats hrm_platform_timesheet_weekly_stats[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_platform_member_id])
+  @@index([hrm_platform_role_id])
+  // spellchecker: ignore-next-line
+  @@unique([employee_code, hrm_platform_organization_id], map: "hrm_platform_employees_employee_code_hrm_platform_orga_b558a9fd")
+  // spellchecker: ignore-next-line
+  @@unique([hrm_platform_organization_id, hrm_platform_member_id], map: "hrm_platform_employees_hrm_platform_organization_id_hr_ad6ff176")
+  @@index([hrm_platform_organization_id])
+  @@index([status])
+  @@index([hrm_platform_department_id])
+  @@index([updated_at])
+}
+
+/// Point-in-time snapshots of employee records for audit trail.
+///
+/// This table captures a complete state of an employee record at a specific
+/// moment, storing all relevant employee information in a denormalized
+/// format. Each snapshot is immutable once created and serves as a permanent
+/// audit record of the employee's state at that point in time.
+///
+/// @namespace employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_employees_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the source employee record being snapshot.
+  ///
+  /// Each snapshot represents a point-in-time state of this employee. The
+  /// relationship enables retrieval of the current employee record while
+  /// maintaining historical context.
+  employee_id String
+  
+  /// Reference to the member account associated with the employee.
+  ///
+  /// Denormalized from the employee record to maintain user identity context
+  /// even if the employee record is modified or deleted.
+  user_id String
+  
+  /// Reference to the organization where the employee works.
+  ///
+  /// Denormalized from the employee record to preserve organizational context
+  /// at the time of the snapshot.
+  organization_id String
+  
+  /// Reference to the role assigned to the employee within the organization.
+  ///
+  /// Denormalized from the employee record to maintain role assignment history
+  /// for auditing purposes.
+  role_id String
+  
+  /// Reference to the department assigned to the employee, if any.
+  ///
+  /// Denormalized from the employee record. Nullable since employees may not
+  /// always have a department assignment. Preserves department context at
+  /// snapshot time.
+  department_id String?
+  
+  /// Job title or position description of the employee.
+  ///
+  /// Nullable field representing the employee's role or title within the
+  /// organization. Captured at snapshot time to preserve historical position
+  /// assignments.
+  position String?
+  
+  /// Employment classification of the employee.
+  ///
+  /// One of: full-time, part-time, contractor, intern. Captured at snapshot
+  /// time to maintain historical employment type tracking for reporting and
+  /// analytics.
+  employment_type String
+  
+  /// Current status of the employee (active or deactivated).
+  ///
+  /// Captured at snapshot time to preserve historical status information.
+  /// Active employees can perform work-related actions while deactivated
+  /// employees retain historical records.
+  status String
+  
+  /// Timestamp when this snapshot was created.
+  ///
+  /// Immutable creation time marking when this point-in-time record was
+  /// captured. Used for ordering snapshots chronologically and determining
+  /// audit timeline.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_platform_employees @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  user hrm_platform_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  role hrm_platform_roles @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  department hrm_platform_departments? @relation(fields: [department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([role_id])
+  @@index([department_id])
+  @@index([employee_id, created_at])
+  @@index([user_id, created_at])
+  @@index([organization_id, created_at])
+}
+
+/// Employment contracts with compensation details, dates, and notes for
+/// tracking employee work history.
+///
+/// Contracts represent the employment relationship between an employee and
+/// organization, including compensation, contract period, and terms.
+///
+/// ### Lifecycle
+///
+/// Each contract has a status indicating whether it is active or ended. Only
+/// one contract per employee can be active at any time. When a new contract
+/// is created, the previous active contract is automatically ended.
+///
+/// ### Relationship with Employee
+///
+/// Contracts belong to employees and are managed through employee records.
+/// Employees can view their own contracts. Users with employee view
+/// permission can view any employee's contract history.
+///
+/// @namespace employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_contracts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the employee this contract belongs to. Each contract is tied
+  /// to one employee.
+  ///
+  /// Contracts are accessed through {@link hrm_platform_employees}. Employees
+  /// can have multiple contracts over their employment history.
+  hrm_platform_employee_id String
+  
+  /// References the organization this contract belongs to for data isolation.
+  ///
+  /// Ensures contracts are scoped to the correct organization. Organization ID
+  /// is derived from the employee's organization.
+  hrm_platform_organization_id String
+  
+  /// Contract title or description providing a brief summary of the employment
+  /// terms.
+  title String
+  
+  /// The date when the contract becomes effective. This marks the beginning of
+  /// the employment period.
+  start_date DateTime
+  
+  /// The date when the contract ends. Can be null for ongoing contracts
+  /// without a fixed end date.
+  end_date DateTime?
+  
+  /// The compensation amount specified in the contract.
+  compensation_amount Float?
+  
+  /// The currency code for the compensation amount (e.g., USD, KRW).
+  compensation_currency String?
+  
+  /// Contract lifecycle status.
+  ///
+  /// Values: active, ended
+  ///
+  /// Only one contract per employee can have status active at any time.
+  status String
+  
+  /// Additional notes or terms for the contract.
+  notes String?
+  
+  /// Timestamp when the contract record was created.
+  created_at DateTime
+  
+  /// Timestamp when the contract record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the contract was soft-deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_platform_employees @relation(fields: [hrm_platform_employee_id], references: [id], onDelete: Cascade)
+  organization hrm_platform_organizations @relation(fields: [hrm_platform_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshot hrm_platform_contracts_snapshots?
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([hrm_platform_employee_id, status])
+  @@index([hrm_platform_organization_id])
+  @@index([hrm_platform_employee_id, start_date])
+}
+
+/// Immutable point-in-time snapshots of employment contract records for
+/// audit trail and historical analysis.
+///
+/// This table stores denormalized snapshots of contract data at specific
+/// moments in time, providing an immutable audit trail that preserves the
+/// exact state of contracts as they existed when the snapshot was created.
+/// Each snapshot is linked to the original contract record, enabling
+/// traceability and historical analysis of contract changes over time.
+///
+/// @namespace employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_contracts_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the contract snapshot record.
+  id String @id
+  
+  /// Reference to the original contract record this snapshot represents.
+  ///
+  /// Establishes a 1:1 relationship between the snapshot and its source
+  /// contract. This allows tracing snapshots back to the current or historical
+  /// contract record for auditing purposes.
+  hrm_platform_contract_id String
+  
+  /// Unique contract identifier assigned to the employment contract.
+  ///
+  /// This is the contract's reference number used for identification and
+  /// tracking purposes.
+  contract_number String
+  
+  /// The date when the employment contract became effective.
+  ///
+  /// Marks the beginning of the contract period and establishes when the
+  /// employee's terms and conditions became active.
+  start_date DateTime
+  
+  /// The date when the employment contract expires or ends (if applicable).
+  ///
+  /// This field may be null for contracts without a defined end date or
+  /// open-ended employment agreements.
+  end_date DateTime?
+  
+  /// The employee's job title or position as specified in the contract.
+  ///
+  /// Describes the role and responsibilities associated with the employment.
+  job_title String
+  
+  /// Reference to the department where the employee works.
+  ///
+  /// Identifies the organizational unit the contract is associated with.
+  department_id String?
+  
+  /// The base compensation amount specified in the contract.
+  ///
+  /// Represents the primary salary or wage agreed upon in the employment
+  /// contract.
+  compensation_amount Float
+  
+  /// The currency code for the compensation amount (e.g., USD, EUR, KRW).
+  ///
+  /// Indicates the monetary unit for the compensation amount.
+  compensation_currency String
+  
+  /// The frequency at which compensation is paid (e.g., monthly, annually,
+  /// hourly).
+  ///
+  /// Describes the payment schedule specified in the contract.
+  compensation_frequency String
+  
+  /// Description of benefits and additional compensation terms in the contract.
+  ///
+  /// Includes information about health insurance, bonuses, stock options, and
+  /// other benefits.
+  benefits_description String?
+  
+  /// The length of the probation period in days, if applicable.
+  ///
+  /// Indicates the trial period duration before the employee achieves regular
+  /// employment status.
+  probation_period_days Int?
+  
+  /// The required notice period in days for contract termination.
+  ///
+  /// Specifies how much advance notice is required from either party to end
+  /// the contract.
+  notice_period_days Int?
+  
+  /// The primary work location or address specified in the contract.
+  ///
+  /// Indicates where the employee is expected to perform their duties.
+  work_location String?
+  
+  /// The employment type classification (e.g., full-time, part-time, contract).
+  ///
+  /// Describes the nature of the employment arrangement.
+  work_type String
+  
+  /// Additional notes or special conditions specified in the contract.
+  ///
+  /// Contains any supplementary terms or annotations related to the employment
+  /// agreement.
+  notes String?
+  
+  /// Timestamp when this snapshot record was created.
+  ///
+  /// Records the exact moment the snapshot was captured for audit purposes.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot record was last updated.
+  ///
+  /// For immutable snapshots, this typically equals created_at and serves as
+  /// an audit reference.
+  updated_at DateTime
+  
+  /// The point-in-time when the original contract state was captured.
+  ///
+  /// Records when the snapshot was taken, which may differ from created_at if
+  /// snapshots are batched.
+  snapshotted_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  contract hrm_platform_contracts @relation(fields: [hrm_platform_contract_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([hrm_platform_contract_id])
+  @@index([created_at])
+  @@index([snapshotted_at])
+  @@index([contract_number])
+}
+
+/// Role definitions with built-in (Owner/Manager/Employee) and custom roles
+/// for permission management.
+///
+/// Roles are organization-scoped entities that define permission sets. Each
+/// role has a unique name within its organization and can be either built-in
+/// (protected) or custom (user-defined). Built-in roles cannot be deleted
+/// while custom roles can be removed when no employees are assigned.
+///
+/// Role Types:
+/// - **Built-in Roles**: Owner, Manager, and Employee - permanently
+/// protected and always available
+/// - **Custom Roles**: User-defined roles with flexible permission combinations
+///
+/// Relationships:
+/// - Each role belongs to exactly one {@link hrm_platform_organizations}
+/// (many-to-one)
+/// - Each role is assigned to many {@link hrm_platform_employees} (one-to-many)
+///
+/// Fields:
+/// - `name`: Unique within organization
+/// - `description`: Optional context about the role
+/// - `role_kind`: Classification (built_in/custom)
+///
+/// @namespace employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Organization this role belongs to. Enforces organization-scoped role
+  /// management.
+  ///
+  /// Each organization maintains its own set of roles. A role name is unique
+  /// only within its parent organization. Roles are never shared across
+  /// organizations.
+  organization_id String
+  
+  /// Role name. Must be unique within the organization.
+  ///
+  /// Used to identify roles in the UI and for role assignment. Built-in roles
+  /// have fixed names: Owner, Manager, Employee. Custom roles can have any
+  /// name as long as it is unique within the organization.
+  name String
+  
+  /// Optional description of the role's purpose and responsibilities.
+  ///
+  /// Provides context about the role's intended use. Can be updated at any
+  /// time by users with organization management permissions.
+  description String?
+  
+  /// Role classification: 'built_in' for Owner/Manager/Employee, 'custom' for
+  /// user-defined roles.
+  ///
+  /// Built-in roles are protected from deletion. Custom roles can be deleted
+  /// when no employees are assigned to them.
+  role_kind String
+  
+  /// Timestamp when this role was created.
+  ///
+  /// Used for auditing and tracking role creation timeline.
+  created_at DateTime
+  
+  /// Timestamp when this role was last updated.
+  ///
+  /// Used for tracking modifications to role definitions.
+  updated_at DateTime
+  
+  /// Timestamp when this role was soft-deleted. NULL when active.
+  ///
+  /// Used for implementing soft delete, allowing roles to be marked as deleted
+  /// without permanently removing them from the database.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  employees hrm_platform_employees[]
+  employeeSnapshots hrm_platform_employees_snapshots[]
+  permissions hrm_platform_permissions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_id, name])
+  @@index([organization_id])
+}
+
+/// Permission codes that define granular access rights for roles within an
+/// organization.
+///
+/// This table stores individual permission identifiers that are assigned to
+/// roles. Each permission represents a specific action or capability (e.g.,
+/// 'organization.create', 'employee.view', 'project.manage') that can be
+/// granted or denied through role assignments. Permissions are scoped to
+/// organizations to enforce multi-tenancy isolation.
+///
+/// ### Role Integration
+///
+/// Permissions are associated with roles via the {@link hrm_platform_roles}
+/// foreign key. When a role is created, it is given a set of permission
+/// codes that define what actions that role can perform within the
+/// organization.
+///
+/// @namespace employee
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Role that this permission belongs to.
+  ///
+  /// Permissions define what actions a role can perform. This foreign key
+  /// establishes the relationship between the permission and its parent role.
+  /// A role can have multiple permissions, and each permission is owned by
+  /// exactly one role.
+  role_id String
+  
+  /// Organization that this permission belongs to.
+  ///
+  /// Multi-tenancy is enforced by scoping permissions to organizations. A
+  /// permission code may exist in multiple organizations, but each instance is
+  /// scoped to a specific organization. This ensures that permission checks
+  /// are always performed within the correct organizational context.
+  organization_id String
+  
+  /// Unique permission identifier code.
+  ///
+  /// The code follows a dot-notation convention (e.g., 'organization.create',
+  /// 'employee.view', 'project.manage') to represent the resource and action.
+  /// This code is used by the authorization middleware to grant or deny access
+  /// to specific operations. The code must be unique within each organization
+  /// to prevent permission conflicts.
+  code String
+  
+  /// Human-readable description of the permission.
+  ///
+  /// This field provides context for what the permission code represents,
+  /// making it easier for administrators to understand and assign appropriate
+  /// permissions when creating or editing roles.
+  description String?
+  
+  /// Timestamp when this permission was created.
+  created_at DateTime
+  
+  /// Timestamp when this permission was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this permission was soft-deleted (if applicable).
+  ///
+  /// Soft delete enables the system to preserve permission history for audit
+  /// purposes while excluding deleted permissions from active role
+  /// assignments.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  role hrm_platform_roles @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([organization_id, code])
+  @@index([role_id])
+  @@index([organization_id])
+}

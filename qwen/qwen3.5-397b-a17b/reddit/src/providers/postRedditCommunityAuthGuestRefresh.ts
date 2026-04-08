@@ -15,85 +15,88 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postRedditCommunityAuthGuestRefresh(props: {
   body: IRedditCommunityGuest.IRefresh;
 }): Promise<IRedditCommunityGuest.IAuthorized> {
-  let decoded: {
-    id: string;
-    session_id: string;
-    type: "guest";
-  };
+  // 1. Verify refresh token
+  let decoded: jwt.JwtPayload | string;
   try {
     decoded = jwt.verify(
       props.body.refresh_token,
       MyGlobal.env.JWT_SECRET_KEY,
       { issuer: "autobe" },
-    ) as {
-      id: string;
-      session_id: string;
-      type: "guest";
-    };
+    );
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  if (decoded.type !== "guest") {
-    throw new HttpException("Invalid token type", 403);
-  }
+  // 2. Validate token payload with typia (no 'as' assertions)
+  const tokenPayload = typia.assert<{
+    id: string & tags.Format<"uuid">;
+    session_id: string & tags.Format<"uuid">;
+    type: "guest";
+  }>(decoded);
+  // 3. Validate session exists
   const session =
     await MyGlobal.prisma.reddit_community_guest_sessions.findFirst({
       where: {
-        id: decoded.session_id,
-        reddit_community_guest_id: decoded.id,
+        id: tokenPayload.session_id,
+        reddit_community_guest_id: tokenPayload.id,
       },
     });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
+  // 4. Check session expiration
+  const now = new Date();
+  if (session.expired_at < now) {
+    throw new HttpException("Session expired", 401);
+  }
+  // 5. Validate guest is not deleted
   const guest = await MyGlobal.prisma.reddit_community_guests.findUniqueOrThrow(
     {
-      where: { id: decoded.id },
+      where: { id: tokenPayload.id },
     },
   );
   if (guest.deleted_at !== null) {
     throw new HttpException("Guest account has been deleted", 403);
   }
+  // 6. Generate new tokens (SAME session_id)
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const accessExpiresStr = accessExpires.toISOString();
-  const refreshExpiresStr = refreshExpires.toISOString();
-  const token = {
+  const token: IAuthorizationToken = {
     access: jwt.sign(
       {
-        type: "guest" as const,
-        id: decoded.id,
-        session_id: decoded.session_id,
-        created_at: new Date().toISOString(),
+        type: tokenPayload.type,
+        id: tokenPayload.id,
+        session_id: tokenPayload.session_id,
+        created_at: toISOStringSafe(new Date()),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
     ),
     refresh: jwt.sign(
       {
-        type: "guest" as const,
-        id: decoded.id,
-        session_id: decoded.session_id,
-        tokenType: "refresh" as const,
-        created_at: new Date().toISOString(),
+        type: tokenPayload.type,
+        id: tokenPayload.id,
+        session_id: tokenPayload.session_id,
+        tokenType: "refresh",
+        created_at: toISOStringSafe(new Date()),
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpiresStr,
-    refreshable_until: refreshExpiresStr,
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
   };
+  // 7. Update session expiration
   await MyGlobal.prisma.reddit_community_guest_sessions.update({
-    where: { id: decoded.session_id },
+    where: { id: tokenPayload.session_id },
     data: { expired_at: refreshExpires },
   });
+  // 8. Return authorized guest info
   return {
-    id: decoded.id,
-    token: {
-      access: token.access,
-      refresh: token.refresh,
-      expired_at: token.expired_at,
-      refreshable_until: token.refreshable_until,
-    },
-  };
+    id: guest.id,
+    device_fingerprint: guest.device_fingerprint,
+    created_at: toISOStringSafe(guest.created_at),
+    updated_at: toISOStringSafe(guest.updated_at),
+    deleted_at: guest.deleted_at ? toISOStringSafe(guest.deleted_at) : null,
+    token,
+  } satisfies IRedditCommunityGuest.IAuthorized;
 }

@@ -1,6 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -19,72 +20,73 @@ export async function postErpHrmTimeMemberDepartments(props: {
   member: MemberPayload;
   body: IErpHrmTimeDepartment.ICreate;
 }): Promise<IErpHrmTimeDepartment> {
-  const membership =
+  const organization =
     await MyGlobal.prisma.erp_hrm_time_organization_memberships.findFirstOrThrow(
       {
         where: {
           erp_hrm_time_member_id: props.member.id,
-          deleted_at: null,
           is_selected_context: true,
+          deleted_at: null,
         },
         select: {
           erp_hrm_time_organization_id: true,
         },
       },
     );
-  const hasPermission =
-    await MyGlobal.prisma.erp_hrm_time_organizations.findFirst({
+  if (
+    props.body.parentDepartmentId !== undefined &&
+    props.body.parentDepartmentId !== null
+  ) {
+    const parent = await MyGlobal.prisma.erp_hrm_time_departments.findFirst({
       where: {
-        id: membership.erp_hrm_time_organization_id,
+        id: props.body.parentDepartmentId,
+        erp_hrm_time_organization_id: organization.erp_hrm_time_organization_id,
         deleted_at: null,
       },
       select: {
         id: true,
+        parent_department_id: true,
       },
     });
-  if (hasPermission === null) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const parentDepartmentId = props.body.parentDepartmentId ?? null;
-  if (parentDepartmentId !== null) {
-    const parent =
-      await MyGlobal.prisma.erp_hrm_time_departments.findFirstOrThrow({
-        where: {
-          id: parentDepartmentId,
-          erp_hrm_time_organization_id: membership.erp_hrm_time_organization_id,
-          deleted_at: null,
-        },
-        select: {
-          parent_department_id: true,
-        },
-      });
+    if (parent === null) {
+      throw new HttpException(
+        "Parent department must belong to the selected organization",
+        400,
+      );
+    }
     if (parent.parent_department_id !== null) {
       throw new HttpException(
-        "Parent department hierarchy is limited to one level",
+        "Department hierarchy can only be one level deep",
         400,
       );
     }
   }
-  const duplicate = await MyGlobal.prisma.erp_hrm_time_departments.findFirst({
-    where: {
-      erp_hrm_time_organization_id: membership.erp_hrm_time_organization_id,
-      name: props.body.name,
-      parent_department_id: parentDepartmentId,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-    },
-  });
-  if (duplicate !== null) {
-    throw new HttpException("Department already exists", 409);
+  try {
+    const created = await MyGlobal.prisma.erp_hrm_time_departments.create({
+      data: await ErpHrmTimeDepartmentCollector.collect({
+        body: props.body,
+        organization: {
+          id: organization.erp_hrm_time_organization_id,
+        },
+      }),
+      ...ErpHrmTimeDepartmentTransformer.select(),
+    });
+    return await ErpHrmTimeDepartmentTransformer.transform(created);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        throw new HttpException(
+          "Department name must be unique within the selected organization",
+          409,
+        );
+      }
+      if (error.code === "P2003") {
+        throw new HttpException(
+          "Parent department must belong to the selected organization",
+          400,
+        );
+      }
+    }
+    throw error;
   }
-  const created = await MyGlobal.prisma.erp_hrm_time_departments.create({
-    data: await ErpHrmTimeDepartmentCollector.collect({
-      body: props.body,
-      organization: { id: membership.erp_hrm_time_organization_id },
-    }),
-    ...ErpHrmTimeDepartmentTransformer.select(),
-  });
-  return await ErpHrmTimeDepartmentTransformer.transform(created);
 }

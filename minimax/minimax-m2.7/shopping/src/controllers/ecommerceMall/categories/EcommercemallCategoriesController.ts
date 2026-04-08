@@ -1,43 +1,59 @@
-import { TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IEcommerceMallCategory } from "../../../api/structures/IEcommerceMallCategory";
-import { getEcommerceMallCategories } from "../../../providers/getEcommerceMallCategories";
+import { IPageIEcommerceMallCategory } from "../../../api/structures/IPageIEcommerceMallCategory";
 import { getEcommerceMallCategoriesCategoryId } from "../../../providers/getEcommerceMallCategoriesCategoryId";
+import { patchEcommerceMallCategories } from "../../../providers/patchEcommerceMallCategories";
 
 @Controller("/ecommerceMall/categories")
 export class EcommercemallCategoriesController {
   /**
-   * Retrieve the complete list of all product categories in the platform taxonomy.
+   * Retrieve a filtered and paginated list of product categories.
    *
-   * This endpoint provides customers with access to the entire category hierarchy for product discovery navigation. Categories support one level of nesting where parent categories can contain subcategories, but subcategories cannot have their own children. This creates a two-level structure for simple and intuitive browsing.
+   * This operation allows browsing categories with optional filtering by parent scope. When parent_id is null or omitted, returns top-level parent categories. When parent_id is provided, returns subcategories belonging to that parent.
    *
-   * The response returns all top-level categories (categories with no parent_id) each containing their immediate subcategories. Each category includes its name and optional description that provides additional context about the types of products in that category. The category name is unique within the same parent scope, ensuring clear identification even when category names might be similar across different branches.
+   * Soft-deleted categories are automatically excluded from results. The response includes category summary information with name and description, suitable for category listing displays and navigation menus.
    *
-   * Categories that have been soft deleted (with a deleted_at timestamp set) are excluded from the results. When a category is deleted, its subcategories are also removed due to cascade deletion, and any products assigned to deleted categories become uncategorized (category_id set to null).
-   *
-   * This operation is publicly accessible to all users including guests and does not require authentication. It is typically used as the entry point for product browsing before users drill down into specific categories to view products.
+   * Supports pagination with configurable page sizes and sorting by creation date (newest first by default). This endpoint is accessible to all users including guests for browsing the category taxonomy.
    *
    * @param connection
+   * @param body Search criteria and pagination parameters for filtering categories
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_categories table to retrieve all categories where parent_id is null (top-level categories) along with their subcategories relation eagerly loaded.
+   * @x-autobe-specification Query ecommerce_mall_categories table with pagination and filtering.
    *
-   * Implementation steps:
-   * 1. Query categories with parent_id IS NULL (top-level categories)
-   * 2. Eagerly load the subcategories relation for each top-level category
-   * 3. Filter out any categories where deleted_at IS NOT NULL (soft deleted)
-   * 4. Order results by created_at ascending for consistent ordering
-   * 5. Return the structured category tree with nested subcategories
+   * 1. Filter criteria (all optional):
+   *    - parent_id: uuid or null - filter by parent category (null returns only root categories)
+   *    - search: string - partial match on category name
+   *    - include_deleted: boolean - defaults to false (never show deleted in normal browsing)
    *
-   * The service layer should validate that subcategories are not further nested - this is enforced at creation time by rejecting any attempt to set a subcategory as parent.
+   * 2. Always exclude records where deleted_at IS NOT NULL.
+   *
+   * 3. Apply sorting: created_at DESC (newest first) by default.
+   *
+   * 4. Join subcategories when returning parent categories for hierarchical display.
+   *    - If parent_id filter is null, include subcategories array in each category summary.
+   *    - If parent_id filter is provided, return flat list of matching subcategories.
+   *
+   * 5. Return cursor-based pagination using page and limit parameters.
+   *
+   * 6. Edge cases:
+   *    - If parent_id references a deleted category, return empty array.
+   *    - If parent_id references a subcategory (violates one-level nesting rule), still return its subcategories (they should be empty due to nesting validation at creation).
+   *    - Category names are unique within parent scope, validate on create/edit.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Get()
-  public async browse(): Promise<IEcommerceMallCategory> {
+  @TypedRoute.Patch()
+  public async index(
+    @TypedBody()
+    body: IEcommerceMallCategory.IRequest,
+  ): Promise<IPageIEcommerceMallCategory.ISummary> {
     try {
-      return await getEcommerceMallCategories();
+      return await patchEcommerceMallCategories({
+        body,
+      });
     } catch (error) {
       console.log(error);
       throw error;
@@ -45,35 +61,27 @@ export class EcommercemallCategoriesController {
   }
 
   /**
-   * Retrieve a specific category by its unique identifier.
+   * Retrieve detailed information about a specific category.
    *
-   * This endpoint returns the complete category information including its name, description, and creation/update timestamps. When the category has subcategories, they are included in the response as an inverted composition showing the parent category with all its direct child subcategories.
+   * This endpoint returns the full category record including its name, description, and any subcategories belonging to it. Customers and guests use this operation to view category details before browsing products.
    *
-   * The operation supports retrieval by any actor including guests, customers, and administrators. Categories that have been soft-deleted (deleted_at timestamp is set) are not accessible through this endpoint and will return a 404 Not Found response.
+   * The response includes the category's metadata (creation date, last update) along with nested subcategory records. Subcategories are returned as part of an inverted composition structure, allowing clients to display the complete category tree without additional requests.
    *
-   * This endpoint is typically used when customers browse the category hierarchy and select a specific category to view its details or navigate to its subcategories. It can also be used by administrators when managing categories through the admin interface.
-   *
-   * Related operations:
-   * - GET /categories - Lists all top-level categories with their subcategories
-   * - GET /categories/{categoryId}/products - Lists products within this category
+   * Deleted categories are not accessible through this operation. If the category has been soft-deleted, the system returns a not-found response.
    *
    * @param connection
-   * @param categoryId Unique identifier of the category to retrieve
+   * @param categoryId Unique identifier of the category to retrieve (global scope)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor null
-   * @x-autobe-specification Query the ecommerce_mall_categories table using the provided categoryId as the primary key lookup.
+   * @x-autobe-specification Query the ecommerce_mall_categories table by the provided categoryId.
    *
-   * 1. Execute a database SELECT query where id equals the categoryId parameter.
-   * 2. Verify the deleted_at field is NULL; if not null, return 404 Not Found.
-   * 3. Load all subcategories where parent_id equals the categoryId and deleted_at is NULL.
-   * 4. Construct the response with the category data and its subcategories array.
-   * 5. Return 200 OK with the IEcommerceMallCategory.IInvert response body containing the category and its children.
+   * Validate that the category exists and has not been soft-deleted (deleted_at IS NULL). If the category is deleted or does not exist, return 404 Not Found.
    *
-   * Edge cases:
-   * - Invalid UUID format returns 400 Bad Request.
-   * - Non-existent categoryId returns 404 Not Found.
-   * - Soft-deleted category returns 404 Not Found (preserving browsing integrity).
-   * - Database connection failures return 500 Internal Server Error.
+   * Load all subcategories belonging to this category from the same table where parent_id equals the requested categoryId.
+   *
+   * Return the category record including: id, name, description, parent_id (null if top-level), created_at, updated_at.
+   *
+   * Include the subcategories array in the response, ordered by name ascending. Each subcategory record follows the same structure but without their own nested subcategories to prevent deep recursion.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":categoryId")

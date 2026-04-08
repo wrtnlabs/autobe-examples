@@ -10,25 +10,39 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallInventoryRecordCollector {
   export async function collect(props: {
     body: IEcommerceMallInventoryRecord.ICreate;
-    ecommerceMallProductVariants: IEntity;
+    productVariant: IEntity;
   }) {
-    const id: string = v4();
-    // Determine sign for quantity_change based on operation type
-    // 'restock' adds inventory (positive), 'adjust' removes inventory (negative)
-    const quantityChange: number =
-      props.body.operation === "restock"
-        ? props.body.quantity
-        : -props.body.quantity;
     return {
-      // Scalar fields
-      id,
-      quantity_change: quantityChange,
+      id: v4(),
+      quantity_change:
+        props.body.operationType === "restock"
+          ? props.body.quantity
+          : -props.body.quantity,
       reason: props.body.reason,
       created_at: new Date(),
-      // BelongsTo relation (required FK)
-      productVariant: {
-        connect: { id: props.ecommerceMallProductVariants.id },
-      },
+      productVariant: { connect: { id: props.productVariant.id } },
     } satisfies Prisma.ecommerce_mall_inventory_recordsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallInventoryRecordCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallInventoryRecord.ICreate;
+//           ecommerceMallProductVariants: IEntity; // from path parameter variantId
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       quantity_change: ...,
+//       reason: ...,
+//       created_at: ...,
+//       productVariant: ...,
+//           } satisfies Prisma.ecommerce_mall_inventory_recordsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

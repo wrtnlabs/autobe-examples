@@ -10,14 +10,16 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace ErpHrmTimesheetCollector {
   export async function collect(props: {
     body: IErpHrmTimesheet.ICreate;
-    erpHrmEmployees: IEntity;
-    erpHrmMemberSessions: IEntity;
+    employee: IEntity;
   }) {
+    const weekStartDate = new Date(props.body.weekStartDate);
+    const weekEndDate = new Date(
+      weekStartDate.getTime() + 6 * 24 * 60 * 60 * 1000,
+    );
     return {
-      // Scalar fields
       id: v4(),
-      week_start_date: new Date(props.body.week_start_date),
-      week_end_date: new Date(props.body.week_end_date),
+      week_start_date: weekStartDate,
+      week_end_date: weekEndDate,
       status: "draft",
       total_hours: 0,
       submitted_at: null,
@@ -26,11 +28,40 @@ export namespace ErpHrmTimesheetCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      // BelongsTo relations
-      employee: { connect: { id: props.erpHrmEmployees.id } },
-      reviewerEmployee: undefined,
-      // HasMany relations (not needed for new draft)
-      timesheetTimelogs: undefined,
+      employee: { connect: { id: props.employee.id } },
     } satisfies Prisma.erp_hrm_timesheetsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace ErpHrmTimesheetCollector {
+//         export async function collect(props: {
+//           body: IErpHrmTimesheet.ICreate;
+//           erpHrmMembers: IEntity; // from authorized actor
+// erpHrmEmployees: IEntity; // from authorized actor
+// erpHrmOrganizations: IEntity; // from authorized session
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       week_start_date: ...,
+//       week_end_date: ...,
+//       status: ...,
+//       total_hours: ...,
+//       submitted_at: ...,
+//       reviewed_at: ...,
+//       rejection_reason: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       employee: ...,
+//       reviewerEmployee: ...,
+//       timesheetTimelogs: ...,
+//           } satisfies Prisma.erp_hrm_timesheetsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

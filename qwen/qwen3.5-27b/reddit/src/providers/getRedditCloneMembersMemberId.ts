@@ -15,12 +15,9 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getRedditCloneMembersMemberId(props: {
   memberId: string & tags.Format<"uuid">;
 }): Promise<IRedditCloneMember> {
-  const member = await MyGlobal.prisma.reddit_clone_members.findUniqueOrThrow({
-    where: {
-      id: props.memberId,
-      deleted_at: null,
-    },
+  const record = await MyGlobal.prisma.reddit_clone_members.findFirstOrThrow({
     ...RedditCloneMemberTransformer.select(),
+    where: { id: props.memberId },
   });
-  return await RedditCloneMemberTransformer.transform(member);
+  return await RedditCloneMemberTransformer.transform(record);
 }

@@ -3,39 +3,29 @@ import typia from "typia";
 
 import { IEcommerceMallSellerDashboard } from "../../../../structures/IEcommerceMallSellerDashboard";
 
-export * as order_items from "./order_items/index";
-export * as summary from "./summary/index";
-
 /**
- * Retrieve the authenticated seller's dashboard summary displaying shop performance metrics.
+ * Retrieve the authenticated seller's dashboard summary showing shop performance metrics.
  *
- * This endpoint provides sellers with a comprehensive overview of their shop's current state. The dashboard returns four key metrics that sellers need to monitor daily: the total number of products they have listed on the platform, the total count of order items across all orders containing their products, the number of pending cancellation requests awaiting their approval or rejection, and the number of pending refund requests awaiting their response.
+ * This endpoint returns key statistics about the seller's shop performance including the total number of products listed on the platform, the total count of order items across all orders containing the seller's products, the number of cancellation requests awaiting seller response, and the number of refund requests awaiting seller response.
  *
- * The dashboard data is aggregated from multiple database tables. Product counts are derived from the ecommerce_mall_products table filtered by the authenticated seller's ID, excluding soft-deleted products. Order item counts are calculated by joining ecommerce_mall_order_items with ecommerce_mall_products to identify items belonging to the seller's products. Pending cancellation and refund request counts are filtered from their respective tables where the seller ID matches and status equals 'pending'.
+ * The dashboard provides sellers with an at-a-glance view of their shop health and pending actions that require attention. Sellers can monitor their sales performance through the order item count and manage customer service through the pending request counts.
  *
- * Sellers should access this endpoint before logging in to get a quick view of what requires attention, and can refresh it periodically throughout the day. After reviewing the summary, sellers may navigate to detailed lists using the filter parameters available in other dashboard endpoints.
- *
- * This endpoint requires seller authentication. The seller must have an approved account status to access dashboard features. Suspended sellers cannot access this endpoint and will receive an authentication error.
+ * This operation is only accessible to authenticated sellers and returns data specific to the seller's account.
  *
  * @param props.connection
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Retrieve seller dashboard summary by aggregating data from multiple tables.
+ * @x-autobe-specification Query the database to aggregate dashboard statistics for the authenticated seller from the session token.
  *
- * 1. Authentication: Verify the request contains a valid seller session token. Extract seller ID from the authenticated session. If session is invalid or seller is suspended, return 401 Unauthorized.
+ * 1. Count total products: SELECT COUNT(*) FROM ecommerce_mall_products WHERE ecommerce_mall_seller_id = {sellerId} AND deleted_at IS NULL
  *
- * 2. Data Aggregation:
- *    a. Count total products: Query ecommerce_mall_products WHERE seller_id = :sellerId AND deleted_at IS NULL
- *    b. Count total order items: Query ecommerce_mall_order_items JOIN ecommerce_mall_products ON order_items.product_id = products.id WHERE products.seller_id = :sellerId
- *    c. Count pending cancellations: Query ecommerce_mall_cancellation_requests WHERE seller_id = :sellerId AND status = 'pending'
- *    d. Count pending refunds: Query ecommerce_mall_refund_requests WHERE seller_id = :sellerId AND status = 'pending'
+ * 2. Count total order items: Query ecommerce_mall_order_items joined with ecommerce_mall_products WHERE product's ecommerce_mall_seller_id = {sellerId}
  *
- * 3. Response Construction: Return an IEcommerceMallSellerDashboard object containing all four count values.
+ * 3. Count pending cancellation requests: SELECT COUNT(*) FROM ecommerce_mall_cancellation_requests WHERE ecommerce_mall_seller_id = {sellerId} AND status = 'pending'
  *
- * 4. Error Handling:
- *    - If seller not found in session: Return 401 Unauthorized
- *    - If database query fails: Return 500 Internal Server Error with generic error message
- *    - Use transactions if multiple queries are needed to ensure data consistency
+ * 4. Count pending refund requests: SELECT COUNT(*) FROM ecommerce_mall_refund_requests WHERE ecommerce_mall_seller_id = {sellerId} AND status = 'pending'
+ *
+ * Return all counts in a single response object. Ensure counts are accurate integers. Handle errors gracefully with appropriate error responses if seller context is unavailable.
  * @path /ecommerceMall/seller/dashboard
  * @accessor api.functional.ecommerceMall.seller.dashboard.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe

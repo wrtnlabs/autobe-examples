@@ -1,5 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
+import { IRedditCloneComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneComment";
+import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
+import { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
+import { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -9,33 +12,29 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { RedditCloneMemberTransformer } from "../transformers/RedditCloneMemberTransformer";
+import { RedditCloneUserProfileTransformer } from "../transformers/RedditCloneUserProfileTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putRedditCloneMemberProfile(props: {
   member: MemberPayload;
-  body: IRedditCloneMember.IUpdate;
-}): Promise<IRedditCloneMember> {
-  const member = await MyGlobal.prisma.reddit_clone_members.findUniqueOrThrow({
-    where: {
-      id: props.member.id,
-      deleted_at: null,
-    },
-  });
-  const updated = await MyGlobal.prisma.reddit_clone_members.update({
-    where: { id: props.member.id },
+  body: IRedditCloneUserProfile.IUpdate;
+}): Promise<IRedditCloneUserProfile> {
+  await MyGlobal.prisma.reddit_clone_user_profiles.update({
+    where: { reddit_clone_member_id: props.member.id },
     data: {
       ...(props.body.display_name !== undefined && {
         display_name: props.body.display_name,
       }),
       ...(props.body.bio !== undefined && { bio: props.body.bio }),
-      ...(props.body.avatar_uri !== undefined && {
-        avatar_uri: props.body.avatar_uri,
-      }),
+      ...(props.body.avatar !== undefined && { avatar: props.body.avatar }),
       updated_at: new Date(),
     },
-    ...RedditCloneMemberTransformer.select(),
   });
-  return await RedditCloneMemberTransformer.transform(updated);
+  const updated =
+    await MyGlobal.prisma.reddit_clone_user_profiles.findUniqueOrThrow({
+      where: { reddit_clone_member_id: props.member.id },
+      ...RedditCloneUserProfileTransformer.select(),
+    });
+  return await RedditCloneUserProfileTransformer.transform(updated);
 }

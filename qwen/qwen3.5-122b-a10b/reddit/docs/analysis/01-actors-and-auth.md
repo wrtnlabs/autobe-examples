@@ -1,291 +1,86 @@
-**redditPlatform — Actor definitions, permission matrix, authentication, session, account lifecycle**
+**redditLike — Actor definitions, permission matrix, authentication, session, account lifecycle**
 
 Actor definitions, permission matrix, authentication, session, account lifecycle
 
 # Actor Definitions
 
-Define all user actor types with their roles and what they can do.
+Define all user actor types with their identity, permissions, and access boundaries.
 
 ## guest Actor
 
-Guests are unauthenticated visitors to the platform who can browse public content without an account. They can view the popular feed showing posts from all communities across the platform. Guests can access individual community feeds and view all posts within those communities. They can read full post content including text, links, and images. Guests can view all comments on posts and see nested reply threads. They can browse the complete list of all communities on the platform. Guests can search for communities by name to find specific ones. They can view any user's public profile including display name, bio, avatar, and karma score. Guests can see each user's posts and comments history on their profile page. However, guests cannot create posts, comments, or vote on content. They cannot subscribe to communities or access the home feed. Guests cannot report content or participate in any interactive features. To engage with the platform, guests must register for an account and become members.
+Guests are unauthenticated visitors who can access public content on the platform without creating an account. They can browse the popular feed to view posts from all communities across the platform. Guests can access community feeds to see posts from specific communities. They can view individual posts including titles, content, vote scores, and comment counts. Guests can read comments on any post and view nested reply threads. They can search for communities by name and browse the list of all available communities. Guests can view any user's profile page including display name, bio, avatar, karma score, and their posted content. However, guests cannot create posts or comments, cannot vote on content, cannot subscribe to communities, and cannot access the home feed. To participate in community activities, guests must register and become members.
 
-### Guest Browsing Capabilities
+### Guest Identity
 
-GUEST BROWSING CAPABILITIES
+Guests are unauthenticated visitors who access the platform without creating an account. They can browse and view public content but cannot participate in community activities. To create posts, comments, vote, or subscribe to communities, guests must register and become members.
 
-WHEN a guest browses the platform, THE system SHALL:
-1. Allow viewing of all public communities in a browsable list
-2. Enable searching for communities by name
-3. Display community names, descriptions, and subscriber counts
-4. Show community icons when available
+### Public Feed and Post Viewing
 
-WHEN a guest searches for communities, THE system SHALL:
-1. Match community names against the search query
-2. Return all communities containing the search term
-3. Display results in a paginated list format
+Guests can browse the popular feed, which shows posts from all communities across the platform. They can view community feeds to see posts from specific communities. Guests can view individual posts including the title, full content, author username, community name, vote score, comment count, and when it was posted. For text posts, they see the first 200 characters of content in the feed. For image posts, they see a thumbnail. For link posts, they see the domain name of the URL.
 
-THE system SHALL make all community information publicly viewable to guests without authentication.
+### Comment Reading and Community Browsing
 
-### Feed Access Rules
+Guests can read comments on any post and view nested reply threads without depth limits. They can search for communities by name and browse the list of all available communities. Each community listing shows the subscriber count. Guests can view any user's profile page, which displays the user's display name, bio, avatar, total karma score, a list of all posts they created, and a list of all comments they wrote.
 
-FEED ACCESS RULES
+### Guest Participation Limitations
 
-WHEN a guest requests the popular feed, THE system SHALL:
-1. Display posts from all communities across the platform
-2. Support sorting by hot, new, top, and controversial options
-3. Apply time filters for top sorting (today, this week, this month, this year, all time)
-4. Paginate the feed results
-
-WHEN a guest accesses a community feed, THE system SHALL:
-1. Display all posts from the specified community
-2. Support the same sorting options as the popular feed
-3. Paginate the feed results
-
-WHEN a guest attempts to access the home feed, THE system SHALL:
-1. Deny access to the home feed
-2. Display an error message indicating login is required
-
-THE home feed shall only be available to authenticated members.
-
-### Content Viewing Permissions
-
-CONTENT VIEWING PERMISSIONS
-
-WHEN a guest views a post, THE system SHALL:
-1. Display the post title
-2. Show the full content (text, link, or image)
-3. Display the author username
-4. Show the community name
-5. Display the vote score
-6. Show the comment count
-7. Display when the post was created
-
-WHEN a guest views a comment, THE system SHALL:
-1. Display the comment author
-2. Show the comment content
-3. Display the vote score
-4. Show when the comment was created
-5. Display nested replies in hierarchical order
-
-WHEN a guest views a user profile, THE system SHALL:
-1. Display the user's display name
-2. Show the user's bio text
-3. Display the user's avatar image
-4. Show the user's total karma score
-5. List all posts created by the user
-6. List all comments written by the user
-
-THE system SHALL make all post content, comments, and user profiles publicly viewable.
-
-### Guest Limitations
-
-GUEST LIMITATIONS
-
-WHEN a guest attempts to create a post, THE system SHALL:
-1. Deny the post creation request
-2. Display an error message indicating registration is required
-
-WHEN a guest attempts to create a comment, THE system SHALL:
-1. Deny the comment creation request
-2. Display an error message indicating registration is required
-
-WHEN a guest attempts to vote on a post, THE system SHALL:
-1. Deny the vote request
-2. Display an error message indicating registration is required
-
-WHEN a guest attempts to vote on a comment, THE system SHALL:
-1. Deny the vote request
-2. Display an error message indicating registration is required
-
-WHEN a guest attempts to subscribe to a community, THE system SHALL:
-1. Deny the subscription request
-2. Display an error message indicating registration is required
-
-WHEN a guest attempts to report content, THE system SHALL:
-1. Deny the report request
-2. Display an error message indicating registration is required
-
-Guests shall have no rights to create, modify, or interact with any platform content.
-
-### Registration Requirements
-
-REGISTRATION REQUIREMENTS
-
-WHEN a guest wishes to interact with the platform, THE system SHALL:
-1. Require the guest to register for an account
-2. Provide access to the registration form
-3. Allow registration with email and password
-4. Require selection of a unique username
-
-WHEN a guest completes registration, THE system SHALL:
-1. Create a new member account
-2. Transition the user from guest to member status
-3. Grant access to all member features
-
-THE system SHALL clearly indicate which features require registration on all restricted action buttons and links.
+Guests cannot create posts or comments on the platform. They cannot vote on posts or comments (no upvoting or downvoting). Guests cannot subscribe to or unsubscribe from communities. They cannot access the home feed, which is only available to logged-in members. To perform any of these actions, guests must register with an email, password, and unique username to become a member.
 
 ## member Actor
 
-Members are registered users who have created an account and logged into the platform. They can create text posts, link posts, and image posts in communities they subscribe to. Members can write comments on any post and reply to existing comments with unlimited nesting depth. They can vote on posts and comments, with the ability to change or remove their vote. Members can subscribe to communities and unsubscribe at any time. They can create new communities and become the owner of those communities. Members can edit and delete their own posts and comments. They can access the home feed showing posts only from their subscribed communities. Members can view the list of communities they subscribe to. They can edit their profile including display name, bio, and avatar image. Members can change their password and delete their account if desired. They can report any post or comment with a reason for moderation review. Members with moderator or owner roles in a community gain additional powers including deleting any content, banning users, and managing reports. All member actions are attributed to their username for community accountability.
+Members are registered users who have authenticated accounts and full participation rights on the platform. Members can sign up with email and password to create an account with a unique username. They can log in and maintain authenticated sessions to access member-only features. Members can edit their own profile including display name, bio text, and avatar image. They can create communities and become the owner of those communities. Members can subscribe to any community to gain posting access, and unsubscribe from communities they no longer wish to follow. They can create posts in communities they subscribe to, with support for text, link, and image post types. Members can edit and delete their own posts and comments. They can vote on posts and comments, with the ability to change or remove their votes. Members can write comments and reply to existing comments with unlimited nesting depth. They can report posts or comments with a reason text. Members can access the home feed showing posts from their subscribed communities. They accumulate karma based on upvotes and downvotes received on their content. Members can become moderators or owners of communities they create, gaining additional moderation powers including deleting any content, banning users, and managing reports.
 
-### Account Registration
+### Member Identity and Access
 
-WHEN a new user registers for an account, THE system SHALL:
-1. Require a valid email address
-2. Require a password that meets security requirements
-3. Require a unique username that does not already exist
-4. Create a member actor with default karma score of zero
-5. Associate all future content with the registered username
+Members are registered users with authenticated accounts who have full participation rights on the platform. Unlike guests who can only view public content, members can create communities, post content, write comments, vote on posts and comments, and subscribe to communities. Members must authenticate with their email and password to access member-only features such as the home feed, posting capabilities, and profile editing. Members accumulate karma scores based on upvotes and downvotes received on their posts and comments. Members can become community owners (when they create a community) or moderators (when added by an owner or another moderator), gaining additional moderation powers within those communities.
 
-IF the email address is already registered, THE system SHALL reject the registration.
-IF the username is already taken, THE system SHALL reject the registration.
-IF the password does not meet security requirements, THE system SHALL reject the registration.
+### Profile Editing Rights
 
-A registered member can create posts, comments, vote on content, subscribe to communities, and manage their profile. All member actions are attributed to their username for community accountability.
+Members can edit their own profile information including display name, bio text, and avatar image. Members can view any other user's profile, including the profile owner's display name, bio, avatar, total karma score, list of posts they have created, and list of comments they have written. Profile editing applies only to the member's own profile; members cannot edit other users' profiles.
 
-### Profile Management
+### Community Creation and Ownership
 
-WHEN a member manages their profile, THE system SHALL:
-1. Allow editing of display name
-2. Allow editing of bio text
-3. Allow uploading and updating of avatar image
-4. Display the member's total karma score on their profile page
-5. Show all posts created by the member on their profile
-6. Show all comments written by the member on their profile
+Members can create a community by providing a unique name, description text, and icon image. The member who creates a community automatically becomes its owner with the highest authority level. Members can browse all communities in a list and search for communities by name. Each community displays its subscriber count to all viewers.
 
-ANY user can view any member's profile page, including display name, bio, avatar, karma score, posts, and comments.
+### Community Subscription Management
 
-THE system SHALL attribute all content to the member's username across the platform for community accountability.
+Members can subscribe to any community to gain posting access within that community. Members can unsubscribe from any community they are subscribed to. Members can view a list of all communities they are subscribed to. Subscribing to a community is required before a member can create posts in that community.
 
-### Post Management
+### Post Creation and Management
 
-WHEN a member creates a post, THE system SHALL:
-1. Require the member to be subscribed to the target community
-2. Require a post title
-3. Accept one of three post types: text post with content, link post with URL, or image post with uploaded image
-4. Associate the post with the member's username and target community
-5. Initialize the post with zero vote score and zero comment count
+Members can create posts in any community they are subscribed to. Every post requires a title. Posts must be one of three types: text posts (with text content), link posts (with a URL), or image posts (with an uploaded image). Members can edit their own posts after creation. Members can delete their own posts. Moderators and community owners can also delete any post in their community (defined in Moderation Permissions).
 
-IF the member is not subscribed to the community, THE system SHALL reject the post creation.
-IF the title is missing, THE system SHALL reject the post creation.
-IF the post type content is invalid, THE system SHALL reject the post creation.
+### Comment Writing and Management
 
-WHEN a member edits their own post, THE system SHALL allow updating of title and content while preserving the post type.
+Members can write comments on any post. Members can reply to any comment, and replies can have replies with no depth limit. Members can edit their own comments after creation. Members can delete their own comments. Moderators and community owners can also delete any comment in their community (defined in Moderation Permissions).
 
-WHEN a member deletes their own post, THE system SHALL remove the post and all associated votes and comments.
+### Voting Rights and Vote Management
 
-### Comment Management
+Members can upvote posts and comments, which adds 1 to the vote score. Members can downvote posts and comments, which subtracts 1 from the vote score. Each member can cast only one vote per post or comment. Members can change their vote from upvote to downvote or vice versa. Members can remove their vote entirely, which adjusts the vote score accordingly. The same voting rules apply to both posts and comments.
 
-WHEN a member creates a comment on a post, THE system SHALL:
-1. Associate the comment with the member's username
-2. Allow unlimited nesting depth for replies
-3. Initialize the comment with zero vote score
-4. Display the comment with author, content, vote score, and timestamp
+### Content Reporting and Home Feed Access
 
-WHEN a member replies to a comment, THE system SHALL:
-1. Create a nested reply under the parent comment
-2. Allow replies to have their own replies with no depth limit
-3. Display the reply threading structure
+Members can report any post or comment by providing a reason text. Reports are submitted to moderators of the community where the reported content exists. Members can access the home feed, which shows posts only from communities they are subscribed to. The home feed is available only to logged-in members.
 
-WHEN a member edits their own comment, THE system SHALL allow updating of the comment content.
+### Community Owner and Moderator Authority
 
-WHEN a member deletes their own comment, THE system SHALL remove the comment and all nested replies.
+Members who become community owners have the highest authority in their community. Owners can add moderators to their community. Owners can remove moderators from their community. Owners cannot be removed by moderators. Members who are moderators can add other moderators to their community. Moderators cannot remove the community owner. Moderators cannot remove each other; only the owner can remove moderators.
 
-### Vote Management
+### Moderation and User Banning Permissions
 
-WHEN a member votes on a post or comment, THE system SHALL:
-1. Allow upvoting which increases the vote score by 1
-2. Allow downvoting which decreases the vote score by 1
-3. Allow changing vote from upvote to downvote or vice versa
-4. Allow removing vote entirely which adjusts the score accordingly
-5. Restrict each member to one vote per post or comment
+Moderators can delete any post in their community regardless of author. Moderators can delete any comment in their community regardless of author. Moderators can ban users from their community. Banned users cannot create posts or comments in that community but can still view content. Moderators can unban previously banned users. Moderators can view the list of banned users in their community.
 
-THE system SHALL calculate vote score as total upvotes minus total downvotes.
+### Report Management Access
 
-IF a member attempts to vote on content they do not have access to, THE system SHALL reject the vote.
-IF a member attempts to cast a second vote without removing the first, THE system SHALL update the existing vote instead.
+Moderators can view all reports submitted for their community. Each report displays the reported content, the user who reported it, and the reason provided. Moderators can approve a report, which deletes the reported content. Moderators can dismiss a report, which keeps the content and removes the report from the report list.
 
-### Community Management
+### Karma Score Accumulation
 
-WHEN a member subscribes to a community, THE system SHALL:
-1. Add the member to the community's subscriber list
-2. Increment the community's subscriber count
-3. Allow the member to create posts in that community
-4. Include posts from that community in the member's home feed
-
-WHEN a member unsubscribes from a community, THE system SHALL:
-1. Remove the member from the community's subscriber list
-2. Decrement the community's subscriber count
-3. Remove posts from that community from the member's home feed
-
-WHEN a member creates a new community, THE system SHALL:
-1. Require a unique community name
-2. Allow optional description text and icon image
-3. Assign the creating member as the community owner
-4. Subscribe the owner to the community automatically
-
-THE member can view a list of all communities they are subscribed to.
-
-### Home Feed Access
-
-WHEN a member accesses the home feed, THE system SHALL:
-1. Show posts only from communities the member is subscribed to
-2. Require the member to be logged in
-3. Support sorting by hot, new, top, and controversial
-4. Paginate the results for efficient browsing
-
-THE home feed is available only to authenticated members and shows content from their subscribed communities.
-
-IF the member is not logged in, THE system SHALL redirect them to the login page or show the popular feed instead.
-
-### Account Security
-
-WHEN a member changes their password, THE system SHALL:
-1. Require the current password for verification
-2. Require a new password that meets security requirements
-3. Update the password hash while preserving the account
-4. Invalidate existing sessions requiring re-authentication
-
-WHEN a member deletes their account, THE system SHALL:
-1. Remove all posts created by the member
-2. Remove all comments created by the member
-3. Remove all votes cast by the member
-4. Remove all subscriptions held by the member
-5. Remove the member account entirely
-
-IF the member has active sessions, THE system SHALL terminate all sessions upon account deletion.
-
-### Content Moderation
-
-WHEN a member reports a post or comment, THE system SHALL:
-1. Require a reason for the report as text
-2. Associate the report with the reporting member's username
-3. Set the report status to pending for moderator review
-4. Display the report to community moderators
-
-MODERATOR POWERS (granted to community moderators):
-- Delete any post in their community
-- Delete any comment in their community
-- Ban users from their community
-- Unban users from their community
-- View the list of banned users
-- Review and approve or dismiss reports
-
-OWNER PRIVILEGES (granted to community owner):
-- All moderator powers plus:
-- Add moderators to the community
-- Remove moderators from the community
-- Cannot be removed by moderators
-
-BANNED users cannot create posts or comments in that community but can still view content.
-
-WHEN a moderator approves a report, THE system SHALL delete the reported content.
-WHEN a moderator dismisses a report, THE system SHALL remove the report from the pending list.
+Members accumulate karma based on votes received on their posts and comments. When someone upvotes a member's post or comment, the member's karma increases by 1. When someone downvotes a member's post or comment, the member's karma decreases by 1. When someone removes their vote, the member's karma adjusts accordingly. Karma can be negative if a member receives more downvotes than upvotes. Each member has a single karma score displayed on their profile.
 
 # Authentication Flows
 
-Registration, login, session management, and token policies.
+Registration, login, logout, and session management from a user perspective.
 
 ## Registration and Login
 
@@ -293,269 +88,98 @@ Define user registration and login flows including validation and error handling
 
 ### User Registration
 
-WHEN a new user registers for an account, THE system SHALL:
-1. Require a valid email address
-2. Require a password that meets security requirements
-3. Require a unique username
-4. Associate the account with the registering user
+Users can create a new account by providing an email address, a password, and choosing a unique username.
 
-IF the email address is already registered, THE system SHALL reject the registration request.
-IF the username is already taken, THE system SHALL reject the registration request.
-IF the password does not meet security requirements, THE system SHALL reject the registration request.
-IF the email address format is invalid, THE system SHALL reject the registration request.
+The email address must be valid and not already registered to another account. The username must be unique across the platform and not already in use. The password must meet security requirements for account protection.
 
-Upon successful registration, THE system SHALL:
-1. Create a new user account
-2. Initialize the user's karma score to zero
-3. Create an empty profile with default values
-4. Automatically log the user into the session
+Upon successful registration, the user is automatically logged in and becomes a member with full access to member features.
+
+If the email is already registered, the registration is rejected with an appropriate message. If the username is already taken, the registration is rejected with an appropriate message. If the email format is invalid, the registration is rejected with an appropriate message.
+
+Guest users (not logged in) cannot register; they must complete the registration process to become members.
 
 ### User Login
 
-WHEN an existing user logs in to the system, THE system SHALL:
-1. Require a valid email address
-2. Require the correct password for that email
-3. Create an authenticated session upon successful verification
+Members can log in to their account using their registered email address and password.
 
-IF the email address is not registered, THE system SHALL reject the login request.
-IF the password does not match the registered account, THE system SHALL reject the login request.
-IF the account has been deleted, THE system SHALL reject the login request.
+Upon successful login, the user becomes authenticated and gains access to member-only features including creating posts, commenting, voting, and managing their profile.
 
-Upon successful login, THE system SHALL:
-1. Create a new authenticated session
-2. Allow access to member-only features
-3. Display personalized content based on subscriptions
+If the email is not registered, the login is rejected with an appropriate message. If the password is incorrect, the login is rejected with an appropriate message.
 
-### Session Management
+Logged-in users remain authenticated until they explicitly log out or their session expires.
 
-WHEN a user is authenticated, THE system SHALL:
-1. Maintain session state for the duration of the session
-2. Require authentication for member-only operations
-3. Allow access to public content without authentication
+### Authentication States
 
-WHILE a user has an active session, THE system SHALL:
-1. Permit access to their personal data
-2. Permit creation of posts and comments
-3. Permit voting on posts and comments
-4. Permit subscription to communities
+The system distinguishes between two authentication states: guest and member.
 
-IF a user's session expires, THE system SHALL:
-1. Require re-authentication for member operations
-2. Preserve access to public content
-3. Prompt the user to log in again
+Guests are users who are not logged in. Guests can browse the popular feed, view community feeds, read posts and comments, and view user profiles. Guests cannot create posts, comments, or vote on content.
 
-### Password Management
+Members are authenticated users who have successfully logged in. Members have access to all guest features plus the ability to create and manage their own content, vote on posts and comments, subscribe to communities, and access the home feed showing content from subscribed communities.
 
-WHEN a user wants to change their password, THE system SHALL:
-1. Require the user to be authenticated
-2. Require the current password for verification
-3. Require a new password that meets security requirements
-4. Update the password upon successful verification
+The system tracks authentication state to enforce permission boundaries between guest and member access levels.
 
-IF the current password is incorrect, THE system SHALL reject the password change request.
-IF the new password does not meet security requirements, THE system SHALL reject the password change request.
+## Session and Logout
 
-AFTER a password is changed, THE system SHALL:
-1. Invalidate all existing sessions except the current one
-2. Require re-authentication on other devices
-3. Allow login with the new password
-
-### Account Deletion
-
-WHEN a user requests account deletion, THE system SHALL:
-1. Require the user to be authenticated
-2. Require confirmation of the deletion request
-3. Delete all user-created content
-4. Remove the user account from the system
-
-WHEN a user account is deleted, THE system SHALL:
-1. Remove all posts created by the user
-2. Remove all comments created by the user
-3. Remove all votes cast by the user
-4. Remove all subscriptions owned by the user
-5. Remove the user's profile data
-
-AFTER account deletion, THE system SHALL:
-1. Prevent login with the deleted email address
-2. Allow the email address to be registered again
-3. Preserve content created by other users that referenced the deleted user
-
-## Session and Token Policy
-
-Define session duration, token refresh, and expiration policies.
+Define session behavior and logout from a user perspective.
 
 ### Session Management
 
-WHEN a user successfully authenticates via login, THE system SHALL create a new session for the user.
+When a user successfully logs in with their email and password, the system establishes an active session for that user. While the session is active, the user can access features that require authentication, such as creating posts, commenting, voting, and managing their profile.
 
-THE system SHALL maintain session state for all authenticated users.
+The system tracks which user is currently logged in for the duration of the session. Session state is maintained on the server side and associated with the authenticated user account.
 
-WHEN a session is active, THE system SHALL allow the user to access authenticated resources.
+### Logout
 
-WHEN a user logs out, THE system SHALL terminate the active session immediately.
+Users can log out from their account at any time. When a user logs out, their active session is terminated and they are returned to a logged-out state.
 
-THE system SHALL support multiple concurrent sessions for the same user account.
+After logging out, the user no longer has access to authenticated features such as creating posts, commenting, voting, or viewing their home feed. To access these features again, the user must log in with their credentials.
 
-WHEN a session is created, THE system SHALL associate it with the authenticated user's account.
+### Account Security
 
-THE system SHALL track session creation timestamp for each session.
+Users can change their account password at any time after logging in. The user must provide their current password to verify their identity before setting a new password.
 
-WHEN a user accesses the system, THE system SHALL validate the session before granting access to protected resources.
+Users can delete their account entirely. When an account is deleted, all content created by that user is also deleted, including:
+- All posts created by the user
+- All comments written by the user
+- All votes cast by the user
+- All reports submitted by the user
 
-IF the session is invalid or expired, THE system SHALL deny access and require re-authentication.
-
-THE system SHALL provide a mechanism for users to view their active sessions.
-
-THE system SHALL allow users to terminate specific sessions remotely.
-
-### JWT Token Policy
-
-THE system SHALL use JWT (JSON Web Token) tokens for session authentication.
-
-WHEN a user authenticates successfully, THE system SHALL issue a JWT token to the client.
-
-THE system SHALL include the user's unique identifier in the JWT token payload.
-
-THE system SHALL sign all JWT tokens with a secure secret key.
-
-THE system SHALL validate JWT token signature on each authenticated request.
-
-JWT tokens SHALL contain an expiration timestamp claim.
-
-THE system SHALL reject JWT tokens with invalid signatures.
-
-THE system SHALL reject JWT tokens that have been tampered with.
-
-WHEN a JWT token is presented, THE system SHALL verify it has not expired before processing the request.
-
-THE system SHALL support token-based authentication for API requests.
-
-JWT tokens SHALL be transmitted securely over HTTPS only.
-
-### Token Refresh Mechanism
-
-WHEN a JWT token approaches expiration, THE system SHALL allow the user to refresh the token.
-
-THE system SHALL issue a refresh token along with the initial JWT token upon authentication.
-
-WHEN a valid refresh token is presented, THE system SHALL issue a new JWT token.
-
-THE system SHALL invalidate the old refresh token when a new one is issued (token rotation).
-
-IF a refresh token is invalid, THE system SHALL reject the refresh request and require re-authentication.
-
-IF a refresh token has expired, THE system SHALL reject the refresh request and require re-authentication.
-
-THE system SHALL support refresh token rotation to prevent token reuse attacks.
-
-WHEN a user logs out, THE system SHALL invalidate all associated refresh tokens.
-
-THE system SHALL allow users to revoke all active refresh tokens from their account settings.
-
-THE system SHALL track refresh token usage for security monitoring.
-
-### Session Expiration Policies
-
-THE system SHALL define a maximum session duration of 24 hours for standard users.
-
-WHEN a session reaches its maximum duration, THE system SHALL expire the session automatically.
-
-THE system SHALL define an idle timeout of 30 minutes for inactive sessions.
-
-WHEN a session exceeds the idle timeout, THE system SHALL terminate the session automatically.
-
-WHEN a session expires, THE system SHALL require the user to re-authenticate to continue.
-
-THE system SHALL clear all session data upon expiration.
-
-IF a user's password is changed, THE system SHALL invalidate all existing sessions for that user.
-
-IF a user's account is suspended or deleted, THE system SHALL terminate all active sessions immediately.
-
-THE system SHALL provide users with notification options for session expiration warnings.
-
-THE system SHALL allow session duration configuration for different user roles.
+The user's profile information, including display name, bio, and avatar, is also removed. The username becomes available for registration by other users after account deletion.
 
 # Account Lifecycle
 
-Account state transitions and lifecycle management.
+Account creation, deletion, and password management.
 
-## Account States and Transitions
+## Account Management
 
-Define account states (active, suspended, deleted) and valid transitions.
+Define how users create accounts, delete accounts, and change passwords.
 
-### Account States Definition
+### Account Registration
 
-THE system SHALL maintain three account states for each user: active, suspended, and deleted.
+Users can create a new account by providing an email address, choosing a password, and selecting a unique username.
 
-WHEN a user registers, THE system SHALL create their account with the active state.
+The email address must not already be associated with an existing account.
+The username must be unique across the platform and cannot be changed after registration.
 
-WHILE an account is in the active state, THE system SHALL allow the user to log in and perform all permitted actions.
+Upon successful registration, the user becomes a member of the platform.
 
-WHILE an account is in the suspended state, THE system SHALL prevent the user from logging in.
+### Password Change
 
-WHILE an account is in the deleted state, THE system SHALL prevent any access to the account.
+Users can change their account password at any time after logging in.
 
-A user SHALL NOT manually transition their account to the suspended state.
+The user must provide their current password to verify their identity.
+The new password must be different from the current password.
 
-A user SHALL NOT manually transition their account to the deleted state without following the deletion workflow.
+Upon successful password change, the user can continue using their account with the new password.
 
-### Account Deletion Process
+### Account Deletion
 
-WHEN a user requests account deletion, THE system SHALL initiate the deletion workflow.
+Users can delete their own account at any time.
 
-WHEN the deletion workflow completes, THE system SHALL transition the account state to deleted.
+When an account is deleted, all content created by that user is also deleted, including:
+- All posts created by the user
+- All comments written by the user
 
-WHEN an account transitions to deleted, THE system SHALL remove all posts created by the user.
+The user's profile information, including display name, bio, and avatar, is also removed.
 
-WHEN an account transitions to deleted, THE system SHALL remove all comments created by the user.
-
-WHEN an account transitions to deleted, THE system SHALL remove the user's profile information including display name, bio, and avatar.
-
-WHEN an account transitions to deleted, THE system SHALL remove all subscriptions associated with the user.
-
-WHEN an account transitions to deleted, THE system SHALL remove all votes cast by the user from posts and comments.
-
-WHEN an account transitions to deleted, THE system SHALL remove the user from any community moderator lists.
-
-IF a user owns a community, THE system SHALL transfer ownership or remove the community when the account is deleted.
-
-THE system SHALL NOT allow a user to log in with a deleted account.
-
-### Account Suspension
-
-WHEN the system detects policy violations, THE system SHALL transition the account state to suspended.
-
-WHILE an account is suspended, THE system SHALL prevent the user from creating new posts.
-
-WHILE an account is suspended, THE system SHALL prevent the user from creating new comments.
-
-WHILE an account is suspended, THE system SHALL prevent the user from voting on posts or comments.
-
-WHILE an account is suspended, THE system SHALL prevent the user from creating new communities.
-
-WHILE an account is suspended, THE system SHALL prevent the user from subscribing to communities.
-
-THE system SHALL notify the user when their account is suspended.
-
-THE system SHALL provide a reason for the suspension to the user.
-
-THE system SHALL allow account recovery through an appeal process defined in business rules.
-
-### Account State Transitions
-
-WHEN a user successfully registers, THE system SHALL transition the account from non-existent to active.
-
-WHEN a user completes the deletion workflow, THE system SHALL transition the account from active to deleted.
-
-WHEN the system detects policy violations, THE system SHALL transition the account from active to suspended.
-
-WHEN a suspended account is reinstated, THE system SHALL transition the account from suspended to active.
-
-A deleted account SHALL NOT transition to any other state.
-
-A suspended account SHALL transition to active only through the reinstatement process.
-
-A deleted account SHALL NOT be recoverable.
-
-WHEN transitioning to deleted, THE system SHALL ensure all associated content is removed before finalizing the state change.
+Account deletion is irreversible and cannot be undone.

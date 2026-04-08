@@ -21,79 +21,50 @@ export async function patchEcommerceMallAdminRegistrations(props: {
   admin: AdminPayload;
   body: IEcommerceMallSellerRegistration.IRequest;
 }): Promise<IPageIEcommerceMallSellerRegistration.ISummary> {
-  const { body } = props;
-  const limit = body.limit;
-  // Build where clause from filter criteria
-  const where: Prisma.ecommerce_mall_seller_registrationsWhereInput = {};
-  if (body.status !== null) {
-    where.status = body.status;
-  }
-  if (body.sellerId !== null) {
-    where.seller_id = body.sellerId;
-  }
-  if (body.reviewerId !== null) {
-    where.reviewer_id = body.reviewerId;
-  }
-  if (body.createdAtFrom !== null || body.createdAtTo !== null) {
-    where.created_at = {};
-    if (body.createdAtFrom !== null) {
-      where.created_at.gte = new Date(body.createdAtFrom);
-    }
-    if (body.createdAtTo !== null) {
-      where.created_at.lte = new Date(body.createdAtTo);
-    }
-  }
-  if (body.reviewedAtFrom !== null || body.reviewedAtTo !== null) {
-    where.reviewed_at = {};
-    if (body.reviewedAtFrom !== null) {
-      where.reviewed_at.gte = new Date(body.reviewedAtFrom);
-    }
-    if (body.reviewedAtTo !== null) {
-      where.reviewed_at.lte = new Date(body.reviewedAtTo);
-    }
-  }
-  // Determine sort order
-  const orderBy: Prisma.ecommerce_mall_seller_registrationsOrderByWithRelationInput =
-    body.sortBy === "reviewedAt"
-      ? { reviewed_at: body.sortOrder ?? "desc" }
-      : body.sortBy === "updatedAt"
-        ? { updated_at: body.sortOrder ?? "desc" }
-        : body.sortBy === "status"
-          ? { status: body.sortOrder ?? "desc" }
-          : { created_at: body.sortOrder ?? "desc" };
-  // Determine pagination strategy
-  const page = body.page ?? 1;
-  // Execute query with appropriate pagination
-  const registrations =
-    await MyGlobal.prisma.ecommerce_mall_seller_registrations.findMany({
-      where,
-      orderBy,
-      skip: body.cursor !== null ? 1 : (page - 1) * limit,
-      take: limit + 1,
-      cursor: body.cursor !== null ? { id: body.cursor } : undefined,
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const skip = (page - 1) * limit;
+  const whereInput = {
+    ...(props.body.status !== undefined && { status: props.body.status }),
+    ...(props.body.sellerId !== undefined && {
+      seller_id: props.body.sellerId,
+    }),
+    ...(props.body.reviewerId !== undefined && {
+      reviewer_id: props.body.reviewerId,
+    }),
+    ...(props.body.createdAt !== undefined && {
+      created_at: {
+        ...(props.body.createdAt.from !== undefined && {
+          gte: new Date(props.body.createdAt.from),
+        }),
+        ...(props.body.createdAt.to !== undefined && {
+          lte: new Date(props.body.createdAt.to),
+        }),
+      },
+    }),
+  } satisfies Prisma.ecommerce_mall_seller_registrationsWhereInput;
+  const [data, total] = await Promise.all([
+    MyGlobal.prisma.ecommerce_mall_seller_registrations.findMany({
+      where: whereInput,
+      skip,
+      take: limit,
+      orderBy: { created_at: "desc" },
       ...EcommerceMallSellerRegistrationAtSummaryTransformer.select(),
-    });
-  // Determine if there's more data
-  const hasMore = registrations.length > limit;
-  const dataRecords = hasMore ? registrations.slice(0, limit) : registrations;
-  // Get total count for pagination metadata
-  const total = await MyGlobal.prisma.ecommerce_mall_seller_registrations.count(
-    { where },
-  );
-  // Transform records to DTOs
-  const data = await ArrayUtil.asyncMap(
-    dataRecords as Parameters<
-      typeof EcommerceMallSellerRegistrationAtSummaryTransformer.transform
-    >[0][],
-    EcommerceMallSellerRegistrationAtSummaryTransformer.transform,
-  );
+    }),
+    MyGlobal.prisma.ecommerce_mall_seller_registrations.count({
+      where: whereInput,
+    }),
+  ]);
   return {
-    data,
+    data: await ArrayUtil.asyncMap(
+      data,
+      EcommerceMallSellerRegistrationAtSummaryTransformer.transform,
+    ),
     pagination: {
-      current: body.cursor !== null ? 1 : page,
-      limit,
+      current: page,
+      limit: limit,
       records: total,
-      pages: Math.ceil(total / limit) || 1,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
   };
 }

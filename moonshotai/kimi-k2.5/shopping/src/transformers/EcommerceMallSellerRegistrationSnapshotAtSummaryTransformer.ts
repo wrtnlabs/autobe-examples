@@ -1,12 +1,16 @@
 import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+import { IEcommerceMallSellerRegistration } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerRegistration";
 import { IEcommerceMallSellerRegistrationSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerRegistrationSnapshot";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallAdminAtSummaryTransformer } from "./EcommerceMallAdminAtSummaryTransformer";
+import { EcommerceMallSellerRegistrationAtSummaryTransformer } from "./EcommerceMallSellerRegistrationAtSummaryTransformer";
 
 export namespace EcommerceMallSellerRegistrationSnapshotAtSummaryTransformer {
   export type Payload =
@@ -18,7 +22,8 @@ export namespace EcommerceMallSellerRegistrationSnapshotAtSummaryTransformer {
       select: {
         id: true,
         created_at: true,
-        reviewer: EcommerceMallAdminAtSummaryTransformer.select(),
+        registration:
+          EcommerceMallSellerRegistrationAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_seller_registration_snapshotsFindManyArgs;
   }
@@ -27,10 +32,13 @@ export namespace EcommerceMallSellerRegistrationSnapshotAtSummaryTransformer {
   ): Promise<IEcommerceMallSellerRegistrationSnapshot.ISummary> {
     return {
       id: input.id,
+      status: input.registration.status as "pending" | "approved" | "rejected",
+      rejectionReason: input.registration.rejection_reason,
       createdAt: input.created_at.toISOString(),
-      reviewer: input.reviewer
-        ? await EcommerceMallAdminAtSummaryTransformer.transform(input.reviewer)
-        : null,
+      sellerRegistration:
+        await EcommerceMallSellerRegistrationAtSummaryTransformer.transform(
+          input.registration,
+        ),
     };
   }
 }

@@ -1,5 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -19,27 +20,39 @@ export async function postErpHrmTimeMemberProjects(props: {
   member: MemberPayload;
   body: IErpHrmTimeProject.ICreate;
 }): Promise<IErpHrmTimeProject> {
-  const membership =
-    await MyGlobal.prisma.erp_hrm_time_organization_memberships.findFirstOrThrow(
-      {
-        where: {
-          erp_hrm_time_member_id: props.member.id,
-          is_selected_context: true,
-          deleted_at: null,
-        },
-        select: {
-          erp_hrm_time_organization_id: true,
-        },
-      },
-    );
-  const created = await MyGlobal.prisma.erp_hrm_time_projects.create({
-    data: await ErpHrmTimeProjectCollector.collect({
-      body: props.body,
-      organization: {
-        id: membership.erp_hrm_time_organization_id,
-      },
-    }),
-    ...ErpHrmTimeProjectTransformer.select(),
-  });
-  return await ErpHrmTimeProjectTransformer.transform(created);
+  const organization = (
+    props.member as unknown as {
+      organization: IEntity | null;
+    }
+  ).organization;
+  if (organization === null || organization === undefined) {
+    throw new HttpException("Organization context is missing", 400);
+  }
+  try {
+    const created = await MyGlobal.prisma.erp_hrm_time_projects.create({
+      data: await ErpHrmTimeProjectCollector.collect({
+        body: props.body,
+        organization,
+      }),
+      ...ErpHrmTimeProjectTransformer.select(),
+    });
+    return await ErpHrmTimeProjectTransformer.transform(created);
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (
+        error as {
+          code?: string;
+        }
+      ).code === "P2002"
+    ) {
+      throw new HttpException(
+        "Project name already exists in this organization",
+        400,
+      );
+    }
+    throw error;
+  }
 }

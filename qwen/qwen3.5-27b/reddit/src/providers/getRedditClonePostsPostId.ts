@@ -1,8 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
-import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
-import { IRedditClonePostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostImage";
+import { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -18,12 +17,12 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getRedditClonePostsPostId(props: {
   postId: string & tags.Format<"uuid">;
 }): Promise<IRedditClonePost> {
-  const post = await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
+  const record = await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
+    ...RedditClonePostTransformer.select(),
     where: {
       id: props.postId,
       deleted_at: null,
     },
-    ...RedditClonePostTransformer.select(),
   });
-  return await RedditClonePostTransformer.transform(post);
+  return await RedditClonePostTransformer.transform(record);
 }

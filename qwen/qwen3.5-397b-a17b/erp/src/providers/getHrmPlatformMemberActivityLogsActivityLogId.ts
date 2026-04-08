@@ -19,23 +19,25 @@ export async function getHrmPlatformMemberActivityLogsActivityLogId(props: {
   member: MemberPayload;
   activityLogId: string & tags.Format<"uuid">;
 }): Promise<IHrmPlatformActivityLog> {
-  const activityLog =
-    await MyGlobal.prisma.hrm_platform_activity_logs.findUniqueOrThrow({
+  const membership =
+    await MyGlobal.prisma.hrm_platform_organization_memberships.findFirst({
+      where: {
+        hrm_platform_member_id: props.member.id,
+      },
+      select: {
+        hrm_platform_organization_id: true,
+      },
+    });
+  if (!membership) {
+    throw new HttpException("No organization context", 403);
+  }
+  const record =
+    await MyGlobal.prisma.hrm_platform_activity_logs.findFirstOrThrow({
+      ...HrmPlatformActivityLogTransformer.select(),
       where: {
         id: props.activityLogId,
-        deleted_at: null,
+        hrm_platform_organization_id: membership.hrm_platform_organization_id,
       },
-      ...HrmPlatformActivityLogTransformer.select(),
     });
-  const employee = await MyGlobal.prisma.hrm_platform_employees.findFirst({
-    where: {
-      user_id: props.member.id,
-      organization_id: activityLog.organization.id,
-      deleted_at: null,
-    },
-  });
-  if (!employee) {
-    throw new HttpException("Forbidden", 403);
-  }
-  return await HrmPlatformActivityLogTransformer.transform(activityLog);
+  return await HrmPlatformActivityLogTransformer.transform(record);
 }

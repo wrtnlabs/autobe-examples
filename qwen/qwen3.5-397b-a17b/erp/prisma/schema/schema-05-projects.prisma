@@ -1,0 +1,379 @@
+/// Projects represent work initiatives within organizations with tracking
+/// for budget, timeline, and status.
+///
+/// Projects are the core unit of work management, containing tasks and
+/// assigned team members. Each project belongs to exactly one {@link
+/// hrm_platform_organizations} for multi-tenancy isolation. Projects have a
+/// lifecycle status (active, archived, completed) that controls whether new
+/// timelogs can be recorded.
+///
+/// Key attributes include name for identification, color code for UI visual
+/// distinction, optional description for context, budget hours for capacity
+/// planning, and optional start/end dates for timeline tracking. The status
+/// field determines project availability: active projects accept new work,
+/// archived projects are preserved for reference, and completed projects
+/// indicate finished initiatives.
+///
+/// @namespace projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_projects {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the {@link hrm_platform_organizations} that owns this project.
+  ///
+  /// All projects belong to exactly one organization for multi-tenancy
+  /// isolation. This foreign key enforces data isolation - employees in one
+  /// organization cannot access projects from another organization. When an
+  /// organization is deleted, all its projects are cascade deleted.
+  organization_id String
+  
+  /// Project name for identification.
+  ///
+  /// Required field that uniquely identifies the project within the
+  /// organization. Used in UI displays, reports, and when assigning timelogs
+  /// to projects.
+  name String
+  
+  /// Optional detailed description of project scope and objectives.
+  ///
+  /// Provides context about what the project aims to accomplish. Can contain
+  /// markdown or plain text. Nullable as not all projects require detailed
+  /// descriptions.
+  description String?
+  
+  /// Hex color code for UI visual distinction.
+  ///
+  /// Required field used to visually distinguish projects in calendars, task
+  /// boards, and reports. Format should be valid hex color (e.g., '#FF5733' or
+  /// 'FF5733').
+  color String
+  
+  /// Project lifecycle status controlling work availability.
+  ///
+  /// Three states: 'active' for ongoing projects accepting new timelogs,
+  /// 'archived' for preserved reference projects that cannot receive new work,
+  /// and 'completed' for finished initiatives. Status changes are logged in
+  /// activity logs.
+  status String
+  
+  /// Optional total estimated hours for project capacity planning.
+  ///
+  /// Represents the planned effort for the project. Used for tracking progress
+  /// against estimates and generating budget reports. Nullable as not all
+  /// projects have defined budgets.
+  budget_hours Float?
+  
+  /// Optional project start date for timeline tracking.
+  ///
+  /// Indicates when project work began or is scheduled to begin. Used for
+  /// Gantt charts, timeline views, and duration calculations. Nullable for
+  /// projects without defined start dates.
+  start_date DateTime?
+  
+  /// Optional project end date or deadline.
+  ///
+  /// Indicates when project work is expected to be completed. Used for
+  /// deadline tracking, overdue alerts, and timeline visualization. Nullable
+  /// for ongoing projects without fixed end dates.
+  end_date DateTime?
+  
+  /// Timestamp when the project was created.
+  created_at DateTime
+  
+  /// Timestamp when the project was last modified.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null means active record.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_platform_organizations @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  projectMemberships hrm_platform_project_members[]
+  tasks hrm_platform_tasks[]
+  timelogs hrm_platform_timelogs[]
+  timers hrm_platform_timers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([organization_id, status])
+  @@index([status])
+}
+
+/// Junction table assigning employees to projects with role designation as
+/// member or project-lead.
+///
+/// This table establishes the many-to-many relationship between {@link
+/// hrm_platform_employees} and {@link hrm_platform_projects}. Each employee
+/// can be assigned to multiple projects, and each project can have multiple
+/// employee members.
+///
+/// The role field distinguishes between regular members and project-leads.
+/// Project leads have elevated permissions to manage tasks within their
+/// assigned projects, while regular members can only view and work on
+/// assigned tasks.
+///
+/// Duplicate assignments are prevented by a unique constraint on the
+/// combination of project_id and employee_id.
+///
+/// @namespace projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_project_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the employee being assigned to the project.
+  ///
+  /// Links to {@link hrm_platform_employees} to identify which employee is a
+  /// member of this project. An employee can be assigned to multiple projects
+  /// through multiple records in this table.
+  hrm_platform_employee_id String
+  
+  /// Reference to the project the employee is assigned to.
+  ///
+  /// Links to {@link hrm_platform_projects} to identify which project this
+  /// membership belongs to. A project can have multiple employee members
+  /// through multiple records in this table.
+  hrm_platform_project_id String
+  
+  /// Role designation for this employee within the project.
+  ///
+  /// Distinguishes between 'member' (regular project member with task work
+  /// permissions) and 'project-lead' (elevated permissions to manage tasks
+  /// within the project). This role determines the employee's capabilities
+  /// within the project context.
+  role String
+  
+  /// Timestamp when this project membership was created.
+  created_at DateTime
+  
+  /// Timestamp when this project membership was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_platform_employees @relation(fields: [hrm_platform_employee_id], references: [id], onDelete: Cascade)
+  project hrm_platform_projects @relation(fields: [hrm_platform_project_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_platform_employee_id])
+  // spellchecker: ignore-next-line
+  @@unique([hrm_platform_project_id, hrm_platform_employee_id], map: "hrm_platform_project_members_hrm_platform_project_id_h_59335f57")
+}
+
+/// Tasks within projects representing work items with title, status,
+/// priority, estimated hours, due date, and optional assignment to
+/// employees.
+///
+/// Tasks are the fundamental unit of work within {@link
+/// hrm_platform_projects}. Each task has a clear status workflow (open →
+/// in-progress → completed → closed) and priority level (low, medium, high,
+/// urgent) for tracking progress and urgency.
+///
+/// Tasks can be assigned to {@link hrm_platform_employees} who are project
+/// members. Assignment is optional - some tasks may be unassigned backlog
+/// items. Tasks support one-level subtask hierarchy through the
+/// parent_task_id self-reference, allowing breakdown of complex work into
+/// smaller components.
+///
+/// Estimated hours help with capacity planning and project budget tracking.
+/// Due dates provide time boundaries for task completion. All task status
+/// changes are recorded in {@link hrm_platform_task_histories} for audit
+/// purposes.
+///
+/// @namespace projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_tasks {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent project this task belongs to.
+  ///
+  /// Every task must belong to exactly one {@link hrm_platform_projects}. This
+  /// foreign key establishes the project-task hierarchy and ensures tasks are
+  /// always scoped to a specific project context.
+  hrm_platform_project_id String
+  
+  /// Reference to the employee assigned to work on this task.
+  ///
+  /// Optional assignment to {@link hrm_platform_employees}. The assigned
+  /// employee must be a project member of the parent project. Null value
+  /// indicates the task is unassigned and available in the project backlog.
+  assigned_employee_id String?
+  
+  /// Self-reference to parent task for subtask hierarchy.
+  ///
+  /// Optional reference to another {@link hrm_platform_tasks} record, enabling
+  /// one-level subtask nesting. When present, this task is a subtask of the
+  /// parent. Null value indicates this is a top-level task. Only one level of
+  /// nesting is supported - subtasks cannot have their own subtasks.
+  parent_task_id String?
+  
+  /// Short descriptive title of the task.
+  ///
+  /// Required field that summarizes the task's purpose or work to be done.
+  /// Should be concise yet informative enough to understand the task at a
+  /// glance.
+  title String
+  
+  /// Detailed description of the task requirements and context.
+  ///
+  /// Optional field providing additional context, acceptance criteria, or
+  /// detailed instructions for completing the task. Can include markdown
+  /// formatting for rich text representation.
+  description String?
+  
+  /// Current workflow status of the task.
+  ///
+  /// Tracks task progression through the workflow: 'open' (new/unstarted),
+  /// 'in-progress' (actively being worked on), 'completed' (work finished),
+  /// 'closed' (finalized and archived). Status changes are recorded in {@link
+  /// hrm_platform_task_histories}.
+  status String
+  
+  /// Priority level indicating task urgency and importance.
+  ///
+  /// Four levels: 'low' (can be deferred), 'medium' (normal priority), 'high'
+  /// (important, should be addressed soon), 'urgent' (critical, immediate
+  /// attention required). Used for sorting and filtering task lists.
+  priority String
+  
+  /// Estimated effort required to complete the task in hours.
+  ///
+  /// Optional planning field for capacity estimation and project budget
+  /// tracking. Helps project leads understand scope and allocate resources
+  /// appropriately.
+  estimated_hours Int?
+  
+  /// Target completion date for the task.
+  ///
+  /// Optional deadline for task completion. Used for scheduling, reminders,
+  /// and identifying overdue tasks. Null indicates no specific deadline.
+  due_date DateTime?
+  
+  /// Timestamp when the task was created.
+  created_at DateTime
+  
+  /// Timestamp when the task was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the task was soft-deleted. Null means active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  project hrm_platform_projects @relation(fields: [hrm_platform_project_id], references: [id], onDelete: Cascade)
+  assignedEmployee hrm_platform_employees? @relation(fields: [assigned_employee_id], references: [id], onDelete: Cascade)
+  parentTask hrm_platform_tasks? @relation("recursive", fields: [parent_task_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  subtasks hrm_platform_tasks[] @relation("recursive")
+  histories hrm_platform_task_histories[]
+  timelogs hrm_platform_timelogs[]
+  timers hrm_platform_timers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([assigned_employee_id])
+  @@index([parent_task_id])
+  @@index([hrm_platform_project_id, status])
+  @@index([status])
+  @@index([priority])
+}
+
+/// Audit trail recording all task status changes with timestamp, old status,
+/// new status, and the user who made the change.
+///
+/// Each entry captures a single status transition for a {@link
+/// hrm_platform_tasks}, creating an immutable historical record. This
+/// enables tracking task lifecycle, auditing who made changes, and
+/// reconstructing task state history.
+///
+/// Records are append-only and never deleted to maintain complete audit
+/// trail integrity.
+///
+/// @namespace projects
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_platform_task_histories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the task whose status changed.
+  ///
+  /// Links to {@link hrm_platform_tasks} to identify which task this history
+  /// entry belongs to. Multiple history entries can exist for the same task,
+  /// forming a chronological audit trail.
+  hrm_platform_task_id String
+  
+  /// References the member who made the status change.
+  ///
+  /// Links to {@link hrm_platform_members} to identify which user performed
+  /// the status transition. Enables audit tracking of who changed task status
+  /// and when.
+  hrm_platform_member_id String
+  
+  /// The task status before the change.
+  ///
+  /// Captures the previous status value (e.g., 'open', 'in-progress',
+  /// 'completed', 'closed') before the transition. Used for audit trail and
+  /// history reconstruction.
+  old_status String
+  
+  /// The task status after the change.
+  ///
+  /// Captures the new status value (e.g., 'open', 'in-progress', 'completed',
+  /// 'closed') after the transition. Represents the current state of the task
+  /// at this point in history.
+  new_status String
+  
+  /// Timestamp when the status change occurred.
+  ///
+  /// Records the exact time when the status transition was made. Serves as
+  /// both the creation timestamp and the temporal marker for ordering history
+  /// entries chronologically.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  task hrm_platform_tasks @relation(fields: [hrm_platform_task_id], references: [id], onDelete: Cascade)
+  member hrm_platform_members @relation(fields: [hrm_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_platform_member_id])
+  @@index([hrm_platform_task_id, created_at])
+}

@@ -1,4 +1,4 @@
-**hrmPlatform — Actor definitions, permission matrix, authentication, session, account lifecycle**
+**hrm — Actor definitions, permission matrix, authentication, session, account lifecycle**
 
 Actor definitions, permission matrix, authentication, session, account lifecycle
 
@@ -8,107 +8,47 @@ Define all user actor types with their identity, permissions, and access boundar
 
 ## guest Actor
 
-A guest is an unauthenticated user who has not yet signed in to the platform. Guests can access public-facing pages including the sign-up and login screens. They can create a new user account by providing an email address and password. Guests can also recover access to their account through password reset functionality. Once authenticated, a guest transitions to a member actor with access to organization-scoped features. Guests cannot view any organization data, employee records, projects, or time tracking information. All data access requires authentication and organization context selection. The guest actor represents the entry point for new users before they join any organization.
+The guest actor represents users who have not yet authenticated or selected an organization context. Guests can access the public sign-up page to create a new user account with email and password. They can also access the login page to authenticate with existing credentials. Once authenticated, guests transition to the member actor state and can select an organization to work within. Guests cannot view any organization-specific data, employee records, projects, or time tracking information. All organization data remains completely inaccessible until the user authenticates and selects an organization context. The guest state is temporary and exists only during the registration or login process.
 
-### Unauthenticated User Access
+### Guest Actor Definition
 
-A guest is an unauthenticated user who has not yet signed in to the platform. Guests cannot view any organization data, employee records, projects, tasks, timelogs, timesheets, or reports. All data access requires authentication and organization context selection. Guests have no access to employee management, time tracking, or organizational features. The guest actor represents the pre-authentication state before a user creates an account or signs in. Once a guest successfully authenticates, they transition to a member actor with access to organization-scoped features.
+The guest actor represents an unauthenticated user who has not yet logged in or selected an organization context. Guests exist in a pre-authentication state and have no access to organization-specific data, employee records, projects, tasks, or time tracking information. All organization data remains completely inaccessible until the user authenticates and selects an organization. The guest state is temporary and exists only during the registration or login process. Once authenticated, the user transitions to the member actor state.
 
-### Account Registration and Login
+### Authentication Entry Points
 
-Guests can access the public sign-up page to create a new user account. The sign-up process requires providing an email address and password. Guests can access the login screen to authenticate with their existing email and password credentials. Account creation is the entry point for new users to join the platform. After successful account creation, the user can log in and create or join an organization. The sign-up and login pages are publicly accessible without authentication.
+Guests can access the public sign-up page to create a new user account with email and password. Guests can also access the public login page to authenticate with existing credentials. These authentication pages are the only entry points available to unauthenticated users. No other system features or pages are accessible without authentication.
 
-### Password Recovery Flow
+### Access Limitations
 
-Guests can recover access to their account through password reset functionality. The password recovery flow allows users to reset their password when they have forgotten their login credentials. Password recovery requires access to the registered email address to verify identity. Once the password is successfully reset, the user can log in with the new password. This flow is available to guests who have already created an account but cannot remember their password.
+Guests cannot view any organization-specific data including employee records, projects, tasks, timelogs, timesheets, or reports. Guests cannot access organization settings, department lists, or activity logs. Guests cannot perform any operations within an organization context. All data queries and actions require an authenticated member with a selected organization context.
 
-### Transition to Member Actor
+### State Transition to Member
 
-After successful authentication, a guest transitions to a member actor with access to organization-scoped features. The transition occurs when the user provides valid email and password credentials. Once authenticated as a member, the user must select which organization to work in. All subsequent actions are scoped to the selected organization. Users can switch between organizations without logging out. The guest state ends when authentication is successful and organization context is established.
+When a guest successfully registers with email and password, they become an authenticated member and can select an organization to work within. When a guest successfully logs in with email and password, they become an authenticated member and can select an organization to work within. After authentication, the guest state is replaced by the member actor state with organization-scoped access. Users can switch between organizations without logging out, but must always have an organization context selected to access data.
 
 ## member Actor
 
-A member is an authenticated user who belongs to at least one organization and has an employee record within that organization. Members can select which organization context to work in when logging in and can switch between organizations without re-authentication. Each member is assigned exactly one role per organization that determines their permissions and access boundaries. Members can view their personal profile information which is shared across all organizations they belong to. They can log time entries for projects they are assigned to and submit timesheets for approval. Members can view their own timelogs, timesheets, and assigned tasks within their organization context. Members can use the live timer feature to track time in real-time. Members cannot access organization settings, manage other employees, or view organization-wide reports unless their role grants those permissions. Members can deactivate their own account but must transfer ownership or delete any organization they solely own first.
+The member actor represents authenticated users who have selected an organization context and belong to one or more organizations. Members have a global user profile with display name, avatar, and contact information shared across all organizations. Within each organization, a member is assigned exactly one role: Owner, Manager, or Employee. Each role grants specific permissions that determine what the member can do within that organization. Members can switch between organizations without logging out, and all actions are scoped to the currently selected organization. Members have employee records in each organization they belong to, containing department, position, employment type, and status. Member permissions are strictly enforced based on their assigned role, and they cannot access data from organizations they do not belong to. The member actor state persists until logout or account deletion.
 
-### Member Identity and Organization Membership
+### Member Identity and Session
 
-A member is an authenticated user who has created or joined at least one organization. Members have an employee record within each organization they belong to, which associates their user account with that organization's data.
+A member is an authenticated user who has successfully logged in with email and password. Members maintain an active session that persists until logout or account deletion. Members can change their password while authenticated. The member state begins after successful authentication and ends when the user logs out or deletes their account.
 
-Members can belong to multiple organizations simultaneously. Each organization maintains independent employee records for the same user, allowing the member to work across different organizational contexts.
+### Organization Context and Multi-Tenancy
 
-The employee record in each organization contains the member's role assignment, department, position, employment type, and employment status. This record is separate from the member's global user profile and is specific to each organization.
+Members can belong to multiple organizations simultaneously. Upon login, members select which organization to work in, establishing the organization context. All subsequent actions are scoped to the selected organization. Members can switch between organizations without logging out, changing the organization context for all operations. Members cannot access data from organizations they do not belong to. Data isolation is enforced at the organization level, ensuring members only see data within their selected organization context.
 
-### Organization Context Selection
+### Global User Profile
 
-When logging in, members must select which organization to work in. This selection establishes the organization context for all subsequent actions during the session.
+Each member has a global user profile that is shared across all organizations they belong to. The profile includes display name, avatar image, and phone number. Members can edit their global profile at any time. Profile changes are reflected across all organization contexts immediately.
 
-Members can switch between organizations without logging out. When switching, the organization context changes immediately, and all data access is scoped to the newly selected organization.
+### Employee Record per Organization
 
-All data visible to the member is strictly isolated to the currently selected organization. Members cannot view or access data from other organizations they belong to while working in a different organization context.
+Within each organization, a member has an employee record that contains organization-specific information. The employee record includes department (optional), position or title (optional), employment type (full-time, part-time, contractor, or intern), and status (active or deactivated). Each member is assigned exactly one role within each organization. Deactivated employees cannot log time or submit timesheets, but their historical data is preserved. Deactivated employees can be reactivated by users with employee management permission.
 
-### Role Assignment and Permissions
+### Role-Based Access Control
 
-Each member is assigned exactly one role per organization. The role determines the member's permissions and access boundaries within that organization.
-
-Three built-in roles exist in every organization and cannot be deleted: Owner, Manager, and Employee. Organization owners can create custom roles with specific permission sets.
-
-Role assignments can be changed by users with the employee management permission. When a role is changed, the member's permissions update immediately to reflect the new role's access rights.
-
-The available permissions that can be assigned to roles include: organization settings management, employee management, employee viewing, project management, project viewing, time entry management, timesheet approval, all timelogs viewing, and report viewing.
-
-### Personal Profile Access
-
-Members have access to a global personal profile that is shared across all organizations they belong to. The profile includes display name, avatar image, and phone number.
-
-Members can edit their personal profile information at any time. Changes to the profile are reflected across all organization contexts immediately.
-
-Profile information is not organization-specific and remains consistent regardless of which organization context the member is currently working in.
-
-### Time Entry Creation and Live Timer
-
-Members can create time entries (timelogs) for projects they are assigned to. Each time entry includes a date, duration, project, optional task, optional description, and billable flag.
-
-Members can only create time entries for themselves. They cannot create or modify time entries for other employees.
-
-Members can use a live timer feature to track time in real-time. The timer requires selecting a project and optionally a task. Only one timer can be active per member at any time.
-
-When the timer is stopped, it automatically creates a time entry with the calculated duration rounded to the nearest minute. Members can also discard the timer without creating a time entry.
-
-Members can edit the description and project or task of a running timer before stopping it.
-
-### Own Time Entry Viewing
-
-Members can view their own time entries within the currently selected organization. The time entry list is paginated and can be filtered by date range, project, task, and billable status.
-
-Members can edit their own time entries only if the entry is not part of an approved timesheet. Members can delete their own time entries only if the entry is not part of any submitted or approved timesheet.
-
-Members can view all time entries they have created across all projects they are assigned to within the organization context.
-
-### Timesheet Submission
-
-Members can submit timesheets for approval. A timesheet represents a week's worth of time entries (Monday to Sunday).
-
-Members can create a draft timesheet for a specific week. The draft automatically includes all time entries for that member in that week.
-
-Members can add or remove time entries from a draft timesheet before submission. A timesheet cannot be submitted if it contains no time entries.
-
-Members cannot submit a timesheet for a week if another timesheet for the same week is already submitted or approved. Once submitted, timesheets enter a pending approval state.
-
-### Assigned Task Access
-
-Members can view tasks assigned to them within projects they are assigned to. Members can see tasks with any status including open, in-progress, completed, and closed.
-
-Members can filter tasks by status, priority, and assignment. Members can sort tasks by due date, priority, or creation date.
-
-Members can view task details including title, description, status, priority, estimated hours, and due date. Members can view the task history which records status changes with timestamps and the user who made each change.
-
-### Account Deactivation
-
-Members can deactivate their own user account. Before deactivation, if the member is the sole owner of any organization, they must either transfer ownership to another member or delete the organization.
-
-When a member deactivates their account, their employee records in all organizations are marked as deactivated. Deactivated employee records preserve all historical data including time entries, timesheets, and task assignments.
-
-Deactivated members cannot log in or access any organization data. Their employee records remain in the system for historical reporting purposes but are marked as inactive.
+Each organization has three built-in roles that cannot be deleted: Owner, Manager, and Employee. The Owner role grants full access to all features and the ability to manage roles and members. The Manager role grants permission to manage employees and projects, approve timesheets, and view reports. The Employee role grants permission to track time, submit timesheets, and view own data. Organization owners can create custom roles with specific permissions. Each custom role has a name and a set of permissions selected from the available permission set. Organization owners can edit custom roles and delete custom roles only if no employees are assigned to them. Role assignment to employees can be changed by users with employee management permission. Permission enforcement is based on the member's assigned role within the selected organization context.
 
 # Authentication Flows
 
@@ -120,47 +60,41 @@ Define user registration and login flows including validation and error handling
 
 ### User Registration
 
-Users can create a new account by providing an email address and password.
+Users can create an account by providing an email address and password.
 
-The email address must be unique across the platform. If the email is already registered, account creation is rejected.
+The system validates the email format and ensures it is not already registered.
 
-Users can set their display name during registration. The display name is part of their global profile shared across all organizations.
+Upon successful registration, the user can create their first organization during the sign-up process.
 
-Users can add a phone number and avatar image to their profile during or after registration.
+The user's global profile is created with a display name that can be edited later.
 
-If the user's email matches a pending invitation, the user is automatically added to the inviting organization upon successful registration.
+If a user is invited to an organization via email before having an account, they can complete registration with that email and will automatically be added to the pending organization.
 
-### User Authentication and Login
+### User Login and Organization Selection
 
-Users log in by providing their email address and password.
+Users can log in to the system using their registered email address and password.
 
-If the credentials are invalid, login is rejected.
+Upon successful authentication, the system presents the list of organizations the user belongs to.
 
-After successful authentication, users must select which organization to work in from the list of organizations they belong to.
+The user must select one organization to establish their working context.
 
-All actions performed by the user are scoped to the selected organization. Data from other organizations is not visible.
+All subsequent actions are scoped to the selected organization until the user switches organizations or logs out.
 
-Users can switch between organizations without logging out. The new organization context is applied immediately.
+The user can switch to a different organization without logging out by selecting it from their organization list.
 
-Users can log out to end their current session. After logout, users must re-authenticate to access any organization data.
+Authentication failures occur when the email or password is incorrect, and the user is prompted to try again.
 
-### Password Management
+### Session and Organization Context
 
-Users can change their password by providing their current password and a new password.
+The system maintains an authenticated session after successful login.
 
-If the current password is incorrect, the password change is rejected.
+The session is associated with the selected organization context.
 
-The new password must meet the system's password requirements.
+Users remain authenticated until they explicitly log out or their session expires.
 
-### Account Deletion
+The system enforces organization context on all authenticated requests to ensure data isolation.
 
-Users can delete their account.
-
-If the user is the sole owner of an organization, they must either transfer ownership to another employee or delete the organization before their account can be deleted.
-
-When a user deletes their account, their employee records in other organizations are marked as deactivated.
-
-The user's global profile data is removed from the system.
+Users belonging to multiple organizations only see data for their currently selected organization.
 
 ## Session and Logout
 
@@ -168,15 +102,31 @@ Define session behavior and logout from a user perspective.
 
 ### Session Management
 
-When users log in successfully, the system creates a session scoped to a specific organization. Users must select which organization to work in during the login process. All actions performed during the session are restricted to the selected organization's data. Users can switch between organizations they belong to without logging out. When switching organizations, the session is updated to the new organization context.
+After successful login, users must select an organization to establish their working context. All subsequent actions within the session are scoped to this selected organization.
+
+Users can switch to a different organization within the same session without logging out. When switching organizations, the user's role and permissions change to reflect their assignment in the newly selected organization.
+
+The session maintains the organization context until the user explicitly switches organizations or logs out. All data access, including employee records, projects, tasks, timelogs, and timesheets, is strictly limited to the selected organization.
+
+Users who belong to multiple organizations can quickly switch between them without re-authentication. Each organization view displays only data belonging to that organization.
 
 ### Logout Behavior
 
-Users can log out from their current session at any time. When users log out, the session is terminated and organization context is cleared. Users must log in again to access the system. Logging out does not affect any pending timesheets or unsaved timelogs; users should complete or save their work before logging out.
+Users can log out from the system at any time. Logging out terminates the current session and clears the organization context.
+
+After logout, users must re-authenticate with their email and password to access the system again. Upon re-login, users must select an organization to establish a new session context.
+
+The system does not automatically log out users due to inactivity. Sessions remain active until the user explicitly logs out.
 
 ### Account Security
 
-Users can change their password at any time by providing their current password and a new password. When users delete their account, the system validates that they are not the sole owner of any organization. If they are the sole owner of an organization, they must transfer ownership to another user or delete the organization before account deletion can proceed. When a user account is deleted, their employee records in other organizations are marked as deactivated. The user's global profile data is removed. Users who belong to multiple organizations only lose access to all organizations upon account deletion.
+Users can change their password at any time after logging in. Password changes require the current password for verification.
+
+The system uses email and password authentication. No additional authentication mechanisms are required.
+
+When a user deletes their account, they are removed from all organizations. If the user is the sole owner of an organization, they must transfer ownership or delete the organization before account deletion.
+
+Deactivated employee records are preserved for historical data integrity. Deactivated employees cannot log in to access the organization's data.
 
 # Account Lifecycle
 
@@ -188,54 +138,34 @@ Define how users create accounts, delete accounts, and change passwords.
 
 ### Account Creation
 
-Users can create an account by providing an email address and password.
+Users can create an account by providing an email address and password during initial sign-up.
 
-During initial sign-up, users create their first organization. The organization requires a name and may include a description, logo image, currency, timezone, and fiscal start month.
+The email address must be unique across the platform. If the email is already registered, the account creation request is rejected.
 
-The email address must be unique across the platform. If the email is already registered, account creation is rejected.
+Upon successful registration, the user must provide an organization name. The user is automatically created as the owner of this new organization.
 
-The password must meet security requirements (as defined by the system).
-
-Upon successful registration, the user is automatically logged in and becomes the owner of the created organization.
-
-The user's global profile is created with display name, avatar image, and phone number fields, which can be edited later.
-
-If the user already has an account and is invited to join an existing organization via email, the invitation is processed without requiring a new account.
-
-### Account Deletion
-
-Users can delete their account from the platform.
-
-Before account deletion, the user must satisfy the following conditions:
-- If the user is the sole owner of any organization, they must either transfer ownership to another employee or delete the organization first.
-- The user cannot be the only remaining owner across all organizations they belong to.
-
-When a user account is deleted:
-- The user's account is permanently removed from the platform.
-- The user's employee records in all other organizations are marked as deactivated.
-- Deactivated employee records preserve historical data (timelogs, timesheets, contracts).
-- The user can no longer log in or access any organization data.
-
-Users who are not owners of any organization can delete their account without additional steps.
-
-Account deletion is irreversible. Users should be warned before confirming deletion.
+The user's global profile is initialized with the provided email. Display name, avatar image, and phone number can be added or updated through profile editing (defined in User Profile section).
 
 ### Password Management
 
-Users can change their password after logging in.
+Users can change their password by providing their current password and a new password.
 
-To change the password, users must provide their current password for verification.
+The current password must be valid for the change to proceed. If the current password is incorrect, the password change request is rejected.
 
-The new password must meet security requirements (as defined by the system).
+The new password must meet the platform's security requirements (as defined by the system).
 
-The new password must be different from the current password.
+Password changes apply globally to the user account and affect access to all organizations the user belongs to.
 
-After a successful password change:
-- The user remains logged in to their current session.
-- The user may be required to log in again on other devices or sessions (depending on system security policy).
+### Account Deletion
 
-If the current password is incorrect, the password change is rejected.
+Users can delete their account, but certain conditions must be met:
 
-If the new password does not meet security requirements, the password change is rejected.
+If the user is the sole owner of an organization, they must either transfer ownership to another employee or delete the organization before their account can be deleted. An account cannot be deleted while the user is the only owner of any organization.
 
-Users who have forgotten their password can initiate a password recovery flow (separate from password change, handled through authentication mechanisms).
+When a user deletes their account:
+- The user account is permanently removed from the platform
+- The user's employee records in all other organizations are marked as deactivated
+- Historical data (timelogs, timesheets, contracts) associated with the user is preserved for organizational records
+- The user can no longer log in or access any organization data
+
+Account deletion is irreversible. Users should be warned of this consequence before confirming deletion.

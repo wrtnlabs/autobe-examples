@@ -1,40 +1,30 @@
 import { Module } from "@nestjs/common";
 
-import { TodoappAuthGuestJoinController } from "./controllers/todoApp/auth/guest/join/TodoappAuthGuestJoinController";
-import { TodoappAuthGuestRefreshController } from "./controllers/todoApp/auth/guest/refresh/TodoappAuthGuestRefreshController";
-import { TodoappAuthMemberController } from "./controllers/todoApp/auth/member/TodoappAuthMemberController";
-import { TodoappGuestSessionsController } from "./controllers/todoApp/guest/sessions/TodoappGuestSessionsController";
-import { TodoappGuestsController } from "./controllers/todoApp/guests/TodoappGuestsController";
-import { TodoappMemberEmail_verificationsController } from "./controllers/todoApp/member/email-verifications/TodoappMemberEmail_verificationsController";
-import { TodoappMemberMembersController } from "./controllers/todoApp/member/members/TodoappMemberMembersController";
-import { TodoappMemberPassword_resetsController } from "./controllers/todoApp/member/password-resets/TodoappMemberPassword_resetsController";
-import { TodoappMemberProfileController } from "./controllers/todoApp/member/profile/TodoappMemberProfileController";
-import { TodoappMemberProfilesController } from "./controllers/todoApp/member/profiles/TodoappMemberProfilesController";
-import { TodoappMemberTodosController } from "./controllers/todoApp/member/todos/TodoappMemberTodosController";
-import { TodoappMemberTodosHistory_entriesController } from "./controllers/todoApp/member/todos/history-entries/TodoappMemberTodosHistory_entriesController";
-import { TodoappMemberTodosHistoryController } from "./controllers/todoApp/member/todos/history/TodoappMemberTodosHistoryController";
-import { TodoappMemberTodosHistoryOrderindexesController } from "./controllers/todoApp/member/todos/history/orderIndexes/TodoappMemberTodosHistoryOrderindexesController";
-import { TodoappMemberTodosRestoreController } from "./controllers/todoApp/member/todos/restore/TodoappMemberTodosRestoreController";
-import { TodoappMemberTodosSnapshotsController } from "./controllers/todoApp/member/todos/snapshots/TodoappMemberTodosSnapshotsController";
+import { MultiusertodoAuthGuestController } from "./controllers/multiUserTodo/auth/guest/MultiusertodoAuthGuestController";
+import { MultiusertodoAuthMemberController } from "./controllers/multiUserTodo/auth/member/MultiusertodoAuthMemberController";
+import { MultiusertodoMemberDashboardTodosSummaryController } from "./controllers/multiUserTodo/member/dashboard/todos/summary/MultiusertodoMemberDashboardTodosSummaryController";
+import { MultiusertodoMemberProfileController } from "./controllers/multiUserTodo/member/profile/MultiusertodoMemberProfileController";
+import { MultiusertodoMemberProfilesController } from "./controllers/multiUserTodo/member/profiles/MultiusertodoMemberProfilesController";
+import { MultiusertodoMemberTodosController } from "./controllers/multiUserTodo/member/todos/MultiusertodoMemberTodosController";
+import { MultiusertodoMemberTodosBulk_move_to_trashController } from "./controllers/multiUserTodo/member/todos/bulk-move-to-trash/MultiusertodoMemberTodosBulk_move_to_trashController";
+import { MultiusertodoMemberTodosBulk_permanent_deleteController } from "./controllers/multiUserTodo/member/todos/bulk-permanent-delete/MultiusertodoMemberTodosBulk_permanent_deleteController";
+import { MultiusertodoMemberTodosBulk_restore_from_trashController } from "./controllers/multiUserTodo/member/todos/bulk-restore-from-trash/MultiusertodoMemberTodosBulk_restore_from_trashController";
+import { MultiusertodoMemberTodosBulk_toggle_completionController } from "./controllers/multiUserTodo/member/todos/bulk-toggle-completion/MultiusertodoMemberTodosBulk_toggle_completionController";
+import { MultiusertodoMemberTodosEdit_history_entriesController } from "./controllers/multiUserTodo/member/todos/edit-history-entries/MultiusertodoMemberTodosEdit_history_entriesController";
 
 @Module({
   controllers: [
-    TodoappAuthGuestJoinController,
-    TodoappAuthGuestRefreshController,
-    TodoappAuthMemberController,
-    TodoappGuestsController,
-    TodoappGuestSessionsController,
-    TodoappMemberMembersController,
-    TodoappMemberPassword_resetsController,
-    TodoappMemberEmail_verificationsController,
-    TodoappMemberProfileController,
-    TodoappMemberProfilesController,
-    TodoappMemberTodosController,
-    TodoappMemberTodosRestoreController,
-    TodoappMemberTodosHistory_entriesController,
-    TodoappMemberTodosSnapshotsController,
-    TodoappMemberTodosHistoryController,
-    TodoappMemberTodosHistoryOrderindexesController,
+    MultiusertodoAuthGuestController,
+    MultiusertodoAuthMemberController,
+    MultiusertodoMemberProfilesController,
+    MultiusertodoMemberProfileController,
+    MultiusertodoMemberTodosController,
+    MultiusertodoMemberTodosEdit_history_entriesController,
+    MultiusertodoMemberDashboardTodosSummaryController,
+    MultiusertodoMemberTodosBulk_move_to_trashController,
+    MultiusertodoMemberTodosBulk_restore_from_trashController,
+    MultiusertodoMemberTodosBulk_permanent_deleteController,
+    MultiusertodoMemberTodosBulk_toggle_completionController,
   ],
 })
 export class MyModule {}

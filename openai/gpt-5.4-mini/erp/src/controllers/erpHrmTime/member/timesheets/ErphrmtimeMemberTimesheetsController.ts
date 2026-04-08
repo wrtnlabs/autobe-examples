@@ -6,7 +6,6 @@ import { IErpHrmTimeTimesheet } from "../../../../api/structures/IErpHrmTimeTime
 import { IPageIErpHrmTimeTimesheet } from "../../../../api/structures/IPageIErpHrmTimeTimesheet";
 import { MemberAuth } from "../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../decorators/payload/MemberPayload";
-import { deleteErpHrmTimeMemberTimesheetsTimesheetId } from "../../../../providers/deleteErpHrmTimeMemberTimesheetsTimesheetId";
 import { getErpHrmTimeMemberTimesheetsTimesheetId } from "../../../../providers/getErpHrmTimeMemberTimesheetsTimesheetId";
 import { patchErpHrmTimeMemberTimesheets } from "../../../../providers/patchErpHrmTimeMemberTimesheets";
 import { postErpHrmTimeMemberTimesheets } from "../../../../providers/postErpHrmTimeMemberTimesheets";
@@ -18,25 +17,25 @@ import { putErpHrmTimeMemberTimesheetsTimesheetId } from "../../../../providers/
 @Controller("/erpHrmTime/member/timesheets")
 export class ErphrmtimeMemberTimesheetsController {
   /**
-   * Create a new weekly timesheet draft for the current employee.
+   * Create a draft weekly timesheet for the authenticated employee.
    *
-   * This operation starts the timesheet workflow for a specific Monday-to-Sunday week and returns the newly created draft timesheet so the employee can review, adjust included timelogs, and submit it later. The timesheet belongs to the currently selected organization and is always created for the authenticated member's own employee record.
+   * This operation creates the employee's weekly timesheet for a specific Monday-to-Sunday period in the currently selected organization. The new record is the editable draft version of the employee's weekly time collection and is intended for later submission, approval, or rejection in the timesheet workflow.
    *
-   * The created timesheet is used in the approval flow for time tracking. When a draft is created, the system may include eligible timelogs for that employee within the requested week, and the resulting record must remain within the same organization context. Requests that target another organization, another employee, or an invalid week must be rejected.
+   * When a draft is created, the service must ensure it belongs to the authenticated employee's organization context, uses valid weekly boundaries, and does not duplicate an existing timesheet for the same employee and week. If the implementation supports automatic draft population, the draft should include the employee's timelogs for that week so the employee can review them before submission.
+   *
+   * If the employee-week pair already exists, or if the requested week is invalid, the server must reject the request with the appropriate validation or conflict error. The response returns the created draft timesheet record.
    *
    * @param connection
-   * @param body Data required to create a weekly timesheet draft for the current employee.
+   * @param body Draft timesheet creation details for the target week.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Create a timesheet draft for the authenticated member's employee in the selected organization.
-   * Validate that the request is scoped to the current organization context and that the user has an employee record in that organization.
-   * Validate the requested week boundaries from the request body and ensure they represent the intended weekly timesheet period.
-   * Prevent creation if a conflicting timesheet for the same employee and week already exists in a non-allowed state according to the timesheet workflow.
-   * Persist the new timesheet and associate any eligible timelogs for that employee and week according to the service rules.
-   * Recompute total hours from the included timelogs so the stored total matches the current contents.
-   * Return the created timesheet entity with its linked timelogs and status information.
-   * If the employee is deactivated or otherwise blocked from time entry, reject the request with a business validation error.
-   * If organization context is missing or the employee does not belong to the selected organization, reject with an authorization or scope error.
+   * @x-autobe-specification Resolve the authenticated member's employee record in the selected organization context.
+   * Validate that the requester is an active employee in that organization; deactivated employees must be rejected because they cannot submit or manage time.
+   * Validate the requested timesheet week so that week_start_date is Monday and week_end_date is Sunday, and the range belongs to a single weekly period.
+   * Check the unique constraint on (erp_hrm_time_employee_id, week_start_date) before insert. If a record already exists for that employee/week, return a conflict error.
+   * Create the timesheet row with status set to draft and persist the employee ownership and week boundaries. The schema includes reviewed fields, rejection reason, and timestamps; set review-related fields to null on creation.
+   * After creation, initialize the draft composition behavior required by the product rules: the employee should later be able to add or remove timelogs from the draft. Do not silently attach timelogs here unless the lower layer explicitly implements that as part of creation logic; if automatic inclusion is supported by the service, it must query the employee's timelogs for the target week within the same organization and insert join rows transactionally.
+   * Enforce organization isolation using the employee's organization membership and the selected organization context; never allow cross-organization timesheet creation. Return the full created entity and surface validation, not-found, forbidden, and conflict errors as appropriate.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -60,22 +59,19 @@ export class ErphrmtimeMemberTimesheetsController {
   /**
    * Retrieve a paginated list of timesheets for the currently selected organization.
    *
-   * Employees can use this endpoint to find their own timesheets by week or status, while users with approval permission can browse submitted timesheets across the organization. Results are always limited to the active organization context and never include timesheets from other organizations.
+   * This endpoint supports browsing timesheets by status and date range so employees can find their own weekly submissions and approvers can review submitted work. Results are always limited to the active organization context, and the returned rows must never include timesheets from any other organization.
    *
-   * Filtering supports timesheet status and week/date range criteria, and the list is paginated for efficient browsing. The returned summary data is intended for list views and should reflect the current organization scope, including access restrictions for draft, submitted, approved, and rejected timesheets.
+   * Employees may only see their own timesheets unless they have approval permissions that allow broader access. Users with approval permission can review all submitted timesheets in the organization, while regular employees remain restricted to their own records. The list is designed for weekly time reporting workflows and should include summary data suitable for table views.
    *
    * @param connection
-   * @param body Search, filter, sort, and pagination criteria for browsing organization-scoped timesheets.
+   * @param body Timesheet list criteria including pagination, sorting, and filters for status and date range.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Query erp_hrm_time_timesheets for the currently selected organization only.
-   * Apply organization scoping from the authenticated member's active organization context before any other filter.
-   * Support pagination, sorting, and filtering by status and week/date range through the request body.
-   * For employees without approval permission, restrict results to their own timesheets only; for users with time approval permission, allow access to all timesheets in the organization as permitted by business rules.
-   * Do not return records from any other organization.
-   * Use the timesheet owner and status rules to ensure draft/rejected self-service behavior remains consistent with the domain rules.
-   * Return a paginated summary payload suitable for list rendering, including fields needed to display week boundaries, status, total hours, and review/submission state if present.
-   * If the request contains invalid date ranges, unsupported filters, or pagination values, return a validation error. If the active organization context is missing, return an authorization/context error.
+   * @x-autobe-specification Read timesheets from erp_hrm_time_timesheets using the current organization context derived from authentication/session state. Join or filter through organization-linked employee records so that only timesheets belonging to the selected organization are returned.
+   *
+   * Implement pagination, sorting, and filtering in the request body. Supported filters must include status and date range, and the organization boundary must be enforced before any pagination is applied. For employees without approval permission, restrict visibility to timesheets owned by the current employee account. For users with approval permission, return all submitted timesheets in the organization plus any own timesheets if that is part of the authorization policy.
+   *
+   * Use the timesheet's week boundaries and status fields to filter results. Preserve the current organization scope across all pages. If the selected organization is missing or invalid, return an authorization/context error. If filter values are malformed or the date range is invalid, return a validation error. The response must be a paginated summary view optimized for list rendering, including the timesheet identity, owner, week range, status, and total hours derived from included timelogs.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -97,21 +93,23 @@ export class ErphrmtimeMemberTimesheetsController {
   }
 
   /**
-   * Retrieve a weekly timesheet and its review metadata.
+   * Retrieve a single timesheet for the currently selected organization.
    *
-   * This operation returns one timesheet record for the currently selected organization, including the employee owner, week boundaries, submission state, review timestamps, rejection reason, and the reviewer when one has been assigned. The timesheet belongs to exactly one employee and represents that employee's weekly time record, so the returned data must always remain scoped to the organization and the owning employee relationship stored in the database.
+   * This operation returns the full weekly timesheet record for one employee, including its week boundaries, status, total hours, submission and review metadata, and the timelogs that belong to that sheet. Timesheets are employee-owned records, so the response reflects the owning employee’s weekly time record and is suitable for detailed review screens, approval workflows, and employee self-service pages.
    *
-   * Employees may use this endpoint to open their own timesheets, while users with timesheet approval permission may use it to inspect submitted timesheets during review. The associated timelogs are represented through the timesheet-to-timelog relationship and must be loaded consistently with the timesheet so the consumer sees the complete weekly composition. If the record belongs to another organization, does not exist, or is not visible to the current actor under organization-scoped access rules, the service must reject the request with an access or not-found error.
+   * Access is limited to the selected organization. Employees may retrieve their own timesheets, and users with timesheet approval permission may retrieve submitted timesheets within the same organization. If the timesheet belongs to another organization, is not accessible in the current organization context, or the caller lacks permission, the request must fail with an authorization or not-found style error depending on the platform’s access policy.
    *
    * @param connection
-   * @param timesheetId Timesheet identifier in UUID format.
+   * @param timesheetId The identifier of the timesheet to retrieve.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the timesheet by id, then join its owner employee, optional reviewer member, and associated timesheet-timelog links with their timelog records.
-   *
-   * Before returning data, enforce selected-organization isolation by verifying that the resolved employee belongs to the current organization context. Deny access if the timesheet does not belong to the selected organization or if the caller lacks permission to view it. Employees may view their own timesheets; approvers with time approval permission may view submitted timesheets in the organization. Do not expose any record from a different organization.
-   *
-   * Return the full entity shape expected for a detail view, including relationship-derived data needed by the consumer. Preserve database values for status, submitted_at, reviewed_at, rejection_reason, and timestamps exactly as stored. If the record is absent or hidden by authorization rules, return a not-found or forbidden response according to the service's standard error policy.
+   * @x-autobe-specification Load the timesheet by its identifier with an organization-scoped query.
+   * Verify that the timesheet belongs to the currently selected organization before returning it.
+   * Join or separately load the owning employee and included timelogs so the response can expose the complete weekly record.
+   * Apply access control rules: the owner can view their own timesheet; users with approval permission can view submitted timesheets in the same organization.
+   * Reject access when the record is outside the active organization context or the caller is not permitted to view it.
+   * Include the timesheet total hours as stored or derived from the included timelogs, ensuring the returned value matches the approved or current draft contents according to the timesheet state.
+   * If the identifier does not resolve to a timesheet in the active organization, return a not found response.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":timesheetId")
@@ -133,29 +131,32 @@ export class ErphrmtimeMemberTimesheetsController {
   }
 
   /**
-   * Update a weekly timesheet for the currently selected organization.
+   * Update a weekly timesheet record for the selected organization.
    *
-   * This endpoint lets the owning employee adjust a draft or rejected timesheet by adding or removing included timelogs, while also supporting authorized review actions on submitted timesheets. A timesheet always belongs to exactly one employee, and all access is limited to the active organization context.
+   * This operation is used to modify a timesheet that belongs to a single employee and represents one Monday-to-Sunday work week. The timesheet stores the owning employee, the review metadata, the week boundaries, the lifecycle status, and the rejection reason when a submission is rejected. The included timelogs are maintained through the timesheet-timelog relation, so this operation updates the timesheet record itself while preserving the linked time entries.
    *
-   * The total hours on the timesheet are derived from the timelogs included in that weekly record. When the included timelogs change, the stored total must be kept in sync with the current contents. Submitted timesheets can be reviewed only by users with approval permission, and rejection requires a reason to be recorded with the review action.
+   * Employees may use this operation to adjust their own draft or rejected timesheets within the currently selected organization. Approvers may use it as part of the review workflow to record review outcomes and related timestamps. The service must enforce organization isolation, verify that the target timesheet belongs to the active organization, and reject attempts to modify a timesheet from another organization. It must also enforce the business rules for timesheet state transitions and prevent invalid edits to submitted or approved records outside the allowed workflow.
+   *
+   * If the timesheet is rejected, the rejection reason should be persisted on the record. If review metadata is changed, the service must keep the review timestamps and reviewer association consistent with the new state. Any invalid status transition, missing required review data, or unauthorized update must result in a validation or permission error.
    *
    * @param connection
-   * @param timesheetId The identifier of the timesheet to update.
-   * @param body Timesheet update data, including allowed timelog adjustments or review fields depending on the caller's permission and the current timesheet status.
+   * @param timesheetId Timesheet identifier in UUID format within the selected organization scope.
+   * @param body Fields to update on the timesheet, including week boundaries and workflow metadata used by the approval process.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the target timesheet by timesheetId within the current organization context. Verify that the timesheet exists and belongs to the selected organization before any update is applied.
+   * @x-autobe-specification Load the target timesheet by id with organization scope enforcement through the owning employee relation. Reject the request if the timesheet does not belong to the selected organization or the current user lacks access.
    *
-   * Enforce business rules by actor and status:
-   * - The owning employee may update only their own timesheet when it is in draft or rejected status.
-   * - Users with time:approve permission may review submitted timesheets.
-   * - Prevent modifications when the timesheet belongs to another employee, when the status is not editable for the requester, or when the timesheet is in a state that does not allow the requested change.
+   * Allow updates only for fields supported by the timesheet model: week_start_date, week_end_date, status, submitted_at, reviewed_at, reviewed_by_member_id, and rejection_reason. Preserve id, employee ownership, and linked timesheet-timelog associations. Do not allow changing the owner through this endpoint.
    *
-   * When the request changes the set of included timelogs, validate that every referenced timelog belongs to the same organization and to the same owning employee, and that the timelogs are allowed to be part of the week being edited. Recompute total hours from the included timelogs so the stored value matches the current composition.
+   * Validate that week_start_date is Monday and week_end_date is Sunday, and that the week range remains coherent. Enforce the uniqueness rule for one timesheet per employee per week. If the week is changed, ensure no conflicting timesheet exists for that employee and week.
    *
-   * If the request performs an approval, set status to approved, store the reviewer identity and review timestamp, and preserve the approved set of timelogs. If the request performs a rejection, require a rejection reason, set status to rejected, and store the reviewer identity and review timestamp. If the request is a self-service edit on a draft or rejected timesheet, update the included timelogs and derived total hours only.
+   * Enforce workflow rules based on status:
+   * - Draft and rejected timesheets may be updated by their owner in the selected organization.
+   * - Submitted and approved timesheets must not be arbitrarily modified; only review-related updates should be accepted when performed through the appropriate approval workflow.
+   * - Rejection reason is required when setting the status to rejected.
+   * - reviewed_at and reviewed_by_member_id must be consistent when approval or rejection is recorded.
    *
-   * Reject updates that try to cross organization boundaries, alter another employee’s timesheet, submit fields that are not permitted for the requester’s role, or attempt to modify a timesheet in a non-editable state. Return validation or authorization errors as appropriate.
+   * Persist updates in a transaction. If state changes affect downstream totals, recompute derived total hours from the linked timelogs when serializing the response. Return not found for missing records, forbidden for cross-organization or unauthorized access, and conflict for duplicate weekly ownership or invalid workflow transitions.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":timesheetId")
@@ -180,60 +181,21 @@ export class ErphrmtimeMemberTimesheetsController {
   }
 
   /**
-   * Permanently deletes a weekly timesheet for the current organization context.
-   *
-   * A timesheet represents an employee’s collected timelogs for a specific week, along with its submission and review state. This operation removes the timesheet record when the caller is allowed to do so and when the timesheet is in a deletable state. The service must respect ownership and permission rules so that only authorized users can delete the record.
-   *
-   * Deletion must be rejected when the timesheet is already submitted or approved, because those states lock the included timelogs and preserve review history. The service must also reject requests for timesheets that do not belong to the current organization context or that the caller is not permitted to access. If the deletion succeeds, the response can return the removed timesheet for confirmation and UI refresh.
-   *
-   * @param connection
-   * @param timesheetId The identifier of the timesheet to delete, scoped to the current organization context.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the target timesheet by timesheetId within the authenticated organization context.
-   * Verify the caller is authorized: the owner may delete their own draft timesheet, and permission-based staff may delete according to the organization rules. Reject access when the timesheet is outside the current organization or not visible to the caller.
-   *
-   * Before deletion, enforce lifecycle constraints from the requirements: timesheets in submitted or approved status must not be deleted. If the schema has a relationship table linking timesheets and timelogs, delete the association rows first or within the same transaction, then delete the timesheet row itself. Do not delete timelogs unless the schema or business rules explicitly require it; the system only removes the timesheet record and its composition links.
-   *
-   * Use a transaction so that relationship cleanup and parent deletion succeed or fail together. Return a not-found error when the timesheetId does not exist in scope, and a conflict or validation error when the status prevents deletion. Record an activity log entry only if the broader system uses activity logging for destructive timesheet actions and the schema supports it.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Delete(":timesheetId")
-  public async erase(
-    @MemberAuth()
-    member: MemberPayload,
-    @TypedParam("timesheetId")
-    timesheetId: string & tags.Format<"uuid">,
-  ): Promise<void> {
-    try {
-      return await deleteErpHrmTimeMemberTimesheetsTimesheetId({
-        member,
-        timesheetId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
    * Submit a draft timesheet for approval.
    *
-   * This operation changes a weekly timesheet from draft to submitted so it can be reviewed by users with approval permission. The timesheet remains owned by the same employee and tied to the same weekly period after submission.
+   * This operation moves an employee's weekly timesheet from draft to submitted so it can be reviewed by users with approval permission. The timesheet remains tied to the same employee and week, and the submission timestamp is recorded when the status changes.
    *
-   * Only the employee who owns the timesheet, or a user with approval permissions in the selected organization context, may perform this action according to the organization’s access rules. The service must reject submissions for locked, already submitted, approved, or otherwise invalid timesheets, and it must preserve the timesheet’s existing timelogs and week boundaries when the status changes.
+   * The timesheet must belong to the current organization context, must be owned by the authenticated employee, must still be in draft status, and must include at least one timelog through the timesheet-to-timelog join table. If the timesheet has already been submitted, approved, or is otherwise not editable, the request is rejected. Validation errors should clearly explain missing timelogs, wrong status, or ownership/context violations.
    *
    * @param connection
-   * @param timesheetId The timesheet identifier within the current organization context.
+   * @param timesheetId Identifier of the timesheet to submit.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the target timesheet by id within the current organization context and verify that it belongs to the active organization. Confirm the requester is either the timesheet owner or has the appropriate approval/management permission required by the domain rules.
+   * @x-autobe-specification Load the target timesheet by id and verify it belongs to the current organization through the owning employee record. Confirm the authenticated member is the same person as the owning employee unless the service explicitly supports privileged submission on behalf of another user, which is not indicated here.
    *
-   * Validate that the timesheet is currently in draft status. Reject the request if it is already submitted, approved, or otherwise not editable. Reject if the timesheet has no included timelogs, because submission requires at least one timelog. Reject if the employee is deactivated, because deactivated employees cannot submit timesheets.
+   * Reject the request if the timesheet status is not draft. Reject if the timesheet has no associated timelogs in erp_hrm_time_timesheet_timelogs that are not deleted. Reject if the employee is deactivated, because deactivated employees cannot submit timesheets. Reject if any included timelog belongs to an archived or completed project only if that rule is enforced elsewhere for submission; otherwise preserve existing historical links and rely on timelog ownership and timesheet composition.
    *
-   * When valid, update the timesheet status from draft to submitted and set the submitted timestamp to the current time. Preserve the week start/end dates, owner, and existing timelog links. If the implementation stores submission metadata on the timesheet, persist it in the same transaction. The operation should be idempotent only in the sense that a repeated submit on a non-draft timesheet must fail with a domain validation error rather than silently reapplying the transition.
-   *
-   * Return the updated timesheet entity after commit. Use transactional integrity so that status changes and any related submission metadata are written atomically. Surface not-found, forbidden, and domain validation failures with appropriate HTTP errors.
+   * On success, update the timesheet row in a transaction: set status to submitted, set submitted_at to the current timestamp, and clear reviewed_by_member_id, reviewed_at, and rejection_reason if they contain stale review data from a prior rejection cycle. Preserve the existing week range and ownership fields. Do not modify timelogs or the join table during submission. Return the updated timesheet entity after commit. Record an activity log entry if the system logs business actions for timesheet submission.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post(":timesheetId/submit")
@@ -255,21 +217,23 @@ export class ErphrmtimeMemberTimesheetsController {
   }
 
   /**
-   * Approve a submitted timesheet for the current organization.
+   * Approve a submitted timesheet.
    *
-   * This operation is available only to users with timesheet approval permission. It finalizes a weekly timesheet that is already in submitted status and returns the approved record so the client can refresh the reviewer-facing view.
+   * This operation is used by approvers to finalize a weekly timesheet after review. A timesheet can only be approved while it is in submitted status, and it must belong to the organization currently selected by the caller. Once approved, the timesheet becomes finalized and the timelogs included in it are locked against further editing or deletion.
    *
-   * After approval, the included timelogs are locked because the weekly time record is finalized. Requests must be rejected when the timesheet is not submitted, belongs to a different organization, or the caller does not have approval permission.
+   * The approved timesheet remains linked to the original employee and weekly period, and the review metadata is updated so clients can display who approved it and when the decision was made. If the timesheet is not in submitted status, belongs to another employee outside the caller's organization context, or the caller lacks approval permission, the request must be rejected.
    *
    * @param connection
-   * @param timesheetId Identifier of the timesheet to approve within the current organization.
+   * @param timesheetId Timesheet identifier within the selected organization.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the target timesheet by ID within the authenticated member's selected organization. Verify that the caller has the time approval permission and that the timesheet status is submitted. Reject the request with a forbidden or conflict-style error if the user lacks permission, the timesheet is outside the current organization, or the status is not submitted.
+   * @x-autobe-specification Load the timesheet by timesheetId within the active organization context and ensure it is visible to the current caller. Verify that the caller has approval permission and that the timesheet status is submitted; reject draft, approved, or rejected timesheets with a business conflict/validation error.
    *
-   * On success, update the timesheet status from submitted to approved and persist the review timestamp and reviewer reference if those fields exist in the schema. Then lock all timelogs associated with the timesheet through the join table so they cannot be edited or deleted afterward. Perform the status update and locking in a transaction to avoid partial approval states. Return the refreshed timesheet entity after the update.
+   * Perform the approval in a transaction. Update the timesheet status to approved, set the reviewed timestamp to the current time, set reviewed_by to the approving member/user reference, and clear any rejection reason if the schema includes such a field. Preserve the employee association and weekly boundary fields unchanged.
    *
-   * If the data model includes a dedicated relation for reviewed-by or reviewed-at, populate it from the current member context and current timestamp. If the schema does not expose review metadata fields, only change the status and apply the locking side effects defined by the timesheet-timelog relationship.
+   * After updating the timesheet, lock all included timelogs through the timesheet-timelog relationship so they cannot be edited or deleted while included in the approved timesheet. If the locking is represented implicitly by timesheet status, ensure downstream timelog write guards check for approved inclusion before allowing modification.
+   *
+   * Record an activity log entry for the approval action if activity logging is enabled by the service. Return the fully updated timesheet entity. Handle not-found, unauthorized, invalid-state, and cross-organization access as distinct errors.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post(":timesheetId/approve")
@@ -291,24 +255,24 @@ export class ErphrmtimeMemberTimesheetsController {
   }
 
   /**
-   * Reject a submitted timesheet with a required reason.
+   * Reject a submitted timesheet and return it to draft status.
    *
-   * This operation is used by an approver to review a submitted weekly timesheet and send it back to the employee for correction. A rejection is only valid when the timesheet is currently in submitted status and belongs to the selected organization context. The rejection reason is mandatory so the employee understands what must be fixed before resubmission.
+   * This operation is used by approvers to review a weekly employee timesheet that is currently in submitted state. The rejection must include a reason, and the system records the review outcome while preserving the organization scope of the timesheet.
    *
-   * When the rejection is accepted, the timesheet returns to draft status and remains editable by its owner. The reviewed timestamp and reviewer reference are updated as part of the review workflow, and the included timelogs remain associated with the same weekly timesheet so the employee can revise and resubmit it. Requests for draft, approved, or already rejected timesheets must be rejected.
-   *
-   * Access is limited to users with timesheet approval permission. If the user lacks permission, if the timesheet is outside the current organization, or if the target timesheet is not eligible for rejection, the request must fail with an appropriate validation or authorization error.
+   * When rejection succeeds, the timesheet is moved back to draft so the employee can revise the included timelogs and submit it again. The action is only valid for submitted timesheets in the current organization context, and it must be blocked when the caller does not have approval permission or when the timesheet is already draft, approved, or otherwise not eligible for review.
    *
    * @param connection
-   * @param timesheetId The timesheet identifier within the current organization context.
-   * @param body Rejection payload containing the mandatory reason for returning the timesheet to draft.
+   * @param timesheetId Unique identifier of the timesheet to reject.
+   * @param body Rejection details for the submitted timesheet. A rejection reason is required.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the target timesheet by ID within the current organization scope. Verify that the authenticated member has approval permission. Reject the request if the timesheet does not belong to the active organization, if it is not in submitted status, or if it is already approved or rejected.
+   * @x-autobe-specification Load the target timesheet by timesheetId within the current organization context and verify it belongs to the active organization selected by the member. Reject the request if the timesheet does not exist, is outside the current organization, or is not in submitted status.
    *
-   * Validate the request body to require a non-empty rejection reason. Persist the status transition from submitted to draft and store the reviewer/review metadata according to the timesheet schema. Keep the included timelogs linked to the timesheet; do not remove them during rejection.
+   * Authorize the caller with time approval permission before allowing review actions. The operation must reject draft, approved, and already rejected timesheets. Require a non-empty rejection reason in the request body.
    *
-   * The operation should be transactional so that status, review metadata, and any related audit/event side effects are saved together. Return the updated timesheet entity after persistence. If the record is missing, return not found. If the status is not eligible, return a domain validation error.
+   * On success, update the timesheet status to draft, set the review timestamp, store the reviewing user as the current member, and persist the rejection reason. Preserve the included timelogs association and do not alter ownership or week boundaries. Record any required activity/audit log entry through the existing organization logging flow if the application uses one for workflow actions.
+   *
+   * Return the updated timesheet entity. If the timesheet is already finalized or the caller lacks permission, return a forbidden or conflict-style validation error consistent with the service conventions. If the timesheet cannot be found in the current organization, return not found.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post(":timesheetId/reject")

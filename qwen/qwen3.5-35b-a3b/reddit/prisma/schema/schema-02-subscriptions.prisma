@@ -1,0 +1,71 @@
+/// Links users to communities with subscription timestamp and status;
+/// enforces unique user-community pairing and tracks active/inactive
+/// subscription states for access control.
+///
+/// This junction table enforces the business rule that users must subscribe
+/// to a community before creating posts. Each subscription record tracks
+/// when a user joined a community via the subscribed_at timestamp. Soft
+/// delete support via deleted_at enables tracking subscription history.
+///
+/// @namespace subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_platform_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the member who subscribed to the community. Links to {@link
+  /// reddit_platform_members}.
+  ///
+  /// This foreign key enforces that only registered members can subscribe to
+  /// communities.
+  user_id String
+  
+  /// References the community that the user subscribed to. Links to {@link
+  /// reddit_platform_communities}.
+  ///
+  /// This foreign key enforces that subscriptions only exist for valid
+  /// communities.
+  community_id String
+  
+  /// Timestamp when the user subscribed to the community.
+  ///
+  /// This field is used to track subscription history and determine
+  /// subscription duration if needed for future features like membership
+  /// tiers.
+  subscribed_at DateTime
+  
+  /// Record creation timestamp.
+  ///
+  /// This field tracks when the subscription record was first created in the
+  /// database.
+  created_at DateTime
+  
+  /// Record last update timestamp.
+  ///
+  /// This field is automatically updated on any record modification to track
+  /// the most recent change.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for subscription removal.
+  ///
+  /// When this field is set, the subscription is considered inactive. A NULL
+  /// value indicates an active subscription.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  user reddit_platform_members @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  community reddit_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([user_id, community_id])
+  @@index([user_id])
+  @@index([community_id])
+}

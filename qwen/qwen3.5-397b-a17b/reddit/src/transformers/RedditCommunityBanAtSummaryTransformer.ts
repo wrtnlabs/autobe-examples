@@ -3,8 +3,10 @@ import { IRedditCommunityBan } from "@ORGANIZATION/PROJECT-api/lib/structures/IR
 import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
 
@@ -17,9 +19,13 @@ export namespace RedditCommunityBanAtSummaryTransformer {
       select: {
         id: true,
         reason: true,
+        status: true,
         created_at: true,
-        bannedMember: RedditCommunityMemberAtSummaryTransformer.select(),
-        bannedBy: RedditCommunityMemberAtSummaryTransformer.select(),
+        updated_at: true,
+        deleted_at: true,
+        community: true,
+        member: RedditCommunityMemberAtSummaryTransformer.select(),
+        issuer: RedditCommunityMemberAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_community_bansFindManyArgs;
   }
@@ -28,14 +34,15 @@ export namespace RedditCommunityBanAtSummaryTransformer {
   ): Promise<IRedditCommunityBan.ISummary> {
     return {
       id: input.id,
-      bannedMember: await RedditCommunityMemberAtSummaryTransformer.transform(
-        input.bannedMember,
+      member: await RedditCommunityMemberAtSummaryTransformer.transform(
+        input.member,
       ),
-      bannedBy: await RedditCommunityMemberAtSummaryTransformer.transform(
-        input.bannedBy,
+      issuer: await RedditCommunityMemberAtSummaryTransformer.transform(
+        input.issuer,
       ),
-      reason: input.reason ?? null,
+      reason: input.reason,
+      status: input.status,
       created_at: input.created_at.toISOString(),
-    };
+    } satisfies IRedditCommunityBan.ISummary;
   }
 }

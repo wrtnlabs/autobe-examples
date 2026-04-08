@@ -1,11 +1,11 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
+import { IErpHrmTimeEmployeeDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployeeDashboardSummary";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
 import { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
-import { IErpHrmTimeTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTask";
+import { IErpHrmTimeTaskHistoryEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTaskHistoryEntry";
 import { IErpHrmTimeTimer } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimer";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -14,14 +14,38 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ErpHrmTimeEmployeeAtSummaryTransformer } from "./ErpHrmTimeEmployeeAtSummaryTransformer";
+import { ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer } from "./ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer";
 import { ErpHrmTimeProjectAtSummaryTransformer } from "./ErpHrmTimeProjectAtSummaryTransformer";
-import { ErpHrmTimeTaskAtSummaryTransformer } from "./ErpHrmTimeTaskAtSummaryTransformer";
+import { ErpHrmTimeTaskHistoryEntryAtSummaryTransformer } from "./ErpHrmTimeTaskHistoryEntryAtSummaryTransformer";
 
 export namespace ErpHrmTimeTimerTransformer {
   export type Payload = Prisma.erp_hrm_time_timersGetPayload<
     ReturnType<typeof select>
   >;
+  export async function transform(input: Payload): Promise<IErpHrmTimeTimer> {
+    return {
+      id: input.id,
+      member: input.member,
+      employee:
+        await ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer.transform(
+          input.employee,
+        ),
+      project: await ErpHrmTimeProjectAtSummaryTransformer.transform(
+        input.project,
+      ),
+      task:
+        input.task === null
+          ? null
+          : await ErpHrmTimeTaskHistoryEntryAtSummaryTransformer.transform(
+              input.task,
+            ),
+      startedAt: input.started_at.toISOString(),
+      description: input.description,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
+    };
+  }
   export function select() {
     return {
       select: {
@@ -31,31 +55,12 @@ export namespace ErpHrmTimeTimerTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        member: true,
-        employee: ErpHrmTimeEmployeeAtSummaryTransformer.select(),
+        member: { select: { id: true } },
+        employee:
+          ErpHrmTimeEmployeeDashboardSummaryAtSummaryTransformer.select(),
         project: ErpHrmTimeProjectAtSummaryTransformer.select(),
-        task: ErpHrmTimeTaskAtSummaryTransformer.select(),
+        task: ErpHrmTimeTaskHistoryEntryAtSummaryTransformer.select(),
       },
     } satisfies Prisma.erp_hrm_time_timersFindManyArgs;
-  }
-  export async function transform(input: Payload): Promise<IErpHrmTimeTimer> {
-    return {
-      id: input.id,
-      member: input.member,
-      employee: await ErpHrmTimeEmployeeAtSummaryTransformer.transform(
-        input.employee,
-      ),
-      project: await ErpHrmTimeProjectAtSummaryTransformer.transform(
-        input.project,
-      ),
-      task: input.task
-        ? await ErpHrmTimeTaskAtSummaryTransformer.transform(input.task)
-        : null,
-      startedAt: input.started_at.toISOString(),
-      description: input.description ?? null,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-    };
   }
 }

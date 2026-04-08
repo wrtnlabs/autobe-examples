@@ -1,8 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
-import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
-import { IRedditClonePostImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostImage";
+import { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -21,64 +20,51 @@ export async function putRedditCloneMemberPostsPostId(props: {
   postId: string & tags.Format<"uuid">;
   body: IRedditClonePost.IUpdate;
 }): Promise<IRedditClonePost> {
-  // Find the post and verify ownership
+  // Step 1: Find the post and verify ownership
   const post = await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
-    where: {
-      id: props.postId,
-    },
+    where: { id: props.postId },
     select: {
       id: true,
-      reddit_clone_members_id: true,
-      deleted_at: true,
-      title: true,
-      content: true,
-      post_type: true,
-      score: true,
-      created_at: true,
-      updated_at: true,
+      reddit_clone_user_profile_id: true,
     },
   });
-  // Verify the member is the author
-  if (post.reddit_clone_members_id !== props.member.id) {
+  // Step 2: Get member's user profile to verify ownership
+  const memberProfile =
+    await MyGlobal.prisma.reddit_clone_user_profiles.findUniqueOrThrow({
+      where: {
+        reddit_clone_member_id: props.member.id,
+      },
+      select: {
+        id: true,
+      },
+    });
+  // Step 3: Verify ownership
+  if (post.reddit_clone_user_profile_id !== memberProfile.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Verify the post is not deleted
-  if (post.deleted_at !== null) {
-    throw new HttpException("Conflict", 409);
+  // Step 4: Build update data
+  const updateData: Prisma.reddit_clone_postsUpdateInput = {
+    updated_at: new Date(),
+  };
+  if (props.body.title !== undefined) {
+    updateData.title = props.body.title;
   }
-  // Create a snapshot before modification
-  await MyGlobal.prisma.reddit_clone_post_snapshots.create({
-    data: {
-      id: v4() as string & tags.Format<"uuid">,
-      reddit_clone_post_id: props.postId,
-      title: post.title,
-      content: post.content,
-      post_type: post.post_type,
-      link_url: null,
-      file_url: null,
-      score: post.score,
-      original_created_at: post.created_at,
-      original_updated_at: post.updated_at,
-      original_deleted_at: post.deleted_at,
-      captured_at: new Date(),
-    },
-  });
-  // Update the post
+  if (props.body.text_content !== undefined) {
+    updateData.text_content = props.body.text_content;
+  }
+  if (props.body.link_url !== undefined) {
+    updateData.link_url = props.body.link_url;
+  }
+  if (props.body.image_url !== undefined) {
+    updateData.image_url = props.body.image_url;
+  }
   await MyGlobal.prisma.reddit_clone_posts.update({
-    where: {
-      id: props.postId,
-    },
-    data: {
-      ...(props.body.title !== undefined && { title: props.body.title }),
-      ...(props.body.content !== undefined && { content: props.body.content }),
-      updated_at: new Date(),
-    },
+    where: { id: props.postId },
+    data: updateData,
   });
-  // Return the updated post with full details
+  // Step 5: Return updated post
   const updated = await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
-    where: {
-      id: props.postId,
-    },
+    where: { id: props.postId },
     ...RedditClonePostTransformer.select(),
   });
   return await RedditClonePostTransformer.transform(updated);

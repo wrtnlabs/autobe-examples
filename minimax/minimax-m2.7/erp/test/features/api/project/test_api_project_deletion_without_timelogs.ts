@@ -2,16 +2,7 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IErpHrmAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmAdmin";
-import type { IErpHrmDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmDepartment";
-import type { IErpHrmEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmEmployee";
-import type { IErpHrmMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmMember";
-import type { IErpHrmOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmOrganization";
-import type { IErpHrmProjectMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProjectMember";
-import type { IErpHrmRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmRole";
-import type { IErpHrmTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTask";
-import type { IErpHrmTaskHistory } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTaskHistory";
-import type { IErpHrmTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimelog";
-import type { IErpHrmTimer } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimer";
+import type { IErpHrmProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmProject";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -22,47 +13,55 @@ import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
 import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
 import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
 import { generate_random_erp_hrm_admin_projects_create } from "../../../generate/generate_random_erp_hrm_admin_projects_create";
-import { prepare_random_erp_hrm_project_member } from "../../../prepare/prepare_random_erp_hrm_project_member";
+import { prepare_random_erp_hrm_project } from "../../../prepare/prepare_random_erp_hrm_project";
+
+interface IErpHrmProjectWithId extends DeepPartial<IErpHrmProject> {
+  id: string;
+  name: string;
+}
 
 export async function test_api_project_deletion_without_timelogs(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Register admin account
+  // 1. Create admin account for authentication
   const adminConnection: api.IConnection = { host: connection.host };
-  await authorize_admin_join(adminConnection, {});
-  // 2. Create a project without timelogs
-  const project = await generate_random_erp_hrm_admin_projects_create(
-    adminConnection,
-    {
+  await authorize_admin_join(adminConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
+      displayName: RandomGenerator.name(),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+    } satisfies IErpHrmAdmin.IJoin,
+  });
+  // 2. Create a project without any timelogs
+  const project = typia.assert<IErpHrmProjectWithId>(
+    await generate_random_erp_hrm_admin_projects_create(adminConnection, {
       body: {
-        name: RandomGenerator.paragraph({ sentences: 2 }),
+        name: RandomGenerator.name(3),
         color: "#FF5733",
         status: "active",
       },
-    },
+    }),
   );
-  typia.assert(project);
-  // 3. Delete the project via DELETE /erpHrm/admin/projects/{projectId}
+  // 3. Delete the project (no timelogs associated)
   await api.functional.erpHrm.admin.projects.erase(adminConnection, {
     projectId: project.id,
   });
-  // 4. Verify the deletion was successful by checking for 404 on retrieval
-  // Since there's no GET endpoint shown, we validate that deletion doesn't throw an error
-  // and the project was removed. The erase function returns void on success (204).
-  // Additional validation: create another project and delete it to confirm deletion flow works
-  const anotherProject = await generate_random_erp_hrm_admin_projects_create(
-    adminConnection,
-    {
+  // 4. Validate project no longer exists by trying to create with same name
+  // (Project names must be unique within organization, so duplicate name should succeed)
+  const secondProject = typia.assert<IErpHrmProjectWithId>(
+    await generate_random_erp_hrm_admin_projects_create(adminConnection, {
       body: {
-        name: RandomGenerator.paragraph({ sentences: 2 }),
-        color: "#1A2B3C",
-        status: "archived",
+        name: project.name,
+        color: "#4A90E2",
+        status: "active",
       },
-    },
+    }),
   );
-  typia.assert(anotherProject);
-  // Delete the second project
-  await api.functional.erpHrm.admin.projects.erase(adminConnection, {
-    projectId: anotherProject.id,
-  });
+  TestValidator.equals(
+    "project name is reusable",
+    secondProject.name,
+    project.name,
+  );
 }

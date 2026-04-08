@@ -1,188 +1,99 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import type { IHrmPlatformAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformAdmin";
-import type { IHrmPlatformDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformDepartment";
-import type { IHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformEmployee";
-import type { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformMember";
-import type { IHrmPlatformOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganization";
-import type { IHrmPlatformOrganizationLogo } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganizationLogo";
-import type { IHrmPlatformOrganizationSetting } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformOrganizationSetting";
-import type { IHrmPlatformRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformRole";
+import type { IHrmTimeTrackDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackDepartment";
+import type { IHrmTimeTrackEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackEmployee";
+import type { IHrmTimeTrackMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackMember";
+import type { IHrmTimeTrackRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmTimeTrackRole";
 import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import type { IPageIHrmPlatformEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIHrmPlatformEmployee";
+import type { IPageIHrmTimeTrackEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIHrmTimeTrackEmployee";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
-import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
-import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
+import { authorize_member_join } from "../../../authorize/authorize_member_join";
+import { authorize_member_login } from "../../../authorize/authorize_member_login";
+import { authorize_member_refresh } from "../../../authorize/authorize_member_refresh";
 
 /**
- * Test employee list retrieval with pagination and filtering.
+ * Test employee list retrieval with pagination functionality.
  *
- * This test verifies that an authenticated admin can retrieve paginated
- * employee records with proper filtering and pagination metadata.
+ * Validates the complete employee list endpoint with pagination support, ensuring proper response structure and data integrity. The test authenticates as a member, retrieves paginated employee data, and verifies that the response contains valid pagination metadata and employee summary records with correct field types.
+ *
+ * Special attention is given to verifying nullable fields (department and role), employment type enum values, and status enum values. The test ensures that the pagination metadata correctly reflects the current page, limit, total records, and total pages.
+ *
+ * 1. Authenticate as a member using the authorize_member_join utility function
+ * 2. Call the employee list endpoint with pagination parameters (limit: 10, page: 1)
+ * 3. Validate the response structure matches IPageIHrmTimeTrackEmployee.ISummary
+ * 4. Verify pagination metadata contains valid values and correct calculations
+ * 5. Validate employment_type and status enum values for each employee
  */
 export async function test_api_employee_list_with_pagination(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Admin authentication
-  const adminConnection: api.IConnection = { host: connection.host };
-  await authorize_admin_join(adminConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(16),
-      href: typia.random<string & tags.Format<"uri">>(),
-      referrer: typia.random<string & tags.Format<"uri">>(),
-      ip: typia.random<string & tags.Format<"ipv4">>(),
-    } satisfies IHrmPlatformAdmin.IJoin,
-  });
-  // 2. Test default pagination (no parameters)
-  const defaultResponse =
-    await api.functional.hrmPlatform.admin.employees.index(adminConnection, {
-      body: {} satisfies IHrmPlatformEmployee.IRequest,
-    });
-  typia.assert(defaultResponse);
-  // Validate default pagination metadata
-  TestValidator.equals(
-    "default page is 1",
-    defaultResponse.pagination.current,
-    1,
-  );
-  TestValidator.equals(
-    "default limit is 20",
-    defaultResponse.pagination.limit,
-    20,
-  );
-  TestValidator.predicate(
-    "total pages is valid",
-    defaultResponse.pagination.pages >= 0,
-  );
-  TestValidator.predicate(
-    "total records is valid",
-    defaultResponse.pagination.records >= 0,
-  );
-  // Validate employee summary structure (typia.assert handles type validation)
-  for (const employee of defaultResponse.data) {
-    typia.assert(employee);
-    // Business logic validations only (type validation done by typia.assert)
-    TestValidator.predicate("member has id", employee.member.id !== undefined);
-    TestValidator.predicate("role has name", employee.role.name !== undefined);
-  }
-  // 3. Test custom pagination parameters
-  const customPaginationResponse =
-    await api.functional.hrmPlatform.admin.employees.index(adminConnection, {
-      body: {
-        page: 2,
-        limit: 10,
-      } satisfies IHrmPlatformEmployee.IRequest,
-    });
-  typia.assert(customPaginationResponse);
-  TestValidator.equals(
-    "custom page is 2",
-    customPaginationResponse.pagination.current,
-    2,
-  );
-  TestValidator.equals(
-    "custom limit is 10",
-    customPaginationResponse.pagination.limit,
-    10,
-  );
-  // 4. Test status filter (active only)
-  const activeOnlyResponse =
-    await api.functional.hrmPlatform.admin.employees.index(adminConnection, {
-      body: {
-        status: "active",
-      } satisfies IHrmPlatformEmployee.IRequest,
-    });
-  typia.assert(activeOnlyResponse);
-  // Verify all returned employees are active
-  for (const employee of activeOnlyResponse.data) {
-    TestValidator.equals(
-      "employee status is active",
-      employee.status,
-      "active",
-    );
-  }
-  // 5. Test employment_type filter
-  const fullTimeOnlyResponse =
-    await api.functional.hrmPlatform.admin.employees.index(adminConnection, {
-      body: {
-        employment_type: "full-time",
-      } satisfies IHrmPlatformEmployee.IRequest,
-    });
-  typia.assert(fullTimeOnlyResponse);
-  // Verify all returned employees are full-time
-  for (const employee of fullTimeOnlyResponse.data) {
-    TestValidator.equals(
-      "employee employment_type is full-time",
-      employee.employment_type,
-      "full-time",
-    );
-  }
-  // 6. Test department_id filter (null for employees without department)
-  const noDepartmentResponse =
-    await api.functional.hrmPlatform.admin.employees.index(adminConnection, {
-      body: {
-        department_id: null,
-      } satisfies IHrmPlatformEmployee.IRequest,
-    });
-  typia.assert(noDepartmentResponse);
-  // Verify all returned employees have null department
-  for (const employee of noDepartmentResponse.data) {
-    TestValidator.equals(
-      "employee department is null",
-      employee.department,
-      null,
-    );
-  }
-  // 7. Test search parameter
-  const searchKeyword = RandomGenerator.alphabets(3);
-  const searchResponse = await api.functional.hrmPlatform.admin.employees.index(
-    adminConnection,
+  // 1. Authenticate as a member
+  const memberConnection: api.IConnection = { host: connection.host };
+  await authorize_member_join(memberConnection);
+  // 2. Call employee list endpoint with pagination
+  const request = {
+    limit: 10,
+    page: 1,
+  } satisfies IHrmTimeTrackEmployee.IRequest;
+  const response = await api.functional.hrmTimeTrack.member.employees.index(
+    memberConnection,
     {
-      body: {
-        search: searchKeyword,
-      } satisfies IHrmPlatformEmployee.IRequest,
+      body: request,
     },
   );
-  typia.assert(searchResponse);
-  // Search may return empty results if no matches found - this is valid
+  typia.assert(response);
+  // 3. Validate pagination metadata
+  TestValidator.equals("current page is 1", response.pagination.current, 1);
+  TestValidator.equals("limit is 10", response.pagination.limit, 10);
   TestValidator.predicate(
-    "search response is valid",
-    searchResponse.data.length >= 0,
+    "total records is non-negative",
+    response.pagination.records >= 0,
   );
-  // 8. Test combined filters
-  const combinedFilterResponse =
-    await api.functional.hrmPlatform.admin.employees.index(adminConnection, {
-      body: {
-        status: "active",
-        employment_type: "full-time",
-        page: 1,
-        limit: 5,
-      } satisfies IHrmPlatformEmployee.IRequest,
-    });
-  typia.assert(combinedFilterResponse);
-  // Verify all returned employees match combined filters
-  for (const employee of combinedFilterResponse.data) {
-    TestValidator.equals(
-      "employee status is active",
-      employee.status,
-      "active",
+  TestValidator.predicate(
+    "total pages is non-negative",
+    response.pagination.pages >= 0,
+  );
+  // 4. Validate pagination calculation
+  const expectedPages =
+    response.pagination.records === 0
+      ? 0
+      : Math.ceil(response.pagination.records / response.pagination.limit);
+  TestValidator.equals(
+    "pages calculation is correct",
+    response.pagination.pages,
+    expectedPages,
+  );
+  // 5. Validate employee data - business logic checks only
+  const validEmploymentTypes = [
+    "full-time",
+    "part-time",
+    "contractor",
+    "intern",
+  ] as const;
+  const validStatuses = ["active", "deactivated"] as const;
+  for (const employee of response.data) {
+    // Validate employment_type enum value
+    TestValidator.predicate(
+      `employee ${employee.id} has valid employment_type`,
+      validEmploymentTypes.includes(
+        employee.employment_type as (typeof validEmploymentTypes)[number],
+      ),
     );
-    TestValidator.equals(
-      "employee employment_type is full-time",
-      employee.employment_type,
-      "full-time",
+    // Validate status enum value
+    TestValidator.predicate(
+      `employee ${employee.id} has valid status`,
+      validStatuses.includes(employee.status as (typeof validStatuses)[number]),
+    );
+    // Validate member email is present
+    TestValidator.predicate(
+      `employee ${employee.id} has member email`,
+      employee.member.email.length > 0,
     );
   }
-  TestValidator.equals(
-    "combined filter limit is 5",
-    combinedFilterResponse.pagination.limit,
-    5,
-  );
 }

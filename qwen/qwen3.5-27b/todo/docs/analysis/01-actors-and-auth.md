@@ -1,467 +1,177 @@
-**multiUserTodo — Actor definitions, permission matrix, authentication, session, account lifecycle**
+**todoApp — Actor definitions, permission matrix, authentication, session, account lifecycle**
 
 Actor definitions, permission matrix, authentication, session, account lifecycle
 
 # Actor Definitions
 
-Define all user actor types with their roles and what they can do.
+Define all user actor types with their identity, permissions, and access boundaries.
 
 ## guest Actor
 
-A guest is any visitor to the application who has not yet authenticated. Guests can access the application landing page and view available registration options. They can initiate the registration process to create a new account. They can also access the login page to authenticate with existing credentials. Guests cannot view any todo items, as all todos are private to authenticated users. They cannot access any user profile information or personal data. Guests have no ability to create, modify, or delete any data in the system. Their role is limited to authentication entry points only. Once a guest completes registration or login, they transition to member status with full capabilities. The system treats all unauthenticated users identically as guests regardless of whether they have an existing account.
+A guest is an unauthenticated user who has not signed in to the application. Guests have no access to any todo items or user data in the system. They can only access the sign-up and login pages to become authenticated. Guests cannot view, create, or interact with any todos in the application. The guest state is the default state before any authentication occurs. Guests must complete the registration process to gain access to todo functionality. Once a guest registers and logs in, they transition to member status. Guests have no persistent identity in the system until they create an account. The application treats all guests identically with no differentiation between them. Guest access is intentionally limited to protect user privacy and data security.
 
-### Guest Actor Definition
+### Guest Definition
 
-THE system SHALL recognize any unauthenticated visitor as a guest actor.
-
-THE system SHALL treat all unauthenticated users identically as guests regardless of whether they have an existing account.
-
-WHEN a guest completes registration, THE system SHALL transition them to member status with full capabilities.
-
-WHEN a guest completes login with valid credentials, THE system SHALL transition them to member status with full capabilities.
-
-THE system SHALL maintain guest status until successful authentication occurs.
-
-WHILE a user is in guest status, THE system SHALL restrict access to authentication entry points only.
-
-### Guest Authentication Entry Points
-
-THE system SHALL provide a landing page accessible to all guests.
-
-THE system SHALL allow guests to initiate the registration process from the landing page.
-
-THE system SHALL provide a login page accessible to all guests.
-
-THE system SHALL allow guests to access the login page from the landing page.
-
-THE system SHALL present registration options on the landing page for guests.
-
-THE system SHALL allow guests to navigate between the landing page and login page without authentication.
-
-WHEN a guest accesses the landing page, THE system SHALL display available authentication options.
-
-WHEN a guest initiates registration, THE system SHALL present the registration form.
-
-WHEN a guest accesses the login page, THE system SHALL present the login form.
+A guest is an unauthenticated user who has not signed in to the application. The guest state is the default state before any authentication occurs. Guests have no persistent identity in the system until they create an account. The application treats all guests identically with no differentiation between them. Guests exist only during their browser session and leave no trace in the system.
 
 ### Guest Access Restrictions
 
-THE system SHALL prevent guests from viewing any todo items.
+Guests have no access to any todo items or user data in the system. Guests cannot view any todos, including their own if they were previously created. Guests cannot create new todos. Guests cannot edit existing todos. Guests cannot delete todos. Guests cannot access any user profiles, including their own. These restrictions protect user privacy and ensure data security. Guests cannot view the trash or restore deleted todos. Guests cannot view edit history of any todos. All todo-related functionality requires authentication.
 
-THE system SHALL prevent guests from accessing any user profile information.
+### Guest Authentication Pathways
 
-THE system SHALL prevent guests from viewing other users' profiles.
-
-THE system SHALL prevent guests from creating any data in the system.
-
-THE system SHALL prevent guests from modifying any data in the system.
-
-THE system SHALL prevent guests from deleting any data in the system.
-
-THE system SHALL prevent guests from accessing personal data belonging to any user.
-
-IF a guest attempts to access a todo item, THE system SHALL reject the request.
-
-IF a guest attempts to access a user profile, THE system SHALL reject the request.
-
-IF a guest attempts to create, modify, or delete any data, THE system SHALL reject the request.
-
-THE system SHALL limit guest capabilities to authentication entry points only.
+Guests can only access the sign-up page to create a new account. Guests can only access the login page to sign in with existing credentials. Guests must complete the registration process to gain access to todo functionality. Guests must provide valid email and password to authenticate. Once a guest successfully logs in, they transition to member status. Authentication is required for all todo operations. The application does not support guest browsing of any todo content.
 
 ## member Actor
 
-A member is an authenticated user with a registered account in the system. Members can create new todo items with titles and optional descriptions. They can view their own todo list with pagination support. Members can mark their todos as complete or incomplete at any time. They can edit todo details including title, description, start date, and due date. Members can delete their own todos, which moves items to trash rather than permanent deletion. They can view and manage their trash to restore or permanently delete items. Members can filter their todo list by completion status. They can sort todos by creation date, start date, or due date. Members can view the edit history of their own todos. They can update their display name in their profile. Members can change their password for security purposes. They can request account deletion which removes all their data permanently. Members can only access their own todos and cannot view other users' data. Each member's todo collection is completely private and isolated from other users.
+A member is an authenticated user who has successfully registered and logged in to the application. Members have full access to create and manage their own todo items. Each member owns a private collection of todos that other users cannot access. Members can view their own profile and edit their display name. Members can change their password to maintain account security. Members can permanently delete their account along with all associated todos. Members cannot view or access another user's todos or profile information. Each member's data is completely isolated from other members. Members can perform all todo operations including create, read, update, and delete. The member role grants full functionality within the user's own data boundaries.
 
-### Member Authentication and Access
+### Member Identity
 
-THE system SHALL recognize a member as an authenticated user with a registered account.
+A member is an authenticated user who has successfully registered with an email and password and is currently logged in to the application. Members are the only actor type with access to todo functionality. Each member has a unique identity associated with their registered email address. Members maintain a profile containing a display name that can be viewed and edited by the member. The member role grants full access to create, view, edit, complete, and delete todo items within the user's own data boundaries.
 
-THE system SHALL require authentication before allowing a member to access their todo collection.
+### Member Todo Permissions
 
-THE system SHALL associate all todo operations with the authenticated member's account.
+Members can create new todo items with a title, optional description, optional start date, and optional due date. Members can view their own todos in a paginated list showing title, completion status, dates, and creation date. Members can view the full details of any individual todo including the complete description. Members can mark their own todos as complete or incomplete, toggling between these two states. Members can edit their own todo's title, description, start date, and due date. Members can delete their own todos, which moves them to trash rather than permanently removing them. Members can restore deleted todos from trash back to the normal todo list. Members can permanently delete todos from trash, which also removes the todo's edit history. Members own all todos they create and have exclusive access to manage them.
 
-WHEN a member is authenticated, THE system SHALL grant access to their own todos only.
+### Member Profile Access
 
-WHEN a member's authentication session expires, THE system SHALL require re-authentication for todo access.
-
-### Todo Creation
-
-WHEN a member creates a todo, THE system SHALL require a title.
-
-WHEN a member creates a todo, THE system SHALL allow an optional description.
-
-WHEN a member creates a todo, THE system SHALL allow an optional start date.
-
-WHEN a member creates a todo, THE system SHALL allow an optional due date.
-
-WHEN a member creates a todo, THE system SHALL initialize the completion status as incomplete.
-
-WHEN a member creates a todo, THE system SHALL associate the todo with the creating member's account.
-
-IF the title is missing during todo creation, THE system SHALL reject the creation request.
-
-IF the due date is earlier than the start date, THE system SHALL reject the creation request.
-
-### Todo List Viewing
-
-WHEN a member views their todo list, THE system SHALL display only the member's own todos.
-
-WHEN a member views their todo list, THE system SHALL present todos in paginated format.
-
-WHEN a member views a todo in the list, THE system SHALL display the title, completion status, start date (if set), due date (if set), and creation date.
-
-WHEN a member views a single todo, THE system SHALL display all details including the full description.
-
-IF a member requests to view another member's todo, THE system SHALL reject the request.
-
-### Todo Completion Toggle
-
-WHEN a member marks a todo as complete, THE system SHALL update the completion status to complete.
-
-WHEN a member marks a todo as incomplete, THE system SHALL update the completion status to incomplete.
-
-WHEN a member toggles completion status, THE system SHALL switch between complete and incomplete states.
-
-IF a member attempts to toggle completion on another member's todo, THE system SHALL reject the request.
-
-### Todo Editing
-
-WHEN a member edits a todo, THE system SHALL allow changes to title, description, start date, and due date.
-
-WHEN a member edits a todo, THE system SHALL create a new edit history entry.
-
-WHEN a member edits a todo, THE system SHALL record the edit timestamp in the history entry.
-
-WHEN a member edits a todo's title, THE system SHALL record the new title value in the history entry.
-
-WHEN a member edits a todo's description, THE system SHALL record the new description value in the history entry.
-
-WHEN a member edits a todo's start date, THE system SHALL record the new start date value in the history entry.
-
-WHEN a member edits a todo's due date, THE system SHALL record the new due date value in the history entry.
-
-IF a member attempts to edit another member's todo, THE system SHALL reject the request.
-
-### Soft Delete Capability
-
-WHEN a member deletes a todo, THE system SHALL move the todo to trash rather than permanently removing it.
-
-WHEN a member deletes a todo, THE system SHALL remove the todo from the normal todo list.
-
-WHEN a member deletes a todo, THE system SHALL preserve the todo's edit history.
-
-IF a member attempts to delete another member's todo, THE system SHALL reject the request.
-
-### Trash Management
-
-WHEN a member views their trash, THE system SHALL display only the member's own deleted todos.
-
-WHEN a member views their trash, THE system SHALL present deleted todos in paginated format.
-
-WHEN a member restores a todo from trash, THE system SHALL return the todo to the normal todo list.
-
-WHEN a member permanently deletes a todo from trash, THE system SHALL remove the todo and its edit history permanently.
-
-IF a member attempts to access another member's trash, THE system SHALL reject the request.
-
-### Filtering by Status
-
-WHEN a member filters their todo list, THE system SHALL allow filtering by completion status.
-
-WHEN a member selects the all todos filter, THE system SHALL display both complete and incomplete todos.
-
-WHEN a member selects the complete todos filter, THE system SHALL display only completed todos.
-
-WHEN a member selects the incomplete todos filter, THE system SHALL display only incomplete todos.
-
-### Sorting Options
-
-WHEN a member sorts their todo list, THE system SHALL allow sorting by creation date, start date, or due date.
-
-WHEN a member sorts by creation date, THE system SHALL allow ordering by newest first or oldest first.
-
-WHEN a member sorts by start date, THE system SHALL allow ordering by earliest first or latest first.
-
-WHEN a member sorts by due date, THE system SHALL allow ordering by earliest first or latest first.
-
-WHEN a member sorts by start date, THE system SHALL place todos without a start date at the end of the list.
-
-WHEN a member sorts by due date, THE system SHALL place todos without a due date at the end of the list.
-
-### Edit History Viewing
-
-WHEN a member views edit history, THE system SHALL display the full history of their own todo edits.
-
-WHEN a member views edit history, THE system SHALL sort entries from most recent to oldest.
-
-WHEN a member views edit history, THE system SHALL show the edit timestamp for each entry.
-
-WHEN a member views edit history, THE system SHALL show what each field was changed to (if changed).
-
-IF a member attempts to view another member's todo edit history, THE system SHALL reject the request.
-
-### Profile and Account Management
-
-WHEN a member manages their profile, THE system SHALL allow updating their display name.
-
-WHEN a member changes their password, THE system SHALL update the password for their account.
-
-WHEN a member requests account deletion, THE system SHALL permanently delete all their todos including those in trash.
-
-WHEN a member requests account deletion, THE system SHALL permanently delete all their edit history entries.
-
-WHEN a member requests account deletion, THE system SHALL permanently delete their user account.
+Members can view their own profile information including their display name. Members can edit their own display name. Members cannot view other members' profiles. The application is designed as a private todo application where each user's profile and data remain inaccessible to other users. Profile information is only accessible to the profile owner.
 
 ### Data Privacy and Isolation
 
-THE system SHALL ensure each member's todo collection is completely private.
-
-THE system SHALL allow members to access only their own todos.
-
-THE system SHALL prevent members from viewing other members' profiles.
-
-THE system SHALL prevent members from accessing other members' todos.
-
-THE system SHALL prevent members from accessing other members' trash.
-
-THE system SHALL prevent members from accessing other members' edit history.
-
-THE system SHALL enforce data isolation between all member accounts.
+Each member's todos are completely private and isolated from other members. Members can only access their own todos and cannot view, access, or interact with another user's todos. There is no sharing mechanism or feature that allows todo visibility across user boundaries. Each member's profile, todos, edit history, and trash contents are inaccessible to all other users. The private application design ensures complete data isolation between all members. Members cannot discover the existence of other users or their todo items through any means.
 
 # Authentication Flows
 
-Registration, login, session management, and token policies.
+Registration, login, logout, and session management from a user perspective.
 
 ## Registration and Login
 
 Define user registration and login flows including validation and error handling.
 
-### User Registration (Signup)
+### User Registration
 
-WHEN a guest initiates registration, THE system SHALL require an email address and password.
+Guests can register for an account by providing an email address and password.
 
-WHEN a guest submits registration information, THE system SHALL validate that the email address is not already registered.
+The email address must be unique and not already associated with an existing account.
 
-WHEN a guest submits registration information, THE system SHALL validate that the password meets minimum security requirements.
+The password must be provided during registration and cannot be empty.
 
-WHEN a guest successfully completes registration, THE system SHALL create a new user account.
+Upon successful registration, the user is authenticated and becomes a member.
 
-WHEN a guest successfully completes registration, THE system SHALL automatically authenticate the user and establish a session.
+If the email address is already in use, the registration request is rejected.
 
-IF the email address is already registered, THE system SHALL reject the registration request.
+If the password is missing or empty, the registration request is rejected.
 
-IF the password does not meet minimum security requirements, THE system SHALL reject the registration request.
+### User Login
 
-IF the email address is invalid or malformed, THE system SHALL reject the registration request.
+Guests can log in to the system by providing their email address and password.
 
-WHEN a user completes registration, THE system SHALL initialize the user with an empty todo list.
+The email address must match an existing account in the system.
 
-WHEN a user completes registration, THE system SHALL set the account state to active.
+The password must match the password associated with the email address.
 
-### User Login (Signin)
+Upon successful login, the user is authenticated and becomes a member.
 
-WHEN a guest attempts to login, THE system SHALL require an email address and password.
+The user can access their private todos and profile after successful authentication.
 
-WHEN a user submits login credentials, THE system SHALL verify the email address exists in the system.
+If the email address does not exist in the system, the login request is rejected.
 
-WHEN a user submits login credentials, THE system SHALL verify the password matches the stored credential.
+If the password does not match the email address, the login request is rejected.
 
-WHEN a user successfully authenticates, THE system SHALL establish a new session.
+### Authentication State
 
-WHEN a user successfully authenticates, THE system SHALL grant the member actor permissions.
+Users are either unauthenticated (guests) or authenticated (members).
 
-IF the email address does not exist, THE system SHALL reject the login request.
+Guests have no access to view, create, edit, or delete todos.
 
-IF the password is incorrect, THE system SHALL reject the login request.
+Guests can only access registration and login functionality.
 
-IF the account is in a suspended state, THE system SHALL reject the login request.
+Members have full access to their own private todos and profile.
 
-IF the account has been deleted, THE system SHALL reject the login request.
+Members can view, create, edit, complete, and delete their own todos.
 
-WHEN a user logs in, THE system SHALL invalidate any previous active sessions for that user.
+Members can view their own profile and edit their display name.
 
-### Authentication Requirements
+Members cannot view or access any other user's todos or profile information.
 
-THE system SHALL require authentication for all member-only operations.
+Authentication is required for all todo operations and profile access.
 
-THE system SHALL maintain user authentication state throughout the session.
+The system maintains the authentication state for the duration of the user's session.
 
-THE system SHALL verify authentication credentials before granting access to protected resources.
+## Session and Logout
 
-WHEN an unauthenticated guest accesses a protected resource, THE system SHALL redirect to the login page.
+Define session behavior and logout from a user perspective.
 
-WHEN an authenticated user accesses a protected resource, THE system SHALL verify the user's authentication is still valid.
+### Session Management
 
-THE system SHALL allow guests to access the registration page without authentication.
+When a user successfully logs in, the system creates a session for that user.
 
-THE system SHALL allow guests to access the login page without authentication.
+A session remains active until the user logs out or deletes their account.
 
-THE system SHALL prevent guests from viewing any todo data.
+The system associates all authenticated requests with the user's active session.
 
-THE system SHALL prevent guests from creating, editing, or deleting any todos.
+Each user's session is isolated from all other users.
 
-WHEN authentication expires, THE system SHALL require the user to re-authenticate before accessing protected resources.
+The system uses the session to determine which user is making a request.
 
-### Registration and Login Error Handling
+When a user's session is active, they can access their todos and profile.
 
-IF registration fails due to email already in use, THE system SHALL inform the user that the email is already registered.
+When a user's session is not active, they cannot access their todos or profile.
 
-IF registration fails due to password requirements, THE system SHALL inform the user of the password requirements.
+### Logout Functionality
 
-IF login fails due to invalid credentials, THE system SHALL inform the user that the credentials are incorrect.
+Users can log out from their account at any time.
 
-IF login fails due to account suspension, THE system SHALL inform the user that the account is suspended.
+When a user logs out, their current session is terminated immediately.
 
-IF login fails due to account deletion, THE system SHALL inform the user that the account no longer exists.
+After logging out, users can no longer access their todos or profile.
 
-WHEN authentication fails, THE system SHALL not reveal whether the email exists or the password is incorrect.
+Logging out returns the user to the guest state with no authentication.
 
-WHEN registration or login encounters a system error, THE system SHALL inform the user of a temporary issue.
+Users must log in again to regain access to their todos and profile after logging out.
 
-THE system SHALL log all authentication failures for security monitoring.
+The logout function is available to all authenticated users.
 
-THE system SHALL not store plaintext passwords in any accessible format.
+When a user logs out, the system confirms logout completion to the user.
 
-WHEN a user attempts multiple failed login attempts, THE system SHALL implement security measures to prevent brute force attacks.
+### Account Security
 
-## Session and Token Policy
+The system requires authentication for all access to user todos and profiles.
 
-Define session duration, token refresh, and expiration policies.
+Guest users cannot access any user's todos or profile information.
 
-### Session Support for Members
+Each user's session is isolated from all other users.
 
-THE system SHALL support authenticated sessions for member actors.
+The system prevents unauthorized access to user data through session validation.
 
-THE system SHALL maintain session state for authenticated members.
+If a user attempts to access another user's todo, the system rejects the request.
 
-THE system SHALL allow members to establish a session through successful authentication.
+The system validates session credentials on every authenticated request.
 
-THE system SHALL allow members to terminate their session through logout.
+Invalid or expired sessions are rejected immediately.
 
-THE system SHALL manage session expiration for security purposes.
+The system does not share session information between different users.
 
-### Token-Based Authentication
-
-THE system SHALL use tokens for member authentication.
-
-THE system SHALL issue tokens upon successful member authentication.
-
-THE system SHALL validate tokens for protected resource access.
-
-THE system SHALL support token expiration for security purposes.
-
-THE system SHALL invalidate tokens upon member logout.
-
-### Token Refresh Capability
-
-THE system SHALL support token refresh for authenticated members.
-
-THE system SHALL allow members to obtain new tokens without re-authentication.
-
-THE system SHALL validate refresh tokens before issuing new tokens.
-
-THE system SHALL invalidate refresh tokens upon member logout.
-
-### Token Expiration Management
-
-THE system SHALL enforce token expiration policies.
-
-THE system SHALL require re-authentication when tokens expire.
-
-THE system SHALL expire all tokens when a member's account is deleted.
-
-THE system SHALL enforce different expiration periods for different token types.
+Account deletion terminates all active sessions for that account immediately.
 
 # Account Lifecycle
 
-Account state transitions and lifecycle management.
+Account creation, deletion, and password management.
 
-## Account States and Transitions
+## Account Management
 
-Define account states (active, suspended, deleted) and valid transitions.
+Define how users create accounts, delete accounts, and change passwords.
 
-### Account State Definitions
+### Account Creation
 
-THE system SHALL support three account states: active, suspended, and deleted.
+Guests can create an account by providing an email address and password. The system associates the newly created account with all todos created by that user. If the email address is already registered, the system rejects account creation. If the email or password is missing, the system rejects account creation.
 
-THE system SHALL maintain the current state for each user account.
+### Account Deletion
 
-THE system SHALL default newly created accounts to the active state.
+Members can delete their account by requesting account deletion. When a member deletes their account, the system permanently removes the account and all associated data. The system permanently deletes all todos owned by the user, including todos in the trash. The system permanently deletes all edit history associated with the user's todos. If the user is not authenticated, the system rejects account deletion. After account deletion is confirmed, the user cannot access the application with that account.
 
-WHILE an account is in the active state, THE system SHALL allow the user to access all features.
+### Password Change
 
-WHILE an account is in the suspended state, THE system SHALL prevent the user from logging in.
-
-WHILE an account is in the suspended state, THE system SHALL preserve all user data including todos and edit history.
-
-WHILE an account is in the deleted state, THE system SHALL prevent any access to the account.
-
-WHILE an account is in the deleted state, THE system SHALL permanently remove all associated todos and edit history.
-
-THE system SHALL record the timestamp when an account transitions to a new state.
-
-### State Transition Rules
-
-WHEN an account transitions from active to suspended, THE system SHALL invalidate all active sessions for that account.
-
-WHEN an account transitions from suspended to active, THE system SHALL require the user to log in again.
-
-WHEN an account transitions from active to deleted, THE system SHALL permanently delete all todos owned by the user.
-
-WHEN an account transitions from active to deleted, THE system SHALL permanently delete all edit history entries for the user's todos.
-
-WHEN an account transitions from active to deleted, THE system SHALL permanently delete all todos in the user's trash.
-
-WHEN an account transitions from suspended to deleted, THE system SHALL permanently delete all todos owned by the user.
-
-WHEN an account transitions from suspended to deleted, THE system SHALL permanently delete all edit history entries for the user's todos.
-
-THE system SHALL NOT allow an account to transition from deleted to any other state.
-
-THE system SHALL NOT allow an account to transition directly from suspended to active without explicit reactivation.
-
-THE system SHALL NOT allow an account to transition from active to deleted if the account has pending operations.
-
-### Valid State Transitions
-
-THE system SHALL allow an account to transition from active to suspended.
-
-THE system SHALL allow an account to transition from suspended to active.
-
-THE system SHALL allow an account to transition from active to deleted.
-
-THE system SHALL allow an account to transition from suspended to deleted.
-
-THE system SHALL NOT allow an account to transition from deleted to active.
-
-THE system SHALL NOT allow an account to transition from deleted to suspended.
-
-THE system SHALL NOT allow an account to transition from suspended to deleted and then restore the account.
-
-THE system SHALL require explicit confirmation before transitioning an account from active to deleted.
-
-THE system SHALL record the reason for account suspension in the account history.
-
-THE system SHALL notify the user when their account transitions to suspended state.
-
-### Account Lifecycle Management
-
-THE system SHALL maintain a complete lifecycle history for each account.
-
-THE system SHALL record the creation timestamp for each account.
-
-THE system SHALL record the deletion timestamp for each account.
-
-THE system SHALL track the total number of state transitions for each account.
-
-THE system SHALL preserve account lifecycle history for audit purposes.
-
-WHEN an account is deleted, THE system SHALL archive the lifecycle history.
-
-THE system SHALL NOT allow restoration of an account after deletion.
-
-THE system SHALL ensure all associated data is deleted when an account reaches the deleted state.
-
-THE system SHALL validate that no active sessions exist before transitioning an account to deleted state.
-
-THE system SHALL ensure data consistency during account lifecycle transitions.
+Members can change their password. The system requires the member to be authenticated before allowing password changes. If the new password is missing, the system rejects the password change.

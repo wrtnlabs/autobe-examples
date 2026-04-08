@@ -8,13 +8,34 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { MallPlatformAdministratorAtSummaryTransformer } from "./MallPlatformAdministratorAtSummaryTransformer";
 
 export namespace MallPlatformAdministratorApprovalRequestAtSummaryTransformer {
   export type Payload =
     Prisma.mall_platform_administrator_approval_requestsGetPayload<
       ReturnType<typeof select>
     >;
+  export async function transform(
+    input: Payload,
+  ): Promise<IMallPlatformAdministratorApprovalRequest.ISummary> {
+    return {
+      id: input.id,
+      administrator: {
+        id: input.administrator.id,
+      } satisfies IMallPlatformAdministrator.ISummary,
+      reviewerAdministrator: input.reviewerAdministrator
+        ? ({
+            id: input.reviewerAdministrator.id,
+          } satisfies IMallPlatformAdministrator.ISummary)
+        : null,
+      reason: input.reason,
+      status: input.status,
+      rejectionReason: input.rejection_reason,
+      reviewedAt: input.reviewed_at?.toISOString() ?? null,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
+    } satisfies IMallPlatformAdministratorApprovalRequest.ISummary;
+  }
   export function select() {
     return {
       select: {
@@ -26,34 +47,61 @@ export namespace MallPlatformAdministratorApprovalRequestAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        administrator: MallPlatformAdministratorAtSummaryTransformer.select(),
-        reviewerAdministrator:
-          MallPlatformAdministratorAtSummaryTransformer.select(),
+        administrator: {
+          select: {
+            id: true,
+          },
+        },
+        reviewerAdministrator: {
+          select: {
+            id: true,
+          },
+        },
+        snapshots: true,
       },
     } satisfies Prisma.mall_platform_administrator_approval_requestsFindManyArgs;
   }
-  export async function transform(
-    input: Payload,
-  ): Promise<IMallPlatformAdministratorApprovalRequest.ISummary> {
-    return {
-      id: input.id,
-      administrator:
-        await MallPlatformAdministratorAtSummaryTransformer.transform(
-          input.administrator,
-        ),
-      reviewerAdministrator:
-        input.reviewerAdministrator === null
-          ? null
-          : await MallPlatformAdministratorAtSummaryTransformer.transform(
-              input.reviewerAdministrator,
-            ),
-      reason: input.reason,
-      status: input.status,
-      rejectionReason: input.rejection_reason,
-      reviewedAt: input.reviewed_at?.toISOString() ?? null,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-    };
-  }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace MallPlatformAdministratorApprovalRequestAtSummaryTransformer {
+//       export type Payload = Prisma.mall_platform_administrator_approval_requestsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             reason: true,
+//             status: true,
+//             rejection_reason: true,
+//             reviewed_at: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//             administrator_id: true,
+//             reviewer_administrator_id: true,
+//             ...
+//           },
+//         } satisfies Prisma.mall_platform_administrator_approval_requestsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IMallPlatformAdministratorApprovalRequest.ISummary> {
+//         return {
+//   id: {string},
+//   administrator: {IMallPlatformAdministrator.ISummary},
+//   reviewerAdministrator: {IMallPlatformAdministrator.ISummary | null},
+//   reason: {string},
+//   status: {string},
+//   rejectionReason: {string | null},
+//   reviewedAt: {string | null},
+//   createdAt: {string},
+//   updatedAt: {string},
+//   deletedAt: {string | null},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

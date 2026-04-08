@@ -18,6 +18,9 @@ export namespace ShoppingMallCustomerProfileAtSummaryTransformer {
         id: true,
         display_name: true,
         phone_number: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
       },
     } satisfies Prisma.shopping_mall_customer_profilesFindManyArgs;
   }
@@ -26,8 +29,11 @@ export namespace ShoppingMallCustomerProfileAtSummaryTransformer {
   ): Promise<IShoppingMallCustomerProfile.ISummary> {
     return {
       id: input.id,
-      displayName: input.display_name,
-      phoneNumber: input.phone_number,
-    };
+      display_name: input.display_name,
+      phone_number: input.phone_number,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+    } satisfies IShoppingMallCustomerProfile.ISummary;
   }
 }

@@ -1,0 +1,89 @@
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IRedditCommunityComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityComment";
+import { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
+import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
+import { IRedditCommunityPost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityPost";
+import { IRedditCommunityReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityReport";
+import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
+import { Prisma } from "@prisma/sdk";
+import jwt from "jsonwebtoken";
+import typia, { tags } from "typia";
+import { v4 } from "uuid";
+
+import { MyGlobal } from "../MyGlobal";
+import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { RedditCommunityReportTransformer } from "../transformers/RedditCommunityReportTransformer";
+import { PasswordUtil } from "../utils/PasswordUtil";
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+
+export async function getRedditCommunityMemberReportsReportId(props: {
+  member: MemberPayload;
+  reportId: string & tags.Format<"uuid">;
+}): Promise<IRedditCommunityReport> {
+  const report =
+    await MyGlobal.prisma.reddit_community_reports.findUniqueOrThrow({
+      where: {
+        id: props.reportId,
+        deleted_at: null,
+      },
+      select: {
+        report_type: true,
+        reportOfPost: {
+          select: {
+            post: {
+              select: {
+                community: {
+                  select: {
+                    id: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        reportOfComment: {
+          select: {
+            comment: {
+              select: {
+                post: {
+                  select: {
+                    community: {
+                      select: {
+                        id: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  const communityId: string & tags.Format<"uuid"> =
+    report.report_type === "post"
+      ? report.reportOfPost!.post.community.id
+      : report.reportOfComment!.comment.post.community.id;
+  const moderator = await MyGlobal.prisma.reddit_community_moderators.findFirst(
+    {
+      where: {
+        reddit_community_member_id: props.member.id,
+        reddit_community_community_id: communityId,
+        deleted_at: null,
+      },
+    },
+  );
+  if (!moderator) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const fullReport =
+    await MyGlobal.prisma.reddit_community_reports.findUniqueOrThrow({
+      where: {
+        id: props.reportId,
+        deleted_at: null,
+      },
+      ...RedditCommunityReportTransformer.select(),
+    });
+  return await RedditCommunityReportTransformer.transform(fullReport);
+}

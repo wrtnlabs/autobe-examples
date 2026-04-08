@@ -4,53 +4,62 @@ import {
   NestiaSimulator,
   PlainFetcher,
 } from "@nestia/fetcher";
-import typia, { tags } from "typia";
+import typia from "typia";
 
+import { IEcommerceMallCart } from "../../../../../../structures/IEcommerceMallCart";
 import { IEcommerceMallCartItem } from "../../../../../../structures/IEcommerceMallCartItem";
 
 /**
- * Update the quantity of an existing item in the customer's shopping cart.
+ * Add a product variant to the customer's shopping cart.
  *
- * This operation modifies the quantity of a specific cart item identified by its unique identifier. The cart item must belong to the authenticated customer. When quantity is updated, the system immediately recalculates the line item subtotal and updates the overall cart total.
+ * This operation allows customers to add items to their shopping cart by specifying a product variant and desired quantity. If the specified variant already exists in the cart, the quantities are combined into a single line item rather than creating duplicate entries. The system automatically creates a new cart for the customer if they do not have one yet.
  *
- * The operation succeeds regardless of the current stock status of the referenced product variant. Customers can increase or decrease quantities even for out-of-stock items. Setting quantity to zero effectively removes the item from the cart, though the dedicated DELETE endpoint should be used for explicit removal.
+ * The operation validates that the variant exists and is not deleted. Stock availability is not enforced at add-to-cart time, but the cart response includes stock status warnings when quantity exceeds available inventory.
  *
- * The system validates that the requested quantity is a positive integer greater than zero. Invalid quantity values result in validation errors.
- *
- * This operation is part of the shopping cart management flow. After updating cart items, customers may proceed to checkout using the checkout preparation and confirmation endpoints.
- *
- * **Security**: Requires customer authentication via valid session token. Only the owner of the cart can modify its contents.
+ * Successful addition returns the updated cart with all items, enabling the customer to immediately see their updated cart state.
  *
  * @param props.connection
- * @param props.itemId Unique identifier of the cart item to update
- * @param props.body New quantity for the cart item
+ * @param props.body The product variant to add and the desired quantity
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor customer
- * @x-autobe-specification Update cart item quantity in ecommerce_mall_cart_items table.
+ * @x-autobe-specification Implement add-to-cart functionality for authenticated customers.
  *
- * 1. Authentication: Extract customer ID from authenticated session token.
- * 2. Path Parameter: Retrieve itemId from URL path parameter.
- * 3. Validation:
- *    - itemId must be a valid UUID
- *    - quantity must be a positive integer (> 0)
- * 4. Authorization: Query cart item by itemId, verify it belongs to customer's cart via ecommerce_mall_cart_items JOIN ecommerce_mall_carts. Return 404 if item not found or does not belong to customer.
- * 5. Update: Set new quantity value and update updated_at timestamp.
- * 6. Response: Return updated cart item with current price from product variant, product details, and calculated subtotal.
- * 7. Edge Cases:
- *    - Item not found → 404 Not Found
- *    - Item belongs to different customer → 404 Not Found (data isolation)
- *    - Invalid quantity (<=0) → 400 Bad Request
- *    - Cart cleared during checkout → 404 Not Found
- * @path /ecommerceMall/customer/customers/cart/items/:itemId
- * @accessor api.functional.ecommerceMall.customer.customers.cart.items.update
+ * 1. Retrieve the authenticated customer from the session context.
+ *
+ * 2. Retrieve or create the customer's cart:
+ *    - Query ecommerce_mall_carts for an existing cart by ecommerce_mall_customer_id
+ *    - If no cart exists, create a new cart record with current timestamp as created_at
+ *
+ * 3. Validate the product variant:
+ *    - Query ecommerce_mall_product_variants to verify the variant exists and is not soft-deleted (deleted_at IS NULL)
+ *    - If variant not found or deleted, return error
+ *
+ * 4. Check for existing cart item:
+ *    - Query ecommerce_mall_cart_items for existing item with same ecommerce_mall_cart_id and ecommerce_mall_product_variant_id
+ *    - If exists: increment quantity by the requested amount
+ *    - If not exists: create new cart_item with quantity
+ *
+ * 5. Update timestamps:
+ *    - Set updated_at on the cart to current timestamp
+ *
+ * 6. Fetch and return the complete updated cart:
+ *    - Join with cart_items, product_variants, and products to return full item details including product name, variant options, price, and availability status
+ *
+ * Business Rules:
+ * - Quantity must be a positive integer greater than 0
+ * - Same variant can only appear once per cart (unique constraint on cart_id + variant_id)
+ * - Cart is created automatically on first item addition
+ * - Stock status is informational only - no enforcement at add-to-cart time
+ * @path /ecommerceMall/customer/customers/cart/items
+ * @accessor api.functional.ecommerceMall.customer.customers.cart.items.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function update(
+export async function create(
   connection: IConnection,
-  props: update.Props,
-): Promise<update.Response> {
+  props: create.Props,
+): Promise<create.Response> {
   return true === connection.simulate
-    ? update.simulate(connection, props)
+    ? create.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -60,31 +69,26 @@ export async function update(
           },
         },
         {
-          ...update.METADATA,
-          path: update.path(props),
+          ...create.METADATA,
+          path: create.path(),
           status: null,
         },
         props.body,
       );
 }
-export namespace update {
+export namespace create {
   export type Props = {
     /**
-     * Unique identifier of the cart item to update
+     * The product variant to add and the desired quantity
      */
-    itemId: string & tags.Format<"uuid">;
-
-    /**
-     * New quantity for the cart item
-     */
-    body: IEcommerceMallCartItem.IUpdate;
+    body: IEcommerceMallCartItem.ICreate;
   };
-  export type Body = IEcommerceMallCartItem.IUpdate;
-  export type Response = IEcommerceMallCartItem;
+  export type Body = IEcommerceMallCartItem.ICreate;
+  export type Response = IEcommerceMallCart;
 
   export const METADATA = {
-    method: "PUT",
-    path: "/ecommerceMall/customer/customers/cart/items/:itemId",
+    method: "POST",
+    path: "/ecommerceMall/customer/customers/cart/items",
     request: {
       type: "application/json",
       encrypted: false,
@@ -95,138 +99,21 @@ export namespace update {
     },
   } as const;
 
-  export const path = (props: Omit<Props, "body">) =>
-    `/ecommerceMall/customer/customers/cart/items/${encodeURIComponent(props.itemId ?? "null")}`;
-  export const random = (): IEcommerceMallCartItem =>
-    typia.random<IEcommerceMallCartItem>();
+  export const path = () => "/ecommerceMall/customer/customers/cart/items";
+  export const random = (): IEcommerceMallCart =>
+    typia.random<IEcommerceMallCart>();
   export const simulate = (
     connection: IConnection,
-    props: update.Props,
+    props: create.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: update.path(props),
+      path: create.path(),
       contentType: "application/json",
     });
     try {
-      assert.param("itemId")(() => typia.assert(props.itemId));
       assert.body(() => typia.assert(props.body));
-    } catch (exp) {
-      if (!typia.is<HttpError>(exp)) throw exp;
-      return {
-        success: false,
-        status: exp.status,
-        headers: exp.headers,
-        data: exp.toJSON().message,
-      } as any;
-    }
-    return random();
-  };
-}
-
-/**
- * Remove a specific item from the customer's shopping cart.
- *
- * This operation permanently removes a single cart item based on its unique identifier. The deletion is immediate and irreversible. Customers can remove any cart item regardless of its current availability status - items that are out of stock, unavailable, or have been deleted by the seller can still be removed.
- *
- * When an item is removed, the system recalculates the cart total by summing the remaining items' line subtotals. If this was the last item in the cart, an empty cart state is displayed to the customer.
- *
- * The operation is scoped to the authenticated customer. Each customer can only remove items from their own cart - attempting to remove items from another customer's cart returns a not-found error for security reasons.
- *
- * Cart items belong to the ecommerce_mall_cart_items table, which stores the cart reference (ecommerce_mall_cart_id), product variant reference (ecommerce_mall_product_variant_id), quantity, and timestamps. Deleting a cart item triggers cascade deletion of related records through the cart relationship.
- *
- * Related operations: GET /customers/cart to view current cart contents, POST /customers/cart/items to add new items, PUT /customers/cart/items/:itemId to update item quantities.
- *
- * @param props.connection
- * @param props.itemId Unique identifier of the cart item to remove
- * @x-autobe-authorization-type null
- * @x-autobe-authorization-actor customer
- * @x-autobe-specification Remove a cart item from the customer's shopping cart.
- *
- * 1. Authentication: Verify the request includes valid customer authentication token. Extract customer ID from session.
- *
- * 2. Parameter Validation:
- *    - Validate itemId is a valid UUID format
- *    - Verify the cart item exists in ecommerce_mall_cart_items table
- *    - Verify the cart item belongs to a cart owned by the authenticated customer
- *
- * 3. Authorization Check:
- *    - Query ecommerce_mall_carts table to verify ownership
- *    - Join with ecommerce_mall_customers to confirm customer ownership
- *    - Return 404 if cart item not found or not owned by customer
- *
- * 4. Deletion Process:
- *    - Delete the cart item from ecommerce_mall_cart_items using cascade relationship
- *    - Update the cart's updated_at timestamp in ecommerce_mall_carts
- *
- * 5. Response:
- *    - Return 204 No Content on successful deletion
- *    - No response body required
- *
- * Edge Cases:
- * - Item already removed: Return 204 (idempotent)
- * - Item belongs to another customer: Return 404
- * - Invalid UUID format: Return 400 Bad Request
- * - Missing authentication: Return 401 Unauthorized
- * @path /ecommerceMall/customer/customers/cart/items/:itemId
- * @accessor api.functional.ecommerceMall.customer.customers.cart.items.erase
- * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
- */
-export async function erase(
-  connection: IConnection,
-  props: erase.Props,
-): Promise<void> {
-  return true === connection.simulate
-    ? erase.simulate(connection, props)
-    : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
-        {
-          ...erase.METADATA,
-          path: erase.path(props),
-          status: null,
-        },
-      );
-}
-export namespace erase {
-  export type Props = {
-    /**
-     * Unique identifier of the cart item to remove
-     */
-    itemId: string & tags.Format<"uuid">;
-  };
-
-  export const METADATA = {
-    method: "DELETE",
-    path: "/ecommerceMall/customer/customers/cart/items/:itemId",
-    request: null,
-    response: {
-      type: "application/json",
-      encrypted: false,
-    },
-  } as const;
-
-  export const path = (props: Props) =>
-    `/ecommerceMall/customer/customers/cart/items/${encodeURIComponent(props.itemId ?? "null")}`;
-  export const random = (): void => typia.random<void>();
-  export const simulate = (
-    connection: IConnection,
-    props: erase.Props,
-  ): void => {
-    const assert = NestiaSimulator.assert({
-      method: METADATA.method,
-      host: connection.host,
-      path: erase.path(props),
-      contentType: "application/json",
-    });
-    try {
-      assert.param("itemId")(() => typia.assert(props.itemId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

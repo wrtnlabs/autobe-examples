@@ -16,6 +16,12 @@ export async function guestAuthorize(request: {
     where: {
       id: payload.id,
       deleted_at: null,
+      sessions: {
+        some: {
+          id: payload.session_id,
+          expired_at: { gt: new Date() },
+        },
+      },
     },
   });
 

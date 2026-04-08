@@ -12,20 +12,69 @@ import { patchEcommerceMallSellerProductsProductIdSnapshots } from "../../../../
 @Controller("/ecommerceMall/seller/products/:productId/snapshots")
 export class EcommercemallSellerProductsSnapshotsController {
   /**
-   * Retrieve a paginated list of historical product snapshots for a specific product, showing all recorded changes to the product's state over time.
+   * Retrieve paginated list of product snapshots for a specific product, enabling sellers and administrators to track product modifications over time.
    *
-   * This operation provides access to immutable audit trail records that capture the complete state of a product at specific points in time, including name, description, price, status, and tags as they existed when each snapshot was created. Snapshots are automatically generated whenever a product is edited by the seller.
+   * This endpoint returns immutable snapshots that capture the complete state of the product at each modification event, including variant states and seller information. Snapshots are preserved indefinitely regardless of the product's current deletion status.
    *
-   * Supports date range filtering to query snapshots within a specific time period, useful for audit investigations or historical price analysis. Pagination is cursor-based for efficient handling of large snapshot histories. Response includes snapshot metadata (created_at timestamp) and denormalized product data for immediate display without additional queries.
+   * Users can filter snapshots by date range, entity status, and snapshot type. Pagination supports cursor-based navigation for efficient retrieval of historical records.
    *
-   * Access control is enforced: sellers can only view snapshots of their own products, while administrators with elevated privileges can view snapshots of any product on the platform. This operation does not return variant-level details—those are preserved separately in ecommerce_mall_product_variant_snapshots.
+   * Key features:
+   * - Immutable snapshot records preserve product state at modification time
+   * - Sellers can view their own product snapshots for dispute resolution
+   * - Administrators can view any product's snapshots for oversight
+   * - Snapshots include variant information and seller profile state
+   * - Date range filtering for efficient historical navigation
+   *
+   * Security:
+   * - Sellers can only view snapshots of products they own
+   * - Administrators can view all product snapshots regardless of ownership
+   * - Deleted products' snapshots remain accessible
    *
    * @param connection
-   * @param productId The unique identifier of the product whose snapshots to retrieve
-   * @param body Pagination and filtering criteria for snapshot retrieval
+   * @param productId UUID of the product to retrieve snapshots for (global scope)
+   * @param body Search criteria including date range filters, status filters, pagination parameters, and sort options. Filters by created_at range, entity_status, and entity_type. Pagination supports cursor-based navigation with limit and cursor parameters. Sortable by created_at, entity_status.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query ecommerce_mall_product_snapshots table filtered by productId. Apply pagination with configurable page size and cursor-based navigation. Support optional date range filtering on created_at for historical analysis. Join with ecommerce_mall_products if product name/status needed (optional projection). Sort by created_at descending (newest first) by default. Return only snapshots the calling user has access to - sellers see their own products' snapshots, admins see all snapshots. Validate productId exists in ecommerce_mall_products before querying snapshots.
+   * @x-autobe-specification Query ecommerce_mall_product_snapshots table filtered by product_id (path parameter).
+   *
+   * Apply search filters:
+   * - Date range filtering on created_at (start_date, end_date)
+   * - Entity status filtering (entity_status)
+   * - Entity type filtering (entity_type, default: 'UPDATE')
+   *
+   * Pagination requirements:
+   * - Cursor-based pagination using created_at as cursor for efficient large result set navigation
+   * - Default limit: 50 items per page
+   * - Maximum limit: 200 items per page
+   * - Return cursor values (nextCursor, prevCursor) for navigation
+   *
+   * Sorting:
+   * - Default sort: created_at DESC (newest first)
+   * - Support sort by: created_at (ASC/DESC), entity_status
+   *
+   * Authorization:
+   * - Sellers: Only return snapshots where product.seller_id == current_user_id
+   * - Administrators: Return all snapshots for the requested productId
+   * - Validate product exists (return 404 if not found)
+   * - Support querying deleted products (snapshots preserved after deletion)
+   *
+   * Result structure:
+   * - For each snapshot: id, product name, category_id, base_price, variant_snapshot_id, seller_snapshot_id, created_at, entity_status, action
+   * - Join with ecommerce_mall_categories for category name in summary
+   * - Denormalized fields already stored in snapshot table (no additional joins needed for core data)
+   *
+   * Edge cases:
+   * - Product with no snapshots: return empty paginated result (not error)
+   * - Deleted product: still return all snapshots (snapshot retention policy)
+   * - Invalid date range: reject with validation error
+   * - Cursor from different product: reject with validation error
+   *
+   * Business rules:
+   * - Snapshots are immutable - no updates or deletes allowed
+   * - Each product modification creates exactly one snapshot
+   * - Snapshot retention is indefinite for dispute resolution
+   * - Sellers cannot access snapshots of other sellers' products
+   * - Administrators have full access to all snapshots
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -50,42 +99,32 @@ export class EcommercemallSellerProductsSnapshotsController {
   }
 
   /**
-   * Retrieve a specific historical snapshot of a product, showing the complete state of the product as it existed at a particular moment in time.
+   * Retrieve a specific product snapshot by product ID and snapshot ID.
    *
-   * This operation provides read-only access to product snapshots for audit trails, dispute resolution, and historical reference. Each snapshot captures the product's name, description, pricing (base and sale prices), status, and tags at the time the snapshot was created. The response includes the exact snapshot timestamp for chronological ordering.
+   * This endpoint returns the complete product snapshot record including all fields as they existed at the time of modification. Product snapshots are immutable audit trail records that preserve the state of products, variants, sellers, and categories at each change point.
    *
-   * Access to product snapshots is restricted based on actor roles and permissions. Product owners (sellers) can only view snapshots of their own products to review their product's change history. Platform administrators have unrestricted access to view snapshots of any product on the platform for oversight and compliance purposes.
-   *
-   * Snapshots are immutable records that remain accessible even after a product is deleted, ensuring historical data integrity for order disputes and audit requirements. The snapshot data can be used to reconstruct what a customer saw when purchasing a product, verify price changes over time, and track modification history.
+   * Product owners (sellers) can view snapshots of their own products. Administrators can view snapshots of any product on the platform, including products owned by other sellers, suspended sellers, or deleted sellers. This access supports compliance requirements, dispute resolution, and platform oversight.
    *
    * @param connection
-   * @param productId The unique identifier of the product this snapshot belongs to (for context and validation)
-   * @param snapshotId The unique identifier of the specific snapshot to retrieve
+   * @param productId Unique identifier of the product. Path must reference the correct product to which the snapshot belongs.
+   * @param snapshotId Unique identifier of the product snapshot to retrieve.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Retrieve a specific product snapshot by ID.
+   * @x-autobe-specification Query ecommerce_mall_product_snapshots table by snapshotId.
    *
-   * 1. Validate that productId matches the snapshot's referenced product.
-   * 2. Verify authentication - user must be logged in as seller or admin.
-   * 3. Authorization check:
-   *    - If user is seller: verify ownership (user.id == product.seller_id)
-   *    - If user is admin: allow access to any product snapshot
-   * 4. Query ecommerce_mall_product_snapshots by snapshotId.
-   * 5. Join with ecommerce_mall_products to verify product exists and get seller_id for ownership validation.
-   * 6. Return snapshot data with all fields: name, slug, description, base_price, sale_price, status, tags, and timestamps.
-   * 7. If snapshot not found: return 404 Not Found.
-   * 8. If user lacks permission: return 403 Forbidden.
+   * Verify that the snapshot belongs to the specified productId (validate reference integrity).
    *
-   * Business rules:
-   * - Snapshots are immutable - never modified or deleted once created.
-   * - Snapshots remain accessible even if the product is deleted.
-   * - Access is logged for audit purposes.
+   * If the authenticated user is a seller, verify ownership: snapshot.seller_id must match the authenticated seller's ID.
    *
-   * Error handling:
-   * - Invalid UUID format in path parameters: 400 Bad Request.
-   * - Snapshot not found: 404 Not Found.
-   * - Unauthorized access: 401 Unauthorized or 403 Forbidden.
-   * - Database query failure: 500 Internal Server Error.
+   * If the authenticated user is an administrator, allow access to any snapshot (no ownership check required).
+   *
+   * If authenticated user is a customer or guest, return 403 Forbidden (not authorized to view product snapshots).
+   *
+   * Include nested relationship data: category, sellerSnapshot, and optionally variantSnapshot.
+   *
+   * Snapshot data is immutable - never modify snapshot records. Read-only access only.
+   *
+   * Return 404 Not Found if snapshotId does not exist or does not belong to the specified productId.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":snapshotId")

@@ -15,58 +15,71 @@ import { authorize_customer_refresh } from "../../../authorize/authorize_custome
 export async function test_api_customer_login_success(
   connection: api.IConnection,
 ): Promise<void> {
-  const signupConnection: api.IConnection = { host: connection.host };
-  const password = RandomGenerator.alphaNumeric(16);
+  const joinConnection: api.IConnection = { host: connection.host };
   const email = typia.random<string & tags.Format<"email">>();
-  const joined = await authorize_customer_join(signupConnection, {
+  const password = typia.random<string & tags.Format<"password">>();
+  const joined = await authorize_customer_join(joinConnection, {
     body: {
       email,
       password,
+      href: "https://example.com/signup",
+      referrer: "https://example.com/landing",
+      ip: "127.0.0.1",
     } satisfies IMallPlatformCustomer.IJoin,
   });
   typia.assert(joined);
   const loginConnection: api.IConnection = { host: connection.host };
-  const authorized = await authorize_customer_login(loginConnection, {
+  const loggedIn = await authorize_customer_login(loginConnection, {
     body: {
       email,
       password,
     } satisfies IMallPlatformCustomer.ILogin,
   });
-  typia.assert(authorized);
+  typia.assert(loggedIn);
   TestValidator.equals(
-    "customer id should match joined account",
-    authorized.id,
+    "customer id should match registered account",
+    loggedIn.id,
     joined.id,
   );
   TestValidator.equals(
-    "customer email should match joined account",
-    authorized.email,
-    email,
+    "customer email should match registered account",
+    loggedIn.email,
+    joined.email,
   );
   TestValidator.equals(
-    "customer status should be active",
-    authorized.status,
+    "customer status should remain active",
+    loggedIn.status,
     joined.status,
   );
   TestValidator.equals(
-    "customer should not be deleted",
-    authorized.deletedAt,
-    null,
+    "customer created_at should remain unchanged",
+    loggedIn.created_at,
+    joined.created_at,
+  );
+  TestValidator.equals(
+    "customer deleted_at should remain null",
+    loggedIn.deleted_at,
+    joined.deleted_at,
   );
   TestValidator.predicate(
-    "access token should be issued",
-    authorized.token.access.length > 0,
+    "access token should be present",
+    loggedIn.token.access.length > 0,
   );
   TestValidator.predicate(
-    "refresh token should be issued",
-    authorized.token.refresh.length > 0,
+    "refresh token should be present",
+    loggedIn.token.refresh.length > 0,
   );
   TestValidator.predicate(
-    "access expiration should be present",
-    authorized.token.expired_at.length > 0,
+    "access token expiry should be present",
+    loggedIn.token.expired_at.length > 0,
   );
   TestValidator.predicate(
-    "refresh expiration should be present",
-    authorized.token.refreshable_until.length > 0,
+    "refresh token expiry should be present",
+    loggedIn.token.refreshable_until.length > 0,
+  );
+  TestValidator.notEquals(
+    "login should issue a fresh access token",
+    loggedIn.token.access,
+    joined.token.access,
   );
 }

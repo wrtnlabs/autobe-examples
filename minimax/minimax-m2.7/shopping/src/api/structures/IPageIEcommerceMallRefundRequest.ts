@@ -1,5 +1,6 @@
 import { IEcommerceMallRefundRequest } from "./IEcommerceMallRefundRequest";
 import { IPage } from "./IPage";
+import { IPageIEcommerceMall } from "./IPageIEcommerceMall";
 
 /**
  * A page.
@@ -34,7 +35,7 @@ export namespace IPageIEcommerceMallRefundRequest {
      *
      * @x-autobe-specification Pagination information for the page.
      */
-    pagination: IPage.IPagination;
+    pagination: IPageIEcommerceMall.IPagination;
 
     /**
      * List of records.

@@ -5,27 +5,32 @@ import { ArrayUtil, RandomGenerator } from "@nestia/e2e";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+/**
+ * Prepare random HRM platform organization creation data for E2E testing.
+ *
+ * Generates a complete IHrmPlatformOrganization.ICreate with randomized values for all required and optional fields. The organization serves as the foundational container for all subsequent entities including employees, projects, tasks, and time tracking data.
+ *
+ * All properties support input override through DeepPartial, allowing test-specific customization while providing sensible defaults for rapid test setup. Currency codes are selected from common ISO 4217 standards, and timezones use valid IANA identifiers.
+ */
 export function prepare_random_hrm_platform_organization(
   input?: DeepPartial<IHrmPlatformOrganization.ICreate>,
 ): IHrmPlatformOrganization.ICreate {
   return {
     name:
       input?.name ??
-      RandomGenerator.paragraph({ sentences: 2, wordMin: 2, wordMax: 4 }),
+      RandomGenerator.paragraph({ sentences: 1, wordMin: 2, wordMax: 4 }),
     description:
       input?.description ??
-      (typia.random<boolean>()
-        ? RandomGenerator.content({
-            paragraphs: 1,
-            sentenceMin: 2,
-            sentenceMax: 4,
-          })
-        : null),
-    logo:
-      input?.logo ??
-      (typia.random<boolean>()
-        ? typia.random<string & tags.Format<"url">>()
-        : null),
+      RandomGenerator.content({
+        paragraphs: 1,
+        sentenceMin: 2,
+        sentenceMax: 4,
+      }) ??
+      null,
+    logo_url:
+      input?.logo_url ??
+      typia.random<string & tags.MaxLength<80000> & tags.Format<"uri">>() ??
+      null,
     currency:
       input?.currency ??
       RandomGenerator.pick([
@@ -41,13 +46,12 @@ export function prepare_random_hrm_platform_organization(
     timezone:
       input?.timezone ??
       RandomGenerator.pick([
-        "America/New_York",
-        "America/Los_Angeles",
-        "Europe/London",
-        "Europe/Paris",
         "Asia/Seoul",
+        "America/New_York",
+        "Europe/London",
         "Asia/Tokyo",
-        "Asia/Shanghai",
+        "America/Los_Angeles",
+        "Europe/Paris",
         "Australia/Sydney",
       ] as const),
     fiscal_start_month:

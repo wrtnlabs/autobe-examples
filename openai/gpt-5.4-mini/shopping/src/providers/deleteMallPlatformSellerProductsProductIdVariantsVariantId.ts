@@ -16,32 +16,35 @@ export async function deleteMallPlatformSellerProductsProductIdVariantsVariantId
   productId: string & tags.Format<"uuid">;
   variantId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  await MyGlobal.prisma.$transaction(async (prisma) => {
-    const product = await prisma.mall_platform_products.findUniqueOrThrow({
+  const product =
+    await MyGlobal.prisma.mall_platform_products.findUniqueOrThrow({
       where: { id: props.productId },
       select: {
         id: true,
         seller_account_id: true,
       },
     });
-    if (product.seller_account_id !== props.seller.id) {
-      throw new HttpException("Forbidden", 403);
-    }
-    const variant =
-      await prisma.mall_platform_product_variants.findUniqueOrThrow({
-        where: { id: props.variantId },
-        select: {
-          id: true,
-          mall_platform_product_id: true,
-        },
-      });
-    if (variant.mall_platform_product_id !== props.productId) {
-      throw new HttpException("Not Found", 404);
-    }
-    const blockingOrderItem = await prisma.mall_platform_order_items.findFirst({
+  if (product.seller_account_id !== props.seller.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const variant =
+    await MyGlobal.prisma.mall_platform_product_variants.findUniqueOrThrow({
+      where: { id: props.variantId },
+      select: {
+        id: true,
+        mall_platform_product_id: true,
+      },
+    });
+  if (variant.mall_platform_product_id !== product.id) {
+    throw new HttpException(
+      "Variant does not belong to the specified product",
+      409,
+    );
+  }
+  const blockingOrderItem =
+    await MyGlobal.prisma.mall_platform_order_items.findFirst({
       where: {
         mall_platform_product_variant_id: props.variantId,
-        deleted_at: null,
         status: {
           in: ["paid", "shipped"],
         },
@@ -50,52 +53,82 @@ export async function deleteMallPlatformSellerProductsProductIdVariantsVariantId
         id: true,
       },
     });
-    if (blockingOrderItem !== null) {
-      throw new HttpException(
-        "Cannot delete variant with pending order items",
-        400,
-      );
-    }
-    const blockingCancellationRequest =
-      await prisma.mall_platform_cancellation_requests.findFirst({
-        where: {
-          orderItem: {
-            mall_platform_product_variant_id: props.variantId,
-          },
-          deleted_at: null,
-          status: "pending",
+  if (blockingOrderItem !== null) {
+    throw new HttpException(
+      "Cannot delete variant with pending paid or shipped order items",
+      409,
+    );
+  }
+  const blockingCancellationRequest =
+    await MyGlobal.prisma.mall_platform_cancellation_requests.findFirst({
+      where: {
+        orderItem: {
+          mall_platform_product_variant_id: props.variantId,
         },
-        select: {
-          id: true,
-        },
-      });
-    if (blockingCancellationRequest !== null) {
-      throw new HttpException(
-        "Cannot delete variant with pending cancellation requests",
-        400,
-      );
-    }
-    const blockingRefundRequest =
-      await prisma.mall_platform_refund_requests.findFirst({
-        where: {
-          orderItem: {
-            mall_platform_product_variant_id: props.variantId,
-          },
-          deleted_at: null,
-          status: "pending",
-        },
-        select: {
-          id: true,
-        },
-      });
-    if (blockingRefundRequest !== null) {
-      throw new HttpException(
-        "Cannot delete variant with pending refund requests",
-        400,
-      );
-    }
-    await prisma.mall_platform_product_variants.delete({
-      where: { id: props.variantId },
+        status: "pending",
+      },
+      select: {
+        id: true,
+      },
     });
+  if (blockingCancellationRequest !== null) {
+    throw new HttpException(
+      "Cannot delete variant with pending cancellation requests",
+      409,
+    );
+  }
+  const blockingRefundRequest =
+    await MyGlobal.prisma.mall_platform_refund_requests.findFirst({
+      where: {
+        orderItem: {
+          mall_platform_product_variant_id: props.variantId,
+        },
+        status: "pending",
+      },
+      select: {
+        id: true,
+      },
+    });
+  if (blockingRefundRequest !== null) {
+    throw new HttpException(
+      "Cannot delete variant with pending refund requests",
+      409,
+    );
+  }
+  await MyGlobal.prisma.mall_platform_product_variants.delete({
+    where: { id: props.variantId },
   });
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function deleteMallPlatformSellerProductsProductIdVariantsVariantId(props: {
+//   seller: SellerPayload;
+//   productId: string & tags.Format<"uuid">;
+//   variantId: string & tags.Format<"uuid">;
+// }): Promise<void> {
+//   await MyGlobal.prisma.....delete({
+//     where: { ... },
+//   });
+// }
+// ```
+//--------------------------------------------------------------

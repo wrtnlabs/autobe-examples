@@ -12,44 +12,36 @@ import { putRedditCloneMemberFilesFileId } from "../../../../providers/putReddit
 @Controller("/redditClone/member/files")
 export class RedditcloneMemberFilesController {
   /**
-   * Upload a file to the platform for use as avatar, community icon, or post image.
+   * Upload an image file to the platform storage system.
    *
-   * This endpoint allows authenticated members to upload image files to the platform. The system supports JPEG, PNG, GIF, and WebP image formats. All uploaded files undergo virus scanning before the upload is finalized. If a file is flagged as malicious, it will be quarantined and the upload rejected.
+   * Authenticated members can upload image files which are validated for format, size, and dimensions before being stored. The system performs virus scanning on all uploads before finalizing the file record.
    *
-   * File size must be between 1KB and 5MB. Image dimensions must be at least 50 pixels on any side and no more than 8000 pixels on any side. The system will automatically reject files that fail validation with appropriate error messages.
+   * Supported image formats include JPEG, PNG, GIF, and WebP. Files must be between 1KB and 5MB in size, with image dimensions between 50 and 8000 pixels on any side. The system automatically generates thumbnails for uploaded images within five minutes of upload.
    *
-   * Uploaded images trigger asynchronous thumbnail generation for optimized display in different contexts (thumbnails for post lists, avatar sizes for profiles, icon sizes for community listings). Thumbnails are generated within five minutes of upload.
+   * Uploaded files are accessible via the returned URI to all users regardless of authentication status. Files are associated with content (posts, communities, profiles) through separate association endpoints.
    *
-   * The uploaded file must be associated with a target entity using the target_type and target_id fields. Valid target types include 'user' for avatars, 'community' for icons, and 'post' for image posts. Each entity can have only one file per association type.
-   *
-   * Files are stored using a generated unique filename to prevent collisions. The original filename is preserved in metadata for display purposes. Files associated with deleted content are retained for 30 days before permanent deletion per retention policies.
-   *
-   * This endpoint requires authentication. Only members can upload files. Public users cannot upload content to the platform.
+   * If virus scanning detects malicious content, the upload is quarantined and the user is notified. If scanning fails due to system error, the upload is rejected with an error response.
    *
    * @param connection
-   * @param body File upload payload containing base64-encoded file data, original filename, MIME type, and target entity association information.
+   * @param body Multipart form-data containing the image file under field name 'file'
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification 1. Validate authentication - extract member_id from JWT session token. Return 401 if not authenticated.
-   * 2. Validate request body contains required fields: file_data (base64 encoded), original_filename, mime_type, target_type, target_id.
-   * 3. Validate mime_type is one of: image/jpeg, image/png, image/gif, image/webp. Return 400 if invalid format.
-   * 4. Decode base64 file_data and validate file size is between 1024 bytes (1KB) and 5242880 bytes (5MB). Return 400 if size invalid.
-   * 5. Validate image dimensions by parsing the image data. Minimum 50px, maximum 8000px on any dimension. Return 400 if dimensions invalid.
-   * 6. Validate filename: reject if contains special characters (except letters, numbers, hyphens, underscores) or exceeds 255 characters. Auto-remove invalid characters if possible.
-   * 7. Validate target_type is one of: 'user', 'community', 'post'. Validate target_id is valid UUID and entity exists.
-   * 8. Generate unique stored_filename using UUID v4.
-   * 9. Save file to storage_path location.
-   * 10. Create reddit_clone_files record with status='pending', uploader_id=member_id.
-   * 11. Create reddit_clone_file_associations record linking file to target entity.
-   * 12. Trigger async virus scan job:
-   *     - Update status to 'scanning' during scan
-   *     - If scan returns 'clean': update status to 'processed', proceed
-   *     - If scan returns 'infected': update status to 'quarantined', delete file, return 400 with threat_name
-   *     - If scan fails: update status to 'failed', return 400 with error message
-   * 13. Trigger async thumbnail generation job (for images only):
-   *     - Generate small (100x100), medium (300x300), large (600x600) variants
-   *     - Store thumbnails in reddit_clone_file_thumbnails table
-   * 14. Return 201 with created IRedditCloneFile entity including all fields except internal storage_path.
+   * @x-autobe-specification Handle multipart form-data file upload with the following steps:
+   *
+   * 1. Extract uploaded file from multipart form data under field name 'file'
+   * 2. Validate file exists and is present in the request
+   * 3. Validate original_filename: reject if contains special characters except letters, numbers, hyphens, underscores; reject if exceeds 255 characters
+   * 4. Validate file size: reject if < 1KB or > 5MB
+   * 5. Validate MIME type matches one of: image/jpeg, image/png, image/gif, image/webp
+   * 6. Validate file extension matches MIME type (no double extensions like .jpg.php)
+   * 7. Read file content to verify it matches declared MIME type
+   * 8. For images, validate dimensions: reject if any dimension < 50px or > 8000px
+   * 9. Generate unique stored_filename using UUID
+   * 10. Store file to storage_path location
+   * 11. Create file record in reddit_clone_files with status='pending', uploader_id from authenticated session
+   * 12. Queue virus scan job asynchronously
+   * 13. Queue thumbnail generation job for images (async, within 5 minutes)
+   * 14. Return file metadata including id and storage URI
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -71,26 +63,20 @@ export class RedditcloneMemberFilesController {
   }
 
   /**
-   * Update the display name of an uploaded file.
+   * Update file metadata and associations for an existing uploaded file.
    *
-   * This operation allows authenticated users to modify the original_filename of files they have uploaded. The original_filename represents the display name shown to other users when viewing the file in context (e.g., in post images or avatar displays).
+   * This endpoint allows updating the target association of a file (retargeting between users, communities, or posts) and modifying the file's processing status. Users can reassign their avatar to a different uploaded image, or update community icons.
    *
-   * Only the uploader of a file can perform this update. System-managed properties such as storage_path, stored_filename, mime_type, file_size, and virus scan status cannot be modified through this endpoint as they are controlled by the platform's file storage system.
+   * Only active files (not soft-deleted) can be updated through this endpoint. Image files attached to posts cannot be modified after the post is created to maintain content integrity. For image posts, deletion and recreation is required to change the image.
    *
-   * The file must exist in the reddit_clone_files table with a status of 'processed' (meaning virus scan completed successfully). Files with 'pending' or 'failed' status cannot be updated until processing issues are resolved.
-   *
-   * When a file association exists through reddit_clone_file_associations, the updated filename will be reflected in all contexts where the file is displayed, including user profiles (for avatars) and post detail views (for image posts).
-   *
-   * Thumbnail variants in reddit_clone_file_thumbnails are automatically generated and cannot be manually updated; they are regenerated based on the source image when necessary.
-   *
-   * This operation does not affect the file's storage location, its association with entities, or its virus scan status. To change file associations (e.g., replacing an avatar with a different image), use the appropriate entity update endpoints instead.
+   * The file must belong to the authenticated user for target reassignment. Only administrators can update file processing status.
    *
    * @param connection
-   * @param fileId Unique identifier of the file to update
-   * @param body File metadata update fields
+   * @param fileId Unique identifier of the file to update (UUID format).
+   * @param body File update payload containing optional target reassignment and status update fields.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Retrieve the file by fileId from reddit_clone_files table. Verify the authenticated uploader matches the file's uploader_id. Validate that status is 'processed' (not 'pending' or 'failed'). Update only the original_filename field in the database. Return the updated file record including all thumbnails from reddit_clone_file_thumbnails relation. Throw FORBIDDEN if uploader doesn't match. Throw NOT_FOUND if fileId doesn't exist or file is soft-deleted (deleted_at is not null).
+   * @x-autobe-specification Retrieve the file by fileId from reddit_clone_files table. Verify the file exists and is not soft-deleted (deleted_at is null). Check authorization: for target updates, verify uploader_id matches authenticated user; for status updates, verify user has admin role. Validate the new_target_type if provided (must be 'user', 'community', or 'post'). If target_type is 'post', reject the update and return 403 Forbidden since post images cannot be modified after creation. Update the target association in reddit_clone_file_associations table if target parameters are provided. Update file status if provided (valid values: 'pending', 'processed', 'failed'). Set updated_at timestamp. Return the updated file entity with associated associations, thumbnails, and scan results.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":fileId")
@@ -115,36 +101,25 @@ export class RedditcloneMemberFilesController {
   }
 
   /**
-   * Permanently remove a file from the platform.
+   * Permanently removes a file from the platform storage.
    *
-   * This operation performs soft deletion on uploaded files, marking them as deleted while preserving the record for retention period compliance. Only the original uploader of the file can perform this operation.
+   * This endpoint allows authenticated users to delete files they have uploaded. When a file is deleted, the system marks it with a deleted_at timestamp for soft deletion, preventing immediate physical removal while maintaining data integrity for audit purposes. Associated file relationships remain intact during soft deletion.
    *
-   * The deletion process cascades to all associated thumbnails, which are permanently removed from storage. File associations linking the file to users (avatars), communities (icons), or posts (images) are dissociated but not deleted, leaving the associations pointing to deleted content.
-   *
-   * Once deleted, the file no longer appears in any file listings or search results. The uploader retains ownership information (uploader_id) for audit purposes even after deletion. The file and its thumbnails remain in storage until the retention cleanup process removes them after the grace period.
-   *
-   * This endpoint should be used when a user wants to remove their own uploaded content. For automated cleanup of orphaned files due to post or community deletion, the system applies retention policies internally rather than through this API.
+   * File deletion is subject to retention policies: files associated with reported content are retained until the report is resolved. Users cannot delete files uploaded by other users. The uploader_id field identifies the owner of the file.
    *
    * @param connection
-   * @param fileId Unique identifier of the file to delete
+   * @param fileId Unique identifier of the file to delete (UUID format)
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Validate that the authenticated member is the uploader of the file by comparing the session user ID with the file's uploader_id field.
+   * @x-autobe-specification Query the reddit_clone_files table using the provided fileId as the primary key. Verify that the authenticated user is either the uploader (uploader_id matches session user) or has moderator privileges. If neither condition is met, return 403 Forbidden.
    *
-   * If the user is not the uploader, return 403 Forbidden with error code FILE_DELETE_FORBIDDEN.
+   * Check if the file exists and is not already deleted (deleted_at is null). If the file is already soft-deleted, return 404 Not Found.
    *
-   * If the file does not exist or is already soft-deleted (deleted_at is not null), return 404 Not Found with error code FILE_NOT_FOUND.
+   * Set the deleted_at field to the current timestamp for soft deletion. Update the updated_at field accordingly. Do not physically remove the file from storage - the soft delete flag handles visibility.
    *
-   * Begin a database transaction that:
-   * 1. Sets the deleted_at field of the matching reddit_clone_files record to current timestamp (soft delete)
-   * 2. Deletes all records from reddit_clone_file_thumbnails where reddit_clone_file_id matches (cascade to storage)
-   * 3. The reddit_clone_file_associations remain in database but are effectively orphaned
+   * If file associations exist (reddit_clone_file_associations), retain them as they support audit trail and orphaned file cleanup processes.
    *
-   * Commit the transaction.
-   *
-   * Return 204 No Content on success.
-   *
-   * Do NOT physically delete the file from storage or database in this operation. The retention cleanup process handles permanent removal after the grace period.
+   * Return the deleted file metadata including id, original_filename, and deleted_at timestamp.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":fileId")

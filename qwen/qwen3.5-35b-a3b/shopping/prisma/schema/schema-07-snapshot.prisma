@@ -1,0 +1,747 @@
+/// Main polymorphic snapshot table for audit trail across all entities.
+///
+/// This table captures point-in-time states for all snapshot-capable
+/// entities including products, product variants, sellers, order items,
+/// reviews, cancellation requests, refund requests, shop profiles, and
+/// categories. Each snapshot records when a change occurred, what type of
+/// entity was modified, and stores key metadata about the entity state at
+/// that point in time.
+///
+/// {@link ecommerce_mall_products} products with snapshots
+/// {@link ecommerce_mall_product_variants} product variants with snapshots
+/// {@link ecommerce_mall_sellers} seller accounts with snapshots
+/// {@link ecommerce_mall_order_items} order items with snapshots
+/// {@link ecommerce_mall_customer_reviews} customer reviews with snapshots
+/// {@link ecommerce_mall_cancellation_requests} cancellation requests with
+/// snapshots
+/// {@link ecommerce_mall_refund_requests} refund requests with snapshots
+/// {@link ecommerce_mall_shop_profiles} shop profiles with snapshots
+/// {@link ecommerce_mall_categories} categories with snapshots
+///
+/// @namespace snapshot
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the product entity when entity_type is PRODUCT.
+  ///
+  /// Used to quickly lookup the original product entity for detailed state
+  /// inspection.
+  ecommerce_mall_product_id String?
+  
+  /// References the product variant entity when entity_type is PRODUCT_VARIANT.
+  ///
+  /// Used to quickly lookup the original product variant entity for detailed
+  /// state inspection.
+  ecommerce_mall_product_variant_id String?
+  
+  /// References the seller entity when entity_type is SELLER.
+  ///
+  /// Used to quickly lookup the original seller entity for detailed state
+  /// inspection.
+  ecommerce_mall_seller_id String?
+  
+  /// References the order item entity when entity_type is ORDER_ITEM.
+  ///
+  /// Used to quickly lookup the original order item entity for detailed state
+  /// inspection.
+  ecommerce_mall_order_item_id String?
+  
+  /// References the customer review entity when entity_type is REVIEW.
+  ///
+  /// Used to quickly lookup the original review entity for detailed state
+  /// inspection.
+  ecommerce_mall_customer_review_id String?
+  
+  /// References the cancellation request entity when entity_type is
+  /// CANCELLATION_REQUEST.
+  ///
+  /// Used to quickly lookup the original cancellation request entity for
+  /// detailed state inspection.
+  ecommerce_mall_cancellation_request_id String?
+  
+  /// References the refund request entity when entity_type is REFUND_REQUEST.
+  ///
+  /// Used to quickly lookup the original refund request entity for detailed
+  /// state inspection.
+  ecommerce_mall_refund_request_id String?
+  
+  /// References the shop profile entity when entity_type is SHOP_PROFILE.
+  ///
+  /// Used to quickly lookup the original shop profile entity for detailed
+  /// state inspection.
+  ecommerce_mall_shop_profile_id String?
+  
+  /// References the category entity when entity_type is CATEGORY.
+  ///
+  /// Used to quickly lookup the original category entity for detailed state
+  /// inspection.
+  ecommerce_mall_category_id String?
+  
+  /// Type of entity being snapshot (e.g., PRODUCT, PRODUCT_VARIANT, SELLER,
+  /// ORDER_ITEM, REVIEW, CANCELLATION_REQUEST, REFUND_REQUEST, SHOP_PROFILE,
+  /// CATEGORY).
+  ///
+  /// Used as a discriminator to determine which foreign key field is valid and
+  /// which child snapshot table to query for detailed entity-specific data.
+  entity_type String
+  
+  /// Type of action that triggered this snapshot (e.g., CREATE, UPDATE,
+  /// DELETE).
+  ///
+  /// Track the nature of the change: CREATE for new entity, UPDATE for
+  /// modifications, DELETE for removal.
+  action String
+  
+  /// Human-readable name of the entity at time of snapshot.
+  ///
+  /// Example: Product name, seller shop name, order number. Preserved for easy
+  /// identification without joining to original entity.
+  entity_name String?
+  
+  /// Status of the entity at time of snapshot.
+  ///
+  /// Example: Product status (ACTIVE, DELETED), order item status (PAID,
+  /// SHIPPED, DELIVERED), approval status (PENDING, APPROVED, REJECTED).
+  entity_status String?
+  
+  /// Optional JSON metadata string for additional snapshot context.
+  ///
+  /// Example: Can store change reason, user ID who made change, source of
+  /// change (API, admin panel, automated). Stored as JSON-encoded string due
+  /// to Prisma type restrictions.
+  metadata String?
+  
+  /// Timestamp when this snapshot was created.
+  ///
+  /// Represents the point-in-time state captured by this snapshot record.
+  created_at DateTime
+  
+  /// Timestamp when this snapshot record was last modified.
+  ///
+  /// For snapshots, this should typically match created_at unless the snapshot
+  /// itself was corrected.
+  updated_at DateTime
+  
+  /// Timestamp when this snapshot was soft deleted (if applicable).
+  ///
+  /// Snapshots are typically immutable and permanently retained, but this
+  /// field allows for audit trail retention policies.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product ecommerce_mall_products? @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  productVariant ecommerce_mall_product_variants? @relation(fields: [ecommerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers? @relation(fields: [ecommerce_mall_seller_id], references: [id], onDelete: Cascade)
+  orderItem ecommerce_mall_order_items? @relation(fields: [ecommerce_mall_order_item_id], references: [id], onDelete: Cascade)
+  customerReview ecommerce_mall_customer_reviews? @relation(fields: [ecommerce_mall_customer_review_id], references: [id], onDelete: Cascade)
+  cancellationRequest ecommerce_mall_cancellation_requests? @relation(fields: [ecommerce_mall_cancellation_request_id], references: [id], onDelete: Cascade)
+  refundRequest ecommerce_mall_refund_requests? @relation(fields: [ecommerce_mall_refund_request_id], references: [id], onDelete: Cascade)
+  shopProfile ecommerce_mall_shop_profiles? @relation(fields: [ecommerce_mall_shop_profile_id], references: [id], onDelete: Cascade)
+  category ecommerce_mall_categories? @relation(fields: [ecommerce_mall_category_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([ecommerce_mall_product_id])
+  @@index([ecommerce_mall_product_variant_id])
+  @@index([ecommerce_mall_seller_id])
+  @@index([ecommerce_mall_order_item_id])
+  @@index([ecommerce_mall_customer_review_id])
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_cancellation_request_id], map: "ecommerce_mall_snapshots_ecommerce_mall_cancellation_r_3ed064d9")
+  @@index([ecommerce_mall_refund_request_id])
+  @@index([ecommerce_mall_shop_profile_id])
+  @@index([ecommerce_mall_category_id])
+  @@unique([entity_type, action])
+  @@index([action])
+  @@index([created_at])
+}
+
+/// Immutable point-in-time snapshots of product modifications for audit trail.
+///
+/// Captures the complete state of a product at each change event, including
+/// nested variant snapshot data. This enables full reconstruction of product
+/// history and supports compliance requirements for data modification
+/// tracking.
+///
+/// Each snapshot records:
+/// - All product fields as they existed at modification time
+/// - Reference to the variant snapshot state at that moment
+/// - Reference to the seller profile snapshot at that moment
+/// - Timestamps capturing the original product's lifecycle
+///
+/// @namespace snapshot
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for product snapshot record.
+  id String @id
+  
+  /// References the original product this snapshot belongs to.
+  ///
+  /// Used to reconstruct product history and link snapshots to current product
+  /// state.
+  ecommerce_mall_product_id String
+  
+  /// References the product variant snapshot captured at the time of product
+  /// modification.
+  ///
+  /// This nested snapshot preserves the exact state of all variants within the
+  /// product when the change occurred, enabling complete historical
+  /// reconstruction.
+  ecommerce_mall_product_variant_snapshot_id String?
+  
+  /// References the seller profile snapshot captured at the time of product
+  /// modification.
+  ///
+  /// Preserves seller information (name, status, approval state) as it existed
+  /// when the product was changed.
+  ecommerce_mall_seller_snapshot_id String
+  
+  /// References the category the product belonged to at the time of snapshot
+  /// creation.
+  ///
+  /// Preserves category assignment even if product is later moved to a
+  /// different category.
+  ecommerce_mall_category_id String
+  
+  /// Product name at time of snapshot.
+  name String
+  
+  /// Product description at time of snapshot.
+  description String
+  
+  /// Base product price at time of snapshot.
+  base_price Float
+  
+  /// Timestamp when the original product was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to the product before this snapshot was
+  /// created.
+  updated_at DateTime
+  
+  /// Timestamp when the product was deleted, if applicable.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product ecommerce_mall_products @relation(fields: [ecommerce_mall_product_id], references: [id], onDelete: Cascade)
+  variantSnapshot ecommerce_mall_product_variant_snapshots? @relation(fields: [ecommerce_mall_product_variant_snapshot_id], references: [id], onDelete: Cascade)
+  sellerSnapshot ecommerce_mall_seller_snapshots @relation(fields: [ecommerce_mall_seller_snapshot_id], references: [id], onDelete: Cascade)
+  category ecommerce_mall_categories @relation(fields: [ecommerce_mall_category_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_variant_snapshot_id], map: "ecommerce_mall_product_snapshots_ecommerce_mall_produc_6e833064")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_category_id], map: "ecommerce_mall_product_snapshots_ecommerce_mall_catego_bd597d99")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_product_id, created_at], map: "ecommerce_mall_product_snapshots_ecommerce_mall_produc_fba5f09c")
+  // spellchecker: ignore-next-line
+  @@index([ecommerce_mall_seller_snapshot_id], map: "ecommerce_mall_product_snapshots_ecommerce_mall_seller_992c195b")
+}
+
+/// Point-in-time snapshots of product variant modifications for audit trail
+/// and historical analysis.
+///
+/// Captures all variant attributes at the time of each change, including SKU
+/// code, option values, pricing, and stock quantities. Enables tracking of
+/// price history, inventory changes, and configuration modifications across
+/// the variant lifecycle. Snapshots are created whenever a product variant
+/// is modified, providing immutable records of all state changes.
+///
+/// References the original variant via {@link
+/// ecommerce_mall_product_variant_snapshots.product_variant} while
+/// denormalizing product and seller references for independent analysis.
+///
+/// @namespace snapshot
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_product_variant_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key identifier for this variant snapshot.
+  id String @id
+  
+  /// Reference to the original product variant that was modified.
+  ///
+  /// Establishes the relationship to the parent variant being audited. Allows
+  /// tracing back to the current variant state while maintaining historical
+  /// snapshot integrity.
+  product_variant_id String
+  
+  /// Reference to the parent product at the time of this snapshot.
+  ///
+  /// Denormalized product reference for independent analysis without requiring
+  /// joins to the variants table. Ensures snapshots remain valid even if the
+  /// variant reference is removed.
+  product_id String
+  
+  /// Reference to the product seller at the time of this snapshot.
+  ///
+  /// Denormalized seller reference for historical seller attribution.
+  /// Preserves the seller identity even if the variant is reassigned to a
+  /// different seller.
+  seller_id String
+  
+  /// Unique SKU code for this variant at the time of snapshot.
+  ///
+  /// The stock keeping unit identifier that was active for this variant. Used
+  /// to track SKU changes and ensure unique product identification across the
+  /// snapshot history.
+  sku_code String
+  
+  /// JSON string of variant option values (e.g., color, size).
+  ///
+  /// Stores the variant configuration options as a JSON object. Captures the
+  /// specific combination of attributes (such as color='red', size='L') that
+  /// define this variant at the time of the snapshot.
+  option_values String
+  
+  /// Override price for this variant, null if using base product price.
+  ///
+  /// The variant-specific price that overrides the base product price. Null
+  /// when the variant uses the base product price. Enables tracking of variant
+  /// pricing changes over time.
+  price Float?
+  
+  /// Stock quantity for this variant at the time of snapshot.
+  ///
+  /// The inventory level of this variant when the snapshot was created.
+  /// Enables historical analysis of stock levels and inventory fluctuations
+  /// across the variant lifecycle.
+  stock_quantity Int
+  
+  /// Timestamp when this snapshot was created.
+  ///
+  /// The point in time when this variant state was captured. All snapshots are
+  /// append-only and cannot be modified, preserving the immutable audit trail.
+  created_at DateTime
+  
+  /// Timestamp of this snapshot creation.
+  ///
+  /// Identical to created_at since snapshots are immutable. Required field for
+  /// all business entities to track record creation time.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  productVariant ecommerce_mall_product_variants @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
+  product ecommerce_mall_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  productSnapshots ecommerce_mall_product_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([product_id])
+  @@index([seller_id])
+  // spellchecker: ignore-next-line
+  @@index([product_variant_id, created_at], map: "ecommerce_mall_product_variant_snapshots_product_varia_a9468830")
+}
+
+/// Immutable point-in-time snapshots of seller shop profile modifications
+/// for audit trail.
+///
+/// Captures the complete state of a seller's shop profile (shop name,
+/// description, logo) at each modification event, preserving historical data
+/// for compliance and dispute resolution.
+///
+/// Each snapshot records when a modification occurred and what the profile
+/// looked like at that moment. These snapshots are append-only and never
+/// modified, providing a complete audit history of all shop profile changes.
+///
+/// @namespace snapshot
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_seller_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the seller whose shop profile was modified.
+  ///
+  /// Links this snapshot to the original seller record in the
+  /// ecommerce_mall_sellers table, enabling retrieval of the seller's current
+  /// profile alongside historical snapshots.
+  seller_id String
+  
+  /// The seller's shop name at the time this snapshot was created.
+  ///
+  /// This is a captured value from when the shop profile was modified,
+  /// preserving the exact state for audit purposes. The shop name is required
+  /// and cannot be null in snapshots.
+  shop_name String
+  
+  /// The seller's shop description at the time this snapshot was created.
+  ///
+  /// This field captures the full text description of the seller's shop as it
+  /// existed at the modification point. Preserved for historical tracking and
+  /// dispute resolution.
+  shop_description String
+  
+  /// The seller's shop logo URL at the time this snapshot was created.
+  ///
+  /// Captures the logo image URL as it was when the profile was modified. This
+  /// field is nullable for initial snapshots where no logo may have been set
+  /// yet.
+  shop_logo String?
+  
+  /// Timestamp when this snapshot was created.
+  ///
+  /// Marks the exact point-in-time when the shop profile modification
+  /// occurred. This immutable timestamp is critical for reconstructing the
+  /// timeline of profile changes and is always set to the current time at
+  /// creation.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller ecommerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  productSnapshots ecommerce_mall_product_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([seller_id, created_at])
+}
+
+/// Immutable snapshots of order items capturing their state at key lifecycle
+/// events (checkout, cancellation, refund) for audit trail and historical
+/// tracking.
+///
+/// This table preserves point-in-time data including product details,
+/// variant options, seller information, quantity, and unit price. Snapshots
+/// are created automatically whenever order item state changes, enabling
+/// complete audit history without modifying the current order item record.
+///
+/// @namespace snapshot
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_order_item_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the order item that this snapshot represents.
+  ///
+  /// Enables retrieving all historical snapshots for a specific order item.
+  /// The FK relationship allows tracking the evolution of an order item's
+  /// state through checkout, potential cancellation, and potential refund
+  /// events. This snapshot table captures read-only historical data.
+  ecommerce_mall_order_item_id String
+  
+  /// Order reference for quick lookup without joining order_items.
+  ///
+  /// Captured at snapshot time to maintain referential integrity even if the
+  /// order item is deleted. Useful for auditing all snapshots related to a
+  /// specific order.
+  order_id String
+  
+  /// Product reference at the time of snapshot.
+  ///
+  /// Allows querying snapshots by product without needing to resolve through
+  /// order_items. Preserved at snapshot time for historical accuracy.
+  product_id String
+  
+  /// Product name at the time of snapshot.
+  ///
+  /// Denormalized from the product entity to preserve historical state.
+  /// Product names may change over time, but the snapshot retains the name as
+  /// it appeared during the purchase event.
+  product_name String
+  
+  /// Product variant (SKU) reference at the time of snapshot.
+  ///
+  /// Captures which specific variant was purchased. This allows tracking
+  /// variant-level changes across snapshots.
+  product_variant_id String
+  
+  /// Variant option values (e.g., color, size) as JSON string at snapshot time.
+  ///
+  /// Denormalized option values from the variant to avoid joins. Stored as
+  /// JSON to capture all variant attributes regardless of schema changes.
+  product_variant_options String
+  
+  /// Seller reference at the time of snapshot.
+  ///
+  /// Captures which seller fulfilled this item. Preserved for historical
+  /// accuracy even if the item is later cancelled or refunded.
+  seller_id String
+  
+  /// Shop name at the time of snapshot.
+  ///
+  /// Denormalized seller shop name to avoid joins. Enables reporting and
+  /// filtering by seller without resolving through seller relationship.
+  seller_name String
+  
+  /// Ordered quantity at the time of snapshot.
+  ///
+  /// Captures how many units were purchased or cancelled. This value remains
+  /// fixed in the snapshot to preserve the historical transaction state.
+  quantity Int
+  
+  /// Unit price per item at the time of snapshot.
+  ///
+  /// Denormalized price from the variant to preserve the exact price paid.
+  /// Allows calculating historical revenue without resolving to current
+  /// variant data.
+  unit_price Float
+  
+  /// Total price (quantity * unit_price) at the time of snapshot.
+  ///
+  /// Pre-calculated field for convenience, storing the line item total at
+  /// snapshot time. Ensures historical accuracy even if prices change later.
+  total_price Float
+  
+  /// Type of event that triggered this snapshot.
+  ///
+  /// Values: 'checkout' (order creation), 'cancellation' (item cancelled),
+  /// 'refund' (item refunded). This categorization enables filtering snapshots
+  /// by the event type that created them.
+  snapshot_type String
+  
+  /// Snapshot creation timestamp.
+  ///
+  /// Records when the snapshot was created. This timestamp marks the exact
+  /// point in time for this snapshot's data. Used for sorting snapshots
+  /// chronologically and determining snapshot sequence.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem ecommerce_mall_order_items @relation(fields: [ecommerce_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([ecommerce_mall_order_item_id, created_at], map: "ecommerce_mall_order_item_snapshots_ecommerce_mall_ord_732787df")
+  @@index([order_id])
+  @@index([product_id])
+  @@index([seller_id])
+  @@index([snapshot_type])
+}
+
+/// Immutable snapshot records of cancellation requests capturing
+/// point-in-time state for seller decision audit and dispute resolution.
+///
+/// Each snapshot preserves the complete cancellation request state (title,
+/// body, actor type, timestamps) when seller responds with approval or
+/// rejection. This enables historical tracking of seller decisions and
+/// preserves original request details even after the main
+/// cancellation_request record is modified or deleted.
+///
+/// @namespace snapshot
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_cancellation_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the parent cancellation request that was approved or rejected.
+  ///
+  /// This foreign key establishes the snapshot's relationship to the original
+  /// cancellation request, preserving the request's identity across its
+  /// lifecycle even if the main record is modified.
+  cancellation_request_id String
+  
+  /// The title of the cancellation request at the time of snapshot.
+  ///
+  /// Captured when seller approves or rejects the cancellation request,
+  /// preserving the original request title for audit purposes.
+  title String
+  
+  /// The detailed body text of the cancellation request at snapshot time.
+  ///
+  /// Contains the customer's reason for requesting cancellation, captured
+  /// immutably when seller responds.
+  body String
+  
+  /// The actor type making the cancellation request (customer).
+  actor_type String
+  
+  /// Original cancellation request creation timestamp, preserved in snapshot.
+  created_at DateTime
+  
+  /// Timestamp when seller approved this cancellation request, if applicable.
+  ///
+  /// Null if the request was rejected or still pending.
+  approved_at DateTime?
+  
+  /// Timestamp when seller rejected this cancellation request, if applicable.
+  ///
+  /// Null if the request was approved or still pending.
+  rejected_at DateTime?
+  
+  /// Seller's detailed reason for rejecting the cancellation request.
+  ///
+  /// Only populated when seller rejections reason is provided during rejection
+  /// decision.
+  seller_rejection_reason String?
+  
+  /// The user ID who created this snapshot record.
+  created_by String
+  
+  /// Soft delete timestamp for the snapshot record.
+  ///
+  /// Used to mark the snapshot as deleted without permanent data loss.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  cancellationRequest ecommerce_mall_cancellation_requests @relation(fields: [cancellation_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([cancellation_request_id], map: "ecommerce_mall_cancellation_request_snapshots_cancella_3872772e")
+}
+
+/// Immutable snapshots capturing point-in-time state of refund requests for
+/// audit trail and seller decision tracking.
+///
+/// Each snapshot represents a specific state of a refund request,
+/// particularly when the seller responds (approves or rejects). These
+/// snapshots preserve the exact values at the time of the state change,
+/// enabling historical tracking of refund approval workflows and providing
+/// an immutable audit log of seller decisions on customer refund requests.
+///
+/// @namespace snapshot
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model ecommerce_mall_refund_request_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the parent refund request entity that this snapshot represents.
+  ///
+  /// This is a unique 1:1 relationship where each refund request can have
+  /// multiple snapshots over its lifecycle, but each snapshot is tied to
+  /// exactly one refund request. The snapshot captures the state of the refund
+  /// request at a specific point in time, enabling audit trail and historical
+  /// tracking of approval/rejection decisions.
+  refund_request_id String
+  
+  /// References the order item that this refund request applies to.
+  ///
+  /// Copied from the parent refund request at snapshot time to preserve the
+  /// association even if the parent record is modified or deleted. This allows
+  /// independent access to snapshot history without requiring the parent
+  /// record.
+  order_item_id String
+  
+  /// The status of the refund request at the time of this snapshot.
+  ///
+  /// Possible values: 'pending', 'approved', 'rejected'. This represents the
+  /// state after any changes that led to this snapshot being created. For
+  /// example, a snapshot created when a seller approves the request will have
+  /// status 'approved'.
+  status String
+  
+  /// The refund reason provided by the customer at the time of this snapshot.
+  ///
+  /// Copied from the parent refund request to preserve the original reason
+  /// even if it changes. This is the customer's explanation for why they are
+  /// requesting the refund.
+  reason String
+  
+  /// The timestamp when the original refund request was created.
+  ///
+  /// Copied from the parent refund request at snapshot time. This represents
+  /// the initial creation time of the refund request, not the snapshot
+  /// creation time.
+  created_at DateTime
+  
+  /// The timestamp when the seller responded to the refund request (approved
+  /// or rejected).
+  ///
+  /// Copied from the parent refund request at snapshot time. This is null if
+  /// the snapshot was taken while the request was still pending approval.
+  responded_at DateTime?
+  
+  /// References the seller who approved the refund request.
+  ///
+  /// Only populated when the snapshot status is 'approved'. Represents the
+  /// seller who made the approval decision. This enables tracking which seller
+  /// approved each refund request for accountability and audit purposes.
+  approved_by_seller_id String?
+  
+  /// The reason provided by the seller for rejecting the refund request.
+  ///
+  /// Only populated when the snapshot status is 'rejected'. Represents the
+  /// seller's explanation for why they denied the refund. This provides
+  /// transparency to the customer about rejection reasons.
+  rejection_reason String?
+  
+  /// The timestamp when this snapshot record was created.
+  ///
+  /// This represents the exact moment in time when the snapshot was taken,
+  /// which is typically triggered when the refund request state changes (e.g.,
+  /// when seller responds with approval or rejection). This is distinct from
+  /// the refund request's created_at and responded_at fields.
+  snapshot_at DateTime
+  
+  /// Soft delete timestamp for the refund request at the time of this snapshot.
+  ///
+  /// Copied from the parent refund request to preserve the deletion state.
+  /// This allows snapshots to accurately reflect whether the parent record was
+  /// deleted at the time of the snapshot.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  refundRequest ecommerce_mall_refund_requests @relation(fields: [refund_request_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([refund_request_id])
+  // spellchecker: ignore-next-line
+  @@index([refund_request_id, snapshot_at], map: "ecommerce_mall_refund_request_snapshots_refund_request_3f3e4618")
+  // spellchecker: ignore-next-line
+  @@index([order_item_id, status], map: "ecommerce_mall_refund_request_snapshots_order_item_id__016aa7c0")
+  @@index([status, responded_at])
+}

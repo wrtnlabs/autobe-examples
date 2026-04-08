@@ -9,6 +9,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { RedditCloneMemberTransformer } from "../transformers/RedditCloneMemberTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -16,23 +17,14 @@ export async function postRedditCloneAuthMemberLogin(props: {
   ip: string;
   body: IRedditCloneMember.ILogin;
 }): Promise<IRedditCloneMember.IAuthorized> {
-  // 1. Find member by email with password_hash explicitly selected
+  // 1. Find member by email with password_hash
   const member = await MyGlobal.prisma.reddit_clone_members.findFirst({
     where: {
       email: props.body.email,
       deleted_at: null,
     },
     select: {
-      id: true,
-      email: true,
-      username: true,
-      display_name: true,
-      bio: true,
-      avatar_uri: true,
-      karma: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
+      ...RedditCloneMemberTransformer.select().select,
       password_hash: true,
     },
   });
@@ -47,65 +39,52 @@ export async function postRedditCloneAuthMemberLogin(props: {
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 3. Calculate expiration timestamps
+  // 3. Create new session
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  // 4. Generate JWT tokens
-  const accessToken = jwt.sign(
-    {
-      type: "member",
-      id: member.id,
-      session_id: v4(),
-      created_at: new Date().toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
-  const refreshToken = jwt.sign(
-    {
-      type: "member",
-      id: member.id,
-      session_id: v4(),
-      tokenType: "refresh",
-      created_at: new Date().toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
-  // 5. Create new session
   const session = await MyGlobal.prisma.reddit_clone_member_sessions.create({
     data: {
       id: v4(),
       reddit_clone_member_id: member.id,
+      access_token: "",
+      refresh_token: "",
       ip: props.body.ip ?? props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
-      user_agent: null,
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      access_token_expires_at: accessExpires,
-      refresh_token_expires_at: refreshExpires,
       created_at: new Date(),
       expired_at: refreshExpires,
+      deleted_at: null,
     },
   });
-  // 6. Return IAuthorized
+  // 4. Generate JWT tokens
+  const token: IAuthorizationToken = {
+    access: jwt.sign(
+      {
+        type: "member",
+        id: member.id,
+        session_id: session.id,
+        created_at: new Date().toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "member",
+        id: member.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: new Date().toISOString(),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: accessExpires.toISOString(),
+    refreshable_until: refreshExpires.toISOString(),
+  };
+  // 5. Return IAuthorized
   return {
-    id: member.id,
-    email: member.email,
-    username: member.username,
-    display_name: member.display_name,
-    bio: member.bio,
-    avatar_uri: member.avatar_uri,
-    karma: member.karma,
-    created_at: member.created_at.toISOString(),
-    updated_at: member.updated_at.toISOString(),
-    deleted_at: member.deleted_at?.toISOString() ?? null,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpires.toISOString(),
-      refreshable_until: refreshExpires.toISOString(),
-    },
-  } satisfies IRedditCloneMember.IAuthorized;
+    ...(await RedditCloneMemberTransformer.transform(member)),
+    token,
+  };
 }

@@ -2,7 +2,6 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIRedditCommunityCommunity";
 import { IRedditCommunityCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunity";
-import { IRedditCommunityCommunityIcon } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityCommunityIcon";
 import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -22,22 +21,24 @@ export async function patchRedditCommunityCommunities(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const whereInput = {
+  const whereInput: Prisma.reddit_community_communitiesWhereInput = {
     deleted_at: null,
-    ...(props.body.search !== undefined && {
-      name: {
-        contains: props.body.search,
-        mode: "insensitive" as const,
-      },
-    }),
-  } satisfies Prisma.reddit_community_communitiesWhereInput;
-  const orderByInput = (
-    props.body.sort === "name"
-      ? { name: "asc" as const }
-      : props.body.sort === "subscribers"
-        ? { subscriptions: { _count: "desc" as const } }
-        : { created_at: "desc" as const }
-  ) satisfies Prisma.reddit_community_communitiesOrderByWithRelationInput;
+    ...(props.body.search !== undefined &&
+      props.body.search !== "" && {
+        name: {
+          contains: props.body.search,
+          mode: "insensitive",
+        },
+      }),
+  };
+  const sort = props.body.sort ?? "created_at";
+  const order = props.body.order ?? "desc";
+  const orderByInput: Prisma.reddit_community_communitiesOrderByWithRelationInput =
+    sort === "name"
+      ? { name: order }
+      : sort === "subscriber_count"
+        ? { subscriptions: { _count: order } }
+        : { created_at: order };
   const data = await MyGlobal.prisma.reddit_community_communities.findMany({
     where: whereInput,
     skip,
@@ -49,15 +50,15 @@ export async function patchRedditCommunityCommunities(props: {
     where: whereInput,
   });
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      RedditCommunityCommunityAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+    },
+    data: await ArrayUtil.asyncMap(
+      data,
+      RedditCommunityCommunityAtSummaryTransformer.transform,
+    ),
   };
 }

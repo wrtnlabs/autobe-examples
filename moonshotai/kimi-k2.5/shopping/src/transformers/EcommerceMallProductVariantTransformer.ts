@@ -1,11 +1,17 @@
+import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
 import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { EcommerceMallProductAtSummaryTransformer } from "./EcommerceMallProductAtSummaryTransformer";
 import { EcommerceMallProductVariantOptionTransformer } from "./EcommerceMallProductVariantOptionTransformer";
 
 export namespace EcommerceMallProductVariantTransformer {
@@ -21,11 +27,7 @@ export namespace EcommerceMallProductVariantTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        product: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.ecommerce_mall_productsFindManyArgs,
+        product: EcommerceMallProductAtSummaryTransformer.select(),
         variantOptions: EcommerceMallProductVariantOptionTransformer.select(),
         inventoryRecords: {
           select: {
@@ -40,14 +42,16 @@ export namespace EcommerceMallProductVariantTransformer {
   ): Promise<IEcommerceMallProductVariant> {
     return {
       id: input.id,
-      productId: input.product.id,
       skuCode: input.sku_code,
       price: input.price,
-      optionValues: await ArrayUtil.asyncMap(
+      product: await EcommerceMallProductAtSummaryTransformer.transform(
+        input.product,
+      ),
+      variantOptions: await ArrayUtil.asyncMap(
         input.variantOptions,
         EcommerceMallProductVariantOptionTransformer.transform,
       ),
-      stockQuantity: input.inventoryRecords.reduce(
+      inventoryQuantity: input.inventoryRecords.reduce(
         (sum, record) => sum + record.quantity_change,
         0,
       ),

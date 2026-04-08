@@ -1,8 +1,7 @@
-import { IEcommerceMallAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAddress";
-import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import { IEcommerceMallCustomerAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerAddress";
+import { IEcommerceMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallMember";
 import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderSnapshot";
-import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -11,9 +10,7 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
 import { EcommerceMallOrderAtSummaryTransformer } from "./EcommerceMallOrderAtSummaryTransformer";
-import { EcommerceMallSellerAtSummaryTransformer } from "./EcommerceMallSellerAtSummaryTransformer";
 
 export namespace EcommerceMallOrderSnapshotTransformer {
   export type Payload = Prisma.ecommerce_mall_order_snapshotsGetPayload<
@@ -24,26 +21,22 @@ export namespace EcommerceMallOrderSnapshotTransformer {
       select: {
         id: true,
         order_number: true,
-        status: true,
-        items_count: true,
-        total_amount: true,
-        paid_amount: true,
-        refund_amount: true,
-        shipping_cost: true,
-        discount_amount: true,
-        payment_method: true,
-        payment_status: true,
+        order_date: true,
         customer_name: true,
-        customer_email: true,
-        shipping_address: true,
+        customer_phone: true,
+        shipping_recipient_name: true,
+        shipping_phone: true,
+        shipping_street: true,
         shipping_city: true,
         shipping_state: true,
         shipping_postal_code: true,
         shipping_country: true,
-        created_at: true,
+        item_count: true,
+        subtotal: true,
+        shipping_fee: true,
+        total_amount: true,
+        order_status: true,
         order: EcommerceMallOrderAtSummaryTransformer.select(),
-        customer: EcommerceMallCustomerAtSummaryTransformer.select(),
-        seller: EcommerceMallSellerAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_order_snapshotsFindManyArgs;
   }
@@ -53,32 +46,82 @@ export namespace EcommerceMallOrderSnapshotTransformer {
     return {
       id: input.id,
       order_number: input.order_number,
-      status: input.status,
-      items_count: input.items_count,
-      total_amount: input.total_amount,
-      paid_amount: input.paid_amount,
-      refund_amount: input.refund_amount,
-      shipping_cost: input.shipping_cost,
-      discount_amount: input.discount_amount,
-      payment_method: input.payment_method,
-      payment_status: input.payment_status,
+      order_date: input.order_date.toISOString(),
       customer_name: input.customer_name,
-      customer_email: input.customer_email,
-      shipping_address: input.shipping_address,
+      customer_phone: input.customer_phone,
+      shipping_recipient_name: input.shipping_recipient_name,
+      shipping_phone: input.shipping_phone,
+      shipping_street: input.shipping_street,
       shipping_city: input.shipping_city,
       shipping_state: input.shipping_state,
       shipping_postal_code: input.shipping_postal_code,
       shipping_country: input.shipping_country,
-      created_at: toISOStringSafe(input.created_at),
+      item_count: input.item_count,
+      subtotal: input.subtotal,
+      shipping_fee: input.shipping_fee,
+      total_amount: input.total_amount,
+      order_status: input.order_status,
       order: await EcommerceMallOrderAtSummaryTransformer.transform(
         input.order,
       ),
-      customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
-        input.customer,
-      ),
-      seller: await EcommerceMallSellerAtSummaryTransformer.transform(
-        input.seller,
-      ),
-    };
+    } satisfies IEcommerceMallOrderSnapshot;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallOrderSnapshotTransformer {
+//       export type Payload = Prisma.ecommerce_mall_order_snapshotsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             order_number: true,
+//             order_date: true,
+//             customer_name: true,
+//             customer_phone: true,
+//             shipping_recipient_name: true,
+//             shipping_phone: true,
+//             shipping_street: true,
+//             shipping_city: true,
+//             shipping_state: true,
+//             shipping_postal_code: true,
+//             shipping_country: true,
+//             item_count: true,
+//             subtotal: true,
+//             shipping_fee: true,
+//             total_amount: true,
+//             order_status: true,
+//             order: EcommerceMallOrderAtSummaryTransformer.select(),
+//           },
+//         } satisfies Prisma.ecommerce_mall_order_snapshotsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallOrderSnapshot> {
+//         return {
+//   id: {string},
+//   order_number: {string},
+//   order_date: {string},
+//   customer_name: {string},
+//   customer_phone: {string},
+//   shipping_recipient_name: {string},
+//   shipping_phone: {string},
+//   shipping_street: {string},
+//   shipping_city: {string},
+//   shipping_state: {string},
+//   shipping_postal_code: {string},
+//   shipping_country: {string},
+//   item_count: {integer},
+//   subtotal: {number},
+//   shipping_fee: {number},
+//   total_amount: {number},
+//   order_status: {string},
+//   order: await EcommerceMallOrderAtSummaryTransformer.transform(input.order),
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

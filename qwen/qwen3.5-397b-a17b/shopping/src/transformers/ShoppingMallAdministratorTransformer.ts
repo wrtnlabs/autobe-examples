@@ -1,5 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
+import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import { IShoppingMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallMember";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
@@ -7,6 +9,7 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { ShoppingMallMemberAtSummaryTransformer } from "./ShoppingMallMemberAtSummaryTransformer";
 
 export namespace ShoppingMallAdministratorTransformer {
   export type Payload = Prisma.shopping_mall_administratorsGetPayload<
@@ -16,52 +19,11 @@ export namespace ShoppingMallAdministratorTransformer {
     return {
       select: {
         id: true,
-        email: true,
-        password_hash: true,
+        grade: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        sessions: {
-          select: {
-            id: true,
-            expired_at: true,
-            created_at: true,
-          },
-        } satisfies Prisma.shopping_mall_administrator_sessionsFindManyArgs,
-        passwordResets: {
-          select: {
-            id: true,
-            token: true,
-            expires_at: true,
-            created_at: true,
-          },
-        } satisfies Prisma.shopping_mall_administrator_password_resetsFindManyArgs,
-        reviewedApprovalRequests: {
-          select: {
-            id: true,
-            administrator_id: true,
-            status: true,
-            created_at: true,
-            updated_at: true,
-          },
-        } satisfies Prisma.shopping_mall_seller_approval_requestsFindManyArgs,
-        sellerApprovalRequestSnapshots: {
-          select: {
-            id: true,
-            shopping_mall_seller_approval_request_id: true,
-            shopping_mall_administrator_id: true,
-            status: true,
-            created_at: true,
-          },
-        } satisfies Prisma.shopping_mall_seller_approval_request_snapshotsFindManyArgs,
-        gradeChanges: {
-          select: {
-            id: true,
-            shopping_mall_administrator_id: true,
-            shopping_mall_super_administrator_id: true,
-            created_at: true,
-          },
-        } satisfies Prisma.shopping_mall_administrator_grade_changesFindManyArgs,
+        member: ShoppingMallMemberAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_administratorsFindManyArgs;
   }
@@ -70,10 +32,13 @@ export namespace ShoppingMallAdministratorTransformer {
   ): Promise<IShoppingMallAdministrator> {
     return {
       id: input.id,
-      email: input.email,
-      createdAt: toISOStringSafe(input.created_at),
-      updatedAt: toISOStringSafe(input.updated_at),
-      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
-    };
+      member: await ShoppingMallMemberAtSummaryTransformer.transform(
+        input.member,
+      ),
+      grade: input.grade,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
+    } satisfies IShoppingMallAdministrator;
   }
 }

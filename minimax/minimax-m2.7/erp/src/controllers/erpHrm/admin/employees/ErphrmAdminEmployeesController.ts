@@ -3,81 +3,54 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IErpHrmEmployee } from "../../../../api/structures/IErpHrmEmployee";
-import { IPageIErpHrmEmployee } from "../../../../api/structures/IPageIErpHrmEmployee";
+import { IErpHrmInvitation } from "../../../../api/structures/IErpHrmInvitation";
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
 import { deleteErpHrmAdminEmployeesEmployeeId } from "../../../../providers/deleteErpHrmAdminEmployeesEmployeeId";
-import { getErpHrmAdminEmployeesEmployeeId } from "../../../../providers/getErpHrmAdminEmployeesEmployeeId";
-import { patchErpHrmAdminEmployees } from "../../../../providers/patchErpHrmAdminEmployees";
+import { postErpHrmAdminEmployees } from "../../../../providers/postErpHrmAdminEmployees";
 import { putErpHrmAdminEmployeesEmployeeId } from "../../../../providers/putErpHrmAdminEmployeesEmployeeId";
 
 @Controller("/erpHrm/admin/employees")
 export class ErphrmAdminEmployeesController {
   /**
-   * Retrieve a filtered and paginated list of employees within the current organization.
+   * Create a new employee in the organization or send an invitation to join.
    *
-   * This operation provides advanced search capabilities for employees including exact match filtering by status (active/deactivated), employment type (full-time, part-time, contractor, intern), assigned role, and assigned department. Position filtering supports partial text matching using search.
+   * This operation adds a new employee record to the organization. If the provided email address already has an account in the system, the employee is added immediately and can start using the organization right away. If the email has no existing account, a pending invitation is created and the user will be added as an employee once they sign up with that email.
    *
-   * The response is always scoped to the user's current organization context as determined by their session. Users in one organization cannot access employee data from another organization. This ensures strict data isolation between organizations as required by the multi-tenant architecture.
+   * The inviting user must specify the role the new employee will hold within the organization. The department and position are optional fields that provide additional context about the employee's placement in the organization.
    *
-   * Users with `employee:view` permission can view the employee list within their organization. The response returns paginated results with summary information optimized for list displays, including employee position, employment type, status, and basic assignment information.
+   * An employee must have an active status to log time or submit timesheets. Deactivated employees preserve their historical data but cannot perform time tracking operations.
    *
-   * Pagination is offset-based with configurable page size for efficient navigation through large employee lists. Sorting options include created_at, updated_at, position, and status fields.
+   * This operation requires the employee:manage permission. Users without this permission will receive an access denied response.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for filtering employees
+   * @param body Employee creation or invitation request containing email, role assignment, and optional department and position
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query erp_hrm_employees table within the current organization context.
-   *
-   * 1. Organization Context: Extract organization_id from the authenticated user's session. All queries MUST be filtered by this organization_id to enforce data isolation.
-   *
-   * 2. Filters (all exact match except position search):
-   *    - status: Filter by employee status ('active' or 'deactivated')
-   *    - employment_type: Filter by employment type ('full-time', 'part-time', 'contractor', 'intern')
-   *    - erp_hrm_role_id: Filter by assigned role UUID
-   *    - erp_hrm_department_id: Filter by assigned department UUID (nullable - can filter for employees with or without department assignment)
-   *    - position: Partial text search using ILIKE for position field
-   *
-   * 3. Pagination:
-   *    - Use offset-based pagination with 'page' (1-based) and 'limit' parameters
-   *    - Default page size: 20, maximum: 100
-   *    - Return total count for client-side pagination
-   *
-   * 4. Sorting:
-   *    - orderBy field: 'created_at', 'updated_at', 'position', 'status' (default: 'created_at')
-   *    - order direction: 'asc' or 'desc' (default: 'desc')
-   *
-   * 5. Soft Delete Handling:
-   *    - Exclude records where deleted_at IS NOT NULL by default
-   *    - Optionally include deleted records when status filter explicitly targets 'deactivated'
-   *
-   * 6. Join Operations:
-   *    - LEFT JOIN erp_hrm_roles ON erp_hrm_employees.erp_hrm_role_id = erp_hrm_roles.id (for role name in summary)
-   *    - LEFT JOIN erp_hrm_departments ON erp_hrm_employees.erp_hrm_department_id = erp_hrm_departments.id (for department name in summary)
-   *    - LEFT JOIN erp_hrm_members ON erp_hrm_employees.erp_hrm_member_id = erp_hrm_members.id (for user email/name in summary)
-   *
-   * 7. Response Summary Fields:
-   *    - Employee ID, position, employment_type, status
-   *    - Role name and ID
-   *    - Department name and ID (nullable)
-   *    - User email (from member relation)
-   *    - created_at, updated_at
-   *
-   * 8. Authorization:
-   *    - Verify user has 'employee:manage' permission in current organization context
-   *    - Return 403 Forbidden if user lacks permission
+   * @x-autobe-specification 1. Validate that the authenticated user has employee:manage permission in the current organization.
+   * 2. Validate required fields: email (valid email format), roleId (must reference valid erp_hrm_roles.id), employmentType (must be one of: full-time, part-time, contractor, intern).
+   * 3. Validate optional fields: departmentId, if provided must reference valid erp_hrm_departments.id in the same organization.
+   * 4. Look up erp_hrm_members by email address.
+   * 5. If member exists:
+   *    a. Verify member is not already an employee in this organization (check erp_hrm_employees where erp_hrm_member_id matches and erp_hrm_organization_id matches).
+   *    b. If already exists, return conflict error.
+   *    c. Create new erp_hrm_employees record with status='active', the member's id, provided role_id, optional department_id, optional position, and employment_type.
+   *    d. Set created_at and updated_at to current timestamp.
+   * 6. If member does not exist:
+   *    a. Create new erp_hrm_invitations record with the email, role_id, optional department_id, position, employment_type, and expiration (e.g., 7 days).
+   *    b. Return the invitation details instead of employee.
+   * 7. Return the created employee record or invitation response with appropriate status code.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
-  public async index(
+  @TypedRoute.Post()
+  public async create(
     @AdminAuth()
     admin: AdminPayload,
     @TypedBody()
-    body: IErpHrmEmployee.IRequest,
-  ): Promise<IPageIErpHrmEmployee.ISummary> {
+    body: IErpHrmEmployee.ICreate,
+  ): Promise<IErpHrmInvitation> {
     try {
-      return await patchErpHrmAdminEmployees({
+      return await postErpHrmAdminEmployees({
         admin,
         body,
       });
@@ -88,110 +61,42 @@ export class ErphrmAdminEmployeesController {
   }
 
   /**
-   * Retrieve a single employee record by its unique identifier within the current organization context.
-   *
-   * This endpoint returns complete employee information including the associated user account, assigned role, optional department, employment type, position, and current status. The employee record links a user (member) to an organization with specific permissions determined by their assigned role.
-   *
-   * The operation enforces organization-level data isolation: employees from other organizations cannot be accessed. The requesting user must have the employee:view permission within the current organization context.
-   *
-   * Related entities included in the response:
-   * - Member (user account) with basic profile information
-   * - Organization (tenant container)
-   * - Role with assigned permissions
-   * - Department (if assigned)
-   * - Active contracts (if any exist)
-   *
-   * This endpoint is typically used after navigating from the employee list or when a user needs detailed employee information for task assignment, reporting, or administrative purposes.
-   *
-   * @param connection
-   * @param employeeId Unique identifier of the employee to retrieve
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Implement single employee retrieval with the following steps:
-   *
-   * 1. **Authentication**: Verify the request includes valid session credentials for a member user.
-   *
-   * 2. **Permission Check**: Verify the requesting user's role includes the `employee:view` permission within the current organization context. Return 403 Forbidden if permission is missing.
-   *
-   * 3. **Organization Context**: Extract organization context from the session. Reject request if no organization is selected.
-   *
-   * 4. **Employee Lookup**:
-   *    - Query erp_hrm_employees table by id
-   *    - Join with erp_hrm_members table to include user account information
-   *    - Join with erp_hrm_roles table to include role details
-   *    - Join with erp_hrm_departments table (LEFT JOIN) for optional department
-   *    - Join with erp_hrm_contracts table to include contract information
-   *
-   * 5. **Organization Verification**: Ensure the found employee belongs to the current organization context. Return 404 Not Found if employee does not exist or belongs to different organization.
-   *
-   * 6. **Soft Delete Check**: If employee.deleted_at is not null, return 404 Not Found (deactivated employees are not accessible).
-   *
-   * 7. **Response Construction**: Build complete employee object with:
-   *    - All employee fields (id, position, employment_type, status, etc.)
-   *    - Nested member object with user profile
-   *    - Nested role object with name and is_builtin flag
-   *    - Nested department object (if assigned)
-   *    - Nested contracts array (employment history)
-   *
-   * 8. **Return 200 OK** with the complete employee object.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":employeeId")
-  public async at(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("employeeId")
-    employeeId: string & tags.Format<"uuid">,
-  ): Promise<IErpHrmEmployee> {
-    try {
-      return await getErpHrmAdminEmployeesEmployeeId({
-        admin,
-        employeeId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
    * Update an existing employee record within the current organization.
    *
-   * This endpoint allows administrators with employee:manage permission to modify employee attributes including department assignment, role assignment, position title, employment type, and status. The operation validates that the specified role and department exist within the same organization as the employee. Only employees within the current organization context can be updated.
+   * This endpoint modifies the employee details including role assignment, department, position, employment type, and status. Only users with the employee:manage permission can perform this operation.
    *
-   * Security: Requires admin role with employee:manage permission. The system enforces role-based access control before allowing any modification. Users without this permission receive a permission denied error.
+   * When updating the role, the new role must exist within the same organization. The role change takes effect immediately upon successful update.
    *
-   * Relationship validation: When updating role_id, the system verifies the new role belongs to the same organization as the employee. When updating erp_hrm_department_id, the system verifies the department exists in the employee's organization.
+   * When updating the department, the department must exist within the same organization. Setting department to null removes the employee's department assignment.
    *
-   * Status management: The status field controls employee activity. Active employees can log time and submit timesheets. Deactivated employees preserve historical data but cannot perform time tracking operations.
+   * When updating status to "deactivated", the employee loses ability to log time and submit timesheets but historical data is preserved. When updating status to "active", the employee regains time tracking capabilities.
    *
-   * This operation is part of the employee management workflow where administrators can reassign employees to different roles or departments, update their employment type, or activate/deactivate their accounts.
+   * Employment type must be one of: full-time, part-time, contractor, intern.
    *
    * @param connection
    * @param employeeId Unique identifier of the employee to update
-   * @param body Employee update fields including position, employment type, status, role assignment, and department assignment
+   * @param body Fields to update for the employee record
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Update erp_hrm_employees record with validation:
+   * @x-autobe-specification Update employee record in erp_hrm_employees table by employeeId.
    *
-   * 1. Validate employeeId exists and belongs to current organization
-   * 2. Verify requesting user has employee:manage permission
-   * 3. If roleId is provided:
-   *    - Validate role exists in database
-   *    - Validate role belongs to same organization as employee
-   * 4. If departmentId is provided:
-   *    - Validate department exists in database
-   *    - Validate department belongs to same organization as employee
-   *    - Set to null to remove department assignment
-   * 5. Update allowed fields: position, employmentType, status, erpHrmRoleId, erpHrmDepartmentId
-   * 6. Set updatedAt to current timestamp
-   * 7. Return updated employee record with related role and department
+   * Validate that the employeeId exists and belongs to the current organization context. Return 404 if employee not found.
    *
-   * Error handling:
-   * - 404 if employee not found or belongs to different organization
-   * - 403 if user lacks employee:manage permission
-   * - 400 if role/department validation fails
-   * - 400 for invalid field values
+   * Verify user has employee:manage permission in the current organization. Return 403 if permission denied.
+   *
+   * If erp_hrm_role_id is being updated, validate that the new role exists and belongs to the current organization. Return 400 if role does not exist or belongs to different organization.
+   *
+   * If erp_hrm_department_id is being updated (non-null value), validate that the department exists and belongs to the current organization. Return 400 if department does not exist or belongs to different organization.
+   *
+   * Validate employment_type is one of: full-time, part-time, contractor, intern. Return 400 for invalid employment_type.
+   *
+   * Validate status is one of: active, deactivated. Return 400 for invalid status.
+   *
+   * Update only the provided fields, preserving unchanged values.
+   *
+   * Set updated_at to current timestamp.
+   *
+   * Return the complete updated employee record with related member, organization, role, and department data loaded.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":employeeId")
@@ -216,30 +121,33 @@ export class ErphrmAdminEmployeesController {
   }
 
   /**
-   * Marks an employee as deleted within the organization.
+   * Deactivate and remove an employee from the organization.
    *
-   * This operation performs a soft deletion by setting the deleted_at timestamp on the employee record. The employee record and all associated data (timelogs, contracts, project memberships) remain in the database but the employee is marked as removed. The employee loses access to the organization.
+   * This endpoint performs a soft delete on the employee record by setting the deleted_at timestamp and changing the status to deactivated. The employee's historical timelogs, timesheets, and other records are preserved in the system.
    *
-   * When an employee is deleted, the system preserves all historical data including their time logs, contracts, and project assignments. This ensures data integrity and audit trail compliance. The employee's status is updated to 'deactivated' to reflect their removed state.
+   * Deactivated employees cannot log time or submit timesheets. Their data remains accessible for historical reporting and audit purposes. A deactivated employee can be reactivated by updating their status back to active through the employee update endpoint.
    *
-   * The authenticated user must have admin privileges (organization owner or manager role) within the organization to perform this operation. Users cannot delete their own employee record while being the sole owner of the organization.
-   *
-   * Attempting to delete an already deleted employee returns a not found error.
+   * The authenticated user must have the employee:manage permission. Attempting to delete an already deleted employee returns a not found error.
    *
    * @param connection
-   * @param employeeId Unique identifier of the employee to delete (UUID format)
+   * @param employeeId Unique identifier of the employee to deactivate
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Retrieve the current authenticated user from session context and verify they are an admin or member with employee management permission.
-   * 2. Validate the employeeId parameter is a valid UUID format.
-   * 3. Query the erp_hrm_employees table to find the employee record where id equals employeeId AND deleted_at IS NULL.
-   * 4. If no record found, return a not found error.
-   * 5. Verify the employee belongs to the current organization context (organization_id matches).
-   * 6. Verify the authenticated user has permission to delete employees (admin role with org:manage or employee:manage permission).
-   * 7. Set the deleted_at field to the current timestamp to perform soft deletion.
-   * 8. Optionally update the status field to 'deleted' if required by business rules.
-   * 9. Record the deletion action in activity logs for audit trail.
-   * 10. Return null response body to indicate successful deletion.
+   * @x-autobe-specification Retrieve the employee by employeeId and validate:
+   * 1. Verify employee exists and belongs to the current organization context
+   * 2. Verify employee is not already deleted (deleted_at is null)
+   * 3. Verify employee:manage permission
+   *
+   * Perform soft delete operation:
+   * 1. Set status to 'deactivated'
+   * 2. Set deleted_at to current timestamp
+   * 3. Do NOT delete associated timelogs, timesheets, or other records (preserve historical data)
+   * 4. Return the updated employee record
+   *
+   * Error handling:
+   * - Not found: Employee does not exist or already deleted
+   * - Access denied: User lacks employee:manage permission
+   * - Already deleted: Return conflict error if attempting to delete again
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":employeeId")

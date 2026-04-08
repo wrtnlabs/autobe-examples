@@ -3,8 +3,10 @@ import { IRedditCommunityMember } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IRedditCommunityModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCommunityModerator";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCommunityMemberAtSummaryTransformer } from "./RedditCommunityMemberAtSummaryTransformer";
 
@@ -16,16 +18,9 @@ export namespace RedditCommunityModeratorAtSummaryTransformer {
     return {
       select: {
         id: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        community: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.reddit_community_communitiesFindManyArgs,
+        role: true,
+        assigned_at: true,
         member: RedditCommunityMemberAtSummaryTransformer.select(),
-        addedBy: RedditCommunityMemberAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_community_moderatorsFindManyArgs;
   }
@@ -34,13 +29,11 @@ export namespace RedditCommunityModeratorAtSummaryTransformer {
   ): Promise<IRedditCommunityModerator.ISummary> {
     return {
       id: input.id,
+      role: input.role,
+      assigned_at: input.assigned_at.toISOString(),
       member: await RedditCommunityMemberAtSummaryTransformer.transform(
         input.member,
       ),
-      addedBy: await RedditCommunityMemberAtSummaryTransformer.transform(
-        input.addedBy,
-      ),
-      createdAt: input.created_at.toISOString(),
-    };
+    } satisfies IRedditCommunityModerator.ISummary;
   }
 }

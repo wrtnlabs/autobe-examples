@@ -1,7 +1,9 @@
 import api from "@ORGANIZATION/PROJECT-api";
+import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import type { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-import type { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+import type { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import type { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReview";
+import type { IEcommerceMallShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShippingAddress";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import type { IPageIEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallReview";
@@ -11,48 +13,53 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-/**
- * Test retrieving reviews for a non-existent product.
- *
- * According to specifications, when a product does not exist, the system should
- * return an empty result set with status 200 (not 404). This validates that
- * the join with products table properly handles non-existent product IDs.
- *
- * Steps:
- * 1. Generate a random UUID that does not correspond to any existing product
- * 2. Call GET /ecommerceMall/products/{nonExistentProductId}/reviews
- *
- * Validations:
- * - Response status should be 200 (empty result, not error)
- * - Response should include valid pagination metadata structure
- * - Data array should be empty
- * - Pagination records count should be 0
- * - This validates the specification: 'if the product does not exist, return an empty result set'
- */
+import { authorize_customer_join } from "../../../authorize/authorize_customer_join";
+import { authorize_customer_login } from "../../../authorize/authorize_customer_login";
+import { authorize_customer_refresh } from "../../../authorize/authorize_customer_refresh";
+
 export async function test_api_product_reviews_retrieval_nonexistent_product(
   connection: api.IConnection,
 ): Promise<void> {
-  // Generate a random UUID that doesn't correspond to any existing product
+  // 1. Create customer connection and authenticate
+  const customerConnection: api.IConnection = { host: connection.host };
+  await authorize_customer_join(customerConnection, {});
+  // 2. Generate a random UUID that does not correspond to any existing product
   const nonExistentProductId = typia.random<string & tags.Format<"uuid">>();
-  // Call the API to retrieve reviews for a non-existent product
-  const response = await api.functional.ecommerceMall.products.reviews.list(
-    connection,
-    { productId: nonExistentProductId },
-  );
-  // Validate the response structure using typia.assert()
-  typia.assert(response);
-  // Validate that data array is empty (non-existent product returns empty results)
-  TestValidator.equals("data array should be empty", response.data.length, 0);
-  // Validate pagination records count is 0
+  // 3. Call GET /ecommerceMall/customer/products/{productId}/reviews with non-existent productId
+  const reviewsResponse =
+    await api.functional.ecommerceMall.customer.products.reviews.at(
+      customerConnection,
+      {
+        productId: nonExistentProductId,
+      },
+    );
+  // 4. Validate response with typia.assert
+  typia.assert(reviewsResponse);
+  // 5. Validate business logic: empty data array
   TestValidator.equals(
-    "pagination records should be 0",
-    response.pagination.records,
+    "data array should be empty",
+    reviewsResponse.data.length,
     0,
   );
-  // Validate pagination pages should be 0
+  TestValidator.equals(
+    "data array should be empty array",
+    reviewsResponse.data,
+    [],
+  );
+  // 6. Validate pagination structure is valid with total: 0
+  TestValidator.equals(
+    "pagination records should be 0",
+    reviewsResponse.pagination.records,
+    0,
+  );
   TestValidator.equals(
     "pagination pages should be 0",
-    response.pagination.pages,
+    reviewsResponse.pagination.pages,
+    0,
+  );
+  TestValidator.equals(
+    "pagination current should be 0",
+    reviewsResponse.pagination.current,
     0,
   );
 }

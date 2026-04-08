@@ -1,3 +1,5 @@
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderSnapshot";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
@@ -20,32 +22,24 @@ export async function patchEcommerceMallAdminOrdersOrderIdSnapshots(props: {
   orderId: string;
   body: IEcommerceMallOrderSnapshot.IRequest;
 }): Promise<IPageIEcommerceMallOrderSnapshot.ISummary> {
-  // Verify order exists
-  await MyGlobal.prisma.ecommerce_mall_orders.findUniqueOrThrow({
-    where: { id: props.orderId },
-  });
-  // Build where clause with date filters
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
   const whereInput = {
     order_id: props.orderId,
-    ...(props.body.createdAfter !== undefined && {
-      created_at: {
-        gte: new Date(props.body.createdAfter),
-      },
-    }),
-    ...(props.body.createdBefore !== undefined && {
-      created_at: {
-        ...(props.body.createdAfter !== undefined
-          ? { gte: new Date(props.body.createdAfter) }
-          : {}),
-        lte: new Date(props.body.createdBefore),
-      },
-    }),
+    ...(props.body.createdAtFrom !== null || props.body.createdAtTo !== null
+      ? {
+          created_at: {
+            ...(props.body.createdAtFrom !== null && {
+              gte: new Date(props.body.createdAtFrom),
+            }),
+            ...(props.body.createdAtTo !== null && {
+              lte: new Date(props.body.createdAtTo),
+            }),
+          },
+        }
+      : {}),
   } satisfies Prisma.ecommerce_mall_order_snapshotsWhereInput;
-  // Pagination parameters
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
-  // Query snapshots with pagination
   const data = await MyGlobal.prisma.ecommerce_mall_order_snapshots.findMany({
     where: whereInput,
     skip,
@@ -53,17 +47,14 @@ export async function patchEcommerceMallAdminOrdersOrderIdSnapshots(props: {
     orderBy: { created_at: "desc" },
     ...EcommerceMallOrderSnapshotAtSummaryTransformer.select(),
   });
-  // Count total records
   const total = await MyGlobal.prisma.ecommerce_mall_order_snapshots.count({
     where: whereInput,
   });
-  // Transform results
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    EcommerceMallOrderSnapshotAtSummaryTransformer.transform,
-  );
   return {
-    data: transformedData,
+    data: await ArrayUtil.asyncMap(
+      data,
+      EcommerceMallOrderSnapshotAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,

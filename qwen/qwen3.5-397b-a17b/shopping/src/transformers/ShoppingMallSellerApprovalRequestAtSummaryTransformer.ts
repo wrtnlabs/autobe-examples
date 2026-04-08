@@ -1,5 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IShoppingMallAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdministrator";
+import { IShoppingMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallAdmin";
+import { IShoppingMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallCustomerProfile";
+import { IShoppingMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallMember";
 import { IShoppingMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSeller";
 import { IShoppingMallSellerApprovalRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IShoppingMallSellerApprovalRequest";
 import { ArrayUtil } from "@nestia/e2e";
@@ -9,7 +11,7 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ShoppingMallAdministratorAtSummaryTransformer } from "./ShoppingMallAdministratorAtSummaryTransformer";
+import { ShoppingMallAdminAtSummaryTransformer } from "./ShoppingMallAdminAtSummaryTransformer";
 import { ShoppingMallSellerAtSummaryTransformer } from "./ShoppingMallSellerAtSummaryTransformer";
 
 export namespace ShoppingMallSellerApprovalRequestAtSummaryTransformer {
@@ -21,11 +23,12 @@ export namespace ShoppingMallSellerApprovalRequestAtSummaryTransformer {
       select: {
         id: true,
         status: true,
-        submitted_at: true,
-        reviewed_at: true,
+        rejection_reason: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
         seller: ShoppingMallSellerAtSummaryTransformer.select(),
-        reviewingAdministrator:
-          ShoppingMallAdministratorAtSummaryTransformer.select(),
+        reviewedByAdmin: ShoppingMallAdminAtSummaryTransformer.select(),
       },
     } satisfies Prisma.shopping_mall_seller_approval_requestsFindManyArgs;
   }
@@ -35,16 +38,17 @@ export namespace ShoppingMallSellerApprovalRequestAtSummaryTransformer {
     return {
       id: input.id,
       status: input.status,
-      submitted_at: input.submitted_at.toISOString(),
-      reviewed_at: input.reviewed_at?.toISOString() ?? null,
+      rejectionReason: input.rejection_reason ?? undefined,
       seller: await ShoppingMallSellerAtSummaryTransformer.transform(
         input.seller,
       ),
-      reviewingAdministrator: input.reviewingAdministrator
-        ? await ShoppingMallAdministratorAtSummaryTransformer.transform(
-            input.reviewingAdministrator,
+      reviewedByAdmin: input.reviewedByAdmin
+        ? await ShoppingMallAdminAtSummaryTransformer.transform(
+            input.reviewedByAdmin,
           )
         : null,
-    };
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+    } satisfies IShoppingMallSellerApprovalRequest.ISummary;
   }
 }

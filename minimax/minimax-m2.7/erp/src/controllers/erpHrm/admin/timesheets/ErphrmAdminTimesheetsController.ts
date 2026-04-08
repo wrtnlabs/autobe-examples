@@ -3,180 +3,51 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IErpHrmTimesheet } from "../../../../api/structures/IErpHrmTimesheet";
-import { IPageIErpHrmTimesheet } from "../../../../api/structures/IPageIErpHrmTimesheet";
 import { AdminAuth } from "../../../../decorators/AdminAuth";
 import { AdminPayload } from "../../../../decorators/payload/AdminPayload";
-import { getErpHrmAdminTimesheetsTimesheetId } from "../../../../providers/getErpHrmAdminTimesheetsTimesheetId";
-import { patchErpHrmAdminTimesheets } from "../../../../providers/patchErpHrmAdminTimesheets";
 import { postErpHrmAdminTimesheetsTimesheetIdApprove } from "../../../../providers/postErpHrmAdminTimesheetsTimesheetIdApprove";
 import { postErpHrmAdminTimesheetsTimesheetIdReject } from "../../../../providers/postErpHrmAdminTimesheetsTimesheetIdReject";
 
-@Controller("/erpHrm/admin/timesheets")
+@Controller("/erpHrm/admin/timesheets/:timesheetId")
 export class ErphrmAdminTimesheetsController {
   /**
-   * Retrieve a filtered and paginated list of timesheets within the organization.
+   * Approve a submitted timesheet for an employee.
    *
-   * This operation provides advanced search capabilities for timesheets including filtering by workflow status (draft, submitted, approved, rejected), date range coverage, and employee ownership. The results are returned in a paginated format optimized for list displays.
+   * This endpoint transitions a timesheet from submitted status to approved status. Upon approval, all timelogs included in the timesheet become permanently locked and cannot be edited or deleted.
    *
-   * **Permission-Based Filtering**:
+   * The system records the approval timestamp and the reviewer employee who performed the approval action. Only users with time:approve permission within the same organization as the timesheet owner can approve timesheets.
    *
-   * When invoked by a member without time:approve permission, the operation automatically scopes results to timesheets owned by the authenticated employee. This ensures data isolation between employees.
-   *
-   * When invoked by a user with time:approve permission (typically managers or organization owners), the operation returns all timesheets within the organization regardless of ownership, allowing reviewers to access the approval queue.
-   *
-   * **Relationship to Database Schema**:
-   *
-   * This operation queries the erp_hrm_timesheets table which stores weekly timesheets with status tracking, week date boundaries (Monday-Sunday), total hours calculated from included timelogs, and reviewer information. The table enforces a composite unique constraint on employee_id and week_start_date to prevent duplicate timesheets for the same employee and week.
-   *
-   * **Usage Context**:
-   *
-   * Employees use this endpoint to view their own timesheet history and track submission status. Reviewers use this endpoint to access submitted timesheets awaiting approval. The response includes summary information optimized for list displays including status, total hours, and week date range.
-   *
-   * **Filtering Options**:
-   *
-   * Supports filtering by timesheet status (draft, submitted, approved, rejected), date range covering the week_start_date, and optionally by specific employee for authorized reviewers. Sorting options include creation date and week start date.
+   * The timesheet must be in submitted status to be approved. If the timesheet has already been reviewed (approved or rejected), the system returns an error indicating an invalid state transition.
    *
    * @param connection
-   * @param body Search criteria and pagination parameters for filtering timesheets
+   * @param timesheetId Unique identifier of the timesheet to approve
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query erp_hrm_timesheets table within the current organization context with the following implementation:
+   * @x-autobe-specification Implement the timesheet approval workflow:
    *
-   * 1. **Base Query**: Start with SELECT query on erp_hrm_timesheets filtered by organization context (via employee relationship)
+   * 1. **Authorization Check**: Verify the current user has time:approve permission in the organization context.
    *
-   * 2. **Authorization Filtering**:
-   *    - If member lacks time:approve permission: Add WHERE clause filtering by erp_hrm_employee_id matching the authenticated user's employee record
-   *    - If member has time:approve permission: Return all timesheets within the organization
+   * 2. **Timesheet Validation**: Retrieve the timesheet by timesheetId. Ensure the timesheet exists and is not soft-deleted (deleted_at is null).
    *
-   * 3. **Search Criteria from Request Body** (apply all provided filters):
-   *    - status: Filter by timesheet status field (draft, submitted, approved, rejected)
-   *    - weekStartDateFrom/weekStartDateTo: Filter by week_start_date range
-   *    - employeeId: Filter by erp_hrm_employee_id (only allowed for time:approve permission holders)
+   * 3. **Status Validation**: Confirm the timesheet status is "submitted". If status is "draft", "approved", or "rejected", return an appropriate error indicating invalid state transition.
    *
-   * 4. **Pagination**: Apply cursor-based or offset pagination using page/pageSize parameters
-   *    - Default page size: 20
-   *    - Maximum page size: 100
+   * 4. **Approval Processing**: Within a database transaction:
+   *    - Update status to "approved"
+   *    - Set reviewed_at to current timestamp
+   *    - Set erp_hrm_reviewer_employee_id to the current user's employee ID in the organization
    *
-   * 5. **Sorting**: Order by created_at DESC by default, optionally by week_start_date DESC
+   * 5. **Timelog Locking**: All timelogs linked to this timesheet via erp_hrm_timesheet_timelogs junction table should be marked as non-editable (implementation-specific locking mechanism).
    *
-   * 6. **Include Related Data**: Join with erp_hrm_employees to include employee name/email for reviewer views
+   * 6. **Response**: Return the updated timesheet entity with reviewer information populated.
    *
-   * 7. **Response Construction**: Map results to IErpHrmTimesheet.ISummary format with essential fields:
-   *    - id, weekStartDate, weekEndDate, status, totalHours, submittedAt, reviewedAt
-   *    - Include employee summary info when viewing all timesheets
-   *
-   * 8. **Edge Cases**:
-   *    - Empty result set returns empty pagination array
-   *    - Invalid date ranges return validation error
-   *    - Unauthorized employeeId filter attempts are silently ignored (not rejected) for members
+   * 7. **Error Handling**:
+   *    - 404 if timesheet not found or deleted
+   *    - 403 if user lacks time:approve permission
+   *    - 409 Conflict if timesheet is not in submitted status
+   *    - 400 for other validation failures
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Patch()
-  public async index(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedBody()
-    body: IErpHrmTimesheet.IRequest,
-  ): Promise<IPageIErpHrmTimesheet.ISummary> {
-    try {
-      return await patchErpHrmAdminTimesheets({
-        admin,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve a specific timesheet by its unique identifier.
-   *
-   * This endpoint retrieves the complete details of a single timesheet, including its associated employee information, week date range, current workflow status, total hours calculated from included timelogs, submission timestamp, and review information if the timesheet has been approved or rejected.
-   *
-   * The timesheet must belong to the current organization context. Employees can only retrieve their own timesheets unless they possess the time:view_all permission, which grants the ability to view any employee's timesheets within the organization. Users with time:view_all permission can see timesheets in all states including draft, submitted, approved, and rejected.
-   *
-   * The response includes all timelog associations for the timesheet. When the timesheet status is approved, all included timelogs are locked from editing. When the status is rejected, the rejection_reason field contains the mandatory reason provided by the reviewer.
-   *
-   * For employees without time:view_all permission, attempting to access another employee's timesheet returns an access denied response. The system does not reveal whether a timesheet exists to unauthorized users.
-   *
-   * Related operations:
-   * - PATCH /timesheets for listing timesheets with filters
-   * - POST /timesheets for creating new draft timesheets
-   * - PUT /timesheets/{timesheetId}/submit for submitting a draft timesheet
-   * - PUT /timesheets/{timesheetId}/approve and /reject for the approval workflow
-   *
-   * @param connection
-   * @param timesheetId Unique identifier of the timesheet to retrieve (UUID format)
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Service Layer:
-   * 1. Extract timesheetId from path parameters, validate as UUID format
-   * 2. Query erp_hrm_timesheets table by id with soft-delete filter (deleted_at IS NULL)
-   * 3. Verify organization context matches the timesheet's organization via employee relationship
-   * 4. Authorization check:
-   *    - If requester has time:view_all permission → allow access to any timesheet
-   *    - Otherwise → verify timesheet.erp_hrm_employee_id matches current user's employee record
-   * 5. If timesheet not found or unauthorized → return appropriate error response
-   * 6. Load associated employee details for the timesheet owner
-   * 7. Load reviewer employee details if reviewer_employee_id is not null
-   * 8. Return complete timesheet with related employee and reviewer information
-   *
-   * Edge Cases:
-   * - Invalid UUID format → 400 Bad Request
-   * - Timesheet soft-deleted (deleted_at IS NOT NULL) → 404 Not Found
-   * - Timesheet not found → 404 Not Found
-   * - Unauthorized access attempt → 403 Forbidden (do not reveal existence)
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":timesheetId")
-  public async at(
-    @AdminAuth()
-    admin: AdminPayload,
-    @TypedParam("timesheetId")
-    timesheetId: string & tags.Format<"uuid">,
-  ): Promise<IErpHrmTimesheet> {
-    try {
-      return await getErpHrmAdminTimesheetsTimesheetId({
-        admin,
-        timesheetId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Approve a submitted timesheet, transitioning it to approved status.
-   *
-   * This endpoint allows users with time:approve permission to formally accept a submitted timesheet. Upon approval, the timesheet status changes from submitted to approved, all contained timelogs become locked and cannot be edited or deleted, and the approval metadata (reviewer and timestamp) is recorded.
-   *
-   * The approval action is idempotent - approving an already-approved timesheet returns success without re-recording the approval. The reviewer_employee_id field is populated with the employee record of the approving user, and the reviewed_at timestamp records the exact moment of approval. This information is immutable once recorded.
-   *
-   * The timesheet must be in submitted status for approval to succeed. Draft timesheets cannot be approved directly - they must be submitted first by the owning employee. Rejected timesheets that have been corrected and re-submitted can be approved.
-   *
-   * Approval does not require a reason - only rejection requires mandatory justification. The rejection_reason field remains null for approved timesheets.
-   *
-   * This operation is part of the timesheet approval workflow alongside the reject action which requires a mandatory rejection reason. Users with time:approve permission can access both approval and rejection operations for any submitted timesheet within their organization.
-   *
-   * @param connection
-   * @param timesheetId Unique identifier of the timesheet to approve. Must be a submitted timesheet belonging to an employee in the same organization as the approving user.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor admin
-   * @x-autobe-specification 1. Retrieve the target timesheet by timesheetId from erp_hrm_timesheets table
-   * 2. Validate timesheet exists and is not soft-deleted (deleted_at is null)
-   * 3. Validate timesheet status is 'submitted' - return error if timesheet is in draft, approved, or rejected status
-   * 4. Validate requesting user has time:approve permission in the organization context
-   * 5. Verify the timesheet belongs to the same organization as the requesting user's employee record
-   * 6. Begin database transaction
-   * 7. Update timesheet: set status to 'approved', reviewer_employee_id to current user's employee ID, reviewed_at to current timestamp
-   * 8. The total_hours field already contains the calculated value from included timelogs
-   * 9. Commit transaction
-   * 10. Return the updated timesheet with reviewer information included
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post(":timesheetId/approve")
+  @TypedRoute.Post("approve")
   public async approve(
     @AdminAuth()
     admin: AdminPayload,
@@ -195,33 +66,43 @@ export class ErphrmAdminTimesheetsController {
   }
 
   /**
-   * Reject a submitted timesheet and return it to draft status.
+   * Reject a submitted timesheet and return it to draft status for employee revision.
    *
-   * This operation allows authorized reviewers to reject timesheets that require corrections. When a timesheet is rejected, it transitions from submitted status back to draft status, allowing the employee to make the necessary changes and resubmit.
+   * This operation allows authorized users with time:approve permission to reject a submitted timesheet. A rejection requires providing a mandatory reason that explains why the timesheet was rejected. The employee can then view the rejection reason, make necessary corrections to their timelogs, and resubmit the timesheet for approval.
    *
-   * The rejection requires a mandatory rejection reason that explains why the timesheet was rejected. This reason is stored with the timesheet and displayed to the employee when viewing the rejected timesheet. The reviewer information and review timestamp are recorded for audit trail purposes.
+   * When a timesheet is rejected, all associated timelogs are unlocked, allowing the employee to edit or remove entries. The timesheet status transitions from submitted back to draft. The rejection reason is stored with the timesheet and visible to the employee.
    *
-   * When a timesheet is rejected, the associations between this timesheet and its timelogs are removed via the erp_hrm_timesheet_timelogs junction table. This allows the employee to either modify the existing timelogs directly or create new timelogs to be included in a revised timesheet submission.
-   *
-   * The operation requires the time:approve permission within the current organization context. Users without this permission receive an access denied error.
+   * Only timesheets in submitted status can be rejected. Attempting to reject a timesheet that is already approved, rejected, or in draft status returns an error.
    *
    * @param connection
-   * @param timesheetId Unique identifier of the timesheet to reject
-   * @param body Rejection reason explaining why the timesheet is being rejected (required)
+   * @param timesheetId Unique identifier of the timesheet to reject (UUID format, scoped to current organization).
+   * @param body Rejection reason explaining why the timesheet was rejected (required).
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor admin
-   * @x-autobe-specification Query the erp_hrm_timesheets table to find the timesheet by timesheetId. Verify the timesheet exists and belongs to the current organization context. Verify the timesheet status is 'submitted'. If status is not submitted, return an error indicating the timesheet cannot be rejected because it is not in submitted status.
+   * @x-autobe-specification Reject a submitted timesheet by timesheetId.
    *
-   * Validate that the request body contains a non-empty rejection_reason field. If rejection_reason is missing or empty, return a validation error requiring the rejection reason.
+   * 1. Validate the timesheetId path parameter is a valid UUID format.
    *
-   * Update the timesheet record: set status to 'rejected', store the rejection_reason from request body, set reviewed_at to current timestamp, set reviewer_employee_id to the authenticated user's employee ID.
+   * 2. Query the erp_hrm_timesheets table to find the timesheet by timesheetId within the current organization context.
    *
-   * Update all timelogs associated with this timesheet via erp_hrm_timesheet_timelogs junction table: remove the timesheet association or unlock the timelogs for editing.
+   * 3. Verify the timesheet exists and belongs to the current organization.
    *
-   * Return the complete updated timesheet including the rejection_reason and reviewer information.
+   * 4. Verify the timesheet status is 'submitted' - reject if timesheet is already approved, rejected, or in draft status.
+   *
+   * 5. Validate the request body contains a non-empty rejectionReason field - this field is mandatory.
+   *
+   * 6. Update the timesheet:
+   *    - Set status to 'rejected'
+   *    - Set rejection_reason to the provided reason string
+   *    - Set reviewed_at to current timestamp
+   *    - Set reviewed_by_id to the authenticated user's employee record ID
+   *
+   * 7. Unlock all timelogs associated with this timesheet via the erp_hrm_timesheet_timelogs junction table. The timelogs should become editable again by the owning employee.
+   *
+   * 8. Return the updated timesheet with all included timelogs in the response body.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
-  @TypedRoute.Post(":timesheetId/reject")
+  @TypedRoute.Post("reject")
   public async reject(
     @AdminAuth()
     admin: AdminPayload,

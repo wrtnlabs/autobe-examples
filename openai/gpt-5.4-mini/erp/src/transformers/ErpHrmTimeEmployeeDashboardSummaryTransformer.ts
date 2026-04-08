@@ -1,9 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
 import { IErpHrmTimeEmployeeDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployeeDashboardSummary";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
@@ -12,56 +11,73 @@ import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { ErpHrmTimeEmployeeAtSummaryTransformer } from "./ErpHrmTimeEmployeeAtSummaryTransformer";
+import { ErpHrmTimeDepartmentAtSummaryTransformer } from "./ErpHrmTimeDepartmentAtSummaryTransformer";
+import { ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer } from "./ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer";
+import { ErpHrmTimeRoleAtSummaryTransformer } from "./ErpHrmTimeRoleAtSummaryTransformer";
 
 export namespace ErpHrmTimeEmployeeDashboardSummaryTransformer {
-  export type Payload =
-    Prisma.erp_hrm_time_employee_dashboard_summariesGetPayload<
-      ReturnType<typeof select>
-    >;
+  export type Payload = Prisma.erp_hrm_time_employeesGetPayload<
+    ReturnType<typeof select>
+  >;
+  export function select() {
+    return {
+      select: {
+        id: true,
+        erp_hrm_time_organization_id: true,
+        erp_hrm_time_member_id: true,
+        erp_hrm_time_role_id: true,
+        erp_hrm_time_department_id: true,
+        position_title: true,
+        employment_type: true,
+        status: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        organization:
+          ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer.select(),
+        member: {
+          select: {
+            id: true,
+          },
+        },
+        role: ErpHrmTimeRoleAtSummaryTransformer.select(),
+        department: ErpHrmTimeDepartmentAtSummaryTransformer.select(),
+        contracts: { select: { id: true } },
+        projectMemberships: { select: { id: true } },
+        assignedTasks: { select: { id: true } },
+        timers: { select: { id: true } },
+        timesheets: { select: { id: true } },
+        timeReportRows: { select: { id: true } },
+        dashboardSummary: { select: { id: true } },
+      },
+    } satisfies Prisma.erp_hrm_time_employeesFindManyArgs;
+  }
   export async function transform(
     input: Payload,
   ): Promise<IErpHrmTimeEmployeeDashboardSummary> {
     return {
       id: input.id,
-      employee: await ErpHrmTimeEmployeeAtSummaryTransformer.transform(
-        input.employee,
-      ),
-      hoursLoggedToday: input.hours_logged_today,
-      hoursLoggedThisWeek: input.hours_logged_this_week,
-      hasActiveTimer: input.has_active_timer,
-      activeTimerStartedAt:
-        input.active_timer_started_at?.toISOString() ?? null,
-      recentTimelogCount: input.recent_timelog_count,
-      pendingTimesheetStatus: input.pending_timesheet_status,
-      recentTimelogSnapshotAt: input.recent_timelog_snapshot_at.toISOString(),
-      assignedOpenTaskCount: input.assigned_open_task_count,
-      assignedInProgressTaskCount: input.assigned_in_progress_task_count,
-      snapshotAt: input.snapshot_at.toISOString(),
+      erpHrmTimeOrganizationId: input.erp_hrm_time_organization_id,
+      erpHrmTimeMemberId: input.erp_hrm_time_member_id,
+      erpHrmTimeRoleId: input.erp_hrm_time_role_id,
+      erpHrmTimeDepartmentId: input.erp_hrm_time_department_id ?? null,
+      organization:
+        await ErpHrmTimeOrganizationDashboardSummaryAtSummaryTransformer.transform(
+          input.organization,
+        ),
+      member: { id: input.member.id } as IErpHrmTimeMember.ISummary,
+      role: await ErpHrmTimeRoleAtSummaryTransformer.transform(input.role),
+      department: input.department
+        ? await ErpHrmTimeDepartmentAtSummaryTransformer.transform(
+            input.department,
+          )
+        : null,
+      positionTitle: input.position_title ?? null,
+      employmentType: input.employment_type,
+      status: input.status,
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
       deletedAt: input.deleted_at?.toISOString() ?? null,
     };
-  }
-  export function select() {
-    return {
-      select: {
-        id: true,
-        hours_logged_today: true,
-        hours_logged_this_week: true,
-        has_active_timer: true,
-        active_timer_started_at: true,
-        recent_timelog_count: true,
-        pending_timesheet_status: true,
-        recent_timelog_snapshot_at: true,
-        assigned_open_task_count: true,
-        assigned_in_progress_task_count: true,
-        snapshot_at: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        employee: ErpHrmTimeEmployeeAtSummaryTransformer.select(),
-      },
-    } satisfies Prisma.erp_hrm_time_employee_dashboard_summariesFindManyArgs;
   }
 }

@@ -20,9 +20,37 @@ export namespace ErpHrmDepartmentCollector {
       updated_at: new Date(),
       deleted_at: null,
       organization: { connect: { id: props.erpHrmOrganizations.id } },
-      parent: props.body.parent_id
-        ? { connect: { id: props.body.parent_id } }
+      parent: props.body.parentId
+        ? { connect: { id: props.body.parentId } }
         : undefined,
     } satisfies Prisma.erp_hrm_departmentsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace ErpHrmDepartmentCollector {
+//         export async function collect(props: {
+//           body: IErpHrmDepartment.ICreate;
+//           erpHrmOrganizations: IEntity; // from authorized session
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       name: ...,
+//       description: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       organization: ...,
+//       parent: ...,
+//       employees: ...,
+//       children: ...,
+//       invitations: ...,
+//           } satisfies Prisma.erp_hrm_departmentsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

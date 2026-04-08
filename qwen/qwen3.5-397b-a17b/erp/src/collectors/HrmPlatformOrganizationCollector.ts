@@ -10,23 +10,27 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace HrmPlatformOrganizationCollector {
   export async function collect(props: {
     body: IHrmPlatformOrganization.ICreate;
+    hrmPlatformMembers: IEntity;
+    hrmPlatformMemberSessions: IEntity;
   }) {
-    const id: string = v4();
     return {
-      id,
+      // Scalar fields
+      id: v4(),
       name: props.body.name,
       description: props.body.description ?? null,
-      logo: props.body.logo ?? null,
+      logo_url: props.body.logo_url ?? null,
       currency: props.body.currency,
       timezone: props.body.timezone,
       fiscal_start_month: props.body.fiscal_start_month,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
+      // HasMany relations (reverse relations - not created here)
       departments: undefined,
-      employees: undefined,
+      organizationMemberships: undefined,
       roles: undefined,
-      invitations: undefined,
+      employees: undefined,
+      employeeInvitations: undefined,
       projects: undefined,
       activityLogs: undefined,
     } satisfies Prisma.hrm_platform_organizationsCreateInput;

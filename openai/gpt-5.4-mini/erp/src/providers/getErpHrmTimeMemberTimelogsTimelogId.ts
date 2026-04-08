@@ -1,10 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IErpHrmTimeDepartment } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeDepartment";
-import { IErpHrmTimeEmployee } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeEmployee";
 import { IErpHrmTimeMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeMember";
-import { IErpHrmTimeOrganization } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganization";
+import { IErpHrmTimeOrganizationDashboardSummary } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeOrganizationDashboardSummary";
 import { IErpHrmTimeProject } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeProject";
-import { IErpHrmTimeRole } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeRole";
 import { IErpHrmTimeTask } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTask";
 import { IErpHrmTimeTimelog } from "@ORGANIZATION/PROJECT-api/lib/structures/IErpHrmTimeTimelog";
 import { ArrayUtil } from "@nestia/e2e";
@@ -24,15 +21,16 @@ export async function getErpHrmTimeMemberTimelogsTimelogId(props: {
   member: MemberPayload;
   timelogId: string & tags.Format<"uuid">;
 }): Promise<IErpHrmTimeTimelog> {
-  const timelog = await MyGlobal.prisma.erp_hrm_time_timelogs.findFirstOrThrow({
-    where: {
-      id: props.timelogId,
-      deleted_at: null,
-      member: {
-        id: props.member.id,
+  const timelog = await MyGlobal.prisma.erp_hrm_time_timelogs.findUniqueOrThrow(
+    {
+      where: {
+        id: props.timelogId,
       },
+      ...ErpHrmTimeTimelogTransformer.select(),
     },
-    ...ErpHrmTimeTimelogTransformer.select(),
-  });
+  );
+  if (timelog.member.id !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
+  }
   return await ErpHrmTimeTimelogTransformer.transform(timelog);
 }

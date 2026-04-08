@@ -15,74 +15,93 @@ export async function deleteShoppingMallSellerProductsProductId(props: {
   seller: SellerPayload;
   productId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // 1. Verify product exists and belongs to the seller
   const product =
     await MyGlobal.prisma.shopping_mall_products.findUniqueOrThrow({
       where: { id: props.productId },
+      select: { id: true, shopping_mall_seller_id: true },
     });
-  if (product.seller_id !== props.seller.id) {
+  if (product.shopping_mall_seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Check if already deleted
-  if (product.deleted_at !== null) {
-    throw new HttpException("Not Found", 404);
-  }
-  // 2. Check for pending order items (paid or shipped status) for any variant of this product
-  const pendingOrderItems =
-    await MyGlobal.prisma.shopping_mall_order_items.findFirst({
+  const variants =
+    await MyGlobal.prisma.shopping_mall_product_variants.findMany({
       where: {
         shopping_mall_product_id: props.productId,
-        status: {
-          in: ["paid", "shipped"],
-        },
         deleted_at: null,
       },
+      select: { id: true },
     });
-  if (pendingOrderItems !== null) {
-    throw new HttpException(
-      "Conflict: Cannot delete product with pending orders",
-      409,
-    );
-  }
-  // 3. Check for pending cancellation requests for any variant of this product
-  const pendingCancellationRequests =
-    await MyGlobal.prisma.shopping_mall_cancellation_requests.findFirst({
-      where: {
-        orderItem: {
-          shopping_mall_product_id: props.productId,
+  const variantIds = variants.map((v) => v.id);
+  if (variantIds.length > 0) {
+    const pendingOrderItems =
+      await MyGlobal.prisma.shopping_mall_order_items.findFirst({
+        where: {
+          shopping_mall_product_variant_id: { in: variantIds },
+          status: { in: ["paid", "shipped"] },
         },
-        status: "pending",
-        deleted_at: null,
-      },
-    });
-  if (pendingCancellationRequests !== null) {
-    throw new HttpException(
-      "Conflict: Cannot delete product with pending cancellation requests",
-      409,
-    );
-  }
-  // 4. Check for pending refund requests for any variant of this product
-  const pendingRefundRequests =
-    await MyGlobal.prisma.shopping_mall_refund_requests.findFirst({
-      where: {
-        orderItem: {
-          shopping_mall_product_id: props.productId,
+      });
+    if (pendingOrderItems) {
+      throw new HttpException(
+        "Cannot delete product with pending order items in paid or shipped status",
+        400,
+      );
+    }
+    const pendingCancellations =
+      await MyGlobal.prisma.shopping_mall_cancellation_requests.findFirst({
+        where: {
+          orderItem: {
+            shopping_mall_product_variant_id: { in: variantIds },
+          },
+          status: "pending",
+          deleted_at: null,
         },
-        status: "pending",
-        deleted_at: null,
-      },
-    });
-  if (pendingRefundRequests !== null) {
-    throw new HttpException(
-      "Conflict: Cannot delete product with pending refund requests",
-      409,
-    );
+      });
+    if (pendingCancellations) {
+      throw new HttpException(
+        "Cannot delete product with pending cancellation requests",
+        400,
+      );
+    }
+    const pendingRefunds =
+      await MyGlobal.prisma.shopping_mall_refund_requests.findFirst({
+        where: {
+          orderItem: {
+            shopping_mall_product_variant_id: { in: variantIds },
+          },
+          status: "pending",
+          deleted_at: null,
+        },
+      });
+    if (pendingRefunds) {
+      throw new HttpException(
+        "Cannot delete product with pending refund requests",
+        400,
+      );
+    }
   }
-  // 5. Soft-delete the product by setting deleted_at
+  const now = toISOStringSafe(new Date());
+  await MyGlobal.prisma.shopping_mall_wishlist_items.updateMany({
+    where: {
+      shopping_mall_product_id: props.productId,
+      deleted_at: null,
+    },
+    data: {
+      deleted_at: now,
+    },
+  });
+  await MyGlobal.prisma.shopping_mall_product_variants.updateMany({
+    where: {
+      shopping_mall_product_id: props.productId,
+      deleted_at: null,
+    },
+    data: {
+      deleted_at: now,
+    },
+  });
   await MyGlobal.prisma.shopping_mall_products.update({
     where: { id: props.productId },
     data: {
-      deleted_at: new Date(),
+      deleted_at: now,
     },
   });
 }

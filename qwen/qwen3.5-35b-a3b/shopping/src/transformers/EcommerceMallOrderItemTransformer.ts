@@ -1,10 +1,10 @@
-import { IEcommerceMallAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAddress";
 import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+import { IEcommerceMallCustomerAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerAddress";
+import { IEcommerceMallMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallMember";
 import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
-import { IEcommerceMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshot";
-import { IEcommerceMallProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantSnapshot";
+import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -15,8 +15,7 @@ import typia, { tags } from "typia";
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallOrderAtSummaryTransformer } from "./EcommerceMallOrderAtSummaryTransformer";
-import { EcommerceMallProductSnapshotAtSummaryTransformer } from "./EcommerceMallProductSnapshotAtSummaryTransformer";
-import { EcommerceMallProductVariantSnapshotAtSummaryTransformer } from "./EcommerceMallProductVariantSnapshotAtSummaryTransformer";
+import { EcommerceMallProductVariantAtSummaryTransformer } from "./EcommerceMallProductVariantAtSummaryTransformer";
 import { EcommerceMallSellerAtSummaryTransformer } from "./EcommerceMallSellerAtSummaryTransformer";
 
 export namespace EcommerceMallOrderItemTransformer {
@@ -27,33 +26,17 @@ export namespace EcommerceMallOrderItemTransformer {
     return {
       select: {
         id: true,
-        product_name: true,
-        product_sku: true,
-        variant_name: true,
         quantity: true,
         unit_price: true,
-        total_price: true,
+        subtotal: true,
+        status: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
         order: EcommerceMallOrderAtSummaryTransformer.select(),
-        productSnapshot:
-          EcommerceMallProductSnapshotAtSummaryTransformer.select(),
-        variantSnapshot:
-          EcommerceMallProductVariantSnapshotAtSummaryTransformer.select(),
-        sellerSnapshot: EcommerceMallSellerAtSummaryTransformer.select(),
-        snapshots: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_order_item_snapshotsFindManyArgs,
-        shipmentItems: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_shipments_order_itemsFindManyArgs,
-        cancellationRequests: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_cancellation_requestsFindManyArgs,
-        refundRequests: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_refund_requestsFindManyArgs,
+        productVariant:
+          EcommerceMallProductVariantAtSummaryTransformer.select(),
+        seller: EcommerceMallSellerAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_order_itemsFindManyArgs;
   }
@@ -62,30 +45,67 @@ export namespace EcommerceMallOrderItemTransformer {
   ): Promise<IEcommerceMallOrderItem> {
     return {
       id: input.id,
-      productName: input.product_name,
-      productSku: input.product_sku,
-      variantName: input.variant_name,
-      quantity: input.quantity,
-      unitPrice: Number(input.unit_price),
-      totalPrice: Number(input.total_price),
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-      orderId: input.order.id,
-      productSnapshot:
-        await EcommerceMallProductSnapshotAtSummaryTransformer.transform(
-          input.productSnapshot,
-        ),
-      variantSnapshot:
-        await EcommerceMallProductVariantSnapshotAtSummaryTransformer.transform(
-          input.variantSnapshot,
-        ),
-      sellerSnapshot: await EcommerceMallSellerAtSummaryTransformer.transform(
-        input.sellerSnapshot,
-      ),
+      quantity: Number(input.quantity),
+      unit_price: Number(input.unit_price),
+      subtotal: Number(input.subtotal),
+      status: typia.assert<
+        "paid" | "shipped" | "delivered" | "cancelled" | "refunded"
+      >(input.status),
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
       order: await EcommerceMallOrderAtSummaryTransformer.transform(
         input.order,
       ),
-    };
+      productVariant:
+        await EcommerceMallProductVariantAtSummaryTransformer.transform(
+          input.productVariant,
+        ),
+      seller: await EcommerceMallSellerAtSummaryTransformer.transform(
+        input.seller,
+      ),
+    } satisfies IEcommerceMallOrderItem;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallOrderItemTransformer {
+//       export type Payload = Prisma.ecommerce_mall_order_itemsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             quantity: true,
+//             unit_price: true,
+//             subtotal: true,
+//             status: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//             ...
+//           },
+//         } satisfies Prisma.ecommerce_mall_order_itemsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallOrderItem> {
+//         return {
+//   id: {string},
+//   order: {IEcommerceMallOrder.ISummary},
+//   productVariant: {IEcommerceMallProductVariant.ISummary},
+//   seller: {IEcommerceMallSeller.ISummary},
+//   quantity: {integer},
+//   unit_price: {number},
+//   subtotal: {number},
+//   status: {"paid" | "shipped" | "delivered" | "cancelled" | "refunded"},
+//   created_at: {string},
+//   updated_at: {string},
+//   deleted_at: {string | null},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

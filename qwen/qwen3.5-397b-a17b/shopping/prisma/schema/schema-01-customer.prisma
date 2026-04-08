@@ -1,0 +1,174 @@
+/// Customer profile information including display name and phone number,
+/// linked to member account.
+///
+/// Extends the base member account with customer-specific profile data. Each
+/// member has exactly one customer profile created upon registration.
+///
+/// References {@link shopping_mall_members} for authentication and account
+/// management. Profile data is editable by the customer through their
+/// account settings.
+///
+/// @namespace customer
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the member account this profile belongs to.
+  ///
+  /// Establishes a 1:1 relationship with {@link shopping_mall_members}. Each
+  /// member has exactly one customer profile. The unique constraint ensures no
+  /// duplicate profiles per member.
+  shopping_mall_member_id String
+  
+  /// Customer's display name shown throughout the platform.
+  ///
+  /// Used in order confirmations, reviews, and customer-facing interfaces.
+  /// Customers can edit this field through their profile settings.
+  display_name String
+  
+  /// Customer's contact phone number.
+  ///
+  /// Used for order notifications and delivery coordination. Customers can
+  /// update this field through their profile settings.
+  phone_number String
+  
+  /// Timestamp when the customer profile was created.
+  created_at DateTime
+  
+  /// Timestamp when the customer profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the customer profile was soft deleted. Null if active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member shopping_mall_members @relation(fields: [shopping_mall_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  addresses shopping_mall_customer_addresses[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([shopping_mall_member_id])
+}
+
+/// Customer shipping addresses with recipient details, supporting multiple
+/// addresses per customer with default designation.
+///
+/// Each address record contains complete shipping information including
+/// recipient name, phone number, and full address details (street, city,
+/// state/province, postal code, country). Customers can maintain multiple
+/// addresses and designate one as their default for checkout convenience.
+///
+/// References {@link shopping_mall_customer_profiles} for customer
+/// ownership. Each customer can have multiple addresses (1:N relationship).
+/// The is_default flag enables quick identification of the primary shipping
+/// address. Soft delete support via deleted_at preserves address history for
+/// order records while removing from active selection.
+///
+/// @namespace customer
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model shopping_mall_customer_addresses {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the customer profile that owns this address.
+  ///
+  /// Establishes ownership relationship where each address belongs to exactly
+  /// one customer profile. A customer profile can have multiple addresses (1:N
+  /// relationship). This reference enables querying all addresses for a
+  /// specific customer and ensures addresses are cascade-deleted when the
+  /// customer profile is removed.
+  shopping_mall_customer_profile_id String
+  
+  /// Full name of the recipient for this shipping address.
+  ///
+  /// Used for delivery labeling and customer service communications. This is
+  /// the person who will receive packages sent to this address.
+  recipient_name String
+  
+  /// Phone number of the recipient for delivery contact.
+  ///
+  /// Couriers use this number to contact the recipient for delivery
+  /// coordination. Should include country code for international
+  /// compatibility.
+  recipient_phone String
+  
+  /// Street address line including building number, street name, and
+  /// apartment/suite number.
+  ///
+  /// Primary address line for physical delivery. Should contain sufficient
+  /// detail for courier navigation.
+  street_address String
+  
+  /// City or municipality name for this address.
+  ///
+  /// Used for regional sorting and delivery routing.
+  city String
+  
+  /// State, province, or regional subdivision name.
+  ///
+  /// Required for addresses in countries with state/province systems. Used for
+  /// regional sorting and tax calculations.
+  state_province String
+  
+  /// Postal or ZIP code for this address.
+  ///
+  /// Used for delivery routing and address validation. Format varies by
+  /// country.
+  postal_code String
+  
+  /// Country name or ISO country code for this address.
+  ///
+  /// Determines international vs domestic shipping rates and customs
+  /// requirements.
+  country String
+  
+  /// Flag indicating whether this is the customer's default shipping address.
+  ///
+  /// When true, this address is pre-selected during checkout. Each customer
+  /// should have exactly one default address at any time. The application
+  /// layer enforces this constraint by updating the flag when customers change
+  /// their default.
+  is_default Boolean
+  
+  /// Timestamp when this address was created.
+  created_at DateTime
+  
+  /// Timestamp when this address was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this address was soft-deleted. Null if active.
+  ///
+  /// Soft delete preserves address data for historical order records while
+  /// removing from active address selection.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customerProfile shopping_mall_customer_profiles @relation(fields: [shopping_mall_customer_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_profile_id, is_default], map: "shopping_mall_customer_addresses_shopping_mall_custome_0817dc5d")
+  // spellchecker: ignore-next-line
+  @@index([shopping_mall_customer_profile_id, deleted_at], map: "shopping_mall_customer_addresses_shopping_mall_custome_f27dd4ad")
+}

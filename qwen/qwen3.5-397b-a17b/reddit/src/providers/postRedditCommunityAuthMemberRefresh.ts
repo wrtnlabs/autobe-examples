@@ -15,54 +15,58 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postRedditCommunityAuthMemberRefresh(props: {
   body: IRedditCommunityMember.IRefresh;
 }): Promise<IRedditCommunityMember.IAuthorized> {
-  let decoded: jwt.JwtPayload;
+  let decoded: {
+    id: string & tags.Format<"uuid">;
+    session_id: string & tags.Format<"uuid">;
+    type: string;
+  };
   try {
-    decoded = jwt.verify(
+    const verified = jwt.verify(
       props.body.refresh_token,
       MyGlobal.env.JWT_SECRET_KEY,
       { issuer: "autobe" },
-    ) as jwt.JwtPayload;
+    );
+    if (typeof verified !== "object" || verified === null) {
+      throw new HttpException("Invalid token format", 401);
+    }
+    const payload = verified as Record<string, unknown>;
+    decoded = {
+      id: payload.id as string & tags.Format<"uuid">,
+      session_id: payload.session_id as string & tags.Format<"uuid">,
+      type: String(payload.type),
+    };
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  const tokenData = typia.assert<{
-    type: "member";
-    id: string & tags.Format<"uuid">;
-    session_id: string & tags.Format<"uuid">;
-  }>(decoded);
-  if (tokenData.type !== "member") {
+  if (decoded.type !== "member") {
     throw new HttpException("Invalid token type", 403);
   }
   const session =
     await MyGlobal.prisma.reddit_community_member_sessions.findFirst({
       where: {
-        id: tokenData.session_id,
-        reddit_community_member_id: tokenData.id,
         refresh_token: props.body.refresh_token,
+        reddit_community_member_id: decoded.id,
       },
     });
   if (!session) {
-    throw new HttpException("Session not found or refresh token mismatch", 401);
-  }
-  const now = new Date();
-  if (session.expired_at < now) {
-    throw new HttpException("Session has expired", 401);
+    throw new HttpException("Session expired or revoked", 401);
   }
   const member =
     await MyGlobal.prisma.reddit_community_members.findUniqueOrThrow({
-      where: { id: tokenData.id },
+      where: { id: decoded.id },
     });
   if (member.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  const accessExpires = new Date(now.getTime() + 60 * 60 * 1000);
-  const refreshExpires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const accessExpiresAt = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshExpiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const newAccessToken = jwt.sign(
     {
       type: "member",
-      id: tokenData.id,
-      session_id: tokenData.session_id,
-      created_at: toISOStringSafe(now),
+      id: decoded.id,
+      session_id: decoded.session_id,
+      created_at: now.toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
@@ -70,29 +74,35 @@ export async function postRedditCommunityAuthMemberRefresh(props: {
   const newRefreshToken = jwt.sign(
     {
       type: "member",
-      id: tokenData.id,
-      session_id: tokenData.session_id,
+      id: decoded.id,
+      session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: toISOStringSafe(now),
+      created_at: now.toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
   await MyGlobal.prisma.reddit_community_member_sessions.update({
-    where: { id: tokenData.session_id },
+    where: { id: decoded.session_id },
     data: {
       access_token: newAccessToken,
       refresh_token: newRefreshToken,
-      expired_at: refreshExpires,
+      expired_at: refreshExpiresAt,
     },
   });
   return {
-    id: tokenData.id,
+    id: member.id,
+    email: member.email,
+    username: member.username,
+    display_name: member.display_name,
+    bio: member.bio,
+    avatar: member.avatar,
+    karma: member.karma,
     token: {
       access: newAccessToken,
       refresh: newRefreshToken,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
+      expired_at: accessExpiresAt.toISOString(),
+      refreshable_until: refreshExpiresAt.toISOString(),
     },
   };
 }

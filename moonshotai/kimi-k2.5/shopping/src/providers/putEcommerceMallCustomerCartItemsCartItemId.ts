@@ -1,12 +1,8 @@
 import { IEcommerceMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCartItem";
-import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
-import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
-import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
 import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
-import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IParentReference } from "@ORGANIZATION/PROJECT-api/lib/structures/IParentReference";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -25,28 +21,45 @@ export async function putEcommerceMallCustomerCartItemsCartItemId(props: {
   cartItemId: string & tags.Format<"uuid">;
   body: IEcommerceMallCartItem.IUpdate;
 }): Promise<IEcommerceMallCartItem> {
-  const cartItem =
-    await MyGlobal.prisma.ecommerce_mall_cart_items.findUniqueOrThrow({
-      where: { id: props.cartItemId },
-      select: { id: true, customer_id: true, deleted_at: true },
-    });
+  // Find the cart item and verify ownership
+  const cartItem = await MyGlobal.prisma.ecommerce_mall_cart_items.findUnique({
+    where: { id: props.cartItemId },
+    select: {
+      id: true,
+      customer_id: true,
+      product_variant_id: true,
+      deleted_at: true,
+    },
+  });
+  // Not found or soft-deleted
+  if (cartItem === null || cartItem.deleted_at !== null) {
+    throw new HttpException("Cart item not found", 404);
+  }
+  // Ownership check - customers can only modify their own cart items
   if (cartItem.customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  if (cartItem.deleted_at !== null) {
-    throw new HttpException("Not Found", 404);
-  }
-  await MyGlobal.prisma.ecommerce_mall_cart_items.update({
+  // Update the cart item with new quantity and refreshed timestamp
+  const updated = await MyGlobal.prisma.ecommerce_mall_cart_items.update({
     where: { id: props.cartItemId },
     data: {
       quantity: props.body.quantity,
       updated_at: new Date(),
     },
+    ...EcommerceMallCartItemTransformer.select(),
   });
-  const updated =
-    await MyGlobal.prisma.ecommerce_mall_cart_items.findUniqueOrThrow({
-      where: { id: props.cartItemId },
-      ...EcommerceMallCartItemTransformer.select(),
+  // Calculate available stock for this variant to determine stockAvailability
+  const inventoryResult =
+    await MyGlobal.prisma.ecommerce_mall_inventory_records.aggregate({
+      where: {
+        product_variant_id: cartItem.product_variant_id,
+      },
+      _sum: {
+        quantity_change: true,
+      },
     });
-  return await EcommerceMallCartItemTransformer.transform(updated);
+  const availableStock = inventoryResult._sum.quantity_change ?? 0;
+  return await EcommerceMallCartItemTransformer.transform(updated, {
+    availableStock,
+  });
 }

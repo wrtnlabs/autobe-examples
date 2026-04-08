@@ -16,15 +16,10 @@ export namespace EcommerceMallProductVariantCollector {
     const id: string = v4();
     return {
       id,
-      sku: props.body.sku,
-      options: JSON.stringify(props.body.options),
-      base_price: props.body.base_price,
-      sale_price: props.body.sale_price ?? null,
+      sku_code: props.body.sku_code,
+      option_values: props.body.option_values,
+      price: props.body.price ?? null,
       stock_quantity: props.body.stock_quantity,
-      reserved_quantity: 0,
-      status: props.body.status ?? "active",
-      sort_order: props.body.sort_order ?? 0,
-      is_default: props.body.is_default ?? false,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
@@ -32,3 +27,34 @@ export namespace EcommerceMallProductVariantCollector {
     } satisfies Prisma.ecommerce_mall_product_variantsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallProductVariantCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallProductVariant.ICreate;
+//           ecommerceMallProducts: IEntity; // from path parameter productId
+// ecommerceMallSellers: IEntity; // from authorized actor
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       sku_code: ...,
+//       option_values: ...,
+//       price: ...,
+//       stock_quantity: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       product: ...,
+//       inventoryRecords: ...,
+//       orderItems: ...,
+//       snapshots: ...,
+//       snapshotHistories: ...,
+//           } satisfies Prisma.ecommerce_mall_product_variantsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

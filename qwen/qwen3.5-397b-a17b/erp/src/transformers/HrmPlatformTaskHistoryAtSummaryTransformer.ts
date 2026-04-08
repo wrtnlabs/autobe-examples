@@ -3,8 +3,10 @@ import { IHrmPlatformMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IHr
 import { IHrmPlatformTaskHistory } from "@ORGANIZATION/PROJECT-api/lib/structures/IHrmPlatformTaskHistory";
 import { ArrayUtil } from "@nestia/e2e";
 import { Prisma } from "@prisma/sdk";
+import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
+import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { HrmPlatformMemberAtSummaryTransformer } from "./HrmPlatformMemberAtSummaryTransformer";
 
@@ -19,7 +21,7 @@ export namespace HrmPlatformTaskHistoryAtSummaryTransformer {
         old_status: true,
         new_status: true,
         created_at: true,
-        task: { select: { id: true } },
+        task: true,
         member: HrmPlatformMemberAtSummaryTransformer.select(),
       },
     } satisfies Prisma.hrm_platform_task_historiesFindManyArgs;
@@ -29,12 +31,12 @@ export namespace HrmPlatformTaskHistoryAtSummaryTransformer {
   ): Promise<IHrmPlatformTaskHistory.ISummary> {
     return {
       id: input.id,
-      old_status: input.old_status,
-      new_status: input.new_status,
-      created_at: input.created_at.toISOString(),
-      actor: await HrmPlatformMemberAtSummaryTransformer.transform(
+      oldStatus: input.old_status,
+      newStatus: input.new_status,
+      createdAt: input.created_at.toISOString(),
+      member: await HrmPlatformMemberAtSummaryTransformer.transform(
         input.member,
       ),
-    };
+    } satisfies IHrmPlatformTaskHistory.ISummary;
   }
 }

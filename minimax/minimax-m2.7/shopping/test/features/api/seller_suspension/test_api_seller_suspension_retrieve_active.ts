@@ -17,81 +17,114 @@ import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refr
 import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
-import { generate_random_ecommerce_mall_admin_seller_suspensions_create } from "../../../generate/generate_random_ecommerce_mall_admin_seller_suspensions_create";
+import { generate_random_ecommerce_mall_admin_admin_seller_suspensions_create } from "../../../generate/generate_random_ecommerce_mall_admin_admin_seller_suspensions_create";
 import { prepare_random_ecommerce_mall_seller_suspension } from "../../../prepare/prepare_random_ecommerce_mall_seller_suspension";
 
 export async function test_api_seller_suspension_retrieve_active(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create admin connection for suspending seller and retrieving suspension
+  // 1. Authenticate as admin via login
   const adminConnection: api.IConnection = { host: connection.host };
-  const admin = await authorize_admin_join(adminConnection, {});
-  // 2. Create a seller account to be suspended
+  const adminEmail = typia.random<string & tags.Format<"email">>();
+  const adminPassword = RandomGenerator.alphaNumeric(16);
+  const adminHref = typia.random<string & tags.Format<"uri">>();
+  const adminReferrer = typia.random<string & tags.Format<"uri">>();
+  // First, create admin via join request
+  await authorize_admin_join(adminConnection, {
+    body: {
+      actorType: "seller",
+      requestedGrade: "admin",
+      reason: RandomGenerator.paragraph({ sentences: 3 }),
+      href: adminHref,
+      referrer: adminReferrer,
+    } satisfies IEcommerceMallAdmin.IJoin,
+  });
+  // Then login as admin
+  await authorize_admin_login(adminConnection, {
+    body: {
+      email: adminEmail,
+      password: adminPassword,
+      href: adminHref,
+      referrer: adminReferrer,
+    } satisfies IEcommerceMallAdmin.ILogin,
+  });
+  // 2. Register a seller account to be suspended
   const sellerConnection: api.IConnection = { host: connection.host };
-  const seller = await authorize_seller_join(sellerConnection, {});
-  // 3. Create a seller suspension record
+  const sellerJoinResult = await authorize_seller_join(sellerConnection, {
+    body: {
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
+      href: typia.random<string & tags.Format<"uri">>(),
+      referrer: typia.random<string & tags.Format<"uri">>(),
+    },
+  });
+  // 3. Create a seller suspension with a reason
+  const suspensionReason = RandomGenerator.paragraph({ sentences: 2 });
   const suspension =
-    await generate_random_ecommerce_mall_admin_seller_suspensions_create(
+    await generate_random_ecommerce_mall_admin_admin_seller_suspensions_create(
       adminConnection,
       {
         body: {
-          seller_id: seller.id,
-          reason: "Policy violation - selling prohibited items",
+          sellerId: sellerJoinResult.id,
+          reason: suspensionReason satisfies string &
+            tags.MinLength<1> &
+            tags.MaxLength<1000>,
         },
       },
     );
   typia.assert(suspension);
-  // 4. Retrieve the suspension details by ID
-  const retrieved =
-    await api.functional.ecommerceMall.admin.seller_suspensions.at(
+  // 4. Retrieve the suspension details by its UUID
+  const retrievedSuspension =
+    await api.functional.ecommerceMall.admin.admin.seller_suspensions.at(
       adminConnection,
       {
         suspensionId: suspension.id,
       },
     );
-  typia.assert(retrieved);
-  // 5. Validate suspension details
-  TestValidator.equals("suspension ID matches", retrieved.id, suspension.id);
+  typia.assert(retrievedSuspension);
+  // 5. Validate response structure for active suspension
+  // Validate suspension id matches
   TestValidator.equals(
-    "reason is present",
-    retrieved.reason,
-    "Policy violation - selling prohibited items",
+    "suspension id matches",
+    retrievedSuspension.id,
+    suspension.id,
   );
+  // Validate reason is present
+  TestValidator.equals(
+    "reason matches",
+    retrievedSuspension.reason,
+    suspensionReason,
+  );
+  // Validate suspendedAt timestamp exists
   TestValidator.predicate(
-    "suspended_at timestamp is present",
-    !!retrieved.suspended_at,
+    "suspendedAt timestamp exists",
+    !!retrievedSuspension.suspendedAt,
   );
+  // Validate restoredAt is null (indicating active suspension)
   TestValidator.equals(
-    "restored_at is null for active suspension",
-    retrieved.restored_at,
+    "restoredAt is null for active suspension",
+    retrievedSuspension.restoredAt,
     null,
   );
-  TestValidator.equals("seller ID matches", retrieved.seller.id, seller.id);
-  TestValidator.predicate("seller email is present", !!retrieved.seller.email);
-  TestValidator.predicate(
-    "seller approval_status is present",
-    !!retrieved.seller.approval_status,
-  );
-  TestValidator.predicate(
-    "suspended_by admin is present",
-    !!retrieved.suspended_by,
+  // Validate nested seller object with email and approval_status
+  TestValidator.equals(
+    "seller email matches",
+    retrievedSuspension.seller.email,
+    sellerJoinResult.email,
   );
   TestValidator.equals(
-    "suspended_by admin ID matches",
-    retrieved.suspended_by.id,
-    admin.id,
+    "seller approval_status exists",
+    typeof retrievedSuspension.seller.approvalStatus,
+    "string",
   );
+  // Validate nested suspendedBy admin object with name and is_super_admin
   TestValidator.equals(
-    "restored_by is null for active suspension",
-    retrieved.restored_by,
-    null,
+    "suspendedBy name exists",
+    typeof retrievedSuspension.suspendedBy.name,
+    "string",
   );
   TestValidator.predicate(
-    "created_at timestamp is present",
-    !!retrieved.created_at,
-  );
-  TestValidator.predicate(
-    "updated_at timestamp is present",
-    !!retrieved.updated_at,
+    "is_super_admin is boolean",
+    typeof retrievedSuspension.suspendedBy.is_super_admin === "boolean",
   );
 }

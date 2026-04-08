@@ -17,10 +17,26 @@ import typia, { tags } from "typia";
 
 import { prepare_random_hrm_platform_timelog } from "../prepare/prepare_random_hrm_platform_timelog";
 
+/**
+ * Generate a random HRM platform timelog via the API for E2E testing.
+ *
+ * Prepares random timelog data using the prepare function, then calls the creation endpoint
+ * to create an actual timelog record in the system. The timelog represents a discrete period
+ * of work performed by an employee on a specific project, with optional task reference and
+ * description. Billable defaults to true per backend specification.
+ *
+ * The generated timelog is created without timesheet assignment and will be automatically
+ * included when the employee creates a draft timesheet for the corresponding week period.
+ *
+ * @param connection - API connection information for the test server
+ * @param props - Optional props for customizing the timelog data
+ * @param props.body - Optional partial timelog creation data for test-time customization
+ * @returns The created IHrmPlatformTimelog entity with all fields populated
+ */
 export async function generate_random_hrm_platform_member_timelogs_create(
   connection: api.IConnection,
   props: {
-    body?: DeepPartial<IHrmPlatformTimelog.ICreate> | undefined;
+    body?: DeepPartial<IHrmPlatformTimelog.ICreate>;
   },
 ): Promise<IHrmPlatformTimelog> {
   const prepared: IHrmPlatformTimelog.ICreate =

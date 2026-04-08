@@ -1,157 +1,125 @@
-/// Main report entity tracking reported content, reporter, community scope,
-/// and moderation status.
+/// Tracks reports submitted by users against posts or comments with status
+/// lifecycle and moderator review tracking.
 ///
-/// This table stores content reports submitted by users for moderation
-/// review. Each report can be on a post or a comment (polymorphic
-/// relationship), belongs to a specific community, and has a moderation
-/// status workflow (pending → approved/dismissed).
+/// ### Core Purpose
+/// This table records instances where community members report content
+/// (posts or comments) that violates community guidelines. Reports form the
+/// foundation of the moderation system, enabling users to flag inappropriate
+/// content for review by community moderators.
 ///
-/// Reports are community-scoped, meaning only moderators of the associated
-/// community can view and act on them. When a report is approved, moderators
-/// delete the reported content; when dismissed, the content remains.
+/// ### Report Lifecycle
+/// Reports begin in `pending` status when first submitted, then transition
+/// to either `approved` (content removed, violator warned/banned) or
+/// `dismissed` (report deemed unfounded) after moderator review. Each report
+/// maintains a complete audit trail including who submitted it, when it was
+/// created, and if/when it was reviewed.
 ///
-/// The report_actions child table (reddit_community_report_actions) tracks
-/// the audit trail of moderator actions on reports.
+/// ### Polymorphic Target Reference
+/// Reports use a polymorphic reference pattern to target either posts or
+/// comments via the `target_type` enum field combined with `target_id`. This
+/// design eliminates the need for duplicate reporting tables while
+/// maintaining clear semantic meaning through the type discriminator.
 ///
-/// {@link reddit_community_members} - reports are submitted by members
-/// {@link reddit_community_communities} - reports belong to a specific
-/// community
-/// {@link reddit_community_post_texts} - reported posts (via
-/// target_type="post")
-/// {@link reddit_community_comments} - reported comments (via
-/// target_type="comment")
-/// {@link reddit_community_report_actions} - audit trail of moderator actions
-///
-/// @namespace Reports
+/// @namespace reports
 /// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_community_reports {
+model reddit_platform_reports {
   //----
   // COLUMNS
   //----
   /// Primary Key.
   id String @id
   
-  /// Member who submitted the report. {@link reddit_community_members.id}
-  reporter_id String
+  /// User who submitted the report, referencing their authenticated session.
+  ///
+  /// This FK enables the system to attribute reports to specific member
+  /// accounts and enforce business rules around user reporting history.
+  reported_by String
   
-  /// Community where the reported content belongs. {@link
-  /// reddit_community_communities.id}
+  /// Community context for the reported content.
+  ///
+  /// Reports are scoped to a specific community because moderation policies
+  /// and review workflows are community-specific. This field enables filtering
+  /// reports by community and linking them to the appropriate moderation
+  /// queue.
   community_id String
   
-  /// Type of reported content: 'post' or 'comment'. Determines which target
-  /// table the target_id references.
-  target_type String
-  
-  /// ID of the reported post or comment (depends on target_type). When
-  /// target_type='post', references a post; when target_type='comment',
-  /// references a comment.
-  target_id String
-  
-  /// Reason for the report provided by the reporter. Required when submitting
-  /// a report.
-  reason String
-  
-  /// Current status of the report: 'pending' (awaiting review), 'approved'
-  /// (content deleted by moderator), or 'dismissed' (content kept by
-  /// moderator).
-  status String
+  /// Moderator who reviewed and resolved the report (if reviewed).
+  ///
+  /// This FK references the reviewing moderator's session and is nullable for
+  /// pending reports. It provides audit trail accountability for moderation
+  /// decisions.
+  reviewed_by String?
   
   /// Timestamp when the report was created.
+  ///
+  /// Created automatically on insert. Used for sorting reports by age and
+  /// tracking response times.
   created_at DateTime
   
-  /// Timestamp when the report was last updated.
+  /// Text description of why the content is being reported.
+  ///
+  /// Users provide a reason explaining the violation (e.g., harassment, spam,
+  /// irrelevant content). This field is required and should be validated for
+  /// length and prohibited content.
+  reason String
+  
+  /// Timestamp of the last update to the report record.
+  ///
+  /// Maintained for audit purposes and to track when report metadata changes
+  /// (e.g., status transitions).
   updated_at DateTime
   
-  /// Soft delete timestamp for report archival. Null means report is active.
+  /// Timestamp of soft deletion if the report was deleted.
+  ///
+  /// Nullable - reports are soft-deleted rather than hard-deleted to preserve
+  /// audit trail. Used for data retention and recovery workflows.
   deleted_at DateTime?
+  
+  /// Type of content being reported: 'post' or 'comment'.
+  ///
+  /// This enum field determines which target table the `target_id` references.
+  /// It is a critical discriminator for the polymorphic reference pattern.
+  target_type String
+  
+  /// ID of the post or comment being reported.
+  ///
+  /// This integer field references either `reddit_platform_posts.id` or
+  /// `reddit_platform_comments.id` depending on the `target_type` value. It
+  /// enables direct lookup of reported content for moderator review.
+  target_id Int
+  
+  /// Timestamp when the report was reviewed and resolved by a moderator.
+  ///
+  /// Nullable for pending reports. Populated when status transitions to
+  /// `approved` or `dismissed`. Used to calculate moderation response time
+  /// metrics.
+  reviewed_at DateTime?
+  
+  /// Current status of the report in the moderation workflow.
+  ///
+  /// - `pending`: Report submitted, awaiting moderator review
+  /// - `approved`: Moderator confirmed violation, action taken on reported
+  /// content
+  /// - `dismissed`: Moderator determined report was unfounded
+  ///
+  /// This enum field drives the moderation queue and reporting dashboards.
+  status String
   
   //----
   // BELONGED RELATIONS,
   //   - format: (propertyKey targetModel constraint)
   //----
-  reporter reddit_community_members @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
-  community reddit_community_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
-  
-  //----
-  // HAS RELATIONS
-  //   - format: (propertyKey targetModel)
-  //----
-  actionHistories reddit_community_report_actions[]
-  systemLogs reddit_community_system_logs[]
+  reportedBy reddit_platform_member_sessions @relation("reddit_platform_reports_of_reported_by", fields: [reported_by], references: [id], onDelete: Cascade)
+  community reddit_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  reviewedBy reddit_platform_member_sessions? @relation("reddit_platform_reports_of_reviewed_by", fields: [reviewed_by], references: [id], onDelete: Cascade)
   
   //----
   // INDEXES
   //----
-  @@index([community_id, status])
-  @@index([target_type, target_id])
-  @@index([reporter_id])
-}
-
-/// Audit trail of moderator actions on reports in the community content
-/// moderation workflow.
-///
-/// This table records when moderators approve (delete the reported content)
-/// or dismiss (keep the reported content) each report. It serves as an
-/// immutable audit log of moderation decisions, tracking which moderator
-/// performed each action and when it occurred.
-///
-/// Key relationships:
-/// - {@link reddit_community_reports}: Each action is linked to a specific
-/// report being moderated
-/// - {@link reddit_community_moderators}: Each action is performed by a
-/// moderator with authority over the community
-///
-/// Business context:
-/// - Approve action: Moderator confirms report is valid, resulting in
-/// content deletion
-/// - Dismiss action: Moderator determines report is invalid, content remains
-/// - Only one action per report is typical, but table supports multiple
-/// actions for audit purposes
-/// - Essential for moderation accountability and review
-///
-/// @namespace Reports
-/// @author AutoBE - https://github.com/wrtnlabs/autobe
-model reddit_community_report_actions {
-  //----
-  // COLUMNS
-  //----
-  /// Primary Key.
-  id String @id
-  
-  /// The report being moderated. {@link reddit_community_reports.id}
-  reddit_community_report_id String
-  
-  /// The moderator who performed this action. {@link
-  /// reddit_community_moderators.id}
-  moderator_id String
-  
-  /// Type of moderation action: 'approve' (deletes content) or 'dismiss'
-  /// (keeps content)
-  action_type String
-  
-  /// Optional moderator notes explaining the action taken
-  notes String?
-  
-  /// When this moderation action was performed
-  created_at DateTime
-  
-  /// Last update timestamp for this action record
-  updated_at DateTime
-  
-  /// Soft delete timestamp for audit trail
-  deleted_at DateTime?
-  
-  //----
-  // BELONGED RELATIONS,
-  //   - format: (propertyKey targetModel constraint)
-  //----
-  report reddit_community_reports @relation(fields: [reddit_community_report_id], references: [id], onDelete: Cascade)
-  moderator reddit_community_moderators @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
-  
-  //----
-  // INDEXES
-  //----
-  // spellchecker: ignore-next-line
-  @@index([reddit_community_report_id, created_at], map: "reddit_community_report_actions_reddit_community_repor_7d8272e0")
-  @@index([moderator_id, created_at])
+  @@index([reviewed_by])
+  @@unique([reported_by, target_type, target_id])
+  @@unique([community_id, status, created_at])
+  @@index([status])
+  @@index([community_id])
+  @@index([reported_by, created_at])
 }
