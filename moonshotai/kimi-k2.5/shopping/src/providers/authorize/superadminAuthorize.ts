@@ -23,5 +23,17 @@ export async function superadminAuthorize(request: {
     throw new ForbiddenException("You're not enrolled");
   }
 
+  const session = await MyGlobal.prisma.ecommerce_mall_super_admin_sessions.findFirst({
+    where: {
+      id: payload.session_id,
+      super_admin_id: payload.id,
+      expired_at: { gt: new Date() },
+    },
+  });
+
+  if (session === null) {
+    throw new ForbiddenException("Your session has expired");
+  }
+
   return payload;
 }

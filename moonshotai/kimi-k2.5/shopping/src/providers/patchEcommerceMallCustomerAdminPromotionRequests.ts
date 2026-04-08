@@ -22,88 +22,109 @@ export async function patchEcommerceMallCustomerAdminPromotionRequests(props: {
   customer: CustomerPayload;
   body: IEcommerceMallAdminPromotionRequest.IRequest;
 }): Promise<IPageIEcommerceMallAdminPromotionRequest.ISummary> {
-  // Verify the customer is a super administrator
-  const admin = await MyGlobal.prisma.ecommerce_mall_admins.findFirst({
-    where: {
-      id: props.customer.id,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      grade: true,
-    },
-  });
-  if (admin === null || admin.grade !== "super_admin") {
-    throw new HttpException(
-      "Forbidden: Only super administrators can access this resource",
-      403,
-    );
-  }
-  const body = props.body;
-  const page = body.page ?? 1;
-  const limit = body.limit ?? 20;
-  const skip = (page - 1) * limit;
-  // Build where clause based on filters
-  const whereConditions: Prisma.ecommerce_mall_admin_promotion_requestsWhereInput =
-    {
-      deleted_at: null,
-    };
-  if (body.status !== null && body.status !== undefined) {
-    whereConditions.status = body.status;
-  }
-  if (body.reviewed === true) {
-    whereConditions.reviewer_id = { not: null };
-  } else if (body.reviewed === false) {
-    whereConditions.reviewer_id = null;
-  }
-  // Handle requester type filtering through polymorphic relations
-  if (body.requesterType === "customer") {
-    whereConditions.customerSubtype = {
-      isNot: null,
-    };
-  } else if (body.requesterType === "seller") {
-    whereConditions.sellerRequest = {
-      isNot: null,
-    };
-  }
-  // Build orderBy clause
+  const limit = Math.min(props.body.limit ?? 20, 100);
+  const where: Prisma.ecommerce_mall_admin_promotion_requestsWhereInput = {
+    deleted_at: null,
+    ...(props.body.status !== null && { status: props.body.status }),
+    ...(props.body.reviewed !== null && {
+      reviewer_id: props.body.reviewed ? { not: null } : null,
+    }),
+    ...(props.body.requesterType === "seller" && {
+      sellerRequest: { isNot: null },
+    }),
+    ...(props.body.requesterType === "customer" && {
+      customerSubtype: { isNot: null },
+    }),
+  };
   let orderBy: Prisma.ecommerce_mall_admin_promotion_requestsOrderByWithRelationInput;
-  const sortOrder = body.sortOrder === "asc" ? "asc" : "desc";
-  if (body.sortBy === "createdAt") {
-    orderBy = { created_at: sortOrder };
-  } else if (body.sortBy === "reviewedAt") {
-    orderBy = { updated_at: sortOrder };
-  } else if (body.sortBy === "status") {
-    orderBy = { status: sortOrder };
+  if (props.body.sortBy === "reviewedAt") {
+    orderBy = { updated_at: props.body.sortOrder ?? "desc" };
+  } else if (props.body.sortBy === "status") {
+    orderBy = { status: props.body.sortOrder ?? "asc" };
   } else {
-    // Default sort by created_at desc
-    orderBy = { created_at: "desc" };
+    orderBy = { created_at: props.body.sortOrder ?? "desc" };
   }
-  // Execute queries
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.ecommerce_mall_admin_promotion_requests.findMany({
-      where: whereConditions,
-      skip,
+  const findManyArgs: Prisma.ecommerce_mall_admin_promotion_requestsFindManyArgs =
+    {
+      where,
       take: limit,
       orderBy,
       ...EcommerceMallAdminPromotionRequestAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.ecommerce_mall_admin_promotion_requests.count({
-      where: whereConditions,
-    }),
-  ]);
-  // Transform results
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    EcommerceMallAdminPromotionRequestAtSummaryTransformer.transform,
-  );
+    };
+  if (props.body.cursor !== null) {
+    findManyArgs.skip = 1;
+    findManyArgs.cursor = { id: props.body.cursor };
+  } else {
+    const page = props.body.page ?? 1;
+    findManyArgs.skip = (page - 1) * limit;
+  }
+  const records =
+    await MyGlobal.prisma.ecommerce_mall_admin_promotion_requests.findMany(
+      findManyArgs,
+    );
+  const total =
+    await MyGlobal.prisma.ecommerce_mall_admin_promotion_requests.count({
+      where,
+    });
+  const currentPage = props.body.cursor !== null ? 1 : (props.body.page ?? 1);
   return {
-    data: transformedData,
     pagination: {
-      current: page,
+      current: currentPage,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      records,
+      EcommerceMallAdminPromotionRequestAtSummaryTransformer.transform,
+    ),
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallAdminPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminPromotionRequest";
+// import { IPageIEcommerceMallAdminPromotionRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallAdminPromotionRequest";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallCustomerAdminPromotionRequests(props: {
+//   customer: CustomerPayload;
+//   body: IEcommerceMallAdminPromotionRequest.IRequest;
+// }): Promise<IPageIEcommerceMallAdminPromotionRequest.ISummary> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_admin_promotion_requests.findMany({
+//     ...EcommerceMallAdminPromotionRequestAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallAdminPromotionRequestAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

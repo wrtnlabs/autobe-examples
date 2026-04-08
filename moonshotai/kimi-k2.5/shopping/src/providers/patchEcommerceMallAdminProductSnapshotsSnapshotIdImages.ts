@@ -17,18 +17,18 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchEcommerceMallAdminProductSnapshotsSnapshotIdImages(props: {
   admin: AdminPayload;
-  snapshotId: string & tags.Format<"uuid">;
+  snapshotId: string;
   body: IEcommerceMallProductSnapshotImage.IRequest;
 }): Promise<IPageIEcommerceMallProductSnapshotImage.ISummary> {
-  // Verify snapshot exists - admins have oversight over all products (section 30)
-  await MyGlobal.prisma.ecommerce_mall_product_snapshots.findUniqueOrThrow({
-    where: { id: props.snapshotId },
-  });
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build display_order filter
-  const displayOrderFilter: Prisma.IntFilter | undefined =
+  const displayOrderFilter:
+    | {
+        gte?: number;
+        lte?: number;
+      }
+    | undefined =
     props.body.displayOrderMin !== undefined ||
     props.body.displayOrderMax !== undefined
       ? {
@@ -40,15 +40,13 @@ export async function patchEcommerceMallAdminProductSnapshotsSnapshotIdImages(pr
           }),
         }
       : undefined;
-  // Build where clause with optional filters
-  const whereInput = {
+  const whereInput: Prisma.ecommerce_mall_product_snapshot_imagesWhereInput = {
     ecommerce_mall_product_snapshot_id: props.snapshotId,
     ...(displayOrderFilter !== undefined && {
       display_order: displayOrderFilter,
     }),
-  } satisfies Prisma.ecommerce_mall_product_snapshot_imagesWhereInput;
-  // Query images with pagination and sorting
-  const images =
+  };
+  const data =
     await MyGlobal.prisma.ecommerce_mall_product_snapshot_images.findMany({
       where: whereInput,
       skip,
@@ -56,15 +54,13 @@ export async function patchEcommerceMallAdminProductSnapshotsSnapshotIdImages(pr
       orderBy: { display_order: "asc" },
       ...EcommerceMallProductSnapshotImageAtSummaryTransformer.select(),
     });
-  // Count total records for pagination
   const total =
     await MyGlobal.prisma.ecommerce_mall_product_snapshot_images.count({
       where: whereInput,
     });
-  // Transform and return paginated result
   return {
     data: await ArrayUtil.asyncMap(
-      images,
+      data,
       EcommerceMallProductSnapshotImageAtSummaryTransformer.transform,
     ),
     pagination: {
@@ -75,3 +71,49 @@ export async function patchEcommerceMallAdminProductSnapshotsSnapshotIdImages(pr
     } satisfies IPage.IPagination,
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallProductSnapshotImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshotImage";
+// import { IPageIEcommerceMallProductSnapshotImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallProductSnapshotImage";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallAdminProductSnapshotsSnapshotIdImages(props: {
+//   admin: AdminPayload;
+//   snapshotId: string;
+//   body: IEcommerceMallProductSnapshotImage.IRequest;
+// }): Promise<IPageIEcommerceMallProductSnapshotImage.ISummary> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_product_snapshot_images.findMany({
+//     ...EcommerceMallProductSnapshotImageAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallProductSnapshotImageAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

@@ -15,71 +15,108 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function patchEcommerceMallProductsProductIdImages(props: {
   productId: string;
   body: IEcommerceMallProductImage.IUpdateOrder;
-}): Promise<IEcommerceMallProductImage.ISummary[]> {
-  const { productId, body } = props;
-  const { imageIds } = body;
+}): Promise<IEcommerceMallProductImage.ISummary> {
+  // Verify product exists
+  await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
+    where: { id: props.productId },
+  });
+  // Fetch all non-deleted images for the product
   const existingImages =
     await MyGlobal.prisma.ecommerce_mall_product_images.findMany({
       where: {
-        product_id: productId,
+        product_id: props.productId,
         deleted_at: null,
       },
       select: {
         id: true,
       },
-      orderBy: {
-        display_order: "asc",
-      },
     });
-  const existingIds = existingImages.map((img) => img.id);
-  const requestIds = imageIds;
-  if (existingIds.length !== requestIds.length) {
-    throw new HttpException(
-      "Invalid reorder request: number of images does not match",
-      400,
-    );
+  if (existingImages.length === 0) {
+    throw new HttpException("No images found for this product", 404);
   }
-  const existingSet = new Set(existingIds);
-  for (const id of requestIds) {
-    if (!existingSet.has(id)) {
+  const existingIds = new Set(existingImages.map((img) => img.id));
+  const requestedIds = props.body.imageIds;
+  // Validate all requested IDs belong to this product
+  for (const id of requestedIds) {
+    if (!existingIds.has(id)) {
       throw new HttpException(
-        `Invalid reorder request: image ${id} does not belong to this product`,
+        "Invalid image ID: not found for this product",
         400,
       );
     }
   }
-  if (new Set(requestIds).size !== requestIds.length) {
+  // Check for duplicates
+  if (new Set(requestedIds).size !== requestedIds.length) {
+    throw new HttpException("Duplicate image IDs in request", 400);
+  }
+  // Validate all images are included in the reorder request
+  if (requestedIds.length !== existingImages.length) {
     throw new HttpException(
-      "Invalid reorder request: duplicate image IDs found",
+      "Reorder request must include all product images",
       400,
     );
   }
+  // Update display_order for each image in transaction
+  const now = typia.assert<string & tags.Format<"date-time">>(
+    new Date().toISOString(),
+  );
   await MyGlobal.prisma.$transaction(
-    requestIds.map((id, index) =>
+    requestedIds.map((id, index) =>
       MyGlobal.prisma.ecommerce_mall_product_images.update({
-        where: {
-          id,
-        },
+        where: { id },
         data: {
           display_order: index,
-          updated_at: new Date(),
+          updated_at: now,
         },
       }),
     ),
   );
-  const updatedImages =
-    await MyGlobal.prisma.ecommerce_mall_product_images.findMany({
+  // Return the new main thumbnail (display_order 0)
+  const firstImage =
+    await MyGlobal.prisma.ecommerce_mall_product_images.findFirstOrThrow({
       where: {
-        product_id: productId,
+        product_id: props.productId,
+        display_order: 0,
         deleted_at: null,
-      },
-      orderBy: {
-        display_order: "asc",
       },
       ...EcommerceMallProductImageAtSummaryTransformer.select(),
     });
-  return await ArrayUtil.asyncMap(
-    updatedImages,
-    EcommerceMallProductImageAtSummaryTransformer.transform,
+  return await EcommerceMallProductImageAtSummaryTransformer.transform(
+    firstImage,
   );
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallProductsProductIdImages(props: {
+//   productId: string;
+//   body: IEcommerceMallProductImage.IUpdateOrder;
+// }): Promise<IEcommerceMallProductImage.ISummary> {
+//   const record = await MyGlobal.prisma.ecommerce_mall_product_images.findFirstOrThrow({
+//     ...EcommerceMallProductImageAtSummaryTransformer.select(),
+//     where: { ... },
+//   });
+//   return await EcommerceMallProductImageAtSummaryTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

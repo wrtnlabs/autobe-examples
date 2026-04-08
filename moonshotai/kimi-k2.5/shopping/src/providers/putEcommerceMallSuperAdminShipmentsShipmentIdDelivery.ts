@@ -19,7 +19,7 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putEcommerceMallSuperAdminShipmentsShipmentIdDelivery(props: {
   superAdmin: SuperadminPayload;
-  shipmentId: string & tags.Format<"uuid">;
+  shipmentId: string;
 }): Promise<IEcommerceMallShipmentDelivery> {
   // Verify shipment exists
   const shipment =
@@ -27,7 +27,7 @@ export async function putEcommerceMallSuperAdminShipmentsShipmentIdDelivery(prop
       where: { id: props.shipmentId },
       select: { id: true },
     });
-  // Check if already delivered
+  // Check if delivery already exists
   const existingDelivery =
     await MyGlobal.prisma.ecommerce_mall_shipment_deliveries.findUnique({
       where: { shipment_id: props.shipmentId },
@@ -36,14 +36,20 @@ export async function putEcommerceMallSuperAdminShipmentsShipmentIdDelivery(prop
   if (existingDelivery !== null) {
     throw new HttpException("Shipment already delivered", 409);
   }
-  // Create delivery record and update order items in transaction
-  const now = new Date();
-  const deliveryId = v4();
-  const createdDelivery = await MyGlobal.prisma.$transaction(async (tx) => {
-    // Create delivery record (admin action, so customer_id is null)
-    const delivery = await tx.ecommerce_mall_shipment_deliveries.create({
+  // Get order items in this shipment
+  const shipmentItems =
+    await MyGlobal.prisma.ecommerce_mall_shipment_items.findMany({
+      where: { shipment_id: props.shipmentId },
+      select: { order_item_id: true },
+    });
+  const orderItemIds = shipmentItems.map((item) => item.order_item_id);
+  // Execute transaction: create delivery record and update order items
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    const now = new Date().toISOString();
+    // Create delivery record
+    await tx.ecommerce_mall_shipment_deliveries.create({
       data: {
-        id: deliveryId,
+        id: v4(),
         shipment_id: props.shipmentId,
         customer_id: null,
         delivered_at: now,
@@ -52,15 +58,8 @@ export async function putEcommerceMallSuperAdminShipmentsShipmentIdDelivery(prop
         updated_at: now,
         deleted_at: null,
       },
-      ...EcommerceMallShipmentDeliveryTransformer.select(),
     });
-    // Get all order items in this shipment
-    const shipmentItems = await tx.ecommerce_mall_shipment_items.findMany({
-      where: { shipment_id: props.shipmentId },
-      select: { order_item_id: true },
-    });
-    const orderItemIds = shipmentItems.map((item) => item.order_item_id);
-    // Update all order items to 'delivered' status
+    // Update all order items to delivered status
     if (orderItemIds.length > 0) {
       await tx.ecommerce_mall_order_items.updateMany({
         where: { id: { in: orderItemIds } },
@@ -70,9 +69,55 @@ export async function putEcommerceMallSuperAdminShipmentsShipmentIdDelivery(prop
         },
       });
     }
-    return delivery;
   });
-  return await EcommerceMallShipmentDeliveryTransformer.transform(
-    createdDelivery,
-  );
+  // Return created delivery record
+  const delivery =
+    await MyGlobal.prisma.ecommerce_mall_shipment_deliveries.findUniqueOrThrow({
+      where: { shipment_id: props.shipmentId },
+      ...EcommerceMallShipmentDeliveryTransformer.select(),
+    });
+  return await EcommerceMallShipmentDeliveryTransformer.transform(delivery);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallShipmentDelivery } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentDelivery";
+// import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
+// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function putEcommerceMallSuperAdminShipmentsShipmentIdDelivery(props: {
+//   superAdmin: SuperadminPayload;
+//   shipmentId: string;
+// }): Promise<IEcommerceMallShipmentDelivery> {
+//   await MyGlobal.prisma.ecommerce_mall_shipment_deliveries.update({
+//     where: { ... },
+//     data: { ... },
+//   });
+//   const updated = await MyGlobal.prisma.ecommerce_mall_shipment_deliveries.findUniqueOrThrow({
+//     where: { ... },
+//     ...EcommerceMallShipmentDeliveryTransformer.select(),
+//   });
+//   return await EcommerceMallShipmentDeliveryTransformer.transform(updated);
+// }
+// ```
+//--------------------------------------------------------------

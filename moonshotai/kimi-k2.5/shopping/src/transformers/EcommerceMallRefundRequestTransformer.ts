@@ -10,6 +10,7 @@ import { IEcommerceMallRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/l
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -36,7 +37,13 @@ export namespace EcommerceMallRefundRequestTransformer {
         updated_at: true,
         deleted_at: true,
         orderItem: EcommerceMallOrderItemTransformer.select(),
-        customer: EcommerceMallSellerAtSummaryTransformer.select(),
+        customer: {
+          select: {
+            id: true,
+            email: true,
+            created_at: true,
+          },
+        } satisfies Prisma.ecommerce_mall_customersFindManyArgs,
         seller: EcommerceMallSellerAtSummaryTransformer.select(),
         snapshots: EcommerceMallRefundRequestSnapshotTransformer.select(),
       },
@@ -49,17 +56,21 @@ export namespace EcommerceMallRefundRequestTransformer {
       id: input.id,
       reason: input.reason,
       status: input.status as "pending" | "approved" | "rejected",
-      requestedAt: input.requested_at.toISOString(),
-      respondedAt: input.responded_at?.toISOString() ?? null,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      requestedAt: toISOStringSafe(input.requested_at),
+      respondedAt: input.responded_at
+        ? toISOStringSafe(input.responded_at)
+        : null,
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
+      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
       orderItem: await EcommerceMallOrderItemTransformer.transform(
         input.orderItem,
       ),
-      customer: await EcommerceMallSellerAtSummaryTransformer.transform(
-        input.customer,
-      ),
+      customer: {
+        id: input.customer.id,
+        email: input.customer.email,
+        createdAt: toISOStringSafe(input.customer.created_at),
+      } satisfies IEcommerceMallCustomer.ISummary,
       seller: await EcommerceMallSellerAtSummaryTransformer.transform(
         input.seller,
       ),
@@ -67,6 +78,49 @@ export namespace EcommerceMallRefundRequestTransformer {
         input.snapshots,
         EcommerceMallRefundRequestSnapshotTransformer.transform,
       ),
-    };
+    } satisfies IEcommerceMallRefundRequest;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallRefundRequestTransformer {
+//       export type Payload = Prisma.ecommerce_mall_refund_requestsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             reason: true,
+//             status: true,
+//             requestedAt: true,
+//             respondedAt: true,
+//             createdAt: true,
+//             updatedAt: true,
+//             deletedAt: true,
+//             ...
+//           },
+//         } satisfies Prisma.ecommerce_mall_refund_requestsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallRefundRequest> {
+//         return {
+//   id: {string},
+//   reason: {string},
+//   status: {"pending" | "approved" | "rejected"},
+//   requestedAt: {string},
+//   respondedAt: {string | null},
+//   createdAt: {string},
+//   updatedAt: {string},
+//   deletedAt: {string | null},
+//   orderItem: {IEcommerceMallOrderItem},
+//   customer: {IEcommerceMallCustomer.ISummary},
+//   seller: {IEcommerceMallSeller.ISummary},
+//   snapshots: {Array<IEcommerceMallRefundRequestSnapshot>},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

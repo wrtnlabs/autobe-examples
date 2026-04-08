@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
+import { EcommerceMallCancellationRequestSnapshotTransformer } from "../transformers/EcommerceMallCancellationRequestSnapshotTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,47 +18,53 @@ export async function getEcommerceMallSellerCancellationRequestsCancellationRequ
   cancellationRequestId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallCancellationRequestSnapshot> {
-  const snapshot =
-    await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.findUnique(
+  const record =
+    await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.findFirstOrThrow(
       {
-        where: { id: props.snapshotId },
-        select: {
-          id: true,
-          cancellation_request_id: true,
-          status_before: true,
-          status_after: true,
-          reason_before: true,
-          reason_after: true,
-          reviewer_note: true,
-          created_at: true,
-          cancellationRequest: {
-            select: {
-              seller_id: true,
-            },
-          },
+        ...EcommerceMallCancellationRequestSnapshotTransformer.select(),
+        where: {
+          id: props.snapshotId,
+          cancellation_request_id: props.cancellationRequestId,
         },
       },
     );
-  if (snapshot === null) {
-    throw new HttpException("Snapshot not found", 404);
-  }
-  if (snapshot.cancellation_request_id !== props.cancellationRequestId) {
-    throw new HttpException(
-      "Snapshot does not belong to this cancellation request",
-      404,
-    );
-  }
-  if (snapshot.cancellationRequest.seller_id !== props.seller.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  return {
-    id: snapshot.id,
-    cancellationRequestId: snapshot.cancellation_request_id,
-    statusBefore: snapshot.status_before,
-    statusAfter: snapshot.status_after,
-    reasonBefore: snapshot.reason_before,
-    reasonAfter: snapshot.reason_after,
-    reviewerNote: snapshot.reviewer_note,
-    createdAt: snapshot.created_at.toISOString(),
-  };
+  return await EcommerceMallCancellationRequestSnapshotTransformer.transform(
+    record,
+  );
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallCancellationRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCancellationRequestSnapshot";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function getEcommerceMallSellerCancellationRequestsCancellationRequestIdSnapshotsSnapshotId(props: {
+//   seller: SellerPayload;
+//   cancellationRequestId: string;
+//   snapshotId: string;
+// }): Promise<IEcommerceMallCancellationRequestSnapshot> {
+//   const record = await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.findFirstOrThrow({
+//     ...EcommerceMallCancellationRequestSnapshotTransformer.select(),
+//     where: { ... },
+//   });
+//   return await EcommerceMallCancellationRequestSnapshotTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

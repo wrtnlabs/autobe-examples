@@ -3,6 +3,7 @@ import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/stru
 import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -21,6 +22,9 @@ export namespace EcommerceMallCartItemAtSummaryTransformer {
         id: true,
         quantity: true,
         created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        customer_id: true,
         productVariant:
           EcommerceMallProductVariantAtSummaryTransformer.select(),
       },
@@ -32,11 +36,44 @@ export namespace EcommerceMallCartItemAtSummaryTransformer {
     return {
       id: input.id,
       quantity: input.quantity,
-      createdAt: input.created_at.toISOString(),
       productVariant:
         await EcommerceMallProductVariantAtSummaryTransformer.transform(
           input.productVariant,
         ),
+      createdAt: input.created_at.toISOString(),
     };
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallCartItemAtSummaryTransformer {
+//       export type Payload = Prisma.ecommerce_mall_cart_itemsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             quantity: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//             customer_id: true,
+//             productVariant: EcommerceMallProductVariantAtSummaryTransformer.select(),
+//           },
+//         } satisfies Prisma.ecommerce_mall_cart_itemsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallCartItem.ISummary> {
+//         return {
+//   id: {string},
+//   quantity: {integer},
+//   productVariant: await EcommerceMallProductVariantAtSummaryTransformer.transform(input.productVariant),
+//   createdAt: {string},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

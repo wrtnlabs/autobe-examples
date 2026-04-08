@@ -12,6 +12,7 @@ import { IEcommerceMallProductVariantSnapshotOptionValue } from "@ORGANIZATION/P
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -45,6 +46,10 @@ export namespace EcommerceMallOrderItemSnapshotTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallOrderItemSnapshot> {
+    const orderItem =
+      await EcommerceMallOrderItemAtSummaryTransformer.transform(
+        input.orderItem,
+      );
     return {
       id: input.id,
       orderItemId: input.orderItem.id,
@@ -55,6 +60,7 @@ export namespace EcommerceMallOrderItemSnapshotTransformer {
       variant:
         await EcommerceMallProductVariantSnapshotAtInvertTransformer.transform(
           input.variantSnapshot,
+          orderItem,
         ),
       seller: await EcommerceMallOrderItemSellerSnapshotTransformer.transform(
         input.sellerSnapshot,
@@ -62,3 +68,38 @@ export namespace EcommerceMallOrderItemSnapshotTransformer {
     };
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallOrderItemSnapshotTransformer {
+//       export type Payload = Prisma.ecommerce_mall_order_item_snapshotsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             created_at: true,
+//             order_item_id: true,
+//             productSnapshot: EcommerceMallOrderItemProductSnapshotTransformer.select(),
+//             variant_snapshot_id: true,
+//             sellerSnapshot: EcommerceMallOrderItemSellerSnapshotTransformer.select(),
+//             ...
+//           },
+//         } satisfies Prisma.ecommerce_mall_order_item_snapshotsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallOrderItemSnapshot> {
+//         return {
+//   id: {string},
+//   orderItemId: {string},
+//   createdAt: {string},
+//   product: await EcommerceMallOrderItemProductSnapshotTransformer.transform(input.productSnapshot),
+//   variant: {IEcommerceMallProductVariantSnapshot.IInvert},
+//   seller: await EcommerceMallOrderItemSellerSnapshotTransformer.transform(input.sellerSnapshot),
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

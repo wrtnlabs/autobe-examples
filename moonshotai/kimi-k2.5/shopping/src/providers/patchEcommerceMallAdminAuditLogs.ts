@@ -22,95 +22,138 @@ export async function patchEcommerceMallAdminAuditLogs(props: {
 }): Promise<IPageIEcommerceMallAdminAuditLog.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
-  // Fetch admin grade to determine access level
-  const admin = await MyGlobal.prisma.ecommerce_mall_admins.findUniqueOrThrow({
-    where: { id: props.admin.id },
-    select: { grade: true },
-  });
-  const isSuperAdmin = admin.grade === "super_admin";
-  // Build date range condition
-  const dateRangeCondition: {
-    gte?: Date;
-    lte?: Date;
-  } = {};
-  if (props.body.dateFrom !== null) {
-    dateRangeCondition.gte = new Date(props.body.dateFrom);
+  const filterConditions: Prisma.ecommerce_mall_admin_audit_logsWhereInput[] =
+    [];
+  if (props.body.adminId !== undefined && props.body.adminId !== null) {
+    filterConditions.push({ ecommerce_mall_admin_id: props.body.adminId });
   }
-  if (props.body.dateTo !== null) {
-    dateRangeCondition.lte = new Date(props.body.dateTo);
+  if (
+    props.body.actionTypes !== undefined &&
+    props.body.actionTypes !== null &&
+    props.body.actionTypes.length > 0
+  ) {
+    filterConditions.push({ action: { in: props.body.actionTypes } });
   }
-  // Build where conditions for admin audit logs
-  const adminAuditWhere: Prisma.ecommerce_mall_admin_audit_logsWhereInput = {
-    ...(props.body.adminId !== null && {
-      ecommerce_mall_admin_id: props.body.adminId,
-    }),
-    ...(props.body.actionTypes !== null &&
-      props.body.actionTypes.length > 0 && {
-        action: {
-          in: props.body.actionTypes,
-        },
-      }),
-    ...(props.body.resourceTypes !== null &&
-      props.body.resourceTypes.length > 0 && {
-        resource_type: {
-          in: props.body.resourceTypes,
-        },
-      }),
-    ...(props.body.resourceId !== null && {
-      resource_id: props.body.resourceId,
-    }),
-    ...(props.body.ipAddress !== null && {
-      ip: props.body.ipAddress,
-    }),
-    ...(Object.keys(dateRangeCondition).length > 0 && {
-      created_at: dateRangeCondition,
-    }),
-  };
-  // Build cursor condition for pagination
-  const cursorCondition: Prisma.ecommerce_mall_admin_audit_logsWhereInput =
-    props.body.createdAt !== null && props.body.id !== null
+  if (
+    props.body.resourceTypes !== undefined &&
+    props.body.resourceTypes !== null &&
+    props.body.resourceTypes.length > 0
+  ) {
+    filterConditions.push({ resource_type: { in: props.body.resourceTypes } });
+  }
+  if (props.body.resourceId !== undefined && props.body.resourceId !== null) {
+    filterConditions.push({ resource_id: props.body.resourceId });
+  }
+  if (props.body.ipAddress !== undefined && props.body.ipAddress !== null) {
+    filterConditions.push({ ip: { contains: props.body.ipAddress } });
+  }
+  if (
+    (props.body.dateFrom !== undefined && props.body.dateFrom !== null) ||
+    (props.body.dateTo !== undefined && props.body.dateTo !== null)
+  ) {
+    filterConditions.push({
+      created_at: {
+        ...(props.body.dateFrom !== undefined && props.body.dateFrom !== null
+          ? { gte: props.body.dateFrom }
+          : {}),
+        ...(props.body.dateTo !== undefined && props.body.dateTo !== null
+          ? { lte: props.body.dateTo }
+          : {}),
+      },
+    });
+  }
+  const hasCursor =
+    props.body.createdAt !== undefined &&
+    props.body.createdAt !== null &&
+    props.body.id !== undefined &&
+    props.body.id !== null;
+  const cursorCondition: Prisma.ecommerce_mall_admin_audit_logsWhereInput | null =
+    hasCursor
       ? {
           OR: [
+            { created_at: { lt: props.body.createdAt } },
             {
-              created_at: {
-                lt: new Date(props.body.createdAt),
-              },
-            },
-            {
-              created_at: new Date(props.body.createdAt),
-              id: {
-                lt: props.body.id,
-              },
+              created_at: props.body.createdAt,
+              id: { lt: props.body.id },
             },
           ],
         }
-      : {};
-  // Query admin audit logs
-  const adminLogs =
+      : null;
+  const whereInput: Prisma.ecommerce_mall_admin_audit_logsWhereInput = {
+    AND: [
+      ...(filterConditions.length > 0 ? filterConditions : []),
+      ...(cursorCondition !== null ? [cursorCondition] : []),
+    ],
+  };
+  const records =
     await MyGlobal.prisma.ecommerce_mall_admin_audit_logs.findMany({
-      where: {
-        ...adminAuditWhere,
-        ...cursorCondition,
-      },
-      orderBy: [{ created_at: "desc" }, { id: "desc" }],
+      where: whereInput,
+      ...(hasCursor ? {} : { skip: (page - 1) * limit }),
       take: limit,
+      orderBy: [{ created_at: "desc" }, { id: "desc" }],
       ...EcommerceMallAdminAuditLogAtSummaryTransformer.select(),
     });
-  const totalCount =
-    await MyGlobal.prisma.ecommerce_mall_admin_audit_logs.count({
-      where: adminAuditWhere,
-    });
-  const transformedData = await ArrayUtil.asyncMap(
-    adminLogs,
-    EcommerceMallAdminAuditLogAtSummaryTransformer.transform,
-  );
+  const filterWhereInput: Prisma.ecommerce_mall_admin_audit_logsWhereInput =
+    filterConditions.length > 0 ? { AND: filterConditions } : {};
+  const total = await MyGlobal.prisma.ecommerce_mall_admin_audit_logs.count({
+    where: filterWhereInput,
+  });
   return {
-    data: transformedData,
+    data: await ArrayUtil.asyncMap(
+      records,
+      EcommerceMallAdminAuditLogAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,
-      records: totalCount,
-      pages: Math.ceil(totalCount / limit),
-    } satisfies IPage.IPagination,
+      records: total,
+      pages: Math.ceil(total / limit),
+    },
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallAdminAuditLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminAuditLog";
+// import { IPageIEcommerceMallAdminAuditLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallAdminAuditLog";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallAdminAuditLogs(props: {
+//   admin: AdminPayload;
+//   body: IEcommerceMallAdminAuditLog.IRequest;
+// }): Promise<IPageIEcommerceMallAdminAuditLog.ISummary> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_admin_audit_logs.findMany({
+//     ...EcommerceMallAdminAuditLogAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallAdminAuditLogAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

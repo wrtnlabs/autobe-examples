@@ -18,20 +18,53 @@ export async function getEcommerceMallAdminCancellationRequestsCancellationReque
   cancellationRequestId: string;
   snapshotId: string;
 }): Promise<IEcommerceMallCancellationRequestSnapshot> {
-  const snapshot =
-    await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.findUniqueOrThrow(
+  const record =
+    await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.findFirstOrThrow(
       {
-        where: { id: props.snapshotId },
         ...EcommerceMallCancellationRequestSnapshotTransformer.select(),
+        where: {
+          id: props.snapshotId,
+          cancellation_request_id: props.cancellationRequestId,
+        },
       },
     );
-  if (snapshot.cancellation_request_id !== props.cancellationRequestId) {
-    throw new HttpException(
-      "Snapshot does not belong to the specified cancellation request",
-      404,
-    );
-  }
   return await EcommerceMallCancellationRequestSnapshotTransformer.transform(
-    snapshot,
+    record,
   );
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallCancellationRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCancellationRequestSnapshot";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function getEcommerceMallAdminCancellationRequestsCancellationRequestIdSnapshotsSnapshotId(props: {
+//   admin: AdminPayload;
+//   cancellationRequestId: string;
+//   snapshotId: string;
+// }): Promise<IEcommerceMallCancellationRequestSnapshot> {
+//   const record = await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.findFirstOrThrow({
+//     ...EcommerceMallCancellationRequestSnapshotTransformer.select(),
+//     where: { ... },
+//   });
+//   return await EcommerceMallCancellationRequestSnapshotTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

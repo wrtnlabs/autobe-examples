@@ -18,28 +18,32 @@ export async function getEcommerceMallCustomerOrderItemsOrderItemIdVariantSnapsh
   customer: CustomerPayload;
   orderItemId: string;
 }): Promise<IEcommerceMallProductVariantSnapshot> {
-  // Query order item with ownership verification
-  const orderItem = await MyGlobal.prisma.ecommerce_mall_order_items.findFirst({
-    where: {
-      id: props.orderItemId,
-      order: {
-        customer_id: props.customer.id,
+  // Verify order item exists and belongs to customer's order
+  const orderItem =
+    await MyGlobal.prisma.ecommerce_mall_order_items.findFirstOrThrow({
+      where: {
+        id: props.orderItemId,
       },
-    },
-    select: {
-      id: true,
-      variant_id: true,
-    },
-  });
-  if (orderItem === null) {
-    throw new HttpException("Order item not found or access denied", 404);
+      select: {
+        id: true,
+        order: {
+          select: {
+            ecommerce_mall_customer_id: true,
+          },
+        },
+        ecommerce_mall_product_variant_snapshot_id: true,
+      },
+    });
+  // Authorization check: customer must own this order
+  if (orderItem.order.ecommerce_mall_customer_id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Retrieve the variant snapshot with option values
+  // Fetch the variant snapshot
   const snapshot =
     await MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.findUniqueOrThrow(
       {
         where: {
-          id: orderItem.variant_id,
+          id: orderItem.ecommerce_mall_product_variant_snapshot_id,
         },
         ...EcommerceMallProductVariantSnapshotTransformer.select(),
       },
@@ -48,3 +52,39 @@ export async function getEcommerceMallCustomerOrderItemsOrderItemIdVariantSnapsh
     snapshot,
   );
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantSnapshot";
+// import { IEcommerceMallProductVariantSnapshotOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantSnapshotOptionValue";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function getEcommerceMallCustomerOrderItemsOrderItemIdVariantSnapshot(props: {
+//   customer: CustomerPayload;
+//   orderItemId: string;
+// }): Promise<IEcommerceMallProductVariantSnapshot> {
+//   const record = await MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.findFirstOrThrow({
+//     ...EcommerceMallProductVariantSnapshotTransformer.select(),
+//     where: { ... },
+//   });
+//   return await EcommerceMallProductVariantSnapshotTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

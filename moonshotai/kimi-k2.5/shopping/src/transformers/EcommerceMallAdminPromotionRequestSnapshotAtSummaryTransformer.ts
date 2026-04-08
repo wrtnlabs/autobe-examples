@@ -2,6 +2,7 @@ import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IE
 import { IEcommerceMallAdminPromotionRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminPromotionRequestSnapshot";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -24,6 +25,11 @@ export namespace EcommerceMallAdminPromotionRequestSnapshotAtSummaryTransformer 
         new_status: true,
         previous_reason: true,
         new_reason: true,
+        adminPromotionRequest: {
+          select: {
+            id: true,
+          },
+        },
         previousReviewer: EcommerceMallAdminAtSummaryTransformer.select(),
         newReviewer: EcommerceMallAdminAtSummaryTransformer.select(),
       },
@@ -52,3 +58,43 @@ export namespace EcommerceMallAdminPromotionRequestSnapshotAtSummaryTransformer 
     };
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallAdminPromotionRequestSnapshotAtSummaryTransformer {
+//       export type Payload = Prisma.ecommerce_mall_admin_promotion_request_snapshotsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             previous_status: true,
+//             new_status: true,
+//             previous_reason: true,
+//             new_reason: true,
+//             created_at: true,
+//             admin_promotion_request_id: true,
+//             previous_reviewer_id: true,
+//             new_reviewer_id: true,
+//             ...
+//           },
+//         } satisfies Prisma.ecommerce_mall_admin_promotion_request_snapshotsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallAdminPromotionRequestSnapshot.ISummary> {
+//         return {
+//   id: {string},
+//   createdAt: {string},
+//   previousStatus: {string},
+//   newStatus: {string},
+//   previousReviewer: {IEcommerceMallAdmin.ISummary | null},
+//   newReviewer: {IEcommerceMallAdmin.ISummary | null},
+//   previousReason: {string | null},
+//   newReason: {string | null},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

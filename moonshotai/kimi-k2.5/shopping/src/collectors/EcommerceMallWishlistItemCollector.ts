@@ -12,9 +12,8 @@ export namespace EcommerceMallWishlistItemCollector {
     body: IEcommerceMallWishlistItem.ICreate;
     ecommerceMallCustomers: IEntity;
   }) {
-    const id: string = v4();
     return {
-      id,
+      id: v4(),
       created_at: new Date(),
       updated_at: new Date(),
       customer: { connect: { id: props.ecommerceMallCustomers.id } },
@@ -22,3 +21,25 @@ export namespace EcommerceMallWishlistItemCollector {
     } satisfies Prisma.ecommerce_mall_wishlist_itemsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallWishlistItemCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallWishlistItem.ICreate;
+//           ecommerceMallCustomers: IEntity; // from authorized actor
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       customer: ...,
+//       product: ...,
+//           } satisfies Prisma.ecommerce_mall_wishlist_itemsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

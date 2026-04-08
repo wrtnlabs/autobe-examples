@@ -21,26 +21,51 @@ export async function getEcommerceMallSellerShipmentsShipmentIdDelivery(props: {
   seller: SellerPayload;
   shipmentId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallShipmentDelivery> {
-  // Verify shipment exists and belongs to the seller
-  const shipment = await MyGlobal.prisma.ecommerce_mall_shipments.findFirst({
-    where: {
-      id: props.shipmentId,
-      seller_id: props.seller.id,
-      deleted_at: null,
-    },
-    select: { id: true },
-  });
-  if (shipment === null) {
-    throw new HttpException("Shipment not found or access denied", 403);
-  }
-  // Find the delivery record for this shipment
-  const delivery =
+  const record =
     await MyGlobal.prisma.ecommerce_mall_shipment_deliveries.findFirstOrThrow({
+      ...EcommerceMallShipmentDeliveryTransformer.select(),
       where: {
         shipment_id: props.shipmentId,
-        deleted_at: null,
       },
-      ...EcommerceMallShipmentDeliveryTransformer.select(),
     });
-  return await EcommerceMallShipmentDeliveryTransformer.transform(delivery);
+  return await EcommerceMallShipmentDeliveryTransformer.transform(record);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallShipmentDelivery } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentDelivery";
+// import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
+// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function getEcommerceMallSellerShipmentsShipmentIdDelivery(props: {
+//   seller: SellerPayload;
+//   shipmentId: string & tags.Format<"uuid">;
+// }): Promise<IEcommerceMallShipmentDelivery> {
+//   const record = await MyGlobal.prisma.ecommerce_mall_shipment_deliveries.findFirstOrThrow({
+//     ...EcommerceMallShipmentDeliveryTransformer.select(),
+//     where: { ... },
+//   });
+//   return await EcommerceMallShipmentDeliveryTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

@@ -22,58 +22,115 @@ export async function patchEcommerceMallSellerOrderItemsOrderItemIdRefundRequest
   orderItemId: string & tags.Format<"uuid">;
   body: IEcommerceMallRefundRequest.IRequest;
 }): Promise<IPageIEcommerceMallRefundRequest.ISummary> {
-  // Verify order item exists and belongs to this seller
-  const orderItem =
-    await MyGlobal.prisma.ecommerce_mall_order_items.findUniqueOrThrow({
+  // Verify order item exists and belongs to seller
+  const orderItem = await MyGlobal.prisma.ecommerce_mall_order_items.findUnique(
+    {
       where: { id: props.orderItemId },
       select: { seller_id: true },
-    });
-  if (orderItem.seller_id !== props.seller.id) {
-    throw new HttpException(
-      "You can only view refund requests for your own order items",
-      403,
-    );
+    },
+  );
+  if (orderItem === null) {
+    throw new HttpException("Order item not found", 404);
   }
-  // Build filter conditions
-  const whereInput = {
-    order_item_id: props.orderItemId,
-    seller_id: props.seller.id,
-    deleted_at: null,
-    ...(props.body.status !== undefined && { status: props.body.status }),
-    ...(props.body.requestedAtFrom !== undefined && {
-      requested_at: { gte: new Date(props.body.requestedAtFrom) },
-    }),
-    ...(props.body.requestedAtTo !== undefined && {
-      requested_at: { lte: new Date(props.body.requestedAtTo) },
-    }),
-  } satisfies Prisma.ecommerce_mall_refund_requestsWhereInput;
+  if (orderItem.seller_id !== props.seller.id) {
+    throw new HttpException("Forbidden", 403);
+  }
   // Pagination
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Query refund requests
-  const data = await MyGlobal.prisma.ecommerce_mall_refund_requests.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
-    orderBy: { requested_at: "desc" },
-    ...EcommerceMallRefundRequestAtSummaryTransformer.select(),
-  });
-  // Get total count
+  // Build date filter
+  const dateFilter: Prisma.DateTimeFilter | undefined =
+    props.body.requestedAtFrom !== undefined ||
+    props.body.requestedAtTo !== undefined
+      ? {
+          ...(props.body.requestedAtFrom !== undefined && {
+            gte: new Date(props.body.requestedAtFrom),
+          }),
+          ...(props.body.requestedAtTo !== undefined && {
+            lte: new Date(props.body.requestedAtTo),
+          }),
+        }
+      : undefined;
+  // Build where clause
+  const where = {
+    order_item_id: props.orderItemId,
+    deleted_at: null,
+    ...(props.body.status !== undefined && { status: props.body.status }),
+    ...(dateFilter !== undefined && { requested_at: dateFilter }),
+  } satisfies Prisma.ecommerce_mall_refund_requestsWhereInput;
+  // Query records
+  const records = await MyGlobal.prisma.ecommerce_mall_refund_requests.findMany(
+    {
+      where,
+      skip,
+      take: limit,
+      orderBy: { requested_at: "desc" },
+      ...EcommerceMallRefundRequestAtSummaryTransformer.select(),
+    },
+  );
+  // Count total
   const total = await MyGlobal.prisma.ecommerce_mall_refund_requests.count({
-    where: whereInput,
+    where,
   });
-  // Transform and return paginated result
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceMallRefundRequestAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      records,
+      EcommerceMallRefundRequestAtSummaryTransformer.transform,
+    ),
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequest";
+// import { IPageIEcommerceMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallRefundRequest";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallSellerOrderItemsOrderItemIdRefundRequests(props: {
+//   seller: SellerPayload;
+//   orderItemId: string;
+//   body: IEcommerceMallRefundRequest.IRequest;
+// }): Promise<IPageIEcommerceMallRefundRequest.ISummary> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_refund_requests.findMany({
+//     ...EcommerceMallRefundRequestAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallRefundRequestAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

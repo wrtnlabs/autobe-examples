@@ -20,50 +20,51 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function putEcommerceMallCustomerReviewsReviewId(props: {
   customer: CustomerPayload;
-  reviewId: string & tags.Format<"uuid">;
+  reviewId: string;
   body: IEcommerceMallReview.IUpdate;
 }): Promise<IEcommerceMallReview> {
-  // Find review and verify ownership
+  // Fetch the review to verify ownership and that it's not deleted
   const review = await MyGlobal.prisma.ecommerce_mall_reviews.findUniqueOrThrow(
     {
       where: { id: props.reviewId },
       select: {
         id: true,
-        customer_id: true,
+        ecommerce_mall_customer_id: true,
+        deleted_at: true,
         rating: true,
         content: true,
-        deleted_at: true,
       },
     },
   );
-  // Verify ownership
-  if (review.customer_id !== props.customer.id) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Verify not deleted
+  // Check if review is deleted
   if (review.deleted_at !== null) {
     throw new HttpException("Review has been deleted", 400);
   }
-  // Create snapshot before update
+  // Check ownership - only the author can update
+  if (review.ecommerce_mall_customer_id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Create snapshot before updating
   await MyGlobal.prisma.ecommerce_mall_review_snapshots.create({
     data: {
       id: v4() as string & tags.Format<"uuid">,
-      ecommerce_mall_review_id: review.id,
+      review: { connect: { id: review.id } },
       rating: review.rating,
       content: review.content,
-      created_at: new Date(),
+      session: { connect: { id: props.customer.session_id } },
+      created_at: new Date().toISOString() as string & tags.Format<"date-time">,
     },
   });
-  // Update review
+  // Update the review with new values
   await MyGlobal.prisma.ecommerce_mall_reviews.update({
     where: { id: props.reviewId },
     data: {
       ...(props.body.rating !== undefined && { rating: props.body.rating }),
       ...(props.body.content !== undefined && { content: props.body.content }),
-      updated_at: new Date(),
+      updated_at: new Date().toISOString() as string & tags.Format<"date-time">,
     },
   });
-  // Fetch updated review with transformer select
+  // Fetch and return the updated review
   const updated =
     await MyGlobal.prisma.ecommerce_mall_reviews.findUniqueOrThrow({
       where: { id: props.reviewId },
@@ -71,3 +72,48 @@ export async function putEcommerceMallCustomerReviewsReviewId(props: {
     });
   return await EcommerceMallReviewTransformer.transform(updated);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReview";
+// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+// import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+// import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function putEcommerceMallCustomerReviewsReviewId(props: {
+//   customer: CustomerPayload;
+//   reviewId: string;
+//   body: IEcommerceMallReview.IUpdate;
+// }): Promise<IEcommerceMallReview> {
+//   await MyGlobal.prisma.ecommerce_mall_reviews.update({
+//     where: { ... },
+//     data: { ... },
+//   });
+//   const updated = await MyGlobal.prisma.ecommerce_mall_reviews.findUniqueOrThrow({
+//     where: { ... },
+//     ...EcommerceMallReviewTransformer.select(),
+//   });
+//   return await EcommerceMallReviewTransformer.transform(updated);
+// }
+// ```
+//--------------------------------------------------------------

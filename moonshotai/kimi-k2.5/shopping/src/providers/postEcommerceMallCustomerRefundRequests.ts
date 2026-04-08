@@ -27,41 +27,33 @@ export async function postEcommerceMallCustomerRefundRequests(props: {
   customer: CustomerPayload;
   body: IEcommerceMallRefundRequest.ICreate;
 }): Promise<IEcommerceMallRefundRequest> {
-  // Look up the order item with its order to verify ownership and status
-  const orderItem = await MyGlobal.prisma.ecommerce_mall_order_items.findUnique(
-    {
+  // Find the order item and verify customer ownership via order
+  const orderItem =
+    await MyGlobal.prisma.ecommerce_mall_order_items.findUniqueOrThrow({
       where: { id: props.body.orderItemId },
       select: {
         id: true,
         status: true,
-        seller_id: true,
+        order_id: true,
         order: {
           select: {
-            id: true,
             customer_id: true,
           },
         },
       },
-    },
-  );
-  if (orderItem === null) {
-    throw new HttpException("Order item not found", 404);
-  }
-  // Verify order item is delivered
+    });
+  // Verify order item has status 'delivered'
   if (orderItem.status !== "delivered") {
     throw new HttpException(
-      "Order item must be delivered to request a refund",
+      "Order item must be delivered to request refund",
       422,
     );
   }
-  // Verify customer owns the order
+  // Verify customer owns the order containing this order item
   if (orderItem.order.customer_id !== props.customer.id) {
-    throw new HttpException(
-      "You can only request refunds for your own orders",
-      403,
-    );
+    throw new HttpException("Forbidden", 403);
   }
-  // Check for existing pending refund request
+  // Check if pending refund request already exists
   const existingRequest =
     await MyGlobal.prisma.ecommerce_mall_refund_requests.findFirst({
       where: {
@@ -72,28 +64,99 @@ export async function postEcommerceMallCustomerRefundRequests(props: {
     });
   if (existingRequest !== null) {
     throw new HttpException(
-      "A pending refund request already exists for this order item",
+      "Pending refund request already exists for this order item",
       409,
     );
   }
-  // Get seller for the collector
-  const seller = await MyGlobal.prisma.ecommerce_mall_sellers.findUnique({
-    where: { id: orderItem.seller_id },
-    select: { id: true },
-  });
-  if (seller === null) {
-    throw new HttpException("Seller not found", 404);
+  // Find delivery record via shipment to validate 7-day window
+  const shipmentItem =
+    await MyGlobal.prisma.ecommerce_mall_shipment_items.findFirst({
+      where: {
+        order_item_id: props.body.orderItemId,
+      },
+      select: {
+        shipment: {
+          select: {
+            delivery: {
+              select: {
+                delivered_at: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  if (shipmentItem?.shipment?.delivery?.delivered_at === undefined) {
+    throw new HttpException(
+      "No delivery record found for this order item",
+      422,
+    );
   }
-  // Create the refund request using the Collector
+  // Validate 7-day window from delivery
+  const deliveredAt = shipmentItem.shipment.delivery.delivered_at;
+  const sevenDaysMs = 604800000;
+  const deadlineTime = deliveredAt.getTime() + sevenDaysMs;
+  if (Date.now() > deadlineTime) {
+    throw new HttpException(
+      "Refund request must be submitted within 7 days of delivery",
+      422,
+    );
+  }
+  // Create refund request using collector
   const created = await MyGlobal.prisma.ecommerce_mall_refund_requests.create({
     data: await EcommerceMallRefundRequestCollector.collect({
       body: props.body,
-      customer: { id: props.customer.id },
-      seller: { id: seller.id },
-      orderItem: { id: orderItem.id },
+      ecommerceMallCustomers: { id: props.customer.id },
+      ecommerceMallOrderItems: { id: props.body.orderItemId },
     }),
     ...EcommerceMallRefundRequestTransformer.select(),
   });
-  // Transform and return the result
   return await EcommerceMallRefundRequestTransformer.transform(created);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequest";
+// import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
+// import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
+// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+// import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+// import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+// import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
+// import { IEcommerceMallRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequestSnapshot";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function postEcommerceMallCustomerRefundRequests(props: {
+//   customer: CustomerPayload;
+//   body: IEcommerceMallRefundRequest.ICreate;
+// }): Promise<IEcommerceMallRefundRequest> {
+//   const record = await MyGlobal.prisma.ecommerce_mall_refund_requests.create({
+//     data: await EcommerceMallRefundRequestCollector.collect({
+//       body: props.body,
+//       ...
+//     }),
+//     ...EcommerceMallRefundRequestTransformer.select(),
+//   });
+//   return await EcommerceMallRefundRequestTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

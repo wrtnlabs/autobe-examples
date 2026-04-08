@@ -18,84 +18,119 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchEcommerceMallSellerProductsProductIdSnapshots(props: {
   seller: SellerPayload;
-  productId: string;
+  productId: string & tags.Format<"uuid">;
   body: IEcommerceMallProductSnapshot.IRequest;
 }): Promise<IPageIEcommerceMallProductSnapshot.ISummary> {
-  // Verify product exists and belongs to the seller
-  const product = await MyGlobal.prisma.ecommerce_mall_products.findFirst({
-    where: {
-      id: props.productId,
-      seller_id: props.seller.id,
-    },
-    select: { id: true },
-  });
-  if (!product) {
-    throw new HttpException("Product not found or access denied", 404);
+  // Verify product exists and check ownership
+  const product =
+    await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
+      where: { id: props.productId },
+      select: { ecommerce_mall_seller_id: true },
+    });
+  // Authorization: seller must own the product OR be admin
+  if (
+    props.seller.type !== "admin" &&
+    product.ecommerce_mall_seller_id !== props.seller.id
+  ) {
+    throw new HttpException(
+      "You don't have permission to view snapshots of this product",
+      403,
+    );
   }
-  // Build where clause with base condition
+  // Build where clause with optional date range criteria
   const whereInput = {
     product_id: props.productId,
-    ...(props.body.createdAtFrom && {
-      created_at: { gte: new Date(props.body.createdAtFrom) },
-    }),
-    ...(props.body.createdAtTo && {
-      created_at: {
-        ...(props.body.createdAtFrom
-          ? { gte: new Date(props.body.createdAtFrom) }
-          : {}),
-        lte: new Date(props.body.createdAtTo),
-      },
+    ...(props.body.createdAtFrom !== null && {
+      created_at: { gte: props.body.createdAtFrom },
     }),
   } satisfies Prisma.ecommerce_mall_product_snapshotsWhereInput;
-  // Refine where clause if both dates are present
-  const finalWhereInput =
-    props.body.createdAtFrom && props.body.createdAtTo
-      ? ({
-          product_id: props.productId,
-          created_at: {
-            gte: new Date(props.body.createdAtFrom),
-            lte: new Date(props.body.createdAtTo),
-          },
-        } satisfies Prisma.ecommerce_mall_product_snapshotsWhereInput)
-      : whereInput;
-  // Handle pagination
+  // Add end date filter if provided
+  if (props.body.createdAtTo !== null) {
+    whereInput.created_at = {
+      ...whereInput.created_at,
+      lte: props.body.createdAtTo,
+    };
+  }
+  // Pagination parameters
   const limit = props.body.limit ?? 20;
   const page = props.body.page ?? 1;
   const skip = (page - 1) * limit;
-  // Handle sorting
-  const sort = props.body.sort ?? "created_at_DESC";
-  const orderByInput =
-    sort === "created_at_ASC"
-      ? ({
-          created_at: "asc",
-        } satisfies Prisma.ecommerce_mall_product_snapshotsOrderByWithRelationInput)
-      : ({
-          created_at: "desc",
-        } satisfies Prisma.ecommerce_mall_product_snapshotsOrderByWithRelationInput);
-  // Fetch snapshots
-  const snapshots =
+  // Sort order (default newest first)
+  const orderByInput = (
+    props.body.sort === "created_at_ASC"
+      ? { created_at: "asc" as const }
+      : { created_at: "desc" as const }
+  ) satisfies Prisma.ecommerce_mall_product_snapshotsOrderByWithRelationInput;
+  // Query snapshots with pagination
+  const records =
     await MyGlobal.prisma.ecommerce_mall_product_snapshots.findMany({
-      where: finalWhereInput,
-      skip,
+      where: whereInput,
+      skip: skip,
       take: limit,
       orderBy: orderByInput,
       ...EcommerceMallProductSnapshotAtSummaryTransformer.select(),
     });
-  // Count total
+  // Count total records
   const total = await MyGlobal.prisma.ecommerce_mall_product_snapshots.count({
-    where: finalWhereInput,
+    where: whereInput,
   });
-  const pages = Math.ceil(total / limit);
   return {
-    data: await ArrayUtil.asyncMap(
-      snapshots,
-      EcommerceMallProductSnapshotAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
-      pages,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      records,
+      EcommerceMallProductSnapshotAtSummaryTransformer.transform,
+    ),
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshot";
+// import { IPageIEcommerceMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallProductSnapshot";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallSellerProductsProductIdSnapshots(props: {
+//   seller: SellerPayload;
+//   productId: string;
+//   body: IEcommerceMallProductSnapshot.IRequest;
+// }): Promise<IPageIEcommerceMallProductSnapshot.ISummary> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_product_snapshots.findMany({
+//     ...EcommerceMallProductSnapshotAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallProductSnapshotAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

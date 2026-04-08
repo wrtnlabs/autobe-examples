@@ -9,6 +9,7 @@ import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IEcommerceMallShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentItem";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -26,6 +27,11 @@ export namespace EcommerceMallShipmentItemTransformer {
       select: {
         id: true,
         created_at: true,
+        shipment: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_shipmentsFindManyArgs,
         orderItem: EcommerceMallOrderItemTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_shipment_itemsFindManyArgs;
@@ -39,6 +45,35 @@ export namespace EcommerceMallShipmentItemTransformer {
         input.orderItem,
       ),
       createdAt: input.created_at.toISOString(),
-    };
+    } satisfies IEcommerceMallShipmentItem;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallShipmentItemTransformer {
+//       export type Payload = Prisma.ecommerce_mall_shipment_itemsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             created_at: true,
+//             shipment_id: true,
+//             orderItem: EcommerceMallOrderItemTransformer.select(),
+//           },
+//         } satisfies Prisma.ecommerce_mall_shipment_itemsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallShipmentItem> {
+//         return {
+//   id: {string},
+//   orderItem: await EcommerceMallOrderItemTransformer.transform(input.orderItem),
+//   createdAt: {string},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

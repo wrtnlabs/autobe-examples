@@ -7,48 +7,55 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 
-function toISOStringSafe(date: Date): string {
-  return date.toISOString();
-}
 export namespace EcommerceMallShipmentCollector {
   export async function collect(props: {
     body: IEcommerceMallShipment.ICreate;
-    seller: IEntity;
+    ecommerceMallSellers: IEntity;
   }) {
-    const id: string = v4();
-    const now = new Date();
-    // Indirect reference: get order_id from the first order item
+    // Indirect reference: Query the first order item to get its order_id
     const firstOrderItem =
       await MyGlobal.prisma.ecommerce_mall_order_items.findFirstOrThrow({
         where: { id: props.body.orderItemIds[0] },
       });
-    const stringNow = toISOStringSafe(now);
-    const shipmentItemsCreate = props.body.orderItemIds.map(
-      (
-        orderItemId,
-      ): Prisma.ecommerce_mall_shipment_itemsCreateWithoutShipmentInput => ({
-        id: v4(),
-        orderItem: { connect: { id: orderItemId } },
-        created_at: stringNow,
-      }),
-    );
     return {
-      id,
+      id: v4(),
       carrier_name: props.body.carrierName,
       tracking_number: props.body.trackingNumber,
-      shipped_at: stringNow,
-      created_at: stringNow,
-      updated_at: stringNow,
+      shipped_at: new Date(),
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
-      // BelongsTo relations
-      seller: { connect: { id: props.seller.id } },
+      seller: { connect: { id: props.ecommerceMallSellers.id } },
       order: { connect: { id: firstOrderItem.order_id } },
-      // HasMany: shipment items (junction table)
-      shipmentItems: {
-        create: shipmentItemsCreate,
-      },
-      // HasOne: delivery - not created initially
-      delivery: undefined,
     } satisfies Prisma.ecommerce_mall_shipmentsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallShipmentCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallShipment.ICreate;
+//           ecommerceMallSellers: IEntity; // from authorized actor
+// ecommerceMallOrders: IEntity; // from order item orderId
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       carrier_name: ...,
+//       tracking_number: ...,
+//       shipped_at: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       seller: ...,
+//       order: ...,
+//       shipmentItems: ...,
+//       delivery: ...,
+//           } satisfies Prisma.ecommerce_mall_shipmentsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

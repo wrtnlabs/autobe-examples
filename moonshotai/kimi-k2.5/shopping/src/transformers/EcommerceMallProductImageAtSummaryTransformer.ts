@@ -1,6 +1,7 @@
 import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -12,6 +13,19 @@ export namespace EcommerceMallProductImageAtSummaryTransformer {
   export type Payload = Prisma.ecommerce_mall_product_imagesGetPayload<
     ReturnType<typeof select>
   >;
+  export function select() {
+    return {
+      select: {
+        id: true,
+        image_url: true,
+        display_order: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        product: true,
+      },
+    } satisfies Prisma.ecommerce_mall_product_imagesFindManyArgs;
+  }
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallProductImage.ISummary> {
@@ -19,15 +33,38 @@ export namespace EcommerceMallProductImageAtSummaryTransformer {
       id: input.id,
       imageUrl: input.image_url,
       displayOrder: input.display_order,
-    };
-  }
-  export function select() {
-    return {
-      select: {
-        id: true,
-        image_url: true,
-        display_order: true,
-      },
-    } satisfies Prisma.ecommerce_mall_product_imagesFindManyArgs;
+    } satisfies IEcommerceMallProductImage.ISummary;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallProductImageAtSummaryTransformer {
+//       export type Payload = Prisma.ecommerce_mall_product_imagesGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             image_url: true,
+//             display_order: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//             product_id: true,
+//           },
+//         } satisfies Prisma.ecommerce_mall_product_imagesFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallProductImage.ISummary> {
+//         return {
+//   id: {string},
+//   imageUrl: {string},
+//   displayOrder: {integer},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

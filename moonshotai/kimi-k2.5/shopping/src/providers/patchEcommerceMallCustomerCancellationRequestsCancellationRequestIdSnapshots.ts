@@ -20,64 +20,67 @@ export async function patchEcommerceMallCustomerCancellationRequestsCancellation
   cancellationRequestId: string;
   body: IEcommerceMallCancellationRequestSnapshot.IRequest;
 }): Promise<IPageIEcommerceMallCancellationRequestSnapshot.ISummary> {
-  // Verify customer owns this cancellation request
+  // Verify cancellation request belongs to customer through order ownership
   const cancellationRequest =
     await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findFirst({
       where: {
         id: props.cancellationRequestId,
-        customer_id: props.customer.id,
-        deleted_at: null,
+        orderItem: {
+          order: {
+            ecommerce_mall_customer_id: props.customer.id,
+          },
+        },
       },
+      select: { id: true },
     });
   if (cancellationRequest === null) {
     throw new HttpException("Cancellation request not found", 404);
   }
-  // Build where clause with filters
-  const whereInput = {
-    cancellation_request_id: props.cancellationRequestId,
-    ...(props.body.statusBefore !== null && {
-      status_before: props.body.statusBefore,
-    }),
-    ...(props.body.statusAfter !== null && {
-      status_after: props.body.statusAfter,
-    }),
-    ...(props.body.createdAtFrom !== null && {
-      created_at: { gte: new Date(props.body.createdAtFrom) },
-    }),
-    ...(props.body.createdAtTo !== null && {
-      created_at: { lte: new Date(props.body.createdAtTo) },
-    }),
-  } satisfies Prisma.ecommerce_mall_cancellation_request_snapshotsWhereInput;
-  // Pagination calculation
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Sorting
-  const sortField = props.body.sortField ?? "created_at";
-  const sortOrder = props.body.sortOrder ?? "desc";
-  const orderBy = {
-    [sortField]: sortOrder,
-  } satisfies Prisma.ecommerce_mall_cancellation_request_snapshotsOrderByWithRelationInput;
-  // Query snapshots
-  const snapshots =
+  // Build where clause with conditional filters
+  const whereInput: Prisma.ecommerce_mall_cancellation_request_snapshotsWhereInput =
+    {
+      ecommerce_mall_cancellation_request_id: props.cancellationRequestId,
+    };
+  if (props.body.statusBefore !== null) {
+    whereInput.status_before = props.body.statusBefore;
+  }
+  if (props.body.statusAfter !== null) {
+    whereInput.status_after = props.body.statusAfter;
+  }
+  // Handle date range filter - build created_at filter inline
+  if (props.body.createdAtFrom !== null || props.body.createdAtTo !== null) {
+    whereInput.created_at = {};
+    if (props.body.createdAtFrom !== null) {
+      whereInput.created_at.gte = new Date(props.body.createdAtFrom);
+    }
+    if (props.body.createdAtTo !== null) {
+      whereInput.created_at.lte = new Date(props.body.createdAtTo);
+    }
+  }
+  const orderByInput: Prisma.ecommerce_mall_cancellation_request_snapshotsOrderByWithRelationInput =
+    {
+      created_at: props.body.sortOrder === "asc" ? "asc" : "desc",
+    };
+  const records =
     await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.findMany(
       {
         where: whereInput,
         skip,
         take: limit,
-        orderBy,
+        orderBy: orderByInput,
         ...EcommerceMallCancellationRequestSnapshotAtSummaryTransformer.select(),
       },
     );
-  // Count total
   const total =
     await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.count({
       where: whereInput,
     });
-  // Transform and return
   return {
     data: await ArrayUtil.asyncMap(
-      snapshots,
+      records,
       EcommerceMallCancellationRequestSnapshotAtSummaryTransformer.transform,
     ),
     pagination: {
@@ -88,3 +91,49 @@ export async function patchEcommerceMallCustomerCancellationRequestsCancellation
     } satisfies IPage.IPagination,
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallCancellationRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCancellationRequestSnapshot";
+// import { IPageIEcommerceMallCancellationRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallCancellationRequestSnapshot";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallCustomerCancellationRequestsCancellationRequestIdSnapshots(props: {
+//   customer: CustomerPayload;
+//   cancellationRequestId: string;
+//   body: IEcommerceMallCancellationRequestSnapshot.IRequest;
+// }): Promise<IPageIEcommerceMallCancellationRequestSnapshot.ISummary> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.findMany({
+//     ...EcommerceMallCancellationRequestSnapshotAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallCancellationRequestSnapshotAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

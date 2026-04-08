@@ -14,7 +14,7 @@ AI Model | Success | Score | FCSR | Status
 [`qwen/qwen3.5-35b-a3b`](#qwenqwen35-35b-a3b) | 4 | 100 | 76% | 🟢
 [`qwen/qwen3.5-27b`](#qwenqwen35-27b) | 4 | 100 | 80% | 🟢
 [`z-ai/glm-5`](#z-aiglm-5) | 4 | 100 | 88% | 🟢
-[`moonshotai/kimi-k2.5`](#moonshotaikimi-k25) | 3 | 99.96 | 64% | 🟢
+[`moonshotai/kimi-k2.5`](#moonshotaikimi-k25) | 3 | 95 | 63% | 🟢
 
 - FCSR: Function Calling Success Rate
 - Status:
@@ -798,7 +798,7 @@ Project | Score | Analyze | Prisma | Interface | Test | Realize
 :-------|------:|:-------:|:------:|:----------|:----:|:-------:
 [`todo`](./moonshotai/kimi-k2.5/todo/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 [`reddit`](./moonshotai/kimi-k2.5/reddit/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
-[`shopping`](./moonshotai/kimi-k2.5/shopping/) | 99.83 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
+[`shopping`](./moonshotai/kimi-k2.5/shopping/) | 80 | 🟢 | 🟢 | 🟢 | 🟢 | 🟡
 [`erp`](./moonshotai/kimi-k2.5/erp/) | 100 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢
 
 ### `moonshotai/kimi-k2.5` - `todo`
@@ -838,10 +838,10 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 ### `moonshotai/kimi-k2.5` - `shopping`
 
 - Source Code: [`moonshotai/kimi-k2.5/shopping`](./moonshotai/kimi-k2.5/shopping/)
-- Score: 99.83
-- Elapsed Time: 31h 31m 49s
-- Token Usage: 322.62M
-- Function Calling Success Rate: 68.18%
+- Score: 80
+- Elapsed Time: 21h 9m 56s
+- Token Usage: 360.52M
+- Function Calling Success Rate: 65.06%
 
 Phase | Generated | Token Usage | Elapsed Time | FCSR
 :-----|:----------|------------:|-------------:|------:
@@ -849,7 +849,7 @@ Phase | Generated | Token Usage | Elapsed Time | FCSR
 🟢 Database | `namespaces`: 8, `models`: 53 | 5.08M | 38m 21s | 31%
 🟢 Interface | `operations`: 259, `schemas`: 207 | 176.24M | 10h 47m 34s | 63%
 🟢 Test | `functions`: 709 | 98.95M | 6h 33m 12s | 74%
-🟡 Realize | `functions`: 346, `errors`: 1 | 39.91M | 11h 49m 37s | 77%
+🟡 Realize | `functions`: 346 | 77.81M | 1h 27m 44s | 61%
 
 
 ### `moonshotai/kimi-k2.5` - `erp`

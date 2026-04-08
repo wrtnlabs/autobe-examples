@@ -15,11 +15,10 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getEcommerceMallSellerDashboard(props: {
   seller: SellerPayload;
 }): Promise<IEcommerceMallSellerDashboard> {
-  const sellerId = props.seller.id;
-  // Count total active products for this seller
+  // Count total products belonging to this seller
   const totalProducts = await MyGlobal.prisma.ecommerce_mall_products.count({
     where: {
-      seller_id: sellerId,
+      ecommerce_mall_seller_id: props.seller.id,
       deleted_at: null,
     },
   });
@@ -27,25 +26,33 @@ export async function getEcommerceMallSellerDashboard(props: {
   const totalOrderItems =
     await MyGlobal.prisma.ecommerce_mall_order_items.count({
       where: {
-        seller_id: sellerId,
+        product: {
+          ecommerce_mall_seller_id: props.seller.id,
+        },
       },
     });
   // Count pending cancellation requests for this seller's order items
   const pendingCancellationRequests =
     await MyGlobal.prisma.ecommerce_mall_cancellation_requests.count({
       where: {
-        status: "pending",
-        orderItem: {
-          seller_id: sellerId,
+        status: "PENDING",
+        order_item: {
+          product: {
+            ecommerce_mall_seller_id: props.seller.id,
+          },
         },
       },
     });
-  // Count pending refund requests for this seller
+  // Count pending refund requests for this seller's order items
   const pendingRefundRequests =
     await MyGlobal.prisma.ecommerce_mall_refund_requests.count({
       where: {
-        status: "pending",
-        seller_id: sellerId,
+        status: "PENDING",
+        order_item: {
+          product: {
+            ecommerce_mall_seller_id: props.seller.id,
+          },
+        },
       },
     });
   return {
@@ -55,3 +62,36 @@ export async function getEcommerceMallSellerDashboard(props: {
     pendingRefundRequests,
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallSellerDashboard } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerDashboard";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function getEcommerceMallSellerDashboard(props: {
+//   seller: SellerPayload;
+// }): Promise<IEcommerceMallSellerDashboard> {
+//   // No matching Collector/Transformer found for this operation.
+//     // You MUST call getDatabaseSchemas first to get exact relation property names.
+//     // NEVER guess relation names from table names — always verify against the schema.
+//     ...
+// }
+// ```
+//--------------------------------------------------------------

@@ -24,10 +24,16 @@ export async function patchEcommerceMallSellerRegistrations(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where clause with seller restriction and optional filters
-  const where: Prisma.ecommerce_mall_seller_registrationsWhereInput = {
-    seller_id: props.seller.id,
+  // Access control: sellers can only view their own registrations
+  // Administrator check could be added here if needed based on seller payload type
+  const sellerIdFilter = props.body.sellerId ?? props.seller.id;
+  // Build where clause with filters
+  const where = {
+    seller_id: sellerIdFilter,
     ...(props.body.status !== undefined && { status: props.body.status }),
+    ...(props.body.reviewerId !== undefined && {
+      reviewer_id: props.body.reviewerId,
+    }),
     ...(props.body.createdAt !== undefined && {
       created_at: {
         ...(props.body.createdAt.from !== undefined && {
@@ -39,8 +45,7 @@ export async function patchEcommerceMallSellerRegistrations(props: {
       },
     }),
   } satisfies Prisma.ecommerce_mall_seller_registrationsWhereInput;
-  // Query registrations with pagination
-  const data =
+  const records =
     await MyGlobal.prisma.ecommerce_mall_seller_registrations.findMany({
       where,
       skip,
@@ -48,19 +53,14 @@ export async function patchEcommerceMallSellerRegistrations(props: {
       orderBy: { created_at: "desc" },
       ...EcommerceMallSellerRegistrationAtSummaryTransformer.select(),
     });
-  // Get total count
   const total = await MyGlobal.prisma.ecommerce_mall_seller_registrations.count(
-    {
-      where,
-    },
-  );
-  // Transform results
-  const transformed = await ArrayUtil.asyncMap(
-    data,
-    EcommerceMallSellerRegistrationAtSummaryTransformer.transform,
+    { where },
   );
   return {
-    data: transformed,
+    data: await ArrayUtil.asyncMap(
+      records,
+      EcommerceMallSellerRegistrationAtSummaryTransformer.transform,
+    ),
     pagination: {
       current: page,
       limit: limit,
@@ -69,3 +69,50 @@ export async function patchEcommerceMallSellerRegistrations(props: {
     } satisfies IPage.IPagination,
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallSellerRegistration } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerRegistration";
+// import { IPageIEcommerceMallSellerRegistration } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallSellerRegistration";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallSellerRegistrations(props: {
+//   seller: SellerPayload;
+//   body: IEcommerceMallSellerRegistration.IRequest;
+// }): Promise<IPageIEcommerceMallSellerRegistration.ISummary> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_seller_registrations.findMany({
+//     ...EcommerceMallSellerRegistrationAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallSellerRegistrationAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

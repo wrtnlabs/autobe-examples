@@ -19,26 +19,49 @@ export async function deleteEcommerceMallSellerAdminPromotionRequestsRequestId(p
     await MyGlobal.prisma.ecommerce_mall_admin_promotion_requests.findUniqueOrThrow(
       {
         where: { id: props.requestId },
-        select: {
-          id: true,
-          status: true,
-          deleted_at: true,
-        },
+        select: { id: true, status: true },
       },
     );
-  if (request.deleted_at !== null) {
-    throw new HttpException("Request not found", 404);
-  }
-  if (request.status === "approved") {
-    throw new HttpException("Cannot delete approved promotion request", 400);
-  }
-  if (request.status === "rejected") {
-    throw new HttpException("Cannot delete rejected promotion request", 400);
+  if (request.status !== "pending") {
+    throw new HttpException(
+      "Only pending promotion requests can be deleted",
+      400,
+    );
   }
   await MyGlobal.prisma.ecommerce_mall_admin_promotion_requests.update({
     where: { id: props.requestId },
-    data: {
-      deleted_at: new Date(),
-    },
+    data: { deleted_at: toISOStringSafe(new Date()) },
   });
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function deleteEcommerceMallSellerAdminPromotionRequestsRequestId(props: {
+//   seller: SellerPayload;
+//   requestId: string & tags.Format<"uuid">;
+// }): Promise<void> {
+//   await MyGlobal.prisma.....delete({
+//     where: { ... },
+//   });
+// }
+// ```
+//--------------------------------------------------------------

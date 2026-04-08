@@ -8,6 +8,7 @@ import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/li
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -31,13 +32,11 @@ export namespace EcommerceMallCancellationRequestAtSummaryTransformer {
         responded_at: true,
         created_at: true,
         updated_at: true,
+        deleted_at: true,
         orderItem: EcommerceMallOrderItemAtSummaryTransformer.select(),
-        customer: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.ecommerce_mall_customersFindManyArgs,
+        customer: { select: {} },
         seller: EcommerceMallSellerAtSummaryTransformer.select(),
+        snapshots: { select: {} },
       },
     } satisfies Prisma.ecommerce_mall_cancellation_requestsFindManyArgs;
   }
@@ -48,19 +47,61 @@ export namespace EcommerceMallCancellationRequestAtSummaryTransformer {
       id: input.id,
       status: input.status,
       reason: input.reason,
-      responseReason: input.response_reason,
+      responseReason: input.response_reason ?? null,
       respondedAt: input.responded_at?.toISOString() ?? null,
       orderItem: await EcommerceMallOrderItemAtSummaryTransformer.transform(
         input.orderItem,
       ),
-      customer: {
-        id: input.customer.id,
-      } satisfies IEcommerceMallCustomer.ISummary,
+      customer: {},
       seller: input.seller
         ? await EcommerceMallSellerAtSummaryTransformer.transform(input.seller)
         : null,
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
-    };
+    } satisfies IEcommerceMallCancellationRequest.ISummary;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallCancellationRequestAtSummaryTransformer {
+//       export type Payload = Prisma.ecommerce_mall_cancellation_requestsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             reason: true,
+//             status: true,
+//             response_reason: true,
+//             responded_at: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//             orderItem: EcommerceMallOrderItemAtSummaryTransformer.select(),
+//             customer_id: true,
+//             seller: EcommerceMallSellerAtSummaryTransformer.select(),
+//             ...
+//           },
+//         } satisfies Prisma.ecommerce_mall_cancellation_requestsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallCancellationRequest.ISummary> {
+//         return {
+//   id: {string},
+//   status: {string},
+//   reason: {string},
+//   responseReason: {string | null},
+//   respondedAt: {string | null},
+//   orderItem: await EcommerceMallOrderItemAtSummaryTransformer.transform(input.orderItem),
+//   customer: {IEcommerceMallCustomer.ISummary},
+//   seller: input.seller ? await EcommerceMallSellerAtSummaryTransformer.transform(input.seller) : null,
+//   createdAt: {string},
+//   updatedAt: {string},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

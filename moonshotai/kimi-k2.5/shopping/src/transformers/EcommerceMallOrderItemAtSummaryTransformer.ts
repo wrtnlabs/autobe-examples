@@ -6,6 +6,7 @@ import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/li
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -55,3 +56,44 @@ export namespace EcommerceMallOrderItemAtSummaryTransformer {
     };
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallOrderItemAtSummaryTransformer {
+//       export type Payload = Prisma.ecommerce_mall_order_itemsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             quantity: true,
+//             price_at_purchase: true,
+//             status: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//             order_id: true,
+//             product: EcommerceMallProductAtSummaryTransformer.select(),
+//             variant: EcommerceMallProductVariantAtSummaryTransformer.select(),
+//             seller: EcommerceMallSellerAtSummaryTransformer.select(),
+//           },
+//         } satisfies Prisma.ecommerce_mall_order_itemsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallOrderItem.ISummary> {
+//         return {
+//   id: {string},
+//   quantity: {integer},
+//   priceAtPurchase: {number},
+//   status: {"paid" | "shipped" | "delivered" | "cancelled" | "refunded"},
+//   createdAt: {string},
+//   product: await EcommerceMallProductAtSummaryTransformer.transform(input.product),
+//   variant: await EcommerceMallProductVariantAtSummaryTransformer.transform(input.variant),
+//   seller: await EcommerceMallSellerAtSummaryTransformer.transform(input.seller),
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

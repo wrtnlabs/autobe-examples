@@ -18,11 +18,11 @@ export async function getEcommerceMallAdminProductVariantsVariantIdSnapshotsComp
   admin: AdminPayload;
   variantId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallProductVariantSnapshot.ICompare> {
-  // Verify variant exists
+  // Validate variant exists - admin can access any variant
   await MyGlobal.prisma.ecommerce_mall_product_variants.findUniqueOrThrow({
     where: { id: props.variantId },
   });
-  // Get the two most recent snapshots for comparison
+  // Retrieve the two most recent snapshots for this variant
   const snapshots =
     await MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.findMany({
       where: { product_variant_id: props.variantId },
@@ -38,55 +38,32 @@ export async function getEcommerceMallAdminProductVariantsVariantIdSnapshotsComp
             option_name: true,
             option_value: true,
           },
-        },
+        } satisfies Prisma.ecommerce_mall_product_variant_snapshot_option_valuesFindManyArgs,
       },
     });
-  if (snapshots.length === 0) {
-    throw new HttpException("No snapshots found for this variant", 404);
-  }
-  const after = snapshots[0];
-  // If only one snapshot, return it as both before and after with no differences
-  if (snapshots.length === 1) {
-    const afterOptions = after.optionValues.reduce(
-      (acc: Record<string, string>, opt) => {
-        acc[opt.option_name] = opt.option_value;
-        return acc;
-      },
-      {},
+  if (snapshots.length < 2) {
+    throw new HttpException(
+      "At least two snapshots are required for comparison",
+      400,
     );
-    const datum: ISnapshotDatum = {
-      type: "object",
-      objectValueJson: JSON.stringify({
-        id: after.id,
-        sku_code: after.sku_code,
-        price: after.price,
-        created_at: toISOStringSafe(after.created_at),
-        optionValues: afterOptions,
-      }),
-    };
-    return {
-      before: datum,
-      after: datum,
-      differences: [],
-    };
   }
-  const before = snapshots[1];
-  // Convert option values to object
-  const beforeOptions = before.optionValues.reduce(
-    (acc: Record<string, string>, opt) => {
-      acc[opt.option_name] = opt.option_value;
+  const [after, before] = snapshots;
+  // Build option values objects
+  const beforeOptionValues = before.optionValues.reduce<Record<string, string>>(
+    (acc, ov) => {
+      acc[ov.option_name] = ov.option_value;
       return acc;
     },
     {},
   );
-  const afterOptions = after.optionValues.reduce(
-    (acc: Record<string, string>, opt) => {
-      acc[opt.option_name] = opt.option_value;
+  const afterOptionValues = after.optionValues.reduce<Record<string, string>>(
+    (acc, ov) => {
+      acc[ov.option_name] = ov.option_value;
       return acc;
     },
     {},
   );
-  // Build ISnapshotDatum for before
+  // Build ISnapshotDatum for before snapshot
   const beforeDatum: ISnapshotDatum = {
     type: "object",
     objectValueJson: JSON.stringify({
@@ -94,10 +71,10 @@ export async function getEcommerceMallAdminProductVariantsVariantIdSnapshotsComp
       sku_code: before.sku_code,
       price: before.price,
       created_at: toISOStringSafe(before.created_at),
-      optionValues: beforeOptions,
+      optionValues: beforeOptionValues,
     }),
   };
-  // Build ISnapshotDatum for after
+  // Build ISnapshotDatum for after snapshot
   const afterDatum: ISnapshotDatum = {
     type: "object",
     objectValueJson: JSON.stringify({
@@ -105,62 +82,62 @@ export async function getEcommerceMallAdminProductVariantsVariantIdSnapshotsComp
       sku_code: after.sku_code,
       price: after.price,
       created_at: toISOStringSafe(after.created_at),
-      optionValues: afterOptions,
+      optionValues: afterOptionValues,
     }),
   };
   // Calculate differences
   const differences: IDifferenceEntry[] = [];
-  // Check SKU code change
+  // Compare sku_code
   if (before.sku_code !== after.sku_code) {
     differences.push({
       path: ["sku_code"],
       operation: "MODIFIED",
       oldValue: before.sku_code,
       newValue: after.sku_code,
-      message: `SKU code changed from "${before.sku_code}" to "${after.sku_code}"`,
+      message: `sku_code was changed: ${before.sku_code} → ${after.sku_code}`,
     });
   }
-  // Check price change
+  // Compare price
   if (before.price !== after.price) {
     differences.push({
       path: ["price"],
       operation: "MODIFIED",
       oldValue: before.price,
       newValue: after.price,
-      message: `Price changed from ${before.price} to ${after.price}`,
+      message: `price was changed: ${before.price} → ${after.price}`,
     });
   }
-  // Check option value changes
+  // Compare option values
   const allOptionNames = new Set([
-    ...Object.keys(beforeOptions),
-    ...Object.keys(afterOptions),
+    ...Object.keys(beforeOptionValues),
+    ...Object.keys(afterOptionValues),
   ]);
   for (const optionName of allOptionNames) {
-    const beforeVal = beforeOptions[optionName];
-    const afterVal = afterOptions[optionName];
-    if (beforeVal === undefined && afterVal !== undefined) {
+    const beforeValue = beforeOptionValues[optionName];
+    const afterValue = afterOptionValues[optionName];
+    if (beforeValue === undefined && afterValue !== undefined) {
       differences.push({
         path: ["optionValues", optionName],
         operation: "ADDED",
         oldValue: null,
-        newValue: afterVal,
-        message: `Option "${optionName}" added with value "${afterVal}"`,
+        newValue: afterValue,
+        message: `optionValues.${optionName} was added: ${afterValue}`,
       });
-    } else if (beforeVal !== undefined && afterVal === undefined) {
+    } else if (beforeValue !== undefined && afterValue === undefined) {
       differences.push({
         path: ["optionValues", optionName],
         operation: "REMOVED",
-        oldValue: beforeVal,
+        oldValue: beforeValue,
         newValue: null,
-        message: `Option "${optionName}" removed (was "${beforeVal}")`,
+        message: `optionValues.${optionName} was removed: ${beforeValue}`,
       });
-    } else if (beforeVal !== afterVal) {
+    } else if (beforeValue !== afterValue) {
       differences.push({
         path: ["optionValues", optionName],
         operation: "MODIFIED",
-        oldValue: beforeVal,
-        newValue: afterVal,
-        message: `Option "${optionName}" changed from "${beforeVal}" to "${afterVal}"`,
+        oldValue: beforeValue,
+        newValue: afterValue,
+        message: `optionValues.${optionName} was changed: ${beforeValue} → ${afterValue}`,
       });
     }
   }
@@ -170,3 +147,39 @@ export async function getEcommerceMallAdminProductVariantsVariantIdSnapshotsComp
     differences,
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantSnapshot";
+// import { ISnapshotDatum } from "@ORGANIZATION/PROJECT-api/lib/structures/ISnapshotDatum";
+// import { IDifferenceEntry } from "@ORGANIZATION/PROJECT-api/lib/structures/IDifferenceEntry";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function getEcommerceMallAdminProductVariantsVariantIdSnapshotsCompare(props: {
+//   admin: AdminPayload;
+//   variantId: string;
+// }): Promise<IEcommerceMallProductVariantSnapshot.ICompare> {
+//   // No matching Collector/Transformer found for this operation.
+//     // You MUST call getDatabaseSchemas first to get exact relation property names.
+//     // NEVER guess relation names from table names — always verify against the schema.
+//     ...
+// }
+// ```
+//--------------------------------------------------------------

@@ -16,44 +16,80 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postEcommerceMallSellerProductsProductIdVariantsProductVariantIdOptions(props: {
   seller: SellerPayload;
-  productId: string & tags.Format<"uuid">;
-  productVariantId: string & tags.Format<"uuid">;
+  productId: string;
+  productVariantId: string;
   body: IEcommerceMallProductVariantOption.ICreate;
 }): Promise<IEcommerceMallProductVariantOption> {
-  // Validate product exists and belongs to seller
+  // Verify product exists and belongs to seller
   const product = await MyGlobal.prisma.ecommerce_mall_products.findUnique({
     where: { id: props.productId },
-    select: { id: true, seller_id: true },
+    select: { id: true, ecommerce_mall_seller_id: true },
   });
-  if (product === null) {
+  if (!product) {
     throw new HttpException("Product not found", 404);
   }
-  if (product.seller_id !== props.seller.id) {
+  if (product.ecommerce_mall_seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Validate variant exists and belongs to product
+  // Verify variant exists and belongs to the product
   const variant =
     await MyGlobal.prisma.ecommerce_mall_product_variants.findUnique({
       where: { id: props.productVariantId },
-      select: { id: true, product_id: true },
+      select: { id: true, ecommerce_mall_product_id: true },
     });
-  if (variant === null) {
+  if (!variant) {
     throw new HttpException("Variant not found", 404);
   }
-  if (variant.product_id !== props.productId) {
-    throw new HttpException("Variant does not belong to product", 400);
+  if (variant.ecommerce_mall_product_id !== props.productId) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Create option using Collector
-  const optionData = await EcommerceMallProductVariantOptionCollector.collect({
-    body: props.body,
-    ecommerceMallProductVariants: { id: props.productVariantId },
-    ecommerceMallSellers: { id: props.seller.id },
-    ecommerceMallSellerSessions: { id: props.seller.session_id },
-  });
-  const created =
+  const record =
     await MyGlobal.prisma.ecommerce_mall_product_variant_options.create({
-      data: optionData,
+      data: await EcommerceMallProductVariantOptionCollector.collect({
+        body: props.body,
+        ecommerceMallProductVariants: { id: props.productVariantId },
+      }),
       ...EcommerceMallProductVariantOptionTransformer.select(),
     });
-  return EcommerceMallProductVariantOptionTransformer.transform(created);
+  return await EcommerceMallProductVariantOptionTransformer.transform(record);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function postEcommerceMallSellerProductsProductIdVariantsProductVariantIdOptions(props: {
+//   seller: SellerPayload;
+//   productId: string;
+//   productVariantId: string;
+//   body: IEcommerceMallProductVariantOption.ICreate;
+// }): Promise<IEcommerceMallProductVariantOption> {
+//   const record = await MyGlobal.prisma.ecommerce_mall_product_variant_options.create({
+//     data: await EcommerceMallProductVariantOptionCollector.collect({
+//       body: props.body,
+//       ...
+//     }),
+//     ...EcommerceMallProductVariantOptionTransformer.select(),
+//   });
+//   return await EcommerceMallProductVariantOptionTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

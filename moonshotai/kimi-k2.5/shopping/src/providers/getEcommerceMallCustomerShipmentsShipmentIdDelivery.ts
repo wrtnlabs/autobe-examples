@@ -21,29 +21,69 @@ export async function getEcommerceMallCustomerShipmentsShipmentIdDelivery(props:
   customer: CustomerPayload;
   shipmentId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallShipmentDelivery> {
-  // Get shipment to find order_id
+  // First verify the shipment exists and belongs to a valid order
+  // Also check if the customer is authorized to view this shipment
   const shipment =
     await MyGlobal.prisma.ecommerce_mall_shipments.findUniqueOrThrow({
       where: { id: props.shipmentId },
       select: {
         id: true,
-        order_id: true,
+        order: {
+          select: {
+            id: true,
+            customer_id: true,
+          },
+        },
       },
     });
-  // Fetch order to verify customer ownership
-  const order = await MyGlobal.prisma.ecommerce_mall_orders.findUniqueOrThrow({
-    where: { id: shipment.order_id },
-    select: { customer_id: true },
-  });
-  // Authorization: verify shipment belongs to customer's order
-  if (order.customer_id !== props.customer.id) {
+  // Verify the customer is the order owner
+  if (shipment.order.customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Find delivery record using transformer select
-  const delivery =
+  // Query the delivery record using the transformer
+  const record =
     await MyGlobal.prisma.ecommerce_mall_shipment_deliveries.findUniqueOrThrow({
-      where: { shipment_id: props.shipmentId },
       ...EcommerceMallShipmentDeliveryTransformer.select(),
+      where: { shipment_id: props.shipmentId },
     });
-  return await EcommerceMallShipmentDeliveryTransformer.transform(delivery);
+  return await EcommerceMallShipmentDeliveryTransformer.transform(record);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallShipmentDelivery } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentDelivery";
+// import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
+// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function getEcommerceMallCustomerShipmentsShipmentIdDelivery(props: {
+//   customer: CustomerPayload;
+//   shipmentId: string & tags.Format<"uuid">;
+// }): Promise<IEcommerceMallShipmentDelivery> {
+//   const record = await MyGlobal.prisma.ecommerce_mall_shipment_deliveries.findFirstOrThrow({
+//     ...EcommerceMallShipmentDeliveryTransformer.select(),
+//     where: { ... },
+//   });
+//   return await EcommerceMallShipmentDeliveryTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

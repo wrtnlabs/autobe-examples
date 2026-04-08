@@ -21,59 +21,87 @@ export async function patchEcommerceMallAdminSellersSellerIdProfileSnapshots(pro
   sellerId: string;
   body: IEcommerceMallSellerProfileSnapshot.IRequest;
 }): Promise<IPageIEcommerceMallSellerProfileSnapshot.ISummary> {
-  // Verify seller exists - will throw 404 if not found
-  await MyGlobal.prisma.ecommerce_mall_sellers.findUniqueOrThrow({
-    where: { id: props.sellerId },
-  });
-  // Build date range filter
-  const createdAtFilter: Prisma.DateTimeFilter | undefined =
-    props.body.createdAfter !== null || props.body.createdBefore !== null
-      ? {
-          ...(props.body.createdAfter !== null && {
-            gte: new Date(props.body.createdAfter),
-          }),
-          ...(props.body.createdBefore !== null && {
-            lte: new Date(props.body.createdBefore),
-          }),
-        }
-      : undefined;
-  // Build where clause
-  const whereInput = {
-    seller_id: props.sellerId,
-    ...(createdAtFilter !== undefined && { created_at: createdAtFilter }),
-  } satisfies Prisma.ecommerce_mall_seller_profile_snapshotsWhereInput;
-  // Pagination parameters with defaults
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Query snapshots with pagination, ordered by newest first
-  const snapshots =
+  const whereInput = {
+    seller_id: props.sellerId,
+    ...(props.body.createdAfter !== null && {
+      created_at: { gte: new Date(props.body.createdAfter) },
+    }),
+    ...(props.body.createdBefore !== null && {
+      created_at: { lte: new Date(props.body.createdBefore) },
+    }),
+  } satisfies Prisma.ecommerce_mall_seller_profile_snapshotsWhereInput;
+  const records =
     await MyGlobal.prisma.ecommerce_mall_seller_profile_snapshots.findMany({
       where: whereInput,
-      orderBy: { created_at: "desc" },
       skip,
       take: limit,
+      orderBy: { created_at: "desc" },
       ...EcommerceMallSellerProfileSnapshotAtSummaryTransformer.select(),
     });
-  // Get total count for pagination metadata
   const total =
     await MyGlobal.prisma.ecommerce_mall_seller_profile_snapshots.count({
       where: whereInput,
     });
-  // Transform database records to DTO format
-  const data = await ArrayUtil.asyncMap(
-    snapshots,
-    EcommerceMallSellerProfileSnapshotAtSummaryTransformer.transform,
-  );
-  // Calculate total pages
-  const pages = Math.ceil(total / limit);
   return {
-    data,
     pagination: {
       current: page,
       limit: limit,
       records: total,
-      pages: pages,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      records,
+      EcommerceMallSellerProfileSnapshotAtSummaryTransformer.transform,
+    ),
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallSellerProfileSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfileSnapshot";
+// import { IPageIEcommerceMallSellerProfileSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallSellerProfileSnapshot";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallAdminSellersSellerIdProfileSnapshots(props: {
+//   admin: AdminPayload;
+//   sellerId: string;
+//   body: IEcommerceMallSellerProfileSnapshot.IRequest;
+// }): Promise<IPageIEcommerceMallSellerProfileSnapshot.ISummary> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_seller_profile_snapshots.findMany({
+//     ...EcommerceMallSellerProfileSnapshotAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallSellerProfileSnapshotAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

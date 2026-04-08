@@ -24,76 +24,104 @@ export async function patchEcommerceMallSellerInventoryRecords(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where clause with filters
-  const where: Prisma.ecommerce_mall_inventory_recordsWhereInput = {
-    // Seller ownership filter through variant -> product -> seller
+  const whereInput = {
     variant: {
       product: {
-        seller_id: props.seller.id,
+        ecommerce_mall_seller_id: props.seller.id,
+        ...(props.body.productId && { id: props.body.productId }),
       },
     },
-    // Optional variant filter
-    ...(props.body.variantId && {
-      product_variant_id: props.body.variantId,
-    }),
-    // Optional reason filter
-    ...(props.body.reason && {
-      reason: props.body.reason,
-    }),
-    // Optional date range filter
-    ...((props.body.dateRangeFrom || props.body.dateRangeTo) && {
-      created_at: {
-        ...(props.body.dateRangeFrom && {
-          gte: new Date(props.body.dateRangeFrom),
-        }),
-        ...(props.body.dateRangeTo && {
-          lte: new Date(props.body.dateRangeTo),
-        }),
-      },
-    }),
-    // Optional quantity direction filter
+    ...(props.body.variantId && { product_variant_id: props.body.variantId }),
+    ...(props.body.reason && { reason: props.body.reason }),
     ...(props.body.quantityDirection === "positive" && {
       quantity_change: { gt: 0 },
     }),
     ...(props.body.quantityDirection === "negative" && {
       quantity_change: { lt: 0 },
     }),
-    // Optional product filter through variant
-    ...(props.body.productId && {
-      variant: {
-        product_id: props.body.productId,
-      },
-    }),
-  };
-  // Determine sort order
-  const sortDirection = props.body.sortDirection ?? "desc";
-  const orderBy: Prisma.ecommerce_mall_inventory_recordsOrderByWithRelationInput =
-    {
-      created_at: sortDirection,
-    };
-  // Query data and count
-  const [data, total] = await Promise.all([
-    MyGlobal.prisma.ecommerce_mall_inventory_records.findMany({
-      where,
+    ...(props.body.dateRangeFrom || props.body.dateRangeTo
+      ? {
+          created_at: {
+            ...(props.body.dateRangeFrom && {
+              gte: new Date(props.body.dateRangeFrom),
+            }),
+            ...(props.body.dateRangeTo && {
+              lte: new Date(props.body.dateRangeTo),
+            }),
+          },
+        }
+      : {}),
+  } satisfies Prisma.ecommerce_mall_inventory_recordsWhereInput;
+  const records =
+    await MyGlobal.prisma.ecommerce_mall_inventory_records.findMany({
+      where: whereInput,
       skip,
       take: limit,
-      orderBy,
+      orderBy: {
+        created_at: props.body.sortDirection === "asc" ? "asc" : "desc",
+      },
       ...EcommerceMallInventoryRecordAtSummaryTransformer.select(),
-    }),
-    MyGlobal.prisma.ecommerce_mall_inventory_records.count({ where }),
-  ]);
-  // Transform results
-  const transformed = await ArrayUtil.asyncMap(
-    data,
-    EcommerceMallInventoryRecordAtSummaryTransformer.transform,
-  );
+    });
+  const total = await MyGlobal.prisma.ecommerce_mall_inventory_records.count({
+    where: whereInput,
+  });
   return {
-    data: transformed,
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      records,
+      EcommerceMallInventoryRecordAtSummaryTransformer.transform,
+    ),
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallInventoryRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallInventoryRecord";
+// import { IPageIEcommerceMallInventoryRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallInventoryRecord";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+// import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallSellerInventoryRecords(props: {
+//   seller: SellerPayload;
+//   body: IEcommerceMallInventoryRecord.IRequest;
+// }): Promise<IPageIEcommerceMallInventoryRecord.ISummary> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_inventory_records.findMany({
+//     ...EcommerceMallInventoryRecordAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallInventoryRecordAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

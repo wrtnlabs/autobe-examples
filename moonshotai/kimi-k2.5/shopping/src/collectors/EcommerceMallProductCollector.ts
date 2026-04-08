@@ -10,7 +10,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallProductCollector {
   export async function collect(props: {
     body: IEcommerceMallProduct.ICreate;
-    seller: IEntity;
+    ecommerceMallSellers: IEntity;
   }) {
     return {
       id: v4(),
@@ -20,8 +20,40 @@ export namespace EcommerceMallProductCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      seller: { connect: { id: props.seller.id } },
+      seller: { connect: { id: props.ecommerceMallSellers.id } },
       category: { connect: { id: props.body.categoryId } },
     } satisfies Prisma.ecommerce_mall_productsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallProductCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallProduct.ICreate;
+//           ecommerceMallSellers: IEntity; // from authorized actor
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       name: ...,
+//       description: ...,
+//       base_price: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       seller: ...,
+//       category: ...,
+//       images: ...,
+//       variants: ...,
+//       wishlistItems: ...,
+//       orderItems: ...,
+//       reviews: ...,
+//       snapshots: ...,
+//           } satisfies Prisma.ecommerce_mall_productsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

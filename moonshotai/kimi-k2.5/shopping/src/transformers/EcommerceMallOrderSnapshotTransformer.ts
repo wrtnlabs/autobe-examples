@@ -1,6 +1,7 @@
 import { IEcommerceMallOrderSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderSnapshot";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -32,6 +33,34 @@ export namespace EcommerceMallOrderSnapshotTransformer {
       id: input.id,
       orderId: input.order.id,
       createdAt: input.created_at.toISOString(),
-    };
+    } satisfies IEcommerceMallOrderSnapshot;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallOrderSnapshotTransformer {
+//       export type Payload = Prisma.ecommerce_mall_order_snapshotsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             created_at: true,
+//             order_id: true,
+//           },
+//         } satisfies Prisma.ecommerce_mall_order_snapshotsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallOrderSnapshot> {
+//         return {
+//   id: {string},
+//   orderId: {string},
+//   createdAt: {string},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

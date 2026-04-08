@@ -27,50 +27,30 @@ export async function putEcommerceMallSellerRefundRequestsRefundRequestId(props:
   refundRequestId: string & tags.Format<"uuid">;
   body: IEcommerceMallRefundRequest.IUpdate;
 }): Promise<IEcommerceMallRefundRequest> {
-  // Find the refund request and verify ownership
+  // Find refund request and verify ownership
   const refundRequest =
-    await MyGlobal.prisma.ecommerce_mall_refund_requests.findFirst({
-      where: {
-        id: props.refundRequestId,
-        seller_id: props.seller.id,
-        deleted_at: null,
-      },
+    await MyGlobal.prisma.ecommerce_mall_refund_requests.findUniqueOrThrow({
+      where: { id: props.refundRequestId },
       select: {
         id: true,
-        order_item_id: true,
-        reason: true,
+        seller_id: true,
         status: true,
-        orderItem: {
-          select: {
-            id: true,
-            quantity: true,
-            variant: {
-              select: {
-                id: true,
-              },
-            },
-          },
-        },
+        reason: true,
+        order_item_id: true,
       },
     });
-  if (refundRequest === null) {
-    throw new HttpException("Refund request not found or not authorized", 404);
+  // Verify seller owns this refund request
+  if (refundRequest.seller_id !== props.seller.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Check that the refund request is still pending
+  // Verify refund request is still pending
   if (refundRequest.status !== "pending") {
     throw new HttpException("Refund request has already been processed", 400);
   }
-  // Validate response reason is provided when rejecting
-  if (props.body.status === "rejected" && !props.body.responseReason) {
-    throw new HttpException(
-      "Response reason is required when rejecting a refund request",
-      400,
-    );
-  }
   const now = new Date();
-  // Perform atomic transaction
+  // Execute all operations atomically
   await MyGlobal.prisma.$transaction(async (tx) => {
-    // Update refund request
+    // Update refund request status and response timestamp
     await tx.ecommerce_mall_refund_requests.update({
       where: { id: props.refundRequestId },
       data: {
@@ -79,7 +59,7 @@ export async function putEcommerceMallSellerRefundRequestsRefundRequestId(props:
         updated_at: now,
       },
     });
-    // Create snapshot record
+    // Create immutable snapshot for audit trail
     await tx.ecommerce_mall_refund_request_snapshots.create({
       data: {
         id: v4(),
@@ -90,8 +70,17 @@ export async function putEcommerceMallSellerRefundRequestsRefundRequestId(props:
         created_at: now,
       },
     });
-    // If approved, update order item and create inventory record
+    // If approved, update order item and restore inventory
     if (props.body.status === "approved") {
+      // Get order item details for inventory restoration
+      const orderItem = await tx.ecommerce_mall_order_items.findUniqueOrThrow({
+        where: { id: refundRequest.order_item_id },
+        select: {
+          id: true,
+          variant_id: true,
+          quantity: true,
+        },
+      });
       // Update order item status to refunded
       await tx.ecommerce_mall_order_items.update({
         where: { id: refundRequest.order_item_id },
@@ -100,28 +89,72 @@ export async function putEcommerceMallSellerRefundRequestsRefundRequestId(props:
           updated_at: now,
         },
       });
-      // Create inventory record to restore stock
-      if (refundRequest.orderItem?.variant?.id) {
-        await tx.ecommerce_mall_inventory_records.create({
-          data: {
-            id: v4(),
-            product_variant_id: refundRequest.orderItem.variant.id,
-            quantity_change: refundRequest.orderItem.quantity,
-            reason: "Refund Restoration",
-            created_at: now,
-          },
-        });
-      }
+      // Create inventory record to restore stock quantity
+      await tx.ecommerce_mall_inventory_records.create({
+        data: {
+          id: v4(),
+          product_variant_id: orderItem.variant_id,
+          quantity_change: orderItem.quantity,
+          reason: "Refund Restoration",
+          created_at: now,
+        },
+      });
     }
   });
-  // Query full refund request with all relations for transformation
-  const updatedRefundRequest =
+  // Fetch updated refund request with all relations and transform
+  const updated =
     await MyGlobal.prisma.ecommerce_mall_refund_requests.findUniqueOrThrow({
       where: { id: props.refundRequestId },
       ...EcommerceMallRefundRequestTransformer.select(),
     });
-  // Transform and return
-  return await EcommerceMallRefundRequestTransformer.transform(
-    updatedRefundRequest,
-  );
+  return await EcommerceMallRefundRequestTransformer.transform(updated);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequest";
+// import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
+// import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
+// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+// import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+// import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+// import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
+// import { IEcommerceMallRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequestSnapshot";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function putEcommerceMallSellerRefundRequestsRefundRequestId(props: {
+//   seller: SellerPayload;
+//   refundRequestId: string;
+//   body: IEcommerceMallRefundRequest.IUpdate;
+// }): Promise<IEcommerceMallRefundRequest> {
+//   await MyGlobal.prisma.ecommerce_mall_refund_requests.update({
+//     where: { ... },
+//     data: { ... },
+//   });
+//   const updated = await MyGlobal.prisma.ecommerce_mall_refund_requests.findUniqueOrThrow({
+//     where: { ... },
+//     ...EcommerceMallRefundRequestTransformer.select(),
+//   });
+//   return await EcommerceMallRefundRequestTransformer.transform(updated);
+// }
+// ```
+//--------------------------------------------------------------

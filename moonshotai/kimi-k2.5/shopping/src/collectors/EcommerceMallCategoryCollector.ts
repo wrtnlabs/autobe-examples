@@ -11,9 +11,8 @@ export namespace EcommerceMallCategoryCollector {
   export async function collect(props: {
     body: IEcommerceMallCategory.ICreate;
   }) {
-    const id: string = v4();
     return {
-      id,
+      id: v4(),
       name: props.body.name,
       description: props.body.description ?? null,
       created_at: new Date(),
@@ -25,3 +24,31 @@ export namespace EcommerceMallCategoryCollector {
     } satisfies Prisma.ecommerce_mall_categoriesCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallCategoryCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallCategory.ICreate;
+//           
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       name: ...,
+//       description: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       parent: ...,
+//       orderItemProductSnapshots: ...,
+//       subcategories: ...,
+//       products: ...,
+//       productSnapshots: ...,
+//           } satisfies Prisma.ecommerce_mall_categoriesCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

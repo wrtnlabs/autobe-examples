@@ -19,100 +19,143 @@ export async function patchEcommerceMallAdminCustomerSessions(props: {
   admin: AdminPayload;
   body: IEcommerceMallCustomerSession.IRequest;
 }): Promise<IPageIEcommerceMallCustomerSession.ISummary> {
-  const body = props.body;
-  // Pagination parameters
-  const page = body.page ?? 1;
-  const limit = body.limit ?? 20;
+  const page = props.body.page ?? 1;
+  const limit = Math.min(props.body.limit ?? 20, 100);
   const skip = (page - 1) * limit;
-  // Sorting parameters
-  const sortBy = body.sortBy ?? "created_at";
-  const sortOrder = body.sortOrder ?? "desc";
-  // Build where clause
-  const where: Prisma.ecommerce_mall_customer_sessionsWhereInput = {};
-  // Created at range filter
+  const sortBy = props.body.sortBy ?? "created_at";
+  const sortOrder = props.body.sortOrder ?? "desc";
+  const whereConditions: Prisma.ecommerce_mall_customer_sessionsWhereInput[] =
+    [];
   if (
-    (body.createdAtFrom !== undefined && body.createdAtFrom !== null) ||
-    (body.createdAtTo !== undefined && body.createdAtTo !== null)
+    props.body.createdAtFrom !== null &&
+    props.body.createdAtFrom !== undefined
   ) {
-    where.created_at = {};
-    if (body.createdAtFrom !== undefined && body.createdAtFrom !== null) {
-      (where.created_at as any).gte = new Date(body.createdAtFrom);
-    }
-    if (body.createdAtTo !== undefined && body.createdAtTo !== null) {
-      (where.created_at as any).lte = new Date(body.createdAtTo);
+    whereConditions.push({ created_at: { gte: props.body.createdAtFrom } });
+  }
+  if (props.body.createdAtTo !== null && props.body.createdAtTo !== undefined) {
+    whereConditions.push({ created_at: { lte: props.body.createdAtTo } });
+  }
+  if (
+    props.body.expiredAtFrom !== null &&
+    props.body.expiredAtFrom !== undefined
+  ) {
+    whereConditions.push({ expired_at: { gte: props.body.expiredAtFrom } });
+  }
+  if (props.body.expiredAtTo !== null && props.body.expiredAtTo !== undefined) {
+    whereConditions.push({ expired_at: { lte: props.body.expiredAtTo } });
+  }
+  if (
+    props.body.status !== null &&
+    props.body.status !== undefined &&
+    props.body.status !== "all"
+  ) {
+    const nowISO = new Date().toISOString();
+    if (props.body.status === "active") {
+      whereConditions.push({ expired_at: { gt: nowISO } });
+    } else if (props.body.status === "expired") {
+      whereConditions.push({ expired_at: { lte: nowISO } });
     }
   }
-  // Expired at range filter and status filter
-  const hasExpiredAtFrom =
-    body.expiredAtFrom !== undefined && body.expiredAtFrom !== null;
-  const hasExpiredAtTo =
-    body.expiredAtTo !== undefined && body.expiredAtTo !== null;
-  const hasStatus = body.status !== undefined && body.status !== null;
-  if (hasExpiredAtFrom || hasExpiredAtTo || hasStatus) {
-    where.expired_at = {};
-    if (hasExpiredAtFrom) {
-      (where.expired_at as any).gte = new Date(body.expiredAtFrom!);
-    }
-    if (hasExpiredAtTo) {
-      (where.expired_at as any).lte = new Date(body.expiredAtTo!);
-    }
-    if (hasStatus) {
-      const now = new Date();
-      if (body.status === "active") {
-        (where.expired_at as any).gt = now;
-      } else if (body.status === "expired") {
-        (where.expired_at as any).lte = now;
-      }
+  if (
+    props.body.ip !== null &&
+    props.body.ip !== undefined &&
+    props.body.ip.length > 0
+  ) {
+    whereConditions.push({
+      ip: { contains: props.body.ip, mode: "insensitive" },
+    });
+  }
+  if (props.body.cursor !== null && props.body.cursor !== undefined) {
+    if (sortBy === "created_at") {
+      whereConditions.push({
+        created_at:
+          sortOrder === "asc"
+            ? { gt: props.body.cursor }
+            : { lt: props.body.cursor },
+      });
+    } else if (sortBy === "expired_at") {
+      whereConditions.push({
+        expired_at:
+          sortOrder === "asc"
+            ? { gt: props.body.cursor }
+            : { lt: props.body.cursor },
+      });
     }
   }
-  // IP partial match filter
-  if (body.ip !== undefined && body.ip !== null && body.ip.length > 0) {
-    where.ip = {
-      contains: body.ip,
-    };
-  }
-  // Cursor pagination (for keyset pagination based on created_at)
-  if (body.cursor !== undefined && body.cursor !== null) {
-    if (where.created_at === undefined) {
-      where.created_at = {};
-    }
-    if (sortOrder === "asc") {
-      (where.created_at as any).gt = new Date(body.cursor);
-    } else {
-      (where.created_at as any).lt = new Date(body.cursor);
-    }
-  }
-  // Build order by
+  const whereInput: Prisma.ecommerce_mall_customer_sessionsWhereInput =
+    whereConditions.length > 0 ? { AND: whereConditions } : {};
   const orderBy: Prisma.ecommerce_mall_customer_sessionsOrderByWithRelationInput =
-    sortBy === "expired_at"
-      ? { expired_at: sortOrder }
-      : { created_at: sortOrder };
-  // Execute queries sequentially (not parallel) as per guidelines
-  const sessions =
+    sortBy === "created_at"
+      ? { created_at: sortOrder }
+      : { expired_at: sortOrder };
+  const records =
     await MyGlobal.prisma.ecommerce_mall_customer_sessions.findMany({
-      where,
-      skip,
+      where: whereInput,
+      skip: skip,
       take: limit,
-      orderBy,
+      orderBy: orderBy,
       ...EcommerceMallCustomerSessionAtSummaryTransformer.select(),
     });
   const total = await MyGlobal.prisma.ecommerce_mall_customer_sessions.count({
-    where,
+    where: whereInput,
   });
-  // Transform results
-  const data = await ArrayUtil.asyncMap(
-    sessions,
+  const transformedData = await ArrayUtil.asyncMap(
+    records,
     EcommerceMallCustomerSessionAtSummaryTransformer.transform,
   );
-  // Calculate pagination
   const pages = Math.ceil(total / limit);
   return {
-    data,
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
-      pages,
+      pages: pages,
     } satisfies IPage.IPagination,
+    data: transformedData,
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerSession";
+// import { IPageIEcommerceMallCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallCustomerSession";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallAdminCustomerSessions(props: {
+//   admin: AdminPayload;
+//   body: IEcommerceMallCustomerSession.IRequest;
+// }): Promise<IPageIEcommerceMallCustomerSession.ISummary> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_customer_sessions.findMany({
+//     ...EcommerceMallCustomerSessionAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallCustomerSessionAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

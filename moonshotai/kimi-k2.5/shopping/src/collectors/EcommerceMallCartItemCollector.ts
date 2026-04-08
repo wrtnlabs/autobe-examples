@@ -12,15 +12,38 @@ export namespace EcommerceMallCartItemCollector {
     body: IEcommerceMallCartItem.ICreate;
     ecommerceMallCustomers: IEntity;
   }) {
-    const id: string = v4();
     return {
-      id,
+      id: v4(),
+      customer: { connect: { id: props.ecommerceMallCustomers.id } },
+      productVariant: { connect: { id: props.body.productVariantId } },
       quantity: props.body.quantity,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      customer: { connect: { id: props.ecommerceMallCustomers.id } },
-      productVariant: { connect: { id: props.body.productVariantId } },
     } satisfies Prisma.ecommerce_mall_cart_itemsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallCartItemCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallCartItem.ICreate;
+//           ecommerceMallCustomers: IEntity; // from authorized actor
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       quantity: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       customer: ...,
+//       productVariant: ...,
+//           } satisfies Prisma.ecommerce_mall_cart_itemsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

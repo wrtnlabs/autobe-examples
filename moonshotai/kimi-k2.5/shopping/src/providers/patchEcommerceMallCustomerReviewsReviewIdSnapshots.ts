@@ -24,63 +24,108 @@ export async function patchEcommerceMallCustomerReviewsReviewIdSnapshots(props: 
   reviewId: string & tags.Format<"uuid">;
   body: IEcommerceMallReview.ISnapshotRequest;
 }): Promise<IPageIEcommerceMallReview.ISnapshot> {
-  // Verify review exists and customer is the author
-  const review = await MyGlobal.prisma.ecommerce_mall_reviews.findFirst({
-    where: {
-      id: props.reviewId,
-      customer_id: props.customer.id,
+  // Verify review exists and check ownership
+  const review = await MyGlobal.prisma.ecommerce_mall_reviews.findUniqueOrThrow(
+    {
+      where: { id: props.reviewId },
+      select: { ecommerce_mall_customer_id: true },
     },
-    select: {
-      id: true,
-    },
-  });
-  if (review === null) {
-    throw new HttpException("Review not found or access denied", 404);
+  );
+  // Only review author or admin can access snapshots
+  if (review.ecommerce_mall_customer_id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
   }
   // Pagination parameters
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 10;
   const skip = (page - 1) * limit;
+  // Sort configuration
+  const sortDirection = props.body.sort?.direction ?? "desc";
+  const orderBy = { created_at: sortDirection };
   // Build where clause
-  const where: Prisma.ecommerce_mall_review_snapshotsWhereInput = {
+  const whereInput = {
     ecommerce_mall_review_id: props.reviewId,
     ...(props.body.search && {
-      content: {
-        contains: props.body.search,
-        mode: "insensitive" as const,
-      },
+      content: { contains: props.body.search, mode: "insensitive" as const },
     }),
-  };
-  // Sort configuration
-  const orderBy: Prisma.ecommerce_mall_review_snapshotsOrderByWithRelationInput =
-    props.body.sort?.field === "created_at"
-      ? { created_at: props.body.sort.direction }
-      : { created_at: "desc" };
-  // Get total count
-  const total = await MyGlobal.prisma.ecommerce_mall_review_snapshots.count({
-    where,
-  });
-  // Fetch snapshots
-  const snapshots =
+  } satisfies Prisma.ecommerce_mall_review_snapshotsWhereInput;
+  // Query snapshots with pagination
+  const records =
     await MyGlobal.prisma.ecommerce_mall_review_snapshots.findMany({
-      where,
+      where: whereInput,
       skip,
       take: limit,
       orderBy,
       ...EcommerceMallReviewAtSnapshotTransformer.select(),
     });
-  // Transform results
+  // Get total count for pagination
+  const total = await MyGlobal.prisma.ecommerce_mall_review_snapshots.count({
+    where: whereInput,
+  });
+  // Transform records to DTOs
   const data = await ArrayUtil.asyncMap(
-    snapshots,
+    records,
     EcommerceMallReviewAtSnapshotTransformer.transform,
   );
+  // Calculate pagination metadata
+  const pages = Math.ceil(total / limit);
   return {
     data,
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: pages,
     } satisfies IPage.IPagination,
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReview";
+// import { IPageIEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallReview";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+// import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+// import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallCustomerReviewsReviewIdSnapshots(props: {
+//   customer: CustomerPayload;
+//   reviewId: string & tags.Format<"uuid">;
+//   body: IEcommerceMallReview.ISnapshotRequest;
+// }): Promise<IPageIEcommerceMallReview.ISnapshot> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_review_snapshots.findMany({
+//     ...EcommerceMallReviewAtSnapshotTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallReviewAtSnapshotTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

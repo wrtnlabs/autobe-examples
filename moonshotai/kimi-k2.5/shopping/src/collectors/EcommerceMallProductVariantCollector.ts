@@ -12,10 +12,8 @@ import { EcommerceMallProductVariantOptionCollector } from "./EcommerceMallProdu
 export namespace EcommerceMallProductVariantCollector {
   export async function collect(props: {
     body: IEcommerceMallProductVariant.ICreate;
-    ecommerceMallProducts: IEntity;
-    ecommerceMallSellers: IEntity;
-    ecommerceMallSellerSessions: IEntity;
-  }): Promise<Prisma.ecommerce_mall_product_variantsCreateInput> {
+    product: IEntity;
+  }) {
     const id: string = v4();
     return {
       id,
@@ -24,17 +22,13 @@ export namespace EcommerceMallProductVariantCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      product: {
-        connect: { id: props.ecommerceMallProducts.id },
-      },
+      product: { connect: { id: props.product.id } },
       variantOptions: props.body.options.length
         ? {
             create: await ArrayUtil.asyncMap(props.body.options, (option) =>
               EcommerceMallProductVariantOptionCollector.collect({
                 body: option,
                 ecommerceMallProductVariants: { id },
-                ecommerceMallSellers: props.ecommerceMallSellers,
-                ecommerceMallSellerSessions: props.ecommerceMallSellerSessions,
               }),
             ),
           }
@@ -42,3 +36,33 @@ export namespace EcommerceMallProductVariantCollector {
     } satisfies Prisma.ecommerce_mall_product_variantsCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallProductVariantCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallProductVariant.ICreate;
+//           ecommerceMallProducts: IEntity; // from path parameter productId
+// ecommerceMallSellers: IEntity; // from authorized actor
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       sku_code: ...,
+//       price: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       product: ...,
+//       variantOptions: ...,
+//       cartItems: ...,
+//       inventoryRecords: ...,
+//       orderItems: ...,
+//       snapshots: ...,
+//           } satisfies Prisma.ecommerce_mall_product_variantsCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

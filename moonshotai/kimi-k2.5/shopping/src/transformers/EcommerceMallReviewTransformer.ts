@@ -6,6 +6,7 @@ import { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -28,6 +29,11 @@ export namespace EcommerceMallReviewTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        orderItem: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_order_itemsFindManyArgs,
         customer: {
           select: {
             id: true,
@@ -35,11 +41,6 @@ export namespace EcommerceMallReviewTransformer {
         } satisfies Prisma.ecommerce_mall_customersFindManyArgs,
         product: EcommerceMallProductAtSummaryTransformer.select(),
         order: EcommerceMallOrderAtSummaryTransformer.select(),
-        orderItem: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.ecommerce_mall_order_itemsFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_reviewsFindManyArgs;
   }
@@ -48,14 +49,7 @@ export namespace EcommerceMallReviewTransformer {
   ): Promise<IEcommerceMallReview> {
     return {
       id: input.id,
-      rating: input.rating,
-      content: input.content,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-      customer: {
-        id: input.customer.id,
-      } satisfies IEcommerceMallCustomer.ISummary,
+      customer: { id: input.customer.id },
       product: await EcommerceMallProductAtSummaryTransformer.transform(
         input.product,
       ),
@@ -63,6 +57,54 @@ export namespace EcommerceMallReviewTransformer {
         input.order,
       ),
       orderItemId: input.orderItem.id,
+      rating: input.rating,
+      content: input.content,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
     };
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallReviewTransformer {
+//       export type Payload = Prisma.ecommerce_mall_reviewsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             rating: true,
+//             content: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//             customer_id: true,
+//             product: EcommerceMallProductAtSummaryTransformer.select(),
+//             order: EcommerceMallOrderAtSummaryTransformer.select(),
+//             order_item_id: true,
+//             ...
+//           },
+//         } satisfies Prisma.ecommerce_mall_reviewsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallReview> {
+//         return {
+//   id: {string},
+//   customer: {IEcommerceMallCustomer.ISummary},
+//   product: await EcommerceMallProductAtSummaryTransformer.transform(input.product),
+//   order: await EcommerceMallOrderAtSummaryTransformer.transform(input.order),
+//   orderItemId: {string},
+//   rating: {integer},
+//   content: {string | null},
+//   createdAt: {string},
+//   updatedAt: {string},
+//   deletedAt: {string | null},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

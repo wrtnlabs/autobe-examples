@@ -17,40 +17,47 @@ export async function getEcommerceMallSellerProductsProductIdSnapshotsCompare(pr
   seller: SellerPayload;
   productId: string;
   query: {
-    sourceSnapshotId: string;
-    targetSnapshotId?: string;
+    sourceSnapshotId: string & tags.Format<"uuid">;
+    targetSnapshotId: (string & tags.Format<"uuid">) | null;
   };
 }): Promise<IEcommerceMallProductSnapshotComparison> {
-  const { sourceSnapshotId, targetSnapshotId } = props.query;
-  // Verify product exists and seller owns it
-  const product = await MyGlobal.prisma.ecommerce_mall_products.findFirst({
-    where: {
-      id: props.productId,
-      seller_id: props.seller.id,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      category_id: true,
-      base_price: true,
-    },
-  });
-  if (!product) {
-    throw new HttpException("Product not found or access denied", 404);
+  // Verify product exists and check ownership
+  const product =
+    await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
+      where: { id: props.productId },
+      select: {
+        id: true,
+        ecommerce_mall_seller_id: true,
+        name: true,
+        description: true,
+        ecommerce_mall_category_id: true,
+        base_price: true,
+      },
+    });
+  // Authorization: seller must own the product or be admin
+  if (props.seller.type === "seller") {
+    if (product.ecommerce_mall_seller_id !== props.seller.id) {
+      throw new HttpException("Forbidden", 403);
+    }
+  } else if (
+    props.seller.type !== "admin" &&
+    props.seller.type !== "superAdmin"
+  ) {
+    throw new HttpException("Forbidden", 403);
   }
-  // Load source snapshot with images
+  const { sourceSnapshotId, targetSnapshotId } = props.query;
+  // Load source snapshot with images and variant snapshots
   const sourceSnapshot =
     await MyGlobal.prisma.ecommerce_mall_product_snapshots.findUniqueOrThrow({
       where: {
         id: sourceSnapshotId,
+        ecommerce_mall_product_id: props.productId,
       },
       select: {
         id: true,
         name: true,
         description: true,
-        category_id: true,
+        ecommerce_mall_category_id: true,
         base_price: true,
         created_at: true,
         images: {
@@ -60,26 +67,24 @@ export async function getEcommerceMallSellerProductsProductIdSnapshotsCompare(pr
             display_order: true,
             created_at: true,
           },
-          orderBy: {
-            display_order: "asc",
+        } satisfies Prisma.ecommerce_mall_product_snapshot_imagesFindManyArgs,
+        variantSnapshots: {
+          select: {
+            id: true,
+            sku_code: true,
+            price: true,
+            optionValues: {
+              select: {
+                option_key: true,
+                option_value: true,
+              },
+            } satisfies Prisma.ecommerce_mall_product_variant_snapshot_option_valuesFindManyArgs,
           },
-        },
+        } satisfies Prisma.ecommerce_mall_product_variant_snapshotsFindManyArgs,
       },
     });
-  // Verify source snapshot belongs to the product
-  const sourceBelongsToProduct =
-    await MyGlobal.prisma.ecommerce_mall_product_snapshots.findFirst({
-      where: {
-        id: sourceSnapshotId,
-        product_id: props.productId,
-      },
-      select: { id: true },
-    });
-  if (!sourceBelongsToProduct) {
-    throw new HttpException("Source snapshot not found for this product", 404);
-  }
-  // Load target - either another snapshot or current product state
-  type TargetData = {
+  // Define target data interface
+  interface TargetData {
     name: string;
     description: string;
     category_id: string;
@@ -88,22 +93,80 @@ export async function getEcommerceMallSellerProductsProductIdSnapshotsCompare(pr
       id: string;
       url: string;
       display_order: number;
-      created_at: Date;
+      created_at: string;
     }>;
-  };
+    variants: Array<{
+      id: string;
+      sku_code: string;
+      price: number;
+      optionValues: Array<{
+        option_key: string;
+        option_value: string;
+      }>;
+    }>;
+  }
   let targetData: TargetData;
-  if (targetSnapshotId) {
+  if (targetSnapshotId === null) {
+    // Use current product state
+    const currentVariants =
+      await MyGlobal.prisma.ecommerce_mall_product_variants.findMany({
+        where: { ecommerce_mall_product_id: props.productId },
+        select: {
+          id: true,
+          sku_code: true,
+          price: true,
+          options: {
+            select: {
+              option_key: true,
+              option_value: true,
+            },
+          } satisfies Prisma.ecommerce_mall_product_variant_optionsFindManyArgs,
+        },
+      });
+    const currentImages =
+      await MyGlobal.prisma.ecommerce_mall_product_images.findMany({
+        where: { ecommerce_mall_product_id: props.productId },
+        select: {
+          id: true,
+          url: true,
+          display_order: true,
+          created_at: true,
+        },
+      });
+    targetData = {
+      name: product.name,
+      description: product.description,
+      category_id: product.ecommerce_mall_category_id,
+      base_price: product.base_price,
+      images: currentImages.map((img) => ({
+        id: img.id,
+        url: img.url,
+        display_order: img.display_order,
+        created_at: toISOStringSafe(img.created_at),
+      })),
+      variants: currentVariants.map((v) => ({
+        id: v.id,
+        sku_code: v.sku_code,
+        price: v.price,
+        optionValues: v.options.map((o) => ({
+          option_key: o.option_key,
+          option_value: o.option_value,
+        })),
+      })),
+    };
+  } else {
+    // Use target snapshot
     const targetSnapshot =
       await MyGlobal.prisma.ecommerce_mall_product_snapshots.findUniqueOrThrow({
         where: {
           id: targetSnapshotId,
+          ecommerce_mall_product_id: props.productId,
         },
         select: {
           id: true,
-          product_id: true,
           name: true,
           description: true,
-          category_id: true,
+          ecommerce_mall_category_id: true,
           base_price: true,
           images: {
             select: {
@@ -112,55 +175,48 @@ export async function getEcommerceMallSellerProductsProductIdSnapshotsCompare(pr
               display_order: true,
               created_at: true,
             },
-            orderBy: {
-              display_order: "asc",
+          } satisfies Prisma.ecommerce_mall_product_snapshot_imagesFindManyArgs,
+          variantSnapshots: {
+            select: {
+              id: true,
+              sku_code: true,
+              price: true,
+              optionValues: {
+                select: {
+                  option_key: true,
+                  option_value: true,
+                },
+              } satisfies Prisma.ecommerce_mall_product_variant_snapshot_option_valuesFindManyArgs,
             },
-          },
+          } satisfies Prisma.ecommerce_mall_product_variant_snapshotsFindManyArgs,
         },
       });
-    if (targetSnapshot.product_id !== props.productId) {
-      throw new HttpException(
-        "Target snapshot not found for this product",
-        404,
-      );
-    }
     targetData = {
       name: targetSnapshot.name,
       description: targetSnapshot.description,
-      category_id: targetSnapshot.category_id,
+      category_id: targetSnapshot.ecommerce_mall_category_id,
       base_price: targetSnapshot.base_price,
-      images: targetSnapshot.images,
-    };
-  } else {
-    // Load current product images
-    const currentImages =
-      await MyGlobal.prisma.ecommerce_mall_product_images.findMany({
-        where: {
-          product_id: props.productId,
-        },
-        select: {
-          id: true,
-          image_url: true,
-          display_order: true,
-          created_at: true,
-        },
-        orderBy: {
-          display_order: "asc",
-        },
-      });
-    targetData = {
-      name: product.name,
-      description: product.description,
-      category_id: product.category_id,
-      base_price: product.base_price,
-      images: currentImages.map((img) => ({
+      images: targetSnapshot.images.map((img) => ({
         id: img.id,
-        url: img.image_url,
+        url: img.url,
         display_order: img.display_order,
-        created_at: img.created_at,
+        created_at: toISOStringSafe(img.created_at),
+      })),
+      variants: targetSnapshot.variantSnapshots.map((v) => ({
+        id: v.id,
+        sku_code: v.sku_code,
+        price: v.price,
+        optionValues: v.optionValues,
       })),
     };
   }
+  // Transform source images to use string dates
+  const sourceImages = sourceSnapshot.images.map((img) => ({
+    id: img.id,
+    url: img.url,
+    display_order: img.display_order,
+    created_at: toISOStringSafe(img.created_at),
+  }));
   // Compare product fields
   const productNameOld =
     sourceSnapshot.name !== targetData.name ? sourceSnapshot.name : null;
@@ -175,11 +231,11 @@ export async function getEcommerceMallSellerProductsProductIdSnapshotsCompare(pr
       ? targetData.description
       : null;
   const categoryIdOld =
-    sourceSnapshot.category_id !== targetData.category_id
-      ? sourceSnapshot.category_id
+    sourceSnapshot.ecommerce_mall_category_id !== targetData.category_id
+      ? sourceSnapshot.ecommerce_mall_category_id
       : null;
   const categoryIdNew =
-    sourceSnapshot.category_id !== targetData.category_id
+    sourceSnapshot.ecommerce_mall_category_id !== targetData.category_id
       ? targetData.category_id
       : null;
   const basePriceOld =
@@ -191,142 +247,87 @@ export async function getEcommerceMallSellerProductsProductIdSnapshotsCompare(pr
       ? targetData.base_price
       : null;
   // Compare images
-  const sourceImageMap = new Map(
-    sourceSnapshot.images.map((img) => [img.id, img]),
-  );
+  const sourceImageMap = new Map(sourceImages.map((img) => [img.id, img]));
   const targetImageMap = new Map(targetData.images.map((img) => [img.id, img]));
+  // Images added (in target but not in source)
   const imagesAdded: IEcommerceMallProductSnapshotImage.ISummary[] = [];
-  const imagesRemoved: IEcommerceMallProductSnapshotImage.ISummary[] = [];
-  const imagesReordered: string[] = [];
-  // Find added images
   for (const targetImg of targetData.images) {
     if (!sourceImageMap.has(targetImg.id)) {
       imagesAdded.push({
-        id: targetImg.id,
-        url: targetImg.url,
-        display_order: targetImg.display_order,
-        created_at: toISOStringSafe(targetImg.created_at),
+        id: targetImg.id as string & tags.Format<"uuid">,
+        url: targetImg.url as string & tags.Format<"uri">,
+        display_order: targetImg.display_order as number &
+          tags.Type<"int32"> &
+          tags.Minimum<1>,
+        created_at: targetImg.created_at as string & tags.Format<"date-time">,
       });
     }
   }
-  // Find removed images
-  for (const sourceImg of sourceSnapshot.images) {
+  // Images removed (in source but not in target)
+  const imagesRemoved: IEcommerceMallProductSnapshotImage.ISummary[] = [];
+  for (const sourceImg of sourceImages) {
     if (!targetImageMap.has(sourceImg.id)) {
       imagesRemoved.push({
-        id: sourceImg.id,
-        url: sourceImg.url,
-        display_order: sourceImg.display_order,
-        created_at: toISOStringSafe(sourceImg.created_at),
+        id: sourceImg.id as string & tags.Format<"uuid">,
+        url: sourceImg.url as string & tags.Format<"uri">,
+        display_order: sourceImg.display_order as number &
+          tags.Type<"int32"> &
+          tags.Minimum<1>,
+        created_at: sourceImg.created_at as string & tags.Format<"date-time">,
       });
     }
   }
-  // Find reordered images
-  for (const sourceImg of sourceSnapshot.images) {
+  // Images reordered (same ID but different display_order)
+  const imagesReordered: string[] = [];
+  for (const sourceImg of sourceImages) {
     const targetImg = targetImageMap.get(sourceImg.id);
     if (targetImg && sourceImg.display_order !== targetImg.display_order) {
       imagesReordered.push(sourceImg.id);
     }
   }
-  // Compare variants by loading all variant snapshots up to each point in time
-  const sourceVariants =
-    await MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.findMany({
-      where: {
-        productVariant: {
-          product_id: props.productId,
-        },
-        created_at: {
-          lte: sourceSnapshot.created_at,
-        },
-      },
-      select: {
-        id: true,
-        product_variant_id: true,
-        sku_code: true,
-        price: true,
-        optionValues: {
-          select: {
-            option_name: true,
-            option_value: true,
-          },
-        },
-      },
-      orderBy: [{ product_variant_id: "asc" }, { created_at: "desc" }],
-    });
-  // Get latest snapshot per variant for source
-  const sourceVariantLatestMap = new Map<string, (typeof sourceVariants)[0]>();
-  for (const variant of sourceVariants) {
-    if (!sourceVariantLatestMap.has(variant.product_variant_id)) {
-      sourceVariantLatestMap.set(variant.product_variant_id, variant);
+  // Compare variants
+  const sourceVariantMap = new Map(
+    sourceSnapshot.variantSnapshots.map((v) => [v.id, v]),
+  );
+  const targetVariantMap = new Map(targetData.variants.map((v) => [v.id, v]));
+  const variantsChanged: string[] = [];
+  // Check for changed or removed variants
+  for (const sourceVariant of sourceSnapshot.variantSnapshots) {
+    const targetVariant = targetVariantMap.get(sourceVariant.id);
+    if (!targetVariant) {
+      variantsChanged.push(sourceVariant.id);
+    } else {
+      const skuChanged = sourceVariant.sku_code !== targetVariant.sku_code;
+      const priceChanged = sourceVariant.price !== targetVariant.price;
+      const sourceOptions = new Map(
+        sourceVariant.optionValues.map((o) => [o.option_key, o.option_value]),
+      );
+      const targetOptions = new Map(
+        targetVariant.optionValues.map((o) => [o.option_key, o.option_value]),
+      );
+      let optionsChanged = sourceOptions.size !== targetOptions.size;
+      if (!optionsChanged) {
+        for (const [key, value] of sourceOptions) {
+          if (targetOptions.get(key) !== value) {
+            optionsChanged = true;
+            break;
+          }
+        }
+      }
+      if (skuChanged || priceChanged || optionsChanged) {
+        variantsChanged.push(sourceVariant.id);
+      }
     }
   }
-  const variantsChanged: string[] = [];
-  if (targetSnapshotId) {
-    const targetSnapshotDate =
-      await MyGlobal.prisma.ecommerce_mall_product_snapshots.findUnique({
-        where: { id: targetSnapshotId },
-        select: { created_at: true },
-      });
-    if (!targetSnapshotDate) {
-      throw new HttpException("Target snapshot not found", 404);
-    }
-    const targetVariants =
-      await MyGlobal.prisma.ecommerce_mall_product_variant_snapshots.findMany({
-        where: {
-          productVariant: {
-            product_id: props.productId,
-          },
-          created_at: {
-            lte: targetSnapshotDate.created_at,
-          },
-        },
-        select: {
-          id: true,
-          product_variant_id: true,
-          sku_code: true,
-          price: true,
-          optionValues: {
-            select: {
-              option_name: true,
-              option_value: true,
-            },
-          },
-        },
-        orderBy: [{ product_variant_id: "asc" }, { created_at: "desc" }],
-      });
-    // Get latest snapshot per variant for target
-    const targetVariantLatestMap = new Map<
-      string,
-      (typeof targetVariants)[0]
-    >();
-    for (const variant of targetVariants) {
-      if (!targetVariantLatestMap.has(variant.product_variant_id)) {
-        targetVariantLatestMap.set(variant.product_variant_id, variant);
-      }
-    }
-    // Compare variants
-    const allVariantIds = new Set([
-      ...Array.from(sourceVariantLatestMap.keys()),
-      ...Array.from(targetVariantLatestMap.keys()),
-    ]);
-    for (const variantId of allVariantIds) {
-      const sourceVar = sourceVariantLatestMap.get(variantId);
-      const targetVar = targetVariantLatestMap.get(variantId);
-      if (!sourceVar || !targetVar) {
-        // Variant was added or removed - add the existing one's ID
-        if (sourceVar) variantsChanged.push(sourceVar.id);
-        if (targetVar) variantsChanged.push(targetVar.id);
-      } else if (
-        sourceVar.sku_code !== targetVar.sku_code ||
-        sourceVar.price !== targetVar.price ||
-        !areOptionValuesEqual(sourceVar.optionValues, targetVar.optionValues)
-      ) {
-        variantsChanged.push(sourceVar.id);
-      }
+  // Check for added variants
+  for (const targetVariant of targetData.variants) {
+    if (!sourceVariantMap.has(targetVariant.id)) {
+      variantsChanged.push(targetVariant.id);
     }
   }
   return {
     sourceSnapshotId,
-    targetSnapshotId: targetSnapshotId ?? null,
+    targetSnapshotId,
     productNameOld,
     productNameNew,
     productDescriptionOld,
@@ -341,26 +342,50 @@ export async function getEcommerceMallSellerProductsProductIdSnapshotsCompare(pr
     variantsChanged: JSON.stringify(variantsChanged),
   };
 }
-function areOptionValuesEqual(
-  a: Array<{
-    option_name: string;
-    option_value: string;
-  }>,
-  b: Array<{
-    option_name: string;
-    option_value: string;
-  }>,
-): boolean {
-  if (a.length !== b.length) return false;
-  const sortedA = [...a].sort((x, y) =>
-    x.option_name.localeCompare(y.option_name),
-  );
-  const sortedB = [...b].sort((x, y) =>
-    x.option_name.localeCompare(y.option_name),
-  );
-  return sortedA.every(
-    (item, index) =>
-      item.option_name === sortedB[index].option_name &&
-      item.option_value === sortedB[index].option_value,
-  );
-}
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallProductSnapshotComparison } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshotComparison";
+// import { IEcommerceMallProductSnapshotImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshotImage";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function getEcommerceMallSellerProductsProductIdSnapshotsCompare(props: {
+//   seller: SellerPayload;
+//   productId: string;
+// }): Promise<IEcommerceMallProductSnapshotComparison> {
+//   return {
+//     sourceSnapshotId: ...,
+//     targetSnapshotId: ...,
+//     productNameOld: ...,
+//     productNameNew: ...,
+//     productDescriptionOld: ...,
+//     productDescriptionNew: ...,
+//     categoryIdOld: ...,
+//     categoryIdNew: ...,
+//     basePriceOld: ...,
+//     basePriceNew: ...,
+//     imagesAdded: await ArrayUtil.asyncMap(..., (r) => EcommerceMallProductSnapshotImageAtSummaryTransformer.transform(r)),
+//     imagesRemoved: await ArrayUtil.asyncMap(..., (r) => EcommerceMallProductSnapshotImageAtSummaryTransformer.transform(r)),
+//     imagesReordered: ...,
+//     variantsChanged: ...,
+//   };
+// }
+// ```
+//--------------------------------------------------------------

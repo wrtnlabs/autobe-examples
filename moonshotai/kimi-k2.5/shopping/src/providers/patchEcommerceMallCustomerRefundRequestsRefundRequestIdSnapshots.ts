@@ -20,20 +20,25 @@ export async function patchEcommerceMallCustomerRefundRequestsRefundRequestIdSna
   refundRequestId: string & tags.Format<"uuid">;
   body: IEcommerceMallRefundRequestSnapshot.IRequest;
 }): Promise<IPageIEcommerceMallRefundRequestSnapshot> {
-  await MyGlobal.prisma.ecommerce_mall_refund_requests.findFirstOrThrow({
-    where: {
-      id: props.refundRequestId,
-      orderItem: {
-        order: {
-          customer: {
-            id: props.customer.id,
+  // Verify refund request exists and belongs to customer
+  const refundRequest =
+    await MyGlobal.prisma.ecommerce_mall_refund_requests.findFirst({
+      where: {
+        id: props.refundRequestId,
+        order_item: {
+          order: {
+            ecommerce_mall_customer_id: props.customer.id,
           },
         },
       },
-    },
-  });
+    });
+  if (refundRequest === null) {
+    throw new HttpException("Refund request not found", 404);
+  }
+  // Build filters
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
+  const skip = (page - 1) * limit;
   const whereInput = {
     refund_request_id: props.refundRequestId,
     ...(props.body.status !== null && { status: props.body.status }),
@@ -56,10 +61,11 @@ export async function patchEcommerceMallCustomerRefundRequestsRefundRequestIdSna
         }
       : {}),
   } satisfies Prisma.ecommerce_mall_refund_request_snapshotsWhereInput;
-  const data =
+  // Query snapshots
+  const records =
     await MyGlobal.prisma.ecommerce_mall_refund_request_snapshots.findMany({
       where: whereInput,
-      skip: (page - 1) * limit,
+      skip,
       take: limit,
       orderBy: { created_at: "desc" },
       ...EcommerceMallRefundRequestSnapshotTransformer.select(),
@@ -69,15 +75,61 @@ export async function patchEcommerceMallCustomerRefundRequestsRefundRequestIdSna
       where: whereInput,
     });
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceMallRefundRequestSnapshotTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      records,
+      EcommerceMallRefundRequestSnapshotTransformer.transform,
+    ),
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequestSnapshot";
+// import { IPageIEcommerceMallRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallRefundRequestSnapshot";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallCustomerRefundRequestsRefundRequestIdSnapshots(props: {
+//   customer: CustomerPayload;
+//   refundRequestId: string;
+//   body: IEcommerceMallRefundRequestSnapshot.IRequest;
+// }): Promise<IPageIEcommerceMallRefundRequestSnapshot> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_refund_request_snapshots.findMany({
+//     ...EcommerceMallRefundRequestSnapshotTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallRefundRequestSnapshotTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

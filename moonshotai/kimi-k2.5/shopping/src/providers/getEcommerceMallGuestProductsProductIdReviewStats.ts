@@ -16,54 +16,86 @@ export async function getEcommerceMallGuestProductsProductIdReviewStats(props: {
   guest: GuestPayload;
   productId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallProductReviewStat> {
-  // Verify product exists
-  await MyGlobal.prisma.ecommerce_mall_products.findUniqueOrThrow({
-    where: { id: props.productId },
-  });
-  // Get aggregate statistics for non-deleted reviews
+  // Calculate average rating and total count from non-deleted reviews
   const aggregateResult =
     await MyGlobal.prisma.ecommerce_mall_reviews.aggregate({
       where: {
-        product_id: props.productId,
+        ecommerce_mall_product_id: props.productId,
         deleted_at: null,
       },
-      _avg: { rating: true },
-      _count: { id: true },
+      _avg: {
+        rating: true,
+      },
+      _count: {
+        rating: true,
+      },
     });
-  // Get distribution by rating
+  // Calculate distribution by rating values
   const distributionResult =
     await MyGlobal.prisma.ecommerce_mall_reviews.groupBy({
       by: ["rating"],
       where: {
-        product_id: props.productId,
+        ecommerce_mall_product_id: props.productId,
         deleted_at: null,
       },
-      _count: { rating: true },
+      _count: {
+        rating: true,
+      },
     });
-  // Initialize distribution with all zeros
-  const dist1 = 0;
-  const dist2 = 0;
-  const dist3 = 0;
-  const dist4 = 0;
-  const dist5 = 0;
-  // Build distribution map from query results
-  const distributionMap: Record<number, number> = {};
-  for (const item of distributionResult) {
-    distributionMap[item.rating] =
-      (item._count?.rating as number | undefined) ?? 0;
+  // Build distribution map with default 0 values
+  const distributionMap = new Map<number, number>([
+    [1, 0],
+    [2, 0],
+    [3, 0],
+    [4, 0],
+    [5, 0],
+  ]);
+  for (const group of distributionResult) {
+    distributionMap.set(group.rating, group._count.rating);
   }
-  const averageRating =
-    (aggregateResult._avg?.rating as number | null | undefined) ?? 0;
-  const totalCount = (aggregateResult._count?.id as number | undefined) ?? 0;
   return {
-    averageRating: Math.round(averageRating * 10) / 10,
-    totalCount,
+    averageRating: Math.round((aggregateResult._avg.rating ?? 0) * 10) / 10,
+    totalCount: aggregateResult._count.rating ?? 0,
     distribution: {
-      "1": distributionMap[1] ?? dist1,
-      "2": distributionMap[2] ?? dist2,
-      "3": distributionMap[3] ?? dist3,
-      "4": distributionMap[4] ?? dist4,
-      "5": distributionMap[5] ?? dist5,
-    } satisfies IEcommerceMallProductReviewStat["distribution"],
+      "1": distributionMap.get(1) ?? 0,
+      "2": distributionMap.get(2) ?? 0,
+      "3": distributionMap.get(3) ?? 0,
+      "4": distributionMap.get(4) ?? 0,
+      "5": distributionMap.get(5) ?? 0,
+    },
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallProductReviewStat } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductReviewStat";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function getEcommerceMallGuestProductsProductIdReviewStats(props: {
+//   guest: GuestPayload;
+//   productId: string & tags.Format<"uuid">;
+// }): Promise<IEcommerceMallProductReviewStat> {
+//   // No matching Collector/Transformer found for this operation.
+//     // You MUST call getDatabaseSchemas first to get exact relation property names.
+//     // NEVER guess relation names from table names — always verify against the schema.
+//     ...
+// }
+// ```
+//--------------------------------------------------------------

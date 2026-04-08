@@ -5,6 +5,7 @@ import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IEcommerceMallShipmentDelivery } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentDelivery";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -23,13 +24,15 @@ export namespace EcommerceMallShipmentDeliveryTransformer {
         id: true,
         delivered_at: true,
         is_auto_delivered: true,
+        shipment: EcommerceMallShipmentAtSummaryTransformer.select(),
+        customer: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_customersFindManyArgs,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        shipment: EcommerceMallShipmentAtSummaryTransformer.select(),
-        customer: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_customersFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_shipment_deliveriesFindManyArgs;
   }
@@ -43,10 +46,49 @@ export namespace EcommerceMallShipmentDeliveryTransformer {
       shipment: await EcommerceMallShipmentAtSummaryTransformer.transform(
         input.shipment,
       ),
-      customer: input.customer ? ({} as IEcommerceMallCustomer.ISummary) : null,
+      customer: input.customer ? {} : null,
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
       deletedAt: input.deleted_at?.toISOString() ?? null,
-    };
+    } satisfies IEcommerceMallShipmentDelivery;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallShipmentDeliveryTransformer {
+//       export type Payload = Prisma.ecommerce_mall_shipment_deliveriesGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             delivered_at: true,
+//             is_auto_delivered: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//             shipment: EcommerceMallShipmentAtSummaryTransformer.select(),
+//             customer_id: true,
+//             ...
+//           },
+//         } satisfies Prisma.ecommerce_mall_shipment_deliveriesFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallShipmentDelivery> {
+//         return {
+//   id: {string},
+//   deliveredAt: {string},
+//   isAutoDelivered: {boolean},
+//   shipment: await EcommerceMallShipmentAtSummaryTransformer.transform(input.shipment),
+//   customer: {IEcommerceMallCustomer.ISummary | null},
+//   createdAt: {string},
+//   updatedAt: {string},
+//   deletedAt: {string | null},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

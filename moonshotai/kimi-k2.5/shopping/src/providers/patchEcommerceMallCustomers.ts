@@ -17,48 +17,38 @@ export async function patchEcommerceMallCustomers(props: {
   body: IEcommerceMallCustomer.IRequest;
 }): Promise<IPageIEcommerceMallCustomer.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
+  const limit = Math.min(props.body.limit ?? 100, 100);
   const skip = (page - 1) * limit;
-  const whereConditions: Prisma.ecommerce_mall_customersWhereInput = {
+  const whereInput: Prisma.ecommerce_mall_customersWhereInput = {
     deleted_at: null,
   };
   if (props.body.search) {
-    whereConditions.email = {
+    whereInput.email = {
       contains: props.body.search,
-      mode: "insensitive",
+      mode: "insensitive" as const,
     };
   }
-  const orderBy: Prisma.ecommerce_mall_customersOrderByWithRelationInput =
-    props.body.sort === "createdAt"
-      ? { created_at: "desc" }
-      : { created_at: "desc" };
   const customers = await MyGlobal.prisma.ecommerce_mall_customers.findMany({
-    where: whereConditions,
+    where: whereInput,
     skip,
     take: limit,
-    orderBy,
+    orderBy: { created_at: "desc" },
     select: {
       id: true,
       email: true,
       created_at: true,
-      _count: {
-        select: {
-          orders: true,
-        },
-      },
     },
   });
   const total = await MyGlobal.prisma.ecommerce_mall_customers.count({
-    where: whereConditions,
+    where: whereInput,
   });
-  const data = customers.map((customer) => ({
-    id: customer.id,
-    email: customer.email,
-    createdAt: customer.created_at.toISOString(),
-    orderCount: customer._count.orders,
-  }));
   return {
-    data,
+    data: customers.map((customer) => ({
+      id: customer.id as string & tags.Format<"uuid">,
+      email: customer.email,
+      created_at: toISOStringSafe(customer.created_at) as string &
+        tags.Format<"date-time">,
+    })),
     pagination: {
       current: page,
       limit: limit,
@@ -67,3 +57,38 @@ export async function patchEcommerceMallCustomers(props: {
     } satisfies IPage.IPagination,
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+// import { IPageIEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallCustomer";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallCustomers(props: {
+//   body: IEcommerceMallCustomer.IRequest;
+// }): Promise<IPageIEcommerceMallCustomer.ISummary> {
+//   // No matching Collector/Transformer found for this operation.
+//     // You MUST call getDatabaseSchemas first to get exact relation property names.
+//     // NEVER guess relation names from table names — always verify against the schema.
+//     ...
+// }
+// ```
+//--------------------------------------------------------------

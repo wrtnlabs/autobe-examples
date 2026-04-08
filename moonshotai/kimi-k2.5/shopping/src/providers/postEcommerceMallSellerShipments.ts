@@ -27,60 +27,57 @@ export async function postEcommerceMallSellerShipments(props: {
   seller: SellerPayload;
   body: IEcommerceMallShipment.ICreate;
 }): Promise<IEcommerceMallShipment> {
-  // Validate all order items belong to seller and have 'paid' status
+  // Validate all order items exist, belong to seller, have 'paid' status, and are not deleted
   const orderItems = await MyGlobal.prisma.ecommerce_mall_order_items.findMany({
     where: {
       id: { in: props.body.orderItemIds },
+      seller_id: props.seller.id,
+      status: "paid",
       deleted_at: null,
     },
     select: {
       id: true,
-      seller_id: true,
-      status: true,
       order_id: true,
     },
   });
-  // Check all order items exist
   if (orderItems.length !== props.body.orderItemIds.length) {
-    throw new HttpException("One or more order items not found", 404);
-  }
-  // Verify all items belong to authenticated seller
-  const unauthorizedItems = orderItems.filter(
-    (item) => item.seller_id !== props.seller.id,
-  );
-  if (unauthorizedItems.length > 0) {
     throw new HttpException(
-      "One or more order items do not belong to authenticated seller",
-      403,
-    );
-  }
-  // Verify all items have 'paid' status
-  const invalidStatusItems = orderItems.filter(
-    (item) => item.status !== "paid",
-  );
-  if (invalidStatusItems.length > 0) {
-    throw new HttpException(
-      "One or more order items are not in 'paid' status",
+      "Some order items not found, do not belong to seller, are not in paid status, or are deleted",
       400,
     );
   }
-  // Verify all items belong to same order
+  // Verify all items belong to the same order
   const uniqueOrderIds = [...new Set(orderItems.map((item) => item.order_id))];
-  if (uniqueOrderIds.length > 1) {
-    throw new HttpException("Order items must belong to the same order", 400);
+  if (uniqueOrderIds.length !== 1) {
+    throw new HttpException(
+      "All order items must belong to the same order",
+      400,
+    );
   }
-  // Execute transaction: create shipment and update order items
-  const created = await MyGlobal.prisma.$transaction(async (prisma) => {
-    // Create shipment with collector
-    const shipment = await prisma.ecommerce_mall_shipments.create({
-      data: await EcommerceMallShipmentCollector.collect({
-        body: props.body,
-        seller: props.seller,
-      }),
-      ...EcommerceMallShipmentTransformer.select(),
+  // Collect shipment data using the collector
+  const shipmentData = await EcommerceMallShipmentCollector.collect({
+    body: props.body,
+    ecommerceMallSellers: props.seller,
+  });
+  // Perform atomic transaction
+  const shipment = await MyGlobal.prisma.$transaction(async (tx) => {
+    // Create shipment
+    const createdShipment = await tx.ecommerce_mall_shipments.create({
+      data: shipmentData,
     });
-    // Update all order items to 'shipped' status
-    await prisma.ecommerce_mall_order_items.updateMany({
+    // Create shipment_items for each order item
+    for (const item of orderItems) {
+      await tx.ecommerce_mall_shipment_items.create({
+        data: {
+          id: v4(),
+          shipment_id: createdShipment.id,
+          order_item_id: item.id,
+          created_at: new Date(),
+        },
+      });
+    }
+    // Update order items status to 'shipped'
+    await tx.ecommerce_mall_order_items.updateMany({
       where: {
         id: { in: props.body.orderItemIds },
       },
@@ -89,7 +86,58 @@ export async function postEcommerceMallSellerShipments(props: {
         updated_at: new Date(),
       },
     });
-    return shipment;
+    // Return shipment with related data for transformation
+    return tx.ecommerce_mall_shipments.findUniqueOrThrow({
+      where: { id: createdShipment.id },
+      ...EcommerceMallShipmentTransformer.select(),
+    });
   });
-  return EcommerceMallShipmentTransformer.transform(created);
+  return EcommerceMallShipmentTransformer.transform(shipment);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// import { IEcommerceMallShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentItem";
+// import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
+// import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
+// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+// import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+// import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+// import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+// import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function postEcommerceMallSellerShipments(props: {
+//   seller: SellerPayload;
+//   body: IEcommerceMallShipment.ICreate;
+// }): Promise<IEcommerceMallShipment> {
+//   const record = await MyGlobal.prisma.ecommerce_mall_shipments.create({
+//     data: await EcommerceMallShipmentCollector.collect({
+//       body: props.body,
+//       ...
+//     }),
+//     ...EcommerceMallShipmentTransformer.select(),
+//   });
+//   return await EcommerceMallShipmentTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

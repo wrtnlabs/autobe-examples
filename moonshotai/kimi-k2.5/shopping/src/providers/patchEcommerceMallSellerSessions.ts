@@ -11,6 +11,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SellerPayload } from "../decorators/payload/SellerPayload";
+import { EcommerceMallCustomerSessionAtSummaryTransformer } from "../transformers/EcommerceMallCustomerSessionAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,104 +19,61 @@ export async function patchEcommerceMallSellerSessions(props: {
   seller: SellerPayload;
   body: IEcommerceMallCustomerSession.IRequest;
 }): Promise<IPageIEcommerceMallCustomerSession.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
-  const sortBy = props.body.sortBy ?? "created_at";
-  const sortOrder = props.body.sortOrder ?? "desc";
-  // Build where clause based on filters
-  const where: Prisma.ecommerce_mall_seller_sessionsWhereInput = {};
-  // Filter by status (active/expired) - handled at DB query level
-  const now = new Date();
-  if (props.body.status === "active") {
-    where.expired_at = { gt: now };
-  } else if (props.body.status === "expired") {
-    where.expired_at = { lte: now };
+  const { body } = props;
+  const limit = body.limit ?? 20;
+  const page = body.page ?? 1;
+  const sortBy = body.sortBy ?? "created_at";
+  const sortOrder = body.sortOrder ?? "desc";
+  const whereConditions: Prisma.ecommerce_mall_customer_sessionsWhereInput[] =
+    [];
+  if (body.createdAtFrom) {
+    whereConditions.push({ created_at: { gte: new Date(body.createdAtFrom) } });
   }
-  // Filter by date ranges
-  if (
-    props.body.createdAtFrom !== undefined &&
-    props.body.createdAtFrom !== null
-  ) {
-    where.created_at = {
-      ...(where.created_at as Record<string, Date> | undefined),
-      gte: new Date(props.body.createdAtFrom),
-    };
+  if (body.createdAtTo) {
+    whereConditions.push({ created_at: { lte: new Date(body.createdAtTo) } });
   }
-  if (props.body.createdAtTo !== undefined && props.body.createdAtTo !== null) {
-    where.created_at = {
-      ...(where.created_at as Record<string, Date> | undefined),
-      lte: new Date(props.body.createdAtTo),
-    };
+  if (body.expiredAtFrom) {
+    whereConditions.push({ expired_at: { gte: new Date(body.expiredAtFrom) } });
   }
-  if (
-    props.body.expiredAtFrom !== undefined &&
-    props.body.expiredAtFrom !== null
-  ) {
-    where.expired_at = {
-      ...(where.expired_at as Record<string, Date> | undefined),
-      gte: new Date(props.body.expiredAtFrom),
-    };
+  if (body.expiredAtTo) {
+    whereConditions.push({ expired_at: { lte: new Date(body.expiredAtTo) } });
   }
-  if (props.body.expiredAtTo !== undefined && props.body.expiredAtTo !== null) {
-    where.expired_at = {
-      ...(where.expired_at as Record<string, Date> | undefined),
-      lte: new Date(props.body.expiredAtTo),
-    };
+  if (body.status === "active") {
+    whereConditions.push({ expired_at: { gt: new Date() } });
+  } else if (body.status === "expired") {
+    whereConditions.push({ expired_at: { lte: new Date() } });
   }
-  // Filter by IP (partial match)
-  if (
-    props.body.ip !== undefined &&
-    props.body.ip !== null &&
-    props.body.ip !== ""
-  ) {
-    where.ip = { contains: props.body.ip };
+  if (body.ip) {
+    whereConditions.push({ ip: { contains: body.ip } });
   }
-  // Filter by cursor (created_at < cursor for descending sort)
-  if (props.body.cursor !== undefined && props.body.cursor !== null) {
-    where.created_at = {
-      ...(where.created_at as Record<string, Date> | undefined),
-      [sortOrder === "asc" ? "gte" : "lte"]: new Date(props.body.cursor),
-    };
+  let skip = (page - 1) * limit;
+  if (body.cursor) {
+    if (sortOrder === "asc") {
+      whereConditions.push({ created_at: { gt: new Date(body.cursor) } });
+    } else {
+      whereConditions.push({ created_at: { lt: new Date(body.cursor) } });
+    }
+    skip = 0;
   }
-  // Order by clause
-  const orderBy: Prisma.ecommerce_mall_seller_sessionsOrderByWithRelationInput =
-    {
-      [sortBy]: sortOrder,
-    };
-  // Fetch sessions and total count
-  const [sessions, total] = await Promise.all([
-    MyGlobal.prisma.ecommerce_mall_seller_sessions.findMany({
+  const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
+  const orderBy =
+    sortBy === "expired_at"
+      ? { expired_at: sortOrder }
+      : { created_at: sortOrder };
+  const [records, total] = await Promise.all([
+    MyGlobal.prisma.ecommerce_mall_customer_sessions.findMany({
+      ...EcommerceMallCustomerSessionAtSummaryTransformer.select(),
       where,
+      orderBy,
       skip,
       take: limit,
-      orderBy,
-      select: {
-        id: true,
-        ip: true,
-        href: true,
-        referrer: true,
-        created_at: true,
-        expired_at: true,
-      },
     }),
-    MyGlobal.prisma.ecommerce_mall_seller_sessions.count({ where }),
+    MyGlobal.prisma.ecommerce_mall_customer_sessions.count({ where }),
   ]);
-  // Transform to response type with proper date string conversion
-  const data = sessions.map((session) => {
-    const createdAtISO = session.created_at.toISOString();
-    const expiredAtISO = session.expired_at.toISOString();
-    const isActiveValue = session.expired_at > now;
-    return {
-      id: session.id as string & tags.Format<"uuid">,
-      ip: session.ip,
-      href: session.href,
-      referrer: session.referrer,
-      createdAt: createdAtISO as string & tags.Format<"date-time">,
-      expiredAt: expiredAtISO as string & tags.Format<"date-time">,
-      isActive: isActiveValue,
-    };
-  });
+  const data = await ArrayUtil.asyncMap(
+    records,
+    EcommerceMallCustomerSessionAtSummaryTransformer.transform,
+  );
   return {
     data,
     pagination: {
@@ -126,3 +84,48 @@ export async function patchEcommerceMallSellerSessions(props: {
     } satisfies IPage.IPagination,
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerSession";
+// import { IPageIEcommerceMallCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallCustomerSession";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallSellerSessions(props: {
+//   seller: SellerPayload;
+//   body: IEcommerceMallCustomerSession.IRequest;
+// }): Promise<IPageIEcommerceMallCustomerSession.ISummary> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_customer_sessions.findMany({
+//     ...EcommerceMallCustomerSessionAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallCustomerSessionAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

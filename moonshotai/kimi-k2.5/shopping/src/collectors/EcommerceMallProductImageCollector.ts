@@ -10,26 +10,47 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallProductImageCollector {
   export async function collect(props: {
     body: IEcommerceMallProductImage.ICreate;
-    product: IEntity;
-    seller: IEntity;
+    ecommerceMallProducts: IEntity;
   }) {
-    const id: string = v4();
     // Calculate next display order for this product
-    const existingCount =
-      await MyGlobal.prisma.ecommerce_mall_product_images.count({
-        where: {
-          product_id: props.product.id,
-          deleted_at: null,
-        },
+    const lastImage =
+      await MyGlobal.prisma.ecommerce_mall_product_images.findFirst({
+        where: { product_id: props.ecommerceMallProducts.id },
+        orderBy: { display_order: "desc" },
       });
+    const displayOrder = lastImage ? lastImage.display_order + 1 : 0;
     return {
-      id,
+      id: v4(),
       image_url: props.body.imageUrl,
-      display_order: existingCount,
+      display_order: displayOrder,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      product: { connect: { id: props.product.id } },
+      product: { connect: { id: props.ecommerceMallProducts.id } },
     } satisfies Prisma.ecommerce_mall_product_imagesCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace EcommerceMallProductImageCollector {
+//         export async function collect(props: {
+//           body: IEcommerceMallProductImage.ICreate;
+//           ecommerceMallProducts: IEntity; // from path parameter productId
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       image_url: ...,
+//       display_order: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       product: ...,
+//           } satisfies Prisma.ecommerce_mall_product_imagesCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

@@ -21,12 +21,9 @@ export async function putEcommerceMallCustomerShipmentsShipmentIdDelivery(props:
   customer: CustomerPayload;
   shipmentId: string;
 }): Promise<IEcommerceMallShipmentDelivery> {
-  // Verify shipment exists and belongs to customer's order
-  const shipment = await MyGlobal.prisma.ecommerce_mall_shipments.findFirst({
-    where: {
-      id: props.shipmentId,
-      deleted_at: null,
-    },
+  // 1. Fetch shipment with order to verify ownership
+  const shipment = await MyGlobal.prisma.ecommerce_mall_shipments.findUnique({
+    where: { id: props.shipmentId },
     select: {
       id: true,
       order: {
@@ -39,30 +36,25 @@ export async function putEcommerceMallCustomerShipmentsShipmentIdDelivery(props:
   if (shipment === null) {
     throw new HttpException("Shipment not found", 404);
   }
+  // 2. Verify customer owns the order
   if (shipment.order.customer_id !== props.customer.id) {
-    throw new HttpException("Forbidden - you do not own this order", 403);
+    throw new HttpException("Forbidden", 403);
   }
-  // Check if already delivered
+  // 3. Check if already delivered
   const existingDelivery =
     await MyGlobal.prisma.ecommerce_mall_shipment_deliveries.findUnique({
-      where: {
-        shipment_id: props.shipmentId,
-      },
-      select: {
-        id: true,
-      },
+      where: { shipment_id: props.shipmentId },
     });
   if (existingDelivery !== null) {
     throw new HttpException("Shipment already delivered", 409);
   }
-  // Execute atomic transaction
-  const now = new Date();
-  const deliveryId = v4() as string & tags.Format<"uuid">;
-  await MyGlobal.prisma.$transaction([
+  // 4. Atomic transaction: create delivery + update order items
+  await MyGlobal.prisma.$transaction(async (tx) => {
     // Create delivery record
-    MyGlobal.prisma.ecommerce_mall_shipment_deliveries.create({
+    const now = new Date();
+    await tx.ecommerce_mall_shipment_deliveries.create({
       data: {
-        id: deliveryId,
+        id: v4(),
         shipment_id: props.shipmentId,
         customer_id: props.customer.id,
         delivered_at: now,
@@ -71,29 +63,74 @@ export async function putEcommerceMallCustomerShipmentsShipmentIdDelivery(props:
         updated_at: now,
         deleted_at: null,
       },
-    }),
-    // Update all order items in this shipment to delivered
-    MyGlobal.prisma.ecommerce_mall_order_items.updateMany({
-      where: {
-        shipmentItem: {
-          is: {
-            shipment_id: props.shipmentId,
-          },
+    });
+    // Find all order items in this shipment
+    const shipmentItems = await tx.ecommerce_mall_shipment_items.findMany({
+      where: { shipment_id: props.shipmentId },
+      select: { order_item_id: true },
+    });
+    const orderItemIds = shipmentItems.map((si) => si.order_item_id);
+    // Update all order items to delivered status
+    if (orderItemIds.length > 0) {
+      await tx.ecommerce_mall_order_items.updateMany({
+        where: {
+          id: { in: orderItemIds },
         },
-      },
-      data: {
-        status: "delivered",
-        updated_at: now,
-      },
-    }),
-  ]);
-  // Fetch the created delivery with proper selection
+        data: {
+          status: "delivered",
+          updated_at: now,
+        },
+      });
+    }
+  });
+  // 5. Fetch and return the created delivery record
   const delivery =
     await MyGlobal.prisma.ecommerce_mall_shipment_deliveries.findUniqueOrThrow({
-      where: {
-        id: deliveryId,
-      },
+      where: { shipment_id: props.shipmentId },
       ...EcommerceMallShipmentDeliveryTransformer.select(),
     });
   return await EcommerceMallShipmentDeliveryTransformer.transform(delivery);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallShipmentDelivery } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipmentDelivery";
+// import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
+// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function putEcommerceMallCustomerShipmentsShipmentIdDelivery(props: {
+//   customer: CustomerPayload;
+//   shipmentId: string;
+// }): Promise<IEcommerceMallShipmentDelivery> {
+//   await MyGlobal.prisma.ecommerce_mall_shipment_deliveries.update({
+//     where: { ... },
+//     data: { ... },
+//   });
+//   const updated = await MyGlobal.prisma.ecommerce_mall_shipment_deliveries.findUniqueOrThrow({
+//     where: { ... },
+//     ...EcommerceMallShipmentDeliveryTransformer.select(),
+//   });
+//   return await EcommerceMallShipmentDeliveryTransformer.transform(updated);
+// }
+// ```
+//--------------------------------------------------------------

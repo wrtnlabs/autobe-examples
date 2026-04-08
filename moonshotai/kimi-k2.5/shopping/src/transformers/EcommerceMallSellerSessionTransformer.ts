@@ -2,6 +2,7 @@ import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IEcommerceMallSellerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerSession";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -40,6 +41,42 @@ export namespace EcommerceMallSellerSessionTransformer {
       seller: await EcommerceMallSellerAtSummaryTransformer.transform(
         input.seller,
       ),
-    };
+    } satisfies IEcommerceMallSellerSession;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallSellerSessionTransformer {
+//       export type Payload = Prisma.ecommerce_mall_seller_sessionsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             ip: true,
+//             href: true,
+//             referrer: true,
+//             created_at: true,
+//             expired_at: true,
+//             seller: EcommerceMallSellerAtSummaryTransformer.select(),
+//           },
+//         } satisfies Prisma.ecommerce_mall_seller_sessionsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallSellerSession> {
+//         return {
+//   id: {string},
+//   ip: {string},
+//   href: {string},
+//   referrer: {string},
+//   created_at: {string},
+//   expired_at: {string},
+//   seller: await EcommerceMallSellerAtSummaryTransformer.transform(input.seller),
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

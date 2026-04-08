@@ -1,6 +1,7 @@
 import { IEcommerceMallGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallGuest";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -24,7 +25,7 @@ export namespace EcommerceMallGuestAtSummaryTransformer {
             expired_at: true,
           },
           orderBy: {
-            expired_at: "desc" as const,
+            created_at: "desc",
           },
           take: 1,
         } satisfies Prisma.ecommerce_mall_guest_sessionsFindManyArgs,
@@ -34,14 +35,47 @@ export namespace EcommerceMallGuestAtSummaryTransformer {
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallGuest.ISummary> {
-    const expiresAt = input.sessions[0]?.expired_at ?? input.created_at;
-    const now = new Date();
-    const isActive = expiresAt > now;
+    const latestSession = input.sessions[0];
+    const expiresAt = latestSession
+      ? latestSession.expired_at.toISOString()
+      : new Date().toISOString();
+    const status: "active" | "expired" =
+      new Date(expiresAt).getTime() > Date.now() ? "active" : "expired";
     return {
       id: input.id,
       createdAt: input.created_at.toISOString(),
-      expiresAt: expiresAt.toISOString(),
-      status: isActive ? "active" : "expired",
-    };
+      expiresAt,
+      status,
+    } satisfies IEcommerceMallGuest.ISummary;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallGuestAtSummaryTransformer {
+//       export type Payload = Prisma.ecommerce_mall_guestsGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//           },
+//         } satisfies Prisma.ecommerce_mall_guestsFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallGuest.ISummary> {
+//         return {
+//   id: {string},
+//   createdAt: {string},
+//   expiresAt: {string},
+//   status: {"active" | "expired"},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

@@ -18,16 +18,49 @@ export async function getEcommerceMallAdminReviewsReviewIdSnapshotsSnapshotId(pr
   reviewId: string;
   snapshotId: string;
 }): Promise<IEcommerceMallReviewSnapshot> {
-  const snapshot =
-    await MyGlobal.prisma.ecommerce_mall_review_snapshots.findUniqueOrThrow({
-      where: { id: props.snapshotId },
+  const record =
+    await MyGlobal.prisma.ecommerce_mall_review_snapshots.findFirstOrThrow({
       ...EcommerceMallReviewSnapshotTransformer.select(),
+      where: {
+        id: props.snapshotId,
+        ecommerce_mall_review_id: props.reviewId,
+      },
     });
-  if (snapshot.review.id !== props.reviewId) {
-    throw new HttpException(
-      "Snapshot does not belong to the specified review",
-      404,
-    );
-  }
-  return await EcommerceMallReviewSnapshotTransformer.transform(snapshot);
+  return await EcommerceMallReviewSnapshotTransformer.transform(record);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReviewSnapshot";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function getEcommerceMallAdminReviewsReviewIdSnapshotsSnapshotId(props: {
+//   admin: AdminPayload;
+//   reviewId: string;
+//   snapshotId: string;
+// }): Promise<IEcommerceMallReviewSnapshot> {
+//   const record = await MyGlobal.prisma.ecommerce_mall_review_snapshots.findFirstOrThrow({
+//     ...EcommerceMallReviewSnapshotTransformer.select(),
+//     where: { ... },
+//   });
+//   return await EcommerceMallReviewSnapshotTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

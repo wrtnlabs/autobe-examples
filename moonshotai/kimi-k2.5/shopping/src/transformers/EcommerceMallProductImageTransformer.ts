@@ -4,6 +4,7 @@ import { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/struct
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -42,6 +43,42 @@ export namespace EcommerceMallProductImageTransformer {
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
       deletedAt: input.deleted_at?.toISOString() ?? null,
-    };
+    } satisfies IEcommerceMallProductImage;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//     export namespace EcommerceMallProductImageTransformer {
+//       export type Payload = Prisma.ecommerce_mall_product_imagesGetPayload<ReturnType<typeof select>>;
+// 
+//       export function select() {
+//         // implicit return type for better type inference
+//         return {
+//           select: {
+//             id: true,
+//             image_url: true,
+//             display_order: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//             product: EcommerceMallProductAtSummaryTransformer.select(),
+//           },
+//         } satisfies Prisma.ecommerce_mall_product_imagesFindManyArgs;
+//       }
+// 
+//       export async function transform(input: Payload): Promise<IEcommerceMallProductImage> {
+//         return {
+//   id: {string},
+//   imageUrl: {string},
+//   displayOrder: {integer},
+//   product: await EcommerceMallProductAtSummaryTransformer.transform(input.product),
+//   createdAt: {string},
+//   updatedAt: {string},
+//   deletedAt: {string | null},
+//         };
+//       }
+//     }
+//--------------------------------------------------------------

@@ -15,21 +15,47 @@ export async function deleteEcommerceMallCustomerWishlistItemsWishlistItemId(pro
   customer: CustomerPayload;
   wishlistItemId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Find the wishlist item and verify it belongs to the customer
   const wishlistItem =
-    await MyGlobal.prisma.ecommerce_mall_wishlist_items.findFirst({
-      where: {
-        id: props.wishlistItemId,
-        customer_id: props.customer.id,
-      },
+    await MyGlobal.prisma.ecommerce_mall_wishlist_items.findUnique({
+      where: { id: props.wishlistItemId },
+      select: { id: true, customer_id: true },
     });
-  if (wishlistItem === null) {
-    throw new HttpException("Wishlist item not found", 404);
+  if (wishlistItem === null || wishlistItem.customer_id !== props.customer.id) {
+    throw new HttpException("Not Found", 404);
   }
-  // Delete the wishlist item
   await MyGlobal.prisma.ecommerce_mall_wishlist_items.delete({
-    where: {
-      id: props.wishlistItemId,
-    },
+    where: { id: props.wishlistItemId },
   });
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function deleteEcommerceMallCustomerWishlistItemsWishlistItemId(props: {
+//   customer: CustomerPayload;
+//   wishlistItemId: string & tags.Format<"uuid">;
+// }): Promise<void> {
+//   await MyGlobal.prisma.....delete({
+//     where: { ... },
+//   });
+// }
+// ```
+//--------------------------------------------------------------

@@ -24,16 +24,55 @@ export async function getEcommerceMallSellerItemsItemId(props: {
   seller: SellerPayload;
   itemId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallOrderItem> {
-  // Retrieve the order item with all related data using transformer select
-  const item =
+  const record =
     await MyGlobal.prisma.ecommerce_mall_order_items.findUniqueOrThrow({
       where: { id: props.itemId },
       ...EcommerceMallOrderItemTransformer.select(),
     });
-  // Authorization check: seller can only view their own order items
-  if (item.seller.id !== props.seller.id) {
+  if (record.seller_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Transform the result to IEcommerceMallOrderItem format
-  return await EcommerceMallOrderItemTransformer.transform(item);
+  return await EcommerceMallOrderItemTransformer.transform(record);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
+// import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
+// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+// import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+// import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+// import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function getEcommerceMallSellerItemsItemId(props: {
+//   seller: SellerPayload;
+//   itemId: string & tags.Format<"uuid">;
+// }): Promise<IEcommerceMallOrderItem> {
+//   const record = await MyGlobal.prisma.ecommerce_mall_order_items.findFirstOrThrow({
+//     ...EcommerceMallOrderItemTransformer.select(),
+//     where: { ... },
+//   });
+//   return await EcommerceMallOrderItemTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

@@ -24,82 +24,61 @@ export async function patchEcommerceMallCustomerCartItems(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build base where condition - only customer's items, not deleted
-  const baseWhere = {
-    customer_id: props.customer.id,
+  const whereInput = {
+    ecommerce_mall_customer_id: props.customer.id,
     deleted_at: null,
-  } satisfies Prisma.ecommerce_mall_cart_itemsWhereInput;
-  // Build search condition if search term provided
-  const searchTerm = props.body.search?.trim();
-  const searchWhere: Prisma.ecommerce_mall_cart_itemsWhereInput = searchTerm
-    ? {
-        OR: [
-          {
-            productVariant: {
-              product: {
-                name: {
-                  contains: searchTerm,
-                  mode: "insensitive" as const,
-                },
-              },
-            },
-          },
-          {
-            productVariant: {
-              sku_code: {
-                contains: searchTerm,
+    ...(props.body.search && {
+      OR: [
+        {
+          productVariant: {
+            product: {
+              name: {
+                contains: props.body.search,
                 mode: "insensitive" as const,
               },
             },
           },
-        ],
-      }
-    : {};
-  const where: Prisma.ecommerce_mall_cart_itemsWhereInput = {
-    ...baseWhere,
-    ...searchWhere,
-  };
-  // Build order by based on sort parameter
-  const orderBy: Prisma.ecommerce_mall_cart_itemsOrderByWithRelationInput =
-    (() => {
-      switch (props.body.sort) {
-        case "product_name":
-          return {
-            productVariant: {
-              product: {
-                name: "asc" as const,
-              },
+        },
+        {
+          productVariant: {
+            sku_code: {
+              contains: props.body.search,
+              mode: "insensitive" as const,
             },
-          };
-        case "price":
-          return {
+          },
+        },
+      ],
+    }),
+  } satisfies Prisma.ecommerce_mall_cart_itemsWhereInput;
+  const orderByInput = (
+    props.body.sort === "product_name"
+      ? {
+          productVariant: {
+            product: {
+              name: "asc" as const,
+            },
+          },
+        }
+      : props.body.sort === "price"
+        ? {
             productVariant: {
               price: "asc" as const,
             },
-          };
-        case "created_at":
-        default:
-          return {
+          }
+        : {
             created_at: "desc" as const,
-          };
-      }
-    })();
-  // Execute queries
-  const data = await MyGlobal.prisma.ecommerce_mall_cart_items.findMany({
-    where,
-    orderBy,
+          }
+  ) satisfies Prisma.ecommerce_mall_cart_itemsOrderByWithRelationInput;
+  const records = await MyGlobal.prisma.ecommerce_mall_cart_items.findMany({
+    where: whereInput,
     skip,
     take: limit,
+    orderBy: orderByInput,
     ...EcommerceMallCartItemAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.ecommerce_mall_cart_items.count({
-    where,
+    where: whereInput,
   });
-  // Transform results
-  const transformedData = await ArrayUtil.asyncMap(
-    data,
-    EcommerceMallCartItemAtSummaryTransformer.transform,
-  );
   return {
     pagination: {
       current: page,
@@ -107,6 +86,56 @@ export async function patchEcommerceMallCustomerCartItems(props: {
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: transformedData,
+    data: await ArrayUtil.asyncMap(
+      records,
+      EcommerceMallCartItemAtSummaryTransformer.transform,
+    ),
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCartItem";
+// import { IPageIEcommerceMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallCartItem";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+// import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallCustomerCartItems(props: {
+//   customer: CustomerPayload;
+//   body: IEcommerceMallCartItem.IRequest;
+// }): Promise<IPageIEcommerceMallCartItem.ISummary> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_cart_items.findMany({
+//     ...EcommerceMallCartItemAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallCartItemAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

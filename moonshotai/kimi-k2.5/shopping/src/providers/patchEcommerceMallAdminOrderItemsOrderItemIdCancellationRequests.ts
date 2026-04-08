@@ -30,79 +30,111 @@ export async function patchEcommerceMallAdminOrderItemsOrderItemIdCancellationRe
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const whereInput = {
+  const sortField = props.body.sortBy ?? "createdAt";
+  const sortOrder = props.body.sortOrder ?? "desc";
+  const orderBy: Prisma.ecommerce_mall_cancellation_requestsOrderByWithRelationInput =
+    sortField === "status"
+      ? { status: sortOrder }
+      : sortField === "updatedAt"
+        ? { updated_at: sortOrder }
+        : { created_at: sortOrder };
+  const where: Prisma.ecommerce_mall_cancellation_requestsWhereInput = {
     order_item_id: props.orderItemId,
     deleted_at: null,
-    ...(props.body.status !== undefined && { status: props.body.status }),
-    ...(props.body.customerId !== undefined && {
-      customer_id: props.body.customerId,
+    ...(props.body.status && { status: props.body.status }),
+    ...(props.body.customerId && { customer_id: props.body.customerId }),
+    ...(props.body.sellerId && { seller_id: props.body.sellerId }),
+    ...(props.body.createdAtFrom && {
+      created_at: { gte: new Date(props.body.createdAtFrom) },
     }),
-    ...(props.body.sellerId !== undefined && {
-      seller_id: props.body.sellerId,
+    ...(props.body.createdAtTo && {
+      created_at: { lte: new Date(props.body.createdAtTo) },
     }),
-    ...((props.body.createdAtFrom !== undefined ||
-      props.body.createdAtTo !== undefined) && {
-      created_at: {
-        ...(props.body.createdAtFrom !== undefined && {
-          gte: new Date(props.body.createdAtFrom),
-        }),
-        ...(props.body.createdAtTo !== undefined && {
-          lte: new Date(props.body.createdAtTo),
-        }),
-      },
+    ...(props.body.respondedAtFrom && {
+      responded_at: { gte: new Date(props.body.respondedAtFrom) },
     }),
-    ...((props.body.respondedAtFrom !== undefined ||
-      props.body.respondedAtTo !== undefined) && {
-      responded_at: {
-        ...(props.body.respondedAtFrom !== undefined && {
-          gte: new Date(props.body.respondedAtFrom),
-        }),
-        ...(props.body.respondedAtTo !== undefined && {
-          lte: new Date(props.body.respondedAtTo),
-        }),
-        ...(props.body.respondedAtFrom === undefined &&
-          props.body.respondedAtTo === undefined && { not: null }),
-      },
+    ...(props.body.respondedAtTo && {
+      responded_at: { lte: new Date(props.body.respondedAtTo) },
     }),
-    ...(props.body.search !== undefined && {
-      reason: { contains: props.body.search },
+    ...(props.body.search && {
+      reason: { contains: props.body.search, mode: "insensitive" },
     }),
-  } satisfies Prisma.ecommerce_mall_cancellation_requestsWhereInput;
-  const orderByInput = (() => {
-    const sortBy = props.body.sortBy ?? "createdAt";
-    const sortOrder = props.body.sortOrder ?? "desc";
-    const orderDirection =
-      sortOrder === "asc" ? ("asc" as const) : ("desc" as const);
-    if (sortBy === "createdAt") {
-      return { created_at: orderDirection };
-    } else if (sortBy === "updatedAt") {
-      return { updated_at: orderDirection };
-    } else {
-      return { status: orderDirection };
-    }
-  })() satisfies Prisma.ecommerce_mall_cancellation_requestsOrderByWithRelationInput;
-  const data =
+  };
+  const records =
     await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findMany({
-      where: whereInput,
+      where,
       skip,
       take: limit,
-      orderBy: orderByInput,
+      orderBy,
       ...EcommerceMallCancellationRequestAtSummaryTransformer.select(),
     });
   const total =
     await MyGlobal.prisma.ecommerce_mall_cancellation_requests.count({
-      where: whereInput,
+      where,
     });
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      EcommerceMallCancellationRequestAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      records,
+      EcommerceMallCancellationRequestAtSummaryTransformer.transform,
+    ),
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IEcommerceMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCancellationRequest";
+// import { IPageIEcommerceMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallCancellationRequest";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
+// import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+// import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+// import { IEcommerceMallProductVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOption";
+// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchEcommerceMallAdminOrderItemsOrderItemIdCancellationRequests(props: {
+//   admin: AdminPayload;
+//   orderItemId: string & tags.Format<"uuid">;
+//   body: IEcommerceMallCancellationRequest.IRequest;
+// }): Promise<IPageIEcommerceMallCancellationRequest.ISummary> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findMany({
+//     ...EcommerceMallCancellationRequestAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallCancellationRequestAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------
