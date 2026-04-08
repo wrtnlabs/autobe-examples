@@ -15,7 +15,7 @@ export async function deleteRedditCloneMemberPostsPostId(props: {
   member: MemberPayload;
   postId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Find the post - throws 404 if not found
+  // 1. Find the post
   const post = await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
     where: { id: props.postId },
     select: {
@@ -24,30 +24,30 @@ export async function deleteRedditCloneMemberPostsPostId(props: {
       vote_score: true,
     },
   });
-  // Verify ownership - 403 if not author
+  // 2. Verify ownership - only author can delete
   if (post.reddit_clone_member_id !== props.member.id) {
-    throw new HttpException(
-      "You do not have permission to delete this post",
-      403,
-    );
+    throw new HttpException("Forbidden", 403);
   }
-  // Soft delete the post
-  await MyGlobal.prisma.reddit_clone_posts.update({
-    where: { id: props.postId },
-    data: {
-      deleted_at: new Date(),
-    },
-  });
-  // Update author karma: subtract the post's vote_score
-  await MyGlobal.prisma.reddit_clone_user_karmas.update({
-    where: { reddit_clone_member_id: post.reddit_clone_member_id },
-    data: {
-      karma_score: {
-        decrement: post.vote_score,
+  // 3. Soft delete post and update author karma in transaction
+  await MyGlobal.prisma.$transaction([
+    // Soft delete the post by setting deleted_at
+    MyGlobal.prisma.reddit_clone_posts.update({
+      where: { id: props.postId },
+      data: {
+        deleted_at: new Date(),
       },
-      updated_at: new Date(),
-    },
-  });
+    }),
+    // Update author karma: subtract the post's vote_score
+    MyGlobal.prisma.reddit_clone_user_karmas.update({
+      where: { reddit_clone_member_id: post.reddit_clone_member_id },
+      data: {
+        karma_score: {
+          decrement: post.vote_score,
+        },
+        updated_at: new Date(),
+      },
+    }),
+  ]);
 }
 
 

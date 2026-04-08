@@ -2,9 +2,8 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import { IMallPlatformInventoryRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformInventoryRecord";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
-import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIMallPlatformInventoryRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformInventoryRecord";
 import { ArrayUtil } from "@nestia/e2e";
@@ -26,90 +25,64 @@ export async function patchMallPlatformSellerProductsProductIdVariantsVariantIdI
   variantId: string & tags.Format<"uuid">;
   body: IMallPlatformInventoryRecord.IRequest;
 }): Promise<IPageIMallPlatformInventoryRecord.ISummary> {
-  const page: number = props.body.page ?? 1;
-  const limit: number = props.body.limit ?? 100;
-  const skip: number = (page - 1) * limit;
   const product =
     await MyGlobal.prisma.mall_platform_products.findUniqueOrThrow({
       where: { id: props.productId },
       select: {
         id: true,
         seller_account_id: true,
+        deleted_at: true,
       },
     });
-  if (product.seller_account_id !== props.seller.id) {
+  if (product.seller_account_id !== props.seller.id)
     throw new HttpException("Forbidden", 403);
-  }
+  if (product.deleted_at !== null) throw new HttpException("Not Found", 404);
   const variant =
     await MyGlobal.prisma.mall_platform_product_variants.findUniqueOrThrow({
       where: { id: props.variantId },
       select: {
         id: true,
         mall_platform_product_id: true,
+        deleted_at: true,
       },
     });
-  if (variant.mall_platform_product_id !== props.productId) {
-    throw new HttpException("Not found", 404);
-  }
+  if (variant.mall_platform_product_id !== props.productId)
+    throw new HttpException("Not Found", 404);
+  if (variant.deleted_at !== null) throw new HttpException("Not Found", 404);
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
+  const where = {
+    mall_platform_product_variant_id: props.variantId,
+    ...(props.body.createdAtFrom !== undefined
+      ? { created_at: { gte: props.body.createdAtFrom } }
+      : {}),
+    ...(props.body.createdAtTo !== undefined
+      ? { created_at: { lte: props.body.createdAtTo } }
+      : {}),
+    ...(props.body.reason !== undefined
+      ? { reason: { contains: props.body.reason } }
+      : {}),
+    ...(props.body.quantityChangeDirection === "positive"
+      ? { quantity_change: { gt: 0 } }
+      : props.body.quantityChangeDirection === "negative"
+        ? { quantity_change: { lt: 0 } }
+        : {}),
+  } satisfies Prisma.mall_platform_inventory_recordsWhereInput;
   const records =
     await MyGlobal.prisma.mall_platform_inventory_records.findMany({
-      ...MallPlatformInventoryRecordAtSummaryTransformer.select(),
-      where: {
-        mall_platform_product_variant_id: props.variantId,
-        ...(props.body.reason !== undefined
-          ? {
-              reason: {
-                contains: props.body.reason,
-                mode: "insensitive",
-              },
-            }
-          : {}),
-        ...(props.body.search !== undefined
-          ? {
-              OR: [
-                {
-                  reason: {
-                    contains: props.body.search,
-                    mode: "insensitive",
-                  },
-                },
-              ],
-            }
-          : {}),
-      },
+      where,
       skip,
       take: limit,
       orderBy:
         props.body.sort === "oldest"
           ? { created_at: "asc" }
           : { created_at: "desc" },
+      ...MallPlatformInventoryRecordAtSummaryTransformer.select(),
     });
-  const total: number =
-    await MyGlobal.prisma.mall_platform_inventory_records.count({
-      where: {
-        mall_platform_product_variant_id: props.variantId,
-        ...(props.body.reason !== undefined
-          ? {
-              reason: {
-                contains: props.body.reason,
-                mode: "insensitive",
-              },
-            }
-          : {}),
-        ...(props.body.search !== undefined
-          ? {
-              OR: [
-                {
-                  reason: {
-                    contains: props.body.search,
-                    mode: "insensitive",
-                  },
-                },
-              ],
-            }
-          : {}),
-      },
-    });
+  const total = await MyGlobal.prisma.mall_platform_inventory_records.count({
+    where,
+  });
   return {
     pagination: {
       current: page,
@@ -147,9 +120,8 @@ export async function patchMallPlatformSellerProductsProductIdVariantsVariantIdI
 // import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 // import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 // import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 // import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
-// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.

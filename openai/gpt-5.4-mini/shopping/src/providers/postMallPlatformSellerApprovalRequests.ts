@@ -19,36 +19,40 @@ export async function postMallPlatformSellerApprovalRequests(props: {
   seller: SellerPayload;
   body: IMallPlatformAdministratorApprovalRequest.ICreate;
 }): Promise<IMallPlatformAdministratorApprovalRequest> {
-  const record = await MyGlobal.prisma.$transaction(async (prisma) => {
-    const seller = await prisma.mall_platform_sellers.findFirst({
-      where: {
-        id: props.seller.id,
-      },
-      select: {
-        id: true,
-      },
-    });
-    if (seller === null) throw new HttpException("Forbidden", 403);
-    const existing =
-      await prisma.mall_platform_administrator_approval_requests.findFirst({
+  const existing =
+    await MyGlobal.prisma.mall_platform_administrator_approval_requests.findFirst(
+      {
         where: {
           administrator_id: props.seller.id,
-          deleted_at: null,
           status: "pending",
+          deleted_at: null,
         },
         select: {
           id: true,
         },
-      });
-    if (existing !== null) throw new HttpException("Conflict", 409);
-    return await prisma.mall_platform_administrator_approval_requests.create({
+      },
+    );
+  if (existing !== null) {
+    throw new HttpException("An active approval request already exists.", 400);
+  }
+  const created =
+    await MyGlobal.prisma.mall_platform_administrator_approval_requests.create({
       data: await MallPlatformAdministratorApprovalRequestCollector.collect({
         body: props.body,
-        administrator: props.seller,
+        administrator: {
+          id: props.seller.id,
+        },
       }),
-      ...MallPlatformAdministratorApprovalRequestTransformer.select(),
     });
-  });
+  const record =
+    await MyGlobal.prisma.mall_platform_administrator_approval_requests.findUniqueOrThrow(
+      {
+        where: {
+          id: created.id,
+        },
+        ...MallPlatformAdministratorApprovalRequestTransformer.select(),
+      },
+    );
   return await MallPlatformAdministratorApprovalRequestTransformer.transform(
     record,
   );

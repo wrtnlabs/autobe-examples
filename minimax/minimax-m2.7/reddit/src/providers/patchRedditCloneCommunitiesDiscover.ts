@@ -24,32 +24,19 @@ export async function patchRedditCloneCommunitiesDiscover(props: {
   const whereInput = {
     deleted_at: null,
     ...(props.body.name !== undefined && {
-      name: {
-        contains: props.body.name,
-        mode: "insensitive" as const,
-      },
+      name: { contains: props.body.name, mode: "insensitive" as const },
     }),
   } satisfies Prisma.reddit_clone_communitiesWhereInput;
-  const orderByInput = (() => {
-    switch (props.body.sortBy) {
-      case "name":
-        return {
-          name: "asc" as const,
-        } satisfies Prisma.reddit_clone_communitiesOrderByWithRelationInput;
-      case "subscriberCount":
-        return {
-          subscriber_count: "desc" as const,
-        } satisfies Prisma.reddit_clone_communitiesOrderByWithRelationInput;
-      case "createdAt":
-      default:
-        return {
-          created_at: "desc" as const,
-        } satisfies Prisma.reddit_clone_communitiesOrderByWithRelationInput;
-    }
-  })();
+  const orderByInput = (
+    props.body.sortBy === "name"
+      ? { name: "asc" as const }
+      : props.body.sortBy === "createdAt"
+        ? { created_at: "desc" as const }
+        : { subscriber_count: "desc" as const }
+  ) satisfies Prisma.reddit_clone_communitiesOrderByWithRelationInput;
   const records = await MyGlobal.prisma.reddit_clone_communities.findMany({
     where: whereInput,
-    skip: skip,
+    skip,
     take: limit,
     orderBy: orderByInput,
     ...RedditCloneCommunityAtSummaryTransformer.select(),

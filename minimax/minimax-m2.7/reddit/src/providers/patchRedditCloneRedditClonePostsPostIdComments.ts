@@ -19,67 +19,66 @@ export async function patchRedditCloneRedditClonePostsPostIdComments(props: {
   postId: string & tags.Format<"uuid">;
   body: IRedditCloneComment.IRequest;
 }): Promise<IPageIRedditCloneComment.ISummary> {
-  // Validate post exists before querying comments
+  // Validate post exists
   await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
     where: { id: props.postId },
     select: { id: true },
   });
-  // Pagination parameters
-  const limit = props.body.limit ?? 20;
+  const sort = props.body.sort ?? "Best";
+  const limit = Math.min(props.body.limit ?? 20, 100);
   const page = props.body.page ?? 1;
+  // Build orderBy based on sort parameter
+  const getOrderBy =
+    (): Prisma.reddit_clone_commentsOrderByWithRelationInput[] => {
+      switch (sort) {
+        case "Best":
+          return [{ vote_score: "desc" }, { created_at: "desc" }];
+        case "New":
+          return [{ created_at: "desc" }];
+        case "Controversial":
+          // For controversial: lowest absolute score first, then by vote_score, then by created_at
+          // We need to use raw query approach by sorting in memory after fetching
+          return [{ vote_score: "asc" }, { created_at: "desc" }];
+        default:
+          return [{ vote_score: "desc" }, { created_at: "desc" }];
+      }
+    };
+  // Offset-based pagination (page/limit)
   const skip = (page - 1) * limit;
-  // Determine sort order
-  const sortOrder = props.body.sort ?? "Best";
-  const orderByInput = (
-    sortOrder === "Best"
-      ? [{ vote_score: "desc" as const }, { created_at: "desc" as const }]
-      : sortOrder === "New"
-        ? [{ created_at: "desc" as const }]
-        : sortOrder === "Controversial"
-          ? [{ vote_score: "asc" as const }, { created_at: "desc" as const }]
-          : [{ vote_score: "desc" as const }, { created_at: "desc" as const }]
-  ) satisfies Prisma.reddit_clone_commentsOrderByWithRelationInput[];
   // Build where clause for top-level comments
-  const whereInput = {
+  const where = {
     reddit_clone_post_id: props.postId,
     parent_comment_id: null,
   } satisfies Prisma.reddit_clone_commentsWhereInput;
-  // Query comments with pagination
-  const fetchMore = props.body.cursor ? 1 : 0;
-  const comments = await MyGlobal.prisma.reddit_clone_comments.findMany({
-    where: whereInput,
-    orderBy: orderByInput,
-    skip: props.body.cursor ? undefined : skip,
-    take: limit + fetchMore,
+  // Query top-level comments
+  const records = await MyGlobal.prisma.reddit_clone_comments.findMany({
     ...RedditCloneCommentAtSummaryTransformer.select(),
+    where,
+    orderBy: getOrderBy(),
+    skip,
+    take: limit,
   });
-  // Apply cursor-based pagination filtering
-  let paginatedComments = comments;
-  if (props.body.cursor && props.body.cursorId && props.body.cursorCreatedAt) {
-    const cursorDate = new Date(props.body.cursorCreatedAt);
-    const cursorId = props.body.cursorId;
-    paginatedComments = comments.filter((comment) => {
-      const commentDate = comment.created_at;
-      return (
-        commentDate > cursorDate ||
-        (commentDate.getTime() === cursorDate.getTime() &&
-          comment.id > cursorId)
-      );
+  // Sort by absolute vote_score for Controversial after fetch
+  let sortedRecords = records;
+  if (sort === "Controversial") {
+    sortedRecords = [...records].sort((a, b) => {
+      const absA = Math.abs(a.vote_score);
+      const absB = Math.abs(b.vote_score);
+      if (absA !== absB) return absA - absB;
+      if (a.vote_score !== b.vote_score) return a.vote_score - b.vote_score;
+      return b.created_at.getTime() - a.created_at.getTime();
     });
-    // Limit to requested page size
-    if (paginatedComments.length > limit) {
-      paginatedComments = paginatedComments.slice(0, limit);
-    }
   }
-  // Get total count for pagination metadata
+  // Count total top-level comments for pagination
   const total = await MyGlobal.prisma.reddit_clone_comments.count({
-    where: whereInput,
+    where: {
+      reddit_clone_post_id: props.postId,
+      parent_comment_id: null,
+    },
   });
-  // Transform comments with nested replies
+  // Transform with nested replies using transformAll
   const data =
-    await RedditCloneCommentAtSummaryTransformer.transformAll(
-      paginatedComments,
-    );
+    await RedditCloneCommentAtSummaryTransformer.transformAll(sortedRecords);
   return {
     pagination: {
       current: page,
@@ -88,7 +87,7 @@ export async function patchRedditCloneRedditClonePostsPostIdComments(props: {
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
     data: data,
-  } satisfies IPageIRedditCloneComment.ISummary;
+  };
 }
 
 

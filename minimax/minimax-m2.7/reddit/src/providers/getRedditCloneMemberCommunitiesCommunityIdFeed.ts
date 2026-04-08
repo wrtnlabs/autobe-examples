@@ -21,107 +21,43 @@ export async function getRedditCloneMemberCommunitiesCommunityIdFeed(props: {
   member: MemberPayload;
   communityId: string & tags.Format<"uuid">;
 }): Promise<IPageIRedditClonePost.ISummary> {
+  // Validate community exists and is not deleted (404 if not found)
+  await MyGlobal.prisma.reddit_clone_communities.findUniqueOrThrow({
+    where: { id: props.communityId },
+    select: { id: true },
+  });
   const page = 1;
   const limit = 20;
   const skip = (page - 1) * limit;
-  // Verify community exists and is not soft-deleted
-  const community = await MyGlobal.prisma.reddit_clone_communities.findUnique({
-    where: { id: props.communityId },
-    select: { id: true, deleted_at: true },
-  });
-  if (community === null || community.deleted_at !== null) {
-    throw new HttpException("Community not found", 404);
-  }
-  // Build WHERE clause for posts
-  const where: Prisma.reddit_clone_postsWhereInput = {
-    reddit_clone_community_id: props.communityId,
-    deleted_at: null,
-  };
-  // Fetch posts with all relations needed for hot score calculation and transformation
-  const allPosts = await MyGlobal.prisma.reddit_clone_posts.findMany({
-    where,
+  // Query posts for this community (not deleted)
+  const posts = await MyGlobal.prisma.reddit_clone_posts.findMany({
+    where: {
+      reddit_clone_community_id: props.communityId,
+      deleted_at: null,
+    },
+    ...RedditClonePostAtSummaryTransformer.select(),
+    take: limit,
+    skip: skip,
     orderBy: { created_at: "desc" },
-    include: {
-      author: {
-        select: {
-          id: true,
-          username: true,
-        },
-      },
-      community: {
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          subscriber_count: true,
-          member: {
-            select: {
-              id: true,
-              username: true,
-            },
-          },
-          icon: {
-            select: {
-              file: true,
-            },
-          },
-        },
-      },
-      postTextContent: {
-        select: {
-          body: true,
-        },
-      },
-      link: {
-        select: {
-          url: true,
-        },
-      },
-      image: {
-        select: {
-          reddit_clone_file_id: true,
-        },
-      },
-      comments: true,
-      postVotes: true,
+  });
+  const total = await MyGlobal.prisma.reddit_clone_posts.count({
+    where: {
+      reddit_clone_community_id: props.communityId,
+      deleted_at: null,
     },
   });
-  // Calculate hot score for each post and sort
-  const hotSortedPosts = calculateHotScore(allPosts);
-  // Apply pagination
-  const paginatedPosts = hotSortedPosts.slice(skip, skip + limit);
-  // Get total count for pagination metadata
-  const total = await MyGlobal.prisma.reddit_clone_posts.count({ where });
   return {
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+    },
     data: await ArrayUtil.asyncMap(
-      paginatedPosts,
+      posts,
       RedditClonePostAtSummaryTransformer.transform,
     ),
   };
-}
-function calculateHotScore(
-  posts: RedditClonePostAtSummaryTransformer.Payload[],
-): RedditClonePostAtSummaryTransformer.Payload[] {
-  return posts.slice().sort((a, b) => {
-    const aAgeHours = getHoursAge(a.created_at);
-    const bAgeHours = getHoursAge(b.created_at);
-    const aScore = a.vote_score / Math.pow(aAgeHours + 2, 1.5);
-    const bScore = b.vote_score / Math.pow(bAgeHours + 2, 1.5);
-    return bScore - aScore;
-  });
-}
-function getHoursAge(createdAt: Date): number {
-  const now = new Date();
-  const nowMs = now.getTime();
-  const createdMs = createdAt.getTime();
-  const diffMs = nowMs - createdMs;
-  return diffMs / (1000 * 60 * 60);
 }
 
 

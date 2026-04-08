@@ -15,14 +15,17 @@ export namespace RedditCloneCommentCollector {
     redditCloneMemberSessions: IEntity;
   }) {
     return {
+      // Scalar fields
       id: v4(),
       content: props.body.content,
       vote_score: 0,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
+      // BelongsTo relations
       post: { connect: { id: props.redditClonePosts.id } },
       member: { connect: { id: props.redditCloneMembers.id } },
+      // Optional BelongsTo - use undefined, NOT null
       parent: props.body.parentCommentId
         ? { connect: { id: props.body.parentCommentId } }
         : undefined,

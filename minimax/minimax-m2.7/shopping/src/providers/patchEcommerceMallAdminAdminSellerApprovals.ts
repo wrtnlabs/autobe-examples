@@ -1,10 +1,8 @@
-import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
 import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallSellerApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerApproval";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
 import { IPageIEcommerceMallSellerApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallSellerApproval";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -25,31 +23,43 @@ export async function patchEcommerceMallAdminAdminSellerApprovals(props: {
 }): Promise<IPageIEcommerceMallSellerApproval.ISummary> {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
+  const cappedLimit = limit > 100 ? 100 : limit;
+  const skip = (page - 1) * cappedLimit;
   const whereInput = {
-    ...(props.body.status && { status: props.body.status }),
+    ...(props.body.status !== undefined && { status: props.body.status }),
+    ...(props.body.created_at_from !== undefined && {
+      created_at: {
+        gte: new Date(
+          props.body.created_at_from as string & tags.Format<"date-time">,
+        ),
+      },
+    }),
+    ...(props.body.created_at_to !== undefined && {
+      created_at: {
+        lte: new Date(
+          props.body.created_at_to as string & tags.Format<"date-time">,
+        ),
+      },
+    }),
   } satisfies Prisma.ecommerce_mall_seller_approvalsWhereInput;
   const records =
     await MyGlobal.prisma.ecommerce_mall_seller_approvals.findMany({
-      ...EcommerceMallSellerApprovalAtSummaryTransformer.select(),
-      skip: skip,
-      take: limit,
       where: whereInput,
+      skip,
+      take: cappedLimit,
       orderBy: { created_at: "desc" },
+      ...EcommerceMallSellerApprovalAtSummaryTransformer.select(),
     });
   const total = await MyGlobal.prisma.ecommerce_mall_seller_approvals.count({
     where: whereInput,
   });
   return {
     pagination: {
-      pagination: {
-        current: page,
-        limit: limit,
-        records: total,
-        pages: Math.ceil(total / limit),
-      } satisfies IPage.IPagination,
-      data: [],
-    } satisfies IPageIEcommerceMall.IPagination,
+      current: page,
+      limit: cappedLimit,
+      records: total,
+      pages: Math.ceil(total / cappedLimit),
+    } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
       records,
       EcommerceMallSellerApprovalAtSummaryTransformer.transform,
@@ -77,11 +87,9 @@ export async function patchEcommerceMallAdminAdminSellerApprovals(props: {
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IEcommerceMallSellerApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerApproval";
 // import { IPageIEcommerceMallSellerApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallSellerApproval";
-// import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
 // import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-// import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
-// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 // import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.

@@ -15,50 +15,87 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postMallPlatformAuthAdministratorRefresh(props: {
   body: IMallPlatformAdministrator.IRefresh;
 }): Promise<IMallPlatformAdministrator.IAuthorized> {
-  let decoded: {
+  const verified: unknown = (() => {
+    try {
+      return jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
+        issuer: "autobe",
+      });
+    } catch {
+      throw new HttpException("Invalid or expired refresh token", 401);
+    }
+  })();
+  const isAdministratorRefreshPayload = (
+    value: unknown,
+  ): value is {
+    type: "administrator";
     id: string;
     session_id: string;
-    type: "administrator";
     created_at: string;
+    tokenType?: "refresh";
+  } => {
+    if (typeof value !== "object" || value === null) return false;
+    if (
+      !Object.prototype.hasOwnProperty.call(value, "type") ||
+      !Object.prototype.hasOwnProperty.call(value, "id") ||
+      !Object.prototype.hasOwnProperty.call(value, "session_id") ||
+      !Object.prototype.hasOwnProperty.call(value, "created_at")
+    ) {
+      return false;
+    }
+    const typeValue = (
+      value as {
+        [key: string]: unknown;
+      }
+    ).type;
+    const idValue = (
+      value as {
+        [key: string]: unknown;
+      }
+    ).id;
+    const sessionIdValue = (
+      value as {
+        [key: string]: unknown;
+      }
+    ).session_id;
+    const createdAtValue = (
+      value as {
+        [key: string]: unknown;
+      }
+    ).created_at;
+    const tokenTypeValue = (
+      value as {
+        [key: string]: unknown;
+      }
+    ).tokenType;
+    if (typeValue !== "administrator") return false;
+    if (typeof idValue !== "string") return false;
+    if (typeof sessionIdValue !== "string") return false;
+    if (typeof createdAtValue !== "string") return false;
+    if (tokenTypeValue !== undefined && tokenTypeValue !== "refresh")
+      return false;
+    return true;
   };
-  try {
-    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
-      issuer: "autobe",
-    }) as {
-      id: string;
-      session_id: string;
-      type: "administrator";
-      created_at: string;
-    };
-  } catch {
+  if (!isAdministratorRefreshPayload(verified)) {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  if (decoded.type !== "administrator") {
-    throw new HttpException("Invalid token type", 403);
-  }
-  const now = new Date();
-  const accessExpiredAt = new Date(now.getTime() + 60 * 60 * 1000);
-  const refreshExpiredAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const session =
-    await MyGlobal.prisma.mall_platform_administrator_sessions.findFirstOrThrow(
-      {
-        where: {
-          id: decoded.session_id,
-          administrator: {
-            id: decoded.id,
-          },
-          expired_at: {
-            gt: now,
-          },
-        },
-        select: {
-          id: true,
-        },
+    await MyGlobal.prisma.mall_platform_administrator_sessions.findFirst({
+      where: {
+        id: verified.session_id,
+        administrator_id: verified.id,
+        expired_at: { gt: new Date() },
       },
-    );
+      select: {
+        id: true,
+        administrator_id: true,
+      },
+    });
+  if (session === null) {
+    throw new HttpException("Session expired or revoked", 401);
+  }
   const administrator =
     await MyGlobal.prisma.mall_platform_administrators.findUniqueOrThrow({
-      where: { id: decoded.id },
+      where: { id: verified.id },
       select: {
         id: true,
         email: true,
@@ -73,29 +110,15 @@ export async function postMallPlatformAuthAdministratorRefresh(props: {
     throw new HttpException("Account has been deleted", 403);
   }
   if (administrator.status !== "active") {
-    throw new HttpException(
-      "Account is not permitted to access the platform",
-      403,
-    );
+    throw new HttpException("Account is not active", 403);
   }
-  const tokenPayload = {
-    id: administrator.id,
-    session_id: session.id,
-    type: "administrator" as const,
-    created_at: now.toISOString(),
-  };
-  const access = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    issuer: "autobe",
-    expiresIn: "1h",
-  });
-  const refresh = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
-    issuer: "autobe",
-    expiresIn: "7d",
-  });
+  const now = new Date();
+  const accessExpiredAt = new Date(now.getTime() + 60 * 60 * 1000);
+  const refreshableUntil = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   await MyGlobal.prisma.mall_platform_administrator_sessions.update({
-    where: { id: session.id },
+    where: { id: verified.session_id },
     data: {
-      expired_at: refreshExpiredAt,
+      expired_at: refreshableUntil,
     },
   });
   return {
@@ -103,14 +126,39 @@ export async function postMallPlatformAuthAdministratorRefresh(props: {
     email: administrator.email,
     grade: administrator.grade,
     status: administrator.status,
-    createdAt: administrator.created_at.toISOString(),
-    updatedAt: administrator.updated_at.toISOString(),
-    deletedAt: null,
+    created_at: toISOStringSafe(administrator.created_at),
+    updated_at: toISOStringSafe(administrator.updated_at),
+    deleted_at: null,
     token: {
-      access,
-      refresh,
-      expired_at: accessExpiredAt.toISOString(),
-      refreshable_until: refreshExpiredAt.toISOString(),
+      access: jwt.sign(
+        {
+          type: "administrator",
+          id: administrator.id,
+          session_id: verified.session_id,
+          created_at: toISOStringSafe(now),
+        },
+        MyGlobal.env.JWT_SECRET_KEY,
+        {
+          expiresIn: "1h",
+          issuer: "autobe",
+        },
+      ),
+      refresh: jwt.sign(
+        {
+          type: "administrator",
+          id: administrator.id,
+          session_id: verified.session_id,
+          created_at: toISOStringSafe(now),
+          tokenType: "refresh",
+        },
+        MyGlobal.env.JWT_SECRET_KEY,
+        {
+          expiresIn: "7d",
+          issuer: "autobe",
+        },
+      ),
+      expired_at: toISOStringSafe(accessExpiredAt),
+      refreshable_until: toISOStringSafe(refreshableUntil),
     },
   };
 }

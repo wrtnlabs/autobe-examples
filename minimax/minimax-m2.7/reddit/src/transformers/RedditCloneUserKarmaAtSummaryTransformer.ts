@@ -1,6 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCloneUserKarma } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserKarma";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -23,7 +24,7 @@ export namespace RedditCloneUserKarmaAtSummaryTransformer {
           select: {
             id: true,
           },
-        } satisfies Prisma.reddit_clone_membersFindFirstArgs,
+        } satisfies Prisma.reddit_clone_membersFindManyArgs,
       },
     } satisfies Prisma.reddit_clone_user_karmasFindManyArgs;
   }
@@ -31,7 +32,7 @@ export namespace RedditCloneUserKarmaAtSummaryTransformer {
     input: Payload,
   ): Promise<IRedditCloneUserKarma.ISummary> {
     return {
-      karmaScore: input.karma_score,
+      karmaScore: Number(input.karma_score),
     } satisfies IRedditCloneUserKarma.ISummary;
   }
 }

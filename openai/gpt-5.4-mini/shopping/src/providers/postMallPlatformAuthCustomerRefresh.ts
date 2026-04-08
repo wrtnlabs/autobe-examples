@@ -1,6 +1,7 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+import { IMallPlatformCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomerProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -15,50 +16,25 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postMallPlatformAuthCustomerRefresh(props: {
   body: IMallPlatformCustomer.IRefresh;
 }): Promise<IMallPlatformCustomer.IAuthorized> {
-  const decodedUnknown: unknown = (() => {
-    try {
-      return jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
-        issuer: "autobe",
-      });
-    } catch {
-      throw new HttpException("Invalid or expired refresh token", 401);
-    }
-  })();
-  if (typeof decodedUnknown !== "object" || decodedUnknown === null) {
-    throw new HttpException("Invalid or expired refresh token", 401);
-  }
-  const hasStringProperty = (
-    value: object,
-    key: string,
-  ): value is Record<string, string> =>
-    Object.prototype.hasOwnProperty.call(value, key) &&
-    typeof (value as Record<string, unknown>)[key] === "string";
-  if (!Object.prototype.hasOwnProperty.call(decodedUnknown, "type")) {
-    throw new HttpException("Invalid or expired refresh token", 401);
-  }
-  if (!Object.prototype.hasOwnProperty.call(decodedUnknown, "id")) {
-    throw new HttpException("Invalid or expired refresh token", 401);
-  }
-  if (!Object.prototype.hasOwnProperty.call(decodedUnknown, "session_id")) {
-    throw new HttpException("Invalid or expired refresh token", 401);
-  }
-  const decodedRecord = decodedUnknown as Record<string, unknown>;
-  const tokenType = decodedRecord.type;
-  const tokenId = decodedRecord.id;
-  const tokenSessionId = decodedRecord.session_id;
-  if (tokenType !== "customer") {
-    throw new HttpException("Invalid token type", 403);
-  }
-  if (typeof tokenId !== "string" || typeof tokenSessionId !== "string") {
-    throw new HttpException("Invalid or expired refresh token", 401);
-  }
-  const customerId = tokenId;
-  const sessionId = tokenSessionId;
+  const decodedUnknown: unknown = jwt.verify(
+    props.body.refreshToken,
+    MyGlobal.env.JWT_SECRET_KEY,
+    { issuer: "autobe" },
+  );
+  const isObject = (value: unknown): value is Record<string, unknown> =>
+    typeof value === "object" && value !== null;
+  if (!isObject(decodedUnknown)) throw new HttpException("Unauthorized", 401);
+  if (typeof decodedUnknown.id !== "string")
+    throw new HttpException("Forbidden", 403);
+  if (typeof decodedUnknown.session_id !== "string")
+    throw new HttpException("Forbidden", 403);
+  if (decodedUnknown.type !== "customer")
+    throw new HttpException("Forbidden", 403);
   const session =
     await MyGlobal.prisma.mall_platform_customer_sessions.findFirst({
       where: {
-        id: sessionId,
-        mall_platform_customer_id: customerId,
+        id: decodedUnknown.session_id,
+        mall_platform_customer_id: decodedUnknown.id,
       },
       select: {
         id: true,
@@ -66,15 +42,10 @@ export async function postMallPlatformAuthCustomerRefresh(props: {
         expired_at: true,
       },
     });
-  if (session === null) {
-    throw new HttpException("Session expired or revoked", 401);
-  }
-  if (session.expired_at.getTime() <= Date.now()) {
-    throw new HttpException("Session expired or revoked", 401);
-  }
+  if (session === null) throw new HttpException("Unauthorized", 401);
   const customer =
     await MyGlobal.prisma.mall_platform_customers.findUniqueOrThrow({
-      where: { id: customerId },
+      where: { id: decodedUnknown.id },
       select: {
         id: true,
         email: true,
@@ -84,26 +55,24 @@ export async function postMallPlatformAuthCustomerRefresh(props: {
         deleted_at: true,
       },
     });
-  if (customer.deleted_at !== null || customer.status !== "active") {
-    throw new HttpException("Account is not active", 403);
-  }
-  const accessExpiredAt = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-  const refreshableUntil = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
-  const tokenCreatedAt = toISOStringSafe(new Date());
+  if (customer.deleted_at !== null) throw new HttpException("Forbidden", 403);
+  const now = new Date();
+  const accessExpiredAt = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshableUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const nowIso = toISOStringSafe(now);
+  const accessExpiredAtIso = toISOStringSafe(accessExpiredAt);
+  const refreshableUntilIso = toISOStringSafe(refreshableUntil);
   await MyGlobal.prisma.mall_platform_customer_sessions.update({
-    where: { id: sessionId },
+    where: { id: session.id },
     data: {
-      expired_at: new Date(refreshableUntil),
+      expired_at: refreshableUntil,
     },
   });
   return {
     id: customer.id,
     email: customer.email,
     status: customer.status,
+    profile: undefined,
     created_at: toISOStringSafe(customer.created_at),
     updated_at: toISOStringSafe(customer.updated_at),
     deleted_at: null,
@@ -111,33 +80,27 @@ export async function postMallPlatformAuthCustomerRefresh(props: {
       access: jwt.sign(
         {
           type: "customer",
-          id: customerId,
-          session_id: sessionId,
-          created_at: tokenCreatedAt,
+          id: decodedUnknown.id,
+          session_id: decodedUnknown.session_id,
+          created_at: nowIso,
         },
         MyGlobal.env.JWT_SECRET_KEY,
-        {
-          issuer: "autobe",
-          expiresIn: "1h",
-        },
+        { issuer: "autobe", expiresIn: "1h" },
       ),
       refresh: jwt.sign(
         {
           type: "customer",
-          id: customerId,
-          session_id: sessionId,
-          created_at: tokenCreatedAt,
+          id: decodedUnknown.id,
+          session_id: decodedUnknown.session_id,
+          created_at: nowIso,
         },
         MyGlobal.env.JWT_SECRET_KEY,
-        {
-          issuer: "autobe",
-          expiresIn: "7d",
-        },
+        { issuer: "autobe", expiresIn: "7d" },
       ),
-      expired_at: accessExpiredAt,
-      refreshable_until: refreshableUntil,
-    } satisfies IAuthorizationToken,
-  } satisfies IMallPlatformCustomer.IAuthorized;
+      expired_at: accessExpiredAtIso,
+      refreshable_until: refreshableUntilIso,
+    },
+  };
 }
 
 
@@ -159,6 +122,7 @@ export async function postMallPlatformAuthCustomerRefresh(props: {
 // 
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+// import { IMallPlatformCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomerProfile";
 // import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
@@ -166,10 +130,16 @@ export async function postMallPlatformAuthCustomerRefresh(props: {
 // export async function postMallPlatformAuthCustomerRefresh(props: {
 //   body: IMallPlatformCustomer.IRefresh;
 // }): Promise<IMallPlatformCustomer.IAuthorized> {
-//   // No matching Collector/Transformer found for this operation.
-//     // You MUST call getDatabaseSchemas first to get exact relation property names.
-//     // NEVER guess relation names from table names — always verify against the schema.
-//     ...
+//   return {
+//     id: ...,
+//     email: ...,
+//     status: ...,
+//     profile: await MallPlatformCustomerProfileTransformer.transform(...),
+//     created_at: ...,
+//     updated_at: ...,
+//     deleted_at: ...,
+//     token: ...,
+//   };
 // }
 // ```
 //--------------------------------------------------------------

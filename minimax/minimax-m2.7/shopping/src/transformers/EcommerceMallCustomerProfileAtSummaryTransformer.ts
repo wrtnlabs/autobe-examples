@@ -1,6 +1,7 @@
 import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -20,6 +21,11 @@ export namespace EcommerceMallCustomerProfileAtSummaryTransformer {
         phone: true,
         created_at: true,
         updated_at: true,
+        customer: {
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.ecommerce_mall_customer_profilesFindManyArgs;
   }
@@ -28,10 +34,10 @@ export namespace EcommerceMallCustomerProfileAtSummaryTransformer {
   ): Promise<IEcommerceMallCustomerProfile.ISummary> {
     return {
       id: input.id,
-      displayName: input.display_name,
+      display_name: input.display_name,
       phone: input.phone,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
     } satisfies IEcommerceMallCustomerProfile.ISummary;
   }
 }
@@ -60,10 +66,10 @@ export namespace EcommerceMallCustomerProfileAtSummaryTransformer {
 //       export async function transform(input: Payload): Promise<IEcommerceMallCustomerProfile.ISummary> {
 //         return {
 //   id: {string},
-//   displayName: {string},
+//   display_name: {string},
 //   phone: {string},
-//   createdAt: {string},
-//   updatedAt: {string},
+//   created_at: {string},
+//   updated_at: {string},
 //         };
 //       }
 //     }

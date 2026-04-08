@@ -2,8 +2,9 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
 import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
-import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -35,15 +36,15 @@ export namespace MallPlatformProductImageTransformer {
   ): Promise<IMallPlatformProductImage> {
     return {
       id: input.id,
+      product: await MallPlatformProductAtSummaryTransformer.transform(
+        input.product,
+      ),
       imageUrl: input.image_url,
       sortOrder: input.sort_order,
       isMain: input.is_main,
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
       deletedAt: input.deleted_at?.toISOString() ?? null,
-      product: await MallPlatformProductAtSummaryTransformer.transform(
-        input.product,
-      ),
     } satisfies IMallPlatformProductImage;
   }
 }
@@ -74,13 +75,13 @@ export namespace MallPlatformProductImageTransformer {
 //       export async function transform(input: Payload): Promise<IMallPlatformProductImage> {
 //         return {
 //   id: {string},
+//   product: await MallPlatformProductAtSummaryTransformer.transform(input.product),
 //   imageUrl: {string},
 //   sortOrder: {integer},
 //   isMain: {boolean},
 //   createdAt: {string},
 //   updatedAt: {string},
 //   deletedAt: {string | null},
-//   product: await MallPlatformProductAtSummaryTransformer.transform(input.product),
 //         };
 //       }
 //     }

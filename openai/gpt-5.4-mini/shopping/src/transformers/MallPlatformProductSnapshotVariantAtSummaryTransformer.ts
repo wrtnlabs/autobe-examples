@@ -1,13 +1,13 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductSnapshot";
 import { IMallPlatformProductSnapshotVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductSnapshotVariant";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariantSnapshot";
-import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -43,10 +43,6 @@ export namespace MallPlatformProductSnapshotVariantAtSummaryTransformer {
   ): Promise<IMallPlatformProductSnapshotVariant.ISummary> {
     return {
       id: input.id,
-      skuCode: input.sku_code,
-      optionValues: input.option_values,
-      priceOverride: input.price_override,
-      isAvailable: input.is_available,
       productSnapshot:
         await MallPlatformProductSnapshotAtSummaryTransformer.transform(
           input.productSnapshot,
@@ -56,6 +52,11 @@ export namespace MallPlatformProductSnapshotVariantAtSummaryTransformer {
             input.productVariantSnapshot,
           )
         : null,
+      skuCode: input.sku_code,
+      optionValues: input.option_values,
+      priceOverride:
+        input.price_override === null ? null : Number(input.price_override),
+      isAvailable: input.is_available,
       createdAt: input.created_at.toISOString(),
     } satisfies IMallPlatformProductSnapshotVariant.ISummary;
   }
@@ -87,12 +88,12 @@ export namespace MallPlatformProductSnapshotVariantAtSummaryTransformer {
 //       export async function transform(input: Payload): Promise<IMallPlatformProductSnapshotVariant.ISummary> {
 //         return {
 //   id: {string},
+//   productSnapshot: await MallPlatformProductSnapshotAtSummaryTransformer.transform(input.productSnapshot),
+//   productVariantSnapshot: input.productVariantSnapshot ? await MallPlatformProductVariantSnapshotAtSummaryTransformer.transform(input.productVariantSnapshot) : null,
 //   skuCode: {string},
 //   optionValues: {string},
 //   priceOverride: {number | null},
 //   isAvailable: {boolean},
-//   productSnapshot: await MallPlatformProductSnapshotAtSummaryTransformer.transform(input.productSnapshot),
-//   productVariantSnapshot: input.productVariantSnapshot ? await MallPlatformProductVariantSnapshotAtSummaryTransformer.transform(input.productVariantSnapshot) : null,
 //   createdAt: {string},
 //         };
 //       }

@@ -12,7 +12,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
-import { MallPlatformCancellationRequestSnapshotAtSummaryTransformer } from "../transformers/MallPlatformCancellationRequestSnapshotAtSummaryTransformer";
+import { MallPlatformCancellationRequestSnapshotTransformer } from "../transformers/MallPlatformCancellationRequestSnapshotTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,78 +20,50 @@ export async function patchMallPlatformCustomerOrderItemsOrderItemIdCancellation
   customer: CustomerPayload;
   orderItemId: string & tags.Format<"uuid">;
   cancellationRequestId: string & tags.Format<"uuid">;
-  body: IMallPlatformCancellationRequestSnapshot.IRequest;
-}): Promise<IPageIMallPlatformCancellationRequestSnapshot.ISummary> {
-  await MyGlobal.prisma.mall_platform_cancellation_requests.findFirstOrThrow({
-    where: {
-      id: props.cancellationRequestId,
-      mall_platform_order_item_id: props.orderItemId,
-    },
-    select: { id: true },
-  });
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
-  const keyword =
-    props.body.search === undefined ||
-    props.body.search === null ||
-    props.body.search.trim() === ""
-      ? null
-      : props.body.search;
-  const from = props.body.from ?? null;
-  const to = props.body.to ?? null;
-  const sort = props.body.sort ?? "changed_at";
-  const order = props.body.order ?? "desc";
-  const where: Prisma.mall_platform_cancellation_request_snapshotsWhereInput = {
-    mall_platform_cancellation_request_id: props.cancellationRequestId,
-    ...(keyword === null
-      ? {}
-      : {
-          OR: [
-            { snapshot_status: { contains: keyword, mode: "insensitive" } },
-            { review_result: { contains: keyword, mode: "insensitive" } },
-            { reason: { contains: keyword, mode: "insensitive" } },
-          ],
-        }),
-    ...(from === null ? {} : { changed_at: { gte: from } }),
-    ...(to === null ? {} : { changed_at: { lte: to } }),
-  };
-  const orderBy: Prisma.mall_platform_cancellation_request_snapshotsOrderByWithRelationInput[] =
-    sort === "snapshot_status"
-      ? [{ snapshot_status: order }, { id: order }]
-      : sort === "review_result"
-        ? [{ review_result: order }, { id: order }]
-        : sort === "reason"
-          ? [{ reason: order }, { id: order }]
-          : sort === "changed_at"
-            ? [{ changed_at: order }, { id: order }]
-            : sort === "id"
-              ? [{ id: order }]
-              : [{ changed_at: "desc" }, { id: "desc" }];
+}): Promise<IPageIMallPlatformCancellationRequestSnapshot> {
+  const cancellationRequest =
+    await MyGlobal.prisma.mall_platform_cancellation_requests.findUniqueOrThrow(
+      {
+        where: {
+          id: props.cancellationRequestId,
+        },
+        select: {
+          id: true,
+          mall_platform_order_item_id: true,
+        },
+      },
+    );
+  if (cancellationRequest.mall_platform_order_item_id !== props.orderItemId) {
+    throw new HttpException("Not Found", 404);
+  }
   const records =
     await MyGlobal.prisma.mall_platform_cancellation_request_snapshots.findMany(
       {
-        ...MallPlatformCancellationRequestSnapshotAtSummaryTransformer.select(),
-        where,
-        orderBy,
-        skip,
-        take: limit,
+        where: {
+          mall_platform_cancellation_request_id: props.cancellationRequestId,
+        },
+        orderBy: [
+          {
+            changed_at: "asc",
+          },
+          {
+            created_at: "asc",
+          },
+        ],
+        ...MallPlatformCancellationRequestSnapshotTransformer.select(),
       },
     );
-  const total =
-    await MyGlobal.prisma.mall_platform_cancellation_request_snapshots.count({
-      where,
-    });
+  const total = records.length;
   return {
     pagination: {
-      current: page,
-      limit,
+      current: 1,
+      limit: total === 0 ? 1 : total,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: total === 0 ? 0 : 1,
     },
     data: await ArrayUtil.asyncMap(
       records,
-      MallPlatformCancellationRequestSnapshotAtSummaryTransformer.transform,
+      MallPlatformCancellationRequestSnapshotTransformer.transform,
     ),
   };
 }
@@ -114,9 +86,9 @@ export async function patchMallPlatformCustomerOrderItemsOrderItemIdCancellation
 // import { toISOStringSafe } from "../utils/toISOStringSafe"
 // 
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-// import { IMallPlatformCancellationRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCancellationRequestSnapshot";
 // import { IPageIMallPlatformCancellationRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformCancellationRequestSnapshot";
 // import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IMallPlatformCancellationRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCancellationRequestSnapshot";
 // import { IMallPlatformCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCancellationRequest";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
@@ -125,10 +97,9 @@ export async function patchMallPlatformCustomerOrderItemsOrderItemIdCancellation
 //   customer: CustomerPayload;
 //   orderItemId: string & tags.Format<"uuid">;
 //   cancellationRequestId: string & tags.Format<"uuid">;
-//   body: IMallPlatformCancellationRequestSnapshot.IRequest;
-// }): Promise<IPageIMallPlatformCancellationRequestSnapshot.ISummary> {
+// }): Promise<IPageIMallPlatformCancellationRequestSnapshot> {
 //   const records = await MyGlobal.prisma.mall_platform_cancellation_request_snapshots.findMany({
-//     ...MallPlatformCancellationRequestSnapshotAtSummaryTransformer.select(),
+//     ...MallPlatformCancellationRequestSnapshotTransformer.select(),
 //     ...,
 //   });
 //   return {
@@ -138,7 +109,7 @@ export async function patchMallPlatformCustomerOrderItemsOrderItemIdCancellation
 //       records: ...,
 //       pages: ...,
 //     },
-//     data: await ArrayUtil.asyncMap(records, MallPlatformCancellationRequestSnapshotAtSummaryTransformer.transform),
+//     data: await ArrayUtil.asyncMap(records, MallPlatformCancellationRequestSnapshotTransformer.transform),
 //   };
 // }
 // ```

@@ -1,4 +1,4 @@
-import { TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
@@ -10,36 +10,38 @@ import { postMallPlatformAdministratorOrdersOrderIdForceRefund } from "../../../
 @Controller("/mallPlatform/administrator/orders/:orderId/force-refund")
 export class MallplatformAdministratorOrdersForce_refundController {
   /**
-   * Force a refund outcome for an order under administrator oversight.
+   * Force a refund on an order under administrator oversight.
    *
-   * This action is used when a privileged administrator must intervene in an order for policy enforcement, dispute resolution, or other exceptional cases. The platform applies the refund outcome to the relevant order item or items, preserves the historical record, and restores stock through inventory history when the refund is completed.
+   * This endpoint is used for policy enforcement and dispute resolution when an administrator needs to override the normal seller-driven refund flow. The operation affects one order and may apply to all eligible items in that order or to a specified subset, depending on the request payload defined by the domain model.
    *
-   * The operation targets a specific order identified by `orderId`. It should only be allowed for administrators with order intervention authority. If the order does not exist, the requester is not authorized, or the order cannot be forced into a refund state because of its current item statuses or request history, the service should return an appropriate error response. When successful, the response returns the updated order view so consumers can confirm the forced refund result.
+   * The service must validate the administrator's intervention permission, confirm that the order exists, and ensure that all targeted items belong to the same order and are eligible for a forced refund. The operation must preserve the historical purchase context and any required snapshot history before the live state changes. If any targeted item fails validation or persistence, the entire request must roll back without partially refunding unrelated items.
    *
    * @param connection
-   * @param orderId The unique identifier of the order to force refund (UUID scope).
+   * @param orderId The order identifier (UUID) for the administrator intervention.
+   * @param body Administrator refund command for the selected order scope.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Load the order by `orderId` and verify that the caller is an administrator with order intervention authority. Confirm the order exists before applying any changes.
+   * @x-autobe-specification Load the order by order_id and verify that the caller is an administrator with order intervention authority. Reject the request with a not-found error if the order does not exist and with a forbidden error if the caller lacks permission.
    *
-   * Identify the affected order item(s) for the force-refund action. Apply the refund outcome to the relevant item(s) according to the platform's intervention policy, using the same state transitions and side effects required for a normal refund outcome. If the intervention covers items that were previously shipped or delivered, ensure the service still records the administrative override and preserves order history.
+   * Determine the target scope from the command body: if explicit order item targets are supplied, validate that each item belongs to the order and can be force-refunded by policy; otherwise, treat the request as an order-wide forced refund over all eligible items. For every targeted item, write any required snapshot record before mutating the live row, update the item status to refunded, restore stock by creating the appropriate positive inventory record, and trigger the refund settlement workflow exactly once per item.
    *
-   * Restore stock by creating inventory history records for the refunded quantity on each affected product variant. Do not directly overwrite current stock; the current stock must remain derived from inventory records. Preserve all historical records and any existing snapshots associated with the order item or refund-related entities.
-   *
-   * The operation must be transactional. If any part of the intervention fails, roll back the entire change set so the order, order items, inventory history, and snapshots remain consistent. Return 404 when the order does not exist, 403 when the caller lacks authority, and 409 when the order cannot be force-refunded due to conflicting state or a policy restriction. Return the updated order representation on success.
+   * Use a single database transaction for the full operation. Do not modify unrelated order items. If any item is in an ineligible state or any downstream persistence step fails, roll back the transaction and return a domain error explaining the failure condition.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
-  public async create(
+  public async forceRefund(
     @AdministratorAuth()
     administrator: AdministratorPayload,
     @TypedParam("orderId")
     orderId: string & tags.Format<"uuid">,
+    @TypedBody()
+    body: IMallPlatformOrder.IForceRefund,
   ): Promise<IMallPlatformOrder> {
     try {
       return await postMallPlatformAdministratorOrdersOrderIdForceRefund({
         administrator,
         orderId,
+        body,
       });
     } catch (error) {
       console.log(error);

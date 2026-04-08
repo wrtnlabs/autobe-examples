@@ -22,25 +22,23 @@ export async function patchRedditCloneMemberCommunitiesCommunityIdModerationQueu
   communityId: string & tags.Format<"uuid">;
   body: IRedditCloneCommunityReport.IRequest;
 }): Promise<IPageIRedditCloneCommunityReport.ISummary> {
-  // Verify community exists
-  await MyGlobal.prisma.reddit_clone_communities.findUniqueOrThrow({
-    where: { id: props.communityId },
-    select: { id: true },
-  });
-  // Verify member is moderator or owner of the community
-  const moderator =
+  // Authorization: Verify member is moderator or owner of the community
+  const isModerator =
     await MyGlobal.prisma.reddit_clone_community_moderators.findFirst({
       where: {
         reddit_clone_community_id: props.communityId,
         reddit_clone_member_id: props.member.id,
         role: { in: ["owner", "moderator"] },
       },
-      select: { id: true },
     });
-  if (!moderator) {
+  if (!isModerator) {
     throw new HttpException("Forbidden", 403);
   }
-  // Build where clause with filters
+  // Pagination defaults
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const skip = (page - 1) * limit;
+  // Build WHERE clause
   const whereInput = {
     reddit_clone_community_id: props.communityId,
     ...(props.body.status !== undefined && { status: props.body.status }),
@@ -48,40 +46,26 @@ export async function patchRedditCloneMemberCommunitiesCommunityIdModerationQueu
       target_type: props.body.targetType,
     }),
     ...(props.body.search !== undefined && {
-      reason: { contains: props.body.search, mode: "insensitive" },
+      reason: { contains: props.body.search, mode: "insensitive" as const },
     }),
   } satisfies Prisma.reddit_clone_community_reportsWhereInput;
-  // Pagination parameters with defaults
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
-  // OrderBy: oldest first (ascending by created_at)
-  const orderByInput = {
-    created_at: "asc" as const,
-  } satisfies Prisma.reddit_clone_community_reportsOrderByWithRelationInput;
-  // Query reports with transformer select
-  const records = await MyGlobal.prisma.reddit_clone_community_reports.findMany(
-    {
+  // Query reports
+  const [records, total] = await Promise.all([
+    MyGlobal.prisma.reddit_clone_community_reports.findMany({
       where: whereInput,
       skip,
       take: limit,
-      orderBy: orderByInput,
+      orderBy: { created_at: "asc" },
       ...RedditCloneCommunityReportAtSummaryTransformer.select(),
-    },
-  );
-  // Count total records for pagination
-  const total = await MyGlobal.prisma.reddit_clone_community_reports.count({
-    where: whereInput,
-  });
-  // Calculate total pages
-  const pages = total === 0 ? 0 : Math.ceil(total / limit);
-  // Build response
+    }),
+    MyGlobal.prisma.reddit_clone_community_reports.count({ where: whereInput }),
+  ]);
   return {
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
-      pages: pages,
+      pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
       records,

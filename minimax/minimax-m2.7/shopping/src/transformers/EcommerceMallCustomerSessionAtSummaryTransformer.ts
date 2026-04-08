@@ -3,6 +3,7 @@ import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/str
 import { IEcommerceMallCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerSession";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -39,12 +40,11 @@ export namespace EcommerceMallCustomerSessionAtSummaryTransformer {
       ip: input.ip,
       href: input.href,
       referrer: input.referrer,
-      createdAt: input.created_at.toISOString(),
-      expiredAt: input.expired_at.toISOString(),
-      isActive: new Date(input.expired_at) > new Date(),
       customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
         input.customer,
       ),
+      created_at: input.created_at.toISOString(),
+      expired_at: input.expired_at.toISOString(),
     } satisfies IEcommerceMallCustomerSession.ISummary;
   }
 }
@@ -80,10 +80,9 @@ export namespace EcommerceMallCustomerSessionAtSummaryTransformer {
 //   ip: {string},
 //   href: {string},
 //   referrer: {string},
-//   createdAt: {string},
-//   expiredAt: {string},
-//   isActive: {boolean},
 //   customer: await EcommerceMallCustomerAtSummaryTransformer.transform(input.customer),
+//   created_at: {string},
+//   expired_at: {string},
 //         };
 //       }
 //     }

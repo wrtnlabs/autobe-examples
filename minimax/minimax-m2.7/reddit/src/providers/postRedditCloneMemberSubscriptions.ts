@@ -32,10 +32,13 @@ export async function postRedditCloneMemberSubscriptions(props: {
         reddit_clone_member_id: props.member.id,
       },
     });
-  if (existingBan) {
-    throw new HttpException("You are banned from this community", 403);
+  if (existingBan !== null) {
+    throw new HttpException(
+      "You are banned from this community and cannot subscribe",
+      403,
+    );
   }
-  // Check if subscription already exists
+  // Check for duplicate subscription
   const existingSubscription =
     await MyGlobal.prisma.reddit_clone_subscriptions.findFirst({
       where: {
@@ -43,15 +46,17 @@ export async function postRedditCloneMemberSubscriptions(props: {
         reddit_clone_community_id: props.body.communityId,
       },
     });
-  if (existingSubscription) {
-    throw new HttpException("Already subscribed to this community", 409);
+  if (existingSubscription !== null) {
+    throw new HttpException(
+      "You are already subscribed to this community",
+      409,
+    );
   }
   // Create subscription
   const record = await MyGlobal.prisma.reddit_clone_subscriptions.create({
     data: await RedditCloneSubscriptionCollector.collect({
       body: props.body,
       redditCloneMembers: { id: props.member.id },
-      redditCloneMemberSessions: { id: props.member.session_id },
     }),
     ...RedditCloneSubscriptionTransformer.select(),
   });

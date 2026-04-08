@@ -24,117 +24,14 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getRedditClonePostsPostId(props: {
   postId: string & tags.Format<"uuid">;
 }): Promise<IRedditClonePost> {
-  const record = await MyGlobal.prisma.reddit_clone_posts.findFirstOrThrow({
+  const record = await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
+    ...RedditClonePostTransformer.select(),
     where: {
       id: props.postId,
       deleted_at: null,
     },
-    select: {
-      id: true,
-      title: true,
-      type: true,
-      vote_score: true,
-      comment_count: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-      author: {
-        select: {
-          id: true,
-          username: true,
-        },
-      },
-      community: {
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          subscriber_count: true,
-          member: {
-            select: {
-              id: true,
-              username: true,
-            },
-          },
-          icon: {
-            select: {
-              file: {
-                select: {
-                  storage_path: true,
-                },
-              },
-            },
-          },
-        },
-      },
-      postTextContent: {
-        select: {
-          id: true,
-          body: true,
-        },
-      },
-      link: {
-        select: {
-          id: true,
-          url: true,
-          created_at: true,
-          updated_at: true,
-        },
-      },
-      image: {
-        select: {
-          id: true,
-          created_at: true,
-          updated_at: true,
-          file: {
-            select: {
-              id: true,
-              original_filename: true,
-              stored_filename: true,
-              mime_type: true,
-              file_size: true,
-              storage_path: true,
-              status: true,
-              created_at: true,
-              updated_at: true,
-              deleted_at: true,
-              uploader: {
-                select: {
-                  id: true,
-                  username: true,
-                },
-              },
-              thumbnails: {
-                select: {
-                  id: true,
-                  width: true,
-                  height: true,
-                  variant: true,
-                  thumbnail_path: true,
-                  created_at: true,
-                },
-              },
-              scans: {
-                select: {
-                  id: true,
-                  scanned_at: true,
-                  scanner: true,
-                  status: true,
-                  threat_name: true,
-                  details: true,
-                  created_at: true,
-                  updated_at: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
   });
-  return await RedditClonePostTransformer.transform(
-    record as RedditClonePostTransformer.Payload,
-  );
+  return await RedditClonePostTransformer.transform(record);
 }
 
 

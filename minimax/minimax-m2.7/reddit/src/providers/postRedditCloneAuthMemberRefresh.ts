@@ -12,7 +12,6 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditCloneFileAssociationAtSummaryTransformer } from "../transformers/RedditCloneFileAssociationAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -24,6 +23,8 @@ export async function postRedditCloneAuthMemberRefresh(props: {
     id: string;
     session_id: string;
     type: string;
+    tokenType?: string;
+    created_at?: string;
   };
   try {
     decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
@@ -34,40 +35,42 @@ export async function postRedditCloneAuthMemberRefresh(props: {
   }
   // 2. Validate token type
   if (decoded.type !== "member") {
-    throw new HttpException("Invalid token type for member refresh", 403);
+    throw new HttpException("Invalid token type for this endpoint", 403);
   }
-  // 3. Validate session exists and not expired
+  // 3. Find and validate session
   const session = await MyGlobal.prisma.reddit_clone_member_sessions.findFirst({
     where: {
       id: decoded.session_id,
       reddit_clone_member_id: decoded.id,
+      expired_at: { gt: new Date() },
     },
   });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  if (session.expired_at < new Date()) {
-    throw new HttpException("Session has expired", 401);
-  }
-  // 4. Validate IP address if provided (optional security check)
+  // 4. Optional IP validation
   if (props.body.ip !== undefined && session.ip !== props.body.ip) {
     throw new HttpException("IP address mismatch", 401);
   }
-  // 5. Validate member exists and not deleted
+  // 5. Fetch member data (only scalar fields - relations don't exist in schema)
   const member = await MyGlobal.prisma.reddit_clone_members.findUniqueOrThrow({
     where: { id: decoded.id },
+    select: {
+      id: true,
+      username: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+    },
   });
-  if (member.deleted_at !== null) {
-    throw new HttpException("Account has been deleted", 403);
-  }
-  // 6. Generate new access and refresh tokens (same session_id)
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  // 6. Generate new tokens
+  const accessExpiresMs = Date.now() + 60 * 60 * 1000;
+  const refreshExpiresMs = Date.now() + 7 * 24 * 60 * 60 * 1000;
   const newAccessToken = jwt.sign(
     {
       type: "member",
-      id: decoded.id,
-      session_id: decoded.session_id,
+      id: member.id,
+      session_id: session.id,
       created_at: new Date().toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
@@ -76,76 +79,40 @@ export async function postRedditCloneAuthMemberRefresh(props: {
   const newRefreshToken = jwt.sign(
     {
       type: "member",
-      id: decoded.id,
-      session_id: decoded.session_id,
+      id: member.id,
+      session_id: session.id,
       tokenType: "refresh",
       created_at: new Date().toISOString(),
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 7. Update session with new tokens and extended expiration
+  // 7. Update session with new tokens
   await MyGlobal.prisma.reddit_clone_member_sessions.update({
-    where: { id: decoded.session_id },
+    where: { id: session.id },
     data: {
       access_token: newAccessToken,
       refresh_token: newRefreshToken,
-      expired_at: refreshExpires,
+      expired_at: new Date(refreshExpiresMs),
     },
   });
-  // 8. Query member with profile, karma, and avatar
-  const memberData =
-    await MyGlobal.prisma.reddit_clone_members.findUniqueOrThrow({
-      where: { id: decoded.id },
-      select: {
-        id: true,
-        username: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        profile: {
-          select: {
-            display_name: true,
-            bio: true,
-            avatarFileAssociation:
-              RedditCloneFileAssociationAtSummaryTransformer.select(),
-          },
-        },
-        karma: {
-          select: {
-            karma_score: true,
-          },
-        },
-      },
-    });
-  // 9. Transform and return IAuthorized response
-  const avatar = memberData.profile?.avatarFileAssociation
-    ? await RedditCloneFileAssociationAtSummaryTransformer.transform(
-        memberData.profile.avatarFileAssociation,
-      )
-    : null;
+  // 8. Return authorized response (relations not available in schema)
   return {
-    id: memberData.id as string & tags.Format<"uuid">,
-    username: memberData.username,
-    displayName: memberData.profile?.display_name ?? memberData.username,
-    bio: memberData.profile?.bio ?? undefined,
-    avatar: avatar,
-    karmaScore:
-      memberData.karma?.karma_score ?? (0 as number & tags.Type<"int32">),
-    createdAt: memberData.created_at.toISOString() as string &
-      tags.Format<"date-time">,
-    updatedAt: memberData.updated_at.toISOString() as string &
-      tags.Format<"date-time">,
+    id: member.id,
+    username: member.username,
+    displayName: member.username,
+    bio: null,
+    avatar: null,
+    karmaScore: 0,
+    createdAt: toISOStringSafe(member.created_at),
+    updatedAt: toISOStringSafe(member.updated_at),
     deletedAt:
-      memberData.deleted_at?.toISOString() ??
-      (null as (string & tags.Format<"date-time">) | null),
+      member.deleted_at !== null ? toISOStringSafe(member.deleted_at) : null,
     token: {
       access: newAccessToken,
       refresh: newRefreshToken,
-      expired_at: accessExpires.toISOString() as string &
-        tags.Format<"date-time">,
-      refreshable_until: refreshExpires.toISOString() as string &
-        tags.Format<"date-time">,
+      expired_at: toISOStringSafe(new Date(accessExpiresMs)),
+      refreshable_until: toISOStringSafe(new Date(refreshExpiresMs)),
     },
   };
 }

@@ -5,9 +5,9 @@ import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMa
 import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import { IMallPlatformOrderItemSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItemSnapshot";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIMallPlatformOrderItemSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformOrderItemSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
@@ -29,39 +29,26 @@ export async function patchMallPlatformAdministratorOrderItemsOrderItemIdSnapsho
   body: IMallPlatformOrderItemSnapshot.IRequest;
 }): Promise<IPageIMallPlatformOrderItemSnapshot.ISummary> {
   await MyGlobal.prisma.mall_platform_order_items.findUniqueOrThrow({
-    where: {
-      id: props.orderItemId,
-    },
-    select: {
-      id: true,
-    },
+    where: { id: props.orderItemId },
+    select: { id: true },
   });
   const page: number = props.body.page ?? 1;
   const limit: number = props.body.limit ?? 100;
   const skip: number = (page - 1) * limit;
   const where: Prisma.mall_platform_order_item_snapshotsWhereInput = {
     mall_platform_order_item_id: props.orderItemId,
-    ...(props.body.snapshotReason !== undefined
-      ? { snapshot_reason: props.body.snapshotReason }
-      : {}),
-    ...(props.body.snapshotAtFrom !== undefined ||
-    props.body.snapshotAtTo !== undefined
-      ? {
-          snapshot_at: {
-            ...(props.body.snapshotAtFrom !== undefined
-              ? { gte: props.body.snapshotAtFrom }
-              : {}),
-            ...(props.body.snapshotAtTo !== undefined
-              ? { lte: props.body.snapshotAtTo }
-              : {}),
-          },
-        }
-      : {}),
-    ...(props.body.search !== undefined
-      ? {
+    ...(props.body.search === undefined || props.body.search.length === 0
+      ? {}
+      : {
           OR: [
             {
               snapshot_reason: {
+                contains: props.body.search,
+                mode: "insensitive",
+              },
+            },
+            {
+              order_item_status: {
                 contains: props.body.search,
                 mode: "insensitive",
               },
@@ -99,14 +86,49 @@ export async function patchMallPlatformAdministratorOrderItemsOrderItemIdSnapsho
                 mode: "insensitive",
               },
             },
+            {
+              seller_logo_image_url: {
+                contains: props.body.search,
+                mode: "insensitive",
+              },
+            },
           ],
-        }
-      : {}),
+        }),
+    ...(props.body.snapshotAtFrom === undefined &&
+    props.body.snapshotAtTo === undefined
+      ? {}
+      : {
+          snapshot_at: {
+            ...(props.body.snapshotAtFrom === undefined
+              ? {}
+              : { gte: new Date(props.body.snapshotAtFrom) }),
+            ...(props.body.snapshotAtTo === undefined
+              ? {}
+              : { lte: new Date(props.body.snapshotAtTo) }),
+          },
+        }),
+    ...(props.body.createdAtFrom === undefined &&
+    props.body.createdAtTo === undefined
+      ? {}
+      : {
+          created_at: {
+            ...(props.body.createdAtFrom === undefined
+              ? {}
+              : { gte: new Date(props.body.createdAtFrom) }),
+            ...(props.body.createdAtTo === undefined
+              ? {}
+              : { lte: new Date(props.body.createdAtTo) }),
+          },
+        }),
   };
   const orderBy: Prisma.mall_platform_order_item_snapshotsOrderByWithRelationInput =
-    props.body.sort === "oldest"
-      ? { snapshot_at: "asc" }
-      : { snapshot_at: "desc" };
+    props.body.sort === "createdAt_asc"
+      ? { created_at: "asc" }
+      : props.body.sort === "snapshotAt_desc"
+        ? { snapshot_at: "desc" }
+        : props.body.sort === "snapshotAt_asc"
+          ? { snapshot_at: "asc" }
+          : { created_at: "desc" };
   const records =
     await MyGlobal.prisma.mall_platform_order_item_snapshots.findMany({
       where,
@@ -121,7 +143,7 @@ export async function patchMallPlatformAdministratorOrderItemsOrderItemIdSnapsho
   return {
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
       pages: Math.ceil(total / limit),
     },
@@ -158,9 +180,9 @@ export async function patchMallPlatformAdministratorOrderItemsOrderItemIdSnapsho
 // import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 // import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 // import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 // import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
-// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
+// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.

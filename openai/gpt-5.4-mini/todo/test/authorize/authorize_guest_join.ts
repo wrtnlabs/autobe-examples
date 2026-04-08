@@ -8,13 +8,23 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+/**
+ * Register and authenticate a guest for E2E testing.
+ *
+ * Builds a valid guest join request from the provided partial body and calls the guest join SDK endpoint.
+ * The SDK returns the authorized guest payload and applies the authentication token flow for test use.
+ */
 export async function authorize_guest_join(
   connection: api.IConnection,
   props: {
-    body: ITodoAppGuest.IJoin;
+    body?: DeepPartial<ITodoAppGuest.IJoin>;
   },
 ): Promise<ITodoAppGuest.IAuthorized> {
-  return await api.functional.todoApp.auth.guest.join(connection, {
-    body: props.body,
-  });
+  const body = {
+    href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
+    referrer:
+      props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
+    ...(props.body?.ip !== undefined ? { ip: props.body.ip } : {}),
+  } satisfies ITodoAppGuest.IJoin;
+  return await api.functional.todoApp.auth.guest.join(connection, { body });
 }

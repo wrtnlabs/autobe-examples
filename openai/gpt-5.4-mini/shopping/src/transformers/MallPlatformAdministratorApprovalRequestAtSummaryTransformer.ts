@@ -2,44 +2,27 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministrator";
 import { IMallPlatformAdministratorApprovalRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministratorApprovalRequest";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { MallPlatformAdministratorAtSummaryTransformer } from "./MallPlatformAdministratorAtSummaryTransformer";
 
 export namespace MallPlatformAdministratorApprovalRequestAtSummaryTransformer {
   export type Payload =
     Prisma.mall_platform_administrator_approval_requestsGetPayload<
       ReturnType<typeof select>
     >;
-  export async function transform(
-    input: Payload,
-  ): Promise<IMallPlatformAdministratorApprovalRequest.ISummary> {
-    return {
-      id: input.id,
-      administrator: {
-        id: input.administrator.id,
-      } satisfies IMallPlatformAdministrator.ISummary,
-      reviewerAdministrator: input.reviewerAdministrator
-        ? ({
-            id: input.reviewerAdministrator.id,
-          } satisfies IMallPlatformAdministrator.ISummary)
-        : null,
-      reason: input.reason,
-      status: input.status,
-      rejectionReason: input.rejection_reason,
-      reviewedAt: input.reviewed_at?.toISOString() ?? null,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-    } satisfies IMallPlatformAdministratorApprovalRequest.ISummary;
-  }
   export function select() {
     return {
       select: {
         id: true,
+        administrator: MallPlatformAdministratorAtSummaryTransformer.select(),
+        reviewerAdministrator:
+          MallPlatformAdministratorAtSummaryTransformer.select(),
         reason: true,
         status: true,
         rejection_reason: true,
@@ -47,19 +30,31 @@ export namespace MallPlatformAdministratorApprovalRequestAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        administrator: {
-          select: {
-            id: true,
-          },
-        },
-        reviewerAdministrator: {
-          select: {
-            id: true,
-          },
-        },
-        snapshots: true,
       },
     } satisfies Prisma.mall_platform_administrator_approval_requestsFindManyArgs;
+  }
+  export async function transform(
+    input: Payload,
+  ): Promise<IMallPlatformAdministratorApprovalRequest.ISummary> {
+    return {
+      id: input.id,
+      administrator:
+        await MallPlatformAdministratorAtSummaryTransformer.transform(
+          input.administrator,
+        ),
+      reviewerAdministrator: input.reviewerAdministrator
+        ? await MallPlatformAdministratorAtSummaryTransformer.transform(
+            input.reviewerAdministrator,
+          )
+        : null,
+      reason: input.reason,
+      status: input.status,
+      rejectionReason: input.rejection_reason ?? null,
+      reviewedAt: input.reviewed_at?.toISOString() ?? null,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
+    } satisfies IMallPlatformAdministratorApprovalRequest.ISummary;
   }
 }
 

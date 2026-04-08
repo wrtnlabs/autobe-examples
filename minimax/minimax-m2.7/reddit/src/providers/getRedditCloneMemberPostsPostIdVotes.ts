@@ -22,48 +22,23 @@ export async function getRedditCloneMemberPostsPostIdVotes(props: {
   member: MemberPayload;
   postId: string & tags.Format<"uuid">;
 }): Promise<IPageIRedditClonePostVote> {
-  // Validate post exists - throws 404 if not found
+  // Validate that the post exists before listing votes
   await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
     where: { id: props.postId },
+    select: { id: true },
   });
-  // Pagination defaults
   const page = 1;
   const limit = 20;
   const skip = (page - 1) * limit;
-  // Query votes without using transformer's select (incompatible with Prisma types)
-  const records = await MyGlobal.prisma.reddit_clone_post_votes.findMany({
-    where: {
-      reddit_clone_post_id: props.postId,
-    },
-    orderBy: {
-      created_at: "desc",
-    },
-    skip: skip,
+  const votes = await MyGlobal.prisma.reddit_clone_post_votes.findMany({
+    where: { reddit_clone_post_id: props.postId },
+    orderBy: { created_at: "desc" },
+    skip,
     take: limit,
-    select: {
-      id: true,
-      direction: true,
-      created_at: true,
-      updated_at: true,
-      member: {
-        select: {
-          id: true,
-          username: true,
-        },
-      },
-      post: {
-        select: {
-          id: true,
-          title: true,
-        },
-      },
-    },
+    ...RedditClonePostVoteTransformer.select(),
   });
-  // Get total count for pagination metadata
   const total = await MyGlobal.prisma.reddit_clone_post_votes.count({
-    where: {
-      reddit_clone_post_id: props.postId,
-    },
+    where: { reddit_clone_post_id: props.postId },
   });
   return {
     pagination: {
@@ -71,11 +46,9 @@ export async function getRedditCloneMemberPostsPostIdVotes(props: {
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+    },
     data: await ArrayUtil.asyncMap(
-      records as Parameters<
-        typeof RedditClonePostVoteTransformer.transform
-      >[0][],
+      votes,
       RedditClonePostVoteTransformer.transform,
     ),
   };

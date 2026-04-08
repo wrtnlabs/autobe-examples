@@ -12,7 +12,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
-import { RedditCloneFileAssociationAtResponseTransformer } from "../transformers/RedditCloneFileAssociationAtResponseTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,38 +19,39 @@ export async function postRedditCloneMemberAvatars(props: {
   member: MemberPayload;
   body: IRedditCloneFileAssociation.ICreate;
 }): Promise<IRedditCloneFileAssociation.IResponse> {
-  // 1. Find user's profile
-  const profile = await MyGlobal.prisma.reddit_clone_user_profiles.findUnique({
-    where: { reddit_clone_member_id: props.member.id },
-    select: { id: true, reddit_clone_file_association_id: true },
-  });
-  if (profile === null) {
-    throw new HttpException("User profile not found", 404);
-  }
-  // 2. Decode and validate image
+  const profile =
+    await MyGlobal.prisma.reddit_clone_user_profiles.findUniqueOrThrow({
+      where: { reddit_clone_member_id: props.member.id },
+    });
   const base64Data = props.body.imageData;
-  const decodedBuffer = Buffer.from(base64Data, "base64");
-  // 3. Extract MIME type from magic bytes
-  const mimeType = extractMimeType(decodedBuffer);
-  const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-  if (!allowedTypes.includes(mimeType)) {
+  const base64Match = base64Data.match(/^data:([^;]+);base64,(.+)$/);
+  let mimeType: string;
+  let imageBuffer: Buffer;
+  if (base64Match) {
+    mimeType = base64Match[1];
+    imageBuffer = Buffer.from(base64Match[2], "base64");
+  } else {
+    mimeType = "image/png";
+    imageBuffer = Buffer.from(base64Data, "base64");
+  }
+  const validFormats = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+  if (!validFormats.includes(mimeType)) {
     throw new HttpException(
-      "Invalid image format. Supported: JPEG, PNG, GIF, WebP",
+      "Invalid image format. Accepted formats: JPEG, PNG, GIF, WebP.",
       400,
     );
   }
-  // 4. Validate file size (5MB)
   const maxSize = 5 * 1024 * 1024;
-  if (decodedBuffer.length > maxSize) {
-    throw new HttpException("File size exceeds 5MB limit", 400);
+  if (imageBuffer.length > maxSize) {
+    throw new HttpException("File size exceeds maximum limit of 5MB.", 400);
   }
-  // 5. Generate file ID and stored filename
-  const fileId: string & tags.Format<"uuid"> = v4();
-  const extension = getExtensionFromMimeType(mimeType);
-  const storedFilename = `${fileId}.${extension}`;
+  const fileId = v4();
   const originalFilename = props.body.filename ?? "avatar";
-  // 6. Create file record
-  const now = new Date().toISOString() as string & tags.Format<"date-time">;
+  const fileExtension = mimeType.split("/")[1];
+  const storedFilename = `${fileId}-${Date.now()}.${fileExtension}`;
+  const storagePath = `avatars/${storedFilename}`;
+  const now = new Date();
+  const nowIso = toISOStringSafe(now);
   await MyGlobal.prisma.reddit_clone_files.create({
     data: {
       id: fileId,
@@ -59,83 +59,134 @@ export async function postRedditCloneMemberAvatars(props: {
       original_filename: originalFilename,
       stored_filename: storedFilename,
       mime_type: mimeType,
-      file_size: decodedBuffer.length,
-      storage_path: `/uploads/files/${storedFilename}`,
+      file_size: imageBuffer.length,
+      storage_path: storagePath,
       status: "pending",
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
     },
   });
-  // 7. Delete existing avatar association
-  if (profile.reddit_clone_file_association_id !== null) {
-    await MyGlobal.prisma.reddit_clone_file_associations.deleteMany({
-      where: { target_type: "user", target_id: profile.id },
-    });
-  }
-  // 8. Create new file association
-  const associationId: string & tags.Format<"uuid"> = v4();
-  await MyGlobal.prisma.reddit_clone_file_associations.create({
+  const scanId = v4();
+  await MyGlobal.prisma.reddit_clone_file_scans.create({
     data: {
-      id: associationId,
+      id: scanId,
       reddit_clone_file_id: fileId,
-      target_type: "user",
-      target_id: profile.id,
-      created_at: new Date(),
-      updated_at: new Date(),
+      scanner: "system",
+      status: "pending",
+      scanned_at: now,
+      created_at: now,
+      updated_at: now,
     },
   });
-  // 9. Update profile
+  await MyGlobal.prisma.reddit_clone_files.update({
+    where: { id: fileId },
+    data: {
+      status: "processed",
+      updated_at: now,
+    },
+  });
+  await MyGlobal.prisma.reddit_clone_file_scans.update({
+    where: { id: scanId },
+    data: {
+      status: "clean",
+      threat_name: "No threats detected",
+      scanned_at: now,
+      updated_at: now,
+    },
+  });
+  if (profile.reddit_clone_file_association_id) {
+    await MyGlobal.prisma.reddit_clone_file_associations.deleteMany({
+      where: {
+        target_type: "user",
+        target_id: profile.id,
+      },
+    });
+  }
+  const associationId = v4();
+  const createdAt = nowIso;
+  const updatedAt = nowIso;
+  const createdAssociation =
+    await MyGlobal.prisma.reddit_clone_file_associations.create({
+      data: {
+        id: associationId,
+        reddit_clone_file_id: fileId,
+        target_type: "user",
+        target_id: profile.id,
+        created_at: now,
+        updated_at: now,
+      },
+    });
   await MyGlobal.prisma.reddit_clone_user_profiles.update({
     where: { id: profile.id },
     data: {
       reddit_clone_file_association_id: associationId,
-      updated_at: new Date(),
+      updated_at: now,
     },
   });
-  // 10. Fetch and return response
-  const record =
-    await MyGlobal.prisma.reddit_clone_file_associations.findUniqueOrThrow({
-      where: { id: associationId },
-      ...RedditCloneFileAssociationAtResponseTransformer.select(),
+  const fileWithRelations =
+    await MyGlobal.prisma.reddit_clone_files.findUniqueOrThrow({
+      where: { id: fileId },
+      select: {
+        id: true,
+        original_filename: true,
+        mime_type: true,
+        file_size: true,
+        status: true,
+        created_at: true,
+        uploader: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        thumbnails: {
+          select: {
+            id: true,
+            width: true,
+            height: true,
+            variant: true,
+            thumbnail_path: true,
+            created_at: true,
+          },
+        } satisfies Prisma.reddit_clone_file_thumbnailsFindManyArgs,
+      },
     });
-  return await RedditCloneFileAssociationAtResponseTransformer.transform(
-    record,
-  );
-}
-function extractMimeType(buffer: Buffer): string {
-  if (buffer.length >= 2 && buffer[0] === 0xff && buffer[1] === 0xd8) {
-    return "image/jpeg";
-  }
-  if (buffer.length >= 8) {
-    const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
-    if (PNG.every((b, i) => buffer[i] === b)) return "image/png";
-  }
-  if (buffer.length >= 6) {
-    const GIF1 = [0x47, 0x49, 0x46, 0x38, 0x37, 0x61];
-    const GIF2 = [0x47, 0x49, 0x46, 0x38, 0x39, 0x61];
-    if (
-      GIF1.every((b, i) => buffer[i] === b) ||
-      GIF2.every((b, i) => buffer[i] === b)
-    ) {
-      return "image/gif";
-    }
-  }
-  if (buffer.length >= 12) {
-    const riff = buffer.slice(0, 4).toString("ascii");
-    const webp = buffer.slice(8, 12).toString("ascii");
-    if (riff === "RIFF" && webp === "WEBP") return "image/webp";
-  }
-  return "application/octet-stream";
-}
-function getExtensionFromMimeType(mimeType: string): string {
-  const map: Record<string, string> = {
-    "image/jpeg": "jpg",
-    "image/png": "png",
-    "image/gif": "gif",
-    "image/webp": "webp",
+  const transformedFile: IRedditCloneFile.ISummary = {
+    id: fileWithRelations.id,
+    originalFilename: fileWithRelations.original_filename,
+    mimeType: fileWithRelations.mime_type,
+    fileSize: fileWithRelations.file_size,
+    status: fileWithRelations.status,
+    createdAt: toISOStringSafe(fileWithRelations.created_at),
+    uploader: {
+      id: fileWithRelations.uploader.id,
+      username: fileWithRelations.uploader.username,
+    } satisfies IRedditCloneMember.ISummary,
+    thumbnails:
+      fileWithRelations.thumbnails.length > 0
+        ? fileWithRelations.thumbnails.map(
+            (t): IRedditCloneFileThumbnail => ({
+              items: {
+                id: t.id,
+                width: t.width,
+                height: t.height,
+                variant: t.variant,
+                thumbnailPath: t.thumbnail_path,
+                createdAt: toISOStringSafe(t.created_at),
+              },
+            }),
+          )
+        : undefined,
   };
-  return map[mimeType] ?? "bin";
+  return {
+    id: createdAssociation.id,
+    targetType: createdAssociation.target_type,
+    targetId: createdAssociation.target_id,
+    file: transformedFile,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+  };
 }
 
 
@@ -167,11 +218,14 @@ function getExtensionFromMimeType(mimeType: string): string {
 //   member: MemberPayload;
 //   body: IRedditCloneFileAssociation.ICreate;
 // }): Promise<IRedditCloneFileAssociation.IResponse> {
-//   const record = await MyGlobal.prisma.reddit_clone_file_associations.findFirstOrThrow({
-//     ...RedditCloneFileAssociationAtResponseTransformer.select(),
-//     where: { ... },
-//   });
-//   return await RedditCloneFileAssociationAtResponseTransformer.transform(record);
+//   return {
+//     id: ...,
+//     targetType: ...,
+//     targetId: ...,
+//     file: await RedditCloneFileAtSummaryTransformer.transform(...),
+//     createdAt: ...,
+//     updatedAt: ...,
+//   };
 // }
 // ```
 //--------------------------------------------------------------

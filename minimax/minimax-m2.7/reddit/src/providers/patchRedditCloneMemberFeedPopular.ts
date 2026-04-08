@@ -13,6 +13,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { RedditClonePostAtSummaryTransformer } from "../transformers/RedditClonePostAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,155 +21,79 @@ export async function patchRedditCloneMemberFeedPopular(props: {
   member: MemberPayload;
   body: IRedditClonePost.IRequest;
 }): Promise<IPageIRedditClonePost.ISummary> {
-  const page = props.body.page ?? (1 as const);
-  const limit = Math.min(props.body.limit ?? (25 as const), 100 as const);
-  const sort = props.body.sort ?? ("hot" as const);
-  const timeRange = props.body.timeRange ?? ("all" as const);
+  // Extract and normalize request parameters with defaults
+  const sort = props.body.sort ?? "hot";
+  const limit = Math.min(props.body.limit ?? 25, 100);
+  const page = props.body.page ?? 1;
   const skip = (page - 1) * limit;
-  const whereCondition: Prisma.reddit_clone_postsWhereInput = {
-    deleted_at: null,
-  };
-  if (props.body.type) {
-    whereCondition.type = props.body.type;
-  }
+  const timeRange = props.body.timeRange ?? "all";
+  // Calculate time boundary for top/controversial sorting
+  const now = new Date();
+  let createdAfter: Date | undefined = undefined;
   if (sort === "top" || sort === "controversial") {
-    const now = new Date();
-    let startDate: Date;
     switch (timeRange) {
       case "day":
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        createdAfter = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         break;
       case "week":
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        createdAfter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         break;
       case "month":
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        createdAfter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         break;
       case "year":
-        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        createdAfter = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
         break;
       case "all":
       default:
-        startDate = new Date("1970-01-01T00:00:00.000Z");
+        // No time filter
+        break;
     }
-    whereCondition.created_at = { gte: startDate };
   }
-  const orderByInput = (
-    sort === "new"
-      ? { created_at: "desc" as const }
-      : sort === "top"
-        ? { vote_score: "desc" as const }
-        : sort === "controversial"
-          ? [{ vote_score: "asc" as const }, { created_at: "desc" as const }]
-          : [{ vote_score: "desc" as const }, { created_at: "desc" as const }]
-  ) as
+  // Build where clause: exclude soft-deleted posts
+  const whereInput: Prisma.reddit_clone_postsWhereInput = {
+    deleted_at: null,
+    ...(createdAfter !== undefined && { created_at: { gte: createdAfter } }),
+  };
+  // Build orderBy based on sort type
+  let orderBy:
     | Prisma.reddit_clone_postsOrderByWithRelationInput
     | Prisma.reddit_clone_postsOrderByWithRelationInput[];
+  switch (sort) {
+    case "new":
+      orderBy = { created_at: "desc" };
+      break;
+    case "top":
+      orderBy = { vote_score: "desc" };
+      break;
+    case "controversial":
+      // Controversial: posts with balanced upvotes/downvotes (vote_score near zero)
+      orderBy = { vote_score: "asc" };
+      break;
+    case "hot":
+    default:
+      // Hot: combination of vote_score and recency using compound ordering
+      orderBy = [{ vote_score: "desc" }, { created_at: "desc" }];
+      break;
+  }
+  // Execute findMany query
   const records = await MyGlobal.prisma.reddit_clone_posts.findMany({
-    where: whereCondition,
-    skip: skip,
+    where: whereInput,
+    orderBy: orderBy,
     take: limit,
-    orderBy: orderByInput,
-    select: {
-      id: true,
-      title: true,
-      type: true,
-      vote_score: true,
-      comment_count: true,
-      created_at: true,
-      author: {
-        select: {
-          id: true,
-          username: true,
-        },
-      },
-      community: {
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          subscriber_count: true,
-          member: {
-            select: {
-              id: true,
-              username: true,
-            },
-          },
-          icon: {
-            select: {
-              file: {
-                select: {
-                  storage_path: true,
-                },
-              },
-            },
-          },
-        },
-      },
-      postTextContent: {
-        select: {
-          body: true,
-        },
-      },
-      link: {
-        select: {
-          url: true,
-        },
-      },
-      image: {
-        select: {
-          reddit_clone_file_id: true,
-        },
-      },
-    },
+    skip: skip,
+    ...RedditClonePostAtSummaryTransformer.select(),
   });
+  // Execute count query
   const total = await MyGlobal.prisma.reddit_clone_posts.count({
-    where: whereCondition,
+    where: whereInput,
   });
-  const data = records.map((record) => {
-    let contentPreview = "";
-    switch (record.type) {
-      case "text":
-        contentPreview = record.postTextContent?.body?.substring(0, 200) ?? "";
-        break;
-      case "image":
-        contentPreview = record.image?.reddit_clone_file_id ?? "";
-        break;
-      case "link":
-        try {
-          contentPreview = record.link?.url
-            ? new URL(record.link.url).hostname
-            : "";
-        } catch {
-          contentPreview = record.link?.url ?? "";
-        }
-        break;
-    }
-    return {
-      id: record.id,
-      title: record.title,
-      type: record.type as "text" | "link" | "image",
-      voteScore: record.vote_score,
-      commentCount: record.comment_count,
-      createdAt: record.created_at.toISOString(),
-      author: {
-        id: record.author.id,
-        username: record.author.username,
-      } satisfies IRedditCloneMember.ISummary,
-      community: {
-        id: record.community.id,
-        name: record.community.name,
-        description: record.community.description,
-        subscriberCount: record.community.subscriber_count,
-        owner: {
-          id: record.community.member.id,
-          username: record.community.member.username,
-        } satisfies IRedditCloneMember.ISummary,
-        icon: record.community.icon?.file?.storage_path ?? undefined,
-      } satisfies IRedditCloneCommunity.ISummary,
-      contentPreview,
-    } satisfies IRedditClonePost.ISummary;
-  });
+  // Transform records to response DTOs
+  const data = await ArrayUtil.asyncMap(
+    records,
+    RedditClonePostAtSummaryTransformer.transform,
+  );
+  // Return paginated response
   return {
     pagination: {
       current: page,
@@ -176,7 +101,7 @@ export async function patchRedditCloneMemberFeedPopular(props: {
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data,
+    data: data,
   };
 }
 

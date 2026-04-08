@@ -19,26 +19,12 @@ export async function postMallPlatformCustomerShippingAddresses(props: {
   customer: CustomerPayload;
   body: IMallPlatformShippingAddress.ICreate;
 }): Promise<IMallPlatformShippingAddress> {
-  const record = await MyGlobal.prisma.$transaction(async (prisma) => {
-    if (props.body.is_default) {
-      await prisma.mall_platform_shipping_addresses.updateMany({
-        where: {
-          customer_id: props.customer.id,
-          is_default: true,
-          deleted_at: null,
-        },
-        data: {
-          is_default: false,
-        },
-      });
-    }
-    return prisma.mall_platform_shipping_addresses.create({
-      data: await MallPlatformShippingAddressCollector.collect({
-        body: props.body,
-        customer: props.customer,
-      }),
-      ...MallPlatformShippingAddressTransformer.select(),
-    });
+  const record = await MyGlobal.prisma.mall_platform_shipping_addresses.create({
+    data: await MallPlatformShippingAddressCollector.collect({
+      body: props.body,
+      customer: props.customer,
+    }),
+    ...MallPlatformShippingAddressTransformer.select(),
   });
   return await MallPlatformShippingAddressTransformer.transform(record);
 }

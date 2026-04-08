@@ -20,62 +20,40 @@ export async function patchMallPlatformCustomerShippingAddresses(props: {
   customer: CustomerPayload;
   body: IMallPlatformShippingAddress.IRequest;
 }): Promise<IPageIMallPlatformShippingAddress.ISummary> {
-  const page: number = props.body.page ?? 1;
-  const limit: number = props.body.limit ?? 100;
-  const skip: number = (page - 1) * limit;
-  const search: string | undefined = props.body.search;
-  const sort: string | undefined = props.body.sort;
-  const where: Prisma.mall_platform_shipping_addressesWhereInput = {
-    customer_id: props.customer.id,
-    deleted_at: null,
-    ...(search === undefined
-      ? {}
-      : {
-          OR: [
-            { recipient_name: { contains: search, mode: "insensitive" } },
-            { phone_number: { contains: search, mode: "insensitive" } },
-            { street_address: { contains: search, mode: "insensitive" } },
-            { city: { contains: search, mode: "insensitive" } },
-            { state_province: { contains: search, mode: "insensitive" } },
-            { postal_code: { contains: search, mode: "insensitive" } },
-            { country: { contains: search, mode: "insensitive" } },
-          ],
-        }),
-  };
-  const orderBy: Prisma.mall_platform_shipping_addressesOrderByWithRelationInput[] =
-    sort === "recipient_name_asc"
-      ? [{ recipient_name: "asc" }, { created_at: "desc" }]
-      : sort === "recipient_name_desc"
-        ? [{ recipient_name: "desc" }, { created_at: "desc" }]
-        : sort === "created_at_asc"
-          ? [{ created_at: "asc" }]
-          : sort === "created_at_desc"
-            ? [{ created_at: "desc" }]
-            : [{ is_default: "desc" }, { created_at: "desc" }];
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
   const records =
     await MyGlobal.prisma.mall_platform_shipping_addresses.findMany({
-      where,
+      where: {
+        customer_id: props.customer.id,
+        deleted_at: null,
+      },
+      orderBy: {
+        created_at: "desc",
+      },
       skip,
       take: limit,
-      orderBy,
       ...MallPlatformShippingAddressAtSummaryTransformer.select(),
     });
-  const recordsCount: number =
-    await MyGlobal.prisma.mall_platform_shipping_addresses.count({
-      where,
-    });
+  const total = await MyGlobal.prisma.mall_platform_shipping_addresses.count({
+    where: {
+      customer_id: props.customer.id,
+      deleted_at: null,
+    },
+  });
   return {
     pagination: {
       current: page,
       limit,
-      records: recordsCount,
-      pages: limit > 0 ? Math.ceil(recordsCount / limit) : 0,
+      records: total,
+      pages: Math.ceil(total / limit),
     },
     data: await ArrayUtil.asyncMap(
       records,
       MallPlatformShippingAddressAtSummaryTransformer.transform,
     ),
-  };
+  } satisfies IPageIMallPlatformShippingAddress.ISummary;
 }
 
 

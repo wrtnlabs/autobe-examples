@@ -1,27 +1,28 @@
 ### Table of Contents
 
-**redditPlatform** is a backend service with the following actors and domain entities.
+**redditCommunity** is a backend service with the following actors and domain entities.
 
-**Actors**: guest, member
-**Entities**: User, Profile, Community, Subscription, Post, Comment, Vote, Report, Ban, ModeratorRole
+**Actors**: guest, member, admin
+**Entities**: User, Profile, Community, Subscription, Post, Vote, Comment, ModeratorRole, BanRecord, Report
 
 ---
 
 **Scope**
 
-- **User** — owns Profile, writes Posts, writes Comments, subscribes to Communities, can be banned from Communities, can be moderator of Communities
-- **Profile** — belongs to User
-- **Community** — has owner User, has subscriptions, has posts, has comments, has reports, has bans, has moderator roles
-- **Subscription** — connects User and Community, required for creating Posts
-- **Post** — belongs to Community, written by User, has votes, has comments, can be reported
-- **Comment** — belongs to Post, written by User, has votes, has replies, can be reported
-- **Vote** — performed by User, applies to Post or Comment
-- **Report** — submitted by User, targets Post or Comment, reviewed by Moderator
-- **Ban** — applies to User, for Community
-- **ModeratorRole** — assigned to User, for Community
+- **User** — has Profile, author of Posts, author of Comments, makes Votes, subscribes to Communities, holds ModeratorRoles, receives Bans in Communities, submits Reports
+- **Profile** — belongs to User, belongs to Community as creator
+- **Community** — has Posts, has Subscribers, has Moderators, has Banned Users, has Reports, created by User
+- **Subscription** — links User to Community
+- **Post** — belongs to Community, has Author (User), has Votes, has Comments, can be Reported
+- **Vote** — belongs to User, targets Post or Comment
+- **Comment** — belongs to Post, has Author (User), has Parent Comment (self-reference), has Votes, can be Reported
+- **ModeratorRole** — belongs to User, belongs to Community
+- **BanRecord** — belongs to User, belongs to Community
+- **Report** — submitted by User, targets Post or Comment, assigned to Community, tracked for review by moderators
 
 - **guest** (guest)
 - **member** (member)
+- **admin** (admin)
 
 ---
 
@@ -42,74 +43,74 @@
 
 **[01-actors-and-auth.md](./01-actors-and-auth.md)**
 - [Actor Definitions](./01-actors-and-auth.md#actor-definitions)
-  - [1] [guest Actor](./01-actors-and-auth.md#guest-actor) — Define the guest actor's identity, permissions, and access boundaries. Do NOT describe specific operations (03), data isolation policies (05), or domain concepts (02).
-  - [2] [member Actor](./01-actors-and-auth.md#member-actor) — Define the member actor's identity, permissions, and access boundaries. Do NOT describe specific operations (03), data isolation policies (05), or domain concepts (02).
+  - [1] [guest Actor](./01-actors-and-auth.md#guest-actor) — Define the guest actor's identity, permissions, and access boundaries.
+  - [2] [member Actor](./01-actors-and-auth.md#member-actor) — Define the member actor's identity, permissions, and access boundaries.
+  - [3] [admin Actor](./01-actors-and-auth.md#admin-actor) — Define the admin actor's identity, permissions, and access boundaries.
 - [Authentication Flows](./01-actors-and-auth.md#authentication-flows)
-  - [3] [Registration and Login](./01-actors-and-auth.md#registration-and-login) — Define user registration and login flows including validation and error handling.
-  - [4] [Session and Logout](./01-actors-and-auth.md#session-and-logout) — Define session behavior and logout from a user perspective.
+  - [4] [Registration and Login](./01-actors-and-auth.md#registration-and-login) — Define user registration and login flows including validation and error handling.
+  - [5] [Session and Logout](./01-actors-and-auth.md#session-and-logout) — Define session behavior and logout from a user perspective.
 - [Account Lifecycle](./01-actors-and-auth.md#account-lifecycle)
-  - [5] [Account Management](./01-actors-and-auth.md#account-management) — Define how users create accounts, delete accounts, and change passwords.
+  - [6] [Account Management](./01-actors-and-auth.md#account-management) — Define how users create accounts, delete accounts, and change passwords.
 
 **[02-domain-model.md](./02-domain-model.md)**
 - [Domain Concepts](./02-domain-model.md#domain-concepts)
-  - [6] [User Concept](./02-domain-model.md#user-concept) — Describe what User represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [7] [Profile Concept](./02-domain-model.md#profile-concept) — Describe what Profile represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [8] [Community Concept](./02-domain-model.md#community-concept) — Describe what Community represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [9] [Subscription Concept](./02-domain-model.md#subscription-concept) — Describe what Subscription represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [10] [Post Concept](./02-domain-model.md#post-concept) — Describe what Post represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [11] [Comment Concept](./02-domain-model.md#comment-concept) — Describe what Comment represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [7] [User Concept](./02-domain-model.md#user-concept) — Describe what User represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [8] [Profile Concept](./02-domain-model.md#profile-concept) — Describe what Profile represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [9] [Community Concept](./02-domain-model.md#community-concept) — Describe what Community represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [10] [Subscription Concept](./02-domain-model.md#subscription-concept) — Describe what Subscription represents in the business domain and its attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [11] [Post Concept](./02-domain-model.md#post-concept) — Describe what Post represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
   - [12] [Vote Concept](./02-domain-model.md#vote-concept) — Describe what Vote represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [13] [Report Concept](./02-domain-model.md#report-concept) — Describe what Report represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [14] [Ban Concept](./02-domain-model.md#ban-concept) — Describe what Ban represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
-  - [15] [ModeratorRole Concept](./02-domain-model.md#moderatorrole-concept) — Describe what ModeratorRole represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [13] [Comment Concept](./02-domain-model.md#comment-concept) — Describe what Comment represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [14] [ModeratorRole Concept](./02-domain-model.md#moderatorrole-concept) — Describe what ModeratorRole represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [15] [BanRecord Concept](./02-domain-model.md#banrecord-concept) — Describe what BanRecord represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
+  - [16] [Report Concept](./02-domain-model.md#report-concept) — Describe what Report Concept represents in the business domain and its key attributes. Do NOT describe operations or workflows — those belong in 03-functional-requirements.
 - [Domain Relationships](./02-domain-model.md#domain-relationships)
-  - [16] [Conceptual Relationships](./02-domain-model.md#conceptual-relationships) — Describe how concepts relate to each other in business terms.
-  - [17] [Lifecycle and Retention](./02-domain-model.md#lifecycle-and-retention) — Describe concept lifecycle states and transitions only. Detailed retention/recovery policies belong in 05-non-functional. Operation details belong in 03-functional-requirements.
+  - [17] [Conceptual Relationships](./02-domain-model.md#conceptual-relationships) — Describe how concepts relate to each other in business terms.
+  - [18] [Lifecycle and Retention](./02-domain-model.md#lifecycle-and-retention) — Describe concept lifecycle states and transitions only. Detailed retention/recovery policies belong in 05-non-functional. Operation details belong in 03-functional-requirements.
 - [Business Categories and State Flows](./02-domain-model.md#business-categories-and-state-flows)
-  - [18] [Business Category Definitions](./02-domain-model.md#business-category-definitions) — Define all business category classifications with their allowed values and descriptions.
-  - [19] [State Transitions](./02-domain-model.md#state-transitions) — Define valid state transition paths for stateful concepts.
+  - [19] [Business Category Definitions](./02-domain-model.md#business-category-definitions) — Define all business category classifications with their allowed values and descriptions.
+  - [20] [State Transitions](./02-domain-model.md#state-transitions) — Define valid state transition paths for stateful concepts.
 
 **[03-functional-requirements.md](./03-functional-requirements.md)**
 - [Core Business Operations](./03-functional-requirements.md#core-business-operations)
-  - [20] [User Operations](./03-functional-requirements.md#user-operations) — Define business operations for User: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [21] [Profile Operations](./03-functional-requirements.md#profile-operations) — Define business operations for Profile: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [22] [Community Operations](./03-functional-requirements.md#community-operations) — Define business operations for Community: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [23] [Subscription Operations](./03-functional-requirements.md#subscription-operations) — Define business operations for Subscription: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [24] [Post Operations](./03-functional-requirements.md#post-operations) — Define business operations for Post: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [25] [Comment Operations](./03-functional-requirements.md#comment-operations) — Define business operations for Comment: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [21] [User Operations](./03-functional-requirements.md#user-operations) — Define business operations for User: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [22] [Profile Operations](./03-functional-requirements.md#profile-operations) — Define business operations for Profile: what create, update, delete, and list operations must accomplish from a business perspective.
+  - [23] [Community Operations](./03-functional-requirements.md#community-operations) — Define business operations for Community: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [24] [Subscription Operations](./03-functional-requirements.md#subscription-operations) — Define business operations for Subscription: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [25] [Post Operations](./03-functional-requirements.md#post-operations) — Define business operations for Post: what create, read, update, delete, and list operations must accomplish from a business perspective.
   - [26] [Vote Operations](./03-functional-requirements.md#vote-operations) — Define business operations for Vote: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [27] [Report Operations](./03-functional-requirements.md#report-operations) — Define business operations for Report: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [28] [Ban Operations](./03-functional-requirements.md#ban-operations) — Define business operations for Ban: what create, read, update, delete, and list operations must accomplish from a business perspective.
-  - [29] [ModeratorRole Operations](./03-functional-requirements.md#moderatorrole-operations) — Define business operations for ModeratorRole: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [27] [Comment Operations](./03-functional-requirements.md#comment-operations) — Define business operations for Comment: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [28] [ModeratorRole Operations](./03-functional-requirements.md#moderatorrole-operations) — Define business operations for ModeratorRole: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [29] [BanRecord Operations](./03-functional-requirements.md#banrecord-operations) — Define business operations for BanRecord: what create, read, update, delete, and list operations must accomplish from a business perspective.
+  - [30] [Report Operations](./03-functional-requirements.md#report-operations) — Define business operations for Report: what create, read, update, delete, and list operations must accomplish from a business perspective.
 - [Error Scenarios and Edge Cases](./03-functional-requirements.md#error-scenarios-and-edge-cases)
-  - [30] [User Error Scenarios](./03-functional-requirements.md#user-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all User operations.
-  - [31] [Profile Error Scenarios](./03-functional-requirements.md#profile-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Profile operations.
-  - [32] [Community Error Scenarios](./03-functional-requirements.md#community-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Community operations.
-  - [33] [Subscription Error Scenarios](./03-functional-requirements.md#subscription-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Subscription operations.
-  - [34] [Post Error Scenarios](./03-functional-requirements.md#post-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Post operations.
-  - [35] [Comment Error Scenarios](./03-functional-requirements.md#comment-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Comment operations.
+  - [31] [User Error Scenarios](./03-functional-requirements.md#user-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all User operations.
+  - [32] [Profile Error Scenarios](./03-functional-requirements.md#profile-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Profile operations.
+  - [33] [Community Error Scenarios](./03-functional-requirements.md#community-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Community operations.
+  - [34] [Subscription Error Scenarios](./03-functional-requirements.md#subscription-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Subscription operations.
+  - [35] [Post Error Scenarios](./03-functional-requirements.md#post-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Post operations.
   - [36] [Vote Error Scenarios](./03-functional-requirements.md#vote-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Vote operations.
-  - [37] [Report Error Scenarios](./03-functional-requirements.md#report-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Report operations.
-  - [38] [Ban Error Scenarios](./03-functional-requirements.md#ban-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Ban operations.
-  - [39] [ModeratorRole Error Scenarios](./03-functional-requirements.md#moderatorrole-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all ModeratorRole operations.
+  - [37] [Comment Error Scenarios](./03-functional-requirements.md#comment-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Comment operations.
+  - [38] [ModeratorRole Error Scenarios](./03-functional-requirements.md#moderatorrole-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all ModeratorRole operations.
+  - [39] [BanRecord Error Scenarios](./03-functional-requirements.md#banrecord-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all BanRecord operations.
+  - [40] [Report Error Scenarios](./03-functional-requirements.md#report-error-scenarios) — Define business error conditions, edge cases, and expected system behaviors for all Report operations.
 - [End-to-End User Scenarios](./03-functional-requirements.md#end-to-end-user-scenarios)
-  - [40] [Cross-Domain User Scenarios](./03-functional-requirements.md#cross-domain-user-scenarios) — Define end-to-end user scenarios that span multiple concepts, describing complete user journeys from start to finish.
+  - [41] [Cross-Domain User Scenarios](./03-functional-requirements.md#cross-domain-user-scenarios) — Define end-to-end user scenarios that span multiple concepts, describing complete user journeys from start to finish.
 - [File Storage](./03-functional-requirements.md#file-storage)
-  - [41] [File Upload and Management](./03-functional-requirements.md#file-upload-and-management) — Define file upload capabilities, supported formats, processing requirements, and access control for stored files.
+  - [42] [File Upload and Management](./03-functional-requirements.md#file-upload-and-management) — Define file upload capabilities, supported formats, processing requirements, and access control for stored files.
 
 **[04-business-rules.md](./04-business-rules.md)**
 - [Domain Business Rules](./04-business-rules.md#domain-business-rules)
-  - [42] [User Rules](./04-business-rules.md#user-rules) — Define validation rules and domain constraints for User.
-  - [43] [Profile Rules](./04-business-rules.md#profile-rules) — Define validation rules and domain constraints for Profile.
-  - [44] [Community Rules](./04-business-rules.md#community-rules) — Define validation rules and domain constraints for Community.
-  - [45] [Subscription Rules](./04-business-rules.md#subscription-rules) — Define validation rules and domain constraints for Subscription.
-  - [46] [Post Rules](./04-business-rules.md#post-rules) — Define validation rules and domain constraints for Post.
-  - [47] [Comment Rules](./04-business-rules.md#comment-rules) — Define validation rules and domain constraints for Comment.
-  - [48] [Vote Rules](./04-business-rules.md#vote-rules) — Define validation rules and domain constraints for Vote.
-  - [49] [Report Rules](./04-business-rules.md#report-rules) — Define validation rules and domain constraints for Report.
-  - [50] [Ban Rules](./04-business-rules.md#ban-rules) — Define validation rules and domain constraints for Ban.
-  - [51] [ModeratorRole Rules](./04-business-rules.md#moderatorrole-rules) — Define validation rules and domain constraints for ModeratorRole.
-  - [52] [Karma Rules](./04-business-rules.md#karma-rules) — Define validation rules and domain constraints for Karma.
+  - [43] [User Rules](./04-business-rules.md#user-rules) — Define validation rules and domain constraints for User. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
+  - [44] [Profile Rules](./04-business-rules.md#profile-rules) — Define validation rules and domain constraints for Profile. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
+  - [45] [Community Rules](./04-business-rules.md#community-rules) — Define validation rules and domain constraints for Community. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
+  - [46] [Subscription Rules](./04-business-rules.md#subscription-rules) — Define validation rules and domain constraints for Subscription. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
+  - [47] [Post Rules](./04-business-rules.md#post-rules) — Define validation rules and domain constraints for Post. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
+  - [48] [Vote Rules](./04-business-rules.md#vote-rules) — Define validation rules and domain constraints for Vote. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
+  - [49] [Comment Rules](./04-business-rules.md#comment-rules) — Define validation rules and domain constraints for Comment. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
+  - [50] [ModeratorRole Rules](./04-business-rules.md#moderatorrole-rules) — Define validation rules and domain constraints for ModeratorRole. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
+  - [51] [BanRecord Rules](./04-business-rules.md#banrecord-rules) — Define validation rules and domain constraints for BanRecord. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
+  - [52] [Report Rules](./04-business-rules.md#report-rules) — Define validation rules and domain constraints for Report. Do NOT repeat data isolation (05), lifecycle states (02), or operation flows (03).
 - [Data Browsing Expectations](./04-business-rules.md#data-browsing-expectations)
   - [53] [List Browsing Expectations](./04-business-rules.md#list-browsing-expectations) — Define business expectations for how users find, filter, and browse lists.
 - [Error Conditions](./04-business-rules.md#error-conditions)
@@ -143,16 +144,16 @@ Each type of information has one authoritative location. Other files should refe
 
 **Glossary**
 
-- **User** — owns Profile, writes Posts, writes Comments, subscribes to Communities, can be banned from Communities, can be moderator of Communities
-- **Profile** — belongs to User
-- **Community** — has owner User, has subscriptions, has posts, has comments, has reports, has bans, has moderator roles
-- **Subscription** — connects User and Community, required for creating Posts
-- **Post** — belongs to Community, written by User, has votes, has comments, can be reported
-- **Comment** — belongs to Post, written by User, has votes, has replies, can be reported
-- **Vote** — performed by User, applies to Post or Comment
-- **Report** — submitted by User, targets Post or Comment, reviewed by Moderator
-- **Ban** — applies to User, for Community
-- **ModeratorRole** — assigned to User, for Community
+- **User** — has Profile, author of Posts, author of Comments, makes Votes, subscribes to Communities, holds ModeratorRoles, receives Bans in Communities, submits Reports
+- **Profile** — belongs to User, belongs to Community as creator
+- **Community** — has Posts, has Subscribers, has Moderators, has Banned Users, has Reports, created by User
+- **Subscription** — links User to Community
+- **Post** — belongs to Community, has Author (User), has Votes, has Comments, can be Reported
+- **Vote** — belongs to User, targets Post or Comment
+- **Comment** — belongs to Post, has Author (User), has Parent Comment (self-reference), has Votes, can be Reported
+- **ModeratorRole** — belongs to User, belongs to Community
+- **BanRecord** — belongs to User, belongs to Community
+- **Report** — submitted by User, targets Post or Comment, assigned to Community, tracked for review by moderators
 
 ---
 

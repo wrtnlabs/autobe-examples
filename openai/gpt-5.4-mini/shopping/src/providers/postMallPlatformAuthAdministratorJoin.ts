@@ -16,30 +16,35 @@ export async function postMallPlatformAuthAdministratorJoin(props: {
   ip: string;
   body: IMallPlatformAdministrator.IJoin;
 }): Promise<IMallPlatformAdministrator.IAuthorized> {
-  const existing =
-    await MyGlobal.prisma.mall_platform_administrators.findUnique({
-      where: { email: props.body.email },
-      select: { id: true },
-    });
-  if (existing !== null)
-    throw new HttpException("Administrator email already exists", 409);
-  const createdAtText = new Date().toISOString();
-  const sessionExpiredAtText = new Date(
-    Date.now() + 7 * 24 * 60 * 60 * 1000,
-  ).toISOString();
-  const passwordHash = await PasswordUtil.hash(props.body.password);
-  const administratorId = v4();
+  const exists = await MyGlobal.prisma.mall_platform_administrators.findFirst({
+    where: {
+      email: props.body.email,
+    },
+    select: {
+      id: true,
+    },
+  });
+  if (exists !== null)
+    throw new HttpException("Administrator already exists", 409);
+  const password_hash = await PasswordUtil.hash(props.body.password);
+  const createdAt = toISOStringSafe(new Date());
   const sessionId = v4();
+  const accessExpiredAt = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshableUntil = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
   const administrator =
     await MyGlobal.prisma.mall_platform_administrators.create({
       data: {
-        id: administratorId,
+        id: v4(),
         email: props.body.email,
-        password_hash: passwordHash,
+        password_hash,
         grade: "regular",
         status: "active",
-        created_at: new Date(createdAtText),
-        updated_at: new Date(createdAtText),
+        created_at: createdAt,
+        updated_at: createdAt,
         deleted_at: null,
       },
       select: {
@@ -52,60 +57,44 @@ export async function postMallPlatformAuthAdministratorJoin(props: {
         deleted_at: true,
       },
     });
-  const session =
-    await MyGlobal.prisma.mall_platform_administrator_sessions.create({
-      data: {
-        id: sessionId,
-        administrator_id: administrator.id,
-        ip: props.ip,
-        href: props.ip,
-        referrer: props.ip,
-        created_at: new Date(createdAtText),
-        expired_at: new Date(sessionExpiredAtText),
+  const token = {
+    access: jwt.sign(
+      {
+        type: "administrator",
+        id: administrator.id,
+        session_id: sessionId,
+        created_at: createdAt,
       },
-      select: {
-        id: true,
-        created_at: true,
-        expired_at: true,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "administrator",
+        id: administrator.id,
+        session_id: sessionId,
+        tokenType: "refresh",
+        created_at: createdAt,
       },
-    });
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: accessExpiredAt,
+    refreshable_until: refreshableUntil,
+  } satisfies IAuthorizationToken;
   return {
     id: administrator.id,
     email: administrator.email,
     grade: administrator.grade,
     status: administrator.status,
-    createdAt: administrator.created_at.toISOString(),
-    updatedAt: administrator.updated_at.toISOString(),
-    deletedAt:
+    created_at: administrator.created_at.toISOString(),
+    updated_at: administrator.updated_at.toISOString(),
+    deleted_at:
       administrator.deleted_at === null
         ? null
         : administrator.deleted_at.toISOString(),
-    token: {
-      access: jwt.sign(
-        {
-          type: "administrator",
-          id: administrator.id,
-          session_id: session.id,
-          created_at: createdAtText,
-        },
-        MyGlobal.env.JWT_SECRET_KEY,
-        { expiresIn: "1h", issuer: "autobe" },
-      ),
-      refresh: jwt.sign(
-        {
-          type: "administrator",
-          id: administrator.id,
-          session_id: session.id,
-          created_at: createdAtText,
-          tokenType: "refresh",
-        },
-        MyGlobal.env.JWT_SECRET_KEY,
-        { expiresIn: "7d", issuer: "autobe" },
-      ),
-      expired_at: session.created_at.toISOString(),
-      refreshable_until: session.expired_at.toISOString(),
-    } satisfies IAuthorizationToken,
-  } satisfies IMallPlatformAdministrator.IAuthorized;
+    token,
+  };
 }
 
 

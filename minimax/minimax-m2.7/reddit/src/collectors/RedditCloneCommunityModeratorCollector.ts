@@ -10,18 +10,17 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace RedditCloneCommunityModeratorCollector {
   export async function collect(props: {
     body: IRedditCloneCommunityModerator.ICreate;
-    redditCloneCommunities: IEntity;
-    redditCloneMembers: IEntity;
+    community: IEntity;
+    member: IEntity;
   }) {
     return {
       id: v4(),
       role: props.body.role ?? "moderator",
       created_at: new Date(),
       updated_at: new Date(),
-      // BelongsTo relations
-      community: { connect: { id: props.redditCloneCommunities.id } },
+      community: { connect: { id: props.community.id } },
       member: { connect: { id: props.body.memberId } },
-      assigner: { connect: { id: props.redditCloneMembers.id } },
+      assigner: { connect: { id: props.member.id } },
     } satisfies Prisma.reddit_clone_community_moderatorsCreateInput;
   }
 }
@@ -35,7 +34,6 @@ export namespace RedditCloneCommunityModeratorCollector {
 //           body: IRedditCloneCommunityModerator.ICreate;
 //           redditCloneCommunities: IEntity; // from path parameter communityId
 // redditCloneMembers: IEntity; // from authorized actor
-// redditCloneMemberSessions: IEntity; // from authorized session
 //           
 //           
 //         }) {

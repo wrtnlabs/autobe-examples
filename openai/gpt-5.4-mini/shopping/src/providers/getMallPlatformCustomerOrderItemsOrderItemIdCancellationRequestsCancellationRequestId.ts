@@ -6,9 +6,9 @@ import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -28,20 +28,20 @@ export async function getMallPlatformCustomerOrderItemsOrderItemIdCancellationRe
   cancellationRequestId: string & tags.Format<"uuid">;
 }): Promise<IMallPlatformCancellationRequest> {
   const record =
-    await MyGlobal.prisma.mall_platform_cancellation_requests.findUniqueOrThrow(
-      {
-        where: {
-          id: props.cancellationRequestId,
+    await MyGlobal.prisma.mall_platform_cancellation_requests.findFirstOrThrow({
+      where: {
+        id: props.cancellationRequestId,
+        mall_platform_order_item_id: props.orderItemId,
+        orderItem: {
+          order: {
+            customer: {
+              id: props.customer.id,
+            },
+          },
         },
-        ...MallPlatformCancellationRequestTransformer.select(),
       },
-    );
-  if (record.orderItem.id !== props.orderItemId) {
-    throw new HttpException(
-      "Cancellation request does not belong to the specified order item.",
-      400,
-    );
-  }
+      ...MallPlatformCancellationRequestTransformer.select(),
+    });
   return await MallPlatformCancellationRequestTransformer.transform(record);
 }
 
@@ -69,9 +69,9 @@ export async function getMallPlatformCustomerOrderItemsOrderItemIdCancellationRe
 // import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 // import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 // import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 // import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
-// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
+// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 // import { IMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministrator";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,

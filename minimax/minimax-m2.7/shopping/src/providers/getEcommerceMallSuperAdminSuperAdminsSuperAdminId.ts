@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { SuperadminPayload } from "../decorators/payload/SuperadminPayload";
+import { EcommerceMallSuperAdminTransformer } from "../transformers/EcommerceMallSuperAdminTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,26 +19,13 @@ export async function getEcommerceMallSuperAdminSuperAdminsSuperAdminId(props: {
 }): Promise<IEcommerceMallSuperAdmin> {
   const record =
     await MyGlobal.prisma.ecommerce_mall_super_admins.findFirstOrThrow({
-      select: {
-        id: true,
-        email: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-      },
       where: {
         id: props.superAdminId,
         deleted_at: null,
       },
+      ...EcommerceMallSuperAdminTransformer.select(),
     });
-  return {
-    id: record.id,
-    email: record.email,
-    createdAt: record.created_at.toISOString(),
-    updatedAt: record.updated_at.toISOString(),
-    deletedAt:
-      record.deleted_at === null ? null : record.deleted_at.toISOString(),
-  };
+  return await EcommerceMallSuperAdminTransformer.transform(record);
 }
 
 

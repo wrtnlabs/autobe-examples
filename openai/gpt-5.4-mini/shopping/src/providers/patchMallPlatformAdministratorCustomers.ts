@@ -22,34 +22,102 @@ export async function patchMallPlatformAdministratorCustomers(props: {
   const page: number = props.body.page ?? 1;
   const limit: number = props.body.limit ?? 100;
   const skip: number = (page - 1) * limit;
-  const where: Prisma.mall_platform_customersWhereInput = {
-    ...(props.body.search !== undefined
-      ? { email: { contains: props.body.search, mode: "insensitive" } }
-      : {}),
-    ...(props.body.status !== undefined ? { status: props.body.status } : {}),
-  };
-  const orderBy: Prisma.mall_platform_customersOrderByWithRelationInput[] =
-    props.body.sort === "email"
-      ? [{ email: props.body.order === "desc" ? "desc" : "asc" }, { id: "asc" }]
-      : props.body.sort === "status"
-        ? [
-            { status: props.body.order === "desc" ? "desc" : "asc" },
-            { id: "asc" },
-          ]
-        : [
-            { created_at: props.body.order === "asc" ? "asc" : "desc" },
-            { id: "asc" },
-          ];
+  const conditions: Prisma.mall_platform_customersWhereInput[] = [
+    ...(props.body.id !== undefined
+      ? [
+          {
+            id: props.body.id,
+          } satisfies Prisma.mall_platform_customersWhereInput,
+        ]
+      : []),
+    ...(props.body.email !== undefined
+      ? [
+          {
+            email: props.body.email,
+          } satisfies Prisma.mall_platform_customersWhereInput,
+        ]
+      : []),
+    ...(props.body.status !== undefined
+      ? [
+          {
+            status: props.body.status,
+          } satisfies Prisma.mall_platform_customersWhereInput,
+        ]
+      : []),
+    ...(props.body.createdAtFrom !== undefined
+      ? [
+          {
+            created_at: { gte: props.body.createdAtFrom },
+          } satisfies Prisma.mall_platform_customersWhereInput,
+        ]
+      : []),
+    ...(props.body.createdAtTo !== undefined
+      ? [
+          {
+            created_at: { lte: props.body.createdAtTo },
+          } satisfies Prisma.mall_platform_customersWhereInput,
+        ]
+      : []),
+    ...(props.body.updatedAtFrom !== undefined
+      ? [
+          {
+            updated_at: { gte: props.body.updatedAtFrom },
+          } satisfies Prisma.mall_platform_customersWhereInput,
+        ]
+      : []),
+    ...(props.body.updatedAtTo !== undefined
+      ? [
+          {
+            updated_at: { lte: props.body.updatedAtTo },
+          } satisfies Prisma.mall_platform_customersWhereInput,
+        ]
+      : []),
+    ...(props.body.deletedAtFrom !== undefined &&
+    props.body.deletedAtFrom !== null
+      ? [
+          {
+            deleted_at: { gte: props.body.deletedAtFrom },
+          } satisfies Prisma.mall_platform_customersWhereInput,
+        ]
+      : []),
+    ...(props.body.deletedAtTo !== undefined && props.body.deletedAtTo !== null
+      ? [
+          {
+            deleted_at: { lte: props.body.deletedAtTo },
+          } satisfies Prisma.mall_platform_customersWhereInput,
+        ]
+      : []),
+    ...(props.body.search !== undefined && props.body.search.length > 0
+      ? [
+          {
+            OR: [
+              {
+                email: {
+                  contains: props.body.search,
+                  mode: "insensitive" as Prisma.QueryMode,
+                },
+              },
+              {
+                status: {
+                  contains: props.body.search,
+                  mode: "insensitive" as Prisma.QueryMode,
+                },
+              },
+            ],
+          } satisfies Prisma.mall_platform_customersWhereInput,
+        ]
+      : []),
+  ];
+  const where: Prisma.mall_platform_customersWhereInput =
+    conditions.length > 0 ? { AND: conditions } : {};
   const records = await MyGlobal.prisma.mall_platform_customers.findMany({
     where,
-    orderBy,
+    orderBy: [{ created_at: "desc" }, { id: "desc" }],
     skip,
     take: limit,
     ...MallPlatformCustomerAtSummaryTransformer.select(),
   });
-  const total = await MyGlobal.prisma.mall_platform_customers.count({
-    where,
-  });
+  const total = await MyGlobal.prisma.mall_platform_customers.count({ where });
   return {
     pagination: {
       current: page,

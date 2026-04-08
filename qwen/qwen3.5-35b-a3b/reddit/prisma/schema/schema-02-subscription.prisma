@@ -1,0 +1,140 @@
+/// Tracks user-community subscription relationships with status and creation
+/// date.
+///
+/// This table manages the membership relationship between members and
+/// communities, enabling users to subscribe to communities and control which
+/// content appears in their personalized feed.
+///
+/// @namespace reddit_community_subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_subscriptions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the member who subscribed to the community.
+  ///
+  /// Establishes the user side of the subscription relationship. Each
+  /// subscription belongs to exactly one member.
+  reddit_community_member_id String
+  
+  /// References the community being subscribed to.
+  ///
+  /// Establishes the community side of the subscription relationship. Each
+  /// subscription is for exactly one community.
+  reddit_community_communities_id String
+  
+  /// Current state of the subscription (active or terminated).
+  ///
+  /// Active: User is following the community, can create posts, and appears in
+  /// subscriber count.
+  ///
+  /// Terminated: User has stopped following the community, cannot create new
+  /// posts.
+  status String
+  
+  /// Timestamp when the subscription was created (subscription start date).
+  ///
+  /// Marks when the user first began following this community.
+  created_at DateTime
+  
+  /// Timestamp when the subscription was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the subscription was soft deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_communities_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots reddit_community_subscriptions_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_community_member_id, reddit_community_communities_id], map: "reddit_community_subscriptions_reddit_community_member_38559d08")
+  @@index([reddit_community_member_id])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_communities_id, status], map: "reddit_community_subscriptions_reddit_community_commun_4f20520d")
+}
+
+/// Point-in-time snapshots of subscription records for audit and history
+/// tracking.
+///
+/// This table captures a complete copy of subscription data at a specific
+/// moment, enabling historical queries and audit trails without modifying
+/// the current subscription record.
+///
+/// @namespace reddit_community_subscriptions
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_subscriptions_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the current subscription record being snapshot.
+  ///
+  /// This allows linking snapshot history to the active subscription for audit
+  /// purposes.
+  reddit_community_subscription_id String
+  
+  /// User ID who created the subscription.
+  ///
+  /// Stored here for historical queries without needing to join to the main
+  /// subscription table.
+  user_id String
+  
+  /// Community ID the user is subscribed to.
+  ///
+  /// Denormalized for historical queries and audit purposes.
+  community_id String
+  
+  /// Timestamp when the subscription was created.
+  ///
+  /// Captured from the original subscription for historical accuracy.
+  created_at DateTime
+  
+  /// Timestamp when the subscription was last updated.
+  ///
+  /// Captured at snapshot time for historical accuracy.
+  updated_at DateTime
+  
+  /// Timestamp when the subscription was deleted (if soft deleted).
+  ///
+  /// May be null if subscription is not deleted at snapshot time.
+  deleted_at DateTime?
+  
+  /// Timestamp when this snapshot was created.
+  ///
+  /// Indicates when this particular historical view was captured.
+  snapshot_created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  subscription reddit_community_subscriptions @relation(fields: [reddit_community_subscription_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([reddit_community_subscription_id], map: "reddit_community_subscriptions_snapshots_reddit_commun_184f3956")
+  // spellchecker: ignore-next-line
+  @@index([user_id, community_id], map: "reddit_community_subscriptions_snapshots_user_id_commu_292720eb")
+  // spellchecker: ignore-next-line
+  @@index([snapshot_created_at], map: "reddit_community_subscriptions_snapshots_snapshot_crea_e3d20d28")
+}

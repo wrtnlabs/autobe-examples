@@ -6,9 +6,9 @@ import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -28,6 +28,39 @@ export async function patchMallPlatformCustomerOrderItemsOrderItemIdCancellation
   orderItemId: string & tags.Format<"uuid">;
   body: IMallPlatformCancellationRequest.ICreate;
 }): Promise<IMallPlatformCancellationRequest> {
+  const orderItem =
+    await MyGlobal.prisma.mall_platform_order_items.findUniqueOrThrow({
+      where: { id: props.orderItemId },
+      select: {
+        id: true,
+        mall_platform_order_id: true,
+        status: true,
+      },
+    });
+  if (orderItem.mall_platform_order_id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  if (orderItem.status !== "paid") {
+    throw new HttpException(
+      "Cancellation is allowed only for paid order items",
+      400,
+    );
+  }
+  const existing =
+    await MyGlobal.prisma.mall_platform_cancellation_requests.findUnique({
+      where: {
+        mall_platform_order_item_id: props.orderItemId,
+      },
+      select: {
+        id: true,
+      },
+    });
+  if (existing !== null) {
+    throw new HttpException(
+      "Cancellation request already exists for this order item",
+      409,
+    );
+  }
   const record =
     await MyGlobal.prisma.mall_platform_cancellation_requests.create({
       data: await MallPlatformCancellationRequestCollector.collect({
@@ -63,9 +96,9 @@ export async function patchMallPlatformCustomerOrderItemsOrderItemIdCancellation
 // import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 // import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 // import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 // import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
-// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
+// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 // import { IMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministrator";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,

@@ -9,23 +9,11 @@ export async function customerAuthorize(request: {
   const payload: CustomerPayload = jwtAuthorize({ request }) as CustomerPayload;
 
   if (payload.type !== "customer") {
-    throw new ForbiddenException(`You're not ${payload.type}`);
-  }
-
-  const customer = await MyGlobal.prisma.ecommerce_mall_customers.findFirst({
-    where: {
-      id: payload.id,
-      deleted_at: null,
-    },
-  });
-
-  if (customer === null) {
-    throw new ForbiddenException("You're not enrolled");
+    throw new ForbiddenException(`You're not a customer`);
   }
 
   const session = await MyGlobal.prisma.ecommerce_mall_customer_sessions.findFirst({
     where: {
-      id: payload.session_id,
       ecommerce_mall_customer_id: payload.id,
       expired_at: { gt: new Date() },
     },

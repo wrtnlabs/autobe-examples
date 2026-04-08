@@ -3,6 +3,7 @@ import { IEcommerceMallAdminPromotion } from "@ORGANIZATION/PROJECT-api/lib/stru
 import { IEcommerceMallSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSuperAdmin";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -10,7 +11,7 @@ import typia, { tags } from "typia";
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallAdminAtSummaryTransformer } from "./EcommerceMallAdminAtSummaryTransformer";
-import { EcommerceMallSuperAdminTransformer } from "./EcommerceMallSuperAdminTransformer";
+import { EcommerceMallSuperAdminAtSummaryTransformer } from "./EcommerceMallSuperAdminAtSummaryTransformer";
 
 export namespace EcommerceMallAdminPromotionTransformer {
   export type Payload = Prisma.ecommerce_mall_admin_promotionsGetPayload<
@@ -24,7 +25,8 @@ export namespace EcommerceMallAdminPromotionTransformer {
         reason: true,
         created_at: true,
         admin: EcommerceMallAdminAtSummaryTransformer.select(),
-        performedBySuperAdmin: EcommerceMallSuperAdminTransformer.select(),
+        performedBySuperAdmin:
+          EcommerceMallSuperAdminAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_admin_promotionsFindManyArgs;
   }
@@ -34,15 +36,16 @@ export namespace EcommerceMallAdminPromotionTransformer {
     return {
       id: input.id,
       action: input.action,
+      reason: input.reason ?? null,
+      created_at: input.created_at.toISOString(),
       admin: await EcommerceMallAdminAtSummaryTransformer.transform(
         input.admin,
       ),
-      performedBySuperAdmin: await EcommerceMallSuperAdminTransformer.transform(
-        input.performedBySuperAdmin,
-      ),
-      reason: input.reason,
-      created_at: input.created_at.toISOString(),
-    } satisfies IEcommerceMallAdminPromotion;
+      performedBySuperAdmin:
+        await EcommerceMallSuperAdminAtSummaryTransformer.transform(
+          input.performedBySuperAdmin,
+        ),
+    };
   }
 }
 
@@ -62,18 +65,18 @@ export namespace EcommerceMallAdminPromotionTransformer {
 //             reason: true,
 //             created_at: true,
 //             admin: EcommerceMallAdminAtSummaryTransformer.select(),
-//             performedBySuperAdmin: EcommerceMallSuperAdminTransformer.select(),
+//             performedBySuperAdmin: EcommerceMallSuperAdminAtSummaryTransformer.select(),
 //           },
 //         } satisfies Prisma.ecommerce_mall_admin_promotionsFindManyArgs;
 //       }
 // 
 //       export async function transform(input: Payload): Promise<IEcommerceMallAdminPromotion> {
 //         return {
+//   admin: await EcommerceMallAdminAtSummaryTransformer.transform(input.admin),
+//   performedBySuperAdmin: await EcommerceMallSuperAdminAtSummaryTransformer.transform(input.performedBySuperAdmin),
+//   reason: {string | null},
 //   id: {string},
 //   action: {string},
-//   admin: await EcommerceMallAdminAtSummaryTransformer.transform(input.admin),
-//   performedBySuperAdmin: await EcommerceMallSuperAdminTransformer.transform(input.performedBySuperAdmin),
-//   reason: {null | string},
 //   created_at: {string},
 //         };
 //       }

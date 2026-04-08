@@ -24,22 +24,16 @@ export async function postMallPlatformAdministratorCategories(props: {
     props.body.parentCategoryId !== null
   ) {
     const parentCategory =
-      await MyGlobal.prisma.mall_platform_categories.findUnique({
-        where: {
-          id: props.body.parentCategoryId,
-        },
+      await MyGlobal.prisma.mall_platform_categories.findUniqueOrThrow({
+        where: { id: props.body.parentCategoryId },
         select: {
           id: true,
           parent_category_id: true,
-          deleted_at: true,
         },
       });
-    if (parentCategory === null || parentCategory.deleted_at !== null) {
-      throw new HttpException("Parent category not found", 404);
-    }
     if (parentCategory.parent_category_id !== null) {
       throw new HttpException(
-        "Category structure must remain one level deep",
+        "Category hierarchy must remain one level deep.",
         400,
       );
     }

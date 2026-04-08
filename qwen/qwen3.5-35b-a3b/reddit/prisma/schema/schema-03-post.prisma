@@ -1,0 +1,771 @@
+/// Main post entity representing user-created content with title, type, and
+/// association to communities and authors.
+///
+/// The post serves as the primary content unit in the community, supporting
+/// three distinct content types: text posts, link posts, and image posts.
+/// Each post is authored by a member and belongs to exactly one community,
+/// establishing clear ownership and context for all content on the platform.
+///
+/// @namespace reddit_community_posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_posts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the member who authored this post.
+  ///
+  /// Establishes ownership and attribution for the post content. Only the
+  /// author (owner) can edit or delete their own posts, as defined by the
+  /// content ownership model.
+  reddit_community_member_id String
+  
+  /// Reference to the community where this post was created.
+  ///
+  /// Determines which subscribers see the post and where it appears in
+  /// community feeds. The post belongs to its community permanently and cannot
+  /// be moved to a different community after creation.
+  reddit_community_community_id String
+  
+  /// Title identifying the subject matter of the post.
+  ///
+  /// Required field that serves as the primary identifier for the post.
+  /// Appears in all post listings and displays. Cannot be empty when creating
+  /// a post. Displayed prominently when viewing the full post content.
+  title String
+  
+  /// Classification of the content type determining how the post is displayed.
+  ///
+  /// Fixed at creation time and remains unchanged for the post's lifetime.
+  /// Three types supported: `text` for written content, `link` for external
+  /// URLs, and `image` for uploaded images. Determines the visual presentation
+  /// and available content fields.
+  post_type String
+  
+  /// Written content for text posts.
+  ///
+  /// Contains the full text entered by the author for text posts. Null for
+  /// link posts and image posts. Shows a preview of the first 200 characters
+  /// in post listings.
+  text_content String?
+  
+  /// External URL reference for link posts.
+  ///
+  /// Stores the destination URL for link posts. Null for text posts and image
+  /// posts. The domain name is displayed in post listings, and users click to
+  /// navigate to the external content.
+  link_url String?
+  
+  /// Timestamp when the post was created.
+  ///
+  /// Displays as relative time (e.g., "3 hours ago") in listings. Provides
+  /// temporal context for the content and establishes the chronological order
+  /// of posts within a community.
+  created_at DateTime
+  
+  /// Timestamp when the post was last updated.
+  ///
+  /// Tracks the most recent modification to the post content or metadata.
+  /// Updated whenever the post is edited by its author.
+  updated_at DateTime
+  
+  /// Timestamp when the post was soft-deleted.
+  ///
+  /// Used for soft deletion to preserve data while marking the post as
+  /// deleted. Null when the post is active, set when the author or moderator
+  /// deletes the post.
+  deleted_at DateTime?
+  
+  /// Net vote score calculated from all user votes on this post.
+  ///
+  /// Computed by adding all upvotes and subtracting all downvotes cast by
+  /// users. Represents the community judgment of the post based on all
+  /// expressed opinions. Updated incrementally as votes are added or changed.
+  vote_score Int
+  
+  /// Total number of comments on this post.
+  ///
+  /// Counts all top-level comments and nested replies associated with the
+  /// post. Updated incrementally as comments are added or removed. Provides
+  /// quick visibility of engagement level without querying the comments table.
+  comment_count Int
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  author reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots reddit_community_post_snapshots[]
+  files reddit_community_post_files[]
+  votes reddit_community_post_votes[]
+  comments reddit_community_comments[]
+  redditCommunityPostReports reddit_community_post_reports[]
+  redditPostReports reddit_community_reports[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_member_id, created_at], map: "reddit_community_posts_reddit_community_member_id_crea_b4877c90")
+  @@index([reddit_community_community_id])
+  @@index([post_type])
+}
+
+/// Point-in-time snapshots of posts for audit trail and content history.
+///
+/// This table stores immutable historical records of post data at the moment
+/// of each snapshot. Each snapshot captures the complete state of a post
+/// including its title, content, type, and associated author and community
+/// information at that point in time.
+///
+/// Snapshots are created whenever a post is modified, providing a complete
+/// audit trail of content changes. The denormalized structure allows
+/// efficient querying of historical post states without reconstructing data
+/// from related tables. Snapshots remain immutable once created, preserving
+/// the exact content and metadata as it existed at the time of capture.
+///
+/// @namespace reddit_community_posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the original post record this snapshot represents.
+  ///
+  /// Each snapshot is linked to exactly one post in the {@link
+  /// reddit_community_posts} table, even if that post is subsequently deleted
+  /// or modified. This allows reconstruction of the complete post history over
+  /// time.
+  reddit_community_post_id String
+  
+  /// Reference to the post author at the time this snapshot was created.
+  ///
+  /// This FK points to the {@link reddit_community_members} table and
+  /// preserves the author identity as it existed when the snapshot was taken,
+  /// even if the original post author is later deleted or changes.
+  reddit_community_member_id String
+  
+  /// Reference to the community where this post was published at the time of
+  /// snapshot.
+  ///
+  /// This FK points to the {@link reddit_community_communities} table and
+  /// captures the community context as it existed when the snapshot was
+  /// created, maintaining historical accuracy for content attribution.
+  reddit_community_community_id String
+  
+  /// Post title captured at snapshot time.
+  ///
+  /// Stores the exact title text as it existed when the snapshot was created.
+  /// For deleted posts, this preserves the original title for historical
+  /// reference.
+  title String
+  
+  /// Type classification of the post: text, link, or image.
+  ///
+  /// Indicates whether this was a text post (content-only), link post
+  /// (URL-based), or image post (uploaded file-based). This classification
+  /// remains immutable in the snapshot even if the original post is modified.
+  post_type String
+  
+  /// Text content of text posts captured at snapshot time.
+  ///
+  /// Stores the full body text for text posts. For link posts and image posts,
+  /// this field is NULL. Preserves the exact content as it existed when the
+  /// snapshot was taken.
+  content String?
+  
+  /// URL for link posts captured at snapshot time.
+  ///
+  /// Stores the target URL for link posts. For text posts and image posts,
+  /// this field is NULL. Preserves the original link destination as it existed
+  /// when the snapshot was created.
+  link_url String?
+  
+  /// Current status of the post at snapshot time: active or deleted.
+  ///
+  /// Tracks whether the post was publicly visible (active) or had been deleted
+  /// (deleted) at the time this snapshot was captured. Enables historical
+  /// tracking of post lifecycle state.
+  status String
+  
+  /// Timestamp when this snapshot was created.
+  ///
+  /// Marks the exact point in time when this post state was captured. Used for
+  /// ordering snapshots chronologically and calculating the duration of
+  /// specific post states.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  redditCommunityPost reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  author reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_community_member_id])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_id], map: "reddit_community_post_snapshots_reddit_community_commu_fab30093")
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_post_id, created_at], map: "reddit_community_post_snapshots_reddit_community_post__d8065680")
+}
+
+/// File attachments for image posts, storing uploaded file metadata and
+/// storage URLs.
+///
+/// ### Parent Relationship
+///
+/// This table maintains a one-to-many relationship with `{@link
+/// reddit_community_posts}`, where each post can have multiple file
+/// attachments. Files are always accessed through their parent post entity.
+///
+/// ### File Metadata
+///
+/// Each file record captures essential information about an uploaded file:
+///
+/// - **Original filename**: The file's name as uploaded by the user
+/// - **MIME type**: Content type classification (e.g., image/png, image/jpeg)
+/// - **File size**: Size in bytes for storage tracking and validation
+/// - **Storage URL**: URL path to the actual file in object storage
+///
+/// ### Lifecycle Management
+///
+/// Files follow soft-delete semantics through the `deleted_at` timestamp.
+/// When a file is deleted, it is marked for removal but retained in the
+/// database for audit purposes. The file is permanently removed only through
+/// scheduled cleanup jobs.
+///
+/// @namespace reddit_community_posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the parent post that owns this file attachment.
+  ///
+  /// Each file belongs to exactly one post and is accessed through the parent
+  /// post relationship. When a post is deleted, associated files are marked
+  /// for soft deletion.
+  reddit_community_post_id String
+  
+  /// Original filename of the uploaded file as provided by the user.
+  ///
+  /// This preserves the user's original filename for display purposes. For
+  /// security, the actual stored file may use a different filename while this
+  /// field maintains the original name.
+  file_name String
+  
+  /// MIME type of the uploaded file (e.g., image/png, image/jpeg, image/gif).
+  ///
+  /// Used for content validation, display determination, and proper MIME-type
+  /// serving when downloading the file.
+  file_type String
+  
+  /// Size of the uploaded file in bytes.
+  ///
+  /// Used for storage quota tracking, upload validation, and display purposes.
+  /// Stored as an integer to represent byte counts.
+  file_size Int
+  
+  /// URL path to the stored file in object storage.
+  ///
+  /// This URI points to the actual file location where the file content is
+  /// stored. Used for downloading and displaying the file.
+  file_url String
+  
+  /// Timestamp when this file record was created.
+  ///
+  /// Records the exact moment the file was uploaded and stored in the system.
+  created_at DateTime
+  
+  /// Timestamp when this file record was last updated.
+  ///
+  /// Tracks the most recent modification time for cache invalidation and
+  /// change detection.
+  updated_at DateTime
+  
+  /// Timestamp when this file was soft deleted.
+  ///
+  /// Nullable field that is populated when the file is marked for deletion.
+  /// Null values indicate the file is still active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_community_post_id])
+}
+
+/// Tracks individual user votes (upvote/downvote) on posts with score
+/// computation support.
+///
+/// **Purpose**
+/// The votes table records each user's opinion on posts, enabling the system
+/// to calculate aggregate scores based on community feedback.
+///
+/// **Vote Uniqueness**
+/// Each member can cast exactly one vote per post. The unique constraint on
+/// (post_id, member_id) ensures a user cannot submit multiple votes for the
+/// same post, preventing vote manipulation.
+///
+/// **Vote Modification**
+/// Members may change their vote direction at any time—switching from upvote
+/// to downvote, or vice versa—or remove their vote entirely. When a vote is
+/// updated, the updated_at timestamp is modified to track the change.
+///
+/// @namespace reddit_community_posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the post that this vote targets.
+  ///
+  /// A vote belongs to exactly one post. Deleting a post CASCADE deletes all
+  /// associated votes.
+  post_id String
+  
+  /// References the member who cast this vote.
+  ///
+  /// A vote is created by exactly one member. Deleting a member CASCADE
+  /// deletes all votes they submitted.
+  member_id String
+  
+  /// The direction of the vote: "upvote" or "downvote".
+  ///
+  /// An upvote adds positive value to the post's score, indicating approval. A
+  /// downvote subtracts value, indicating disapproval. Members can change
+  /// their vote_type at any time to modify their opinion.
+  vote_type String
+  
+  /// Timestamp when this vote was first submitted.
+  ///
+  /// The created_at timestamp captures when the user initially expressed their
+  /// opinion. This remains unchanged even if the vote_type is later modified
+  /// or the vote is removed, preserving vote history timing.
+  created_at DateTime
+  
+  /// Timestamp of the last modification to this vote record.
+  ///
+  /// The updated_at timestamp is updated whenever a member changes their
+  /// vote_type or removes their vote (soft delete). This enables tracking of
+  /// when opinions were last modified.
+  updated_at DateTime
+  
+  /// Timestamp when this vote was soft deleted.
+  ///
+  /// When a member removes their vote, deleted_at is set to the current
+  /// timestamp. The vote record persists for audit purposes while being
+  /// excluded from active queries. NULL means the vote is still active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_community_posts @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  member reddit_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([post_id, member_id])
+  @@index([post_id, created_at])
+  @@index([member_id])
+}
+
+/// Threaded comment entity for post discussions with parent-child
+/// relationships.
+///
+/// A comment represents user engagement with post content, supporting nested
+/// replies for threaded discussions. Each comment belongs to exactly one
+/// post and is authored by exactly one member. Comments can have optional
+/// parent references to enable hierarchical reply structures.
+///
+/// {!reddit_community_comments!} supports soft delete via `deleted_at` field
+/// and maintains audit trail through `created_at` and `updated_at`
+/// timestamps.
+///
+/// @namespace reddit_community_posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the post to which this comment belongs. Each comment is
+  /// associated with exactly one post, enabling post-comment relationship
+  /// navigation.
+  ///
+  /// {!reddit_community_posts!} is the target parent entity. Comments cannot
+  /// exist without a parent post.
+  reddit_community_post_id String
+  
+  /// References the member who authored this comment. Identifies the user
+  /// responsible for the comment content and enables author-based queries.
+  ///
+  /// {!reddit_community_members!} is the target actor entity. Every comment
+  /// must have exactly one author.
+  reddit_community_member_id String
+  
+  /// References the parent comment when this is a reply. Nullable for
+  /// top-level comments. Enables threaded/nested comment discussions through
+  /// self-referential hierarchy.
+  ///
+  /// {!reddit_community_comments!} is the target parent entity. When null,
+  /// this comment is a top-level comment directly on the post.
+  reddit_community_comment_id String?
+  
+  /// The text content of the comment. Contains the user's written message or
+  /// reply text.
+  ///
+  /// Must be non-empty when creating a comment. Empty or whitespace-only
+  /// content is rejected during validation.
+  content String
+  
+  /// Timestamp when this comment was originally created. Immutable after
+  /// creation, used for sorting and audit purposes.
+  created_at DateTime
+  
+  /// Timestamp when this comment was last modified. Updated whenever the
+  /// comment content is edited. Used to track comment modification history.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. NULL indicates an active comment. When set, the
+  /// comment is marked as deleted but retained for audit purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  author reddit_community_members @relation(fields: [reddit_community_member_id], references: [id], onDelete: Cascade)
+  parent reddit_community_comments? @relation("recursive", fields: [reddit_community_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  replies reddit_community_comments[] @relation("recursive")
+  votes reddit_community_comment_votes[]
+  redditCommunityCommentReports reddit_community_comment_reports[]
+  redditCommentReports reddit_community_reports[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_post_id, created_at], map: "reddit_community_comments_reddit_community_post_id_cre_7ea47a9e")
+  @@index([reddit_community_member_id])
+  @@index([reddit_community_comment_id])
+}
+
+/// Tracks user votes on comments (upvotes or downvotes) with one vote per
+/// user per comment.
+///
+/// The comment vote system enables community members to express agreement or
+/// disagreement with comment content. Each member can cast exactly one vote
+/// per comment, and can change their vote at any time. The vote status
+/// determines the comment's net score calculation.
+///
+/// ## Vote Types
+///
+/// - **upvote**: Indicates agreement or positive feedback with the comment
+/// - **downvote**: Indicates disagreement or negative feedback with the comment
+///
+/// ## Data Model
+///
+/// - Each row represents a single vote from a member on a specific comment
+/// - Members can vote on any comment except their own
+/// - A member can have only one vote per comment (upvote or downvote)
+/// - Votes are soft-deleted when the associated member or comment is deleted
+///
+/// ## Relationships
+///
+/// - @{link reddit_community_members} - The member who cast the vote
+/// - @{link reddit_community_comments} - The comment that received the vote
+///
+/// @namespace reddit_community_posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comment_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// References the member who cast this vote.
+  ///
+  /// A member can vote on any comment except their own. The vote is associated
+  /// with the member's account and contributes to their karma score.
+  member_id String
+  
+  /// References the comment that received this vote.
+  ///
+  /// A comment can receive multiple votes from different members, but each
+  /// member can only vote once per comment. The vote contributes to the
+  /// comment's net score calculation.
+  reddit_community_comment_id String
+  
+  /// The type of vote cast: 'upvote' or 'downvote'.
+  ///
+  /// Members can change their vote type at any time. The current vote_type
+  /// determines the comment's net score calculation (upvotes count +1,
+  /// downvotes count -1).
+  ///
+  /// Allowed values:
+  /// - `upvote`: Indicates agreement or positive feedback
+  /// - `downvote`: Indicates disagreement or negative feedback
+  vote_type String
+  
+  /// Timestamp when this vote was first cast.
+  created_at DateTime
+  
+  /// Timestamp when this vote was last modified (e.g., vote type changed).
+  updated_at DateTime
+  
+  /// Timestamp when this vote was soft-deleted. Null if the vote is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member reddit_community_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  comment reddit_community_comments @relation(fields: [reddit_community_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([member_id, reddit_community_comment_id], map: "reddit_community_comment_votes_member_id_reddit_commun_5330546d")
+  @@index([reddit_community_comment_id])
+  @@index([member_id])
+}
+
+/// Main post entity representing user-created content with title, type, and
+/// association to communities and authors.
+///
+/// The post serves as the primary content unit in the community, supporting
+/// three distinct content types: text posts, link posts, and image posts.
+/// Each post is authored by a member and belongs to exactly one community,
+/// establishing clear ownership and context for all content on the platform.
+///
+/// {!reddit_community_posts!} supports soft delete via `deleted_at` field
+/// and maintains audit trail through `created_at` and `updated_at`
+/// timestamps.
+///
+/// @namespace reddit_community_posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_post_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The post being reported. Links to the content that was flagged for review.
+  ///
+  /// This foreign key establishes the parent-child relationship where the post
+  /// is the reported entity and the report is the moderation record tracking
+  /// the violation flag.
+  reddit_community_post_id String
+  
+  /// The member who submitted the report. Links to the account that flagged
+  /// the post.
+  ///
+  /// This identifies the reporter for transparency and prevents abuse through
+  /// rate limiting or pattern analysis.
+  reddit_community_user_id String
+  
+  /// The community where the reported post exists. Links to the community that
+  /// owns the reported content.
+  ///
+  /// This provides context for moderation decisions and enables
+  /// community-level report metrics and moderation oversight.
+  reddit_community_community_id String
+  
+  /// The reporter's explanation for filing this report.
+  ///
+  /// Members provide a brief description of why they believe the post violates
+  /// community guidelines or rules. This text aids moderators in understanding
+  /// the context and making informed decisions.
+  ///
+  /// Format: Plain text string, max 500 characters.
+  reason String
+  
+  /// Current moderation status of the report.
+  ///
+  /// Reports progress through a lifecycle: pending (awaiting review) →
+  /// reviewed (resolved). This field enables filtering the moderation queue
+  /// and tracking report progress.
+  ///
+  /// Allowed values: pending, reviewed
+  status String
+  
+  /// Timestamp when the report was submitted.
+  ///
+  /// This timestamp is used for sorting reports by submission time,
+  /// calculating moderation response times, and maintaining audit trails.
+  created_at DateTime
+  
+  /// Timestamp when the report status was last updated.
+  ///
+  /// This field tracks when moderators reviewed the report or other status
+  /// changes occurred, enabling SLA monitoring and audit compliance.
+  updated_at DateTime
+  
+  /// Timestamp when the report was soft-deleted.
+  ///
+  /// Soft deletion preserves report records for audit purposes while hiding
+  /// them from active workflows. Null indicates the report is still active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  post reddit_community_posts @relation(fields: [reddit_community_post_id], references: [id], onDelete: Cascade)
+  reporter reddit_community_members @relation(fields: [reddit_community_user_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_community_post_id])
+  @@index([reddit_community_user_id])
+  @@index([reddit_community_community_id])
+  @@index([status])
+}
+
+/// Reports submitted by members to flag comments for moderation review.
+///
+/// Tracks content violations that require moderator attention, linking the
+/// reported comment to the reporting member and the community context. Each
+/// report maintains a status workflow from submission through resolution,
+/// with reason text explaining the violation for moderator decision-making.
+///
+/// This entity is part of the moderation workflow and is managed by
+/// community moderators. Reports are read-only from a member's perspective
+/// (only view their own submissions).
+///
+/// @link reddit_community_comments
+/// @link reddit_community_members
+/// @link reddit_community_communities
+///
+/// @namespace reddit_community_posts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_comment_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The comment being reported. Links to the content that was flagged for
+  /// review.
+  ///
+  /// This foreign key establishes the parent-child relationship where the
+  /// comment is the reported entity and the report is the moderation record
+  /// tracking the violation flag.
+  ///
+  /// {!reddit_community_comments!} is the target parent entity. Comments
+  /// cannot exist without a parent post.
+  reddit_community_comment_id String
+  
+  /// The member who submitted the report. Links to the account that flagged
+  /// the comment.
+  ///
+  /// This identifies the reporter for transparency and prevents abuse through
+  /// rate limiting or pattern analysis.
+  reddit_community_user_id String
+  
+  /// The community where the reported comment exists. Links to the community
+  /// that owns the reported content.
+  ///
+  /// This provides context for moderation decisions and enables
+  /// community-level report metrics and moderation oversight.
+  reddit_community_community_id String
+  
+  /// Text explanation for why the comment was reported.
+  ///
+  /// Members must provide a reason when submitting a report. This field
+  /// captures the violation type, context, or specific concern that led to the
+  /// report submission. The reason is visible to moderators for review and
+  /// decision-making.
+  reason String
+  
+  /// Current status of the report in the moderation workflow.
+  ///
+  /// Values: pending (awaiting review), reviewed (under review), resolved
+  /// (action taken).
+  ///
+  /// Status transitions follow the moderation workflow and are managed by
+  /// community moderators.
+  status String
+  
+  /// Timestamp when the report was created.
+  ///
+  /// Used to track report age, prioritize pending reports, and analyze
+  /// moderation workflow efficiency.
+  created_at DateTime
+  
+  /// Timestamp when the report status was last updated.
+  ///
+  /// Tracks when moderators reviewed or modified the report for workflow audit
+  /// and response time metrics.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for report removal.
+  ///
+  /// Allows reports to be logically deleted while preserving audit trail for
+  /// moderation history and compliance.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  comment reddit_community_comments @relation(fields: [reddit_community_comment_id], references: [id], onDelete: Cascade)
+  reporter reddit_community_members @relation(fields: [reddit_community_user_id], references: [id], onDelete: Cascade)
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reddit_community_user_id])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_id], map: "reddit_community_comment_reports_reddit_community_comm_3fe35594")
+  @@index([status])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_comment_id, reddit_community_user_id], map: "reddit_community_comment_reports_reddit_community_comm_7d6c5342")
+}

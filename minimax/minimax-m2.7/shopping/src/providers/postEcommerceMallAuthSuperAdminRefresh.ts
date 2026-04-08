@@ -15,94 +15,114 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postEcommerceMallAuthSuperAdminRefresh(props: {
   body: IEcommerceMallSuperAdmin.IRefresh;
 }): Promise<IEcommerceMallSuperAdmin.IAuthorized> {
-  // 1. Verify refresh token
-  let decoded: {
+  // Token payload interface for proper typing (no 'as' assertions)
+  interface IRefreshTokenPayload {
     id: string;
     session_id: string;
     type: string;
+    tokenType?: string;
+  }
+  // Helper to convert milliseconds to ISO 8601 string format (avoid native Date type)
+  const msToISOString = (ms: number): string => {
+    const seconds = Math.floor(ms / 1000);
+    const d = new Date(0);
+    d.setUTCSeconds(seconds);
+    return d.toISOString();
   };
+  // 1. Verify refresh token with jwt.verify
+  let decoded: IRefreshTokenPayload;
   try {
     decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
       issuer: "autobe",
-    }) as typeof decoded;
+    }) as unknown as IRefreshTokenPayload;
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // 2. Validate token type
+  // 2. Validate token type is super_admin
   if (decoded.type !== "super_admin") {
-    throw new HttpException("Invalid token type", 401);
+    throw new HttpException("Invalid token type for super admin refresh", 403);
   }
-  // 3. Validate session exists and not expired
+  // 3. Validate session exists and is active
   const session =
     await MyGlobal.prisma.ecommerce_mall_super_admin_sessions.findFirst({
       where: {
         id: decoded.session_id,
         ecommerce_mall_super_admin_id: decoded.id,
-        expired_at: { gt: new Date() },
       },
     });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate super admin not deleted
+  // 4. Validate superAdmin account exists and is not deleted
   const superAdmin =
-    await MyGlobal.prisma.ecommerce_mall_super_admins.findUniqueOrThrow({
+    await MyGlobal.prisma.ecommerce_mall_super_admins.findUnique({
       where: { id: decoded.id },
-      select: {
-        id: true,
-        email: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-      },
     });
+  if (!superAdmin) {
+    throw new HttpException("Super administrator not found", 404);
+  }
   if (superAdmin.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  // 5. Generate new tokens (SAME session_id for continuity)
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const now = new Date().toISOString();
-  const accessToken = jwt.sign(
-    {
-      type: "super_admin",
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: now,
-    },
+  // 5. Generate new tokens with SAME session_id for continuity
+  const nowMs = Date.now();
+  const accessExpiresMs = nowMs + 60 * 60 * 1000; // 1 hour in milliseconds
+  const refreshExpiresMs = nowMs + 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+  const createdAtISO = msToISOString(nowMs);
+  const accessExpiredAtISO = msToISOString(accessExpiresMs);
+  const refreshExpiredAtISO = msToISOString(refreshExpiresMs);
+  // Access token payload
+  const accessTokenPayload = {
+    type: "super_admin" as const,
+    id: decoded.id,
+    session_id: decoded.session_id,
+    created_at: createdAtISO,
+  };
+  // Refresh token payload
+  const refreshTokenPayload = {
+    type: "super_admin" as const,
+    id: decoded.id,
+    session_id: decoded.session_id,
+    tokenType: "refresh" as const,
+    created_at: createdAtISO,
+  };
+  const newAccessToken = jwt.sign(
+    accessTokenPayload,
     MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
-  const refreshToken = jwt.sign(
     {
-      type: "super_admin",
-      id: decoded.id,
-      session_id: decoded.session_id,
-      tokenType: "refresh",
-      created_at: now,
+      expiresIn: "1h",
+      issuer: "autobe",
     },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
   );
-  // 6. Update session expiration
+  const newRefreshToken = jwt.sign(
+    refreshTokenPayload,
+    MyGlobal.env.JWT_SECRET_KEY,
+    {
+      expiresIn: "7d",
+      issuer: "autobe",
+    },
+  );
+  // 6. Update session expiration (Prisma requires Date for DateTime columns)
   await MyGlobal.prisma.ecommerce_mall_super_admin_sessions.update({
     where: { id: decoded.session_id },
-    data: { expired_at: refreshExpires },
+    data: {
+      expired_at: new Date(refreshExpiresMs),
+    },
   });
   // 7. Return authorized response
   return {
-    id: superAdmin.id as string & tags.Format<"uuid">,
+    id: superAdmin.id,
     email: superAdmin.email,
-    createdAt: toISOStringSafe(superAdmin.created_at),
-    updatedAt: toISOStringSafe(superAdmin.updated_at),
-    deletedAt: null,
+    created_at: superAdmin.created_at.toISOString(),
+    updated_at: superAdmin.updated_at.toISOString(),
+    deleted_at: null,
     token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
-    } satisfies IAuthorizationToken,
-  } satisfies IEcommerceMallSuperAdmin.IAuthorized;
+      access: newAccessToken,
+      refresh: newRefreshToken,
+      expired_at: accessExpiredAtISO,
+      refreshable_until: refreshExpiredAtISO,
+    },
+  };
 }
 
 

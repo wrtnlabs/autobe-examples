@@ -20,20 +20,17 @@ export async function patchMallPlatformCustomerSessions(props: {
   customer: CustomerPayload;
   body: IMallPlatformCustomerSession.IRequest;
 }): Promise<IPageIMallPlatformCustomerSession.ISummary> {
-  const current: number = props.body.page ?? 1;
-  const limit: number = props.body.limit ?? 100;
-  const page: number = current < 1 ? 1 : current;
-  const size: number = limit < 1 ? 1 : limit;
-  const skip: number = (page - 1) * size;
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
   const where: Prisma.mall_platform_customer_sessionsWhereInput = {
-    ...(props.body.id !== undefined && { id: props.body.id }),
-    ...(props.body.mallPlatformCustomerId !== undefined && {
-      mall_platform_customer_id: props.body.mallPlatformCustomerId,
-    }),
-    ...(props.body.ip !== undefined && { ip: props.body.ip }),
-    ...(props.body.href !== undefined && { href: props.body.href }),
-    ...(props.body.referrer !== undefined && { referrer: props.body.referrer }),
-    ...(props.body.search !== undefined && props.body.search.length > 0
+    mall_platform_customer_id: props.customer.id,
+    ...(props.body.ip !== undefined ? { ip: props.body.ip } : {}),
+    ...(props.body.href !== undefined ? { href: props.body.href } : {}),
+    ...(props.body.referrer !== undefined
+      ? { referrer: props.body.referrer }
+      : {}),
+    ...(props.body.search !== undefined
       ? {
           OR: [
             { ip: { contains: props.body.search, mode: "insensitive" } },
@@ -42,23 +39,47 @@ export async function patchMallPlatformCustomerSessions(props: {
           ],
         }
       : {}),
+    ...(props.body.createdAtFrom !== undefined ||
+    props.body.createdAtTo !== undefined
+      ? {
+          created_at: {
+            ...(props.body.createdAtFrom !== undefined
+              ? { gte: new globalThis.Date(props.body.createdAtFrom) }
+              : {}),
+            ...(props.body.createdAtTo !== undefined
+              ? { lte: new globalThis.Date(props.body.createdAtTo) }
+              : {}),
+          },
+        }
+      : {}),
+    ...(props.body.expiredAtFrom !== undefined ||
+    props.body.expiredAtTo !== undefined
+      ? {
+          expired_at: {
+            ...(props.body.expiredAtFrom !== undefined
+              ? { gte: new globalThis.Date(props.body.expiredAtFrom) }
+              : {}),
+            ...(props.body.expiredAtTo !== undefined
+              ? { lte: new globalThis.Date(props.body.expiredAtTo) }
+              : {}),
+          },
+        }
+      : {}),
   };
   const orderBy: Prisma.mall_platform_customer_sessionsOrderByWithRelationInput =
-    props.body.sort === "ip"
-      ? { ip: props.body.order ?? "desc" }
-      : props.body.sort === "href"
-        ? { href: props.body.order ?? "desc" }
-        : props.body.sort === "referrer"
-          ? { referrer: props.body.order ?? "desc" }
-          : props.body.sort === "expiredAt"
-            ? { expired_at: props.body.order ?? "desc" }
-            : { created_at: props.body.order ?? "desc" };
+    props.body.sort === "expiredAt"
+      ? { expired_at: "desc" }
+      : props.body.sort === "expiredAt_asc"
+        ? { expired_at: "asc" }
+        : props.body.sort === "createdAt_asc"
+          ? { created_at: "asc" }
+          : { created_at: "desc" };
   const records =
     await MyGlobal.prisma.mall_platform_customer_sessions.findMany({
       where,
-      skip,
-      take: size,
       orderBy,
+      skip,
+      take: limit,
       ...MallPlatformCustomerSessionAtSummaryTransformer.select(),
     });
   const total = await MyGlobal.prisma.mall_platform_customer_sessions.count({
@@ -67,9 +88,9 @@ export async function patchMallPlatformCustomerSessions(props: {
   return {
     pagination: {
       current: page,
-      limit: size,
+      limit,
       records: total,
-      pages: Math.ceil(total / size),
+      pages: Math.ceil(total / limit),
     },
     data: await ArrayUtil.asyncMap(
       records,

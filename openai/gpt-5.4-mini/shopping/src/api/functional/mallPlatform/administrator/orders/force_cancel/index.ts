@@ -9,24 +9,24 @@ import typia, { tags } from "typia";
 import { IMallPlatformOrder } from "../../../../../structures/IMallPlatformOrder";
 
 /**
- * Force-cancel an order or selected order items as an administrator intervention.
+ * Forcibly cancels an order or selected order items under administrator oversight.
  *
- * This endpoint lets an administrator override the normal purchase flow for exceptional policy enforcement or dispute resolution. The cancellation is applied in the context of the target order so the platform can preserve the order record, item history, and any existing snapshots while updating the affected item states and restoring stock through inventory history.
+ * This endpoint is reserved for platform administrators who need to intervene in an order for policy enforcement or dispute resolution. The cancellation may apply to the entire order or only to selected items, depending on the request payload, even though ordinary customer cancellation remains item-level and condition-based.
  *
- * The operation is item-level by business rule. If the intervention covers every item in the order, the order becomes fully cancelled; if only some items are cancelled, the remaining items continue through their own lifecycle. If the request fails validation, targets an ineligible item, or cannot be completed safely, no partial state changes may be committed.
+ * When cancellation is applied, the service must preserve the historical record of the order, update the affected order items, and restore stock for each affected product variant through inventory history records. If the request cancels only part of the order, the remaining items must continue through their normal lifecycle unchanged. After the operation, the overall order status must be recalculated from the item states so the order reflects the combined result of its items.
+ *
+ * Validation must reject requests for missing orders, unauthorized callers, ineligible items, or conflicting cancellation scopes. The operation must be atomic: if any targeted item cannot be cancelled, the transaction must roll back and no partial cancellation should be committed.
  *
  * @param props.connection
- * @param props.orderId The order identifier to intervene on (UUID).
- * @param props.body Administrator force-cancellation command containing the cancellation scope and any required intervention reason.
+ * @param props.orderId The identifier of the order to intervene on.
+ * @param props.body Administrator intervention details indicating whether the full order or specific items should be forcibly cancelled.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor administrator
- * @x-autobe-specification Authorize the caller as an administrator before any data access. Load the target order by orderId and resolve the items affected by the force-cancel command.
+ * @x-autobe-specification Authorize the caller as an administrator with order intervention authority before loading or mutating any order data. Fetch the order by orderId and interpret the request body to determine whether the intervention targets the whole order or a subset of items.
  *
- * Perform the intervention in a single database transaction. For each targeted order item, verify it belongs to the order and can be transitioned to cancelled according to the platform's order intervention rules. For each cancelled item, create an inventory history record with a positive quantity change for the corresponding product variant so stock is restored via append-only inventory tracking rather than direct stock mutation.
+ * Perform all work inside a single transaction. Validate that every targeted item belongs to the order and is eligible for administrative cancellation according to the current item state. Apply the cancellation to each targeted item, restore stock by creating positive inventory records for the corresponding product variants, and preserve the intervention outcome in the platform's snapshot/audit history mechanism so the prior state remains reconstructible.
  *
- * Do not delete the order, order items, or any historical snapshot data. Recompute the overall order state from the resulting item states after the cancellation completes. If every item is cancelled, mark the order as fully cancelled; otherwise keep the order in the appropriate mixed state derived from the remaining active items.
- *
- * If the order does not exist, the caller lacks administrator privileges, the request targets items outside the order, or any cancellation rule fails, abort the transaction and return an error without committing partial updates. Ensure the implementation does not double-restore stock if the transaction is retried after a failure.
+ * After all targeted items are processed, recompute the derived order status from the full set of item states. If the order does not exist, the caller lacks authority, any targeted item is not cancellable, or the scope conflicts with the current order state, roll back the transaction and return an appropriate validation or conflict error. Do not allow partial updates.
  * @path /mallPlatform/administrator/orders/:orderId/force-cancel
  * @accessor api.functional.mallPlatform.administrator.orders.force_cancel.forceCancel
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
@@ -56,16 +56,16 @@ export async function forceCancel(
 export namespace forceCancel {
   export type Props = {
     /**
-     * The order identifier to intervene on (UUID).
+     * The identifier of the order to intervene on.
      */
     orderId: string & tags.Format<"uuid">;
 
     /**
-     * Administrator force-cancellation command containing the cancellation scope and any required intervention reason.
+     * Administrator intervention details indicating whether the full order or specific items should be forcibly cancelled.
      */
-    body: IMallPlatformOrder.IForceCancel;
+    body: IMallPlatformOrder.ICreate;
   };
-  export type Body = IMallPlatformOrder.IForceCancel;
+  export type Body = IMallPlatformOrder.ICreate;
   export type Response = IMallPlatformOrder;
 
   export const METADATA = {

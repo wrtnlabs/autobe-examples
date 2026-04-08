@@ -13,7 +13,7 @@ export namespace MallPlatformProductImageCollector {
     product: IEntity;
   }) {
     const id: string = v4();
-    const now: Date = new Date();
+    const now = new Date();
     return {
       id,
       image_url: props.body.imageUrl,

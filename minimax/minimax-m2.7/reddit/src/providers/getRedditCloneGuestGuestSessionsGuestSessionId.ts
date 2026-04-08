@@ -19,14 +19,16 @@ export async function getRedditCloneGuestGuestSessionsGuestSessionId(props: {
   guestSessionId: string & tags.Format<"uuid">;
 }): Promise<IRedditCloneGuestSession> {
   const record =
-    await MyGlobal.prisma.reddit_clone_guest_sessions.findUniqueOrThrow({
+    await MyGlobal.prisma.reddit_clone_guest_sessions.findFirstOrThrow({
+      where: {
+        id: props.guestSessionId,
+        reddit_clone_guest_id: props.guest.id,
+        expired_at: {
+          gt: new Date(),
+        },
+      },
       ...RedditCloneGuestSessionTransformer.select(),
-      where: { id: props.guestSessionId },
     });
-  // Check if session has expired
-  if (record.expired_at < new Date()) {
-    throw new HttpException("Guest session not found or expired", 404);
-  }
   return await RedditCloneGuestSessionTransformer.transform(record);
 }
 

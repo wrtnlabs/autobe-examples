@@ -2,12 +2,14 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministrator";
 import { IMallPlatformAdministratorApprovalRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministratorApprovalRequest";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { MallPlatformAdministratorAtSummaryTransformer } from "./MallPlatformAdministratorAtSummaryTransformer";
 
 export namespace MallPlatformAdministratorApprovalRequestTransformer {
   export type Payload =
@@ -25,21 +27,10 @@ export namespace MallPlatformAdministratorApprovalRequestTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        administrator: {
-          select: {
-            id: true,
-          },
-        },
-        reviewerAdministrator: {
-          select: {
-            id: true,
-          },
-        },
-        snapshots: {
-          select: {
-            id: true,
-          },
-        },
+        administrator: MallPlatformAdministratorAtSummaryTransformer.select(),
+        reviewerAdministrator:
+          MallPlatformAdministratorAtSummaryTransformer.select(),
+        snapshots: { select: { id: true } },
       },
     } satisfies Prisma.mall_platform_administrator_approval_requestsFindManyArgs;
   }
@@ -48,9 +39,15 @@ export namespace MallPlatformAdministratorApprovalRequestTransformer {
   ): Promise<IMallPlatformAdministratorApprovalRequest> {
     return {
       id: input.id,
-      administrator: input.administrator as IMallPlatformAdministrator.ISummary,
-      reviewerAdministrator:
-        input.reviewerAdministrator as IMallPlatformAdministrator.ISummary | null,
+      administrator:
+        await MallPlatformAdministratorAtSummaryTransformer.transform(
+          input.administrator,
+        ),
+      reviewerAdministrator: input.reviewerAdministrator
+        ? await MallPlatformAdministratorAtSummaryTransformer.transform(
+            input.reviewerAdministrator,
+          )
+        : null,
       reason: input.reason,
       status: input.status,
       rejectionReason: input.rejection_reason,

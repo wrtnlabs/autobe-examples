@@ -8,18 +8,20 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 
 export namespace EcommerceMallCartItemCollector {
+  /**
+   * Collector for creating cart item records.
+   * Transforms IEcommerceMallCartItem.ICreate DTO to Prisma CreateInput.
+   */
   export async function collect(props: {
     body: IEcommerceMallCartItem.ICreate;
-    cart: IEntity;
+    ecommerceMallCarts: IEntity;
   }) {
     return {
-      // Scalar fields
       id: v4(),
       quantity: props.body.quantity,
       created_at: new Date(),
       updated_at: new Date(),
-      // BelongsTo relations (MUST use connect, relation name NOT table name)
-      cart: { connect: { id: props.cart.id } },
+      cart: { connect: { id: props.ecommerceMallCarts.id } },
       productVariant: { connect: { id: props.body.productVariantId } },
     } satisfies Prisma.ecommerce_mall_cart_itemsCreateInput;
   }
@@ -32,8 +34,8 @@ export namespace EcommerceMallCartItemCollector {
 //       export namespace EcommerceMallCartItemCollector {
 //         export async function collect(props: {
 //           body: IEcommerceMallCartItem.ICreate;
-//           ecommerceMallCustomers: IEntity; // from authorized actor
-// ecommerceMallCustomerSessions: IEntity; // from authorized session
+//           ecommerceMallCarts: IEntity; // from authorized session
+// ecommerceMallCustomers: IEntity; // from authorized actor
 //           
 //           
 //         }) {

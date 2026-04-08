@@ -1,6 +1,7 @@
 import { IEcommerceMallSuperAdminAuditLogMetadatum } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSuperAdminAuditLogMetadatum";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -24,7 +25,7 @@ export namespace EcommerceMallSuperAdminAuditLogMetadatumAtSummaryTransformer {
           select: {
             id: true,
           },
-        },
+        } satisfies Prisma.ecommerce_mall_super_admin_audit_logsFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_super_admin_audit_log_metadataFindManyArgs;
   }
@@ -35,6 +36,7 @@ export namespace EcommerceMallSuperAdminAuditLogMetadatumAtSummaryTransformer {
       id: input.id,
       key: input.key,
       value: input.value,
+      created_at: input.created_at.toISOString(),
     } satisfies IEcommerceMallSuperAdminAuditLogMetadatum.ISummary;
   }
 }
@@ -64,6 +66,7 @@ export namespace EcommerceMallSuperAdminAuditLogMetadatumAtSummaryTransformer {
 //   id: {string},
 //   key: {string},
 //   value: {string},
+//   created_at: {string},
 //         };
 //       }
 //     }

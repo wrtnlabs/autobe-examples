@@ -22,15 +22,19 @@ export async function postRedditCloneMemberFiles(props: {
   member: MemberPayload;
   body: IRedditCloneFile.ICreate;
 }): Promise<IRedditCloneFile> {
-  const created = await MyGlobal.prisma.reddit_clone_files.create({
+  // Fetch member entity from database for collector
+  const member = await MyGlobal.prisma.reddit_clone_members.findUniqueOrThrow({
+    where: { id: props.member.id },
+  });
+  // Create file record using collector and transformer
+  const record = await MyGlobal.prisma.reddit_clone_files.create({
     data: await RedditCloneFileCollector.collect({
       body: props.body,
-      redditCloneMembers: { id: props.member.id },
-      redditCloneMemberSessions: { id: props.member.session_id },
+      redditCloneMembers: member,
     }),
     ...RedditCloneFileTransformer.select(),
   });
-  return await RedditCloneFileTransformer.transform(created);
+  return await RedditCloneFileTransformer.transform(record);
 }
 
 

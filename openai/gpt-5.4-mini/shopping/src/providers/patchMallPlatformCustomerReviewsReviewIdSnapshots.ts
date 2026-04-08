@@ -1,14 +1,10 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
-import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
-import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
-import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformReview";
 import { IMallPlatformReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformReviewSnapshot";
-import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIMallPlatformReviewSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformReviewSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
@@ -32,6 +28,7 @@ export async function patchMallPlatformCustomerReviewsReviewIdSnapshots(props: {
   const review = await MyGlobal.prisma.mall_platform_reviews.findUniqueOrThrow({
     where: { id: props.reviewId },
     select: {
+      id: true,
       customer_id: true,
     },
   });
@@ -39,41 +36,36 @@ export async function patchMallPlatformCustomerReviewsReviewIdSnapshots(props: {
     throw new HttpException("Forbidden", 403);
   }
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const where: Prisma.mall_platform_review_snapshotsWhereInput = {
-    mall_platform_review_id: props.reviewId,
-    ...(props.body.snapshotAction !== undefined
-      ? { snapshot_action: props.body.snapshotAction }
-      : {}),
-    ...(props.body.isDeleted !== undefined
-      ? { is_deleted: props.body.isDeleted }
-      : {}),
-    ...(props.body.search !== undefined && props.body.search.length > 0
-      ? {
-          OR: [
-            {
-              snapshot_action: {
-                contains: props.body.search,
-                mode: "insensitive",
-              },
-            },
-            {
-              content: {
-                contains: props.body.search,
-                mode: "insensitive",
-              },
-            },
-          ],
-        }
-      : {}),
-  };
   const orderBy: Prisma.mall_platform_review_snapshotsOrderByWithRelationInput =
-    props.body.sort === "oldest"
-      ? { created_at: "asc" }
-      : props.body.sort === "snapshotAction"
-        ? { snapshot_action: "asc" }
-        : { created_at: "desc" };
+    props.body.sort === "snapshotAction"
+      ? { snapshot_action: props.body.order === "asc" ? "asc" : "desc" }
+      : props.body.sort === "content"
+        ? { content: props.body.order === "asc" ? "asc" : "desc" }
+        : props.body.sort === "isDeleted"
+          ? { is_deleted: props.body.order === "asc" ? "asc" : "desc" }
+          : { created_at: props.body.order === "asc" ? "asc" : "desc" };
+  const where = {
+    mall_platform_review_id: props.reviewId,
+    ...(props.body.snapshotAction !== undefined && {
+      snapshot_action: props.body.snapshotAction,
+    }),
+    ...(props.body.content !== undefined && {
+      content: { contains: props.body.content, mode: "insensitive" },
+    }),
+    ...(props.body.isDeleted !== undefined && {
+      is_deleted: props.body.isDeleted,
+    }),
+    ...(props.body.search !== undefined && {
+      OR: [
+        {
+          snapshot_action: { contains: props.body.search, mode: "insensitive" },
+        },
+        { content: { contains: props.body.search, mode: "insensitive" } },
+      ],
+    }),
+  } satisfies Prisma.mall_platform_review_snapshotsWhereInput;
   const records = await MyGlobal.prisma.mall_platform_review_snapshots.findMany(
     {
       where,
@@ -123,13 +115,9 @@ export async function patchMallPlatformCustomerReviewsReviewIdSnapshots(props: {
 // import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 // import { IMallPlatformReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformReview";
 // import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
-// import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
-// import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
-// import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 // import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 // import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
-// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.

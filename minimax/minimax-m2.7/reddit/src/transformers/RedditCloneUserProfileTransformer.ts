@@ -5,6 +5,7 @@ import { IRedditCloneFileThumbnail } from "@ORGANIZATION/PROJECT-api/lib/structu
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -38,12 +39,12 @@ export namespace RedditCloneUserProfileTransformer {
     return {
       id: input.id,
       displayName: input.display_name,
-      bio: input.bio,
+      bio: input.bio ?? undefined,
       avatar: input.avatarFileAssociation
         ? await RedditCloneFileAssociationAtSummaryTransformer.transform(
             input.avatarFileAssociation,
           )
-        : null,
+        : undefined,
       member: await RedditCloneMemberAtSummaryTransformer.transform(
         input.member,
       ),

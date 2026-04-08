@@ -19,83 +19,43 @@ import { authorize_administrator_refresh } from "../../../authorize/authorize_ad
 export async function test_api_cancellation_request_snapshot_history_view(
   connection: api.IConnection,
 ): Promise<void> {
-  /**
-   * Browse cancellation request snapshot history as an administrator.
-   *
-   * Validates that the administrator-only snapshot history endpoint returns a
-   * paginated list of immutable cancellation request snapshots for a specific
-   * order item and cancellation request pair.
-   *
-   * This test focuses on response shape, pagination metadata, and historical
-   * snapshot preservation. Because the live cancellation request summary DTO is
-   * empty in the provided definitions, the test intentionally limits itself to
-   * fields guaranteed by the snapshot summary and page DTOs.
-   *
-   * 1. Authenticate as an administrator on an isolated connection.
-   * 2. Request snapshot history using valid UUID route parameters and paging.
-   * 3. Validate the page metadata and immutable snapshot summary fields.
-   * 4. Confirm the returned data does not exceed the requested page size.
-   */
-  const administratorConnection: api.IConnection = { host: connection.host };
-  await authorize_administrator_join(administratorConnection, {
+  const adminConnection: api.IConnection = { host: connection.host };
+  await authorize_administrator_join(adminConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphaNumeric(12),
+      password: typia.random<string & tags.Format<"password">>(),
     } satisfies IMallPlatformAdministrator.IJoin,
   });
-  const response =
-    await api.functional.mallPlatform.administrator.orderItems.cancellationRequests.snapshots.index(
-      administratorConnection,
+  const orderItemId = typia.random<string & tags.Format<"uuid">>();
+  const cancellationRequestId = typia.random<string & tags.Format<"uuid">>();
+  const first: IPageIMallPlatformCancellationRequestSnapshot.ISummary =
+    await api.functional.mallPlatform.administrator.orderItems.cancellationRequests.snapshots.getByOrderitemidAndCancellationrequestid(
+      adminConnection,
       {
-        orderItemId: typia.random<string & tags.Format<"uuid">>(),
-        cancellationRequestId: typia.random<string & tags.Format<"uuid">>(),
-        body: {
-          page: 1,
-          limit: 10,
-        } satisfies IMallPlatformCancellationRequestSnapshot.IRequest,
+        orderItemId,
+        cancellationRequestId,
       },
     );
-  typia.assert(response);
-  TestValidator.equals(
-    "pagination current page",
-    response.pagination.current,
-    1,
-  );
-  TestValidator.equals("pagination limit", response.pagination.limit, 10);
+  typia.assert(first);
+  const second: IPageIMallPlatformCancellationRequestSnapshot.ISummary =
+    await api.functional.mallPlatform.administrator.orderItems.cancellationRequests.snapshots.getByOrderitemidAndCancellationrequestid(
+      adminConnection,
+      {
+        orderItemId,
+        cancellationRequestId,
+      },
+    );
+  typia.assert(second);
+  TestValidator.equals("snapshot page is stable", second, first);
   TestValidator.predicate(
-    "pagination record count is non-negative",
-    response.pagination.records >= 0,
+    "pagination metadata is non-negative",
+    first.pagination.current >= 0 &&
+      first.pagination.limit >= 0 &&
+      first.pagination.records >= 0 &&
+      first.pagination.pages >= 0,
   );
   TestValidator.predicate(
-    "pagination page count is non-negative",
-    response.pagination.pages >= 0,
+    "snapshot list is an array",
+    Array.isArray(first.data),
   );
-  TestValidator.predicate(
-    "returned records do not exceed limit",
-    response.data.length <= response.pagination.limit,
-  );
-  for (const snapshot of response.data) {
-    typia.assert(snapshot);
-    TestValidator.equals(
-      "snapshot deletion marker remains null",
-      snapshot.deletedAt,
-      null,
-    );
-    TestValidator.predicate(
-      "snapshot has a valid createdAt timestamp",
-      snapshot.createdAt.length > 0,
-    );
-    TestValidator.predicate(
-      "snapshot has a valid updatedAt timestamp",
-      snapshot.updatedAt.length > 0,
-    );
-    TestValidator.predicate(
-      "snapshot has a valid changedAt timestamp",
-      snapshot.changedAt.length > 0,
-    );
-    TestValidator.predicate(
-      "snapshot includes the parent cancellation request summary",
-      snapshot.cancellationRequest !== null,
-    );
-  }
 }

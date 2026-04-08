@@ -11,20 +11,22 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdminPayload } from "../decorators/payload/AdminPayload";
-import { EcommerceMallSellerSuspensionTransformer } from "../transformers/EcommerceMallSellerSuspensionTransformer";
+import { EcommerceMallSellerSuspensionAtInvertTransformer } from "../transformers/EcommerceMallSellerSuspensionAtInvertTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getEcommerceMallAdminAdminSellerSuspensionsSuspensionId(props: {
   admin: AdminPayload;
   suspensionId: string & tags.Format<"uuid">;
-}): Promise<IEcommerceMallSellerSuspension> {
+}): Promise<IEcommerceMallSellerSuspension.IInvert> {
   const record =
     await MyGlobal.prisma.ecommerce_mall_seller_suspensions.findUniqueOrThrow({
       where: { id: props.suspensionId },
-      ...EcommerceMallSellerSuspensionTransformer.select(),
+      ...EcommerceMallSellerSuspensionAtInvertTransformer.select(),
     });
-  return await EcommerceMallSellerSuspensionTransformer.transform(record);
+  return await EcommerceMallSellerSuspensionAtInvertTransformer.transform(
+    record,
+  );
 }
 
 
@@ -54,12 +56,12 @@ export async function getEcommerceMallAdminAdminSellerSuspensionsSuspensionId(pr
 // export async function getEcommerceMallAdminAdminSellerSuspensionsSuspensionId(props: {
 //   admin: AdminPayload;
 //   suspensionId: string & tags.Format<"uuid">;
-// }): Promise<IEcommerceMallSellerSuspension> {
+// }): Promise<IEcommerceMallSellerSuspension.IInvert> {
 //   const record = await MyGlobal.prisma.ecommerce_mall_seller_suspensions.findFirstOrThrow({
-//     ...EcommerceMallSellerSuspensionTransformer.select(),
+//     ...EcommerceMallSellerSuspensionAtInvertTransformer.select(),
 //     where: { ... },
 //   });
-//   return await EcommerceMallSellerSuspensionTransformer.transform(record);
+//   return await EcommerceMallSellerSuspensionAtInvertTransformer.transform(record);
 // }
 // ```
 //--------------------------------------------------------------

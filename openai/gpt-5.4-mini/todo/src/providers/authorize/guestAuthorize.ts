@@ -11,7 +11,7 @@ export async function guestAuthorize(request: {
   try {
     payload = jwtAuthorize({ request }) as GuestPayload;
   } catch {
-    throw new UnauthorizedException("Invalid or missing authorization token");
+    throw new UnauthorizedException("Invalid guest authorization token");
   }
 
   if (payload.type !== "guest") {
@@ -26,18 +26,6 @@ export async function guestAuthorize(request: {
 
   if (guest === null) {
     throw new ForbiddenException("You're not enrolled");
-  }
-
-  const session = await MyGlobal.prisma.todo_app_guest_sessions.findFirst({
-    where: {
-      id: payload.session_id,
-      todo_app_guest_id: payload.id,
-      expired_at: { gt: new Date() },
-    },
-  });
-
-  if (session === null) {
-    throw new ForbiddenException("Your session is invalid or expired");
   }
 
   return payload;

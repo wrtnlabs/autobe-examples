@@ -22,101 +22,85 @@ export async function patchMallPlatformCustomerShipments(props: {
   customer: CustomerPayload;
   body: IMallPlatformShipment.IRequest;
 }): Promise<IPageIMallPlatformShipment.ISummary> {
-  const current: number = props.body.page ?? 1;
+  const page: number = props.body.page ?? 1;
   const limit: number = props.body.limit ?? 100;
-  const skip: number = (current - 1) * limit;
-  if (
-    props.body.createdAtFrom !== undefined ||
-    props.body.createdAtTo !== undefined ||
-    props.body.shippedAtFrom !== undefined ||
-    props.body.shippedAtTo !== undefined ||
-    props.body.deliveredAtFrom !== undefined ||
-    props.body.deliveredAtTo !== undefined
-  ) {
-    throw new HttpException(
-      "Date range filtering is not supported in this endpoint.",
-      400,
-    );
-  }
-  if (
-    props.body.customerId !== undefined &&
-    props.body.customerId !== props.customer.id
-  ) {
-    return {
-      pagination: {
-        current,
-        limit,
-        records: 0,
-        pages: 0,
-      },
-      data: [],
-    };
-  }
-  if (
-    props.body.sort !== undefined &&
-    props.body.sort !== "newest" &&
-    props.body.sort !== "oldest" &&
-    props.body.sort !== "carrierName" &&
-    props.body.sort !== "trackingNumber" &&
-    props.body.sort !== "status"
-  ) {
-    throw new HttpException("Unsupported sort key.", 400);
-  }
-  const records = await MyGlobal.prisma.mall_platform_shipments.findMany({
-    where: {
+  const skip: number = (page - 1) * limit;
+  const andConditions: Prisma.mall_platform_shipmentsWhereInput[] = [
+    {
       deleted_at: null,
       order: {
         customer_id: props.customer.id,
       },
-      ...(props.body.status !== undefined && { status: props.body.status }),
-      ...(props.body.carrierName !== undefined && {
-        carrier_name: props.body.carrierName,
-      }),
-      ...(props.body.trackingNumber !== undefined && {
-        tracking_number: props.body.trackingNumber,
-      }),
-      ...(props.body.sellerId !== undefined && {
-        mall_platform_seller_id: props.body.sellerId,
-      }),
-    } satisfies Prisma.mall_platform_shipmentsWhereInput,
-    orderBy:
-      props.body.sort === "carrierName"
-        ? { carrier_name: "asc" }
-        : props.body.sort === "trackingNumber"
-          ? { tracking_number: "asc" }
-          : props.body.sort === "status"
-            ? { status: "asc" }
-            : props.body.sort === "oldest"
-              ? { created_at: "asc" }
-              : { created_at: "desc" },
+    },
+  ];
+  if (props.body.status !== undefined) {
+    andConditions.push({ status: props.body.status });
+  }
+  if (props.body.carrierName !== undefined) {
+    andConditions.push({
+      carrier_name: { contains: props.body.carrierName, mode: "insensitive" },
+    });
+  }
+  if (props.body.trackingNumber !== undefined) {
+    andConditions.push({
+      tracking_number: {
+        contains: props.body.trackingNumber,
+        mode: "insensitive",
+      },
+    });
+  }
+  if (props.body.orderNumber !== undefined) {
+    andConditions.push({
+      order: {
+        customer_id: props.customer.id,
+        order_number: {
+          contains: props.body.orderNumber,
+          mode: "insensitive",
+        },
+      },
+    });
+  }
+  if (props.body.search !== undefined && props.body.search.length > 0) {
+    andConditions.push({
+      OR: [
+        { carrier_name: { contains: props.body.search, mode: "insensitive" } },
+        {
+          tracking_number: { contains: props.body.search, mode: "insensitive" },
+        },
+        {
+          order: {
+            customer_id: props.customer.id,
+            order_number: { contains: props.body.search, mode: "insensitive" },
+          },
+        },
+      ],
+    });
+  }
+  const where: Prisma.mall_platform_shipmentsWhereInput = {
+    AND: andConditions,
+  };
+  const orderBy: Prisma.mall_platform_shipmentsOrderByWithRelationInput =
+    props.body.sort === "oldest"
+      ? { created_at: "asc" }
+      : props.body.sort === "status_asc"
+        ? { status: "asc" }
+        : props.body.sort === "status_desc"
+          ? { status: "desc" }
+          : { created_at: "desc" };
+  const records = await MyGlobal.prisma.mall_platform_shipments.findMany({
+    where,
     skip,
     take: limit,
+    orderBy,
     ...MallPlatformShipmentAtSummaryTransformer.select(),
   });
-  const recordsCount = await MyGlobal.prisma.mall_platform_shipments.count({
-    where: {
-      deleted_at: null,
-      order: {
-        customer_id: props.customer.id,
-      },
-      ...(props.body.status !== undefined && { status: props.body.status }),
-      ...(props.body.carrierName !== undefined && {
-        carrier_name: props.body.carrierName,
-      }),
-      ...(props.body.trackingNumber !== undefined && {
-        tracking_number: props.body.trackingNumber,
-      }),
-      ...(props.body.sellerId !== undefined && {
-        mall_platform_seller_id: props.body.sellerId,
-      }),
-    } satisfies Prisma.mall_platform_shipmentsWhereInput,
-  });
+  const total = await MyGlobal.prisma.mall_platform_shipments.count({ where });
   return {
     pagination: {
-      current,
+      current: page,
       limit,
-      records: recordsCount,
-      pages: recordsCount === 0 ? 0 : Math.ceil(recordsCount / limit),
+      records: total,
+      pages: Math.ceil(total / limit),
     },
     data: await ArrayUtil.asyncMap(
       records,

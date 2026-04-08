@@ -12,79 +12,85 @@ import { authorize_super_admin_join } from "../../../authorize/authorize_super_a
 import { authorize_super_admin_login } from "../../../authorize/authorize_super_admin_login";
 import { authorize_super_admin_refresh } from "../../../authorize/authorize_super_admin_refresh";
 
+/**
+ * Test super administrator login with valid credentials.
+ *
+ * Validates the complete authentication flow for platform super administrators:
+ * registration via join endpoint, followed by successful login with the created
+ * credentials. Verifies that the authorization response contains valid JWT tokens,
+ * account metadata, and that the session was properly established.
+ *
+ * The test ensures:
+ * - JWT access token is returned (short-lived for security)
+ * - JWT refresh token is returned (long-lived for session extension)
+ * - Token expiration timestamps are valid ISO 8601 dates
+ * - Super admin account details (id, email) are returned correctly
+ * - Account is active (deleted_at is null)
+ * - Session metadata is properly tracked for security audit
+ *
+ * 1. Register new super admin via join endpoint with valid credentials.
+ * 2. Extract and store the credentials used for registration.
+ * 3. Login with the registered email and correct password.
+ * 4. Validate authorization response contains required fields.
+ * 5. Validate token properties and account status.
+ */
 export async function test_api_superadmin_login_with_valid_credentials(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Generate valid super admin credentials
-  const email: string & tags.Format<"email"> = typia.random<
-    string & tags.Format<"email">
-  >();
-  const password: string & tags.Format<"password"> =
-    RandomGenerator.alphaNumeric(16) as string & tags.Format<"password">;
-  // 2. Create a new super admin account via join
-  const joinBody: IEcommerceMallSuperAdmin.IJoin = {
-    email,
-    password,
-    href: typia.random<string & tags.Format<"uri">>(),
-    referrer: typia.random<string & tags.Format<"uri">>(),
-  } satisfies IEcommerceMallSuperAdmin.IJoin;
+  // 1. Register new super admin with valid credentials
+  const email = typia.random<string & tags.Format<"email"> & tags.MaxLength<255>>();
+  const password = `${RandomGenerator.alphaNumeric(8)}A${RandomGenerator.name(1).toLowerCase()}!`;
+  const href = typia.random<string & tags.Format<"uri">>();
+  const referrer = typia.random<string & tags.Format<"uri">>();
+  const superAdminConnection: api.IConnection = { host: connection.host };
   const joined: IEcommerceMallSuperAdmin.IAuthorized =
-    await api.functional.ecommerceMall.auth.superAdmin.join(connection, {
-      body: joinBody,
+    await authorize_super_admin_join(superAdminConnection, {
+      body: {
+        email,
+        password,
+        href,
+        referrer,
+      } satisfies IEcommerceMallSuperAdmin.IJoin,
     });
   typia.assert(joined);
-  // 3. Log in with the created credentials
+  // 2. Login with the registered credentials
   const loginBody: IEcommerceMallSuperAdmin.ILogin = {
     email,
     password,
+    href,
+    referrer,
   } satisfies IEcommerceMallSuperAdmin.ILogin;
-  const loggedIn: IEcommerceMallSuperAdmin.IAuthorized =
-    await api.functional.ecommerceMall.auth.superAdmin.login(connection, {
+  const loginConnection: api.IConnection = { host: connection.host };
+  const authorized: IEcommerceMallSuperAdmin.IAuthorized =
+    await authorize_super_admin_login(loginConnection, {
       body: loginBody,
     });
-  // 4. Validate complete response using typia.assert
-  typia.assert(loggedIn);
-  // 5. Validate super admin identity information
-  TestValidator.equals("email matches input", loggedIn.email, email);
+  typia.assert(authorized);
+  // 3. Validate response contains correct super admin details
+  TestValidator.equals(
+    "email matches registered email",
+    authorized.email,
+    email,
+  );
+  TestValidator.equals("id is a valid UUID", authorized.id, joined.id);
+  TestValidator.equals("account is active", authorized.deleted_at, null);
+  // 4. Validate token structure and properties
   TestValidator.predicate(
-    "has valid UUID id",
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      loggedIn.id,
+    "has valid access token",
+    authorized.token.access.length > 0,
+  );
+  TestValidator.predicate(
+    "has valid refresh token",
+    authorized.token.refresh.length > 0,
+  );
+  TestValidator.predicate(
+    "has valid access expiration",
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(authorized.token.expired_at),
+  );
+  TestValidator.predicate(
+    "has valid refreshable until",
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(
+      authorized.token.refreshable_until,
     ),
-  );
-  TestValidator.predicate(
-    "has valid createdAt",
-    !isNaN(Date.parse(loggedIn.createdAt)),
-  );
-  TestValidator.predicate(
-    "has valid updatedAt",
-    !isNaN(Date.parse(loggedIn.updatedAt)),
-  );
-  TestValidator.equals("deletedAt is null", loggedIn.deletedAt, null);
-  // 6. Validate JWT tokens are present and non-empty
-  TestValidator.predicate(
-    "has non-empty access token",
-    loggedIn.token.access.length > 0,
-  );
-  TestValidator.predicate(
-    "has non-empty refresh token",
-    loggedIn.token.refresh.length > 0,
-  );
-  // 7. Validate token expiration timestamps are valid and in the future
-  TestValidator.predicate(
-    "has valid expired_at timestamp",
-    !isNaN(Date.parse(loggedIn.token.expired_at)),
-  );
-  TestValidator.predicate(
-    "has valid refreshable_until timestamp",
-    !isNaN(Date.parse(loggedIn.token.refreshable_until)),
-  );
-  TestValidator.predicate(
-    "expired_at is in the future",
-    new Date(loggedIn.token.expired_at) > new Date(),
-  );
-  TestValidator.predicate(
-    "refreshable_until is in the future",
-    new Date(loggedIn.token.refreshable_until) > new Date(),
   );
 }

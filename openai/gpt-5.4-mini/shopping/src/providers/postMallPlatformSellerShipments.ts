@@ -1,14 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
-import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
-import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
-import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 import { IMallPlatformShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShipment";
-import { IMallPlatformShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShipmentItem";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -27,91 +21,78 @@ export async function postMallPlatformSellerShipments(props: {
   seller: SellerPayload;
   body: IMallPlatformShipment.ICreate;
 }): Promise<IMallPlatformShipment> {
-  const created = await MyGlobal.prisma.$transaction(async (prisma) => {
-    const orderItemIds: string[] = props.body.shipmentItems.flatMap(
-      (item) => item.orderItemIds,
-    );
-    const uniqueOrderItemIds: string[] = [...new Set(orderItemIds)];
-    if (orderItemIds.length !== uniqueOrderItemIds.length) {
-      throw new HttpException("Duplicate order items are not allowed", 400);
-    }
-    const orderItems = await prisma.mall_platform_order_items.findMany({
-      where: {
-        id: { in: uniqueOrderItemIds },
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        status: true,
-        mall_platform_seller_id: true,
-        mall_platform_order_id: true,
-        shipmentItem: {
-          where: {
-            deleted_at: null,
-            shipment: {
-              deleted_at: null,
-              status: { not: "cancelled" },
-            },
-          },
-          select: {
-            id: true,
-          },
+  if (props.body.carrierName.trim().length === 0)
+    throw new HttpException("Carrier name is required", 400);
+  if (props.body.trackingNumber.trim().length === 0)
+    throw new HttpException("Tracking number is required", 400);
+  if (props.body.orderItemIds.length === 0)
+    throw new HttpException("At least one order item is required", 400);
+  const uniqueOrderItemIds = [...new Set(props.body.orderItemIds)];
+  if (uniqueOrderItemIds.length !== props.body.orderItemIds.length)
+    throw new HttpException("Duplicate order item IDs are not allowed", 400);
+  const orderItems = await MyGlobal.prisma.mall_platform_order_items.findMany({
+    where: {
+      id: { in: uniqueOrderItemIds },
+    },
+    select: {
+      id: true,
+      status: true,
+      mall_platform_order_id: true,
+      mall_platform_seller_id: true,
+      shipmentItem: {
+        select: {
+          id: true,
         },
       },
-    });
-    if (orderItems.length !== uniqueOrderItemIds.length) {
-      throw new HttpException("One or more order items were not found", 400);
-    }
-    const firstOrderItem = orderItems[0];
-    if (firstOrderItem === undefined) {
-      throw new HttpException("One or more order items were not found", 400);
-    }
-    if (
-      orderItems.some(
-        (item) => item.mall_platform_seller_id !== props.seller.id,
-      )
-    ) {
+    },
+  });
+  if (orderItems.length !== uniqueOrderItemIds.length)
+    throw new HttpException("One or more order items were not found", 404);
+  const orderId = orderItems[0].mall_platform_order_id;
+  for (const orderItem of orderItems) {
+    if (orderItem.mall_platform_seller_id !== props.seller.id)
+      throw new HttpException("You can only ship your own order items", 403);
+    if (orderItem.mall_platform_order_id !== orderId)
       throw new HttpException(
-        "You can only create shipments for your own order items",
-        403,
-      );
-    }
-    if (
-      orderItems.some(
-        (item) =>
-          item.mall_platform_order_id !== firstOrderItem.mall_platform_order_id,
-      )
-    ) {
-      throw new HttpException(
-        "All shipment items must belong to the same order",
+        "All selected items must belong to the same order",
         400,
       );
-    }
-    if (
-      orderItems.some(
-        (item) =>
-          item.status !== "paid" && item.status !== "waiting_for_shipment",
-      )
-    ) {
+    if (orderItem.status !== "paid" && orderItem.status !== "delivered")
+      throw new HttpException("One or more order items are not shippable", 400);
+    if (orderItem.shipmentItem !== null)
       throw new HttpException(
-        "One or more order items are not available for shipping",
+        "One or more order items already belong to a shipment",
         400,
       );
-    }
-    if (orderItems.some((item) => item.shipmentItem !== null)) {
-      throw new HttpException(
-        "One or more order items are already assigned to an active shipment",
-        400,
-      );
-    }
-    return await prisma.mall_platform_shipments.create({
+  }
+  const created = await MyGlobal.prisma.$transaction(async (prisma) => {
+    const shipment = await prisma.mall_platform_shipments.create({
       data: await MallPlatformShipmentCollector.collect({
         body: props.body,
         seller: props.seller,
-        order: { id: firstOrderItem.mall_platform_order_id },
+        order: { id: orderId },
       }),
       ...MallPlatformShipmentTransformer.select(),
     });
+    const now = toISOStringSafe(new Date());
+    await prisma.mall_platform_shipment_items.createMany({
+      data: uniqueOrderItemIds.map((orderItemId) => ({
+        id: v4(),
+        mall_platform_shipment_id: shipment.id,
+        mall_platform_order_item_id: orderItemId,
+        created_at: now,
+        updated_at: now,
+      })),
+    });
+    await prisma.mall_platform_order_items.updateMany({
+      where: {
+        id: { in: uniqueOrderItemIds },
+      },
+      data: {
+        status: "shipped",
+      },
+    });
+    return shipment;
   });
   return await MallPlatformShipmentTransformer.transform(created);
 }
@@ -135,15 +116,9 @@ export async function postMallPlatformSellerShipments(props: {
 // 
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IMallPlatformShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShipment";
-// import { IMallPlatformShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShipmentItem";
 // import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 // import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 // import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
-// import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
-// import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
-// import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-// import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
-// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.

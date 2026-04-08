@@ -5,14 +5,15 @@ import { IRedditCloneFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedd
 import { IRedditCloneFileThumbnail } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileThumbnail";
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { RedditCloneCommunityAtSummaryTransformer } from "./RedditCloneCommunityAtSummaryTransformer";
 import { RedditCloneFileAtSummaryTransformer } from "./RedditCloneFileAtSummaryTransformer";
-import { RedditCloneMemberAtSummaryTransformer } from "./RedditCloneMemberAtSummaryTransformer";
 
 export namespace RedditCloneCommunityIconAtInvertTransformer {
   export type Payload = Prisma.reddit_clone_community_iconsGetPayload<
@@ -23,15 +24,7 @@ export namespace RedditCloneCommunityIconAtInvertTransformer {
       select: {
         id: true,
         created_at: true,
-        community: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            subscriber_count: true,
-            member: RedditCloneMemberAtSummaryTransformer.select(),
-          },
-        } satisfies Prisma.reddit_clone_communitiesFindManyArgs,
+        community: RedditCloneCommunityAtSummaryTransformer.select(),
         file: RedditCloneFileAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_clone_community_iconsFindManyArgs;
@@ -42,15 +35,9 @@ export namespace RedditCloneCommunityIconAtInvertTransformer {
     return {
       id: input.id,
       createdAt: input.created_at.toISOString(),
-      community: {
-        id: input.community.id,
-        name: input.community.name,
-        description: input.community.description,
-        subscriberCount: input.community.subscriber_count,
-        owner: await RedditCloneMemberAtSummaryTransformer.transform(
-          input.community.member,
-        ),
-      } satisfies IRedditCloneCommunity.ISummary,
+      community: await RedditCloneCommunityAtSummaryTransformer.transform(
+        input.community,
+      ),
       file: await RedditCloneFileAtSummaryTransformer.transform(input.file),
     } satisfies IRedditCloneCommunityIcon.IInvert;
   }

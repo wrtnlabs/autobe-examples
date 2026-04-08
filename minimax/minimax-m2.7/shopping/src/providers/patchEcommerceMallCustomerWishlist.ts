@@ -1,12 +1,9 @@
-import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
-import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
-import { IEcommerceMallWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlist";
+import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlistItem";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
-import { IPageIEcommerceMallWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallWishlist";
+import { IPageIEcommerceMallWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallWishlistItem";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -16,45 +13,59 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
-import { EcommerceMallWishlistAtSummaryTransformer } from "../transformers/EcommerceMallWishlistAtSummaryTransformer";
+import { EcommerceMallWishlistItemAtSummaryTransformer } from "../transformers/EcommerceMallWishlistItemAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchEcommerceMallCustomerWishlist(props: {
   customer: CustomerPayload;
-  body: IEcommerceMallWishlist.IRequest;
-}): Promise<IPageIEcommerceMallWishlist.ISummary> {
-  const limit = props.body.limit ?? 20;
+  body: IEcommerceMallWishlistItem.IRequest;
+}): Promise<IPageIEcommerceMallWishlistItem.ISummary> {
   const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const whereCondition: Prisma.ecommerce_mall_wishlistsWhereInput = {
-    shopping_customer_id: props.customer.id,
-  };
-  const totalRecords = await MyGlobal.prisma.ecommerce_mall_wishlists.count({
-    where: whereCondition,
+  const wishlist = await MyGlobal.prisma.ecommerce_mall_wishlists.findUnique({
+    where: { shopping_customer_id: props.customer.id },
+    select: { id: true },
   });
-  const records = await MyGlobal.prisma.ecommerce_mall_wishlists.findMany({
-    where: whereCondition,
-    skip: skip,
+  if (!wishlist) {
+    return {
+      pagination: {
+        current: page as number & tags.Type<"int32"> & tags.Minimum<0>,
+        limit: limit as number & tags.Type<"int32"> & tags.Minimum<0>,
+        records: 0,
+        pages: 0,
+      } satisfies IPage.IPagination,
+      data: [],
+    };
+  }
+  const whereInput = {
+    ecommerce_mall_wishlist_id: wishlist.id,
+    product: props.body.search
+      ? { name: { contains: props.body.search, mode: "insensitive" as const } }
+      : undefined,
+  } satisfies Prisma.ecommerce_mall_wishlist_itemsWhereInput;
+  const records = await MyGlobal.prisma.ecommerce_mall_wishlist_items.findMany({
+    where: whereInput,
+    skip,
     take: limit,
     orderBy: { created_at: "desc" },
-    ...EcommerceMallWishlistAtSummaryTransformer.select(),
+    ...EcommerceMallWishlistItemAtSummaryTransformer.select(),
   });
-  const data = await ArrayUtil.asyncMap(
-    records,
-    EcommerceMallWishlistAtSummaryTransformer.transform,
-  );
+  const total = await MyGlobal.prisma.ecommerce_mall_wishlist_items.count({
+    where: whereInput,
+  });
   return {
     pagination: {
-      pagination: {
-        current: page,
-        limit: limit,
-        records: totalRecords,
-        pages: Math.ceil(totalRecords / limit),
-      },
-      data: [],
-    },
-    data: data,
+      current: page as number & tags.Type<"int32"> & tags.Minimum<0>,
+      limit: limit as number & tags.Type<"int32"> & tags.Minimum<0>,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      records,
+      EcommerceMallWishlistItemAtSummaryTransformer.transform,
+    ),
   };
 }
 
@@ -76,23 +87,20 @@ export async function patchEcommerceMallCustomerWishlist(props: {
 // import { toISOStringSafe } from "../utils/toISOStringSafe"
 // 
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-// import { IEcommerceMallWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlist";
-// import { IPageIEcommerceMallWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallWishlist";
-// import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
-// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-// import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
-// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-// import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 // import { IEcommerceMallWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlistItem";
+// import { IPageIEcommerceMallWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallWishlistItem";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 // export async function patchEcommerceMallCustomerWishlist(props: {
 //   customer: CustomerPayload;
-//   body: IEcommerceMallWishlist.IRequest;
-// }): Promise<IPageIEcommerceMallWishlist.ISummary> {
-//   const records = await MyGlobal.prisma.ecommerce_mall_wishlists.findMany({
-//     ...EcommerceMallWishlistAtSummaryTransformer.select(),
+//   body: IEcommerceMallWishlistItem.IRequest;
+// }): Promise<IPageIEcommerceMallWishlistItem.ISummary> {
+//   const records = await MyGlobal.prisma.ecommerce_mall_wishlist_items.findMany({
+//     ...EcommerceMallWishlistItemAtSummaryTransformer.select(),
 //     ...,
 //   });
 //   return {
@@ -102,7 +110,7 @@ export async function patchEcommerceMallCustomerWishlist(props: {
 //       records: ...,
 //       pages: ...,
 //     },
-//     data: await ArrayUtil.asyncMap(records, EcommerceMallWishlistAtSummaryTransformer.transform),
+//     data: await ArrayUtil.asyncMap(records, EcommerceMallWishlistItemAtSummaryTransformer.transform),
 //   };
 // }
 // ```

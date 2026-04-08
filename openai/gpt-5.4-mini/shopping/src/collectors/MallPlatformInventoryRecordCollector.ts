@@ -10,20 +10,18 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace MallPlatformInventoryRecordCollector {
   export async function collect(props: {
     body: IMallPlatformInventoryRecord.ICreate;
-    mallPlatformProductVariants: IEntity;
+    productVariant: IEntity;
   }) {
-    const id: string = v4();
-    const now: Date = new Date();
     return {
-      id,
+      id: v4(),
       quantity_change: props.body.quantityChange,
       reason: props.body.reason,
-      created_at: now,
-      updated_at: now,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
       productVariant: {
         connect: {
-          id: props.mallPlatformProductVariants.id,
+          id: props.productVariant.id,
         },
       },
     } satisfies Prisma.mall_platform_inventory_recordsCreateInput;
@@ -37,7 +35,8 @@ export namespace MallPlatformInventoryRecordCollector {
 //       export namespace MallPlatformInventoryRecordCollector {
 //         export async function collect(props: {
 //           body: IMallPlatformInventoryRecord.ICreate;
-//           mallPlatformProductVariants: IEntity; // from path parameter {variantId}
+//           mallPlatformProducts: IEntity; // from path parameter {productId}
+// mallPlatformProductVariants: IEntity; // from path parameter {variantId}
 //           
 //           
 //         }) {

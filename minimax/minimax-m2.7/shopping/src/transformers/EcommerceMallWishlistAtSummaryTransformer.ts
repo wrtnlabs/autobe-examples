@@ -1,9 +1,9 @@
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import { IEcommerceMallWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlist";
-import { IEcommerceMallWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlistItem";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -11,7 +11,6 @@ import typia, { tags } from "typia";
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
-import { EcommerceMallWishlistItemAtSummaryTransformer } from "./EcommerceMallWishlistItemAtSummaryTransformer";
 
 export namespace EcommerceMallWishlistAtSummaryTransformer {
   export type Payload = Prisma.ecommerce_mall_wishlistsGetPayload<
@@ -24,7 +23,11 @@ export namespace EcommerceMallWishlistAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         customer: EcommerceMallCustomerAtSummaryTransformer.select(),
-        wishlistItems: EcommerceMallWishlistItemAtSummaryTransformer.select(),
+        wishlistItems: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_wishlist_itemsFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_wishlistsFindManyArgs;
   }
@@ -34,12 +37,9 @@ export namespace EcommerceMallWishlistAtSummaryTransformer {
     return {
       id: input.id,
       createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
       customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
         input.customer,
-      ),
-      wishlistItems: await ArrayUtil.asyncMap(
-        input.wishlistItems,
-        EcommerceMallWishlistItemAtSummaryTransformer.transform,
       ),
     } satisfies IEcommerceMallWishlist.ISummary;
   }
@@ -60,17 +60,16 @@ export namespace EcommerceMallWishlistAtSummaryTransformer {
 //             created_at: true,
 //             updated_at: true,
 //             customer: EcommerceMallCustomerAtSummaryTransformer.select(),
-//             wishlistItems: EcommerceMallWishlistItemAtSummaryTransformer.select(),
 //           },
 //         } satisfies Prisma.ecommerce_mall_wishlistsFindManyArgs;
 //       }
 // 
 //       export async function transform(input: Payload): Promise<IEcommerceMallWishlist.ISummary> {
 //         return {
-//   createdAt: {string},
-//   customer: await EcommerceMallCustomerAtSummaryTransformer.transform(input.customer),
 //   id: {string},
-//   wishlistItems: await ArrayUtil.asyncMap(input.wishlistItems, EcommerceMallWishlistItemAtSummaryTransformer.transform),
+//   createdAt: {string},
+//   updatedAt: {string},
+//   customer: await EcommerceMallCustomerAtSummaryTransformer.transform(input.customer),
 //         };
 //       }
 //     }

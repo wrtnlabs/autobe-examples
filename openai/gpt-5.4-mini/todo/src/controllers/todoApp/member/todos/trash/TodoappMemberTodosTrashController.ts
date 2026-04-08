@@ -1,40 +1,31 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia, { tags } from "typia";
+import typia from "typia";
 
 import { IPageITodoAppTodo } from "../../../../../api/structures/IPageITodoAppTodo";
 import { ITodoAppTodo } from "../../../../../api/structures/ITodoAppTodo";
 import { MemberAuth } from "../../../../../decorators/MemberAuth";
 import { MemberPayload } from "../../../../../decorators/payload/MemberPayload";
-import { deleteTodoAppMemberTodosTrashTodoId } from "../../../../../providers/deleteTodoAppMemberTodosTrashTodoId";
-import { getTodoAppMemberTodosTrashTodoId } from "../../../../../providers/getTodoAppMemberTodosTrashTodoId";
 import { patchTodoAppMemberTodosTrash } from "../../../../../providers/patchTodoAppMemberTodosTrash";
-import { putTodoAppMemberTodosTrashTodoId } from "../../../../../providers/putTodoAppMemberTodosTrashTodoId";
 
 @Controller("/todoApp/member/todos/trash")
 export class TodoappMemberTodosTrashController {
   /**
-   * Retrieve the current member's deleted todo items from trash as a paginated list.
+   * Retrieve the authenticated member's trashed todos in a paginated list.
    *
-   * This endpoint returns only todos that belong to the authenticated member and are currently marked as deleted. It is the trash browsing entry point for the private todo application, allowing the member to review items that are still recoverable before they are restored or permanently removed. The response is optimized for list display and includes the summary fields needed by the UI: title, completion state, start date, due date, and creation date.
+   * This endpoint returns only todos that belong to the current member and are currently in the trash. It supports browsing large trash sets through pagination, and it can be used together with completion-status filters and sort options to help members find deleted todos quickly.
    *
-   * The operation is built on the current-state todo record stored in the `todo_app_todos` table. The table keeps ownership (`todo_app_member_id`), the todo title, optional description, optional start and due dates, completion state, timestamps, and the `deleted_at` column used to identify items in trash. Deleted todos are separated from normal todos by this timestamp and must never be mixed with the active todo list. Only the owning member can access these rows; this endpoint must reject any request that does not match the current member's ownership boundary.
-   *
-   * Because trash browsing supports pagination and list controls, this endpoint accepts a request body for search and sorting parameters. It should preserve stable ordering, support empty results without error, and return only deleted items. Edit history is intentionally not included here because the `todo_app_todo_histories` table is a separate record trail that should be fetched through the dedicated history endpoint when the user opens a specific todo. If a trashed todo is restored or permanently removed, it naturally disappears from this listing on subsequent requests.
+   * Only summary fields suitable for list display should be returned. The list must never include active todos or any data owned by other members. Deleted todos remain recoverable until they are restored or permanently removed through the dedicated trash actions.
    *
    * @param connection
-   * @param body Trash list search, pagination, and sorting criteria.
+   * @param body Trash list search criteria including pagination, completion-status filtering, and sort options for the current member's deleted todos.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement as a member-only trash listing query against `todo_app_todos`.
+   * @x-autobe-specification Query the todo_app_todos table for rows owned by the authenticated member and marked as deleted/trash according to the application's trash state handling. Exclude all non-trashed todos.
    *
-   * Filter by the authenticated member's `todo_app_member_id` and require `deleted_at IS NOT NULL` so only trashed items are returned. Exclude all active todos. Apply pagination from the request body and sort in a deterministic order suitable for trash browsing, preferably by `deleted_at` descending and then `created_at` descending as a stable tie-breaker unless the request body specifies an alternate allowed sort key.
+   * Apply pagination from the request body and return a paginated result set sorted according to the requested sort order. Support completion-status filtering for all, complete only, or incomplete only trashed todos if the request DTO includes those fields. For date-based sorting, ensure todos with null start date or due date are placed at the end when sorting by that field, matching the business rules.
    *
-   * Map the response to a paginated summary DTO, not the full todo detail DTO. The summary should expose only the fields needed for trash list browsing: id, title, isCompleted, startAt, dueAt, createdAt, and deletedAt if the schema for summaries includes it. Do not include description or history data in the trash list response unless the summary schema explicitly requires it. Ensure the result count and page metadata reflect only trashed items owned by the current member.
-   *
-   * Enforce authorization before querying: guests must be rejected, and the member identity must be derived from the active session rather than client input. No path parameters are needed because the trash resource is scoped to the current authenticated member. Handle empty trash as a valid empty page response. If the request body includes filters for completion state, apply them only within the trashed subset. Never leak items from other members.
-   *
-   * This operation should not perform mutations. It must be read-only and should not touch `todo_app_todo_histories`. Any history retrieval belongs to the todo detail/history operations. Keep validation strict for pagination and sorting values, and return a standard invalid-request error when unsupported values are provided.
+   * Select only list-safe columns for the summary projection. Do not join or expose other members' data. If the member has no trashed todos, return an empty page with valid pagination metadata. Authorization must require an authenticated member context; unauthenticated access should be rejected by the auth layer before query execution.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -48,120 +39,6 @@ export class TodoappMemberTodosTrashController {
       return await patchTodoAppMemberTodosTrash({
         member,
         body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve the details of one deleted todo item from the signed-in member’s trash.
-   *
-   * This operation returns a single todo record that belongs to the current member account and is currently marked as deleted in the `todo_app_todos` table. The record represents the todo’s current state, including its title, optional description, optional start date, optional due date, completion status, creation timestamp, update timestamp, and deletion timestamp. Because the application is private, the todo must belong to the authenticated member, and items owned by other accounts must never be exposed.
-   *
-   * The endpoint is intended for trash detail viewing after the user has already opened the trash list. It works together with the trash list and restore/permanent deletion operations: the trash list is used to find deleted todos, this endpoint is used to inspect one deleted todo in detail, and then the user can choose to restore it or permanently remove it. If the todo has already been permanently deleted, the request must fail because the record no longer exists. If the todo is not actually in the trash, the request must also be rejected because only deleted todos are accessible through this route.
-   *
-   * @param connection
-   * @param todoId Deleted todo ID
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the todo record by id from todo_app_todos, then verify ownership against the current member context using todo_app_member_id. Enforce deleted_at IS NOT NULL so that only trashed todos are returned. If the record does not exist, belongs to another member, or is active instead of deleted, return a not-found or access-denied style failure consistent with the service conventions.
-   *
-   * Select only the current-state columns from todo_app_todos; do not join todo_histories for this endpoint because the trash detail view does not require history expansion. The service should not infer or fabricate fields not present in the schema. Use the todo's UUID path parameter directly and avoid request-body-based lookup. If the app uses a repository layer, implement a single filtered lookup with member ownership and deletion state in the predicate, then map the entity to the public todo response schema.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":todoId")
-  public async at(
-    @MemberAuth()
-    member: MemberPayload,
-    @TypedParam("todoId")
-    todoId: string & tags.Format<"uuid">,
-  ): Promise<ITodoAppTodo> {
-    try {
-      return await getTodoAppMemberTodosTrashTodoId({
-        member,
-        todoId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Restore one deleted todo from the current member's trash back to the active todo list.
-   *
-   * This operation is part of the private todo recovery workflow. The target todo must belong to the authenticated member and must currently be in the deleted state so it can be brought back into the normal todo list. The todo_app_todos entity stores each member's private todo item, including ownership, title, optional description, optional start and due dates, completion state, and delete status; this endpoint changes only the delete status while preserving the rest of the todo's data.
-   *
-   * Only authenticated members may use this operation. Guests are not permitted to restore todos. The service must verify that the referenced todo exists, is owned by the current member, and is currently available in trash before applying the restore. If any of those checks fail, the request must be rejected. When restoration succeeds, the todo becomes visible again in the normal todo list and remains private to its owner.
-   *
-   * The client can use this operation together with the trash list endpoint to recover a deleted item after review. After a successful restore, the returned todo representation can be used to refresh both the active list and any detail view without requiring an additional fetch.
-   *
-   * @param connection
-   * @param todoId The ID of the deleted todo to restore.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Implement a member-only recovery action for a deleted todo.
-   *
-   * Lookup the todo_app_todos row by the provided todoId and the current authenticated member's ownership context. Reject the request if the record does not exist, is not owned by the member, or is not currently marked as deleted. This endpoint must not allow restoring someone else's todo under any circumstance.
-   *
-   * On success, update the todo's delete state back to active in a single atomic operation. Preserve all other persisted todo fields exactly as they are, including title, description, dates, completion state, and ownership. Do not create a new todo row and do not alter history records. The restore action should only change the deletion state so the item reappears in the active todo list.
-   *
-   * Return the restored todo using the standard todo response shape. If the application uses history or audit side effects for state changes, record them in the existing todo history mechanism only if the current project rules require such tracking for restore actions; otherwise do not introduce extra data writes. Ensure authorization is checked before any state change to avoid leaking whether another user's todo exists.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Put(":todoId")
-  public async putByTodoid(
-    @MemberAuth()
-    member: MemberPayload,
-    @TypedParam("todoId")
-    todoId: string & tags.Format<"uuid">,
-  ): Promise<ITodoAppTodo> {
-    try {
-      return await putTodoAppMemberTodosTrashTodoId({
-        member,
-        todoId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Permanently removes one trashed todo that belongs to the current member.
-   *
-   * This operation is part of the private trash workflow for the todo application. It targets a todo that has already been moved out of the normal todo list and is currently stored in the user's trash area, identified by its todo ID. The todo record itself contains the current state of the item, including ownership, title, description, optional start and due dates, completion state, creation and update timestamps, and the deleted timestamp that marks it as being in trash.
-   *
-   * Only the owning member can perform this action. The server must verify that the requested todo belongs to the authenticated member and is currently deleted before removing it permanently. Because todos are private and owned by a single account, there is no valid cross-account access path for this endpoint.
-   *
-   * When a trashed todo is permanently removed, all of its edit-history records are also removed as part of the same deletion flow. The todo history table is an append-only timeline of past edits for the parent todo, and it is configured to cascade when the parent todo is deleted. Clients should use the trash list endpoint to browse deleted todos before calling this endpoint, and the normal todo detail endpoint or trash restoration endpoint for other recovery-related actions.
-   *
-   * If the todo does not exist, does not belong to the current member, or is not in trash, the request must fail with an appropriate not-found or conflict-style error response according to the service's error conventions.
-   *
-   * @param connection
-   * @param todoId The trashed todo's ID.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor member
-   * @x-autobe-specification Load the target todo by id and the authenticated member id in a single ownership-aware lookup. Require deleted_at to be non-null before proceeding, because this endpoint is only for permanent removal from trash. If the record is missing, belongs to another member, or is not currently trashed, return a not-found style response to avoid exposing private ownership details.
-   *
-   * Execute the removal in a transaction. Delete the todo record first; related todo history rows must be removed with it through the configured cascading relation. Do not attempt to manually preserve history or move the record elsewhere. After successful deletion, return the removed todo representation if the service layer supports returning deleted entities; otherwise return an empty success response consistently.
-   *
-   * Do not accept any request body. All required context is supplied by the path parameter and the authenticated member session. Ensure authorization middleware blocks guests before the service layer runs. Keep validation limited to UUID format for todoId and the ownership/trash-state checks described above.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Delete(":todoId")
-  public async erase(
-    @MemberAuth()
-    member: MemberPayload,
-    @TypedParam("todoId")
-    todoId: string & tags.Format<"uuid">,
-  ): Promise<void> {
-    try {
-      return await deleteTodoAppMemberTodosTrashTodoId({
-        member,
-        todoId,
       });
     } catch (error) {
       console.log(error);

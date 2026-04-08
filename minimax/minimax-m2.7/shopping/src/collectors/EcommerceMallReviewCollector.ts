@@ -10,20 +10,27 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallReviewCollector {
   export async function collect(props: {
     body: IEcommerceMallReview.ICreate;
-    customer: IEntity;
-    product: IEntity;
-    orderItem: IEntity;
+    ecommerceMallOrderItems: IEntity;
+    ecommerceMallCustomers: IEntity;
   }) {
+    // Query order item to get product_id (indirect reference pattern)
+    const orderItem =
+      await MyGlobal.prisma.ecommerce_mall_order_items.findFirstOrThrow({
+        where: { id: props.ecommerceMallOrderItems.id },
+      });
     return {
+      // Scalar fields
       id: v4(),
       rating: props.body.rating,
       content: props.body.content ?? null,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      customer: { connect: { id: props.customer.id } },
-      product: { connect: { id: props.product.id } },
-      orderItem: { connect: { id: props.orderItem.id } },
+      // BelongsTo relations - use connect with relation property names
+      customer: { connect: { id: props.ecommerceMallCustomers.id } },
+      product: { connect: { id: orderItem.ecommerce_mall_product_id } },
+      orderItem: { connect: { id: props.ecommerceMallOrderItems.id } },
+      // reviewSnapshots is hasMany - skip for creation
     } satisfies Prisma.ecommerce_mall_reviewsCreateInput;
   }
 }
@@ -35,9 +42,8 @@ export namespace EcommerceMallReviewCollector {
 //       export namespace EcommerceMallReviewCollector {
 //         export async function collect(props: {
 //           body: IEcommerceMallReview.ICreate;
-//           ecommerceMallCustomers: IEntity; // from authorized actor
-// ecommerceMallOrders: IEntity; // from path parameter orderId
-// ecommerceMallOrderItems: IEntity; // from path parameter itemId
+//           ecommerceMallOrderItems: IEntity; // from path parameter itemId
+// ecommerceMallCustomers: IEntity; // from authorized actor
 //           
 //           
 //         }) {

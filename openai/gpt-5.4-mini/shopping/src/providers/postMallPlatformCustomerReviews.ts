@@ -1,6 +1,13 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
+import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
+import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
+import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformReview";
+import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -11,6 +18,7 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { MallPlatformReviewCollector } from "../collectors/MallPlatformReviewCollector";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
+import { MallPlatformReviewTransformer } from "../transformers/MallPlatformReviewTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,75 +26,66 @@ export async function postMallPlatformCustomerReviews(props: {
   customer: CustomerPayload;
   body: IMallPlatformReview.ICreate;
 }): Promise<IMallPlatformReview> {
-  const deliveredOrderItem =
-    await MyGlobal.prisma.mall_platform_order_items.findFirstOrThrow({
+  return await MyGlobal.prisma.$transaction(async (prisma) => {
+    const orderItem = await prisma.mall_platform_order_items.findUniqueOrThrow({
       where: {
-        mall_platform_order_id: props.customer.id,
-        status: "delivered",
+        id: props.body.orderItemId,
       },
       select: {
         id: true,
+        status: true,
+        mall_platform_order_id: true,
         mall_platform_product_variant_id: true,
       },
     });
-  const existingReview = await MyGlobal.prisma.mall_platform_reviews.findFirst({
-    where: {
-      order_item_id: deliveredOrderItem.id,
-      deleted_at: null,
-    },
-    select: {
-      id: true,
-    },
-  });
-  if (existingReview !== null) {
-    throw new HttpException("Review already exists for this purchase", 409);
-  }
-  const createdReview = await MyGlobal.prisma.mall_platform_reviews.create({
-    data: await MallPlatformReviewCollector.collect({
-      body: props.body,
-      customer: {
-        id: props.customer.id,
+    const order = await prisma.mall_platform_orders.findUniqueOrThrow({
+      where: {
+        id: orderItem.mall_platform_order_id,
       },
-      orderItem: {
-        id: deliveredOrderItem.id,
+      select: {
+        customer_id: true,
       },
-      product: {
-        id: deliveredOrderItem.mall_platform_product_variant_id,
-      },
-    }),
-    select: {
-      id: true,
-      customer: {
-        select: {
-          id: true,
-          email: true,
-          status: true,
-          created_at: true,
-          updated_at: true,
-          deleted_at: true,
+    });
+    if (order.customer_id !== props.customer.id) {
+      throw new HttpException("Forbidden", 403);
+    }
+    const productVariant =
+      await prisma.mall_platform_product_variants.findUniqueOrThrow({
+        where: {
+          id: orderItem.mall_platform_product_variant_id,
         },
+        select: {
+          mall_platform_product_id: true,
+        },
+      });
+    if (productVariant.mall_platform_product_id !== props.body.productId) {
+      throw new HttpException("Product does not match purchase context", 400);
+    }
+    if (orderItem.status !== "delivered") {
+      throw new HttpException("Review is allowed only after delivery", 400);
+    }
+    const existing = await prisma.mall_platform_reviews.findFirst({
+      where: {
+        order_item_id: props.body.orderItemId,
+        product_id: props.body.productId,
+        deleted_at: null,
       },
-    },
+      select: {
+        id: true,
+      },
+    });
+    if (existing !== null) {
+      throw new HttpException("Review already exists for this purchase", 409);
+    }
+    const created = await prisma.mall_platform_reviews.create({
+      data: await MallPlatformReviewCollector.collect({
+        body: props.body,
+        customer: props.customer,
+      }),
+      ...MallPlatformReviewTransformer.select(),
+    });
+    return await MallPlatformReviewTransformer.transform(created);
   });
-  return {
-    reviewId: createdReview.id,
-    customer: {
-      id: createdReview.customer.id,
-      email: createdReview.customer.email,
-      status: createdReview.customer.status,
-      created_at: toISOStringSafe(createdReview.customer.created_at),
-      updated_at: toISOStringSafe(createdReview.customer.updated_at),
-      deleted_at:
-        createdReview.customer.deleted_at === null
-          ? null
-          : toISOStringSafe(createdReview.customer.deleted_at),
-    },
-    displayState:
-      createdReview.customer.deleted_at === null &&
-      createdReview.customer.status !== "deleted"
-        ? "activeCustomer"
-        : "deletedUser",
-  };
 }
 
 
@@ -109,6 +108,13 @@ export async function postMallPlatformCustomerReviews(props: {
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IMallPlatformReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformReview";
 // import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+// import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
+// import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
+// import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
+// import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
+// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
+// import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
+// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
@@ -116,12 +122,14 @@ export async function postMallPlatformCustomerReviews(props: {
 //   customer: CustomerPayload;
 //   body: IMallPlatformReview.ICreate;
 // }): Promise<IMallPlatformReview> {
-//   await MyGlobal.prisma.mall_platform_reviews.create({
+//   const record = await MyGlobal.prisma.mall_platform_reviews.create({
 //     data: await MallPlatformReviewCollector.collect({
 //       body: props.body,
 //       ...
 //     }),
+//     ...MallPlatformReviewTransformer.select(),
 //   });
+//   return await MallPlatformReviewTransformer.transform(record);
 // }
 // ```
 //--------------------------------------------------------------

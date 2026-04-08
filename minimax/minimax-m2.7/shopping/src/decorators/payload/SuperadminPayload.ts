@@ -1,4 +1,3 @@
-// File: src/decorators/payload/SuperadminPayload.ts
 import { tags } from "typia";
 
 export interface SuperadminPayload {

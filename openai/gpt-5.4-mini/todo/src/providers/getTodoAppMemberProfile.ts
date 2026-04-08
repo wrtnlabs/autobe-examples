@@ -1,6 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ITodoAppMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMember";
-import { ITodoAppUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppUserProfile";
+import { ITodoAppProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -10,48 +10,53 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { TodoAppProfileTransformer } from "../transformers/TodoAppProfileTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getTodoAppMemberProfile(props: {
   member: MemberPayload;
-}): Promise<ITodoAppUserProfile> {
-  const profile = await MyGlobal.prisma.todo_app_user_profiles.findFirstOrThrow(
-    {
-      where: {
-        todo_app_member_id: props.member.id,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-        display_name: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        member: {
-          select: {
-            id: true,
-            email: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
-          },
-        },
-      },
+}): Promise<ITodoAppProfile> {
+  const record = await MyGlobal.prisma.todo_app_profiles.findFirstOrThrow({
+    where: {
+      todo_app_member_id: props.member.id,
     },
-  );
-  return {
-    id: profile.id,
-    todoAppMember: {
-      id: profile.member.id,
-      email: profile.member.email,
-      created_at: profile.member.created_at.toISOString(),
-      updated_at: profile.member.updated_at.toISOString(),
-      deleted_at: profile.member.deleted_at?.toISOString() ?? null,
-    },
-    displayName: profile.display_name,
-    createdAt: profile.created_at.toISOString(),
-    updatedAt: profile.updated_at.toISOString(),
-    deletedAt: profile.deleted_at?.toISOString() ?? null,
-  };
+    ...TodoAppProfileTransformer.select(),
+  });
+  return await TodoAppProfileTransformer.transform(record);
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { ITodoAppProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppProfile";
+// import { ITodoAppMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMember";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function getTodoAppMemberProfile(props: {
+//   member: MemberPayload;
+// }): Promise<ITodoAppProfile> {
+//   const record = await MyGlobal.prisma.todo_app_profiles.findFirstOrThrow({
+//     ...TodoAppProfileTransformer.select(),
+//     where: { ... },
+//   });
+//   return await TodoAppProfileTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

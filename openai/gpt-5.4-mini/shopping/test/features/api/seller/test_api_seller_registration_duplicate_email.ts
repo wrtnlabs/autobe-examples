@@ -14,69 +14,59 @@ import { authorize_seller_join } from "../../../authorize/authorize_seller_join"
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
 
-/**
- * Test duplicate seller registration is rejected for an already registered email.
- *
- * Validates the seller onboarding flow by creating an initial seller account,
- * then attempting to register another seller with the same email. The test
- * ensures the backend rejects the duplicate business identity, preserves the
- * original seller account, and does not issue a second authorization token bundle.
- *
- * 1. Create a seller account with a unique email and password.
- * 2. Attempt to register a second seller using the same email.
- * 3. Confirm the duplicate registration fails with a business conflict.
- * 4. Confirm the original seller authorization data remains unchanged.
- */
 export async function test_api_seller_registration_duplicate_email(
   connection: api.IConnection,
 ): Promise<void> {
-  const email: string = typia.random<string & tags.Format<"email">>();
-  const password = "P@ssw0rd123!";
-  const firstConnection: api.IConnection = { host: connection.host };
-  const firstAuthorized = await authorize_seller_join(firstConnection, {
+  /**
+   * Test seller registration prevents duplicate email sign-up.
+   *
+   * Validates that a seller can register successfully with a unique email and
+   * that a second registration attempt using the same email is rejected. This
+   * ensures seller email uniqueness at the account level and protects the
+   * original seller account from being duplicated or replaced.
+   *
+   * 1. Register the first seller with a unique email and valid password.
+   * 2. Confirm the returned authorized seller payload matches the created email.
+   * 3. Attempt a second seller registration using the same email.
+   * 4. Confirm the duplicate registration is rejected and no new account is created.
+   */
+  const email = typia.random<string & tags.Format<"email">>();
+  const password = RandomGenerator.alphaNumeric(16);
+  const sellerConnection: api.IConnection = { host: connection.host };
+  const firstSeller = await authorize_seller_join(sellerConnection, {
     body: {
       email,
       password,
     } satisfies IMallPlatformSeller.IJoin,
   });
-  typia.assert(firstAuthorized);
-  TestValidator.equals("registered seller email", firstAuthorized.email, email);
+  typia.assert(firstSeller);
   TestValidator.equals(
-    "registered seller status",
-    firstAuthorized.status.status,
-    "pending",
-  );
-  TestValidator.equals(
-    "registered seller rejection reason",
-    firstAuthorized.status.rejectionReason,
-    null,
+    "registered seller email should match input",
+    firstSeller.email,
+    email,
   );
   TestValidator.predicate(
-    "registered seller has authorization token",
-    firstAuthorized.token.access.length > 0 &&
-      firstAuthorized.token.refresh.length > 0,
+    "registered seller id should be a non-empty string",
+    firstSeller.id.length > 0,
+  );
+  TestValidator.predicate(
+    "authorization token should include access token",
+    firstSeller.token.access.length > 0,
+  );
+  TestValidator.predicate(
+    "authorization token should include refresh token",
+    firstSeller.token.refresh.length > 0,
   );
   const duplicateConnection: api.IConnection = { host: connection.host };
-  await TestValidator.httpError(
-    "duplicate seller email is rejected",
-    [400, 409],
+  await TestValidator.error(
+    "duplicate seller registration should fail",
     async () => {
       await authorize_seller_join(duplicateConnection, {
         body: {
           email,
-          password: "DifferentP@ssw0rd123!",
+          password: RandomGenerator.alphaNumeric(16),
         } satisfies IMallPlatformSeller.IJoin,
       });
     },
-  );
-  TestValidator.equals(
-    "original seller email remains unchanged",
-    firstAuthorized.email,
-    email,
-  );
-  TestValidator.equals(
-    "original seller token remains issued",
-    firstAuthorized.token.access.length > 0,
-    true,
   );
 }

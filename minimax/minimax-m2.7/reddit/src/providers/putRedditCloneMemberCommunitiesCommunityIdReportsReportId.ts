@@ -21,68 +21,60 @@ export async function putRedditCloneMemberCommunitiesCommunityIdReportsReportId(
   reportId: string & tags.Format<"uuid">;
   body: IRedditCloneCommunityReport.IUpdate;
 }): Promise<IRedditCloneCommunityReport> {
-  // Step 1: Verify moderator authorization for the community
+  // Step 1: Validate member has moderator privileges for the community
   const moderator =
     await MyGlobal.prisma.reddit_clone_community_moderators.findFirst({
       where: {
         reddit_clone_community_id: props.communityId,
         reddit_clone_member_id: props.member.id,
+        role: { in: ["owner", "moderator"] },
       },
-      select: {
-        id: true,
-        role: true,
-      },
+      select: { id: true },
     });
   if (!moderator) {
-    throw new HttpException(
-      "You do not have moderator privileges for this community",
-      403,
-    );
+    throw new HttpException("Forbidden", 403);
   }
-  // Step 2: Verify report exists and belongs to the community
+  // Step 2: Verify report exists and belongs to the specified community
   const report = await MyGlobal.prisma.reddit_clone_reports.findUniqueOrThrow({
     where: { id: props.reportId },
     select: {
       id: true,
       reddit_clone_community_id: true,
+      status: true,
       target_type: true,
       target_id: true,
-      status: true,
     },
   });
+  // Verify report belongs to the specified community
   if (report.reddit_clone_community_id !== props.communityId) {
-    throw new HttpException(
-      "Report does not belong to the specified community",
-      404,
-    );
+    throw new HttpException("Report not found in this community", 404);
   }
   // Step 3: Ensure report status is currently 'pending'
   if (report.status !== "pending") {
     throw new HttpException("Only pending reports can be updated", 400);
   }
-  // Step 4: Update report status
+  // Step 4: Update the report status (only status and updated_at exist in schema)
+  const now = new Date();
   await MyGlobal.prisma.reddit_clone_reports.update({
     where: { id: props.reportId },
     data: {
       status: props.body.status,
-      updated_at: new Date(),
+      updated_at: now,
     },
   });
-  // Step 5: If approved, remove the reported content
+  // Step 5: If approved, delete the reported content (cascade handles child records)
   if (props.body.status === "approved") {
     if (report.target_type === "post") {
-      // Delete the reported post (cascade will handle comments, votes, etc.)
-      await MyGlobal.prisma.reddit_clone_posts.deleteMany({
+      await MyGlobal.prisma.reddit_clone_posts.delete({
         where: { id: report.target_id },
       });
     } else if (report.target_type === "comment") {
-      // Delete the reported comment (cascade will handle nested replies, votes, etc.)
-      await MyGlobal.prisma.reddit_clone_comments.deleteMany({
+      await MyGlobal.prisma.reddit_clone_comments.delete({
         where: { id: report.target_id },
       });
     }
   }
-  // Step 6: Return updated report
+  // Step 6: Fetch and return the updated report
   const updated = await MyGlobal.prisma.reddit_clone_reports.findUniqueOrThrow({
     where: { id: props.reportId },
     ...RedditCloneCommunityReportTransformer.select(),

@@ -1,5 +1,3 @@
-import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import { IEcommerceMallShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShippingAddress";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -21,12 +19,12 @@ export async function getEcommerceMallCustomerAddressesAddressId(props: {
 }): Promise<IEcommerceMallShippingAddress> {
   const record =
     await MyGlobal.prisma.ecommerce_mall_shipping_addresses.findFirstOrThrow({
+      ...EcommerceMallShippingAddressTransformer.select(),
       where: {
         id: props.addressId,
         ecommerce_mall_customer_id: props.customer.id,
         deleted_at: null,
       },
-      ...EcommerceMallShippingAddressTransformer.select(),
     });
   return await EcommerceMallShippingAddressTransformer.transform(record);
 }
@@ -50,8 +48,6 @@ export async function getEcommerceMallCustomerAddressesAddressId(props: {
 // 
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IEcommerceMallShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShippingAddress";
-// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-// import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.

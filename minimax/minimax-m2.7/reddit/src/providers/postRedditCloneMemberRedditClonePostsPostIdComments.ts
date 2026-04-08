@@ -22,23 +22,28 @@ export async function postRedditCloneMemberRedditClonePostsPostIdComments(props:
   postId: string & tags.Format<"uuid">;
   body: IRedditCloneComment.ICreate;
 }): Promise<IRedditCloneComment> {
-  // Validate post exists and is not deleted
+  // Step 1: Validate post exists and is not deleted
   const post = await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
     where: { id: props.postId },
-    select: { id: true, deleted_at: true },
+    select: {
+      id: true,
+      deleted_at: true,
+      reddit_clone_community_id: true,
+    },
   });
   if (post.deleted_at !== null) {
     throw new HttpException("Post not found", 404);
   }
-  // If parentCommentId provided, validate parent comment belongs to same post
-  if (
-    props.body.parentCommentId !== undefined &&
-    props.body.parentCommentId !== null
-  ) {
+  // Step 2: Validate parent comment if provided
+  if (props.body.parentCommentId) {
     const parentComment =
       await MyGlobal.prisma.reddit_clone_comments.findUniqueOrThrow({
         where: { id: props.body.parentCommentId },
-        select: { id: true, reddit_clone_post_id: true, deleted_at: true },
+        select: {
+          id: true,
+          deleted_at: true,
+          reddit_clone_post_id: true,
+        },
       });
     if (parentComment.deleted_at !== null) {
       throw new HttpException("Parent comment not found", 404);
@@ -50,17 +55,35 @@ export async function postRedditCloneMemberRedditClonePostsPostIdComments(props:
       );
     }
   }
-  // Create the comment with transformer select for proper typing
-  const record = await MyGlobal.prisma.reddit_clone_comments.create({
+  // Step 3: Check if member is banned from the community
+  const ban = await MyGlobal.prisma.reddit_clone_bans.findFirst({
+    where: {
+      reddit_clone_user_id: props.member.id,
+      reddit_clone_community_id: post.reddit_clone_community_id,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+    },
+  });
+  if (ban !== null) {
+    throw new HttpException(
+      "You are banned from commenting in this community",
+      403,
+    );
+  }
+  // Step 4: Create the comment using collector
+  const created = await MyGlobal.prisma.reddit_clone_comments.create({
     data: await RedditCloneCommentCollector.collect({
       body: props.body,
-      redditClonePosts: { id: props.postId },
-      redditCloneMembers: { id: props.member.id },
-      redditCloneMemberSessions: { id: props.member.session_id },
+      redditClonePosts: { id: props.postId } as IEntity,
+      redditCloneMembers: { id: props.member.id } as IEntity,
+      redditCloneMemberSessions: { id: props.member.session_id } as IEntity,
     }),
     ...RedditCloneCommentTransformer.select(),
   });
-  return await RedditCloneCommentTransformer.transform(record);
+  // Step 5: Transform and return
+  return await RedditCloneCommentTransformer.transform(created);
 }
 
 

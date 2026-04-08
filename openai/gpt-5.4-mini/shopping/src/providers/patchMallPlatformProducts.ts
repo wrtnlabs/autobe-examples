@@ -1,8 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
-import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformProduct";
 import { ArrayUtil } from "@nestia/e2e";
@@ -20,28 +19,27 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function patchMallPlatformProducts(props: {
   body: IMallPlatformProduct.IRequest;
 }): Promise<IPageIMallPlatformProduct.ISummary> {
-  const page: number = props.body.page ?? 1;
-  const limit: number = props.body.limit ?? 100;
-  const skip: number = (page - 1) * limit;
   if (props.body.categoryId !== undefined) {
     await MyGlobal.prisma.mall_platform_categories.findUniqueOrThrow({
       where: { id: props.body.categoryId },
-      select: { id: true },
     });
   }
-  const where: Prisma.mall_platform_productsWhereInput = {
+  const page: number = props.body.page ?? 1;
+  const limit: number = props.body.limit ?? 100;
+  const skip: number = (page - 1) * limit;
+  const where = {
     deleted_at: null,
-    ...(props.body.categoryId !== undefined
-      ? { category_id: props.body.categoryId }
-      : {}),
-    ...(props.body.search !== undefined
+    ...(props.body.search !== undefined && props.body.search !== ""
       ? {
-          OR: [
-            { name: { contains: props.body.search, mode: "insensitive" } },
-            {
-              description: { contains: props.body.search, mode: "insensitive" },
-            },
-          ],
+          name: {
+            contains: props.body.search,
+            mode: "insensitive",
+          },
+        }
+      : {}),
+    ...(props.body.categoryId !== undefined
+      ? {
+          category_id: props.body.categoryId,
         }
       : {}),
     ...(props.body.minPrice !== undefined || props.body.maxPrice !== undefined
@@ -56,13 +54,14 @@ export async function patchMallPlatformProducts(props: {
           },
         }
       : {}),
-  };
-  const orderBy: Prisma.mall_platform_productsOrderByWithRelationInput =
+  } satisfies Prisma.mall_platform_productsWhereInput;
+  const orderBy = (
     props.body.sort === "priceAsc"
       ? { base_price: "asc" }
       : props.body.sort === "priceDesc"
         ? { base_price: "desc" }
-        : { created_at: "desc" };
+        : { created_at: "desc" }
+  ) satisfies Prisma.mall_platform_productsOrderByWithRelationInput;
   const records = await MyGlobal.prisma.mall_platform_products.findMany({
     where,
     orderBy,
@@ -70,19 +69,21 @@ export async function patchMallPlatformProducts(props: {
     take: limit,
     ...MallPlatformProductAtSummaryTransformer.select(),
   });
-  const total = await MyGlobal.prisma.mall_platform_products.count({ where });
+  const total: number = await MyGlobal.prisma.mall_platform_products.count({
+    where,
+  });
   return {
     pagination: {
       current: page,
-      limit: limit,
+      limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
+    } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
       records,
       MallPlatformProductAtSummaryTransformer.transform,
     ),
-  };
+  } satisfies IPageIMallPlatformProduct.ISummary;
 }
 
 
@@ -106,9 +107,8 @@ export async function patchMallPlatformProducts(props: {
 // import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
 // import { IPageIMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformProduct";
 // import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 // import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
-// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.

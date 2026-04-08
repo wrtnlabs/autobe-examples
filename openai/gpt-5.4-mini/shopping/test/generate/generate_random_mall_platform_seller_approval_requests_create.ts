@@ -13,9 +13,12 @@ import { prepare_random_mall_platform_administrator_approval_request } from "../
 /**
  * Generate a random mall platform administrator approval request via the API for E2E testing.
  *
- * Prepares administrator approval request data through the shared prepare function, then submits it to the API.
+ * Prepares administrator approval request creation data using the matching prepare function,
+ * then submits it to the platform approval request creation endpoint.
  *
- * This helper is designed for end-to-end tests covering administrator access request creation.
+ * @param connection - API connection object used to call the backend.
+ * @param props - Optional creation payload overrides for the request body.
+ * @returns The created administrator approval request record.
  */
 export async function generate_random_mall_platform_seller_approval_requests_create(
   connection: api.IConnection,
@@ -27,10 +30,12 @@ export async function generate_random_mall_platform_seller_approval_requests_cre
 ): Promise<IMallPlatformAdministratorApprovalRequest> {
   const prepared: IMallPlatformAdministratorApprovalRequest.ICreate =
     prepare_random_mall_platform_administrator_approval_request(props.body);
-  return await api.functional.mallPlatform.seller.approval_requests.create(
-    connection,
-    {
-      body: prepared,
-    },
-  );
+  const result: IMallPlatformAdministratorApprovalRequest =
+    await api.functional.mallPlatform.seller.approvalRequests.create(
+      connection,
+      {
+        body: prepared,
+      },
+    );
+  return result;
 }

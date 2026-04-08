@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerProfile";
 import { IMallPlatformSellerProfileSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerProfileSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -13,6 +14,20 @@ export namespace MallPlatformSellerProfileSnapshotTransformer {
   export type Payload = Prisma.mall_platform_seller_profile_snapshotsGetPayload<
     ReturnType<typeof select>
   >;
+  export function select() {
+    return {
+      select: {
+        id: true,
+        shop_name: true,
+        shop_description: true,
+        logo_image_uri: true,
+        created_at: true,
+        sellerProfile: {
+          select: {},
+        },
+      },
+    } satisfies Prisma.mall_platform_seller_profile_snapshotsFindManyArgs;
+  }
   export async function transform(
     input: Payload,
   ): Promise<IMallPlatformSellerProfileSnapshot> {
@@ -24,18 +39,6 @@ export namespace MallPlatformSellerProfileSnapshotTransformer {
       logoImageUri: input.logo_image_uri,
       createdAt: input.created_at.toISOString(),
     } satisfies IMallPlatformSellerProfileSnapshot;
-  }
-  export function select() {
-    return {
-      select: {
-        id: true,
-        shop_name: true,
-        shop_description: true,
-        logo_image_uri: true,
-        created_at: true,
-        sellerProfile: true,
-      },
-    } satisfies Prisma.mall_platform_seller_profile_snapshotsFindManyArgs;
   }
 }
 

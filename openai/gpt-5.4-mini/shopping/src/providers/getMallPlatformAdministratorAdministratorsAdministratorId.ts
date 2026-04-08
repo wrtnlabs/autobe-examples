@@ -19,9 +19,7 @@ export async function getMallPlatformAdministratorAdministratorsAdministratorId(
 }): Promise<IMallPlatformAdministrator> {
   const record =
     await MyGlobal.prisma.mall_platform_administrators.findUniqueOrThrow({
-      where: {
-        id: props.administratorId,
-      },
+      where: { id: props.administratorId },
       ...MallPlatformAdministratorTransformer.select(),
     });
   return await MallPlatformAdministratorTransformer.transform(record);

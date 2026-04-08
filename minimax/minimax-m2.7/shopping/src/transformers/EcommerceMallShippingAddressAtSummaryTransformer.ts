@@ -1,6 +1,7 @@
 import { IEcommerceMallShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShippingAddress";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -27,11 +28,7 @@ export namespace EcommerceMallShippingAddressAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        customer: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.ecommerce_mall_customersFindManyArgs,
+        ecommerce_mall_customer_id: true,
         orders: {
           select: {
             id: true,
@@ -44,16 +41,12 @@ export namespace EcommerceMallShippingAddressAtSummaryTransformer {
     input: Payload,
   ): Promise<IEcommerceMallShippingAddress.ISummary> {
     return {
-      id: input.id,
-      recipientName: input.recipient_name,
-      phone: input.phone,
-      streetAddress: input.street_address,
       city: input.city,
-      state: input.state,
-      postalCode: input.postal_code,
       country: input.country,
-      isDefault: input.is_default,
-      createdAt: input.created_at.toISOString(),
+      id: input.id,
+      is_default: input.is_default,
+      recipient_name: input.recipient_name,
+      state: input.state,
     } satisfies IEcommerceMallShippingAddress.ISummary;
   }
 }
@@ -90,14 +83,10 @@ export namespace EcommerceMallShippingAddressAtSummaryTransformer {
 //         return {
 //   city: {string},
 //   country: {string},
-//   createdAt: {string},
 //   id: {string},
-//   isDefault: {boolean},
-//   phone: {string},
-//   postalCode: {string},
-//   recipientName: {string},
+//   is_default: {boolean},
+//   recipient_name: {string},
 //   state: {string},
-//   streetAddress: {string},
 //         };
 //       }
 //     }

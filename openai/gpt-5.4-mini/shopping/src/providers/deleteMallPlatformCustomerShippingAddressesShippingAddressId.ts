@@ -16,28 +16,34 @@ export async function deleteMallPlatformCustomerShippingAddressesShippingAddress
   shippingAddressId: string & tags.Format<"uuid">;
 }): Promise<void> {
   await MyGlobal.prisma.$transaction(async (prisma) => {
-    const address = await prisma.mall_platform_shipping_addresses.findUnique({
-      where: { id: props.shippingAddressId },
-      select: {
-        id: true,
-        customer_id: true,
-        is_default: true,
-      },
-    });
-    if (address === null) return;
-    if (address.customer_id !== props.customer.id) {
+    const shippingAddress =
+      await prisma.mall_platform_shipping_addresses.findUniqueOrThrow({
+        where: {
+          id: props.shippingAddressId,
+        },
+        select: {
+          id: true,
+          customer_id: true,
+          is_default: true,
+        },
+      });
+    if (shippingAddress.customer_id !== props.customer.id) {
       throw new HttpException("Forbidden", 403);
     }
-    if (address.is_default) {
+    if (shippingAddress.is_default) {
       await prisma.mall_platform_shipping_addresses.update({
-        where: { id: props.shippingAddressId },
+        where: {
+          id: shippingAddress.id,
+        },
         data: {
           is_default: false,
         },
       });
     }
     await prisma.mall_platform_shipping_addresses.delete({
-      where: { id: props.shippingAddressId },
+      where: {
+        id: shippingAddress.id,
+      },
     });
   });
 }

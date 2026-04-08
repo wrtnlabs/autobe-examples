@@ -19,13 +19,14 @@ export async function getRedditCloneMemberSubscriptionsSubscriptionId(props: {
   member: MemberPayload;
   subscriptionId: string & tags.Format<"uuid">;
 }): Promise<IRedditCloneSubscription.IInvert> {
+  // Query subscription by ID with ownership verification
   const record =
     await MyGlobal.prisma.reddit_clone_subscriptions.findFirstOrThrow({
+      ...RedditCloneSubscriptionAtInvertTransformer.select(),
       where: {
         id: props.subscriptionId,
         reddit_clone_member_id: props.member.id,
       },
-      ...RedditCloneSubscriptionAtInvertTransformer.select(),
     });
   return await RedditCloneSubscriptionAtInvertTransformer.transform(record);
 }

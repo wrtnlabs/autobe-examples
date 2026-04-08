@@ -1,6 +1,7 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+import { IMallPlatformCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomerProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -11,6 +12,8 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+
+null;
 
 
 //--------------------------------------------------------------
@@ -31,6 +34,7 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 // 
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+// import { IMallPlatformCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomerProfile";
 // import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
@@ -39,10 +43,16 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 //   ip: string;
 //   body: IMallPlatformCustomer.ILogin;
 // }): Promise<IMallPlatformCustomer.IAuthorized> {
-//   // No matching Collector/Transformer found for this operation.
-//     // You MUST call getDatabaseSchemas first to get exact relation property names.
-//     // NEVER guess relation names from table names — always verify against the schema.
-//     ...
+//   return {
+//     id: ...,
+//     email: ...,
+//     status: ...,
+//     profile: await MallPlatformCustomerProfileTransformer.transform(...),
+//     created_at: ...,
+//     updated_at: ...,
+//     deleted_at: ...,
+//     token: ...,
+//   };
 // }
 // ```
 //--------------------------------------------------------------

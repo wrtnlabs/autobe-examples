@@ -4,6 +4,7 @@ import { IRedditCloneFileThumbnail } from "@ORGANIZATION/PROJECT-api/lib/structu
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { IRedditCloneUserProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneUserProfile";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -11,6 +12,7 @@ import typia, { tags } from "typia";
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCloneFileAtSummaryTransformer } from "./RedditCloneFileAtSummaryTransformer";
+import { RedditCloneMemberAtSummaryTransformer } from "./RedditCloneMemberAtSummaryTransformer";
 
 export namespace RedditCloneUserProfileAtSummaryTransformer {
   export type Payload = Prisma.reddit_clone_user_profilesGetPayload<
@@ -24,28 +26,14 @@ export namespace RedditCloneUserProfileAtSummaryTransformer {
         bio: true,
         created_at: true,
         updated_at: true,
+        member: RedditCloneMemberAtSummaryTransformer.select(),
         avatarFileAssociation: {
           select: {
-            file: {
-              select: RedditCloneFileAtSummaryTransformer.select().select,
-            },
-          },
-        },
-        member: {
-          select: {
-            id: true,
-            username: true,
-            created_at: true,
-            updated_at: true,
-            karma: {
-              select: {
-                karma_score: true,
-              },
-            },
+            file: RedditCloneFileAtSummaryTransformer.select(),
           },
         },
       },
-    };
+    } satisfies Prisma.reddit_clone_user_profilesFindManyArgs;
   }
   export async function transform(
     input: Payload,
@@ -53,18 +41,17 @@ export namespace RedditCloneUserProfileAtSummaryTransformer {
     return {
       id: input.id,
       displayName: input.display_name,
-      bio: input.bio,
+      bio: input.bio ?? undefined,
       createdAt: toISOStringSafe(input.created_at),
       avatar: input.avatarFileAssociation?.file
         ? await RedditCloneFileAtSummaryTransformer.transform(
             input.avatarFileAssociation.file,
           )
         : undefined,
-      member: {
-        id: input.member.id,
-        username: input.member.username,
-      },
-      karmaScore: input.member.karma?.karma_score ?? 0,
+      member: await RedditCloneMemberAtSummaryTransformer.transform(
+        input.member,
+      ),
+      karmaScore: 0,
     } satisfies IRedditCloneUserProfile.ISummary;
   }
 }
@@ -81,10 +68,12 @@ export namespace RedditCloneUserProfileAtSummaryTransformer {
 //         return {
 //           select: {
 //             id: true,
-//             displayName: true,
+//             display_name: true,
 //             bio: true,
-//             createdAt: true,
-//             karmaScore: true,
+//             created_at: true,
+//             updated_at: true,
+//             member: RedditCloneMemberAtSummaryTransformer.select(),
+//             reddit_clone_file_association_id: true,
 //             ...
 //           },
 //         } satisfies Prisma.reddit_clone_user_profilesFindManyArgs;
@@ -97,7 +86,7 @@ export namespace RedditCloneUserProfileAtSummaryTransformer {
 //   bio: {string | null},
 //   createdAt: {string},
 //   avatar: {IRedditCloneFile.ISummary | null},
-//   member: {IRedditCloneMember.ISummary},
+//   member: await RedditCloneMemberAtSummaryTransformer.transform(input.member),
 //   karmaScore: {integer},
 //         };
 //       }

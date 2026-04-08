@@ -21,19 +21,29 @@ import { prepare_random_mall_platform_administrator_approval_request } from "../
 export async function test_api_seller_approval_request_create_pending(
   connection: api.IConnection,
 ): Promise<void> {
+  /**
+   * Verify that an authenticated seller can submit an administrator approval request.
+   *
+   * This test covers the seller governance onboarding flow by creating a fresh seller
+   * session, submitting an approval request, and checking that the created request is
+   * stored in the pending state with the seller bound as the applicant.
+   *
+   * 1. Register a new seller account and obtain an authenticated seller connection.
+   * 2. Submit an administrator approval request with a valid reason.
+   * 3. Validate the request reason, pending status, applicant linkage, and the absence
+   *    of reviewer or rejection metadata.
+   */
   const sellerConnection: api.IConnection = { host: connection.host };
-  const sellerEmail: string = `${RandomGenerator.alphabets(8)}@test.com`;
-  const sellerPassword: string = RandomGenerator.alphaNumeric(12);
-  const authorized = await authorize_seller_join(sellerConnection, {
+  const seller = await authorize_seller_join(sellerConnection, {
     body: {
-      email: sellerEmail,
-      password: sellerPassword,
+      email: typia.random<string & tags.Format<"email">>(),
+      password: RandomGenerator.alphaNumeric(16),
     } satisfies IMallPlatformSeller.IJoin,
   });
-  typia.assert(authorized);
-  const reason: string = RandomGenerator.paragraph({ sentences: 2 });
-  const created =
-    await api.functional.mallPlatform.seller.approvalRequests.create(
+  typia.assert(seller);
+  const reason = RandomGenerator.paragraph({ sentences: 3 });
+  const request =
+    await generate_random_mall_platform_seller_approval_requests_create(
       sellerConnection,
       {
         body: {
@@ -41,21 +51,19 @@ export async function test_api_seller_approval_request_create_pending(
         } satisfies IMallPlatformAdministratorApprovalRequest.ICreate,
       },
     );
-  typia.assert(created);
-  TestValidator.equals("approval request reason", created.reason, reason);
-  TestValidator.equals("approval request status", created.status, "pending");
+  typia.assert(request);
+  TestValidator.equals("request reason", request.reason, reason);
+  TestValidator.equals("request status", request.status, "pending");
   TestValidator.equals(
-    "approval request reviewer administrator",
-    created.reviewerAdministrator,
+    "request applicant id",
+    request.administrator.id,
+    seller.id,
+  );
+  TestValidator.equals("request reviewer", request.reviewerAdministrator, null);
+  TestValidator.equals(
+    "request rejection reason",
+    request.rejectionReason,
     null,
   );
-  TestValidator.equals(
-    "approval request rejection reason",
-    created.rejectionReason,
-    null,
-  );
-  TestValidator.predicate(
-    "approval request applicant reference exists",
-    () => created.administrator !== null && created.administrator !== undefined,
-  );
+  TestValidator.equals("request reviewed at", request.reviewedAt, null);
 }

@@ -2,6 +2,7 @@ import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IE
 import { IEcommerceMallAdminAuditLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminAuditLog";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -37,7 +38,9 @@ export namespace EcommerceMallAdminAuditLogAtSummaryTransformer {
       action: input.action,
       resourceType: input.resource_type,
       resourceId: input.resource_id,
+      details: input.details,
       ipAddress: input.ip_address,
+      userAgent: input.user_agent,
       createdAt: input.created_at.toISOString(),
       admin: await EcommerceMallAdminAtSummaryTransformer.transform(
         input.admin,
@@ -72,13 +75,15 @@ export namespace EcommerceMallAdminAuditLogAtSummaryTransformer {
 // 
 //       export async function transform(input: Payload): Promise<IEcommerceMallAdminAuditLog.ISummary> {
 //         return {
-//   id: {string},
 //   action: {string},
-//   resourceType: {string},
-//   resourceId: {string},
-//   ipAddress: {string},
-//   createdAt: {string},
 //   admin: await EcommerceMallAdminAtSummaryTransformer.transform(input.admin),
+//   createdAt: {string},
+//   details: {string | null},
+//   id: {string},
+//   ipAddress: {string},
+//   resourceId: {string},
+//   resourceType: {string},
+//   userAgent: {string | null},
 //         };
 //       }
 //     }

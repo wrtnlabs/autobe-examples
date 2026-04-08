@@ -15,15 +15,13 @@ export async function deleteEcommerceMallCustomerWishlistProductId(props: {
   customer: CustomerPayload;
   productId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // 1. Find customer's wishlist
   const wishlist = await MyGlobal.prisma.ecommerce_mall_wishlists.findUnique({
     where: { shopping_customer_id: props.customer.id },
     select: { id: true },
   });
-  if (wishlist === null) {
-    throw new HttpException("Wishlist not found", 404);
+  if (!wishlist) {
+    throw new HttpException("Wishlist item not found", 404);
   }
-  // 2. Find the wishlist item to delete
   const wishlistItem =
     await MyGlobal.prisma.ecommerce_mall_wishlist_items.findFirst({
       where: {
@@ -32,10 +30,9 @@ export async function deleteEcommerceMallCustomerWishlistProductId(props: {
       },
       select: { id: true },
     });
-  if (wishlistItem === null) {
+  if (!wishlistItem) {
     throw new HttpException("Wishlist item not found", 404);
   }
-  // 3. Delete the wishlist item
   await MyGlobal.prisma.ecommerce_mall_wishlist_items.delete({
     where: { id: wishlistItem.id },
   });

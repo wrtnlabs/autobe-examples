@@ -4,12 +4,12 @@ import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { IMallPlatformShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShipment";
-import { IMallPlatformShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShipmentItem";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -104,7 +104,8 @@ export namespace MallPlatformOrderTransformer {
 //             updated_at: true,
 //             deleted_at: true,
 //             customer: MallPlatformCustomerAtSummaryTransformer.select(),
-//             ...
+//             orderItems: MallPlatformOrderItemTransformer.select(),
+//             shipments: MallPlatformShipmentTransformer.select(),
 //           },
 //         } satisfies Prisma.mall_platform_ordersFindManyArgs;
 //       }
@@ -123,8 +124,8 @@ export namespace MallPlatformOrderTransformer {
 //   stateProvince: {string},
 //   postalCode: {string},
 //   country: {string},
-//   orderItems: {Array<IMallPlatformOrderItem>},
-//   shipments: {Array<IMallPlatformShipment>},
+//   orderItems: await ArrayUtil.asyncMap(input.orderItems, MallPlatformOrderItemTransformer.transform),
+//   shipments: await ArrayUtil.asyncMap(input.shipments, MallPlatformShipmentTransformer.transform),
 //   createdAt: {string},
 //   updatedAt: {string},
 //   deletedAt: {string | null},

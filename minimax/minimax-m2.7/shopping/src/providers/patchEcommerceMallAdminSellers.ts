@@ -1,8 +1,6 @@
-import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
 import { IPageIEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallSeller";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -24,41 +22,53 @@ export async function patchEcommerceMallAdminSellers(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const whereInput = {
-    deleted_at: null,
-    ...(props.body.approvalStatus && {
-      approval_status: props.body.approvalStatus,
+  const whereInput: Prisma.ecommerce_mall_sellersWhereInput = {
+    ...(props.body.search !== undefined && {
+      email: {
+        contains: props.body.search,
+        mode: "insensitive" as const,
+      },
     }),
-    ...(props.body.createdAtFrom && {
-      created_at: { gte: props.body.createdAtFrom },
+    ...(props.body.status !== undefined && {
+      approval_status: props.body.status,
     }),
-    ...(props.body.createdAtTo && {
-      created_at: { lte: props.body.createdAtTo },
+    ...(props.body.dateFrom !== undefined && {
+      created_at: {
+        gte: new Date(props.body.dateFrom),
+      },
     }),
-    ...(props.body.search && {
-      email: { contains: props.body.search, mode: "insensitive" as const },
+    ...(props.body.dateTo !== undefined && {
+      created_at: {
+        lte: new Date(props.body.dateTo),
+      },
     }),
-  } satisfies Prisma.ecommerce_mall_sellersWhereInput;
+    ...(props.body.showDeleted !== true && {
+      deleted_at: null,
+    }),
+  };
+  const sortBy = props.body.sortBy ?? "created_at";
+  const sortOrder =
+    props.body.sortOrder ?? (sortBy === "created_at" ? "desc" : "asc");
+  const orderByInput: Prisma.ecommerce_mall_sellersOrderByWithRelationInput = {
+    [sortBy]: sortOrder,
+  };
   const records = await MyGlobal.prisma.ecommerce_mall_sellers.findMany({
-    ...EcommerceMallSellerAtSummaryTransformer.select(),
     where: whereInput,
     skip,
     take: limit,
-    orderBy: { created_at: "desc" as const },
+    orderBy: orderByInput,
+    ...EcommerceMallSellerAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.ecommerce_mall_sellers.count({
     where: whereInput,
   });
   return {
     pagination: {
-      pagination: {
-        current: page,
-        limit: limit,
-        records: total,
-        pages: Math.ceil(total / limit),
-      } satisfies IPage.IPagination,
-      data: [],
-    } satisfies IPageIEcommerceMall.IPagination,
+      current: page,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
       records,
       EcommerceMallSellerAtSummaryTransformer.transform,
@@ -86,9 +96,7 @@ export async function patchEcommerceMallAdminSellers(props: {
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 // import { IPageIEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallSeller";
-// import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
 // import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-// import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.

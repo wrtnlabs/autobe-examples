@@ -22,7 +22,7 @@ export async function postRedditCloneMemberRedditCloneCommentsCommentIdReplies(p
   commentId: string & tags.Format<"uuid">;
   body: IRedditCloneComment.ICreate;
 }): Promise<IRedditCloneComment> {
-  // Step 1: Fetch parent comment to get the post_id
+  // Validate parent comment exists (404 if not found)
   const parentComment =
     await MyGlobal.prisma.reddit_clone_comments.findUniqueOrThrow({
       where: { id: props.commentId },
@@ -31,110 +31,21 @@ export async function postRedditCloneMemberRedditCloneCommentsCommentIdReplies(p
         reddit_clone_post_id: true,
       },
     });
-  // Step 2: Create the reply comment
+  // Create the reply comment
   const created = await MyGlobal.prisma.reddit_clone_comments.create({
     data: await RedditCloneCommentCollector.collect({
       body: props.body,
-      redditClonePosts: { id: parentComment.reddit_clone_post_id },
-      redditCloneMembers: { id: props.member.id },
-      redditCloneMemberSessions: { id: props.member.session_id },
+      redditClonePosts: {
+        id: parentComment.reddit_clone_post_id,
+      } satisfies IEntity,
+      redditCloneMembers: { id: props.member.id } satisfies IEntity,
+      redditCloneMemberSessions: {
+        id: props.member.session_id,
+      } satisfies IEntity,
     }),
+    ...RedditCloneCommentTransformer.select(),
   });
-  // Step 3: Fetch the created comment with proper selects for the transformer
-  const record = await MyGlobal.prisma.reddit_clone_comments.findUniqueOrThrow({
-    where: { id: created.id },
-    select: {
-      id: true,
-      content: true,
-      vote_score: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-      post: {
-        select: {
-          id: true,
-          title: true,
-          type: true,
-          vote_score: true,
-          comment_count: true,
-          created_at: true,
-          updated_at: true,
-          deleted_at: true,
-          author: {
-            select: {
-              id: true,
-              username: true,
-            },
-          },
-          community: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-              subscriber_count: true,
-              member: {
-                select: {
-                  id: true,
-                  username: true,
-                },
-              },
-              icon: {
-                select: {
-                  file: {
-                    select: {
-                      url: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          postTextContent: {
-            select: {
-              body: true,
-            },
-          },
-          link: {
-            select: {
-              url: true,
-            },
-          },
-          image: {
-            select: {
-              reddit_clone_file_id: true,
-            },
-          },
-        },
-      },
-      member: {
-        select: {
-          id: true,
-          username: true,
-        },
-      },
-      parent: {
-        select: {
-          id: true,
-          content: true,
-          vote_score: true,
-          created_at: true,
-          member: {
-            select: {
-              id: true,
-              username: true,
-            },
-          },
-          parent: {
-            select: {
-              id: true,
-            },
-          },
-        },
-      },
-    },
-  });
-  // Step 4: Transform the record using the transformer
-  return await RedditCloneCommentTransformer.transform(record);
+  return await RedditCloneCommentTransformer.transform(created);
 }
 
 

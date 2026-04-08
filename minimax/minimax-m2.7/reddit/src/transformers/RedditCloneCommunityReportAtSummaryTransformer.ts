@@ -3,6 +3,7 @@ import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IRedditCloneCommunityReport } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunityReport";
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -30,7 +31,7 @@ export namespace RedditCloneCommunityReportAtSummaryTransformer {
         updated_at: true,
         community: RedditCloneCommunityAtSummaryTransformer.select(),
         reporter: RedditCloneMemberAtSummaryTransformer.select(),
-        resolvedBy: RedditCloneMemberAtSummaryTransformer.select(),
+        resolvedBy: true,
       },
     } satisfies Prisma.reddit_clone_community_reportsFindManyArgs;
   }
@@ -42,7 +43,7 @@ export namespace RedditCloneCommunityReportAtSummaryTransformer {
       targetType: input.target_type as "post" | "comment",
       targetId: input.target_id,
       status: input.status as "pending" | "approved" | "dismissed",
-      createdAt: toISOStringSafe(input.created_at),
+      createdAt: input.created_at.toISOString(),
       reporter: await RedditCloneMemberAtSummaryTransformer.transform(
         input.reporter,
       ),

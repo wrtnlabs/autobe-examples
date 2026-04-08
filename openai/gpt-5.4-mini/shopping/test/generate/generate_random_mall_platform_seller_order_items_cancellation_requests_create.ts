@@ -7,9 +7,9 @@ import type { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/struct
 import type { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 import type { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import type { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import type { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import type { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import type { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import type { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -21,13 +21,9 @@ import { prepare_random_mall_platform_cancellation_request } from "../prepare/pr
 /**
  * Generate a random mall platform cancellation request via the API for E2E testing.
  *
- * Prepares cancellation request data using the matching prepare function, then
- * submits it to the cancellation-request creation endpoint for the specified
- * order item.
+ * Prepares random cancellation request data using the prepare function, then submits it to the cancellation request creation endpoint for the specified order item.
  *
- * This helper is intended for end-to-end scenarios that need a real cancellation
- * request record linked to an existing paid order item. The order item identifier
- * must be provided through params.
+ * This helper is intended for end-to-end tests that need a persisted cancellation request entity tied to a particular order item. The caller must provide the target orderItemId through props.params.
  */
 export async function generate_random_mall_platform_seller_order_items_cancellation_requests_create(
   connection: api.IConnection,
@@ -40,13 +36,11 @@ export async function generate_random_mall_platform_seller_order_items_cancellat
 ): Promise<IMallPlatformCancellationRequest> {
   const prepared: IMallPlatformCancellationRequest.ICreate =
     prepare_random_mall_platform_cancellation_request(props.body);
-  const result: IMallPlatformCancellationRequest =
-    await api.functional.mallPlatform.seller.orderItems.cancellationRequests.create(
-      connection,
-      {
-        body: prepared,
-        orderItemId: props.params.orderItemId,
-      },
-    );
-  return result;
+  return await api.functional.mallPlatform.seller.orderItems.cancellationRequests.create(
+    connection,
+    {
+      body: prepared,
+      orderItemId: props.params.orderItemId,
+    },
+  );
 }

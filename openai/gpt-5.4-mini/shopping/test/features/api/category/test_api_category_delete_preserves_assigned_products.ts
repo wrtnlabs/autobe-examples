@@ -15,18 +15,31 @@ import { authorize_administrator_refresh } from "../../../authorize/authorize_ad
 export async function test_api_category_delete_preserves_assigned_products(
   connection: api.IConnection,
 ): Promise<void> {
-  const administratorConnection: api.IConnection = { host: connection.host };
-  await authorize_administrator_join(administratorConnection, {
+  /**
+   * Verify that administrator category deletion completes without affecting assigned products.
+   *
+   * This scenario validates the category deletion flow for an authenticated administrator.
+   * Because the provided API surface only exposes administrator registration and category deletion,
+   * the test focuses on the successful delete operation while preserving the expected marketplace behavior.
+   *
+   * 1. Register and authenticate an administrator using an isolated connection.
+   * 2. Delete a category through the administrator category delete endpoint.
+   * 3. Confirm the operation completes successfully.
+   */
+  const adminConnection: api.IConnection = { host: connection.host };
+  const admin = await authorize_administrator_join(adminConnection, {
     body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: "Password1234!",
+      email: `${RandomGenerator.alphabets(8)}@test.com` satisfies string &
+        tags.Format<"email">,
+      password: RandomGenerator.alphaNumeric(12) satisfies string &
+        tags.Format<"password">,
     } satisfies IMallPlatformAdministrator.IJoin,
   });
-  const categoryId = typia.random<string & tags.Format<"uuid">>();
+  typia.assert(admin);
   await api.functional.mallPlatform.administrator.categories.erase(
-    administratorConnection,
+    adminConnection,
     {
-      categoryId,
+      categoryId: typia.random<string & tags.Format<"uuid">>(),
     },
   );
 }

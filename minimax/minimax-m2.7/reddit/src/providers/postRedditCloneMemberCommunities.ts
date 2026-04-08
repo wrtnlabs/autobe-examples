@@ -25,54 +25,66 @@ export async function postRedditCloneMemberCommunities(props: {
   body: IRedditCloneCommunity.ICreate;
 }): Promise<IRedditCloneCommunity> {
   // Check if community name is already taken
-  const existing = await MyGlobal.prisma.reddit_clone_communities.findUnique({
-    where: { name: props.body.name },
+  const existing = await MyGlobal.prisma.reddit_clone_communities.findFirst({
+    where: { name: props.body.name, deleted_at: null },
     select: { id: true },
   });
   if (existing !== null) {
-    throw new HttpException("Community name already taken", 409);
+    throw new HttpException("Community name is already taken", 409);
   }
-  // Create the community
-  const created = await MyGlobal.prisma.reddit_clone_communities.create({
+  // Create the community using collector
+  const community = await MyGlobal.prisma.reddit_clone_communities.create({
     data: await RedditCloneCommunityCollector.collect({
       body: props.body,
-      redditCloneMembers: { id: props.member.id },
-      redditCloneMemberSessions: { id: props.member.session_id },
+      redditCloneMembers: {
+        id: props.member.id,
+      },
+      redditCloneMemberSessions: {
+        id: props.member.session_id,
+      },
     }),
+    ...RedditCloneCommunityTransformer.select(),
   });
-  // Create owner moderator record (self-assigned)
+  // If icon is provided, create community icon and file association
+  if (props.body.icon !== undefined) {
+    const timestamp = toISOStringSafe(new Date());
+    await MyGlobal.prisma.reddit_clone_community_icons.create({
+      data: {
+        id: v4(),
+        reddit_clone_community_id: community.id,
+        reddit_clone_file_id: props.body.icon.id,
+        created_at: timestamp as string as string & tags.Format<"date-time">,
+      },
+    });
+    await MyGlobal.prisma.reddit_clone_file_associations.create({
+      data: {
+        id: v4(),
+        reddit_clone_file_id: props.body.icon.id,
+        target_type: "community",
+        target_id: community.id,
+        created_at: timestamp as string as string & tags.Format<"date-time">,
+        updated_at: timestamp as string as string & tags.Format<"date-time">,
+      },
+    });
+  }
+  // Create owner moderator record
+  const moderatorTimestamp = toISOStringSafe(new Date());
   await MyGlobal.prisma.reddit_clone_moderators.create({
     data: {
       id: v4(),
       reddit_clone_member_id: props.member.id,
-      reddit_clone_community_id: created.id,
+      reddit_clone_community_id: community.id,
       assigned_by: props.member.id,
       role: "owner",
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: moderatorTimestamp as string as string &
+        tags.Format<"date-time">,
+      updated_at: moderatorTimestamp as string as string &
+        tags.Format<"date-time">,
       deleted_at: null,
     },
   });
-  // Create file association if icon is provided
-  if (props.body.icon !== undefined) {
-    await MyGlobal.prisma.reddit_clone_file_associations.create({
-      data: {
-        id: v4(),
-        target_type: "community",
-        target_id: created.id,
-        reddit_clone_file_id: props.body.icon.id,
-        created_at: new Date(),
-        updated_at: new Date(),
-      },
-    });
-  }
-  // Fetch and return the created community with full details
-  const record =
-    await MyGlobal.prisma.reddit_clone_communities.findUniqueOrThrow({
-      where: { id: created.id },
-      ...RedditCloneCommunityTransformer.select(),
-    });
-  return await RedditCloneCommunityTransformer.transform(record);
+  // Return the created community
+  return await RedditCloneCommunityTransformer.transform(community);
 }
 
 

@@ -1,17 +1,25 @@
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
+import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import { IEcommerceMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshot";
-import { IEcommerceMallProductSnapshotVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshotVariant";
+import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+import { IEcommerceMallProductVariantOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOptionValue";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+import { IEcommerceMallSellerProfileSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfileSnapshot";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { EcommerceMallOrderAtSummaryTransformer } from "./EcommerceMallOrderAtSummaryTransformer";
 import { EcommerceMallProductSnapshotAtSummaryTransformer } from "./EcommerceMallProductSnapshotAtSummaryTransformer";
-import { EcommerceMallProductSnapshotVariantAtSummaryTransformer } from "./EcommerceMallProductSnapshotVariantAtSummaryTransformer";
+import { EcommerceMallProductVariantTransformer } from "./EcommerceMallProductVariantTransformer";
+import { EcommerceMallSellerProfileSnapshotAtSummaryTransformer } from "./EcommerceMallSellerProfileSnapshotAtSummaryTransformer";
 
 export namespace EcommerceMallOrderItemAtSummaryTransformer {
   export type Payload = Prisma.ecommerce_mall_order_itemsGetPayload<
@@ -25,20 +33,18 @@ export namespace EcommerceMallOrderItemAtSummaryTransformer {
         unit_price: true,
         status: true,
         created_at: true,
-        order: {
-          select: {
-            id: true,
-          },
-        },
+        updated_at: true,
+        order: EcommerceMallOrderAtSummaryTransformer.select(),
+        product: true,
+        productVariant: EcommerceMallProductVariantTransformer.select(),
         productSnapshot:
           EcommerceMallProductSnapshotAtSummaryTransformer.select(),
-        productVariant:
-          EcommerceMallProductSnapshotVariantAtSummaryTransformer.select(),
-        sellerProfileSnapshot: {
-          select: {
-            shop_name: true,
-          },
-        },
+        sellerProfileSnapshot:
+          EcommerceMallSellerProfileSnapshotAtSummaryTransformer.select(),
+        shipmentItem: { select: { id: true } },
+        cancellationRequests: { select: { id: true } },
+        refundRequests: { select: { id: true } },
+        reviews: { select: { id: true } },
       },
     } satisfies Prisma.ecommerce_mall_order_itemsFindManyArgs;
   }
@@ -47,20 +53,24 @@ export namespace EcommerceMallOrderItemAtSummaryTransformer {
   ): Promise<IEcommerceMallOrderItem.ISummary> {
     return {
       id: input.id,
-      orderId: input.order.id ?? undefined,
       quantity: input.quantity,
-      unitPrice: input.unit_price,
-      status: input.status as IEcommerceMallOrderItem.ISummary["status"],
-      createdAt: toISOStringSafe(input.created_at),
+      unit_price: input.unit_price,
+      status: input.status,
+      created_at: input.created_at.toISOString(),
+      order: await EcommerceMallOrderAtSummaryTransformer.transform(
+        input.order,
+      ),
+      productVariant: await EcommerceMallProductVariantTransformer.transform(
+        input.productVariant,
+      ),
       productSnapshot:
         await EcommerceMallProductSnapshotAtSummaryTransformer.transform(
           input.productSnapshot,
         ),
-      variantSnapshot:
-        await EcommerceMallProductSnapshotVariantAtSummaryTransformer.transform(
-          input.productVariant,
+      sellerProfileSnapshot:
+        await EcommerceMallSellerProfileSnapshotAtSummaryTransformer.transform(
+          input.sellerProfileSnapshot,
         ),
-      sellerShopName: input.sellerProfileSnapshot.shop_name,
     } satisfies IEcommerceMallOrderItem.ISummary;
   }
 }
@@ -82,12 +92,11 @@ export namespace EcommerceMallOrderItemAtSummaryTransformer {
 //             status: true,
 //             created_at: true,
 //             updated_at: true,
-//             ecommerce_mall_order_id: true,
+//             order: EcommerceMallOrderAtSummaryTransformer.select(),
 //             ecommerce_mall_product_id: true,
-//             ecommerce_mall_product_variant_id: true,
+//             productVariant: EcommerceMallProductVariantTransformer.select(),
 //             productSnapshot: EcommerceMallProductSnapshotAtSummaryTransformer.select(),
-//             ecommerce_mall_seller_profile_snapshot_id: true,
-//             ...
+//             sellerProfileSnapshot: EcommerceMallSellerProfileSnapshotAtSummaryTransformer.select(),
 //           },
 //         } satisfies Prisma.ecommerce_mall_order_itemsFindManyArgs;
 //       }
@@ -95,14 +104,14 @@ export namespace EcommerceMallOrderItemAtSummaryTransformer {
 //       export async function transform(input: Payload): Promise<IEcommerceMallOrderItem.ISummary> {
 //         return {
 //   id: {string},
-//   orderId: {string},
 //   quantity: {integer},
-//   unitPrice: {number},
-//   status: {"paid" | "shipped" | "delivered" | "cancelled" | "refunded"},
-//   createdAt: {string},
+//   unit_price: {number},
+//   status: {string},
+//   created_at: {string},
+//   order: await EcommerceMallOrderAtSummaryTransformer.transform(input.order),
+//   productVariant: await EcommerceMallProductVariantTransformer.transform(input.productVariant),
 //   productSnapshot: await EcommerceMallProductSnapshotAtSummaryTransformer.transform(input.productSnapshot),
-//   variantSnapshot: {IEcommerceMallProductSnapshotVariant.ISummary},
-//   sellerShopName: {string},
+//   sellerProfileSnapshot: await EcommerceMallSellerProfileSnapshotAtSummaryTransformer.transform(input.sellerProfileSnapshot),
 //         };
 //       }
 //     }

@@ -19,12 +19,14 @@ export async function postRedditCloneAuthMemberJoin(props: {
   ip: string;
   body: IRedditCloneMember.IJoin;
 }): Promise<IRedditCloneMember.IAuthorized> {
+  // 1. Check for existing email
   const existingEmail = await MyGlobal.prisma.reddit_clone_members.findFirst({
     where: { email: props.body.email },
   });
   if (existingEmail) {
     throw new HttpException("Email already registered", 409);
   }
+  // 2. Check for existing username
   const existingUsername = await MyGlobal.prisma.reddit_clone_members.findFirst(
     {
       where: { username: props.body.username },
@@ -33,194 +35,125 @@ export async function postRedditCloneAuthMemberJoin(props: {
   if (existingUsername) {
     throw new HttpException("Username already taken", 409);
   }
+  // 3. Generate IDs
   const memberId = v4() as string & tags.Format<"uuid">;
-  const createdAt = toISOStringSafe(new Date());
-  const member = await MyGlobal.prisma.reddit_clone_members.create({
+  const sessionId = v4() as string & tags.Format<"uuid">;
+  const karmaId = v4() as string & tags.Format<"uuid">;
+  const profileId = v4() as string & tags.Format<"uuid">;
+  const verificationId = v4() as string & tags.Format<"uuid">;
+  // 4. Generate timestamps
+  const nowIso = new Date().toISOString() as string & tags.Format<"date-time">;
+  const verificationExpiresIso = new Date(
+    Date.now() + 24 * 60 * 60 * 1000,
+  ).toISOString() as string & tags.Format<"date-time">;
+  const accessExpiresIso = new Date(
+    Date.now() + 60 * 60 * 1000,
+  ).toISOString() as string & tags.Format<"date-time">;
+  const refreshExpiresIso = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000,
+  ).toISOString() as string & tags.Format<"date-time">;
+  // 5. Hash password
+  const passwordHash = await PasswordUtil.hash(props.body.password);
+  // 6. Create member record
+  await MyGlobal.prisma.reddit_clone_members.create({
     data: {
       id: memberId,
       email: props.body.email,
-      password_hash: await PasswordUtil.hash(props.body.password),
+      password_hash: passwordHash,
       username: props.body.username,
-      created_at: createdAt,
-      updated_at: createdAt,
+      created_at: new Date(),
+      updated_at: new Date(),
       deleted_at: null,
     },
-    select: {
-      id: true,
-      username: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-    },
   });
-  await MyGlobal.prisma.reddit_clone_user_profiles.create({
-    data: {
-      id: v4() as string & tags.Format<"uuid">,
-      member: { connect: { id: member.id } },
-      display_name: member.username,
-      bio: null,
-      created_at: createdAt,
-      updated_at: createdAt,
-    },
-  });
+  // 7. Create user karma record (initial score: 0)
   await MyGlobal.prisma.reddit_clone_user_karmas.create({
     data: {
-      id: v4() as string & tags.Format<"uuid">,
-      member: { connect: { id: member.id } },
+      id: karmaId,
+      reddit_clone_member_id: memberId,
       karma_score: 0,
-      created_at: createdAt,
-      updated_at: createdAt,
+      created_at: new Date(),
+      updated_at: new Date(),
     },
   });
-  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
-  const refreshExpires = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  // 8. Create user profile
+  await MyGlobal.prisma.reddit_clone_user_profiles.create({
+    data: {
+      id: profileId,
+      reddit_clone_member_id: memberId,
+      display_name: props.body.username,
+      bio: null,
+      reddit_clone_file_association_id: null,
+      created_at: new Date(),
+      updated_at: new Date(),
+    },
+  });
+  // 9. Create email verification record
+  const verificationToken = v4() as string & tags.Format<"uuid">;
+  await MyGlobal.prisma.reddit_clone_member_email_verifications.create({
+    data: {
+      id: verificationId,
+      reddit_clone_member_id: memberId,
+      token: verificationToken,
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      verified_at: null,
+      created_at: new Date(),
+      updated_at: new Date(),
+    },
+  });
+  // 10. Generate JWT tokens
+  const accessToken = jwt.sign(
+    {
+      type: "member",
+      id: memberId,
+      session_id: sessionId,
+      created_at: nowIso,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "1h", issuer: "autobe" },
   );
-  const sessionId = v4() as string & tags.Format<"uuid">;
+  const refreshToken = jwt.sign(
+    {
+      type: "member",
+      id: memberId,
+      session_id: sessionId,
+      tokenType: "refresh",
+      created_at: nowIso,
+    },
+    MyGlobal.env.JWT_SECRET_KEY,
+    { expiresIn: "7d", issuer: "autobe" },
+  );
+  // 11. Create session record
   await MyGlobal.prisma.reddit_clone_member_sessions.create({
     data: {
       id: sessionId,
-      member: { connect: { id: member.id } },
+      reddit_clone_member_id: memberId,
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      ip: props.body.ip ?? props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
-      ip: props.body.ip ?? props.ip,
-      expired_at: accessExpires,
-      created_at: createdAt,
-      access_token: "",
-      refresh_token: "",
+      created_at: new Date(),
+      expired_at: new Date(Date.now() + 60 * 60 * 1000),
     },
   });
-  const token: IAuthorizationToken = {
-    access: jwt.sign(
-      {
-        type: "member",
-        id: member.id,
-        session_id: sessionId,
-        created_at: createdAt,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "member",
-        id: member.id,
-        session_id: sessionId,
-        tokenType: "refresh",
-        created_at: createdAt,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "7d", issuer: "autobe" },
-    ),
-    expired_at: accessExpires,
-    refreshable_until: refreshExpires,
-  };
-  const userProfile =
-    await MyGlobal.prisma.reddit_clone_user_profiles.findUnique({
-      where: { reddit_clone_member_id: member.id },
-      select: {
-        display_name: true,
-        bio: true,
-      },
-    });
-  const userKarma = await MyGlobal.prisma.reddit_clone_user_karmas.findUnique({
-    where: { reddit_clone_member_id: member.id },
-    select: {
-      karma_score: true,
-    },
-  });
-  const avatarAssociation =
-    await MyGlobal.prisma.reddit_clone_file_associations.findFirst({
-      where: {
-        target_id: member.id,
-        target_type: "user",
-      },
-      select: {
-        id: true,
-        target_id: true,
-        created_at: true,
-        reddit_clone_file_id: true,
-      },
-    });
-  let avatar: IRedditCloneFileAssociation.ISummary | undefined = undefined;
-  if (avatarAssociation?.reddit_clone_file_id) {
-    const avatarFile = await MyGlobal.prisma.reddit_clone_files.findUnique({
-      where: { id: avatarAssociation.reddit_clone_file_id },
-      select: {
-        id: true,
-        original_filename: true,
-        mime_type: true,
-        file_size: true,
-        status: true,
-        created_at: true,
-        uploader: {
-          select: {
-            id: true,
-            username: true,
-          },
-        },
-        thumbnails: {
-          select: {
-            id: true,
-            width: true,
-            height: true,
-            variant: true,
-            thumbnail_path: true,
-            created_at: true,
-          },
-        },
-      },
-    });
-    if (avatarFile) {
-      const thumbnailItems = avatarFile.thumbnails
-        ? avatarFile.thumbnails.map(
-            (t): IRedditCloneFileThumbnail.ISummary => ({
-              id: t.id,
-              width: t.width,
-              height: t.height,
-              variant: t.variant,
-              thumbnailPath: t.thumbnail_path,
-              createdAt: toISOStringSafe(t.created_at),
-            }),
-          )
-        : undefined;
-      avatar = {
-        id: avatarAssociation.id,
-        userId: avatarAssociation.target_id,
-        createdAt: toISOStringSafe(avatarAssociation.created_at),
-        file: {
-          createdAt: toISOStringSafe(avatarFile.created_at),
-          fileSize: avatarFile.file_size,
-          id: avatarFile.id,
-          mimeType: avatarFile.mime_type,
-          originalFilename: avatarFile.original_filename,
-          status: avatarFile.status,
-          uploader: {
-            id: avatarFile.uploader.id,
-            username: avatarFile.uploader.username,
-          },
-          thumbnails: thumbnailItems
-            ? (thumbnailItems.map(
-                (item): IRedditCloneFileThumbnail => ({
-                  items: item,
-                }),
-              ) satisfies IRedditCloneFileThumbnail[])
-            : undefined,
-        },
-      };
-    }
-  }
+  // 12. Return authorized response
   return {
-    id: member.id,
-    username: member.username,
-    displayName: userProfile?.display_name ?? member.username,
-    bio: userProfile?.bio ?? null,
-    avatar: avatar ?? undefined,
-    karmaScore: (userKarma?.karma_score ?? 0) as number & tags.Type<"int32">,
-    createdAt: toISOStringSafe(member.created_at),
-    updatedAt: toISOStringSafe(member.updated_at),
-    deletedAt: member.deleted_at ? toISOStringSafe(member.deleted_at) : null,
-    token,
+    id: memberId,
+    username: props.body.username,
+    displayName: props.body.username,
+    bio: null,
+    avatar: null,
+    karmaScore: 0 as number & tags.Type<"int32">,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+    deletedAt: null,
+    token: {
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpiresIso,
+      refreshable_until: refreshExpiresIso,
+    },
   };
 }
 

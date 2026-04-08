@@ -25,23 +25,7 @@ export async function putRedditCloneMemberCommunitiesCommunityIdModeratorsModera
   moderatorId: string & tags.Format<"uuid">;
   body: IRedditCloneCommunityModerator.IUpdate;
 }): Promise<IRedditCloneCommunityModerator> {
-  // Fetch community to verify ownership
-  const community =
-    await MyGlobal.prisma.reddit_clone_communities.findUniqueOrThrow({
-      where: { id: props.communityId },
-      select: {
-        id: true,
-        reddit_clone_member_id: true,
-      },
-    });
-  // Only community owner can modify moderator roles
-  if (community.reddit_clone_member_id !== props.member.id) {
-    throw new HttpException(
-      "Only the community owner can modify moderator roles",
-      403,
-    );
-  }
-  // Fetch the moderator record
+  // Step 1: Fetch the moderator record to validate existence and get member info
   const moderator =
     await MyGlobal.prisma.reddit_clone_moderators.findUniqueOrThrow({
       where: { id: props.moderatorId },
@@ -52,22 +36,28 @@ export async function putRedditCloneMemberCommunitiesCommunityIdModeratorsModera
         role: true,
       },
     });
-  // Verify moderator belongs to this community
+  // Validate moderator belongs to the specified community
   if (moderator.reddit_clone_community_id !== props.communityId) {
     throw new HttpException("Moderator not found in this community", 404);
   }
-  // Prevent self-modification
-  if (moderator.reddit_clone_member_id === props.member.id) {
-    throw new HttpException("You cannot modify your own moderator role", 403);
-  }
-  // Only owner can promote to owner role
-  if (props.body.role === "owner") {
+  // Step 2: Verify requester is the community owner (only owner can modify moderator roles)
+  const community =
+    await MyGlobal.prisma.reddit_clone_communities.findUniqueOrThrow({
+      where: { id: props.communityId },
+      select: { id: true, reddit_clone_member_id: true },
+    });
+  const isOwner = community.reddit_clone_member_id === props.member.id;
+  if (!isOwner) {
     throw new HttpException(
-      "Only the current owner can transfer ownership",
+      "Only the community owner can modify moderator roles",
       403,
     );
   }
-  // Update the moderator role
+  // Step 3: Prevent self-modification
+  if (moderator.reddit_clone_member_id === props.member.id) {
+    throw new HttpException("You cannot modify your own moderator role", 403);
+  }
+  // Step 4: Update the role and updated_at
   await MyGlobal.prisma.reddit_clone_moderators.update({
     where: { id: props.moderatorId },
     data: {
@@ -75,7 +65,7 @@ export async function putRedditCloneMemberCommunitiesCommunityIdModeratorsModera
       updated_at: new Date(),
     },
   });
-  // Fetch aggregated counts
+  // Step 5: Aggregate counts (using sequential await pattern)
   const pendingReportsCount =
     await MyGlobal.prisma.reddit_clone_community_reports.count({
       where: {
@@ -97,14 +87,22 @@ export async function putRedditCloneMemberCommunitiesCommunityIdModeratorsModera
         status: "dismissed",
       },
     });
-  const activeBansCount =
+  const permanentBansCount =
     await MyGlobal.prisma.reddit_clone_community_bans.count({
       where: {
         reddit_clone_community_id: props.communityId,
-        OR: [{ expires_at: null }, { expires_at: { gt: new Date() } }],
+        expires_at: null,
       },
     });
-  // Fetch recent pending reports
+  const activeTemporaryBansCount =
+    await MyGlobal.prisma.reddit_clone_community_bans.count({
+      where: {
+        reddit_clone_community_id: props.communityId,
+        expires_at: { not: null, gt: new Date() },
+      },
+    });
+  const activeBansCount = permanentBansCount + activeTemporaryBansCount;
+  // Step 6: Fetch recent pending reports (up to 10)
   const recentPendingReportsData =
     await MyGlobal.prisma.reddit_clone_community_reports.findMany({
       where: {
@@ -119,7 +117,7 @@ export async function putRedditCloneMemberCommunitiesCommunityIdModeratorsModera
     recentPendingReportsData,
     RedditCloneCommunityModeratorAtRecentPendingReportTransformer.transform,
   );
-  // Fetch recent bans
+  // Step 7: Fetch recent bans (up to 10)
   const recentBansData =
     await MyGlobal.prisma.reddit_clone_community_bans.findMany({
       where: {
@@ -133,19 +131,12 @@ export async function putRedditCloneMemberCommunitiesCommunityIdModeratorsModera
     recentBansData,
     RedditCloneCommunityModeratorAtRecentBanTransformer.transform,
   );
+  // Step 8: Return IRedditCloneCommunityModerator response
   return {
-    pendingReportsCount: pendingReportsCount satisfies number &
-      tags.Type<"int32"> &
-      tags.Minimum<0>,
-    approvedReportsCount: approvedReportsCount satisfies number &
-      tags.Type<"int32"> &
-      tags.Minimum<0>,
-    dismissedReportsCount: dismissedReportsCount satisfies number &
-      tags.Type<"int32"> &
-      tags.Minimum<0>,
-    activeBansCount: activeBansCount satisfies number &
-      tags.Type<"int32"> &
-      tags.Minimum<0>,
+    pendingReportsCount,
+    approvedReportsCount,
+    dismissedReportsCount,
+    activeBansCount,
     recentPendingReports,
     recentBans,
   } satisfies IRedditCloneCommunityModerator;

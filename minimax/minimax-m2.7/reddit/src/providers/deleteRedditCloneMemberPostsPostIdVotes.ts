@@ -15,6 +15,7 @@ export async function deleteRedditCloneMemberPostsPostIdVotes(props: {
   member: MemberPayload;
   postId: string & tags.Format<"uuid">;
 }): Promise<void> {
+  // Find the existing vote record
   const vote = await MyGlobal.prisma.reddit_clone_post_votes.findFirst({
     where: {
       reddit_clone_member_id: props.member.id,
@@ -25,33 +26,43 @@ export async function deleteRedditCloneMemberPostsPostIdVotes(props: {
       direction: true,
       post: {
         select: {
-          id: true,
           reddit_clone_member_id: true,
         },
       },
     },
   });
-  if (vote === null) {
+  // If no vote exists, return 404
+  if (!vote) {
     throw new HttpException("Vote not found", 404);
   }
-  const voteDirection = vote.direction;
-  const postAuthorId = vote.post.reddit_clone_member_id;
+  // Determine adjustment values based on vote direction
+  const isUpvote = vote.direction === "upvote";
+  const voteScoreAdjustment = isUpvote ? -1 : 1;
+  const karmaAdjustment = isUpvote ? -1 : 1;
+  // Execute all operations in a transaction
   await MyGlobal.prisma.$transaction([
+    // Delete the vote record
     MyGlobal.prisma.reddit_clone_post_votes.delete({
       where: { id: vote.id },
     }),
+    // Update post vote_score
     MyGlobal.prisma.reddit_clone_posts.update({
       where: { id: props.postId },
       data: {
-        vote_score:
-          voteDirection === "upvote" ? { decrement: 1 } : { increment: 1 },
+        vote_score: {
+          increment: voteScoreAdjustment,
+        },
       },
     }),
+    // Update author's karma
     MyGlobal.prisma.reddit_clone_user_karmas.update({
-      where: { reddit_clone_member_id: postAuthorId },
+      where: {
+        reddit_clone_member_id: vote.post.reddit_clone_member_id,
+      },
       data: {
-        karma_score:
-          voteDirection === "upvote" ? { decrement: 1 } : { increment: 1 },
+        karma_score: {
+          increment: karmaAdjustment,
+        },
       },
     }),
   ]);

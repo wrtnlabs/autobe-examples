@@ -2,6 +2,7 @@ import { IEcommerceMallGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IE
 import { IEcommerceMallGuestSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallGuestSession";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -40,6 +41,7 @@ export namespace EcommerceMallGuestSessionAtSummaryTransformer {
       guest: await EcommerceMallGuestAtSummaryTransformer.transform(
         input.guest,
       ),
+      isExpired: input.expired_at < new Date(),
     } satisfies IEcommerceMallGuestSession.ISummary;
   }
 }
@@ -69,12 +71,13 @@ export namespace EcommerceMallGuestSessionAtSummaryTransformer {
 //       export async function transform(input: Payload): Promise<IEcommerceMallGuestSession.ISummary> {
 //         return {
 //   id: {string},
+//   createdAt: {string},
+//   expiredAt: {string},
 //   ip: {string},
 //   href: {string},
 //   referrer: {string},
-//   createdAt: {string},
-//   expiredAt: {string},
 //   guest: await EcommerceMallGuestAtSummaryTransformer.transform(input.guest),
+//   isExpired: {boolean},
 //         };
 //       }
 //     }

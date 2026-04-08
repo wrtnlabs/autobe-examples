@@ -18,7 +18,9 @@ export async function deleteMallPlatformSellerProductsProductIdVariantsVariantId
 }): Promise<void> {
   const product =
     await MyGlobal.prisma.mall_platform_products.findUniqueOrThrow({
-      where: { id: props.productId },
+      where: {
+        id: props.productId,
+      },
       select: {
         id: true,
         seller_account_id: true,
@@ -28,18 +30,17 @@ export async function deleteMallPlatformSellerProductsProductIdVariantsVariantId
     throw new HttpException("Forbidden", 403);
   }
   const variant =
-    await MyGlobal.prisma.mall_platform_product_variants.findUniqueOrThrow({
-      where: { id: props.variantId },
+    await MyGlobal.prisma.mall_platform_product_variants.findFirst({
+      where: {
+        id: props.variantId,
+        mall_platform_product_id: props.productId,
+      },
       select: {
         id: true,
-        mall_platform_product_id: true,
       },
     });
-  if (variant.mall_platform_product_id !== product.id) {
-    throw new HttpException(
-      "Variant does not belong to the specified product",
-      409,
-    );
+  if (variant === null) {
+    throw new HttpException("Variant not found for the specified product", 404);
   }
   const blockingOrderItem =
     await MyGlobal.prisma.mall_platform_order_items.findFirst({
@@ -55,16 +56,14 @@ export async function deleteMallPlatformSellerProductsProductIdVariantsVariantId
     });
   if (blockingOrderItem !== null) {
     throw new HttpException(
-      "Cannot delete variant with pending paid or shipped order items",
+      "Conflict: the variant has pending order items",
       409,
     );
   }
   const blockingCancellationRequest =
     await MyGlobal.prisma.mall_platform_cancellation_requests.findFirst({
       where: {
-        orderItem: {
-          mall_platform_product_variant_id: props.variantId,
-        },
+        mall_platform_order_item_id: props.variantId,
         status: "pending",
       },
       select: {
@@ -73,16 +72,14 @@ export async function deleteMallPlatformSellerProductsProductIdVariantsVariantId
     });
   if (blockingCancellationRequest !== null) {
     throw new HttpException(
-      "Cannot delete variant with pending cancellation requests",
+      "Conflict: the variant has pending cancellation requests",
       409,
     );
   }
   const blockingRefundRequest =
     await MyGlobal.prisma.mall_platform_refund_requests.findFirst({
       where: {
-        orderItem: {
-          mall_platform_product_variant_id: props.variantId,
-        },
+        mall_platform_order_item_id: props.variantId,
         status: "pending",
       },
       select: {
@@ -91,13 +88,22 @@ export async function deleteMallPlatformSellerProductsProductIdVariantsVariantId
     });
   if (blockingRefundRequest !== null) {
     throw new HttpException(
-      "Cannot delete variant with pending refund requests",
+      "Conflict: the variant has pending refund requests",
       409,
     );
   }
-  await MyGlobal.prisma.mall_platform_product_variants.delete({
-    where: { id: props.variantId },
-  });
+  await MyGlobal.prisma.$transaction([
+    MyGlobal.prisma.mall_platform_inventory_records.deleteMany({
+      where: {
+        mall_platform_product_variant_id: props.variantId,
+      },
+    }),
+    MyGlobal.prisma.mall_platform_product_variants.delete({
+      where: {
+        id: props.variantId,
+      },
+    }),
+  ]);
 }
 
 

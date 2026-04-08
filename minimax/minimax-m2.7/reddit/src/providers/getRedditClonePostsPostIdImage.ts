@@ -19,25 +19,32 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getRedditClonePostsPostIdImage(props: {
   postId: string & tags.Format<"uuid">;
 }): Promise<IRedditCloneFile> {
-  await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
+  // Step 1: Verify the post exists
+  const post = await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
     where: { id: props.postId },
-    select: { id: true },
+    select: { id: true, type: true },
   });
-  const postImage = await MyGlobal.prisma.reddit_clone_post_images.findFirst({
-    where: {
-      reddit_clone_post_id: props.postId,
-      file: {
-        deleted_at: null,
-      },
-    },
-    select: {
-      file: RedditCloneFileTransformer.select(),
-    },
-  });
-  if (!postImage) {
-    throw new HttpException("Not found", 404);
+  // Step 2: Verify this is an image post
+  if (post.type !== "image") {
+    throw new HttpException("Post is not an image post", 404);
   }
-  return await RedditCloneFileTransformer.transform(postImage.file);
+  // Step 3: Find the associated image record
+  const postImage =
+    await MyGlobal.prisma.reddit_clone_post_images.findUniqueOrThrow({
+      where: { reddit_clone_post_id: props.postId },
+      select: { id: true, reddit_clone_file_id: true },
+    });
+  // Step 4: Get the file metadata (with deleted_at check)
+  const file = await MyGlobal.prisma.reddit_clone_files.findUniqueOrThrow({
+    where: { id: postImage.reddit_clone_file_id },
+    ...RedditCloneFileTransformer.select(),
+  });
+  // Step 5: Verify file is not deleted
+  if (file.deleted_at !== null) {
+    throw new HttpException("Image file not found", 404);
+  }
+  // Step 6: Return transformed response
+  return await RedditCloneFileTransformer.transform(file);
 }
 
 

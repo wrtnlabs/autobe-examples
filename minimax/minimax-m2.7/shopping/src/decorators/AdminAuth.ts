@@ -1,3 +1,4 @@
+// File: src/decorators/AdminAuth.ts
 import { SwaggerCustomizer } from "@nestia/core";
 import { ExecutionContext, createParamDecorator } from "@nestjs/common";
 import { Singleton } from "tstl";

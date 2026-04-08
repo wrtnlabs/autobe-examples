@@ -9,49 +9,39 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 
 export namespace RedditCloneFileCollector {
   /**
-   * Extract MIME type from base64 file content using magic bytes.
+   * Collects file upload data for reddit_clone_files table.
+   * Handles metadata extraction and uploader relationship.
    */
-  function extractMimeType(base64Content: string): string {
-    const header = base64Content.substring(0, 50);
-    if (header.startsWith("/9j/")) return "image/jpeg";
-    if (header.startsWith("iVBOR")) return "image/png";
-    if (header.startsWith("R0lGO")) return "image/gif";
-    if (header.startsWith("UklGR")) return "image/webp";
-    return "application/octet-stream";
-  }
-  /**
-   * Get file extension from MIME type.
-   */
-  function getExtension(mimeType: string): string {
-    const map: Record<string, string> = {
-      "image/jpeg": "jpg",
-      "image/png": "png",
-      "image/gif": "gif",
-      "image/webp": "webp",
-    };
-    return map[mimeType] ?? "bin";
-  }
   export async function collect(props: {
     body: IRedditCloneFile.ICreate;
     redditCloneMembers: IEntity;
-    redditCloneMemberSessions: IEntity;
   }) {
     const id: string = v4();
-    const mimeType: string = extractMimeType(props.body.file);
-    const extension: string = getExtension(mimeType);
-    const storedFilename: string = `${v4()}.${extension}`;
-    const fileSize: number = Math.ceil((props.body.file.length - 22) * 3) / 4;
+    const now: Date = new Date();
+    // Extract file extension from original filename
+    const originalExt = props.body.originalFilename.split(".").pop() ?? "";
+    const extension = originalExt ? `.${originalExt}` : "";
+    // Generate unique stored filename
+    const storedFilename = `${v4()}${extension}`;
+    // Generate storage path organized by year/month
+    const year = now.getFullYear().toString();
+    const month = (now.getMonth() + 1).toString().padStart(2, "0");
+    const storagePath = `uploads/${year}/${month}/`;
+    // Calculate file size from binary content
+    const fileSize = new TextEncoder().encode(props.body.file).length;
     return {
+      // Scalar fields
       id,
       original_filename: props.body.originalFilename,
       stored_filename: storedFilename,
-      mime_type: mimeType,
+      mime_type: "application/octet-stream",
       file_size: fileSize,
-      storage_path: `/uploads/files/${storedFilename}`,
+      storage_path: storagePath,
       status: "pending",
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
+      // BelongsTo relation
       uploader: { connect: { id: props.redditCloneMembers.id } },
     } satisfies Prisma.reddit_clone_filesCreateInput;
   }

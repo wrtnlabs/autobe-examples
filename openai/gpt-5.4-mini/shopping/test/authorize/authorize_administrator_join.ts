@@ -11,13 +11,9 @@ import typia, { tags } from "typia";
 /**
  * Register and authenticate a new administrator for E2E testing.
  *
- * Delegates to the mall platform administrator join API using the provided
- * request body, then returns the authorized administrator payload including
- * issued tokens.
- *
- * The underlying SDK function also mutates the connection authorization header
- * with the access token, so this utility preserves the full authentication flow
- * required by subsequent authenticated requests.
+ * Creates a valid administrator join request and delegates to the generated SDK
+ * join endpoint. The returned authorized payload includes the issued token pair
+ * and the authenticated administrator identity.
  */
 export async function authorize_administrator_join(
   connection: api.IConnection,

@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerProfile";
 import { IMallPlatformSellerProfileSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerProfileSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -17,13 +18,15 @@ export namespace MallPlatformSellerProfileSnapshotAtSummaryTransformer {
     return {
       select: {
         id: true,
-        sellerProfile: {
-          select: {},
-        },
         shop_name: true,
         shop_description: true,
         logo_image_uri: true,
         created_at: true,
+        sellerProfile: {
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.mall_platform_seller_profile_snapshotsFindManyArgs;
   }
@@ -32,10 +35,10 @@ export namespace MallPlatformSellerProfileSnapshotAtSummaryTransformer {
   ): Promise<IMallPlatformSellerProfileSnapshot.ISummary> {
     return {
       id: input.id,
-      sellerProfile: {} as IMallPlatformSellerProfile.ISummary,
+      sellerProfile: {} satisfies IMallPlatformSellerProfile.ISummary,
       shopName: input.shop_name,
       shopDescription: input.shop_description,
-      logoImageUri: input.logo_image_uri ?? null,
+      logoImageUri: input.logo_image_uri,
       createdAt: input.created_at.toISOString(),
     } satisfies IMallPlatformSellerProfileSnapshot.ISummary;
   }
@@ -69,7 +72,7 @@ export namespace MallPlatformSellerProfileSnapshotAtSummaryTransformer {
 //   sellerProfile: {IMallPlatformSellerProfile.ISummary},
 //   shopName: {string},
 //   shopDescription: {string},
-//   logoImageUri: {string | null},
+//   logoImageUri: {string},
 //   createdAt: {string},
 //         };
 //       }

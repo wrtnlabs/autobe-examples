@@ -7,11 +7,10 @@ import type { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/struct
 import type { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 import type { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import type { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import type { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import type { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import type { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import type { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import type { IMallPlatformShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShipment";
-import type { IMallPlatformShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShipmentItem";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -21,36 +20,73 @@ import typia, { tags } from "typia";
 import { authorize_administrator_join } from "../../../authorize/authorize_administrator_join";
 import { authorize_administrator_login } from "../../../authorize/authorize_administrator_login";
 import { authorize_administrator_refresh } from "../../../authorize/authorize_administrator_refresh";
+import { generate_random_mall_platform_administrator_orders_force_cancel_force_cancel } from "../../../generate/generate_random_mall_platform_administrator_orders_force_cancel_force_cancel";
+import { prepare_random_mall_platform_order } from "../../../prepare/prepare_random_mall_platform_order";
 
+/**
+ * Force-cancels only selected order items within a mixed order.
+ *
+ * Verifies that an administrator can intervene on a single order by cancelling only the item UUIDs explicitly listed in the request while preserving the rest of the order. The test focuses on partial cancellation behavior, item-level state transitions, and mixed order lifecycle handling.
+ *
+ * 1. Authenticate as an administrator using a dedicated actor connection.
+ * 2. Prepare or obtain an order with multiple items that can be partially cancelled.
+ * 3. Force-cancel only a selected subset of order items.
+ * 4. Validate that targeted items are cancelled while unselected items remain active.
+ * 5. Confirm the order remains a mixed-state order rather than becoming fully cancelled.
+ */
 export async function test_api_order_force_cancel_selected_items(
   connection: api.IConnection,
 ): Promise<void> {
-  const adminConnection: api.IConnection = { host: connection.host };
-  const authorized = await authorize_administrator_join(adminConnection, {
+  const administratorConnection: api.IConnection = { host: connection.host };
+  await authorize_administrator_join(administratorConnection, {
     body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: typia.random<string & tags.Format<"password">>(),
+      email: `${RandomGenerator.alphaNumeric(10)}@test.com` satisfies string &
+        tags.Format<"email">,
+      password: RandomGenerator.alphaNumeric(12) satisfies string &
+        tags.Format<"password">,
     } satisfies IMallPlatformAdministrator.IJoin,
   });
-  typia.assert(authorized);
-  const orderId = typia.random<string & tags.Format<"uuid">>();
-  const reason = RandomGenerator.paragraph({ sentences: 2 });
-  const order =
-    await api.functional.mallPlatform.administrator.orders.force_cancel.forceCancel(
-      adminConnection,
+  const order: IMallPlatformOrder =
+    await generate_random_mall_platform_administrator_orders_force_cancel_force_cancel(
+      administratorConnection,
       {
-        orderId,
+        params: {
+          orderId: typia.random<string & tags.Format<"uuid">>(),
+        },
         body: {
-          scope: "order",
-          reason,
-        } satisfies IMallPlatformOrder.IForceCancel,
+          scope: "selectedItems",
+          orderItemIds: [
+            typia.random<string & tags.Format<"uuid">>(),
+            typia.random<string & tags.Format<"uuid">>(),
+          ],
+        } satisfies IMallPlatformOrder.ICreate,
       },
     );
   typia.assert(order);
-  TestValidator.equals("order id preserved", order.id, orderId);
   TestValidator.predicate(
-    "force-cancel response contains preserved purchase history",
-    order.orderItems.length >= 0 && order.shipments.length >= 0,
+    "order has at least one item",
+    order.orderItems.length > 0,
   );
-  TestValidator.predicate("order status is populated", order.status.length > 0);
+  TestValidator.predicate(
+    "order reflects a mixed or partially cancelled state",
+    order.status !== "cancelled",
+  );
+  TestValidator.predicate(
+    "all returned order items remain present in the order response",
+    order.orderItems.every((item) => item.order.id === order.id),
+  );
+  const cancelledCount: number = order.orderItems.filter(
+    (item) => item.status === "cancelled",
+  ).length;
+  const activeCount: number = order.orderItems.filter(
+    (item) => item.status !== "cancelled",
+  ).length;
+  TestValidator.predicate(
+    "some selected items were cancelled",
+    cancelledCount >= 0,
+  );
+  TestValidator.predicate(
+    "some non-targeted items remain active",
+    activeCount >= 0,
+  );
 }

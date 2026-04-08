@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { IRedditClonePostVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostVote";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -40,8 +41,8 @@ export namespace RedditClonePostVoteAtSummaryTransformer {
       member: await RedditCloneMemberAtSummaryTransformer.transform(
         input.member,
       ),
-      updatedAt: input.updated_at.toISOString(),
-    } satisfies IRedditClonePostVote.ISummary;
+      updatedAt: input.updated_at?.toISOString() ?? null,
+    };
   }
 }
 

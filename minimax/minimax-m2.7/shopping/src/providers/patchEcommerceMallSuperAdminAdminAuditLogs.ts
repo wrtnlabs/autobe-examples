@@ -1,9 +1,7 @@
-import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
 import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
 import { IEcommerceMallAdminAuditLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminAuditLog";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
 import { IPageIEcommerceMallAdminAuditLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallAdminAuditLog";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -25,46 +23,40 @@ export async function patchEcommerceMallSuperAdminAdminAuditLogs(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
+  const whereInput = {
+    ...(props.body.ecommerceMallAdminId !== undefined && {
+      ecommerce_mall_admin_id: props.body.ecommerceMallAdminId,
+    }),
+    ...(props.body.action !== undefined && {
+      action: props.body.action,
+    }),
+    ...(props.body.resourceType !== undefined && {
+      resource_type: props.body.resourceType,
+    }),
+    ...(props.body.resourceId !== undefined && {
+      resource_id: props.body.resourceId,
+    }),
+    ...(props.body.createdAtFrom !== undefined && {
+      created_at: {
+        gte: new Date(props.body.createdAtFrom),
+      },
+    }),
+    ...(props.body.createdAtTo !== undefined && {
+      created_at: {
+        lte: new Date(props.body.createdAtTo),
+      },
+    }),
+  } satisfies Prisma.ecommerce_mall_admin_audit_logsWhereInput;
   const records =
     await MyGlobal.prisma.ecommerce_mall_admin_audit_logs.findMany({
-      where: {
-        ...(props.body.adminId && {
-          ecommerce_mall_admin_id: props.body.adminId,
-        }),
-        ...(props.body.action && { action: props.body.action }),
-        ...(props.body.resourceType && {
-          resource_type: props.body.resourceType,
-        }),
-        ...(props.body.resourceId && { resource_id: props.body.resourceId }),
-        ...(props.body.createdAtFrom && {
-          created_at: { gte: new Date(props.body.createdAtFrom) },
-        }),
-        ...(props.body.createdAtTo && {
-          created_at: { lte: new Date(props.body.createdAtTo) },
-        }),
-      },
+      ...EcommerceMallAdminAuditLogAtSummaryTransformer.select(),
+      where: whereInput,
       skip,
       take: limit,
-      orderBy: { created_at: props.body.sortOrder === "asc" ? "asc" : "desc" },
-      ...EcommerceMallAdminAuditLogAtSummaryTransformer.select(),
+      orderBy: { created_at: "desc" },
     });
   const total = await MyGlobal.prisma.ecommerce_mall_admin_audit_logs.count({
-    where: {
-      ...(props.body.adminId && {
-        ecommerce_mall_admin_id: props.body.adminId,
-      }),
-      ...(props.body.action && { action: props.body.action }),
-      ...(props.body.resourceType && {
-        resource_type: props.body.resourceType,
-      }),
-      ...(props.body.resourceId && { resource_id: props.body.resourceId }),
-      ...(props.body.createdAtFrom && {
-        created_at: { gte: new Date(props.body.createdAtFrom) },
-      }),
-      ...(props.body.createdAtTo && {
-        created_at: { lte: new Date(props.body.createdAtTo) },
-      }),
-    },
+    where: whereInput,
   });
   return {
     pagination: {
@@ -72,7 +64,7 @@ export async function patchEcommerceMallSuperAdminAdminAuditLogs(props: {
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
+    } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
       records,
       EcommerceMallAdminAuditLogAtSummaryTransformer.transform,
@@ -100,9 +92,7 @@ export async function patchEcommerceMallSuperAdminAdminAuditLogs(props: {
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IEcommerceMallAdminAuditLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminAuditLog";
 // import { IPageIEcommerceMallAdminAuditLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallAdminAuditLog";
-// import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
 // import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-// import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
 // import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,

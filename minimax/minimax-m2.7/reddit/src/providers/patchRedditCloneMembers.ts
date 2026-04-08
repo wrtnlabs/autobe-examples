@@ -18,65 +18,56 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function patchRedditCloneMembers(props: {
   body: IRedditCloneMember.IUpdate;
 }): Promise<IRedditCloneMember> {
-  const authHeader = process.env.AUTHORIZATION ?? process.env.authorization;
-  if (!authHeader?.startsWith("Bearer ")) {
+  const customer = (props as any).customer;
+  if (!customer?.id) {
     throw new HttpException("Unauthorized", 401);
   }
-  const token = authHeader.slice(7);
-  const decoded = jwt.verify(token, MyGlobal.env.JWT_SECRET_KEY) as {
-    memberId?: string;
-    sub?: string;
-  };
-  const memberId = (decoded.memberId ?? decoded.sub) as string &
-    tags.Format<"uuid">;
-  const member = await MyGlobal.prisma.reddit_clone_members.findFirst({
-    where: { id: memberId, deleted_at: null },
-    select: { id: true },
-  });
-  if (!member) {
-    throw new HttpException("Unauthorized", 401);
-  }
+  const memberId = customer.id;
   if (props.body.avatarFileAssociationId !== undefined) {
     const fileAssociation =
-      await MyGlobal.prisma.reddit_clone_file_associations.findUnique({
-        where: { id: props.body.avatarFileAssociationId },
-        select: { id: true, target_type: true, target_id: true },
+      await MyGlobal.prisma.reddit_clone_file_associations.findFirst({
+        where: {
+          id: props.body.avatarFileAssociationId,
+          target_type: "user",
+          target_id: memberId,
+        },
+        select: { id: true },
       });
     if (!fileAssociation) {
-      throw new HttpException("Avatar file not found", 404);
-    }
-    if (
-      fileAssociation.target_type !== "user" ||
-      fileAssociation.target_id !== memberId
-    ) {
       throw new HttpException("Forbidden", 403);
     }
   }
-  const record = await MyGlobal.prisma.$transaction(async (tx) => {
-    const updateData: Prisma.reddit_clone_user_profilesUpdateInput = {
-      updated_at: new Date(),
-    };
-    if (props.body.displayName !== undefined) {
-      updateData.display_name = props.body.displayName;
-    }
-    if (props.body.bio !== undefined) {
-      updateData.bio = props.body.bio;
-    }
-    if (props.body.avatarFileAssociationId !== undefined) {
-      updateData.avatarFileAssociation = {
-        connect: { id: props.body.avatarFileAssociationId },
-      };
-    }
-    await tx.reddit_clone_user_profiles.update({
-      where: { reddit_clone_member_id: memberId },
-      data: updateData,
-    });
-    return await tx.reddit_clone_members.findFirstOrThrow({
+  await MyGlobal.prisma.reddit_clone_members.findFirstOrThrow({
+    where: { id: memberId, deleted_at: null },
+  });
+  const updateData: {
+    display_name?: string;
+    bio?: string | null;
+    reddit_clone_file_association_id?: string | null;
+    updated_at: Date;
+  } = {
+    updated_at: new Date(),
+  };
+  if (props.body.displayName !== undefined) {
+    updateData.display_name = props.body.displayName;
+  }
+  if (props.body.bio !== undefined) {
+    updateData.bio = props.body.bio;
+  }
+  if (props.body.avatarFileAssociationId !== undefined) {
+    updateData.reddit_clone_file_association_id =
+      props.body.avatarFileAssociationId;
+  }
+  await MyGlobal.prisma.reddit_clone_user_profiles.update({
+    where: { reddit_clone_member_id: memberId },
+    data: updateData,
+  });
+  const updatedMember =
+    await MyGlobal.prisma.reddit_clone_members.findFirstOrThrow({
       where: { id: memberId },
       ...RedditCloneMemberTransformer.select(),
     });
-  });
-  return await RedditCloneMemberTransformer.transform(record);
+  return await RedditCloneMemberTransformer.transform(updatedMember);
 }
 
 

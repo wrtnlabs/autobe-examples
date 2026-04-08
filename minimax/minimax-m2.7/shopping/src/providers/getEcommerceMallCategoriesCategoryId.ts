@@ -8,22 +8,22 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { EcommerceMallCategoryAtInvertTransformer } from "../transformers/EcommerceMallCategoryAtInvertTransformer";
+import { EcommerceMallCategoryTransformer } from "../transformers/EcommerceMallCategoryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getEcommerceMallCategoriesCategoryId(props: {
   categoryId: string & tags.Format<"uuid">;
-}): Promise<IEcommerceMallCategory.IInvert> {
+}): Promise<IEcommerceMallCategory> {
   const record =
-    await MyGlobal.prisma.ecommerce_mall_categories.findFirstOrThrow({
-      ...EcommerceMallCategoryAtInvertTransformer.select(),
+    await MyGlobal.prisma.ecommerce_mall_categories.findUniqueOrThrow({
       where: {
         id: props.categoryId,
         deleted_at: null,
       },
+      ...EcommerceMallCategoryTransformer.select(),
     });
-  return await EcommerceMallCategoryAtInvertTransformer.transform(record);
+  return await EcommerceMallCategoryTransformer.transform(record);
 }
 
 
@@ -50,12 +50,12 @@ export async function getEcommerceMallCategoriesCategoryId(props: {
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 // export async function getEcommerceMallCategoriesCategoryId(props: {
 //   categoryId: string & tags.Format<"uuid">;
-// }): Promise<IEcommerceMallCategory.IInvert> {
+// }): Promise<IEcommerceMallCategory> {
 //   const record = await MyGlobal.prisma.ecommerce_mall_categories.findFirstOrThrow({
-//     ...EcommerceMallCategoryAtInvertTransformer.select(),
+//     ...EcommerceMallCategoryTransformer.select(),
 //     where: { ... },
 //   });
-//   return await EcommerceMallCategoryAtInvertTransformer.transform(record);
+//   return await EcommerceMallCategoryTransformer.transform(record);
 // }
 // ```
 //--------------------------------------------------------------

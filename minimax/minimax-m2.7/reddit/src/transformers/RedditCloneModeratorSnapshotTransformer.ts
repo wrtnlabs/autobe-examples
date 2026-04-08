@@ -4,6 +4,7 @@ import { IRedditCloneCommunityModerator } from "@ORGANIZATION/PROJECT-api/lib/st
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { IRedditCloneModeratorSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneModeratorSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -42,8 +43,8 @@ export namespace RedditCloneModeratorSnapshotTransformer {
       redditCloneMemberId: input.member.id,
       assignedByUserId: input.assignedBy.id,
       role: input.role,
-      assignedAt: toISOStringSafe(input.assigned_at),
-      createdAt: toISOStringSafe(input.created_at),
+      assignedAt: input.assigned_at.toISOString(),
+      createdAt: input.created_at.toISOString(),
       moderator:
         await RedditCloneCommunityModeratorAtSummaryTransformer.transform(
           input.moderator,

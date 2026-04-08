@@ -30,22 +30,21 @@ export async function deleteMallPlatformSellerProductsProductIdImagesImageId(pro
     throw new HttpException("Forbidden", 403);
   }
   const image =
-    await MyGlobal.prisma.mall_platform_product_images.findUniqueOrThrow({
+    await MyGlobal.prisma.mall_platform_product_images.findFirstOrThrow({
       where: {
         id: props.imageId,
+        mall_platform_product_id: props.productId,
       },
       select: {
         id: true,
-        mall_platform_product_id: true,
       },
     });
-  if (image.mall_platform_product_id !== props.productId) {
-    throw new HttpException("Forbidden", 403);
-  }
-  await MyGlobal.prisma.mall_platform_product_images.delete({
-    where: {
-      id: props.imageId,
-    },
+  await MyGlobal.prisma.$transaction(async (prisma) => {
+    await prisma.mall_platform_product_images.delete({
+      where: {
+        id: image.id,
+      },
+    });
   });
 }
 

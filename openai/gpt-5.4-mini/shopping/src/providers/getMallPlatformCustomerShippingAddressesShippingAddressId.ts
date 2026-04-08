@@ -23,6 +23,7 @@ export async function getMallPlatformCustomerShippingAddressesShippingAddressId(
       where: {
         id: props.shippingAddressId,
         customer_id: props.customer.id,
+        deleted_at: null,
       },
       ...MallPlatformShippingAddressTransformer.select(),
     });

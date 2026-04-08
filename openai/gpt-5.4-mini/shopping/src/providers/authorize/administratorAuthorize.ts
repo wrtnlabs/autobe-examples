@@ -10,11 +10,8 @@ export async function administratorAuthorize(request: {
 
   try {
     payload = jwtAuthorize({ request }) as AdministratorPayload;
-  } catch (error) {
-    if (error instanceof UnauthorizedException || error instanceof ForbiddenException) {
-      throw error;
-    }
-    throw new UnauthorizedException();
+  } catch {
+    throw new UnauthorizedException("Invalid authorization token.");
   }
 
   if (payload.type !== "administrator") {

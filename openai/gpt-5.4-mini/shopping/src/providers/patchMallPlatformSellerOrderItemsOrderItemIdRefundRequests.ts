@@ -5,10 +5,10 @@ import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformRefundRequest";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIMallPlatformRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformRefundRequest";
 import { ArrayUtil } from "@nestia/e2e";
@@ -43,64 +43,45 @@ export async function patchMallPlatformSellerOrderItemsOrderItemIdRefundRequests
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
+  const search = props.body.search?.trim();
   const where = {
     mall_platform_order_item_id: props.orderItemId,
-    deleted_at: null,
-    ...(props.body.search !== undefined && props.body.search !== ""
+    ...(props.body.status !== undefined ? { status: props.body.status } : {}),
+    ...(props.body.customerId !== undefined
+      ? { mall_platform_customer_id: props.body.customerId }
+      : {}),
+    ...(props.body.sellerId !== undefined
+      ? { mall_platform_seller_id: props.body.sellerId }
+      : {}),
+    ...(props.body.administratorId !== undefined
+      ? { mall_platform_administrator_id: props.body.administratorId }
+      : {}),
+    ...(props.body.hasReviewed !== undefined
+      ? { reviewed_at: props.body.hasReviewed ? { not: null } : null }
+      : {}),
+    ...(search !== undefined && search.length > 0
       ? {
           OR: [
-            {
-              reason: {
-                contains: props.body.search,
-                mode: "insensitive",
-              },
-            },
-            {
-              review_note: {
-                contains: props.body.search,
-                mode: "insensitive",
-              },
-            },
+            { reason: { contains: search, mode: "insensitive" } },
+            { review_note: { contains: search, mode: "insensitive" } },
           ],
         }
       : {}),
-    ...(props.body.status !== undefined ? { status: props.body.status } : {}),
-    ...(props.body.reviewedAtFrom !== undefined ||
-    props.body.reviewedAtTo !== undefined
-      ? {
-          reviewed_at: {
-            ...(props.body.reviewedAtFrom !== undefined &&
-            props.body.reviewedAtFrom !== null
-              ? { gte: props.body.reviewedAtFrom }
-              : {}),
-            ...(props.body.reviewedAtTo !== undefined &&
-            props.body.reviewedAtTo !== null
-              ? { lte: props.body.reviewedAtTo }
-              : {}),
-          },
-        }
-      : {}),
-    ...(props.body.createdAtFrom !== undefined ||
-    props.body.createdAtTo !== undefined
-      ? {
-          created_at: {
-            ...(props.body.createdAtFrom !== undefined &&
-            props.body.createdAtFrom !== null
-              ? { gte: props.body.createdAtFrom }
-              : {}),
-            ...(props.body.createdAtTo !== undefined &&
-            props.body.createdAtTo !== null
-              ? { lte: props.body.createdAtTo }
-              : {}),
-          },
-        }
-      : {}),
   } satisfies Prisma.mall_platform_refund_requestsWhereInput;
+  const orderBy = (
+    props.body.sort === "status"
+      ? { status: "asc" }
+      : props.body.sort === "reviewedAt"
+        ? { reviewed_at: "desc" }
+        : props.body.sort === "updatedAt"
+          ? { updated_at: "desc" }
+          : { created_at: "desc" }
+  ) satisfies Prisma.mall_platform_refund_requestsOrderByWithRelationInput;
   const records = await MyGlobal.prisma.mall_platform_refund_requests.findMany({
     where,
     skip,
     take: limit,
-    orderBy: [{ created_at: "desc" }, { id: "desc" }],
+    orderBy,
     ...MallPlatformRefundRequestAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.mall_platform_refund_requests.count({
@@ -146,9 +127,9 @@ export async function patchMallPlatformSellerOrderItemsOrderItemIdRefundRequests
 // import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 // import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 // import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 // import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
-// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
+// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 // import { IMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministrator";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,

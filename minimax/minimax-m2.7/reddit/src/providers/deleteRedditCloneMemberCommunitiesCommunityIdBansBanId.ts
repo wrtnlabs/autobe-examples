@@ -16,34 +16,27 @@ export async function deleteRedditCloneMemberCommunitiesCommunityIdBansBanId(pro
   communityId: string & tags.Format<"uuid">;
   banId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Step 1: Find the ban and verify ownership
-  const existingBan = await MyGlobal.prisma.reddit_clone_bans.findUnique({
+  // Step 1: Verify the ban exists and belongs to the specified community
+  const ban = await MyGlobal.prisma.reddit_clone_bans.findUnique({
     where: { id: props.banId },
     select: {
       id: true,
       reddit_clone_community_id: true,
-      reddit_clone_user_id: true,
-      issued_by_reddit_clone_user_id: true,
-      reason: true,
-      created_at: true,
-      updated_at: true,
       deleted_at: true,
-      expires_at: true,
     },
   });
-  // If ban not found, throw 404
-  if (existingBan === null) {
+  if (!ban) {
     throw new HttpException("Ban not found", 404);
   }
-  // Verify ban belongs to the specified community
-  if (existingBan.reddit_clone_community_id !== props.communityId) {
+  // Step 2: Verify the ban belongs to the specified community
+  if (ban.reddit_clone_community_id !== props.communityId) {
     throw new HttpException("Ban not found", 404);
   }
-  // Step 2: Check if ban is already deleted (unbanned)
-  if (existingBan.deleted_at !== null) {
+  // Step 3: Verify the ban is currently active (not already unbanned)
+  if (ban.deleted_at !== null) {
     throw new HttpException("Ban not found", 404);
   }
-  // Step 3: Verify requesting member has moderator privileges in the community
+  // Step 4: Check if requesting member has moderator privileges in the community
   const moderatorRecord =
     await MyGlobal.prisma.reddit_clone_community_moderators.findFirst({
       where: {
@@ -56,16 +49,19 @@ export async function deleteRedditCloneMemberCommunitiesCommunityIdBansBanId(pro
         role: true,
       },
     });
-  if (moderatorRecord === null) {
-    throw new HttpException("Forbidden", 403);
+  if (!moderatorRecord) {
+    throw new HttpException(
+      "You do not have permission to unban users in this community",
+      403,
+    );
   }
-  // Step 4: Soft-delete the ban by setting deleted_at
-  const deletedAtTimestamp = new Date();
+  // Step 5: Soft-delete the ban by setting deleted_at to current timestamp
+  const now = new Date();
   await MyGlobal.prisma.reddit_clone_bans.update({
     where: { id: props.banId },
     data: {
-      deleted_at: deletedAtTimestamp,
-      updated_at: deletedAtTimestamp,
+      deleted_at: now,
+      updated_at: now,
     },
   });
 }

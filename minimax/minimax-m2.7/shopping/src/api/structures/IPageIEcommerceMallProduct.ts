@@ -1,5 +1,5 @@
 import { IEcommerceMallProduct } from "./IEcommerceMallProduct";
-import { IPageIEcommerceMall } from "./IPageIEcommerceMall";
+import { IPage } from "./IPage";
 
 export namespace IPageIEcommerceMallProduct {
   /**
@@ -13,7 +13,7 @@ export namespace IPageIEcommerceMallProduct {
      *
      * @x-autobe-specification Pagination information for the page.
      */
-    pagination: IPageIEcommerceMall.IPagination;
+    pagination: IPage.IPagination;
 
     /**
      * List of records.
@@ -21,5 +21,26 @@ export namespace IPageIEcommerceMallProduct {
      * @x-autobe-specification List of records of type IEcommerceMallProduct.ISummary.
      */
     data: IEcommerceMallProduct.ISummary[];
+  };
+
+  /**
+   * A page.
+   *
+   * Collection of records with pagination information.
+   */
+  export type IAnalytic = {
+    /**
+     * Page information.
+     *
+     * @x-autobe-specification Pagination information for the page.
+     */
+    pagination: IPage.IPagination;
+
+    /**
+     * List of records.
+     *
+     * @x-autobe-specification List of records of type IEcommerceMallProduct.IAnalytic.
+     */
+    data: IEcommerceMallProduct.IAnalytic[];
   };
 }

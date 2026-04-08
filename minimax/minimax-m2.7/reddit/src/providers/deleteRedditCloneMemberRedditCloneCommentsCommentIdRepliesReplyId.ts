@@ -16,7 +16,6 @@ export async function deleteRedditCloneMemberRedditCloneCommentsCommentIdReplies
   commentId: string & tags.Format<"uuid">;
   replyId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Find the reply by replyId - throws 404 if not found
   const reply = await MyGlobal.prisma.reddit_clone_comments.findUniqueOrThrow({
     where: { id: props.replyId },
     select: {
@@ -26,19 +25,15 @@ export async function deleteRedditCloneMemberRedditCloneCommentsCommentIdReplies
       deleted_at: true,
     },
   });
-  // Verify reply belongs to the specified parent comment
   if (reply.parent_comment_id !== props.commentId) {
-    throw new HttpException("Not Found", 404);
+    throw new HttpException("Not found", 404);
   }
-  // Verify the authenticated user is the author of the reply
   if (reply.reddit_clone_member_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Idempotent: if already deleted, return success
   if (reply.deleted_at !== null) {
     return;
   }
-  // Soft-delete: set deleted_at timestamp
   await MyGlobal.prisma.reddit_clone_comments.update({
     where: { id: props.replyId },
     data: {

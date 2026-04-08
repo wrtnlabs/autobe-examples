@@ -1,6 +1,7 @@
 import { IEcommerceMallProductSnapshotVariantOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshotVariantOptionValue";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -24,7 +25,7 @@ export namespace EcommerceMallProductSnapshotVariantOptionValueTransformer {
           select: {
             id: true,
           },
-        } satisfies Prisma.ecommerce_mall_product_snapshot_variantsFindManyArgs,
+        },
       },
     } satisfies Prisma.ecommerce_mall_product_snapshot_variant_option_valuesFindManyArgs;
   }
@@ -35,8 +36,8 @@ export namespace EcommerceMallProductSnapshotVariantOptionValueTransformer {
       id: input.id,
       key: input.key,
       value: input.value,
-      created_at: input.created_at.toISOString(),
-    } satisfies IEcommerceMallProductSnapshotVariantOptionValue;
+      createdAt: input.created_at.toISOString(),
+    };
   }
 }
 
@@ -65,7 +66,7 @@ export namespace EcommerceMallProductSnapshotVariantOptionValueTransformer {
 //   id: {string},
 //   key: {string},
 //   value: {string},
-//   created_at: {string},
+//   createdAt: {string},
 //         };
 //       }
 //     }

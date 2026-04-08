@@ -6,7 +6,6 @@ import { IMallPlatformShipment } from "../../../../api/structures/IMallPlatformS
 import { IPageIMallPlatformShipment } from "../../../../api/structures/IPageIMallPlatformShipment";
 import { SellerAuth } from "../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../decorators/payload/SellerPayload";
-import { deleteMallPlatformSellerShipmentsShipmentId } from "../../../../providers/deleteMallPlatformSellerShipmentsShipmentId";
 import { getMallPlatformSellerShipmentsShipmentId } from "../../../../providers/getMallPlatformSellerShipmentsShipmentId";
 import { patchMallPlatformSellerShipments } from "../../../../providers/patchMallPlatformSellerShipments";
 import { postMallPlatformSellerShipments } from "../../../../providers/postMallPlatformSellerShipments";
@@ -15,23 +14,27 @@ import { putMallPlatformSellerShipmentsShipmentId } from "../../../../providers/
 @Controller("/mallPlatform/seller/shipments")
 export class MallplatformSellerShipmentsController {
   /**
-   * Create a seller-specific shipment for one set of eligible order items.
+   * Create a shipment for one seller's eligible order items.
    *
-   * This endpoint lets a seller group one or more of their order items into a single shipment and register shared tracking information for that package. All included items must belong to the same seller and must still require shipping; items from different sellers cannot be mixed in one shipment.
+   * This operation creates a new shipment package with shared tracking information and links the selected order items to it. It is used in the seller fulfillment workflow so customers can later view which items travel together inside the same shipment from their order history.
    *
-   * After successful creation, the shipment is linked to the selected order items and those items are marked as shipped. The shipment becomes visible in order details so customers can track the package and later confirm delivery for the shipment as a whole.
+   * Every item in the shipment must belong to the same seller and must still be waiting to ship. If any selected item is already shipped, delivered, cancelled, refunded, or assigned to another shipment, the request must fail and no shipment should be created. When creation succeeds, the included order items are updated to shipped status in the same transaction.
    *
-   * Validation errors are returned when the selected items are not eligible for shipping, when items already belong to another active shipment, when the shipment would mix sellers, or when the target order items cannot be found. The server must also reject attempts to create a shipment for a completed or otherwise unavailable shipping set.
+   * The response should include the created shipment and its linked items so the caller can immediately show tracking details. Validation errors should clearly identify missing tracking information, empty item selection, mixed-seller item selection, and duplicate or ineligible items.
    *
    * @param connection
-   * @param body Shipment creation payload containing the eligible order items to bundle together and the shared tracking information for the package.
+   * @param body Shipment creation details including the seller's eligible order items and the shipment tracking information.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load the target order items, verify that every item exists, belongs to the authenticated seller, and is in a shippable state (paid/waiting for shipment). Enforce that all items belong to the same seller and that each item is not already assigned to another active shipment. Reject completed or otherwise unavailable shipment attempts.
+   * @x-autobe-specification Treat this as a transactional shipment-creation workflow.
    *
-   * Create the shipment and shipment-item association records in a single transaction. Persist the carrier name and tracking number from the request body, then update each included order item's status to shipped. Ensure the shipment inherits the common seller context from the selected items and that no cross-seller grouping is possible.
+   * Load the requested order items and verify that every item belongs to the authenticated seller. Reject the request if any item is not owned by that seller, if the items come from different sellers, or if any item is not in a shippable state.
    *
-   * If any item validation fails, abort the transaction and return a domain-appropriate error. Do not partially create shipments. Return the full shipment entity with its included shipment items and tracking fields after commit.
+   * Enforce the one-shipment-per-eligible-item rule. Before inserting anything, confirm that none of the selected items already belongs to an active shipment and that the same item is not duplicated in the request.
+   *
+   * Create the shipment row and its shipment-item linkage rows in a single transaction. Persist the carrier name and tracking number from the request, then update all included order items to shipped status after the shipment is created.
+   *
+   * Return the created shipment with its tracking fields and included order items. If validation fails, roll back the full transaction and return a domain error rather than creating a partial shipment.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -53,23 +56,23 @@ export class MallplatformSellerShipmentsController {
   }
 
   /**
-   * Search and browse shipments in a paginated list.
+   * Search and list shipments with pagination, filtering, and sorting.
    *
-   * Shipments are seller-specific delivery packages that contain one or more order items from the same seller and share the same tracking information. This endpoint supports shipment management and order history screens where callers need to inspect shipment status, carrier data, and shipping progress without loading the full shipment detail payload.
+   * Shipments represent seller-specific delivery packages that may contain one or more order items from the same seller and share one set of tracking details. This endpoint is intended for order history screens, seller fulfillment views, and administrative browsing of shipment records.
    *
-   * Access is restricted by ownership and role. Customers may only see shipments belonging to their own orders, and sellers may only see shipments that contain their own order items. The service must validate pagination, filtering, and sorting inputs, return empty pages when nothing matches, and reject unauthorized access consistently with the platform’s authorization rules.
+   * Customers should only see shipments that belong to their own orders, sellers should only see shipments that contain their own order items, and administrators may browse all shipments. If the search matches no records, the response should be an empty page rather than an error.
    *
-   * This endpoint does not modify shipment state. Completed shipments remain visible in browse results, but shipping creation, delivery confirmation, and other state changes are handled by separate operations.
+   * Validation errors should be returned for unsupported filters, invalid pagination values, or malformed sorting rules. This endpoint does not modify shipment data.
    *
    * @param connection
-   * @param body Shipment search criteria including pagination, filters, and sorting options.
+   * @param body Shipment search criteria including pagination, sorting, and shipment-related filters.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Query mall_platform_shipments as a paginated collection.
+   * @x-autobe-specification Query mall_platform_shipments as the primary table and join mall_platform_shipment_items plus mall_platform_order_items when filtering by order scope, seller scope, or item membership. Apply pagination, keyword search, and sorting from the request body, then return shipment summary rows only.
    *
-   * Apply request-body filters for shipment status, seller scope, customer order scope, carrier name, tracking number, and date range if the corresponding fields are present in the request DTO. When the caller is a seller, constrain results to shipments containing the seller’s own order items. When the caller is a customer, constrain results to shipments related to the customer’s own orders. If the caller is an administrator, allow platform-wide access only if the surrounding authorization layer permits it.
+   * Enforce actor-based visibility in the query layer: customers may only read shipments related to their own orders, sellers may only read shipments containing their own items, and administrators may read all shipments. Reject unsupported criteria, invalid page values, and impossible sort requests with validation errors rather than silently ignoring them.
    *
-   * Return summary rows only, sorted according to the requested sort mode and defaulting to newest first when unspecified. Do not fetch or embed the full nested shipment item graph unless needed for authorization checks. Validate pagination bounds, reject unsupported filters or sort keys, and return a standard empty page when no records match. If a shipment is inaccessible, treat it according to the platform’s existing not-found or forbidden conventions rather than leaking cross-account data.
+   * Do not mutate any shipment rows in this operation. Completed shipments remain readable as historical records, but duplicate shipment creation or resubmission is outside the scope of this list endpoint.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -91,23 +94,21 @@ export class MallplatformSellerShipmentsController {
   }
 
   /**
-   * Retrieve a single shipment with its tracking information and included order items.
+   * Retrieve a single shipment with its tracking details and included order items.
    *
-   * This endpoint returns the shipment detail view for one seller-specific package, including the shared carrier and tracking data, the shipment status, and the order items assigned to that shipment. The response is intended for both customers viewing order history and sellers reviewing fulfillment progress.
+   * This endpoint returns the shipment header for one package created by a seller, including carrier information, tracking number, shipment status, shipped and delivered timestamps, and the order items assigned to that shipment. It is used in order history and shipment detail views so customers can see how their items are grouped for delivery.
    *
-   * The shipment groups only order items from the same seller, so the returned item list should reflect that seller boundary and preserve the order context needed to show which purchased lines travel together. If the shipment does not exist, or the caller is not allowed to view it, the service should return the appropriate not-found or authorization error.
+   * The shipment is identified by its UUID path parameter. The response should reflect the current shipment record together with its related shipment items so the consumer can display which order items travel together. If the shipment does not exist, return a not-found error. If the shipment belongs to an order the caller is not allowed to view, return an authorization error.
    *
    * @param connection
-   * @param shipmentId The shipment identifier (global scope).
+   * @param shipmentId The shipment UUID identifier (global scope).
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load the shipment by shipment_id and return the full shipment record with its related shipment items and each associated order item needed for display.
+   * @x-autobe-specification Load the shipment by primary key and include its shipmentItems relation, with each linked orderItem and the minimal nested order-item references needed for display. Use a single transaction-free read query because this is a pure retrieval operation.
    *
-   * Join shipment_items to order_items, and for customer-facing views also include the order context necessary to verify that the shipment belongs to the caller’s order history. If the implementation needs to show item grouping, load the linked order item snapshots or summary fields already persisted on the order item as available in the schema.
+   * Validate that shipmentId is a UUID and return 404 when no shipment exists for the given id. Do not infer or compute shipment membership from orders; use the persisted shipment-item junction records. The response must expose current carrier_name, tracking_number, tracking_url, status, shipped_at, delivered_at, created_at, and updated_at values from mall_platform_shipments.
    *
-   * Validate that the shipment exists before any relationship traversal. If the shipment is missing, return 404. If the caller is a customer, ensure the shipment belongs to one of that customer’s orders. If the caller is a seller, ensure the shipment belongs to items from that seller’s fulfillment scope. If access cannot be confirmed, return 403 or 404 according to the platform’s access-control convention.
-   *
-   * Do not mutate shipment state in this operation. This endpoint is read-only and must not change delivery status, tracking fields, or item statuses. Preserve the shipment’s current state exactly as stored, including completed shipments that are no longer available for shipping actions.
+   * Preserve access control according to actor rules: customers may read shipments that belong to their own orders, sellers may read shipments for their own seller-owned orders/items, and administrators may read any shipment. If authorization fails, return 403. If the shipment has been deleted or is otherwise unavailable in persistence, treat it as not found.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":shipmentId")
@@ -129,24 +130,24 @@ export class MallplatformSellerShipmentsController {
   }
 
   /**
-   * Updates the tracking details for a shipment.
+   * Update a shipment's carrier, tracking information, or status.
    *
-   * A shipment represents one seller's delivery package for one or more order items, and all items in the package must belong to the same seller. This operation is intended for seller fulfillment workflows where the shipping carrier or tracking number needs to be corrected or revised after the shipment has been created.
+   * This endpoint updates the shipment header for an existing seller shipment tied to a single order. It is used to correct carrier details, record tracking information, and advance shipment status as fulfillment progresses. Shipment membership is preserved, so the included order items are not reassigned by this operation.
    *
-   * The system must reject updates for shipments that are no longer available for shipping actions, including completed shipments. It must also preserve the seller grouping rule so that shipment contents remain internally consistent and cannot be changed to include items from another seller through this endpoint.
+   * The service must verify that the shipment exists, is not deleted, and is accessible to the caller according to seller ownership or administrator privileges. A completed shipment must not be reopened or resubmitted, and invalid lifecycle transitions must be rejected without partially updating the record. If the request changes the status to shipped or delivered, the corresponding timestamp fields should be populated when they are still empty.
    *
-   * If the shipment does not exist, the request must fail with a not-found error. If the shipment is immutable because it has already been completed, the request must fail with a conflict or unavailable-state error. Validation errors should report invalid tracking information or any attempt to violate shipment consistency rules.
+   * If the shipment is not found, return a not-found error. If the caller lacks permission to modify it, return an authorization or ownership error. If the requested update conflicts with shipment lifecycle rules or tracking-number uniqueness within the seller scope, return a validation error.
    *
    * @param connection
-   * @param shipmentId The shipment identifier (UUID).
-   * @param body Shipment fields to update, such as carrier information and tracking number.
+   * @param shipmentId The shipment identifier in UUID format.
+   * @param body The shipment fields that can be updated, including carrier information, tracking details, and status.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load the shipment by shipment_id and lock it for update. Verify the shipment exists and belongs to the current seller or an administrator with shipment intervention authority. Reject the request if the shipment is completed or otherwise marked unavailable for shipping actions.
+   * @x-autobe-specification Load the shipment by id together with its seller, order, and shipmentItems relations. Verify that the caller is the owning seller or an administrator with shipment management privileges. Reject missing or deleted shipments.
    *
-   * Update only mutable shipment fields such as carrier name and tracking number, and do not allow the request to move shipment items across sellers or to introduce items that do not belong to the shipment's seller. If the implementation permits shipment item adjustment in this endpoint, revalidate that every included order item belongs to the same seller and that none of the items are already assigned to another active shipment.
+   * Update only the shipment header fields exposed by the request body: carrier name, tracking number, tracking URL, and status. Never modify shipment item membership in this endpoint. Enforce the unique constraint on tracking_number combined with mall_platform_seller_id before persisting changes.
    *
-   * Persist changes in a transaction. Keep the existing shipment-item associations intact unless the schema explicitly supports controlled reassignment. Return the updated shipment together with its item set and tracking details. Surface validation failures for malformed tracking data, missing shipment, unauthorized access, or attempts to edit completed shipments.
+   * Disallow status changes that would reopen a shipment already marked delivered or otherwise completed. When transitioning to shipped, set shipped_at if it is null. When transitioning to delivered, set delivered_at if it is null. Keep the transaction atomic so the shipment record cannot be partially updated. Return the refreshed shipment after commit.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":shipmentId")
@@ -163,40 +164,6 @@ export class MallplatformSellerShipmentsController {
         seller,
         shipmentId,
         body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Delete a shipment record.
-   *
-   * This operation removes a seller-specific shipment from active use. A shipment belongs to one seller and one order, and it groups order items that travel together with shared carrier and tracking information.
-   *
-   * The shipment is identified by its UUID path parameter. The implementation must verify that the caller is allowed to manage the shipment, then mark the shipment as deleted in a way that keeps historical fulfillment data available for authorized views and dispute handling. Shipment-item assignments linked to the shipment are removed by the database relationship behavior, so the shipment no longer appears in active shipment lists or order views after deletion.
-   *
-   * If the shipment does not exist, return a not-found error. If the caller is not authorized to delete the shipment, return an authorization error. The operation must not partially modify tracking fields or shipment-item membership when deletion fails.
-   *
-   * @param connection
-   * @param shipmentId The UUID of the shipment to delete.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load mall_platform_shipments by UUID and verify it exists before writing. Confirm the caller has permission to manage the shipment in the owning seller or administrator scope. Perform a logical deletion by setting deleted_at on the shipment row; do not change carrier_name, tracking_number, tracking_url, status, shipped_at, or delivered_at. Ensure read paths exclude deleted shipments from active shipment views, order detail shipment groupings, and seller shipment lists. Because mall_platform_shipment_items is a dependent junction table with onDelete: Cascade, shipment-item rows should be removed consistently when the shipment is erased according to the persistence strategy. Reject repeated deletion attempts with a not-found style response.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Delete(":shipmentId")
-  public async erase(
-    @SellerAuth()
-    seller: SellerPayload,
-    @TypedParam("shipmentId")
-    shipmentId: string & tags.Format<"uuid">,
-  ): Promise<void> {
-    try {
-      return await deleteMallPlatformSellerShipmentsShipmentId({
-        seller,
-        shipmentId,
       });
     } catch (error) {
       console.log(error);

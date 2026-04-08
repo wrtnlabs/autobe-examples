@@ -19,13 +19,13 @@ export async function getEcommerceMallSellerSellerSessionsSessionId(props: {
   sessionId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallSellerSession> {
   const record =
-    await MyGlobal.prisma.ecommerce_mall_seller_sessions.findUniqueOrThrow({
-      where: { id: props.sessionId },
+    await MyGlobal.prisma.ecommerce_mall_seller_sessions.findFirstOrThrow({
       ...EcommerceMallSellerSessionTransformer.select(),
+      where: {
+        id: props.sessionId,
+        ecommerce_mall_seller_id: props.seller.id,
+      },
     });
-  if (record.seller.id !== props.seller.id) {
-    throw new HttpException("Forbidden", 403);
-  }
   return await EcommerceMallSellerSessionTransformer.transform(record);
 }
 

@@ -31,7 +31,7 @@ export async function getRedditCloneMemberCommunitiesCommunityIdModeratorsModera
         reddit_clone_moderator_id: props.moderatorId,
       },
     });
-  return await RedditCloneModeratorSnapshotTransformer.transform(record);
+  return RedditCloneModeratorSnapshotTransformer.transform(record);
 }
 
 

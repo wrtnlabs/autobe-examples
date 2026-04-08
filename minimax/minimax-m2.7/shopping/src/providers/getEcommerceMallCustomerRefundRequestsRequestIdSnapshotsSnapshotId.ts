@@ -1,9 +1,6 @@
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
-import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
-import { IEcommerceMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshot";
-import { IEcommerceMallProductSnapshotVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshotVariant";
-import { IEcommerceMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequest";
+import { IEcommerceMallRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequestSnapshot";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -15,7 +12,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
-import { EcommerceMallRefundRequestAtInvertTransformer } from "../transformers/EcommerceMallRefundRequestAtInvertTransformer";
+import { EcommerceMallRefundRequestSnapshotTransformer } from "../transformers/EcommerceMallRefundRequestSnapshotTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -23,19 +20,24 @@ export async function getEcommerceMallCustomerRefundRequestsRequestIdSnapshotsSn
   customer: CustomerPayload;
   requestId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
-}): Promise<IEcommerceMallRefundRequest.IInvert> {
+}): Promise<IEcommerceMallRefundRequestSnapshot> {
+  // Query the snapshot with related customer and seller data
   const record =
     await MyGlobal.prisma.ecommerce_mall_refund_request_snapshots.findFirstOrThrow(
       {
-        ...EcommerceMallRefundRequestAtInvertTransformer.select(),
         where: {
           id: props.snapshotId,
           ecommerce_mall_refund_request_id: props.requestId,
-          ecommerce_mall_customer_id: props.customer.id,
         },
+        ...EcommerceMallRefundRequestSnapshotTransformer.select(),
       },
     );
-  return await EcommerceMallRefundRequestAtInvertTransformer.transform(record);
+  // Authorization check: customer can only view their own snapshots
+  if (record.customer.id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  // Transform and return the snapshot
+  return await EcommerceMallRefundRequestSnapshotTransformer.transform(record);
 }
 
 
@@ -56,13 +58,10 @@ export async function getEcommerceMallCustomerRefundRequestsRequestIdSnapshotsSn
 // import { toISOStringSafe } from "../utils/toISOStringSafe"
 // 
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-// import { IEcommerceMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequest";
+// import { IEcommerceMallRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequestSnapshot";
 // import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 // import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 // import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
-// import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
-// import { IEcommerceMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshot";
-// import { IEcommerceMallProductSnapshotVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshotVariant";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
@@ -70,12 +69,12 @@ export async function getEcommerceMallCustomerRefundRequestsRequestIdSnapshotsSn
 //   customer: CustomerPayload;
 //   requestId: string & tags.Format<"uuid">;
 //   snapshotId: string & tags.Format<"uuid">;
-// }): Promise<IEcommerceMallRefundRequest.IInvert> {
+// }): Promise<IEcommerceMallRefundRequestSnapshot> {
 //   const record = await MyGlobal.prisma.ecommerce_mall_refund_request_snapshots.findFirstOrThrow({
-//     ...EcommerceMallRefundRequestAtInvertTransformer.select(),
+//     ...EcommerceMallRefundRequestSnapshotTransformer.select(),
 //     where: { ... },
 //   });
-//   return await EcommerceMallRefundRequestAtInvertTransformer.transform(record);
+//   return await EcommerceMallRefundRequestSnapshotTransformer.transform(record);
 // }
 // ```
 //--------------------------------------------------------------

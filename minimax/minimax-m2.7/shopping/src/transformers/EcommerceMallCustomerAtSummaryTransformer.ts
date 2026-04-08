@@ -2,12 +2,14 @@ import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { EcommerceMallCustomerProfileAtSummaryTransformer } from "./EcommerceMallCustomerProfileAtSummaryTransformer";
 
 export namespace EcommerceMallCustomerAtSummaryTransformer {
   export type Payload = Prisma.ecommerce_mall_customersGetPayload<
@@ -18,41 +20,28 @@ export namespace EcommerceMallCustomerAtSummaryTransformer {
       select: {
         id: true,
         email: true,
-        password_hash: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        profile: {
-          select: {
-            id: true,
-            ecommerce_mall_customer_id: true,
-            display_name: true,
-            phone: true,
-            created_at: true,
-            updated_at: true,
-          },
-        },
+        profile: EcommerceMallCustomerProfileAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_customersFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallCustomer.ISummary> {
+    if (!input.profile) throw new Error("Customer profile not found");
     return {
       id: input.id,
       email: input.email,
-      createdAt: toISOStringSafe(input.created_at),
-      updatedAt: toISOStringSafe(input.updated_at),
-      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
-      customerProfile: {
-        id: input.profile!.id,
-        profileType: "customer" as const,
-        customerId: input.profile!.ecommerce_mall_customer_id,
-        displayName: input.profile!.display_name,
-        phone: input.profile!.phone,
-        createdAt: toISOStringSafe(input.profile!.created_at),
-        updatedAt: toISOStringSafe(input.profile!.updated_at),
-      } satisfies IEcommerceMallCustomerProfile,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
+      status:
+        input.deleted_at === null ? ("active" as const) : ("banned" as const),
+      profile: await EcommerceMallCustomerProfileAtSummaryTransformer.transform(
+        input.profile,
+      ),
     } satisfies IEcommerceMallCustomer.ISummary;
   }
 }
@@ -70,10 +59,11 @@ export namespace EcommerceMallCustomerAtSummaryTransformer {
 //           select: {
 //             id: true,
 //             email: true,
-//             createdAt: true,
-//             updatedAt: true,
-//             deletedAt: true,
-//             ...
+//             password_hash: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//             profile: EcommerceMallCustomerProfileAtSummaryTransformer.select(),
 //           },
 //         } satisfies Prisma.ecommerce_mall_customersFindManyArgs;
 //       }
@@ -82,10 +72,11 @@ export namespace EcommerceMallCustomerAtSummaryTransformer {
 //         return {
 //   id: {string},
 //   email: {string},
-//   createdAt: {string},
-//   updatedAt: {string},
-//   deletedAt: {string | null},
-//   customerProfile: {IEcommerceMallCustomerProfile},
+//   created_at: {string},
+//   updated_at: {string},
+//   deleted_at: {string | null},
+//   status: {"active" | "banned"},
+//   profile: await EcommerceMallCustomerProfileAtSummaryTransformer.transform(input.profile),
 //         };
 //       }
 //     }

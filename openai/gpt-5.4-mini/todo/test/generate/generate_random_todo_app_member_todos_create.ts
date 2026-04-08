@@ -10,6 +10,13 @@ import typia, { tags } from "typia";
 
 import { prepare_random_todo_app_todo } from "../prepare/prepare_random_todo_app_todo";
 
+/**
+ * Generate a random private todo for E2E testing.
+ *
+ * Prepares randomized todo creation data using the prepare function, then
+ * calls the authenticated member todo creation endpoint to persist the new
+ * todo and return the created record.
+ */
 export async function generate_random_todo_app_member_todos_create(
   connection: api.IConnection,
   props: {

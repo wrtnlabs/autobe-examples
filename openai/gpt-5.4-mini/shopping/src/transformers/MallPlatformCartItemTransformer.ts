@@ -3,11 +3,11 @@ import { IMallPlatformCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
-import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { IMallPlatformShoppingCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShoppingCart";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -21,26 +21,6 @@ export namespace MallPlatformCartItemTransformer {
   export type Payload = Prisma.mall_platform_cart_itemsGetPayload<
     ReturnType<typeof select>
   >;
-  export async function transform(
-    input: Payload,
-  ): Promise<IMallPlatformCartItem> {
-    return {
-      id: input.id,
-      quantity: input.quantity,
-      availabilityState: input.availability_state,
-      shoppingCart:
-        await MallPlatformShoppingCartAtSummaryTransformer.transform(
-          input.shoppingCart,
-        ),
-      productVariant:
-        await MallPlatformProductVariantAtSummaryTransformer.transform(
-          input.productVariant,
-        ),
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-    } satisfies IMallPlatformCartItem;
-  }
   export function select() {
     return {
       select: {
@@ -54,6 +34,26 @@ export namespace MallPlatformCartItemTransformer {
         productVariant: MallPlatformProductVariantAtSummaryTransformer.select(),
       },
     } satisfies Prisma.mall_platform_cart_itemsFindManyArgs;
+  }
+  export async function transform(
+    input: Payload,
+  ): Promise<IMallPlatformCartItem> {
+    return {
+      id: input.id,
+      shoppingCart:
+        await MallPlatformShoppingCartAtSummaryTransformer.transform(
+          input.shoppingCart,
+        ),
+      productVariant:
+        await MallPlatformProductVariantAtSummaryTransformer.transform(
+          input.productVariant,
+        ),
+      quantity: input.quantity,
+      availabilityState: input.availability_state,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
+    } satisfies IMallPlatformCartItem;
   }
 }
 
@@ -83,10 +83,10 @@ export namespace MallPlatformCartItemTransformer {
 //       export async function transform(input: Payload): Promise<IMallPlatformCartItem> {
 //         return {
 //   id: {string},
-//   quantity: {integer},
-//   availabilityState: {string},
 //   shoppingCart: await MallPlatformShoppingCartAtSummaryTransformer.transform(input.shoppingCart),
 //   productVariant: await MallPlatformProductVariantAtSummaryTransformer.transform(input.productVariant),
+//   quantity: {integer},
+//   availabilityState: {string},
 //   createdAt: {string},
 //   updatedAt: {string},
 //   deletedAt: {string | null},

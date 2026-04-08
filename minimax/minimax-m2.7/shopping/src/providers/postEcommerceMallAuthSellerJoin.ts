@@ -1,6 +1,9 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+import { IEcommerceMallSellerApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerApproval";
 import { IEcommerceMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfile";
+import { IEcommerceMallSellerSuspension } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerSuspension";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -10,6 +13,10 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { EcommerceMallSellerCollector } from "../collectors/EcommerceMallSellerCollector";
+import { EcommerceMallSellerApprovalAtSummaryTransformer } from "../transformers/EcommerceMallSellerApprovalAtSummaryTransformer";
+import { EcommerceMallSellerProfileAtSummaryTransformer } from "../transformers/EcommerceMallSellerProfileAtSummaryTransformer";
+import { EcommerceMallSellerSuspensionAtSummaryTransformer } from "../transformers/EcommerceMallSellerSuspensionAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,138 +25,89 @@ export async function postEcommerceMallAuthSellerJoin(props: {
   body: IEcommerceMallSeller.IJoin;
 }): Promise<IEcommerceMallSeller.IAuthorized> {
   // 1. Check for duplicate email
-  const existingSeller = await MyGlobal.prisma.ecommerce_mall_sellers.findFirst(
-    {
-      where: { email: props.body.email },
-    },
-  );
-  if (existingSeller) {
+  const existing = await MyGlobal.prisma.ecommerce_mall_sellers.findFirst({
+    where: { email: props.body.email },
+    select: { id: true },
+  });
+  if (existing) {
     throw new HttpException("Email already registered", 409);
   }
-  // 2. Hash password
-  const passwordHash = await PasswordUtil.hash(props.body.password);
-  // 3. Generate IDs and timestamps as strings
-  const sellerId = v4();
-  const profileId = v4();
-  const sessionId = v4();
-  const now = new Date().toISOString();
-  // 4. Create seller with approval_status='pending'
+  // 2. Create seller with pending approval status (Collector handles password hashing)
   const seller = await MyGlobal.prisma.ecommerce_mall_sellers.create({
+    data: await EcommerceMallSellerCollector.collect({
+      body: props.body,
+    }),
+    select: {
+      id: true,
+      email: true,
+      approval_status: true,
+      rejection_reason: true,
+      rejected_at: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+    },
+  });
+  // 3. Create email verification token with 24-hour expiration
+  const verificationToken = v4();
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  await MyGlobal.prisma.ecommerce_mall_seller_email_verifications.create({
     data: {
-      id: sellerId,
+      id: v4(),
+      ecommerce_mall_seller_id: seller.id,
+      token: verificationToken,
       email: props.body.email,
-      password_hash: passwordHash,
-      approval_status: "pending",
-      rejection_reason: null,
-      rejected_at: null,
-      created_at: new Date(now),
-      updated_at: new Date(now),
-      deleted_at: null,
+      expires_at: expiresAt,
+      verified_at: null,
+      created_at: new Date(),
+      updated_at: new Date(),
     },
   });
-  // 5. Create seller profile
-  const profile = await MyGlobal.prisma.ecommerce_mall_seller_profiles.create({
-    data: {
-      id: profileId,
-      seller_id: sellerId,
-      name: "",
-      description: "",
-      logo_uri: null,
-      created_at: new Date(now),
-      updated_at: new Date(now),
-      deleted_at: null,
-    },
-  });
-  // 6. Generate JWT tokens
-  const accessExpiresIn = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-  const refreshExpiresIn = new Date(
-    Date.now() + 7 * 24 * 60 * 60 * 1000,
-  ).toISOString();
-  const accessToken = jwt.sign(
-    {
-      type: "seller",
-      id: seller.id,
-      session_id: sessionId,
-      created_at: now,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
-  const refreshToken = jwt.sign(
-    {
-      type: "seller",
-      id: seller.id,
-      session_id: sessionId,
-      tokenType: "refresh",
-      created_at: now,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
-  // 7. Create session
-  await MyGlobal.prisma.ecommerce_mall_seller_sessions.create({
-    data: {
-      id: sessionId,
-      ecommerce_mall_seller_id: sellerId,
-      ip: props.body.ip ?? props.ip,
-      href: props.body.href,
-      referrer: props.body.referrer,
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      created_at: new Date(now),
-      expired_at: new Date(accessExpiresIn),
-    },
-  });
-  // 8. Return IAuthorized response
+  // 4. Query profile (may be null for newly registered sellers)
+  const profile =
+    await MyGlobal.prisma.ecommerce_mall_seller_profiles.findFirst({
+      where: { seller_id: seller.id },
+      ...EcommerceMallSellerProfileAtSummaryTransformer.select(),
+    });
+  // 5. Query approval history (empty for new registrations)
+  const approvals =
+    await MyGlobal.prisma.ecommerce_mall_seller_approvals.findMany({
+      where: { ecommerce_mall_seller_id: seller.id },
+      ...EcommerceMallSellerApprovalAtSummaryTransformer.select(),
+    });
+  // 6. Query suspension history (empty for new registrations)
+  const suspensions =
+    await MyGlobal.prisma.ecommerce_mall_seller_suspensions.findMany({
+      where: { ecommerce_mall_seller_id: seller.id },
+      ...EcommerceMallSellerSuspensionAtSummaryTransformer.select(),
+    });
+  // 7. Build and return IAuthorized response
   return {
-    id: seller.id as string & tags.Format<"uuid">,
-    email: seller.email as string & tags.Format<"email">,
+    id: seller.id,
+    email: seller.email,
     approvalStatus: seller.approval_status as
       | "pending"
       | "approved"
       | "rejected",
     rejectionReason: seller.rejection_reason,
-    rejectedAt: seller.rejected_at
-      ? (seller.rejected_at.toISOString() as string & tags.Format<"date-time">)
-      : null,
-    profile: {
-      id: profile.id as string & tags.Format<"uuid">,
-      name: profile.name,
-      description: profile.description,
-      logo_uri: profile.logo_uri,
-      seller: {
-        id: seller.id as string & tags.Format<"uuid">,
-        email: seller.email as string & tags.Format<"email">,
-        approvalStatus: seller.approval_status as
-          | "pending"
-          | "approved"
-          | "rejected",
-        createdAt: seller.created_at.toISOString() as string &
-          tags.Format<"date-time">,
-      },
-      created_at: profile.created_at.toISOString() as string &
-        tags.Format<"date-time">,
-      updated_at: profile.updated_at.toISOString() as string &
-        tags.Format<"date-time">,
-      deleted_at: profile.deleted_at
-        ? (profile.deleted_at.toISOString() as string &
-            tags.Format<"date-time">)
-        : null,
-    },
-    productsCount: 0 as number & tags.Type<"int32">,
-    createdAt: seller.created_at.toISOString() as string &
-      tags.Format<"date-time">,
-    updatedAt: seller.updated_at.toISOString() as string &
-      tags.Format<"date-time">,
-    deletedAt: seller.deleted_at
-      ? (seller.deleted_at.toISOString() as string & tags.Format<"date-time">)
-      : null,
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpiresIn as string & tags.Format<"date-time">,
-      refreshable_until: refreshExpiresIn as string & tags.Format<"date-time">,
-    },
+    rejectedAt: seller.rejected_at ? toISOStringSafe(seller.rejected_at) : null,
+    profile: profile
+      ? await EcommerceMallSellerProfileAtSummaryTransformer.transform(profile)
+      : (null as unknown as IEcommerceMallSellerProfile.ISummary),
+    sellerApprovals: await ArrayUtil.asyncMap(
+      approvals,
+      EcommerceMallSellerApprovalAtSummaryTransformer.transform,
+    ),
+    sellerSuspensions: await ArrayUtil.asyncMap(
+      suspensions,
+      EcommerceMallSellerSuspensionAtSummaryTransformer.transform,
+    ),
+    approvalCount: approvals.length,
+    suspensionCount: suspensions.length,
+    createdAt: toISOStringSafe(seller.created_at),
+    updatedAt: toISOStringSafe(seller.updated_at),
+    deletedAt: seller.deleted_at ? toISOStringSafe(seller.deleted_at) : null,
+    token: null as unknown as IAuthorizationToken,
   };
 }
 
@@ -173,6 +131,9 @@ export async function postEcommerceMallAuthSellerJoin(props: {
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 // import { IEcommerceMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfile";
+// import { IEcommerceMallSellerApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerApproval";
+// import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
+// import { IEcommerceMallSellerSuspension } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerSuspension";
 // import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
@@ -187,8 +148,11 @@ export async function postEcommerceMallAuthSellerJoin(props: {
 //     approvalStatus: ...,
 //     rejectionReason: ...,
 //     rejectedAt: ...,
-//     profile: await EcommerceMallSellerProfileTransformer.transform(...),
-//     productsCount: ...,
+//     profile: await EcommerceMallSellerProfileAtSummaryTransformer.transform(...),
+//     sellerApprovals: await ArrayUtil.asyncMap(..., (r) => EcommerceMallSellerApprovalAtSummaryTransformer.transform(r)),
+//     sellerSuspensions: await ArrayUtil.asyncMap(..., (r) => EcommerceMallSellerSuspensionAtSummaryTransformer.transform(r)),
+//     approvalCount: ...,
+//     suspensionCount: ...,
 //     createdAt: ...,
 //     updatedAt: ...,
 //     deletedAt: ...,

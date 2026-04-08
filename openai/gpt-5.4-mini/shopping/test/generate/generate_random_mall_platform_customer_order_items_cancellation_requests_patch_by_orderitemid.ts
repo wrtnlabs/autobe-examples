@@ -7,9 +7,9 @@ import type { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/struct
 import type { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 import type { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import type { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import type { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import type { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import type { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import type { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -19,14 +19,16 @@ import typia, { tags } from "typia";
 import { prepare_random_mall_platform_cancellation_request } from "../prepare/prepare_random_mall_platform_cancellation_request";
 
 /**
- * Generate a random mall platform cancellation request via the API for E2E testing.
+ * Generate a random cancellation request for an order item via the API for E2E testing.
  *
- * Prepares a valid cancellation request body using the matching prepare function,
- * then submits it to the customer cancellation-request endpoint for the specified
- * order item.
+ * Prepares random cancellation request data using the prepare function, then submits
+ * the request for the specified order item through the customer cancellation-request
+ * endpoint. The created cancellation request entity is returned for further test use.
  *
- * The generated request is item-scoped and returns the created cancellation request
- * entity so tests can assert the pending review state immediately.
+ * @param connection API connection to the mall platform backend.
+ * @param props Input properties containing optional cancellation request body overrides
+ * and the required order item identifier.
+ * @returns The created cancellation request entity.
  */
 export async function generate_random_mall_platform_customer_order_items_cancellation_requests_patch_by_orderitemid(
   connection: api.IConnection,
@@ -39,13 +41,11 @@ export async function generate_random_mall_platform_customer_order_items_cancell
 ): Promise<IMallPlatformCancellationRequest> {
   const prepared: IMallPlatformCancellationRequest.ICreate =
     prepare_random_mall_platform_cancellation_request(props.body);
-  const result: IMallPlatformCancellationRequest =
-    await api.functional.mallPlatform.customer.orderItems.cancellationRequests.patchByOrderitemid(
-      connection,
-      {
-        body: prepared,
-        orderItemId: props.params.orderItemId,
-      },
-    );
-  return result;
+  return await api.functional.mallPlatform.customer.orderItems.cancellationRequests.patchByOrderitemid(
+    connection,
+    {
+      body: prepared,
+      orderItemId: props.params.orderItemId,
+    },
+  );
 }

@@ -1,9 +1,9 @@
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
-import { IEcommerceMallShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShippingAddress";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -11,7 +11,6 @@ import typia, { tags } from "typia";
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
-import { EcommerceMallShippingAddressAtSummaryTransformer } from "./EcommerceMallShippingAddressAtSummaryTransformer";
 
 export namespace EcommerceMallOrderAtSummaryTransformer {
   export type Payload = Prisma.ecommerce_mall_ordersGetPayload<
@@ -22,26 +21,25 @@ export namespace EcommerceMallOrderAtSummaryTransformer {
       select: {
         id: true,
         order_number: true,
+        status: true,
         subtotal: true,
         shipping_cost: true,
         total_amount: true,
-        status: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
         customer: EcommerceMallCustomerAtSummaryTransformer.select(),
-        shippingAddress:
-          EcommerceMallShippingAddressAtSummaryTransformer.select(),
-        orderItems: {
+        shippingAddress: {
           select: {
             id: true,
           },
-        } satisfies Prisma.ecommerce_mall_order_itemsFindManyArgs,
-        shipments: {
+        },
+        _count: {
           select: {
-            id: true,
+            orderItems: true,
+            shipments: true,
           },
-        } satisfies Prisma.ecommerce_mall_shipmentsFindManyArgs,
+        },
       },
     } satisfies Prisma.ecommerce_mall_ordersFindManyArgs;
   }
@@ -51,19 +49,17 @@ export namespace EcommerceMallOrderAtSummaryTransformer {
     return {
       id: input.id,
       order_number: input.order_number,
-      total_amount: input.total_amount,
       status: input.status,
+      subtotal: input.subtotal,
+      shipping_cost: input.shipping_cost,
+      total_amount: input.total_amount,
       created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
       customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
         input.customer,
       ),
-      shipping_address:
-        await EcommerceMallShippingAddressAtSummaryTransformer.transform(
-          input.shippingAddress,
-        ),
-      items_count: input.orderItems.length,
+      items_count: input._count.orderItems,
+      shipments_count: input._count.shipments,
     } satisfies IEcommerceMallOrder.ISummary;
   }
 }
@@ -89,7 +85,7 @@ export namespace EcommerceMallOrderAtSummaryTransformer {
 //             updated_at: true,
 //             deleted_at: true,
 //             customer: EcommerceMallCustomerAtSummaryTransformer.select(),
-//             shippingAddress: EcommerceMallShippingAddressAtSummaryTransformer.select(),
+//             ecommerce_mall_shipping_address_id: true,
 //           },
 //         } satisfies Prisma.ecommerce_mall_ordersFindManyArgs;
 //       }
@@ -98,14 +94,15 @@ export namespace EcommerceMallOrderAtSummaryTransformer {
 //         return {
 //   id: {string},
 //   order_number: {string},
-//   total_amount: {number},
 //   status: {string},
+//   subtotal: {number},
+//   shipping_cost: {number},
+//   total_amount: {number},
 //   created_at: {string},
-//   updated_at: {string},
 //   deleted_at: {null | string},
 //   customer: await EcommerceMallCustomerAtSummaryTransformer.transform(input.customer),
-//   shipping_address: await EcommerceMallShippingAddressAtSummaryTransformer.transform(input.shippingAddress),
 //   items_count: {integer},
+//   shipments_count: {integer},
 //         };
 //       }
 //     }

@@ -8,9 +8,13 @@ import typia, { tags } from "typia";
 /**
  * Prepare random inventory record creation data for E2E testing.
  *
- * Generates a complete IMallPlatformInventoryRecord.ICreate with realistic
- * inventory movement data. Callers may override any field through a
- * DeepPartial input, while unspecified values are generated automatically.
+ * Generates a complete IMallPlatformInventoryRecord.ICreate object with a
+ * signed inventory change and a realistic business reason. Test code may
+ * override either field through a DeepPartial input while missing properties are
+ * filled with safe random defaults.
+ *
+ * @param input DeepPartial overrides for customizing the generated payload.
+ * @returns A complete inventory record creation DTO.
  */
 export function prepare_random_mall_platform_inventory_record(
   input?: DeepPartial<IMallPlatformInventoryRecord.ICreate> | undefined,

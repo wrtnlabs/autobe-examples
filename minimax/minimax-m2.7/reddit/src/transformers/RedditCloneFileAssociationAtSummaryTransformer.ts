@@ -4,6 +4,7 @@ import { IRedditCloneFileAssociation } from "@ORGANIZATION/PROJECT-api/lib/struc
 import { IRedditCloneFileThumbnail } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileThumbnail";
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -26,7 +27,9 @@ export namespace RedditCloneFileAssociationAtSummaryTransformer {
         updated_at: true,
         file: RedditCloneFileAtSummaryTransformer.select(),
         userProfileAvatar: {
-          select: { id: true },
+          select: {
+            id: true,
+          },
         } satisfies Prisma.reddit_clone_user_profilesFindFirstArgs,
       },
     } satisfies Prisma.reddit_clone_file_associationsFindManyArgs;
@@ -39,7 +42,7 @@ export namespace RedditCloneFileAssociationAtSummaryTransformer {
       userId: input.target_id,
       file: await RedditCloneFileAtSummaryTransformer.transform(input.file),
       createdAt: input.created_at.toISOString(),
-    };
+    } satisfies IRedditCloneFileAssociation.ISummary;
   }
 }
 

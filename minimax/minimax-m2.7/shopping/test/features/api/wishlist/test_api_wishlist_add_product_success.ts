@@ -1,18 +1,29 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import type { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
+import type { IEcommerceMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCancellationRequest";
+import type { IEcommerceMallCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCart";
+import type { IEcommerceMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCartItem";
 import type { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+import type { IEcommerceMallCheckout } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCheckout";
 import type { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import type { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
+import type { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import type { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
 import type { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import type { IEcommerceMallProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductImage";
 import type { IEcommerceMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshot";
-import type { IEcommerceMallProductSnapshotVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshotVariant";
 import type { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
 import type { IEcommerceMallProductVariantOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOptionValue";
+import type { IEcommerceMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequest";
+import type { IEcommerceMallRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequestSnapshot";
 import type { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReview";
 import type { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+import type { IEcommerceMallSellerApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerApproval";
 import type { IEcommerceMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfile";
+import type { IEcommerceMallSellerProfileSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfileSnapshot";
+import type { IEcommerceMallSellerSuspension } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerSuspension";
+import type { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
 import type { IEcommerceMallShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShippingAddress";
 import type { IEcommerceMallWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlist";
 import type { IEcommerceMallWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlistItem";
@@ -30,88 +41,64 @@ import { authorize_seller_join } from "../../../authorize/authorize_seller_join"
 import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
 import { generate_random_ecommerce_mall_customer_wishlist_create } from "../../../generate/generate_random_ecommerce_mall_customer_wishlist_create";
-import { generate_random_ecommerce_mall_seller_products_create } from "../../../generate/generate_random_ecommerce_mall_seller_products_create";
+import { generate_random_ecommerce_mall_seller_sellers_me_products_create } from "../../../generate/generate_random_ecommerce_mall_seller_sellers_me_products_create";
 import { prepare_random_ecommerce_mall_product } from "../../../prepare/prepare_random_ecommerce_mall_product";
 import { prepare_random_ecommerce_mall_wishlist_item } from "../../../prepare/prepare_random_ecommerce_mall_wishlist_item";
 
+/**
+ * Test adding a valid product to an authenticated customer's wishlist.
+ *
+ * Validates the complete wishlist workflow including customer registration, seller product creation, and wishlist item creation. Ensures that wishlist items are properly associated with the correct product and customer, with all expected fields including UUID identifier, product reference, parent wishlist reference, and timestamp.
+ *
+ * 1. Customer registers a new account via customer join endpoint.
+ * 2. Seller registers a new account via seller join endpoint.
+ * 3. Seller creates a new product listing with required fields (name, description, category, base price).
+ * 4. Customer adds the product to their wishlist using the product ID.
+ * 5. Validates the wishlist item response contains proper product reference and timestamps.
+ *
+ * @param connection Base API connection for test execution
+ */
 export async function test_api_wishlist_add_product_success(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Register a seller account
-  const sellerConnection: api.IConnection = { host: connection.host };
-  const seller = await authorize_seller_join(sellerConnection, {});
-  // 2. Create a product listing
-  const product = await generate_random_ecommerce_mall_seller_products_create(
-    sellerConnection,
-    {},
-  );
-  typia.assert(product);
-  // 3. Register a new customer account
+  // 1. Customer registers and authenticates
   const customerConnection: api.IConnection = { host: connection.host };
-  const customer = await authorize_customer_join(customerConnection, {});
-  typia.assert(customer);
-  // 4. Add the product to the customer's wishlist
+  await authorize_customer_join(customerConnection, {});
+  // 2. Seller registers (account may require admin approval for product creation)
+  const sellerConnection: api.IConnection = { host: connection.host };
+  await authorize_seller_join(sellerConnection, {});
+  // 3. Seller creates a product
+  const product =
+    await generate_random_ecommerce_mall_seller_sellers_me_products_create(
+      sellerConnection,
+      {},
+    );
+  typia.assert(product);
+  // 4. Customer adds product to wishlist
   const wishlistItem =
-    await api.functional.ecommerceMall.customer.wishlist.create(
+    await generate_random_ecommerce_mall_customer_wishlist_create(
       customerConnection,
       {
         body: {
           productId: product.id,
-        } satisfies IEcommerceMallWishlistItem.ICreate,
+        },
       },
     );
   typia.assert(wishlistItem);
-  // 5. Verify wishlist item has valid UUID identifier
+  // 5. Validate business logic
   TestValidator.equals(
-    "wishlist item has valid UUID",
-    wishlistItem.id.length === 36,
-    true,
-  );
-  // 6. Verify wishlist item references correct product
-  TestValidator.equals(
-    "product ID matches",
+    "product id matches",
     wishlistItem.product.id,
     product.id,
   );
-  // 7. Verify product summary information is included
   TestValidator.equals(
     "product name matches",
     wishlistItem.product.name,
     product.name,
   );
-  TestValidator.predicate(
-    "category information is included",
-    wishlistItem.product.category !== undefined &&
-      wishlistItem.product.category !== null,
-  );
-  TestValidator.predicate(
-    "thumbnail URL is included",
-    wishlistItem.product.thumbnailUrl !== undefined &&
-      wishlistItem.product.thumbnailUrl !== null,
-  );
-  TestValidator.predicate(
-    "stock status is included",
-    typeof wishlistItem.product.hasStock === "boolean",
-  );
-  // 8. Verify parent wishlist context is included
   TestValidator.equals(
-    "wishlist ID is valid UUID",
-    wishlistItem.wishlist.id.length === 36,
-    true,
-  );
-  TestValidator.equals(
-    "customer ID matches",
-    wishlistItem.wishlist.customer.id,
-    customer.id,
-  );
-  // 9. Verify createdAt timestamp is set correctly
-  TestValidator.predicate(
-    "createdAt is ISO date-time format",
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(wishlistItem.createdAt),
-  );
-  TestValidator.equals(
-    "createdAt is recent",
-    new Date(wishlistItem.createdAt).getTime() <= Date.now(),
-    true,
+    "product base price matches",
+    wishlistItem.product.basePrice,
+    product.basePrice,
   );
 }

@@ -11,8 +11,6 @@ export namespace MallPlatformReviewCollector {
   export async function collect(props: {
     body: IMallPlatformReview.ICreate;
     customer: IEntity;
-    orderItem: IEntity;
-    product: IEntity;
   }) {
     const id: string = v4();
     const now: Date = new Date();
@@ -24,13 +22,19 @@ export namespace MallPlatformReviewCollector {
       updated_at: now,
       deleted_at: null,
       customer: {
-        connect: { id: props.customer.id },
+        connect: {
+          id: props.customer.id,
+        },
       },
       orderItem: {
-        connect: { id: props.orderItem.id },
+        connect: {
+          id: props.body.orderItemId,
+        },
       },
       product: {
-        connect: { id: props.product.id },
+        connect: {
+          id: props.body.productId,
+        },
       },
     } satisfies Prisma.mall_platform_reviewsCreateInput;
   }
@@ -43,7 +47,8 @@ export namespace MallPlatformReviewCollector {
 //       export namespace MallPlatformReviewCollector {
 //         export async function collect(props: {
 //           body: IMallPlatformReview.ICreate;
-//           
+//           mallPlatformCustomers: IEntity; // from authorized actor
+// mallPlatformCustomerSessions: IEntity; // from authorized session
 //           
 //           
 //         }) {

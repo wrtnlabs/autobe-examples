@@ -20,31 +20,24 @@ export async function patchRedditCloneFiles(props: {
   body: IRedditCloneFile.IRequest;
 }): Promise<IPageIRedditCloneFile.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
+  const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
   const whereInput = {
     deleted_at: null,
-    ...(props.body.status !== undefined && { status: props.body.status }),
-    ...(props.body.uploaderId !== undefined && {
-      uploader_id: props.body.uploaderId,
+    ...(props.body.status && { status: props.body.status }),
+    ...(props.body.uploaderId && { uploader_id: props.body.uploaderId }),
+    ...(props.body.mimeType && { mime_type: props.body.mimeType }),
+    ...(props.body.search && {
+      original_filename: { contains: props.body.search, mode: "insensitive" },
     }),
-    ...(props.body.mimeType !== undefined && {
-      mime_type: props.body.mimeType,
-    }),
-    ...(props.body.search !== undefined && {
-      original_filename: {
-        contains: props.body.search,
-        mode: "insensitive" as const,
-      },
-    }),
-    ...(props.body.createdAtFrom !== undefined && {
+    ...(props.body.createdAtFrom && {
       created_at: { gte: new Date(props.body.createdAtFrom) },
     }),
-    ...(props.body.createdAtTo !== undefined && {
+    ...(props.body.createdAtTo && {
       created_at: { lte: new Date(props.body.createdAtTo) },
     }),
   } satisfies Prisma.reddit_clone_filesWhereInput;
-  const data = await MyGlobal.prisma.reddit_clone_files.findMany({
+  const records = await MyGlobal.prisma.reddit_clone_files.findMany({
     where: whereInput,
     skip,
     take: limit,
@@ -55,17 +48,17 @@ export async function patchRedditCloneFiles(props: {
     where: whereInput,
   });
   return {
-    data: await ArrayUtil.asyncMap(
-      data,
-      RedditCloneFileAtSummaryTransformer.transform,
-    ),
     pagination: {
       current: page,
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-  } satisfies IPageIRedditCloneFile.ISummary;
+    data: await ArrayUtil.asyncMap(
+      records,
+      RedditCloneFileAtSummaryTransformer.transform,
+    ),
+  };
 }
 
 

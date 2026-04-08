@@ -19,15 +19,21 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getRedditCloneCommunitiesCommunityIdIcon(props: {
   communityId: string & tags.Format<"uuid">;
 }): Promise<IRedditCloneCommunityIcon.IInvert | null> {
+  // Verify community exists first (returns 404 if not found)
+  await MyGlobal.prisma.reddit_clone_communities.findUniqueOrThrow({
+    where: { id: props.communityId },
+    select: { id: true },
+  });
+  // Query icon for this community (icon is optional, so use regular findFirst)
   const icon = await MyGlobal.prisma.reddit_clone_community_icons.findFirst({
     ...RedditCloneCommunityIconAtInvertTransformer.select(),
-    where: {
-      reddit_clone_community_id: props.communityId,
-    },
+    where: { reddit_clone_community_id: props.communityId },
   });
-  if (icon === null) {
+  // Return null if no icon exists
+  if (!icon) {
     return null;
   }
+  // Transform and return the icon record
   return await RedditCloneCommunityIconAtInvertTransformer.transform(icon);
 }
 

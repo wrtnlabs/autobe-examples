@@ -22,35 +22,39 @@ export async function putRedditCloneMemberCommunitiesCommunityId(props: {
   communityId: string & tags.Format<"uuid">;
   body: IRedditCloneCommunity.IUpdate;
 }): Promise<IRedditCloneCommunity> {
-  // Find the community and verify ownership
+  // 1. Find community and verify ownership
   const community =
     await MyGlobal.prisma.reddit_clone_communities.findUniqueOrThrow({
       where: { id: props.communityId },
       select: {
         id: true,
         reddit_clone_member_id: true,
+        name: true,
       },
     });
-  // Verify the authenticated member is the owner
+  // 2. Authorization check - only owner can update
   if (community.reddit_clone_member_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Validate name uniqueness if being changed
-  if (props.body.name !== undefined) {
-    const existingWithName =
-      await MyGlobal.prisma.reddit_clone_communities.findFirst({
-        where: {
-          name: props.body.name,
-          id: { not: props.communityId },
-          deleted_at: null,
-        },
-      });
-    if (existingWithName !== null) {
+  // 3. Validate name uniqueness if name is being changed
+  if (props.body.name !== undefined && props.body.name !== community.name) {
+    const existing = await MyGlobal.prisma.reddit_clone_communities.findFirst({
+      where: {
+        name: props.body.name,
+        deleted_at: null,
+        NOT: { id: props.communityId },
+      },
+    });
+    if (existing) {
       throw new HttpException("Community name already exists", 400);
     }
   }
-  // Build update data with conditional fields
-  const updateData: Prisma.reddit_clone_communitiesUpdateInput = {
+  // 4. Build update data - only include fields that are provided
+  const updateData: {
+    name?: string;
+    description?: string;
+    updated_at: string;
+  } = {
     updated_at: toISOStringSafe(new Date()),
   };
   if (props.body.name !== undefined) {
@@ -59,31 +63,39 @@ export async function putRedditCloneMemberCommunitiesCommunityId(props: {
   if (props.body.description !== undefined) {
     updateData.description = props.body.description;
   }
-  // Update community
+  // 5. Update community
   await MyGlobal.prisma.reddit_clone_communities.update({
     where: { id: props.communityId },
     data: updateData,
   });
-  // Handle icon update if provided
+  // 6. Handle icon update if provided
   if (props.body.icon !== undefined) {
-    const iconId = v4() as string & tags.Format<"uuid">;
-    const now = toISOStringSafe(new Date());
+    // Verify the file exists and is processed
+    const file = await MyGlobal.prisma.reddit_clone_files.findUniqueOrThrow({
+      where: { id: props.body.icon.fileId },
+      select: { id: true, status: true },
+    });
+    if (file.status !== "processed") {
+      throw new HttpException(
+        "File must be processed before setting as icon",
+        400,
+      );
+    }
+    // Upsert the icon record
     await MyGlobal.prisma.reddit_clone_community_icons.upsert({
-      where: {
-        reddit_clone_community_id: props.communityId,
-      },
+      where: { reddit_clone_community_id: props.communityId },
       create: {
-        id: iconId,
+        id: v4(),
         reddit_clone_community_id: props.communityId,
         reddit_clone_file_id: props.body.icon.fileId,
-        created_at: now,
+        created_at: toISOStringSafe(new Date()) as any,
       },
       update: {
         reddit_clone_file_id: props.body.icon.fileId,
       },
     });
   }
-  // Fetch and return updated community
+  // 7. Fetch and return updated community using transformer
   const updated =
     await MyGlobal.prisma.reddit_clone_communities.findUniqueOrThrow({
       where: { id: props.communityId },

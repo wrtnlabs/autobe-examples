@@ -11,11 +11,15 @@ import typia, { tags } from "typia";
 import { prepare_random_mall_platform_shipping_address } from "../prepare/prepare_random_mall_platform_shipping_address";
 
 /**
- * Generate a random shipping address for the authenticated customer via the API.
+ * Generate a random mall platform shipping address via the API for E2E testing.
  *
- * Prepares shipping address creation data with the dedicated prepare function,
- * then creates the saved address through the customer shipping address endpoint.
- * The created address is returned for reuse in E2E test scenarios.
+ * Prepares a complete shipping address creation payload using the matching prepare function, then creates the persisted address through the customer shipping-address API.
+ *
+ * The created resource is returned exactly as the server persists it. No URL parameters are required for this operation.
+ *
+ * @param connection - API connection used to call the customer shipping address creation endpoint.
+ * @param props - Optional body overrides used to prepare the shipping address creation payload.
+ * @returns The created mall platform shipping address.
  */
 export async function generate_random_mall_platform_customer_shipping_addresses_create(
   connection: api.IConnection,
@@ -25,10 +29,12 @@ export async function generate_random_mall_platform_customer_shipping_addresses_
 ): Promise<IMallPlatformShippingAddress> {
   const prepared: IMallPlatformShippingAddress.ICreate =
     prepare_random_mall_platform_shipping_address(props.body);
-  return await api.functional.mallPlatform.customer.shipping_addresses.create(
-    connection,
-    {
-      body: prepared,
-    },
-  );
+  const result: IMallPlatformShippingAddress =
+    await api.functional.mallPlatform.customer.shipping_addresses.create(
+      connection,
+      {
+        body: prepared,
+      },
+    );
+  return result;
 }

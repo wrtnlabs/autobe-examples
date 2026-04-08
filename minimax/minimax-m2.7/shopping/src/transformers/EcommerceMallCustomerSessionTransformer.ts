@@ -3,6 +3,7 @@ import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/str
 import { IEcommerceMallCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerSession";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -12,11 +13,9 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
 
 export namespace EcommerceMallCustomerSessionTransformer {
-  // Payload type - inferred from select() return type for type-safe field access
   export type Payload = Prisma.ecommerce_mall_customer_sessionsGetPayload<
     ReturnType<typeof select>
   >;
-  // select() function - selects all database fields needed by transform()
   export function select() {
     return {
       select: {
@@ -33,22 +32,21 @@ export namespace EcommerceMallCustomerSessionTransformer {
       },
     } satisfies Prisma.ecommerce_mall_customer_sessionsFindManyArgs;
   }
-  // transform() function - converts Prisma payload to DTO
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallCustomerSession> {
     return {
       id: input.id,
-      customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
-        input.customer,
-      ),
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      expiredAt: input.expired_at.toISOString(),
       ip: input.ip,
       href: input.href,
       referrer: input.referrer,
-    } satisfies IEcommerceMallCustomerSession;
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      expired_at: input.expired_at.toISOString(),
+      customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
+        input.customer,
+      ),
+    };
   }
 }
 
@@ -81,12 +79,12 @@ export namespace EcommerceMallCustomerSessionTransformer {
 //         return {
 //   id: {string},
 //   customer: await EcommerceMallCustomerAtSummaryTransformer.transform(input.customer),
-//   createdAt: {string},
-//   updatedAt: {string},
-//   expiredAt: {string},
-//   ip: {string},
+//   expired_at: {string},
 //   href: {string},
+//   ip: {string},
 //   referrer: {string},
+//   created_at: {string},
+//   updated_at: {string},
 //         };
 //       }
 //     }

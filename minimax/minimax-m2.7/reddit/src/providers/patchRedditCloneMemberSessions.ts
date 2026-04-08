@@ -20,40 +20,44 @@ export async function patchRedditCloneMemberSessions(props: {
   member: MemberPayload;
   body: IRedditCloneMemberSession.IRequest;
 }): Promise<IPageIRedditCloneMemberSession.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
+  // Pagination with sensible defaults
+  const page = props.body.page ?? (1 as const);
+  const limit = props.body.limit ?? (20 as const);
   const skip = (page - 1) * limit;
-  const whereClause = {
+  // Current timestamp as ISO string for status filtering
+  const now = new Date().toISOString();
+  // Build dynamic WHERE clause based on provided filters
+  const whereInput: Prisma.reddit_clone_member_sessionsWhereInput = {
     reddit_clone_member_id: props.member.id,
-    ...(props.body.ip && {
+    ...(props.body.ip !== undefined && {
       ip: {
         contains: props.body.ip,
-        mode: "default" as const,
       },
     }),
     ...(props.body.status === "active" && {
       expired_at: {
-        gt: new Date(),
+        gt: now,
       },
     }),
     ...(props.body.status === "expired" && {
       expired_at: {
-        lte: new Date(),
+        lte: now,
       },
     }),
-    ...(props.body.createdAfter && {
+    ...(props.body.createdAfter !== undefined && {
       created_at: {
-        gte: new Date(props.body.createdAfter),
+        gte: props.body.createdAfter,
       },
     }),
-    ...(props.body.createdBefore && {
+    ...(props.body.createdBefore !== undefined && {
       created_at: {
-        lte: new Date(props.body.createdBefore),
+        lte: props.body.createdBefore,
       },
     }),
-  } satisfies Prisma.reddit_clone_member_sessionsWhereInput;
-  const records = await MyGlobal.prisma.reddit_clone_member_sessions.findMany({
-    where: whereClause,
+  };
+  // Query sessions with pagination and sorting by creation date descending
+  const sessions = await MyGlobal.prisma.reddit_clone_member_sessions.findMany({
+    where: whereInput,
     skip,
     take: limit,
     orderBy: {
@@ -61,9 +65,11 @@ export async function patchRedditCloneMemberSessions(props: {
     },
     ...RedditCloneMemberSessionAtSummaryTransformer.select(),
   });
+  // Get total count for pagination metadata
   const total = await MyGlobal.prisma.reddit_clone_member_sessions.count({
-    where: whereClause,
+    where: whereInput,
   });
+  // Return paginated response
   return {
     pagination: {
       current: page,
@@ -72,10 +78,10 @@ export async function patchRedditCloneMemberSessions(props: {
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
-      records,
+      sessions,
       RedditCloneMemberSessionAtSummaryTransformer.transform,
     ),
-  };
+  } satisfies IPageIRedditCloneMemberSession.ISummary;
 }
 
 

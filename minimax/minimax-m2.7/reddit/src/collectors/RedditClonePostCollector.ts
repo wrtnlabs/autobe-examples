@@ -13,7 +13,7 @@ export namespace RedditClonePostCollector {
     redditCloneMembers: IEntity;
     redditCloneMemberSessions: IEntity;
   }) {
-    const id: string = v4();
+    const id = v4();
     const now = new Date();
     return {
       // Scalar fields
@@ -28,33 +28,33 @@ export namespace RedditClonePostCollector {
       // BelongsTo relations
       author: { connect: { id: props.redditCloneMembers.id } },
       community: { connect: { id: props.body.communityId } },
-      // HasOne relations (conditional based on type discriminator)
+      // HasOne relations - polymorphic based on type discriminator
       postTextContent:
-        props.body.type === "text"
+        props.body.type === "text" && props.body.body !== undefined
           ? {
               create: {
                 id: v4(),
-                body: props.body.body ?? "",
+                body: props.body.body,
               },
             }
           : undefined,
       link:
-        props.body.type === "link"
+        props.body.type === "link" && props.body.url !== undefined
           ? {
               create: {
                 id: v4(),
-                url: props.body.url ?? "",
+                url: props.body.url,
                 created_at: now,
                 updated_at: now,
               },
             }
           : undefined,
       image:
-        props.body.type === "image"
+        props.body.type === "image" && props.body.fileId !== undefined
           ? {
               create: {
                 id: v4(),
-                file: { connect: { id: props.body.fileId ?? id } },
+                file: { connect: { id: props.body.fileId } },
                 created_at: now,
                 updated_at: now,
               },

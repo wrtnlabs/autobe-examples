@@ -19,56 +19,27 @@ export async function getRedditCloneMemberRedditCloneCommentsCommentIdVotes(prop
   member: MemberPayload;
   commentId: string & tags.Format<"uuid">;
 }): Promise<IPageIRedditClonePostVote.ISummary> {
-  // Verify comment exists and get its associated post_id
-  const comment = await MyGlobal.prisma.reddit_clone_comments.findUniqueOrThrow(
-    {
-      where: { id: props.commentId },
-      select: { id: true, reddit_clone_post_id: true },
-    },
-  );
-  const page = 1;
-  const limit = 20;
-  const skip = (page - 1) * limit;
-  // Query votes for the post that contains this comment
-  const votes = await MyGlobal.prisma.reddit_clone_post_votes.findMany({
-    where: { reddit_clone_post_id: comment.reddit_clone_post_id },
-    orderBy: { created_at: "desc" },
-    skip,
-    take: limit,
-    select: {
-      id: true,
-      direction: true,
-      created_at: true,
-      updated_at: true,
-      member: {
-        select: {
-          id: true,
-          username: true,
-        },
-      },
-    },
+  // Validate comment exists - throws 404 if not found
+  await MyGlobal.prisma.reddit_clone_comments.findUniqueOrThrow({
+    where: { id: props.commentId },
+    select: { id: true },
   });
-  const total = await MyGlobal.prisma.reddit_clone_post_votes.count({
-    where: { reddit_clone_post_id: comment.reddit_clone_post_id },
-  });
+  // Schema limitation: reddit_clone_post_votes only links to posts (reddit_clone_post_id).
+  // There is no comment votes table or foreign key to comments.
+  // Comment voting is not implemented in the current database schema.
+  // The denormalized vote_score exists on reddit_clone_comments but provides
+  // only aggregate data, not individual vote records with voter information.
+  // Return empty paginated result since comment-level vote records cannot be queried.
+  const page = 1 as number & tags.Type<"int32"> & tags.Minimum<0>;
+  const limit = 10 as number & tags.Type<"int32"> & tags.Minimum<0>;
   return {
     pagination: {
       current: page,
       limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
+      records: 0 as number & tags.Type<"int32"> & tags.Minimum<0>,
+      pages: 0 as number & tags.Type<"int32"> & tags.Minimum<0>,
     },
-    data: votes.map((vote) => ({
-      id: vote.id,
-      direction: vote.direction,
-      createdAt: vote.created_at.toISOString(),
-      member: {
-        id: vote.member.id,
-        username: vote.member.username,
-      },
-      updatedAt:
-        vote.updated_at === null ? null : vote.updated_at.toISOString(),
-    })),
+    data: [],
   };
 }
 

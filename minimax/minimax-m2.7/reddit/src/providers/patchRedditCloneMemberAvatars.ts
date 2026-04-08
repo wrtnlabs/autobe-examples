@@ -25,28 +25,30 @@ export async function patchRedditCloneMemberAvatars(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const whereCondition: Prisma.reddit_clone_file_associationsWhereInput = {
+  const whereInput: Prisma.reddit_clone_file_associationsWhereInput = {
     target_type: "user",
-    ...(props.body.userId !== undefined && { target_id: props.body.userId }),
-    file: {
-      deleted_at: null,
-      ...(props.body.status !== undefined && { status: props.body.status }),
-      ...(props.body.mimeType !== undefined && {
-        mime_type: props.body.mimeType,
-      }),
-    },
   };
-  const records = await MyGlobal.prisma.reddit_clone_file_associations.findMany(
-    {
-      where: whereCondition,
-      skip,
-      take: limit,
-      orderBy: { created_at: "desc" },
-      ...RedditCloneFileAssociationAtSummaryTransformer.select(),
-    },
-  );
+  if (props.body.userId) {
+    whereInput.target_id = props.body.userId;
+  }
+  whereInput.file = {
+    deleted_at: null,
+  };
+  if (props.body.status) {
+    whereInput.file.status = props.body.status;
+  }
+  if (props.body.mimeType) {
+    whereInput.file.mime_type = props.body.mimeType;
+  }
+  const data = await MyGlobal.prisma.reddit_clone_file_associations.findMany({
+    where: whereInput,
+    skip,
+    take: limit,
+    orderBy: { created_at: "desc" },
+    ...RedditCloneFileAssociationAtSummaryTransformer.select(),
+  });
   const total = await MyGlobal.prisma.reddit_clone_file_associations.count({
-    where: whereCondition,
+    where: whereInput,
   });
   return {
     pagination: {
@@ -54,9 +56,9 @@ export async function patchRedditCloneMemberAvatars(props: {
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    },
+    } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
-      records,
+      data,
       RedditCloneFileAssociationAtSummaryTransformer.transform,
     ),
   };

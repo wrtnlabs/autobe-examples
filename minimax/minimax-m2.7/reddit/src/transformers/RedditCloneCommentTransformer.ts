@@ -4,12 +4,15 @@ import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { RedditCloneCommentAtSummaryTransformer } from "./RedditCloneCommentAtSummaryTransformer";
+import { RedditCloneMemberAtSummaryTransformer } from "./RedditCloneMemberAtSummaryTransformer";
 import { RedditClonePostAtSummaryTransformer } from "./RedditClonePostAtSummaryTransformer";
 
 export namespace RedditCloneCommentTransformer {
@@ -25,7 +28,63 @@ export namespace RedditCloneCommentTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        post: RedditClonePostAtSummaryTransformer.select(),
+        post: {
+          select: {
+            id: true,
+            title: true,
+            type: true,
+            vote_score: true,
+            comment_count: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+            author: {
+              select: {
+                id: true,
+                username: true,
+              },
+            },
+            community: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                subscriber_count: true,
+                created_at: true,
+                updated_at: true,
+                deleted_at: true,
+                member: {
+                  select: {
+                    id: true,
+                    username: true,
+                  },
+                },
+                icon: true,
+              },
+            },
+            postTextContent: {
+              select: {
+                body: true,
+              },
+            },
+            link: {
+              select: {
+                url: true,
+              },
+            },
+            image: true,
+            comments: {
+              select: {
+                id: true,
+              },
+            },
+            postVotes: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
         member: {
           select: {
             id: true,
@@ -38,6 +97,9 @@ export namespace RedditCloneCommentTransformer {
             content: true,
             vote_score: true,
             created_at: true,
+            updated_at: true,
+            deleted_at: true,
+            post: true,
             member: {
               select: {
                 id: true,
@@ -54,6 +116,9 @@ export namespace RedditCloneCommentTransformer {
             content: true,
             vote_score: true,
             created_at: true,
+            updated_at: true,
+            deleted_at: true,
+            post: true,
             member: {
               select: {
                 id: true,
@@ -63,86 +128,33 @@ export namespace RedditCloneCommentTransformer {
             parent: true,
             replies: true,
           },
-        } satisfies Prisma.reddit_clone_commentsFindManyArgs,
+        },
       },
     } satisfies Prisma.reddit_clone_commentsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IRedditCloneComment> {
-    const transformSummary = async (
-      comment: {
-        id: string;
-        content: string;
-        vote_score: number;
-        created_at: Date;
-        member: {
-          id: string;
-          username: string;
-        };
-        parent: unknown;
-        replies: unknown[];
-      },
-      cache: VariadicSingleton<
-        Promise<IRedditCloneComment.ISummary[]>,
-        [string]
-      >,
-    ): Promise<IRedditCloneComment.ISummary> => {
-      return {
-        id: comment.id as string & tags.Format<"uuid">,
-        content: comment.content,
-        author: {
-          id: comment.member.id as string & tags.Format<"uuid">,
-          username: comment.member.username,
-        },
-        voteScore: comment.vote_score as number & tags.Type<"int32">,
-        createdAt: comment.created_at.toISOString() as string &
-          tags.Format<"date-time">,
-        replies: await cache.get(comment.id),
-      };
-    };
-    const cache = new VariadicSingleton(
-      async (parentId: string): Promise<IRedditCloneComment.ISummary[]> => {
-        const records = await MyGlobal.prisma.reddit_clone_comments.findMany({
-          where: { parent_comment_id: parentId },
-        });
-        return await ArrayUtil.asyncMap(records, (r) =>
-          transformSummary(r, cache),
-        );
-      },
-    );
     return {
       id: input.id,
       content: input.content,
       voteScore: input.vote_score,
       createdAt: toISOStringSafe(input.created_at),
       updatedAt: toISOStringSafe(input.updated_at),
-      deletedAt:
-        input.deleted_at != null ? toISOStringSafe(input.deleted_at) : null,
-      post: await RedditClonePostAtSummaryTransformer.transform(input.post),
-      member: {
-        id: input.member.id,
-        username: input.member.username,
-      },
+      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
+      post: await RedditClonePostAtSummaryTransformer.transform(
+        input.post as any,
+      ),
+      member: await RedditCloneMemberAtSummaryTransformer.transform(
+        input.member,
+      ),
       parent: input.parent
-        ? await transformSummary(
-            input.parent as {
-              id: string;
-              content: string;
-              vote_score: number;
-              created_at: Date;
-              member: {
-                id: string;
-                username: string;
-              };
-              parent: unknown;
-              replies: unknown[];
-            },
-            cache,
-          )
+        ? await RedditCloneCommentAtSummaryTransformer.transform(input.parent)
         : null,
-      replies: await cache.get(input.id),
-    };
+      replies: await ArrayUtil.asyncMap(input.replies, (item) =>
+        RedditCloneCommentAtSummaryTransformer.transform(item),
+      ),
+    } satisfies IRedditCloneComment;
   }
 }
 
@@ -159,13 +171,10 @@ export namespace RedditCloneCommentTransformer {
 //           select: {
 //             id: true,
 //             content: true,
-//             vote_score: true,
-//             created_at: true,
-//             updated_at: true,
-//             deleted_at: true,
-//             post: RedditClonePostAtSummaryTransformer.select(),
-//             member: RedditCloneMemberAtSummaryTransformer.select(),
-//             parent_comment_id: true,
+//             voteScore: true,
+//             createdAt: true,
+//             updatedAt: true,
+//             deletedAt: true,
 //             ...
 //           },
 //         } satisfies Prisma.reddit_clone_commentsFindManyArgs;
@@ -179,8 +188,8 @@ export namespace RedditCloneCommentTransformer {
 //   createdAt: {string},
 //   updatedAt: {string},
 //   deletedAt: {string | null},
-//   post: await RedditClonePostAtSummaryTransformer.transform(input.post),
-//   member: await RedditCloneMemberAtSummaryTransformer.transform(input.member),
+//   post: {IRedditClonePost.ISummary},
+//   member: {IRedditCloneMember.ISummary},
 //   parent: {IRedditCloneComment.ISummary | null},
 //   replies: {Array<IRedditCloneComment.ISummary>},
 //         };

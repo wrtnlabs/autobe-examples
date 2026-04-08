@@ -13,6 +13,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { GuestPayload } from "../decorators/payload/GuestPayload";
+import { RedditClonePostAtSummaryTransformer } from "../transformers/RedditClonePostAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,111 +21,37 @@ export async function getRedditCloneGuestCommunitiesCommunityIdFeed(props: {
   guest: GuestPayload;
   communityId: string & tags.Format<"uuid">;
 }): Promise<IPageIRedditClonePost.ISummary> {
-  const limit = 20;
-  const page = 1;
-  const skip = (page - 1) * limit;
   // Verify community exists and is not soft-deleted
   await MyGlobal.prisma.reddit_clone_communities.findUniqueOrThrow({
-    where: { id: props.communityId, deleted_at: null },
-    select: { id: true },
-  });
-  // Build where clause for posts in this community
-  const whereClause: Prisma.reddit_clone_postsWhereInput = {
-    reddit_clone_community_id: props.communityId,
-    deleted_at: null,
-  };
-  // Get posts with proper select structure
-  const records = await MyGlobal.prisma.reddit_clone_posts.findMany({
-    where: whereClause,
-    skip,
-    take: limit,
-    orderBy: { created_at: "desc" },
-    select: {
-      id: true,
-      title: true,
-      type: true,
-      vote_score: true,
-      comment_count: true,
-      created_at: true,
-      updated_at: true,
-      deleted_at: true,
-      author: {
-        select: {
-          id: true,
-          username: true,
-        },
-      },
-      community: {
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          subscriber_count: true,
-          member: {
-            select: {
-              id: true,
-              username: true,
-            },
-          },
-          icon: {
-            select: {
-              file: {
-                select: {
-                  storage_path: true,
-                },
-              },
-            },
-          },
-        },
-      },
-      postTextContent: {
-        select: {
-          body: true,
-        },
-      },
-      link: {
-        select: {
-          url: true,
-        },
-      },
-      image: {
-        select: {
-          reddit_clone_file_id: true,
-        },
-      },
+    where: {
+      id: props.communityId,
+      deleted_at: null,
     },
   });
-  // Count total for pagination
-  const total = await MyGlobal.prisma.reddit_clone_posts.count({
-    where: whereClause,
+  const page = 1;
+  const limit = 20;
+  const skip = (page - 1) * limit;
+  // Query posts from this community with soft-delete filter
+  const posts = await MyGlobal.prisma.reddit_clone_posts.findMany({
+    where: {
+      reddit_clone_community_id: props.communityId,
+      deleted_at: null,
+    },
+    skip,
+    take: limit,
+    orderBy: [
+      {
+        created_at: "desc",
+      },
+    ],
+    ...RedditClonePostAtSummaryTransformer.select(),
   });
-  // Transform records to response DTO
-  const data = await ArrayUtil.asyncMap(records, async (record) => {
-    return {
-      id: record.id,
-      title: record.title,
-      type: record.type as "text" | "link" | "image",
-      voteScore: record.vote_score,
-      commentCount: record.comment_count,
-      createdAt: record.created_at.toISOString() as string &
-        tags.Format<"date-time">,
-      author: {
-        id: record.author.id,
-        username: record.author.username,
-      } satisfies IRedditCloneMember.ISummary,
-      community: {
-        id: record.community.id,
-        name: record.community.name,
-        description: record.community.description,
-        subscriberCount: record.community.subscriber_count,
-        owner: {
-          id: record.community.member.id,
-          username: record.community.member.username,
-        } satisfies IRedditCloneMember.ISummary,
-        icon: record.community.icon?.file?.storage_path ?? null,
-      } satisfies IRedditCloneCommunity.ISummary,
-      contentPreview: getContentPreview(record),
-    } satisfies IRedditClonePost.ISummary;
+  // Count total posts for pagination metadata
+  const total = await MyGlobal.prisma.reddit_clone_posts.count({
+    where: {
+      reddit_clone_community_id: props.communityId,
+      deleted_at: null,
+    },
   });
   return {
     pagination: {
@@ -132,36 +59,12 @@ export async function getRedditCloneGuestCommunitiesCommunityIdFeed(props: {
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
-    data,
+    },
+    data: await ArrayUtil.asyncMap(
+      posts,
+      RedditClonePostAtSummaryTransformer.transform,
+    ),
   };
-}
-function getContentPreview(record: {
-  type: string;
-  postTextContent: {
-    body: string;
-  } | null;
-  link: {
-    url: string;
-  } | null;
-  image: {
-    reddit_clone_file_id: string;
-  } | null;
-}): string {
-  switch (record.type) {
-    case "text":
-      return record.postTextContent?.body?.substring(0, 200) ?? "";
-    case "image":
-      return record.image?.reddit_clone_file_id ?? "";
-    case "link":
-      try {
-        return record.link?.url ? new URL(record.link.url).hostname : "";
-      } catch {
-        return record.link?.url ?? "";
-      }
-    default:
-      return "";
-  }
 }
 
 

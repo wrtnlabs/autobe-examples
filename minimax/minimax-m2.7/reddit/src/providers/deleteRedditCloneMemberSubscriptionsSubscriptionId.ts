@@ -15,19 +15,17 @@ export async function deleteRedditCloneMemberSubscriptionsSubscriptionId(props: 
   member: MemberPayload;
   subscriptionId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Verify subscription exists and belongs to the authenticated member
+  // Find subscription and verify ownership
   const subscription =
-    await MyGlobal.prisma.reddit_clone_subscriptions.findFirst({
-      where: {
-        id: props.subscriptionId,
-        reddit_clone_member_id: props.member.id,
-      },
+    await MyGlobal.prisma.reddit_clone_subscriptions.findUniqueOrThrow({
+      where: { id: props.subscriptionId },
       select: {
         id: true,
+        reddit_clone_member_id: true,
       },
     });
-  // If subscription not found or belongs to different user, return 404
-  if (subscription === null) {
+  // Verify the subscription belongs to the authenticated user
+  if (subscription.reddit_clone_member_id !== props.member.id) {
     throw new HttpException("Not Found", 404);
   }
   // Delete the subscription

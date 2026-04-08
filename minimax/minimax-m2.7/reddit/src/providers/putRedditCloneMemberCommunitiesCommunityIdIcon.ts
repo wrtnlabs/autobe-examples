@@ -13,6 +13,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { RedditCloneCommunityAtInvertTransformer } from "../transformers/RedditCloneCommunityAtInvertTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -21,36 +22,50 @@ export async function putRedditCloneMemberCommunitiesCommunityIdIcon(props: {
   communityId: string & tags.Format<"uuid">;
   body: IRedditCloneCommunityIcon.IUpdate;
 }): Promise<IRedditCloneCommunity.IInvert> {
-  // Check community exists and auth
+  // 1. Verify community exists and is not soft-deleted
   const community = await MyGlobal.prisma.reddit_clone_communities.findFirst({
-    where: { id: props.communityId, deleted_at: null },
-    select: { id: true, reddit_clone_member_id: true },
+    where: {
+      id: props.communityId,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      reddit_clone_member_id: true,
+    },
   });
   if (community === null) {
-    throw new HttpException("Community not found or deleted", 404);
+    throw new HttpException("Community not found", 404);
   }
+  // 2. Verify authenticated user is owner OR moderator
   const isOwner = community.reddit_clone_member_id === props.member.id;
-  const moderatorRecord =
+  const isModerator =
     await MyGlobal.prisma.reddit_clone_community_moderators.findFirst({
       where: {
         reddit_clone_community_id: props.communityId,
         reddit_clone_member_id: props.member.id,
       },
-      select: { id: true },
+      select: {
+        id: true,
+      },
     });
-  const isModerator = moderatorRecord !== null;
-  if (!isOwner && !isModerator) {
+  if (!isOwner && isModerator === null) {
     throw new HttpException("Forbidden", 403);
   }
-  // Check file exists and is processed
+  // 3. Verify file exists, is not deleted, and has status = 'processed'
   const file = await MyGlobal.prisma.reddit_clone_files.findFirst({
-    where: { id: props.body.fileId, deleted_at: null, status: "processed" },
-    select: { id: true },
+    where: {
+      id: props.body.fileId,
+      deleted_at: null,
+      status: "processed",
+    },
+    select: {
+      id: true,
+    },
   });
   if (file === null) {
     throw new HttpException("File not found, deleted, or not processed", 400);
   }
-  // Check file association
+  // 4. Verify file association exists with target_type='community' and target_id=communityId
   const fileAssociation =
     await MyGlobal.prisma.reddit_clone_file_associations.findFirst({
       where: {
@@ -58,138 +73,43 @@ export async function putRedditCloneMemberCommunitiesCommunityIdIcon(props: {
         target_type: "community",
         target_id: props.communityId,
       },
-      select: { id: true },
+      select: {
+        id: true,
+      },
     });
   if (fileAssociation === null) {
-    throw new HttpException("File not properly associated with community", 400);
+    throw new HttpException(
+      "File is not properly associated with this community",
+      400,
+    );
   }
-  // Transaction: delete old icon, create new icon
-  const newIconId = v4() as string & tags.Format<"uuid">;
+  // 5. Use transaction to delete existing icon and create new one
   await MyGlobal.prisma.$transaction(async (tx) => {
+    // Delete existing icon if any
     await tx.reddit_clone_community_icons.deleteMany({
-      where: { reddit_clone_community_id: props.communityId },
+      where: {
+        reddit_clone_community_id: props.communityId,
+      },
     });
+    // Create new icon
     await tx.reddit_clone_community_icons.create({
       data: {
-        id: newIconId,
+        id: v4(),
         reddit_clone_community_id: props.communityId,
         reddit_clone_file_id: props.body.fileId,
         created_at: new Date(),
       },
     });
-    await tx.reddit_clone_communities.update({
-      where: { id: props.communityId },
-      data: { updated_at: new Date() },
-    });
   });
-  // Query the new icon with all nested relations
-  const icon =
-    await MyGlobal.prisma.reddit_clone_community_icons.findUniqueOrThrow({
-      where: { id: newIconId },
-      select: {
-        id: true,
-        created_at: true,
-        reddit_clone_community_id: true,
-        community: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            subscriber_count: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
-            member: {
-              select: {
-                id: true,
-                username: true,
-              },
-            },
-          },
-        },
-        file: {
-          select: {
-            id: true,
-            original_filename: true,
-            storage_path: true,
-            mime_type: true,
-            file_size: true,
-            status: true,
-            created_at: true,
-            uploader: {
-              select: {
-                id: true,
-                username: true,
-              },
-            },
-            thumbnails: {
-              select: {
-                id: true,
-                width: true,
-                height: true,
-                variant: true,
-                thumbnail_path: true,
-                created_at: true,
-              },
-            },
-          },
-        },
-      },
+  // 6. Return updated community with icon
+  const updatedCommunity =
+    await MyGlobal.prisma.reddit_clone_communities.findUniqueOrThrow({
+      where: { id: props.communityId },
+      ...RedditCloneCommunityAtInvertTransformer.select(),
     });
-  // Build IRedditCloneCommunity.IInvert response manually
-  return {
-    id: icon.community.id,
-    name: icon.community.name,
-    description: icon.community.description,
-    subscriberCount: icon.community.subscriber_count,
-    owner: {
-      id: icon.community.member.id,
-      username: icon.community.member.username,
-    },
-    icon: {
-      id: icon.id,
-      createdAt: icon.created_at.toISOString(),
-      community: {
-        id: icon.community.id,
-        name: icon.community.name,
-        description: icon.community.description,
-        subscriberCount: icon.community.subscriber_count,
-        owner: {
-          id: icon.community.member.id,
-          username: icon.community.member.username,
-        },
-      },
-      file: {
-        id: icon.file.id,
-        createdAt: icon.file.created_at.toISOString(),
-        originalFilename: icon.file.original_filename,
-        mimeType: icon.file.mime_type,
-        fileSize: icon.file.file_size,
-        status: icon.file.status,
-        uploader: {
-          id: icon.file.uploader.id,
-          username: icon.file.uploader.username,
-        },
-        thumbnails: icon.file.thumbnails?.length
-          ? icon.file.thumbnails.map((t) => ({
-              items: {
-                id: t.id,
-                width: t.width,
-                height: t.height,
-                variant: t.variant,
-                thumbnailPath: t.thumbnail_path,
-                createdAt: t.created_at.toISOString(),
-              },
-            }))
-          : undefined,
-      },
-    },
-    createdAt: icon.community.created_at.toISOString(),
-    updatedAt: icon.community.updated_at.toISOString(),
-    deletedAt: icon.community.deleted_at
-      ? icon.community.deleted_at.toISOString()
-      : null,
-  };
+  return await RedditCloneCommunityAtInvertTransformer.transform(
+    updatedCommunity,
+  );
 }
 
 

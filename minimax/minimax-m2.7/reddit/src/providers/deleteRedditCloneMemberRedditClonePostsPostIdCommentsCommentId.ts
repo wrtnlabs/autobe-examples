@@ -16,26 +16,22 @@ export async function deleteRedditCloneMemberRedditClonePostsPostIdCommentsComme
   postId: string & tags.Format<"uuid">;
   commentId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Find comment and verify it belongs to specified post
-  const comment = await MyGlobal.prisma.reddit_clone_comments.findUniqueOrThrow(
-    {
-      where: { id: props.commentId },
-      select: {
-        id: true,
-        reddit_clone_post_id: true,
-        reddit_clone_member_id: true,
-      },
+  // Find the comment and verify it belongs to the specified post
+  const comment = await MyGlobal.prisma.reddit_clone_comments.findFirstOrThrow({
+    where: {
+      id: props.commentId,
+      reddit_clone_post_id: props.postId,
     },
-  );
-  // Verify comment belongs to the specified post
-  if (comment.reddit_clone_post_id !== props.postId) {
-    throw new HttpException("Not Found", 404);
-  }
-  // Authorization check - only the author can delete their own comment
+    select: {
+      id: true,
+      reddit_clone_member_id: true,
+    },
+  });
+  // Verify the authenticated member is the author
   if (comment.reddit_clone_member_id !== props.member.id) {
-    throw new HttpException("Forbidden", 403);
+    throw new HttpException("You can only delete your own comments", 403);
   }
-  // Soft delete - set deleted_at timestamp to preserve thread structure
+  // Soft delete the comment (preserves thread structure)
   await MyGlobal.prisma.reddit_clone_comments.update({
     where: { id: props.commentId },
     data: {

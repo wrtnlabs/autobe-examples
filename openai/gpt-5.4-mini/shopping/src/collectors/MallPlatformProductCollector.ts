@@ -13,7 +13,7 @@ export namespace MallPlatformProductCollector {
     seller: IEntity;
   }) {
     const id: string = v4();
-    const now: Date = new Date();
+    const now = new Date();
     return {
       id,
       name: props.body.name,
@@ -23,11 +23,15 @@ export namespace MallPlatformProductCollector {
       updated_at: now,
       deleted_at: null,
       sellerAccount: {
-        connect: { id: props.seller.id },
+        connect: {
+          id: props.seller.id,
+        },
       },
       category: props.body.categoryId
         ? {
-            connect: { id: props.body.categoryId },
+            connect: {
+              id: props.body.categoryId,
+            },
           }
         : undefined,
     } satisfies Prisma.mall_platform_productsCreateInput;
@@ -41,7 +45,7 @@ export namespace MallPlatformProductCollector {
 //       export namespace MallPlatformProductCollector {
 //         export async function collect(props: {
 //           body: IMallPlatformProduct.ICreate;
-//           mallPlatformSellers: IEntity; // from authorized actor
+//           mallPlatformSellerAccounts: IEntity; // from authorized actor
 //           
 //           
 //         }) {

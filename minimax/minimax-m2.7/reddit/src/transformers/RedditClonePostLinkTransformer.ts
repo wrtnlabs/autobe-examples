@@ -4,6 +4,7 @@ import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRe
 import { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
 import { IRedditClonePostLink } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostLink";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -33,8 +34,8 @@ export namespace RedditClonePostLinkTransformer {
     return {
       id: input.id,
       url: input.url,
-      created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
       post: await RedditClonePostAtSummaryTransformer.transform(input.post),
     } satisfies IRedditClonePostLink;
   }

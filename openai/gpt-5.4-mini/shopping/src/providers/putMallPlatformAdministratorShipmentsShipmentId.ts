@@ -1,14 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
-import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
-import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
-import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 import { IMallPlatformShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShipment";
-import { IMallPlatformShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShipmentItem";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -27,25 +21,54 @@ export async function putMallPlatformAdministratorShipmentsShipmentId(props: {
   shipmentId: string & tags.Format<"uuid">;
   body: IMallPlatformShipment.IUpdate;
 }): Promise<IMallPlatformShipment> {
-  if (props.administrator.type !== "administrator") {
-    throw new HttpException("Forbidden", 403);
-  }
-  return await MyGlobal.prisma.$transaction(async (prisma) => {
-    const shipment = await prisma.mall_platform_shipments.findUniqueOrThrow({
+  const shipment =
+    await MyGlobal.prisma.mall_platform_shipments.findUniqueOrThrow({
       where: { id: props.shipmentId },
       select: {
         id: true,
+        deleted_at: true,
+        mall_platform_seller_id: true,
         status: true,
+        shipped_at: true,
+        delivered_at: true,
       },
     });
-    if (
-      shipment.status === "delivered" ||
-      shipment.status === "cancelled" ||
-      shipment.status === "completed"
-    ) {
-      throw new HttpException("Shipment is not available for update", 409);
+  if (shipment.deleted_at !== null) {
+    throw new HttpException("Not Found", 404);
+  }
+  if (
+    shipment.status === "delivered" &&
+    props.body.status !== undefined &&
+    props.body.status !== "delivered"
+  ) {
+    throw new HttpException("Shipment lifecycle cannot be reopened.", 400);
+  }
+  if (
+    shipment.status === "completed" &&
+    props.body.status !== undefined &&
+    props.body.status !== "completed"
+  ) {
+    throw new HttpException("Shipment lifecycle cannot be reopened.", 400);
+  }
+  if (props.body.trackingNumber !== undefined) {
+    const duplicate = await MyGlobal.prisma.mall_platform_shipments.findFirst({
+      where: {
+        mall_platform_seller_id: shipment.mall_platform_seller_id,
+        tracking_number: props.body.trackingNumber,
+        deleted_at: null,
+        NOT: { id: props.shipmentId },
+      },
+      select: { id: true },
+    });
+    if (duplicate !== null) {
+      throw new HttpException(
+        "Tracking number must be unique within the seller scope.",
+        400,
+      );
     }
-    await prisma.mall_platform_shipments.update({
+  }
+  await MyGlobal.prisma.$transaction(async (tx) => {
+    await tx.mall_platform_shipments.update({
       where: { id: props.shipmentId },
       data: {
         ...(props.body.carrierName !== undefined && {
@@ -57,23 +80,17 @@ export async function putMallPlatformAdministratorShipmentsShipmentId(props: {
         ...(props.body.trackingUrl !== undefined && {
           tracking_url: props.body.trackingUrl,
         }),
-        ...(props.body.status !== undefined && {
-          status: props.body.status,
-        }),
-        ...(props.body.shippedAt !== undefined && {
-          shipped_at: props.body.shippedAt,
-        }),
-        ...(props.body.deliveredAt !== undefined && {
-          delivered_at: props.body.deliveredAt,
-        }),
+        ...(props.body.status !== undefined && { status: props.body.status }),
+        updated_at: new Date(),
       },
     });
-    const updated = await prisma.mall_platform_shipments.findUniqueOrThrow({
+  });
+  const updated =
+    await MyGlobal.prisma.mall_platform_shipments.findUniqueOrThrow({
       where: { id: props.shipmentId },
       ...MallPlatformShipmentTransformer.select(),
     });
-    return await MallPlatformShipmentTransformer.transform(updated);
-  });
+  return await MallPlatformShipmentTransformer.transform(updated);
 }
 
 
@@ -98,12 +115,6 @@ export async function putMallPlatformAdministratorShipmentsShipmentId(props: {
 // import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 // import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 // import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
-// import { IMallPlatformShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShipmentItem";
-// import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
-// import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
-// import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-// import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
-// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.

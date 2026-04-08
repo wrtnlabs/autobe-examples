@@ -16,52 +16,49 @@ export async function deleteRedditCloneMemberCommunitiesCommunityIdReportsReport
   communityId: string & tags.Format<"uuid">;
   reportId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // 1. Validate community exists and is not deleted
-  const community = await MyGlobal.prisma.reddit_clone_communities.findUnique({
-    where: { id: props.communityId },
-    select: {
-      id: true,
-      deleted_at: true,
-    },
-  });
-  if (community === null) {
-    throw new HttpException("Community not found", 404);
-  }
-  if (community.deleted_at !== null) {
-    throw new HttpException("Community not found", 404);
-  }
-  // 2. Validate report exists, belongs to community, and is pending
-  const report =
-    await MyGlobal.prisma.reddit_clone_community_reports.findUnique({
+  // Validate community exists
+  await MyGlobal.prisma.reddit_clone_communities
+    .findUniqueOrThrow({
+      where: { id: props.communityId },
+      select: { id: true },
+    })
+    .catch(() => {
+      throw new HttpException("Community not found", 404);
+    });
+  // Validate report exists and belongs to the community
+  const report = await MyGlobal.prisma.reddit_clone_community_reports
+    .findUniqueOrThrow({
       where: { id: props.reportId },
       select: {
         id: true,
         reddit_clone_community_id: true,
         status: true,
       },
+    })
+    .catch(() => {
+      throw new HttpException("Report not found", 404);
     });
-  if (report === null) {
-    throw new HttpException("Report not found", 404);
-  }
   if (report.reddit_clone_community_id !== props.communityId) {
     throw new HttpException("Report not found", 404);
   }
+  // Verify report status is 'pending' - only pending reports can be dismissed
   if (report.status !== "pending") {
     throw new HttpException("Report is not in pending status", 400);
   }
-  // 3. Verify the member is a moderator of the community
+  // Verify user is a moderator of the community
   const moderator =
     await MyGlobal.prisma.reddit_clone_community_moderators.findFirst({
       where: {
         reddit_clone_community_id: props.communityId,
         reddit_clone_member_id: props.member.id,
+        role: { in: ["owner", "moderator"] },
       },
       select: { id: true },
     });
   if (moderator === null) {
-    throw new HttpException("You are not a moderator of this community", 403);
+    throw new HttpException("Forbidden", 403);
   }
-  // 4. Update the report with dismissed status
+  // Dismiss the report by updating its status
   await MyGlobal.prisma.reddit_clone_community_reports.update({
     where: { id: props.reportId },
     data: {

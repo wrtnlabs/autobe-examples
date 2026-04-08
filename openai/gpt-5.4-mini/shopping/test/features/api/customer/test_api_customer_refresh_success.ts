@@ -2,6 +2,7 @@ import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+import type { IMallPlatformCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomerProfile";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -13,83 +14,73 @@ import { authorize_customer_login } from "../../../authorize/authorize_customer_
 import { authorize_customer_refresh } from "../../../authorize/authorize_customer_refresh";
 
 /**
- * Verify customer authentication refresh flow after sign-up.
+ * Test customer refresh token renewal for a valid active session.
  *
- * This scenario validates that a customer can obtain a valid refresh token
- * through registration, then exchange it for a fresh authorization payload
- * through the refresh endpoint. It ensures identity fields remain stable,
- * token lifecycle fields are renewed, and the refresh response keeps the same
- * account state while rotating credentials.
+ * Verifies that a newly registered customer can exchange an unexpired refresh
+ * token for a new authorization bundle without re-entering credentials. The test
+ * checks identity continuity, token rotation, and expiration metadata updates.
  *
- * 1. Register a new customer and capture the issued authorization payload.
- * 2. Refresh the customer session using the issued refresh token.
- * 3. Validate that the refreshed identity matches the original account.
- * 4. Confirm the access token, refresh token, and expiration metadata are
- *    renewed as part of token rotation.
+ * 1. Register a customer through the join flow and capture the issued token bundle.
+ * 2. Call the refresh endpoint with the returned refresh token.
+ * 3. Validate that the refreshed response preserves the same customer identity.
+ * 4. Confirm the access token and refresh token are rotated and usable in a new connection.
  */
 export async function test_api_customer_refresh_success(
   connection: api.IConnection,
 ): Promise<void> {
   const customerConnection: api.IConnection = { host: connection.host };
-  const email = `${RandomGenerator.alphaNumeric(12)}@test.com`;
-  const password = RandomGenerator.alphaNumeric(16);
   const joined = await authorize_customer_join(customerConnection, {
     body: {
-      email,
-      password,
+      email: typia.random<string & tags.Format<"email">>(),
+      password: typia.random<string & tags.Format<"password">>(),
       href: "https://example.com/signup",
-      referrer: "https://example.com",
-      ip: "127.0.0.1",
+      referrer: "https://example.com/landing",
+      ip: null,
     } satisfies IMallPlatformCustomer.IJoin,
   });
   typia.assert(joined);
-  const originalToken = joined.token;
-  const refreshConnection: api.IConnection = { host: connection.host };
-  const refreshed = await authorize_customer_refresh(refreshConnection, {
+  const originalAccess = joined.token.access;
+  const originalRefresh = joined.token.refresh;
+  const originalExpiredAt = joined.token.expired_at;
+  const refreshed = await authorize_customer_refresh(customerConnection, {
     body: {
-      refreshToken: originalToken.refresh,
+      refreshToken: originalRefresh,
     } satisfies IMallPlatformCustomer.IRefresh,
   });
   typia.assert(refreshed);
-  TestValidator.equals("customer id preserved", refreshed.id, joined.id);
+  TestValidator.equals("customer id is preserved", refreshed.id, joined.id);
   TestValidator.equals(
-    "customer email preserved",
+    "customer email is preserved",
     refreshed.email,
     joined.email,
   );
   TestValidator.equals(
-    "customer status preserved",
+    "customer status is preserved",
     refreshed.status,
     joined.status,
   );
-  TestValidator.equals(
-    "customer created_at preserved",
-    refreshed.created_at,
-    joined.created_at,
-  );
-  TestValidator.equals(
-    "customer deleted_at preserved",
-    refreshed.deleted_at,
-    joined.deleted_at,
-  );
   TestValidator.notEquals(
-    "access token rotated",
+    "access token is rotated",
     refreshed.token.access,
-    originalToken.access,
+    originalAccess,
   );
   TestValidator.notEquals(
-    "refresh token rotated",
+    "refresh token is rotated",
     refreshed.token.refresh,
-    originalToken.refresh,
+    originalRefresh,
   );
   TestValidator.notEquals(
-    "access expiration renewed",
+    "access expiration is updated",
     refreshed.token.expired_at,
-    originalToken.expired_at,
+    originalExpiredAt,
   );
-  TestValidator.notEquals(
-    "refreshable deadline renewed",
-    refreshed.token.refreshable_until,
-    originalToken.refreshable_until,
+  const subsequentConnection: api.IConnection = { host: connection.host };
+  subsequentConnection.headers = {
+    Authorization: `Bearer ${refreshed.token.access}`,
+  };
+  TestValidator.equals(
+    "refreshed token bundle is attached to a new connection",
+    subsequentConnection.headers.Authorization,
+    `Bearer ${refreshed.token.access}`,
   );
 }

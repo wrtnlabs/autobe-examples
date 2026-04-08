@@ -4,14 +4,14 @@ import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRe
 import { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
 import { IRedditClonePostTextContent } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostTextContent";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { RedditCloneCommunityAtSummaryTransformer } from "./RedditCloneCommunityAtSummaryTransformer";
-import { RedditCloneMemberAtSummaryTransformer } from "./RedditCloneMemberAtSummaryTransformer";
+import { RedditClonePostAtSummaryTransformer } from "./RedditClonePostAtSummaryTransformer";
 
 export namespace RedditClonePostTextContentTransformer {
   export type Payload = Prisma.reddit_clone_post_text_contentsGetPayload<
@@ -22,18 +22,7 @@ export namespace RedditClonePostTextContentTransformer {
       select: {
         id: true,
         body: true,
-        post: {
-          select: {
-            id: true,
-            title: true,
-            type: true,
-            vote_score: true,
-            comment_count: true,
-            created_at: true,
-            author: RedditCloneMemberAtSummaryTransformer.select(),
-            community: RedditCloneCommunityAtSummaryTransformer.select(),
-          },
-        },
+        post: RedditClonePostAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_clone_post_text_contentsFindManyArgs;
   }
@@ -43,22 +32,8 @@ export namespace RedditClonePostTextContentTransformer {
     return {
       id: input.id,
       body: input.body,
-      post: {
-        id: input.post.id,
-        title: input.post.title,
-        type: input.post.type as "text" | "link" | "image",
-        voteScore: input.post.vote_score as number,
-        commentCount: input.post.comment_count as number,
-        createdAt: input.post.created_at.toISOString(),
-        author: await RedditCloneMemberAtSummaryTransformer.transform(
-          input.post.author,
-        ),
-        community: await RedditCloneCommunityAtSummaryTransformer.transform(
-          input.post.community,
-        ),
-        contentPreview: "",
-      } satisfies IRedditClonePost.ISummary,
-    };
+      post: await RedditClonePostAtSummaryTransformer.transform(input.post),
+    } satisfies IRedditClonePostTextContent;
   }
 }
 

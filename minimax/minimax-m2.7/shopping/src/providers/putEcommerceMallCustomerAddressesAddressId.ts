@@ -1,5 +1,3 @@
-import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import { IEcommerceMallShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShippingAddress";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
@@ -20,7 +18,7 @@ export async function putEcommerceMallCustomerAddressesAddressId(props: {
   addressId: string & tags.Format<"uuid">;
   body: IEcommerceMallShippingAddress.IUpdate;
 }): Promise<IEcommerceMallShippingAddress> {
-  // Verify ownership - address must exist and belong to authenticated customer
+  // Ownership check: verify address belongs to customer and is not soft-deleted
   await MyGlobal.prisma.ecommerce_mall_shipping_addresses.findUniqueOrThrow({
     where: {
       id: props.addressId,
@@ -28,58 +26,58 @@ export async function putEcommerceMallCustomerAddressesAddressId(props: {
       deleted_at: null,
     },
   });
-  // If setting this address as default, unset other defaults for this customer
-  if (props.body.isDefault === true) {
-    await MyGlobal.prisma.ecommerce_mall_shipping_addresses.updateMany({
-      where: {
-        ecommerce_mall_customer_id: props.customer.id,
-        deleted_at: null,
-        id: { not: props.addressId },
-      },
-      data: {
-        is_default: false,
-        updated_at: new Date(),
-      },
+  // Update with transaction for atomic is_default handling
+  const updated = await MyGlobal.prisma.$transaction(async (tx) => {
+    // If setting this address as default, clear other default addresses first
+    if (props.body.is_default === true) {
+      await tx.ecommerce_mall_shipping_addresses.updateMany({
+        where: {
+          ecommerce_mall_customer_id: props.customer.id,
+          deleted_at: null,
+          id: { not: props.addressId },
+          is_default: true,
+        },
+        data: { is_default: false },
+      });
+    }
+    // Build update data with partial fields from body
+    const data: Prisma.ecommerce_mall_shipping_addressesUpdateInput = {
+      updated_at: new Date(),
+      ...(props.body.recipient_name !== undefined && {
+        recipient_name: props.body.recipient_name,
+      }),
+      ...(props.body.phone !== undefined && {
+        phone: props.body.phone,
+      }),
+      ...(props.body.street_address !== undefined && {
+        street_address: props.body.street_address,
+      }),
+      ...(props.body.city !== undefined && {
+        city: props.body.city,
+      }),
+      ...(props.body.state !== undefined && {
+        state: props.body.state,
+      }),
+      ...(props.body.postal_code !== undefined && {
+        postal_code: props.body.postal_code,
+      }),
+      ...(props.body.country !== undefined && {
+        country: props.body.country,
+      }),
+      ...(props.body.is_default !== undefined && {
+        is_default: props.body.is_default,
+      }),
+    };
+    await tx.ecommerce_mall_shipping_addresses.update({
+      where: { id: props.addressId },
+      data,
     });
-  }
-  // Build update data with only provided optional fields
-  const updateData: Prisma.ecommerce_mall_shipping_addressesUpdateInput = {
-    updated_at: new Date(),
-  };
-  if (props.body.recipientName !== undefined) {
-    updateData.recipient_name = props.body.recipientName;
-  }
-  if (props.body.phone !== undefined) {
-    updateData.phone = props.body.phone;
-  }
-  if (props.body.streetAddress !== undefined) {
-    updateData.street_address = props.body.streetAddress;
-  }
-  if (props.body.city !== undefined) {
-    updateData.city = props.body.city;
-  }
-  if (props.body.state !== undefined) {
-    updateData.state = props.body.state;
-  }
-  if (props.body.postalCode !== undefined) {
-    updateData.postal_code = props.body.postalCode;
-  }
-  if (props.body.country !== undefined) {
-    updateData.country = props.body.country;
-  }
-  if (props.body.isDefault !== undefined) {
-    updateData.is_default = props.body.isDefault;
-  }
-  await MyGlobal.prisma.ecommerce_mall_shipping_addresses.update({
-    where: { id: props.addressId },
-    data: updateData,
-  });
-  // Return updated address using transformer
-  const updated =
-    await MyGlobal.prisma.ecommerce_mall_shipping_addresses.findUniqueOrThrow({
+    // Fetch updated record for response
+    return tx.ecommerce_mall_shipping_addresses.findUniqueOrThrow({
       where: { id: props.addressId },
       ...EcommerceMallShippingAddressTransformer.select(),
     });
+  });
   return await EcommerceMallShippingAddressTransformer.transform(updated);
 }
 
@@ -102,8 +100,6 @@ export async function putEcommerceMallCustomerAddressesAddressId(props: {
 // 
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IEcommerceMallShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShippingAddress";
-// import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-// import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.

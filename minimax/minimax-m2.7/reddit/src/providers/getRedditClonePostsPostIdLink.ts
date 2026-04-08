@@ -11,6 +11,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { RedditClonePostLinkTransformer } from "../transformers/RedditClonePostLinkTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -19,21 +20,13 @@ export async function getRedditClonePostsPostIdLink(props: {
 }): Promise<IRedditClonePostLink> {
   const record = await MyGlobal.prisma.reddit_clone_post_links.findFirstOrThrow(
     {
-      select: {
-        id: true,
-        url: true,
-        created_at: true,
-        updated_at: true,
+      ...RedditClonePostLinkTransformer.select(),
+      where: {
+        reddit_clone_post_id: props.postId,
       },
-      where: { reddit_clone_post_id: props.postId },
     },
   );
-  return {
-    id: record.id,
-    url: record.url,
-    created_at: record.created_at.toISOString(),
-    updated_at: record.updated_at.toISOString(),
-  };
+  return await RedditClonePostLinkTransformer.transform(record);
 }
 
 

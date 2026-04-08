@@ -3,6 +3,7 @@ import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IEcommerceMallSellerSuspension } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerSuspension";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -38,18 +39,18 @@ export namespace EcommerceMallSellerSuspensionAtSummaryTransformer {
     return {
       id: input.id,
       reason: input.reason,
+      restored_reason: input.restored_reason ?? undefined,
       suspended_at: input.suspended_at.toISOString(),
       restored_at: input.restored_at?.toISOString() ?? null,
-      restored_reason: input.restored_reason ?? undefined,
       created_at: input.created_at.toISOString(),
       updated_at: input.updated_at.toISOString(),
       seller: await EcommerceMallSellerAtSummaryTransformer.transform(
         input.seller,
       ),
-      suspended_by: await EcommerceMallAdminAtSummaryTransformer.transform(
+      suspendedBy: await EcommerceMallAdminAtSummaryTransformer.transform(
         input.suspendedBy,
       ),
-      restored_by: input.restoredBy
+      restoredBy: input.restoredBy
         ? await EcommerceMallAdminAtSummaryTransformer.transform(
             input.restoredBy,
           )
@@ -88,14 +89,14 @@ export namespace EcommerceMallSellerSuspensionAtSummaryTransformer {
 //         return {
 //   id: {string},
 //   reason: {string},
+//   restored_reason: {null | string},
 //   suspended_at: {string},
-//   restored_at: {string | null},
-//   restored_reason: {string | null},
+//   restored_at: {null | string},
 //   created_at: {string},
 //   updated_at: {string},
 //   seller: await EcommerceMallSellerAtSummaryTransformer.transform(input.seller),
-//   suspended_by: {IEcommerceMallAdmin.ISummary},
-//   restored_by: {IEcommerceMallAdmin.ISummary | null},
+//   suspendedBy: {IEcommerceMallAdmin.ISummary},
+//   restoredBy: {null | IEcommerceMallAdmin.ISummary},
 //         };
 //       }
 //     }

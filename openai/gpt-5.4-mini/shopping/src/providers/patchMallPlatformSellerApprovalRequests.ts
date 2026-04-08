@@ -20,80 +20,80 @@ export async function patchMallPlatformSellerApprovalRequests(props: {
   seller: SellerPayload;
   body: IMallPlatformAdministratorApprovalRequest.IRequest;
 }): Promise<IPageIMallPlatformAdministratorApprovalRequest.ISummary> {
-  const seller = await MyGlobal.prisma.mall_platform_sellers.findFirst({
-    where: {
-      id: props.seller.id,
-    },
-    select: {
-      id: true,
-    },
-  });
-  if (seller === null) {
-    throw new HttpException("Forbidden", 403);
+  if (props.body.page !== undefined && props.body.page < 1) {
+    throw new HttpException("Page must be greater than or equal to 1", 400);
   }
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
-  const order = props.body.order ?? "desc";
-  const sort = props.body.sort ?? "createdAt";
-  if (
-    sort !== "createdAt" &&
-    sort !== "updatedAt" &&
-    sort !== "reviewedAt" &&
-    sort !== "status" &&
-    sort !== "reason" &&
-    sort !== "rejectionReason"
-  ) {
-    throw new HttpException("Unsupported sort key", 400);
+  if (props.body.limit !== undefined && props.body.limit < 1) {
+    throw new HttpException("Limit must be greater than or equal to 1", 400);
   }
+  const page: number = props.body.page ?? 1;
+  const limit: number = props.body.limit ?? 20;
+  const skip: number = (page - 1) * limit;
+  const createdAtFilter =
+    props.body.createdAtFrom !== undefined ||
+    props.body.createdAtTo !== undefined
+      ? {
+          ...(props.body.createdAtFrom !== undefined
+            ? { gte: new Date(props.body.createdAtFrom) }
+            : {}),
+          ...(props.body.createdAtTo !== undefined
+            ? { lte: new Date(props.body.createdAtTo) }
+            : {}),
+        }
+      : undefined;
+  const reviewedAtFilter =
+    props.body.reviewedAtFrom !== undefined ||
+    props.body.reviewedAtTo !== undefined
+      ? {
+          ...(props.body.reviewedAtFrom !== undefined
+            ? { gte: new Date(props.body.reviewedAtFrom) }
+            : {}),
+          ...(props.body.reviewedAtTo !== undefined
+            ? { lte: new Date(props.body.reviewedAtTo) }
+            : {}),
+        }
+      : undefined;
+  const updatedAtFilter =
+    props.body.updatedAtFrom !== undefined ||
+    props.body.updatedAtTo !== undefined
+      ? {
+          ...(props.body.updatedAtFrom !== undefined
+            ? { gte: new Date(props.body.updatedAtFrom) }
+            : {}),
+          ...(props.body.updatedAtTo !== undefined
+            ? { lte: new Date(props.body.updatedAtTo) }
+            : {}),
+        }
+      : undefined;
   const where = {
-    deleted_at: null,
-    ...(props.body.status === undefined || props.body.status === ""
-      ? {}
-      : { status: props.body.status }),
-    ...(props.body.search === undefined || props.body.search === ""
-      ? {}
-      : {
-          OR: [
-            { reason: { contains: props.body.search } },
-            { status: { contains: props.body.search } },
-            { rejection_reason: { contains: props.body.search } },
-          ],
-        }),
+    ...(props.body.administratorId !== undefined
+      ? { administrator_id: props.body.administratorId }
+      : {}),
+    ...(props.body.reviewerAdministratorId !== undefined
+      ? { reviewer_administrator_id: props.body.reviewerAdministratorId }
+      : {}),
+    ...(props.body.status !== undefined ? { status: props.body.status } : {}),
+    ...(props.body.reason !== undefined
+      ? { reason: { contains: props.body.reason, mode: "insensitive" } }
+      : {}),
+    ...(props.body.rejectionReason !== undefined
+      ? {
+          rejection_reason: {
+            contains: props.body.rejectionReason,
+            mode: "insensitive",
+          },
+        }
+      : {}),
+    ...(createdAtFilter !== undefined ? { created_at: createdAtFilter } : {}),
+    ...(reviewedAtFilter !== undefined
+      ? { reviewed_at: reviewedAtFilter }
+      : {}),
+    ...(updatedAtFilter !== undefined ? { updated_at: updatedAtFilter } : {}),
   } satisfies Prisma.mall_platform_administrator_approval_requestsWhereInput;
-  const orderBy = (
-    sort === "status"
-      ? [
-          { status: order },
-          { created_at: "desc" as const },
-          { id: "desc" as const },
-        ]
-      : sort === "updatedAt"
-        ? [
-            { updated_at: order },
-            { created_at: "desc" as const },
-            { id: "desc" as const },
-          ]
-        : sort === "reviewedAt"
-          ? [
-              { reviewed_at: order },
-              { created_at: "desc" as const },
-              { id: "desc" as const },
-            ]
-          : sort === "reason"
-            ? [
-                { reason: order },
-                { created_at: "desc" as const },
-                { id: "desc" as const },
-              ]
-            : sort === "rejectionReason"
-              ? [
-                  { rejection_reason: order },
-                  { created_at: "desc" as const },
-                  { id: "desc" as const },
-                ]
-              : [{ created_at: order }, { id: "desc" as const }]
-  ) satisfies Prisma.mall_platform_administrator_approval_requestsOrderByWithRelationInput[];
+  const orderBy = [
+    { created_at: "desc" },
+    { status: "asc" },
+  ] satisfies Prisma.mall_platform_administrator_approval_requestsOrderByWithRelationInput[];
   const records =
     await MyGlobal.prisma.mall_platform_administrator_approval_requests.findMany(
       {
@@ -113,7 +113,7 @@ export async function patchMallPlatformSellerApprovalRequests(props: {
       current: page,
       limit,
       records: total,
-      pages: total === 0 ? 0 : Math.ceil(total / limit),
+      pages: Math.ceil(total / limit),
     },
     data: await ArrayUtil.asyncMap(
       records,

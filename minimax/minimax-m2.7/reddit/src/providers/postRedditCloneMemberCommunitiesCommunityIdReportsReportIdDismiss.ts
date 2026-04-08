@@ -21,11 +21,14 @@ export async function postRedditCloneMemberCommunitiesCommunityIdReportsReportId
   reportId: string & tags.Format<"uuid">;
   body: IRedditCloneCommunityReport.IDismiss;
 }): Promise<IRedditCloneCommunityReport> {
+  // 1. Authorization: Verify member is moderator or owner of the community
   const moderator =
-    await MyGlobal.prisma.reddit_clone_community_moderators.findFirst({
+    await MyGlobal.prisma.reddit_clone_community_moderators.findUnique({
       where: {
-        reddit_clone_community_id: props.communityId,
-        reddit_clone_member_id: props.member.id,
+        reddit_clone_community_id_reddit_clone_member_id: {
+          reddit_clone_community_id: props.communityId,
+          reddit_clone_member_id: props.member.id,
+        },
       },
       select: {
         id: true,
@@ -35,25 +38,30 @@ export async function postRedditCloneMemberCommunitiesCommunityIdReportsReportId
   if (!moderator) {
     throw new HttpException("Forbidden", 403);
   }
-  const report = await MyGlobal.prisma.reddit_clone_reports.findFirst({
+  // 2. Report validation: Verify report exists and belongs to the community
+  const report = await MyGlobal.prisma.reddit_clone_reports.findUnique({
     where: {
       id: props.reportId,
-      reddit_clone_community_id: props.communityId,
     },
     select: {
       id: true,
       status: true,
+      reddit_clone_community_id: true,
     },
   });
-  if (!report) {
-    throw new HttpException("Report not found", 404);
+  if (!report || report.reddit_clone_community_id !== props.communityId) {
+    throw new HttpException("Not Found", 404);
   }
-  if (report.status === "dismissed") {
-    throw new HttpException("Report has already been dismissed", 400);
+  // 3. Status transition check: Only pending reports can be dismissed
+  if (report.status !== "pending") {
+    throw new HttpException(
+      report.status === "approved"
+        ? "Report has already been approved"
+        : "Report has already been dismissed",
+      400,
+    );
   }
-  if (report.status === "approved") {
-    throw new HttpException("Report has already been approved", 400);
-  }
+  // 4. Update report to dismissed status
   await MyGlobal.prisma.reddit_clone_reports.update({
     where: { id: props.reportId },
     data: {
@@ -61,11 +69,12 @@ export async function postRedditCloneMemberCommunitiesCommunityIdReportsReportId
       updated_at: new Date(),
     },
   });
-  const record = await MyGlobal.prisma.reddit_clone_reports.findFirstOrThrow({
-    ...RedditCloneCommunityReportTransformer.select(),
+  // 5. Return updated report using transformer
+  const updated = await MyGlobal.prisma.reddit_clone_reports.findUniqueOrThrow({
     where: { id: props.reportId },
+    ...RedditCloneCommunityReportTransformer.select(),
   });
-  return await RedditCloneCommunityReportTransformer.transform(record);
+  return await RedditCloneCommunityReportTransformer.transform(updated);
 }
 
 

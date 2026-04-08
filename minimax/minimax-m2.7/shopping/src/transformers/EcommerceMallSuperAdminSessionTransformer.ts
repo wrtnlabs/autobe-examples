@@ -2,6 +2,7 @@ import { IEcommerceMallSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structur
 import { IEcommerceMallSuperAdminSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSuperAdminSession";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -69,11 +70,11 @@ export namespace EcommerceMallSuperAdminSessionTransformer {
 //       export async function transform(input: Payload): Promise<IEcommerceMallSuperAdminSession> {
 //         return {
 //   id: {string},
-//   ip: {string},
-//   href: {string},
-//   referrer: {string},
 //   createdAt: {string},
 //   expiredAt: {string},
+//   href: {string},
+//   ip: {string},
+//   referrer: {string},
 //   superAdmin: await EcommerceMallSuperAdminAtSummaryTransformer.transform(input.superAdmin),
 //         };
 //       }

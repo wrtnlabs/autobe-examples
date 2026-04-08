@@ -5,12 +5,15 @@ import { IRedditCloneFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedd
 import { IRedditCloneFileThumbnail } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileThumbnail";
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { RedditCloneCommunityIconAtInvertTransformer } from "./RedditCloneCommunityIconAtInvertTransformer";
+import { RedditCloneMemberAtSummaryTransformer } from "./RedditCloneMemberAtSummaryTransformer";
 
 export namespace RedditCloneCommunityAtInvertTransformer {
   export type Payload = Prisma.reddit_clone_communitiesGetPayload<
@@ -26,176 +29,58 @@ export namespace RedditCloneCommunityAtInvertTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        member: {
-          select: {
-            id: true,
-            username: true,
-          },
-        },
-        icon: {
-          select: {
-            id: true,
-            created_at: true,
-            community: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
-                subscriber_count: true,
-                created_at: true,
-                member: {
-                  select: {
-                    id: true,
-                    username: true,
-                  },
-                },
-                icon: {
-                  select: {
-                    file: {
-                      select: {
-                        url: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-            file: {
-              select: {
-                id: true,
-                original_filename: true,
-                mime_type: true,
-                file_size: true,
-                status: true,
-                created_at: true,
-                uploader: {
-                  select: {
-                    id: true,
-                    username: true,
-                  },
-                },
-                thumbnails: {
-                  select: {
-                    id: true,
-                    width: true,
-                    height: true,
-                    variant: true,
-                    thumbnail_path: true,
-                    created_at: true,
-                  },
-                },
-              },
-            },
-          },
-        },
+        member: RedditCloneMemberAtSummaryTransformer.select(),
+        icon: RedditCloneCommunityIconAtInvertTransformer.select(),
         communityModerators: {
-          select: {
-            id: true,
-          },
-        },
+          select: {},
+        } satisfies Prisma.reddit_clone_community_moderatorsFindManyArgs,
         communityBans: {
-          select: {
-            id: true,
-          },
-        },
+          select: {},
+        } satisfies Prisma.reddit_clone_community_bansFindManyArgs,
         communityReports: {
-          select: {
-            id: true,
-          },
-        },
+          select: {},
+        } satisfies Prisma.reddit_clone_community_reportsFindManyArgs,
         subscriptions: {
-          select: {
-            id: true,
-          },
-        },
+          select: {},
+        } satisfies Prisma.reddit_clone_subscriptionsFindManyArgs,
         posts: {
-          select: {
-            id: true,
-          },
-        },
+          select: {},
+        } satisfies Prisma.reddit_clone_postsFindManyArgs,
         moderators: {
-          select: {
-            id: true,
-          },
-        },
+          select: {},
+        } satisfies Prisma.reddit_clone_moderatorsFindManyArgs,
         moderatorSnapshots: {
-          select: {
-            id: true,
-          },
-        },
+          select: {},
+        } satisfies Prisma.reddit_clone_moderator_snapshotsFindManyArgs,
         bans: {
-          select: {
-            id: true,
-          },
-        },
+          select: {},
+        } satisfies Prisma.reddit_clone_bansFindManyArgs,
         reports: {
-          select: {
-            id: true,
-          },
-        },
+          select: {},
+        } satisfies Prisma.reddit_clone_reportsFindManyArgs,
       },
     } satisfies Prisma.reddit_clone_communitiesFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IRedditCloneCommunity.IInvert> {
-    if (!input.icon) {
-      throw new Error(
-        "RedditCloneCommunityAtInvertTransformer: icon is required but was null in database",
-      );
-    }
+    if (input.icon === null)
+      throw new HttpException("Community icon is required", 500);
     return {
       id: input.id,
       name: input.name,
       description: input.description,
       subscriberCount: input.subscriber_count,
-      owner: {
-        id: input.member.id,
-        username: input.member.username,
-      } satisfies IRedditCloneMember.ISummary,
-      icon: {
-        id: input.icon.id,
-        createdAt: input.icon.created_at.toISOString(),
-        community: {
-          id: input.icon.community.id,
-          name: input.icon.community.name,
-          description: input.icon.community.description,
-          subscriberCount: input.icon.community.subscriber_count,
-          owner: {
-            id: input.icon.community.member.id,
-            username: input.icon.community.member.username,
-          } satisfies IRedditCloneMember.ISummary,
-          icon: input.icon.community.icon?.file?.url ?? undefined,
-        } satisfies IRedditCloneCommunity.ISummary,
-        file: {
-          id: input.icon.file.id,
-          originalFilename: input.icon.file.original_filename,
-          mimeType: input.icon.file.mime_type,
-          fileSize: input.icon.file.file_size,
-          status: input.icon.file.status,
-          createdAt: input.icon.file.created_at.toISOString(),
-          uploader: {
-            id: input.icon.file.uploader.id,
-            username: input.icon.file.uploader.username,
-          } satisfies IRedditCloneMember.ISummary,
-          thumbnails: input.icon.file.thumbnails?.length
-            ? await ArrayUtil.asyncMap(
-                input.icon.file.thumbnails,
-                async (t) => ({
-                  id: t.id,
-                  width: t.width,
-                  height: t.height,
-                  variant: t.variant,
-                  thumbnailPath: t.thumbnail_path,
-                  createdAt: t.created_at.toISOString(),
-                }),
-              )
-            : undefined,
-        } satisfies IRedditCloneFile.ISummary,
-      } satisfies IRedditCloneCommunityIcon.IInvert,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at ? input.deleted_at.toISOString() : null,
+      owner: await RedditCloneMemberAtSummaryTransformer.transform(
+        input.member,
+      ),
+      icon: await RedditCloneCommunityIconAtInvertTransformer.transform(
+        input.icon,
+      ),
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
+      deletedAt:
+        input.deleted_at !== null ? toISOStringSafe(input.deleted_at) : null,
     } satisfies IRedditCloneCommunity.IInvert;
   }
 }

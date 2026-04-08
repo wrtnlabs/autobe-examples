@@ -10,15 +10,13 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallCancellationRequestCollector {
   export async function collect(props: {
     body: IEcommerceMallCancellationRequest.ICreate;
+    ecommerceMallOrderItems: IEntity;
     ecommerceMallCustomers: IEntity;
-    ecommerceMallCustomerSessions: IEntity;
-    ecommerceMallSellers: IEntity;
   }) {
-    // Query order item to derive seller_id (indirect reference pattern)
+    // Query order item to derive seller_id (not directly available in props)
     const orderItem =
       await MyGlobal.prisma.ecommerce_mall_order_items.findFirstOrThrow({
-        where: { id: props.body.orderItemId },
-        include: { product: { select: { ecommerce_mall_seller_id: true } } },
+        where: { id: props.ecommerceMallOrderItems.id },
       });
     return {
       id: v4(),
@@ -26,10 +24,9 @@ export namespace EcommerceMallCancellationRequestCollector {
       status: "pending",
       created_at: new Date(),
       updated_at: new Date(),
-      // BelongsTo relations using connect
-      orderItem: { connect: { id: props.body.orderItemId } },
+      orderItem: { connect: { id: props.ecommerceMallOrderItems.id } },
       customer: { connect: { id: props.ecommerceMallCustomers.id } },
-      seller: { connect: { id: orderItem.product.ecommerce_mall_seller_id } },
+      seller: { connect: { id: orderItem.ecommerce_mall_order_id } },
     } satisfies Prisma.ecommerce_mall_cancellation_requestsCreateInput;
   }
 }
@@ -41,9 +38,8 @@ export namespace EcommerceMallCancellationRequestCollector {
 //       export namespace EcommerceMallCancellationRequestCollector {
 //         export async function collect(props: {
 //           body: IEcommerceMallCancellationRequest.ICreate;
-//           ecommerceMallCustomers: IEntity; // from authorized actor
-// ecommerceMallCustomerSessions: IEntity; // from authorized session
-// ecommerceMallSellers: IEntity; // from authorized actor
+//           ecommerceMallOrderItems: IEntity; // from path parameter itemId
+// ecommerceMallCustomers: IEntity; // from authorized actor
 //           
 //           
 //         }) {

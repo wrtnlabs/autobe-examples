@@ -18,23 +18,47 @@ export async function putMallPlatformCustomerProfile(props: {
   customer: CustomerPayload;
   body: IMallPlatformCustomerProfile.IUpdate;
 }): Promise<IMallPlatformCustomerProfile> {
+  const profile =
+    await MyGlobal.prisma.mall_platform_customer_profiles.findFirst({
+      where: {
+        mall_platform_customer_id: props.customer.id,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        display_name: true,
+        phone_number: true,
+      },
+    });
+  if (profile === null) {
+    throw new HttpException("Customer profile not found", 404);
+  }
+  if (
+    props.body.displayName !== undefined &&
+    props.body.displayName.trim().length === 0
+  ) {
+    throw new HttpException("Invalid profile information", 400);
+  }
+  if (
+    props.body.phoneNumber !== undefined &&
+    props.body.phoneNumber.trim().length === 0
+  ) {
+    throw new HttpException("Invalid profile information", 400);
+  }
   await MyGlobal.prisma.mall_platform_customer_profiles.update({
     where: {
-      mall_platform_customer_id: props.customer.id,
+      id: profile.id,
     },
     data: {
-      ...(props.body.displayName !== undefined
-        ? { display_name: props.body.displayName }
-        : {}),
-      ...(props.body.phoneNumber !== undefined
-        ? { phone_number: props.body.phoneNumber }
-        : {}),
+      display_name: props.body.displayName ?? profile.display_name,
+      phone_number: props.body.phoneNumber ?? profile.phone_number,
+      updated_at: new Date(),
     },
   });
   const updated =
     await MyGlobal.prisma.mall_platform_customer_profiles.findUniqueOrThrow({
       where: {
-        mall_platform_customer_id: props.customer.id,
+        id: profile.id,
       },
       ...MallPlatformCustomerProfileTransformer.select(),
     });

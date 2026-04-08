@@ -19,17 +19,13 @@ export async function getRedditCloneRedditClonePostsPostIdCommentsCommentId(prop
   postId: string & tags.Format<"uuid">;
   commentId: string & tags.Format<"uuid">;
 }): Promise<IRedditCloneComment.IInvert> {
-  const records = await MyGlobal.prisma.reddit_clone_comments.findMany({
+  const record = await MyGlobal.prisma.reddit_clone_comments.findFirstOrThrow({
     ...RedditCloneCommentAtInvertTransformer.select(),
     where: {
       id: props.commentId,
       reddit_clone_post_id: props.postId,
     },
   });
-  const record = records[0];
-  if (!record) {
-    throw new HttpException("Not found", 404);
-  }
   return await RedditCloneCommentAtInvertTransformer.transform(record);
 }
 

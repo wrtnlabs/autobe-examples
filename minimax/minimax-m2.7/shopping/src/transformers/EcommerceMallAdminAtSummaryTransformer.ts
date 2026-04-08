@@ -1,6 +1,7 @@
 import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -22,6 +23,13 @@ export namespace EcommerceMallAdminAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        sessions: true,
+        passwordResets: true,
+        auditLogs: true,
+        reviewedSellerApprovals: true,
+        sellerSuspensionsInitiateds: true,
+        sellerSuspensionsRestoreds: true,
+        promotions: true,
       },
     } satisfies Prisma.ecommerce_mall_adminsFindManyArgs;
   }
@@ -33,9 +41,7 @@ export namespace EcommerceMallAdminAtSummaryTransformer {
       email: input.email,
       name: input.name,
       created_at: input.created_at.toISOString(),
-      updated_at: input.updated_at.toISOString(),
       deleted_at: input.deleted_at?.toISOString() ?? null,
-      is_super_admin: false,
     } satisfies IEcommerceMallAdmin.ISummary;
   }
 }
@@ -68,9 +74,7 @@ export namespace EcommerceMallAdminAtSummaryTransformer {
 //   email: {string},
 //   name: {string},
 //   created_at: {string},
-//   updated_at: {string},
 //   deleted_at: {null | string},
-//   is_super_admin: {boolean},
 //         };
 //       }
 //     }

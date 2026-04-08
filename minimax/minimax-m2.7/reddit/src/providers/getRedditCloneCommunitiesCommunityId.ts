@@ -12,6 +12,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { RedditCloneCommunityAtInvertTransformer } from "../transformers/RedditCloneCommunityAtInvertTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -19,109 +20,14 @@ export async function getRedditCloneCommunitiesCommunityId(props: {
   communityId: string & tags.Format<"uuid">;
 }): Promise<IRedditCloneCommunity.IInvert> {
   const record =
-    await MyGlobal.prisma.reddit_clone_communities.findUniqueOrThrow({
-      where: { id: props.communityId },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        subscriber_count: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        member: {
-          select: {
-            id: true,
-            username: true,
-          },
-        },
-        icon: {
-          select: {
-            id: true,
-            created_at: true,
-            file: {
-              select: {
-                id: true,
-                original_filename: true,
-                mime_type: true,
-                file_size: true,
-                status: true,
-                created_at: true,
-                uploader: {
-                  select: {
-                    id: true,
-                    username: true,
-                  },
-                },
-                thumbnails: {
-                  select: {
-                    id: true,
-                    width: true,
-                    height: true,
-                    variant: true,
-                    thumbnail_path: true,
-                    created_at: true,
-                  },
-                },
-              },
-            },
-          },
-        },
+    await MyGlobal.prisma.reddit_clone_communities.findFirstOrThrow({
+      ...RedditCloneCommunityAtInvertTransformer.select(),
+      where: {
+        id: props.communityId,
+        deleted_at: null,
       },
     });
-  if (record.deleted_at !== null) {
-    throw new HttpException("Not Found", 404);
-  }
-  if (!record.icon) {
-    throw new HttpException("Not Found", 404);
-  }
-  return {
-    id: record.id,
-    name: record.name,
-    description: record.description,
-    subscriberCount: record.subscriber_count,
-    owner: {
-      id: record.member.id,
-      username: record.member.username,
-    } satisfies IRedditCloneMember.ISummary,
-    icon: {
-      id: record.icon.id,
-      createdAt: record.icon.created_at.toISOString(),
-      community: {
-        id: record.id,
-        name: record.name,
-        description: record.description,
-        subscriberCount: record.subscriber_count,
-        owner: {
-          id: record.member.id,
-          username: record.member.username,
-        } satisfies IRedditCloneMember.ISummary,
-      } satisfies IRedditCloneCommunity.ISummary,
-      file: {
-        id: record.icon.file.id,
-        originalFilename: record.icon.file.original_filename,
-        mimeType: record.icon.file.mime_type,
-        fileSize: record.icon.file.file_size,
-        status: record.icon.file.status,
-        createdAt: record.icon.file.created_at.toISOString(),
-        uploader: {
-          id: record.icon.file.uploader.id,
-          username: record.icon.file.uploader.username,
-        } satisfies IRedditCloneMember.ISummary,
-        thumbnails: record.icon.file.thumbnails?.map((t) => ({
-          id: t.id,
-          width: t.width,
-          height: t.height,
-          variant: t.variant,
-          thumbnailPath: t.thumbnail_path,
-          createdAt: t.created_at.toISOString(),
-        })),
-      } satisfies IRedditCloneFile.ISummary,
-    } satisfies IRedditCloneCommunityIcon.IInvert,
-    createdAt: record.created_at.toISOString(),
-    updatedAt: record.updated_at.toISOString(),
-    deletedAt: record.deleted_at ? record.deleted_at.toISOString() : null,
-  } satisfies IRedditCloneCommunity.IInvert;
+  return await RedditCloneCommunityAtInvertTransformer.transform(record);
 }
 
 

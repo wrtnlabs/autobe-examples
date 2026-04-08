@@ -19,7 +19,7 @@ export async function getEcommerceMallAdminAdminAuditLogsAuditLogId(props: {
   auditLogId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallAdminAuditLog> {
   const record =
-    await MyGlobal.prisma.ecommerce_mall_admin_audit_logs.findFirstOrThrow({
+    await MyGlobal.prisma.ecommerce_mall_admin_audit_logs.findUniqueOrThrow({
       ...EcommerceMallAdminAuditLogTransformer.select(),
       where: { id: props.auditLogId },
     });

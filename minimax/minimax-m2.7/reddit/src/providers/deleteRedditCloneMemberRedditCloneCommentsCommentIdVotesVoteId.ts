@@ -16,45 +16,51 @@ export async function deleteRedditCloneMemberRedditCloneCommentsCommentIdVotesVo
   commentId: string & tags.Format<"uuid">;
   voteId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const comment = await MyGlobal.prisma.reddit_clone_comments.findUnique({
-    where: { id: props.commentId },
-    select: {
-      id: true,
-      reddit_clone_post_id: true,
-      reddit_clone_member_id: true,
-    },
-  });
-  if (comment === null) {
-    throw new HttpException("Not Found", 404);
-  }
-  const vote = await MyGlobal.prisma.reddit_clone_post_votes.findUnique({
+  // 1. Find the vote record
+  const vote = await MyGlobal.prisma.reddit_clone_post_votes.findUniqueOrThrow({
     where: { id: props.voteId },
     select: {
       id: true,
+      direction: true,
       reddit_clone_member_id: true,
       reddit_clone_post_id: true,
-      direction: true,
     },
   });
-  if (vote === null) {
-    throw new HttpException("Not Found", 404);
-  }
+  // 2. Verify vote belongs to the specified comment
+  // The vote references a post, so we need to find the comment's post
+  const comment = await MyGlobal.prisma.reddit_clone_comments.findUniqueOrThrow(
+    {
+      where: { id: props.commentId },
+      select: {
+        id: true,
+        reddit_clone_member_id: true,
+        reddit_clone_post_id: true,
+      },
+    },
+  );
+  // The vote's post_id must match the comment's post_id
   if (vote.reddit_clone_post_id !== comment.reddit_clone_post_id) {
-    throw new HttpException("Not Found", 404);
+    throw new HttpException("Vote not found for this comment", 404);
   }
+  // 3. Verify ownership - only the vote author can remove their vote
   if (vote.reddit_clone_member_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  const karmaIncrement = vote.direction === "upvote" ? 1 : -1;
-  await MyGlobal.prisma.$transaction([
-    MyGlobal.prisma.reddit_clone_user_karmas.update({
-      where: { reddit_clone_member_id: comment.reddit_clone_member_id },
-      data: { karma_score: { increment: karmaIncrement } },
-    }),
-    MyGlobal.prisma.reddit_clone_post_votes.delete({
-      where: { id: props.voteId },
-    }),
-  ]);
+  // 4. Adjust comment author's karma based on vote direction
+  const karmaDelta = vote.direction === "upvote" ? 1 : -1;
+  const commentAuthorId = comment.reddit_clone_member_id;
+  // Update the comment author's karma
+  await MyGlobal.prisma.reddit_clone_user_karmas.update({
+    where: { reddit_clone_member_id: commentAuthorId },
+    data: {
+      karma_score: { increment: karmaDelta },
+      updated_at: new Date(),
+    },
+  });
+  // 5. Delete the vote record
+  await MyGlobal.prisma.reddit_clone_post_votes.delete({
+    where: { id: props.voteId },
+  });
 }
 
 

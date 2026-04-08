@@ -16,12 +16,23 @@ export async function sellerAuthorize(request: {
     where: {
       id: payload.id,
       deleted_at: null,
-      approval_status: "approved",
     },
   });
 
   if (seller === null) {
-    throw new ForbiddenException("You're not an approved seller");
+    throw new ForbiddenException("You're not enrolled");
+  }
+
+  const session = await MyGlobal.prisma.ecommerce_mall_seller_sessions.findFirst({
+    where: {
+      id: payload.session_id,
+      ecommerce_mall_seller_id: payload.id,
+      expired_at: { gt: new Date() },
+    },
+  });
+
+  if (session === null) {
+    throw new ForbiddenException("Session expired");
   }
 
   return payload;

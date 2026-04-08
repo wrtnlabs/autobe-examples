@@ -3,7 +3,6 @@ import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structur
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import type { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import type { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import type { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import type { IMallPlatformProductVariantSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariantSnapshot";
 import type { IMallPlatformProductVariantSnapshotOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariantSnapshotOption";
@@ -24,24 +23,26 @@ export async function test_api_product_variant_snapshot_option_scope_not_found(
   connection: api.IConnection,
 ): Promise<void> {
   const sellerConnection: api.IConnection = { host: connection.host };
-  const seller = await authorize_seller_join(sellerConnection, {
+  await authorize_seller_join(sellerConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: "password1234" satisfies string,
+      password: RandomGenerator.alphaNumeric(16) as string &
+        tags.Format<"password">,
     } satisfies IMallPlatformSeller.IJoin,
   });
-  typia.assert(seller);
+  const productId = typia.random<string & tags.Format<"uuid">>();
+  const snapshotId = typia.random<string & tags.Format<"uuid">>();
+  const optionId = typia.random<string & tags.Format<"uuid">>();
   await TestValidator.httpError(
-    "snapshot option should not be accessible outside the requested product and variant scope",
+    "not found when option does not belong to the requested product snapshot scope",
     404,
     async () => {
-      await api.functional.mallPlatform.seller.products.variants.snapshots.options.at(
+      await api.functional.mallPlatform.seller.products.variantSnapshots.options.at(
         sellerConnection,
         {
-          productId: typia.random<string & tags.Format<"uuid">>(),
-          variantId: typia.random<string & tags.Format<"uuid">>(),
-          snapshotId: typia.random<string & tags.Format<"uuid">>(),
-          optionKey: typia.random<string & tags.Format<"uuid">>(),
+          productId,
+          snapshotId,
+          optionId,
         },
       );
     },

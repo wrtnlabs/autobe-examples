@@ -16,37 +16,31 @@ export namespace EcommerceMallProductVariantCollector {
     ecommerceMallSellers: IEntity;
     ecommerceMallSellerSessions: IEntity;
   }) {
-    const variantId = v4();
+    const variantId: string = v4();
     return {
       // Scalar fields
       id: variantId,
       sku_code: props.body.skuCode,
       price: props.body.price ?? null,
-      quantity: props.body.quantity ?? 0,
+      quantity: 0,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
       // BelongsTo relation
       product: { connect: { id: props.ecommerceMallProducts.id } },
       // HasMany relation - nested create with neighbor collector
-      optionValues: props.body.optionValues?.length
-        ? {
-            create: await ArrayUtil.asyncMap(
-              props.body.optionValues,
-              (optionValue) =>
-                EcommerceMallProductVariantOptionValueCollector.collect({
-                  body: optionValue,
-                  ecommerceMallProductVariants: {
-                    id: variantId,
-                  } as IEntity,
-                  ecommerceMallProducts: props.ecommerceMallProducts,
-                  ecommerceMallSellers: props.ecommerceMallSellers,
-                  ecommerceMallSellerSessions:
-                    props.ecommerceMallSellerSessions,
-                }),
-            ),
-          }
-        : undefined,
+      optionValues: {
+        create: await ArrayUtil.asyncMap(
+          props.body.optionValues,
+          (optionValue) =>
+            EcommerceMallProductVariantOptionValueCollector.collect({
+              body: optionValue,
+              ecommerceMallProductVariants: { id: variantId } as IEntity,
+              ecommerceMallSellers: props.ecommerceMallSellers,
+              ecommerceMallSellerSessions: props.ecommerceMallSellerSessions,
+            }),
+        ),
+      },
     } satisfies Prisma.ecommerce_mall_product_variantsCreateInput;
   }
 }

@@ -3,7 +3,8 @@ import { ExecutionContext, createParamDecorator } from "@nestjs/common";
 import { Singleton } from "tstl";
 import { memberAuthorize } from "../providers/authorize/memberAuthorize";
 
-export const MemberAuth = (): ParameterDecorator =>
+export const MemberAuth =
+  (): ParameterDecorator =>
   (
     target: object,
     propertyKey: string | symbol | undefined,

@@ -11,6 +11,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { RedditClonePostVoteTransformer } from "../transformers/RedditClonePostVoteTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,30 +19,31 @@ export async function patchRedditCloneRedditClonePostsPostIdVotes(props: {
   postId: string & tags.Format<"uuid">;
   body: IRedditClonePostVote.IUpdate;
 }): Promise<IRedditClonePostVote> {
+  const memberId = (MyGlobal as any).session?.reddit_clone_member_id;
+  if (!memberId) {
+    throw new HttpException("Unauthorized", 401);
+  }
   const existingVote = await MyGlobal.prisma.reddit_clone_post_votes.findFirst({
     where: {
       reddit_clone_post_id: props.postId,
-    },
-    select: {
-      id: true,
-      direction: true,
-      created_at: true,
-      updated_at: true,
-      reddit_clone_member_id: true,
+      reddit_clone_member_id: memberId,
     },
   });
   if (!existingVote) {
     throw new HttpException("Vote not found. Cast a vote first.", 404);
   }
-  if (props.body.direction === existingVote.direction) {
+  if (existingVote.direction === props.body.direction) {
     throw new HttpException("Vote already cast in this direction.", 400);
   }
-  const delta = props.body.direction === "upvote" ? 2 : -2;
-  const authorId = existingVote.reddit_clone_member_id;
-  const updatedVoteId = existingVote.id;
+  const isChangingToUpvote = props.body.direction === "upvote";
+  const karmaAdjustment = isChangingToUpvote ? 2 : -2;
+  const post = await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
+    where: { id: props.postId },
+    select: { id: true, reddit_clone_member_id: true },
+  });
   await MyGlobal.prisma.$transaction([
     MyGlobal.prisma.reddit_clone_post_votes.update({
-      where: { id: updatedVoteId },
+      where: { id: existingVote.id },
       data: {
         direction: props.body.direction,
         updated_at: new Date(),
@@ -50,97 +52,28 @@ export async function patchRedditCloneRedditClonePostsPostIdVotes(props: {
     MyGlobal.prisma.reddit_clone_posts.update({
       where: { id: props.postId },
       data: {
-        vote_score: { increment: delta },
+        vote_score: {
+          increment: karmaAdjustment,
+        },
       },
     }),
     MyGlobal.prisma.reddit_clone_user_karmas.update({
-      where: { reddit_clone_member_id: authorId },
+      where: {
+        reddit_clone_member_id: post.reddit_clone_member_id,
+      },
       data: {
-        karma_score: { increment: delta },
-        updated_at: new Date(),
+        karma_score: {
+          increment: karmaAdjustment,
+        },
       },
     }),
   ]);
-  const vote = await MyGlobal.prisma.reddit_clone_post_votes.findUniqueOrThrow({
-    where: { id: updatedVoteId },
-    select: {
-      id: true,
-      direction: true,
-      created_at: true,
-      updated_at: true,
-      member: {
-        select: {
-          id: true,
-          username: true,
-        },
-      },
-      post: {
-        select: {
-          id: true,
-          title: true,
-          type: true,
-          vote_score: true,
-          comment_count: true,
-          created_at: true,
-          updated_at: true,
-          deleted_at: true,
-          author: {
-            select: {
-              id: true,
-              username: true,
-            },
-          },
-          community: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-              subscriber_count: true,
-              member: {
-                select: {
-                  id: true,
-                  username: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
-  return {
-    id: vote.id,
-    direction: vote.direction,
-    created_at: vote.created_at.toISOString(),
-    updated_at: vote.updated_at.toISOString(),
-    member: {
-      id: vote.member.id,
-      username: vote.member.username,
-    },
-    post: {
-      id: vote.post.id,
-      title: vote.post.title,
-      type: vote.post.type as "text" | "link" | "image",
-      voteScore: vote.post.vote_score,
-      commentCount: vote.post.comment_count,
-      createdAt: vote.post.created_at.toISOString(),
-      author: {
-        id: vote.post.author.id,
-        username: vote.post.author.username,
-      },
-      community: {
-        id: vote.post.community.id,
-        name: vote.post.community.name,
-        description: vote.post.community.description,
-        subscriberCount: vote.post.community.subscriber_count,
-        owner: {
-          id: vote.post.community.member.id,
-          username: vote.post.community.member.username,
-        },
-      },
-      contentPreview: "",
-    },
-  };
+  const updatedVote =
+    await MyGlobal.prisma.reddit_clone_post_votes.findUniqueOrThrow({
+      where: { id: existingVote.id },
+      ...RedditClonePostVoteTransformer.select(),
+    });
+  return await RedditClonePostVoteTransformer.transform(updatedVote);
 }
 
 

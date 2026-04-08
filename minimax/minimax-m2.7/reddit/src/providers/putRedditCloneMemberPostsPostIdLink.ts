@@ -12,6 +12,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { RedditClonePostLinkTransformer } from "../transformers/RedditClonePostLinkTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -20,53 +21,46 @@ export async function putRedditCloneMemberPostsPostIdLink(props: {
   postId: string & tags.Format<"uuid">;
   body: IRedditClonePostLink.IUpdate;
 }): Promise<IRedditClonePostLink> {
-  // Find the post and verify ownership/type
-  const post = await MyGlobal.prisma.reddit_clone_posts.findUnique({
+  // 1. Validate post exists and is of type 'link'
+  const post = await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
     where: { id: props.postId },
     select: {
       id: true,
+      reddit_clone_member_id: true,
       type: true,
       deleted_at: true,
-      reddit_clone_member_id: true,
     },
   });
-  if (!post) {
-    throw new HttpException("Post not found", 404);
-  }
+  // 2. Verify post is not deleted
   if (post.deleted_at !== null) {
     throw new HttpException("Post not found", 404);
   }
+  // 3. Verify post is of type 'link'
   if (post.type !== "link") {
-    throw new HttpException("Post type mismatch", 400);
+    throw new HttpException(
+      "Post type mismatch - this endpoint is only for link posts",
+      400,
+    );
   }
+  // 4. Verify authenticated member is the author
   if (post.reddit_clone_member_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Update the link URL
+  // 5. Update the link URL
   await MyGlobal.prisma.reddit_clone_post_links.update({
     where: { reddit_clone_post_id: props.postId },
     data: {
-      ...(props.body.url !== undefined && { url: props.body.url }),
+      url: props.body.url,
       updated_at: new Date(),
     },
   });
-  // Fetch the updated link with manual select
+  // 6. Return updated link entity
   const updated =
     await MyGlobal.prisma.reddit_clone_post_links.findUniqueOrThrow({
       where: { reddit_clone_post_id: props.postId },
-      select: {
-        id: true,
-        url: true,
-        created_at: true,
-        updated_at: true,
-      },
+      ...RedditClonePostLinkTransformer.select(),
     });
-  return {
-    id: updated.id,
-    url: updated.url,
-    created_at: updated.created_at.toISOString(),
-    updated_at: updated.updated_at.toISOString(),
-  };
+  return await RedditClonePostLinkTransformer.transform(updated);
 }
 
 

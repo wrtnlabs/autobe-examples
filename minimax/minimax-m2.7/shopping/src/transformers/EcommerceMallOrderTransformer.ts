@@ -1,19 +1,19 @@
-import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+import { IEcommerceMallCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCart";
+import { IEcommerceMallCheckout } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCheckout";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
-import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import { IEcommerceMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshot";
 import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
 import { IEcommerceMallProductVariantOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOptionValue";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
-import { IEcommerceMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfile";
 import { IEcommerceMallSellerProfileSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfileSnapshot";
 import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
 import { IEcommerceMallShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShippingAddress";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -21,7 +21,7 @@ import typia, { tags } from "typia";
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { EcommerceMallCustomerAtSummaryTransformer } from "./EcommerceMallCustomerAtSummaryTransformer";
-import { EcommerceMallOrderItemTransformer } from "./EcommerceMallOrderItemTransformer";
+import { EcommerceMallOrderItemAtSummaryTransformer } from "./EcommerceMallOrderItemAtSummaryTransformer";
 import { EcommerceMallShipmentAtSummaryTransformer } from "./EcommerceMallShipmentAtSummaryTransformer";
 import { EcommerceMallShippingAddressAtSummaryTransformer } from "./EcommerceMallShippingAddressAtSummaryTransformer";
 
@@ -44,7 +44,7 @@ export namespace EcommerceMallOrderTransformer {
         customer: EcommerceMallCustomerAtSummaryTransformer.select(),
         shippingAddress:
           EcommerceMallShippingAddressAtSummaryTransformer.select(),
-        orderItems: EcommerceMallOrderItemTransformer.select(),
+        orderItems: EcommerceMallOrderItemAtSummaryTransformer.select(),
         shipments: EcommerceMallShipmentAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_ordersFindManyArgs;
@@ -54,12 +54,15 @@ export namespace EcommerceMallOrderTransformer {
   ): Promise<IEcommerceMallOrder> {
     return {
       id: input.id,
-      orderNumber: input.order_number,
+      order_number: input.order_number,
       subtotal: input.subtotal,
-      shippingCost: input.shipping_cost,
-      totalAmount: input.total_amount,
+      shipping_cost: input.shipping_cost,
+      total_amount: input.total_amount,
       status: input.status,
-      itemsCount: input.orderItems.length,
+      created_at: toISOStringSafe(input.created_at),
+      updated_at: toISOStringSafe(input.updated_at),
+      deleted_at:
+        input.deleted_at != null ? toISOStringSafe(input.deleted_at) : null,
       customer: await EcommerceMallCustomerAtSummaryTransformer.transform(
         input.customer,
       ),
@@ -69,15 +72,20 @@ export namespace EcommerceMallOrderTransformer {
         ),
       orderItems: await ArrayUtil.asyncMap(
         input.orderItems,
-        EcommerceMallOrderItemTransformer.transform,
+        EcommerceMallOrderItemAtSummaryTransformer.transform,
       ),
       shipments: await ArrayUtil.asyncMap(
         input.shipments,
         EcommerceMallShipmentAtSummaryTransformer.transform,
       ),
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      // Computed fields - no DB columns
+      code: typia.assert<string>(""),
+      message: typia.assert<string>(""),
+      cartItemId: null,
+      isValid: undefined,
+      errors: undefined,
+      warnings: undefined,
+      items: undefined,
     } satisfies IEcommerceMallOrder;
   }
 }
@@ -93,6 +101,9 @@ export namespace EcommerceMallOrderTransformer {
 //         // implicit return type for better type inference
 //         return {
 //           select: {
+//             code: true,
+//             message: true,
+//             cartItemId: true,
 //             id: true,
 //             order_number: true,
 //             subtotal: true,
@@ -102,30 +113,34 @@ export namespace EcommerceMallOrderTransformer {
 //             created_at: true,
 //             updated_at: true,
 //             deleted_at: true,
-//             customer: EcommerceMallCustomerAtSummaryTransformer.select(),
-//             shippingAddress: EcommerceMallShippingAddressAtSummaryTransformer.select(),
-//             orderItems: EcommerceMallOrderItemTransformer.select(),
-//             shipments: EcommerceMallShipmentAtSummaryTransformer.select(),
+//             isValid: true,
+//             ...
 //           },
 //         } satisfies Prisma.ecommerce_mall_ordersFindManyArgs;
 //       }
 // 
 //       export async function transform(input: Payload): Promise<IEcommerceMallOrder> {
 //         return {
+//   code: {string},
+//   message: {string},
+//   cartItemId: {string | null},
 //   id: {string},
-//   orderNumber: {string},
+//   order_number: {string},
 //   subtotal: {number},
-//   shippingCost: {number},
-//   totalAmount: {number},
+//   shipping_cost: {number},
+//   total_amount: {number},
 //   status: {string},
-//   itemsCount: {integer},
-//   customer: await EcommerceMallCustomerAtSummaryTransformer.transform(input.customer),
-//   shippingAddress: await EcommerceMallShippingAddressAtSummaryTransformer.transform(input.shippingAddress),
-//   orderItems: await ArrayUtil.asyncMap(input.orderItems, EcommerceMallOrderItemTransformer.transform),
-//   shipments: await ArrayUtil.asyncMap(input.shipments, EcommerceMallShipmentAtSummaryTransformer.transform),
-//   createdAt: {string},
-//   updatedAt: {string},
-//   deletedAt: {string | null},
+//   created_at: {string},
+//   updated_at: {string},
+//   deleted_at: {string | null},
+//   customer: {IEcommerceMallCustomer.ISummary},
+//   shippingAddress: {IEcommerceMallShippingAddress.ISummary},
+//   orderItems: {Array<IEcommerceMallOrderItem.ISummary>},
+//   shipments: {Array<IEcommerceMallShipment.ISummary>},
+//   isValid: {boolean},
+//   errors: {Array<IEcommerceMallCheckout.IValidationError>},
+//   warnings: {Array<IEcommerceMallOrder.IWarning>},
+//   items: {Array<IEcommerceMallCart.IResult>},
 //         };
 //       }
 //     }

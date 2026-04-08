@@ -11,7 +11,6 @@ export namespace RedditCloneSubscriptionCollector {
   export async function collect(props: {
     body: IRedditCloneSubscription.ICreate;
     redditCloneMembers: IEntity;
-    redditCloneMemberSessions: IEntity;
   }) {
     return {
       id: v4(),

@@ -1,14 +1,20 @@
+import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+import { IEcommerceMallSellerApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerApproval";
 import { IEcommerceMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfile";
+import { IEcommerceMallSellerSuspension } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerSuspension";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallSellerProfileTransformer } from "./EcommerceMallSellerProfileTransformer";
+import { EcommerceMallSellerApprovalAtSummaryTransformer } from "./EcommerceMallSellerApprovalAtSummaryTransformer";
+import { EcommerceMallSellerProfileAtSummaryTransformer } from "./EcommerceMallSellerProfileAtSummaryTransformer";
+import { EcommerceMallSellerSuspensionAtSummaryTransformer } from "./EcommerceMallSellerSuspensionAtSummaryTransformer";
 
 export namespace EcommerceMallSellerTransformer {
   export type Payload = Prisma.ecommerce_mall_sellersGetPayload<
@@ -26,49 +32,97 @@ export namespace EcommerceMallSellerTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        profile: EcommerceMallSellerProfileTransformer.select(),
+        sellerSessions: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_seller_sessionsFindManyArgs,
+        passwordResets: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_seller_password_resetsFindManyArgs,
+        emailVerifications: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_seller_email_verificationsFindManyArgs,
+        adminRequest: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_admin_request_of_sellersFindManyArgs,
+        profile: EcommerceMallSellerProfileAtSummaryTransformer.select(),
+        adminRequests: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_seller_admin_requestsFindManyArgs,
         products: {
           select: {
             id: true,
           },
         } satisfies Prisma.ecommerce_mall_productsFindManyArgs,
-        sellerSessions: true,
-        passwordResets: true,
-        emailVerifications: true,
-        adminRequest: true,
-        adminRequests: true,
-        productSnapshots: true,
-        shipments: true,
-        cancellationRequests: true,
-        refundRequests: true,
-        refundRequestSnapshots: true,
-        sellerApprovals: true,
-        sellerSuspensions: true,
+        productSnapshots: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_product_snapshotsFindManyArgs,
+        shipments: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_shipmentsFindManyArgs,
+        cancellationRequests: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_cancellation_requestsFindManyArgs,
+        refundRequests: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_refund_requestsFindManyArgs,
+        refundRequestSnapshots: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_refund_request_snapshotsFindManyArgs,
+        sellerApprovals:
+          EcommerceMallSellerApprovalAtSummaryTransformer.select(),
+        sellerSuspensions:
+          EcommerceMallSellerSuspensionAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_sellersFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallSeller> {
-    if (input.profile === null)
-      throw new Error(
-        "Seller profile is required but not found for seller: " + input.id,
-      );
+    if (!input.profile) {
+      throw new HttpException("Seller profile not found", 404);
+    }
     return {
       id: input.id,
       email: input.email,
       approvalStatus: input.approval_status,
-      rejectionReason: input.rejection_reason ?? null,
-      rejectedAt:
-        input.rejected_at !== null ? toISOStringSafe(input.rejected_at) : null,
-      profile: await EcommerceMallSellerProfileTransformer.transform(
+      rejectionReason: input.rejection_reason,
+      rejectedAt: input.rejected_at?.toISOString() ?? null,
+      profile: await EcommerceMallSellerProfileAtSummaryTransformer.transform(
         input.profile,
       ),
-      productsCount: input.products.length,
-      createdAt: toISOStringSafe(input.created_at),
-      updatedAt: toISOStringSafe(input.updated_at),
-      deletedAt:
-        input.deleted_at !== null ? toISOStringSafe(input.deleted_at) : null,
+      sellerApprovals: await ArrayUtil.asyncMap(
+        input.sellerApprovals,
+        EcommerceMallSellerApprovalAtSummaryTransformer.transform,
+      ),
+      sellerSuspensions: await ArrayUtil.asyncMap(
+        input.sellerSuspensions,
+        EcommerceMallSellerSuspensionAtSummaryTransformer.transform,
+      ),
+      approvalCount: input.sellerApprovals.length,
+      suspensionCount: input.sellerSuspensions.length,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
     } satisfies IEcommerceMallSeller;
   }
 }
@@ -86,14 +140,16 @@ export namespace EcommerceMallSellerTransformer {
 //           select: {
 //             id: true,
 //             email: true,
-//             approvalStatus: true,
-//             rejectionReason: true,
-//             rejectedAt: true,
-//             productsCount: true,
-//             createdAt: true,
-//             updatedAt: true,
-//             deletedAt: true,
-//             ...
+//             password_hash: true,
+//             approval_status: true,
+//             rejection_reason: true,
+//             rejected_at: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//             sellerApprovals: EcommerceMallSellerApprovalAtSummaryTransformer.select(),
+//             profile: EcommerceMallSellerProfileAtSummaryTransformer.select(),
+//             sellerSuspensions: EcommerceMallSellerSuspensionAtSummaryTransformer.select(),
 //           },
 //         } satisfies Prisma.ecommerce_mall_sellersFindManyArgs;
 //       }
@@ -105,8 +161,11 @@ export namespace EcommerceMallSellerTransformer {
 //   approvalStatus: {string},
 //   rejectionReason: {string | null},
 //   rejectedAt: {string | null},
-//   profile: {IEcommerceMallSellerProfile},
-//   productsCount: {integer},
+//   profile: await EcommerceMallSellerProfileAtSummaryTransformer.transform(input.profile),
+//   sellerApprovals: await ArrayUtil.asyncMap(input.sellerApprovals, EcommerceMallSellerApprovalAtSummaryTransformer.transform),
+//   sellerSuspensions: await ArrayUtil.asyncMap(input.sellerSuspensions, EcommerceMallSellerSuspensionAtSummaryTransformer.transform),
+//   approvalCount: {integer},
+//   suspensionCount: {integer},
 //   createdAt: {string},
 //   updatedAt: {string},
 //   deletedAt: {string | null},

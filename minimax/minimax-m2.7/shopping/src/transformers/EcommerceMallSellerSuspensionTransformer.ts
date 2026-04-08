@@ -3,6 +3,7 @@ import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IEcommerceMallSellerSuspension } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerSuspension";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -13,9 +14,11 @@ import { EcommerceMallAdminAtSummaryTransformer } from "./EcommerceMallAdminAtSu
 import { EcommerceMallSellerAtSummaryTransformer } from "./EcommerceMallSellerAtSummaryTransformer";
 
 export namespace EcommerceMallSellerSuspensionTransformer {
+  // 1. Payload type first
   export type Payload = Prisma.ecommerce_mall_seller_suspensionsGetPayload<
     ReturnType<typeof select>
   >;
+  // 2. select() function second
   export function select() {
     return {
       select: {
@@ -32,28 +35,29 @@ export namespace EcommerceMallSellerSuspensionTransformer {
       },
     } satisfies Prisma.ecommerce_mall_seller_suspensionsFindManyArgs;
   }
+  // 3. transform() function last
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallSellerSuspension> {
     return {
+      createdAt: input.created_at.toISOString(),
       id: input.id,
       reason: input.reason,
-      restoredReason: input.restored_reason ?? null,
-      suspendedAt: input.suspended_at.toISOString(),
       restoredAt: input.restored_at?.toISOString() ?? null,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      seller: await EcommerceMallSellerAtSummaryTransformer.transform(
-        input.seller,
-      ),
-      suspendedBy: await EcommerceMallAdminAtSummaryTransformer.transform(
-        input.suspendedBy,
-      ),
       restoredBy: input.restoredBy
         ? await EcommerceMallAdminAtSummaryTransformer.transform(
             input.restoredBy,
           )
         : null,
+      restoredReason: input.restored_reason ?? null,
+      seller: await EcommerceMallSellerAtSummaryTransformer.transform(
+        input.seller,
+      ),
+      suspendedAt: input.suspended_at.toISOString(),
+      suspendedBy: await EcommerceMallAdminAtSummaryTransformer.transform(
+        input.suspendedBy,
+      ),
+      updatedAt: input.updated_at.toISOString(),
     } satisfies IEcommerceMallSellerSuspension;
   }
 }
@@ -86,16 +90,16 @@ export namespace EcommerceMallSellerSuspensionTransformer {
 // 
 //       export async function transform(input: Payload): Promise<IEcommerceMallSellerSuspension> {
 //         return {
+//   createdAt: {string},
 //   id: {string},
 //   reason: {string},
-//   restoredReason: {string | null},
-//   suspendedAt: {string},
 //   restoredAt: {string | null},
-//   createdAt: {string},
-//   updatedAt: {string},
-//   seller: await EcommerceMallSellerAtSummaryTransformer.transform(input.seller),
-//   suspendedBy: {IEcommerceMallAdmin.ISummary},
 //   restoredBy: {IEcommerceMallAdmin.ISummary | null},
+//   restoredReason: {null | string},
+//   seller: await EcommerceMallSellerAtSummaryTransformer.transform(input.seller),
+//   suspendedAt: {string},
+//   suspendedBy: {IEcommerceMallAdmin.ISummary},
+//   updatedAt: {string},
 //         };
 //       }
 //     }

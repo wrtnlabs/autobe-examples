@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCloneCommunityBan } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunityBan";
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -46,8 +47,8 @@ export namespace RedditCloneCommunityBanAtSummaryTransformer {
         input.issuer,
       ),
       isActive:
-        !input.deleted_at &&
-        (!input.expires_at || input.expires_at > new Date()),
+        input.deleted_at === null &&
+        (input.expires_at === null || input.expires_at > new Date()),
     } satisfies IRedditCloneCommunityBan.ISummary;
   }
 }

@@ -18,208 +18,200 @@ export async function patchRedditClonePostsPostIdVotes(props: {
   postId: string & tags.Format<"uuid">;
   body: IRedditClonePostVote.IUpdate;
 }): Promise<IRedditClonePostVote> {
-  // Verify post exists and is not soft-deleted
-  const post = await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
+  const post = await MyGlobal.prisma.reddit_clone_posts.findUnique({
     where: { id: props.postId },
-    select: {
-      id: true,
-      reddit_clone_member_id: true,
-      deleted_at: true,
-    },
+    select: { id: true, deleted_at: true, reddit_clone_member_id: true },
   });
-  if (post.deleted_at !== null) {
-    throw new HttpException("Post not found", 404);
+  if (!post || post.deleted_at !== null) {
+    throw new HttpException("Post not found or deleted", 404);
   }
-  // Placeholder for member ID from auth context
-  const memberId = "00000000-0000-0000-0000-000000000000" as string &
-    tags.Format<"uuid">;
-  // Check for existing vote
+  const memberSession = (
+    global as unknown as {
+      __memberSession__?: {
+        id: string;
+        member_id: string;
+      };
+    }
+  ).__memberSession__;
+  if (!memberSession?.member_id) {
+    throw new HttpException("Unauthorized", 401);
+  }
   const existingVote = await MyGlobal.prisma.reddit_clone_post_votes.findUnique(
     {
       where: {
         reddit_clone_member_id_reddit_clone_post_id: {
-          reddit_clone_member_id: memberId,
+          reddit_clone_member_id: memberSession.member_id,
           reddit_clone_post_id: props.postId,
         },
       },
-      select: {
-        id: true,
-        direction: true,
-      },
     },
   );
-  const direction = props.body.direction;
-  const scoreDelta = direction === "upvote" ? 1 : -1;
-  const now = new Date();
-  await MyGlobal.prisma.$transaction(async (tx) => {
+  const newDirection = props.body.direction;
+  const now = new Date().toISOString();
+  const result = await MyGlobal.prisma.$transaction(async (tx) => {
     if (!existingVote) {
-      await tx.reddit_clone_post_votes.create({
+      const scoreChange = newDirection === "upvote" ? 1 : -1;
+      const karmaChange = scoreChange;
+      const created = await tx.reddit_clone_post_votes.create({
         data: {
           id: v4(),
-          reddit_clone_member_id: memberId,
+          reddit_clone_member_id: memberSession.member_id,
           reddit_clone_post_id: props.postId,
-          direction: direction,
-          created_at: now,
-          updated_at: now,
+          direction: newDirection,
+          created_at: new Date(now),
+          updated_at: new Date(now),
+        },
+        select: {
+          id: true,
+          direction: true,
+          created_at: true,
+          updated_at: true,
+          member: { select: { id: true, username: true } },
+          post: {
+            select: {
+              id: true,
+              title: true,
+              type: true,
+              created_at: true,
+              vote_score: true,
+              comment_count: true,
+              author: { select: { id: true, username: true } },
+              community: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                  subscriber_count: true,
+                  member: { select: { id: true, username: true } },
+                },
+              },
+            },
+          },
         },
       });
       await tx.reddit_clone_posts.update({
         where: { id: props.postId },
-        data: { vote_score: { increment: scoreDelta } },
+        data: {
+          vote_score: { increment: scoreChange },
+          updated_at: new Date(now),
+        },
       });
-    } else if (existingVote.direction === direction) {
+      await tx.reddit_clone_user_karmas.update({
+        where: { reddit_clone_member_id: post.reddit_clone_member_id },
+        data: {
+          karma_score: { increment: karmaChange },
+          updated_at: new Date(now),
+        },
+      });
+      return { tag: "created" as const, vote: created };
+    }
+    if (existingVote.direction === newDirection) {
+      const scoreChange = existingVote.direction === "upvote" ? -1 : 1;
+      const karmaChange = scoreChange;
       await tx.reddit_clone_post_votes.delete({
         where: { id: existingVote.id },
       });
       await tx.reddit_clone_posts.update({
         where: { id: props.postId },
-        data: { vote_score: { increment: -scoreDelta } },
-      });
-    } else {
-      await tx.reddit_clone_post_votes.update({
-        where: { id: existingVote.id },
         data: {
-          direction: direction,
-          updated_at: now,
+          vote_score: { increment: scoreChange },
+          updated_at: new Date(now),
         },
       });
-      await tx.reddit_clone_posts.update({
-        where: { id: props.postId },
-        data: { vote_score: { increment: scoreDelta * 2 } },
+      await tx.reddit_clone_user_karmas.update({
+        where: { reddit_clone_member_id: post.reddit_clone_member_id },
+        data: {
+          karma_score: { increment: karmaChange },
+          updated_at: new Date(now),
+        },
       });
+      return { tag: "removed" as const };
     }
-  });
-  // Fetch vote with proper nested relations for response
-  const vote = await MyGlobal.prisma.reddit_clone_post_votes.findUnique({
-    where: {
-      reddit_clone_member_id_reddit_clone_post_id: {
-        reddit_clone_member_id: memberId,
-        reddit_clone_post_id: props.postId,
-      },
-    },
-    select: {
-      id: true,
-      direction: true,
-      created_at: true,
-      updated_at: true,
-      member: {
-        select: {
-          id: true,
-          username: true,
-        },
-      },
-      post: {
-        select: {
-          id: true,
-          title: true,
-          type: true,
-          vote_score: true,
-          comment_count: true,
-          created_at: true,
-          author: {
-            select: {
-              id: true,
-              username: true,
-            },
-          },
-          community: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-              subscriber_count: true,
-              member: {
-                select: {
-                  id: true,
-                  username: true,
-                },
+    const scoreChange = newDirection === "upvote" ? 2 : -2;
+    const karmaChange = scoreChange;
+    const updated = await tx.reddit_clone_post_votes.update({
+      where: { id: existingVote.id },
+      data: { direction: newDirection, updated_at: new Date(now) },
+      select: {
+        id: true,
+        direction: true,
+        created_at: true,
+        updated_at: true,
+        member: { select: { id: true, username: true } },
+        post: {
+          select: {
+            id: true,
+            title: true,
+            type: true,
+            created_at: true,
+            vote_score: true,
+            comment_count: true,
+            author: { select: { id: true, username: true } },
+            community: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                subscriber_count: true,
+                member: { select: { id: true, username: true } },
               },
             },
           },
-          postTextContent: {
-            select: {
-              body: true,
-            },
-          },
-          link: {
-            select: {
-              url: true,
-            },
-          },
-          image: {
-            select: {
-              reddit_clone_file_id: true,
-            },
-          },
+        },
+      },
+    });
+    await tx.reddit_clone_posts.update({
+      where: { id: props.postId },
+      data: {
+        vote_score: { increment: scoreChange },
+        updated_at: new Date(now),
+      },
+    });
+    await tx.reddit_clone_user_karmas.update({
+      where: { reddit_clone_member_id: post.reddit_clone_member_id },
+      data: {
+        karma_score: { increment: karmaChange },
+        updated_at: new Date(now),
+      },
+    });
+    return { tag: "updated" as const, vote: updated };
+  });
+  if (result.tag === "removed") {
+    throw new HttpException("Vote removed", 204);
+  }
+  const v = result.vote;
+  return {
+    id: v.id,
+    direction: v.direction,
+    created_at: v.created_at.toISOString(),
+    updated_at: v.updated_at.toISOString(),
+    member: { id: v.member.id, username: v.member.username },
+    post: {
+      id: v.post.id,
+      title: v.post.title,
+      type:
+        v.post.type === "text"
+          ? "text"
+          : v.post.type === "link"
+            ? "link"
+            : "image",
+      contentPreview: "",
+      createdAt: v.post.created_at.toISOString(),
+      voteScore: v.post.vote_score,
+      commentCount: v.post.comment_count,
+      author: { id: v.post.author.id, username: v.post.author.username },
+      community: {
+        id: v.post.community.id,
+        name: v.post.community.name,
+        description: v.post.community.description ?? "",
+        subscriberCount: v.post.community.subscriber_count ?? 0,
+        owner: {
+          id: v.post.community.member.id,
+          username: v.post.community.member.username,
         },
       },
     },
-  });
-  if (!vote) {
-    throw new HttpException("Vote removed", 200);
-  }
-  // Manually transform to match IRedditClonePostVote DTO
-  const contentPreview = getContentPreview(vote.post);
-  return {
-    id: vote.id,
-    direction: vote.direction,
-    created_at: vote.created_at.toISOString(),
-    updated_at: vote.updated_at.toISOString(),
-    member: {
-      id: vote.member.id,
-      username: vote.member.username,
-    } satisfies IRedditCloneMember.ISummary,
-    post: {
-      id: vote.post.id,
-      title: vote.post.title,
-      type: vote.post.type as "text" | "link" | "image",
-      voteScore: vote.post.vote_score,
-      commentCount: vote.post.comment_count,
-      createdAt: vote.post.created_at.toISOString(),
-      author: {
-        id: vote.post.author.id,
-        username: vote.post.author.username,
-      } satisfies IRedditCloneMember.ISummary,
-      community: {
-        id: vote.post.community.id,
-        name: vote.post.community.name,
-        description: vote.post.community.description,
-        subscriberCount: vote.post.community.subscriber_count,
-        owner: {
-          id: vote.post.community.member.id,
-          username: vote.post.community.member.username,
-        } satisfies IRedditCloneMember.ISummary,
-      } satisfies IRedditCloneCommunity.ISummary,
-      contentPreview: contentPreview,
-    } satisfies IRedditClonePost.ISummary,
-  };
-}
-function getContentPreview(post: {
-  type: string;
-  postTextContent: {
-    body: string;
-  } | null;
-  link: {
-    url: string;
-  } | null;
-  image: {
-    reddit_clone_file_id: string;
-  } | null;
-}): string {
-  switch (post.type) {
-    case "text":
-      return post.postTextContent?.body?.substring(0, 200) ?? "";
-    case "image":
-      return post.image?.reddit_clone_file_id ?? "";
-    case "link":
-      try {
-        return post.link?.url ? new URL(post.link.url).hostname : "";
-      } catch {
-        return post.link?.url ?? "";
-      }
-    default:
-      return "";
-  }
+  } satisfies IRedditClonePostVote;
 }
 
 

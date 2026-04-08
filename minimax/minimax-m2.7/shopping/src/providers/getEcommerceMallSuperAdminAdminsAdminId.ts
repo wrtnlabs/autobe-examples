@@ -17,7 +17,7 @@ export async function getEcommerceMallSuperAdminAdminsAdminId(props: {
   superAdmin: SuperadminPayload;
   adminId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallAdmin> {
-  const record = await MyGlobal.prisma.ecommerce_mall_admins.findUniqueOrThrow({
+  const record = await MyGlobal.prisma.ecommerce_mall_admins.findFirstOrThrow({
     ...EcommerceMallAdminTransformer.select(),
     where: {
       id: props.adminId,

@@ -3,6 +3,7 @@ import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { IRedditCloneSubscription } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneSubscription";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -37,7 +38,7 @@ export namespace RedditCloneSubscriptionTransformer {
       community: await RedditCloneCommunityAtSummaryTransformer.transform(
         input.community,
       ),
-      createdAt: toISOStringSafe(input.created_at),
+      createdAt: input.created_at.toISOString(),
     } satisfies IRedditCloneSubscription;
   }
 }

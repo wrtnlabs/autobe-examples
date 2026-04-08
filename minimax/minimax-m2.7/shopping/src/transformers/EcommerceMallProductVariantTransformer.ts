@@ -1,16 +1,14 @@
-import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
-import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
 import { IEcommerceMallProductVariantOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOptionValue";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallProductAtSummaryTransformer } from "./EcommerceMallProductAtSummaryTransformer";
 import { EcommerceMallProductVariantOptionValueTransformer } from "./EcommerceMallProductVariantOptionValueTransformer";
 
 export namespace EcommerceMallProductVariantTransformer {
@@ -27,18 +25,28 @@ export namespace EcommerceMallProductVariantTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        product: EcommerceMallProductAtSummaryTransformer.select(),
+        product: {
+          select: {
+            id: true,
+          },
+        },
         optionValues:
           EcommerceMallProductVariantOptionValueTransformer.select(),
         inventoryRecords: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_inventory_recordsFindManyArgs,
+          select: {
+            id: true,
+          },
+        },
         cartItems: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_cart_itemsFindManyArgs,
+          select: {
+            id: true,
+          },
+        },
         orderItems: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_order_itemsFindManyArgs,
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.ecommerce_mall_product_variantsFindManyArgs;
   }
@@ -48,19 +56,15 @@ export namespace EcommerceMallProductVariantTransformer {
     return {
       id: input.id,
       skuCode: input.sku_code,
-      price: input.price,
+      price: input.price ?? null,
       quantity: input.quantity,
-      product: await EcommerceMallProductAtSummaryTransformer.transform(
-        input.product,
-      ),
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
       optionValues: await ArrayUtil.asyncMap(
         input.optionValues,
         EcommerceMallProductVariantOptionValueTransformer.transform,
       ),
-      inventoryCount: input.inventoryRecords.length,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
     } satisfies IEcommerceMallProductVariant;
   }
 }
@@ -83,24 +87,22 @@ export namespace EcommerceMallProductVariantTransformer {
 //             created_at: true,
 //             updated_at: true,
 //             deleted_at: true,
-//             product: EcommerceMallProductAtSummaryTransformer.select(),
-//             ...
+//             ecommerce_mall_product_id: true,
+//             optionValues: EcommerceMallProductVariantOptionValueTransformer.select(),
 //           },
 //         } satisfies Prisma.ecommerce_mall_product_variantsFindManyArgs;
 //       }
 // 
 //       export async function transform(input: Payload): Promise<IEcommerceMallProductVariant> {
 //         return {
-//   id: {string},
-//   skuCode: {string},
-//   price: {number | null},
-//   quantity: {integer},
-//   product: await EcommerceMallProductAtSummaryTransformer.transform(input.product),
-//   optionValues: {Array<IEcommerceMallProductVariantOptionValue>},
-//   inventoryCount: {integer},
 //   createdAt: {string},
+//   deletedAt: {null | string},
+//   id: {string},
+//   optionValues: await ArrayUtil.asyncMap(input.optionValues, EcommerceMallProductVariantOptionValueTransformer.transform),
+//   price: {null | number},
+//   quantity: {integer},
+//   skuCode: {string},
 //   updatedAt: {string},
-//   deletedAt: {string | null},
 //         };
 //       }
 //     }

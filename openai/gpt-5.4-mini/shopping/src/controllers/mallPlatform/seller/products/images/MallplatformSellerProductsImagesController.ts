@@ -3,36 +3,31 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IMallPlatformProductImage } from "../../../../../api/structures/IMallPlatformProductImage";
-import { IPageIMallPlatformProductImage } from "../../../../../api/structures/IPageIMallPlatformProductImage";
 import { SellerAuth } from "../../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../../decorators/payload/SellerPayload";
 import { deleteMallPlatformSellerProductsProductIdImagesImageId } from "../../../../../providers/deleteMallPlatformSellerProductsProductIdImagesImageId";
-import { getMallPlatformSellerProductsProductIdImagesImageId } from "../../../../../providers/getMallPlatformSellerProductsProductIdImagesImageId";
-import { patchMallPlatformSellerProductsProductIdImages } from "../../../../../providers/patchMallPlatformSellerProductsProductIdImages";
 import { postMallPlatformSellerProductsProductIdImages } from "../../../../../providers/postMallPlatformSellerProductsProductIdImages";
 import { putMallPlatformSellerProductsProductIdImagesImageId } from "../../../../../providers/putMallPlatformSellerProductsProductIdImagesImageId";
 
 @Controller("/mallPlatform/seller/products/:productId/images")
 export class MallplatformSellerProductsImagesController {
   /**
-   * Attach a new image to a product.
+   * Add a new image to a product.
    *
-   * This operation lets the owning seller add a presentation image to the specified product so it appears in listings and on the product detail page. The new image becomes part of the product's ordered gallery, and its position affects which image is used as the main thumbnail.
+   * This operation lets the owning seller attach an additional image to an existing product so the product can be presented with a richer image gallery. The inserted image becomes part of the product's ordered image set, and the first image in that order serves as the thumbnail used in listings.
    *
-   * Only the seller who owns the product may perform this action. The service must verify that the product exists and that the authenticated seller is allowed to maintain it before creating the image. If the product is unavailable or the caller is not the owner, the request must fail without changing any existing images.
-   *
-   * After the image is created, the system must preserve the updated image order and record the change in the product history through a snapshot. The response returns the newly created product image with its current ordering state.
+   * The target product must exist and belong to the authenticated seller. The request is rejected if the product is missing, belongs to another seller, or violates image-management validation such as duplicate image URLs or conflicting display order. Image creation is part of product maintenance, and the result is immediately visible on the product detail page according to its display order.
    *
    * @param connection
    * @param productId The identifier of the product that will receive the new image.
-   * @param body The image details to attach to the specified product, including the image source and any supported ordering data.
+   * @param body The image information to attach to the target product, including the image URL and any create-time presentation data supported by the model.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Fetch the target product by productId and confirm it belongs to the authenticated seller. Reject the request if the product does not exist or if the caller lacks ownership rights for product maintenance.
+   * @x-autobe-specification Resolve the target product by productId and verify that it belongs to the authenticated seller. Reject the request with a business error if the product does not exist or if the caller is not the owner.
    *
-   * Insert a mall_platform_product_images row associated with that product using the request body fields. If the create DTO includes an ordering field, insert the image at the requested position and shift later images consistently in the same transaction; otherwise append it to the end of the product's image set.
+   * Insert a new row into mall_platform_product_images using the target product id, the submitted image URL, the intended sort order, and the is_main flag. Enforce the unique constraints on (mall_platform_product_id, image_url) and (mall_platform_product_id, sort_order). If the same image URL already exists for the product, return a conflict-style business validation error rather than creating a duplicate. If the requested sort order is already occupied, either shift ordering in a controlled transaction or reject the request according to the implementation rules, but never leave the gallery in a partially updated state.
    *
-   * After insertion, create the corresponding product image snapshot so the visual history remains traceable. Do not alter unrelated products or image sets. Roll back the transaction on any validation or persistence error and return the appropriate business error.
+   * If the product currently has no images, make the inserted image the main image. If the product already has a main image, preserve the existing thumbnail behavior unless the chosen ordering logic explicitly promotes the new row. Do not change unrelated products. Because product image history is preserved through snapshots, ensure the surrounding product update flow records the change where appropriate. Return the created image record after persistence.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Post()
@@ -57,99 +52,23 @@ export class MallplatformSellerProductsImagesController {
   }
 
   /**
-   * Reorder the images attached to a product.
+   * Update one image that belongs to a product.
    *
-   * This operation updates the seller-managed image collection for a single product. The submitted order determines how the images appear on the product detail page, and the first image becomes the main thumbnail used in listings and search results.
+   * This operation lets the owning seller modify an existing image in that product's image set. The image remains tied to the same product, and any presentation-related change may affect how the product appears in listings and on the product detail page.
    *
-   * Only the seller who owns the product may perform this action. If any referenced image is unavailable, does not belong to the product, or the requested order is invalid, the system must reject the update without changing the current image set. When the reorder succeeds, the change must be preserved in the product snapshot history so the previous and updated image order can be reviewed later for dispute resolution.
-   *
-   * @param connection
-   * @param productId The product identifier whose image order is being updated.
-   * @param body The desired final order of the product images. The order of the submitted items determines the gallery order, and the first item becomes the product thumbnail.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load the target product by productId and verify that the authenticated seller owns it and is permitted to maintain its images. Interpret the request body as a full reorder of the product image set, not a partial update.
-   *
-   * Validate that the requested image sequence contains only images that belong to the product, that no image is missing or duplicated, and that every referenced image is currently available. Update the stored ordering atomically so the first image becomes the thumbnail image used by product listings.
-   *
-   * After a successful reorder, create the corresponding product snapshot entry to preserve the prior and updated image state together with the product's other editable data. If validation fails, leave the image order unchanged and do not create a snapshot. Return business errors for missing product, unauthorized seller, unavailable image target, or invalid ordering.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Patch()
-  public async index(
-    @SellerAuth()
-    seller: SellerPayload,
-    @TypedParam("productId")
-    productId: string & tags.Format<"uuid">,
-    @TypedBody()
-    body: IMallPlatformProductImage.IRequest,
-  ): Promise<IPageIMallPlatformProductImage.ISummary> {
-    try {
-      return await patchMallPlatformSellerProductsProductIdImages({
-        seller,
-        productId,
-        body,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieve a single image that belongs to a specific product.
-   *
-   * This operation returns the full product image record for the image identified by `imageId` within the scope of `productId`. Because product images are owned by a product and image management is restricted to the product owner, the implementation must verify that the image belongs to the requested product before returning it.
-   *
-   * If the product does not exist, the image does not exist, or the image is not attached to the specified product, the server must return a normal not-found style business error. The response reflects the current image state used for product presentation, including the ordering position that determines which image appears as the main thumbnail in listings.
+   * The request is validated against product ownership and image availability. If the product does not exist, is not owned by the caller, or the target image is no longer available for that product, the request is rejected and no unrelated images are modified. The previous state must be preserved in the product image snapshot history before the update is committed.
    *
    * @param connection
-   * @param productId The identifier of the parent product that owns the image.
-   * @param imageId The identifier of the product image within the scope of the specified product.
+   * @param productId The identifier of the product that owns the image.
+   * @param imageId The identifier of the product image within that product's image set.
+   * @param body The fields to update for an existing image belonging to the specified product.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load the product image by the parent product identifier and the image identifier. Verify the product exists, then query mall_platform_product_images using both identifiers so the image cannot be accessed outside its product scope. If the product is missing, the image is missing, or the image belongs to a different product, return a business not-found error. Do not accept a request body. Return the current product image entity only; no mutation, no reordering, and no snapshot data are performed by this endpoint.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Get(":imageId")
-  public async at(
-    @SellerAuth()
-    seller: SellerPayload,
-    @TypedParam("productId")
-    productId: string & tags.Format<"uuid">,
-    @TypedParam("imageId")
-    imageId: string & tags.Format<"uuid">,
-  ): Promise<IMallPlatformProductImage> {
-    try {
-      return await getMallPlatformSellerProductsProductIdImagesImageId({
-        seller,
-        productId,
-        imageId,
-      });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Updates one image in a product's ordered image set.
+   * @x-autobe-specification Load the product by productId and verify that the authenticated seller owns it. Then load the target image by imageId scoped to that product. Reject the request if the product is missing, the image is missing, the product is not owned by the caller, or the product is unavailable for image maintenance.
    *
-   * This operation is used by the seller who owns the product to maintain the product's visual presentation. The product image list is ordered, so any successful change must preserve the sequence that determines the main thumbnail image shown in listings and the display order on the product detail page.
+   * Apply only the fields allowed by the product image update DTO. Do not allow reassignment to another product. If the update changes ordering or other presentation attributes, keep the image set consistent so the first image remains the thumbnail used in listings. Before persisting the update, create the corresponding product image snapshot entry that preserves the prior image state.
    *
-   * The request is rejected when the product does not exist, the image does not belong to the specified product, or the caller is not the owning seller. If the update changes ordering-related data, the system must keep the image set consistent and must not alter unrelated images. Every successful update is recorded in snapshot history so past product presentation can be reviewed later.
-   *
-   * @param connection
-   * @param productId Identifier of the product that owns the image being updated.
-   * @param imageId Identifier of the product image to update within the specified product.
-   * @param body The editable properties for the specified product image, including any fields that affect its presentation or ordering within the product gallery.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Fetch the product by productId and the image by imageId, then confirm the image belongs to that product and that the authenticated seller owns the product. Reject the request if the product is missing, the image is missing, ownership does not match, or the product is not available for maintenance.
-   *
-   * Apply only the mutable fields defined by the product image schema. If the payload affects ordering, recompute the product's image ordering in a transaction so the first image remains the thumbnail image and other images keep a stable relative order unless explicitly changed. Do not reorder or delete unrelated images when the target image is unavailable.
-   *
-   * Before committing the update, create the required snapshot entry capturing the prior image state and any order-sensitive state needed for audit history. Return the updated image after the transaction succeeds. If any validation or persistence step fails, roll back the entire change.
+   * Use a transaction so the snapshot insert and the image update are atomic. If the target image is unavailable, return a business error and do not reorder or delete any other images as a side effect.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Put(":imageId")
@@ -177,22 +96,24 @@ export class MallplatformSellerProductsImagesController {
   }
 
   /**
-   * Delete one image from a product's ordered image set.
+   * Delete one image from a seller-owned product.
    *
-   * This operation removes the specified image from the product that the authenticated seller owns. If the deleted image was the first image, the next remaining image becomes the new main thumbnail image. If it was the only image, the product remains without a thumbnail until a new image is added.
+   * This operation removes a single image from the product's ordered image set. If the deleted image was the first image, the next image in order becomes the new thumbnail used in listings. If it was the only image, the product remains without a thumbnail until a new image is added.
    *
-   * The product must exist, must still be manageable, and the target image must belong to that product. If the product is unavailable, the seller does not own the product, or the image no longer exists, the request is rejected and no other images are changed. The deletion is preserved in the product image history used for dispute review and visual reconstruction.
+   * Only the seller who owns the product may perform this action. The request must fail if the product does not exist, is no longer available for image maintenance, or the target image cannot be found under that product. When the action is rejected, the existing image list must remain unchanged.
+   *
+   * The deletion must be captured in history through the product image snapshot mechanism so the previous presentation can be reconstructed for audit and dispute review.
    *
    * @param connection
-   * @param productId The UUID of the product that owns the image.
-   * @param imageId The UUID of the image to delete from the product.
+   * @param productId The identifier of the product whose image will be deleted.
+   * @param imageId The identifier of the image to remove from the product's ordered image set.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor seller
-   * @x-autobe-specification Load the target product and image, then verify that the authenticated seller owns the product and that the image belongs to that product. Reject the request if the product is missing, removed from sale, or otherwise unavailable for maintenance, or if the image target no longer exists.
-   *
-   * Delete only the requested image row from mall_platform_product_images. After deletion, recompute or renumber the remaining images so the first image remains the thumbnail candidate and the display order stays contiguous. If the deleted image was the only image, leave the product with no thumbnail until another image is added.
-   *
-   * Do not change unrelated images, variants, or product fields. Record the change through the product image snapshot/history mechanism so prior presentation state remains traceable. Return no response body for a successful delete unless the platform contract requires one.
+   * @x-autobe-specification Verify that the authenticated seller owns the product identified by productId and that the product is still eligible for image maintenance.
+   * Resolve the target image by imageId within the scope of that product only; if it is missing, return a business not-found error and do not modify any other image rows.
+   * Execute the removal in a transaction, then preserve the remaining image ordering so the product keeps a stable visual sequence.
+   * If the deleted image was the main thumbnail, promote the next image in order to thumbnail; if it was the last image, leave the product without a thumbnail.
+   * Record the removed state in the product image snapshot/history tables before committing, and return no response body on success.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Delete(":imageId")

@@ -5,9 +5,9 @@ import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMa
 import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import { IMallPlatformOrderItemSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItemSnapshot";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIMallPlatformOrderItemSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformOrderItemSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
@@ -32,84 +32,123 @@ export async function patchMallPlatformCustomerOrderItemsOrderItemIdSnapshots(pr
     await MyGlobal.prisma.mall_platform_order_items.findUniqueOrThrow({
       where: { id: props.orderItemId },
       select: {
-        id: true,
         order: {
           select: {
-            customer: {
-              select: {
-                id: true,
-              },
-            },
+            customer_id: true,
           },
         },
       },
     });
-  if (orderItem.order.customer.id !== props.customer.id) {
+  if (orderItem.order.customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 100;
   const skip = (page - 1) * limit;
-  const where = {
+  const where: Prisma.mall_platform_order_item_snapshotsWhereInput = {
     mall_platform_order_item_id: props.orderItemId,
-    ...(props.body.snapshotReason !== undefined && {
-      snapshot_reason: props.body.snapshotReason,
-    }),
-    ...((props.body.snapshotAtFrom !== undefined ||
-      props.body.snapshotAtTo !== undefined) && {
-      snapshot_at: {
-        ...(props.body.snapshotAtFrom !== undefined && {
-          gte: props.body.snapshotAtFrom,
-        }),
-        ...(props.body.snapshotAtTo !== undefined && {
-          lte: props.body.snapshotAtTo,
-        }),
-      },
-    }),
-    ...(props.body.search !== undefined && {
-      OR: [
-        { product_name: { contains: props.body.search, mode: "insensitive" } },
-        {
-          product_description: {
-            contains: props.body.search,
-            mode: "insensitive",
+    ...(props.body.search !== undefined && props.body.search.length > 0
+      ? {
+          OR: [
+            {
+              snapshot_reason: {
+                contains: props.body.search,
+                mode: "insensitive",
+              },
+            },
+            {
+              order_item_status: {
+                contains: props.body.search,
+                mode: "insensitive",
+              },
+            },
+            {
+              product_name: {
+                contains: props.body.search,
+                mode: "insensitive",
+              },
+            },
+            {
+              product_description: {
+                contains: props.body.search,
+                mode: "insensitive",
+              },
+            },
+            {
+              product_sku: {
+                contains: props.body.search,
+                mode: "insensitive",
+              },
+            },
+            {
+              variant_sku_code: {
+                contains: props.body.search,
+                mode: "insensitive",
+              },
+            },
+            {
+              seller_shop_name: {
+                contains: props.body.search,
+                mode: "insensitive",
+              },
+            },
+            {
+              seller_shop_description: {
+                contains: props.body.search,
+                mode: "insensitive",
+              },
+            },
+            {
+              seller_logo_image_url: {
+                contains: props.body.search,
+                mode: "insensitive",
+              },
+            },
+          ],
+        }
+      : {}),
+    ...(props.body.snapshotAtFrom !== undefined ||
+    props.body.snapshotAtTo !== undefined
+      ? {
+          snapshot_at: {
+            ...(props.body.snapshotAtFrom !== undefined
+              ? { gte: props.body.snapshotAtFrom }
+              : {}),
+            ...(props.body.snapshotAtTo !== undefined
+              ? { lte: props.body.snapshotAtTo }
+              : {}),
           },
-        },
-        { product_sku: { contains: props.body.search, mode: "insensitive" } },
-        {
-          variant_sku_code: {
-            contains: props.body.search,
-            mode: "insensitive",
+        }
+      : {}),
+    ...(props.body.createdAtFrom !== undefined ||
+    props.body.createdAtTo !== undefined
+      ? {
+          created_at: {
+            ...(props.body.createdAtFrom !== undefined
+              ? { gte: props.body.createdAtFrom }
+              : {}),
+            ...(props.body.createdAtTo !== undefined
+              ? { lte: props.body.createdAtTo }
+              : {}),
           },
-        },
-        {
-          seller_shop_name: {
-            contains: props.body.search,
-            mode: "insensitive",
-          },
-        },
-        {
-          seller_shop_description: {
-            contains: props.body.search,
-            mode: "insensitive",
-          },
-        },
-        {
-          snapshot_reason: { contains: props.body.search, mode: "insensitive" },
-        },
-      ],
-    }),
-  } satisfies Prisma.mall_platform_order_item_snapshotsWhereInput;
+        }
+      : {}),
+  };
+  const orderBy: Prisma.mall_platform_order_item_snapshotsOrderByWithRelationInput =
+    props.body.sort === "createdAt_asc"
+      ? { created_at: "asc" }
+      : props.body.sort === "createdAt_desc"
+        ? { created_at: "desc" }
+        : props.body.sort === "snapshotAt_asc"
+          ? { snapshot_at: "asc" }
+          : { snapshot_at: "desc" };
   const records =
     await MyGlobal.prisma.mall_platform_order_item_snapshots.findMany({
-      ...MallPlatformOrderItemSnapshotAtSummaryTransformer.select(),
       where,
-      orderBy:
-        props.body.sort === "oldest"
-          ? { snapshot_at: "asc" }
-          : { snapshot_at: "desc" },
       skip,
       take: limit,
+      orderBy,
+      ...MallPlatformOrderItemSnapshotAtSummaryTransformer.select(),
     });
   const total = await MyGlobal.prisma.mall_platform_order_item_snapshots.count({
     where,
@@ -154,9 +193,9 @@ export async function patchMallPlatformCustomerOrderItemsOrderItemIdSnapshots(pr
 // import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 // import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 // import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 // import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
-// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
+// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.

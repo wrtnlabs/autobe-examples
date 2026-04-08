@@ -1,6 +1,7 @@
 import { IEcommerceMallSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSuperAdmin";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -21,24 +22,12 @@ export namespace EcommerceMallSuperAdminAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        sessions: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_super_admin_sessionsFindManyArgs,
-        passwordResets: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_super_admin_password_resetsFindManyArgs,
-        auditLogs: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_super_admin_audit_logsFindManyArgs,
-        reviewedAdminRequests: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_admin_requestsFindManyArgs,
-        reviewedSellerAdminRequests: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_seller_admin_requestsFindManyArgs,
-        adminPromotions: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_admin_promotionsFindManyArgs,
+        sessions: true,
+        passwordResets: true,
+        auditLogs: true,
+        reviewedAdminRequests: true,
+        reviewedSellerAdminRequests: true,
+        adminPromotions: true,
       },
     } satisfies Prisma.ecommerce_mall_super_adminsFindManyArgs;
   }
@@ -50,6 +39,7 @@ export namespace EcommerceMallSuperAdminAtSummaryTransformer {
       email: input.email,
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
+      isDeleted: input.deleted_at !== null,
     } satisfies IEcommerceMallSuperAdmin.ISummary;
   }
 }
@@ -81,6 +71,7 @@ export namespace EcommerceMallSuperAdminAtSummaryTransformer {
 //   email: {string},
 //   createdAt: {string},
 //   updatedAt: {string},
+//   isDeleted: {boolean},
 //         };
 //       }
 //     }

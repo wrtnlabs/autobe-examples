@@ -21,7 +21,9 @@ export async function getMallPlatformSellerApprovalRequestsApprovalRequestId(pro
   const record =
     await MyGlobal.prisma.mall_platform_administrator_approval_requests.findUniqueOrThrow(
       {
-        where: { id: props.approvalRequestId },
+        where: {
+          id: props.approvalRequestId,
+        },
         ...MallPlatformAdministratorApprovalRequestTransformer.select(),
       },
     );

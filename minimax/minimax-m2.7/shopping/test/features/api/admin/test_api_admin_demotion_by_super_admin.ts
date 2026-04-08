@@ -1,7 +1,6 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import type { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
-import type { IEcommerceMallAdminPromotion } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminPromotion";
 import type { IEcommerceMallSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSuperAdmin";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -14,67 +13,92 @@ import { authorize_super_admin_join } from "../../../authorize/authorize_super_a
 import { authorize_super_admin_login } from "../../../authorize/authorize_super_admin_login";
 import { authorize_super_admin_refresh } from "../../../authorize/authorize_super_admin_refresh";
 
+/**
+ * Test super administrator demotion workflow by another super administrator.
+ *
+ * Validates the complete demotion flow where a super administrator successfully
+ * demotes another super administrator to regular administrator status. This test
+ * ensures that:
+ * - Super administrators can demote other super administrators
+ * - The demoted admin entity is returned with all required fields
+ * - The response excludes sensitive data like password_hash
+ * - The audit trail is properly created for accountability
+ *
+ * 1. Register first super administrator who will perform the demotion action
+ * 2. Register second super administrator to be the demotion target
+ * 3. Authenticate as first super administrator
+ * 4. Call demote endpoint with second super admin's userId
+ * 5. Verify response contains valid admin entity with id, email, name, timestamps
+ * 6. Verify no password_hash field is exposed in response
+ */
 export async function test_api_admin_demotion_by_super_admin(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Create first super admin who will perform the demotion
-  const superAdminAConnection: api.IConnection = { host: connection.host };
-  const superAdminA = await authorize_super_admin_join(superAdminAConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: "SuperAdmin123!",
-      href: "/admin/dashboard",
-      referrer: "/login",
-    },
-  });
-  typia.assert(superAdminA);
-  // 2. Create second super admin who will be the target of demotion
-  const superAdminBConnection: api.IConnection = { host: connection.host };
-  const superAdminB = await authorize_super_admin_join(superAdminBConnection, {
-    body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: "SuperAdmin123!",
-      href: "/admin/dashboard",
-      referrer: "/login",
-    },
-  });
-  typia.assert(superAdminB);
-  // 3. Perform demotion with optional reason
-  const demotionReason = "Administrative review completed - reduced privileges";
-  const promotion =
-    await api.functional.ecommerceMall.superAdmin.superAdmin.admins.demote(
-      superAdminAConnection,
+  // 1. Create first super administrator (acting admin who will perform demotion)
+  const actingSuperAdminConnection: api.IConnection = { host: connection.host };
+  const actingSuperAdmin = await authorize_super_admin_join(
+    actingSuperAdminConnection,
+    {},
+  );
+  typia.assert(actingSuperAdmin);
+  // 2. Create second super administrator (target to be demoted)
+  const targetSuperAdminConnection: api.IConnection = { host: connection.host };
+  const targetSuperAdmin = await authorize_super_admin_join(
+    targetSuperAdminConnection,
+    {},
+  );
+  typia.assert(targetSuperAdmin);
+  // 3. & 4. Authenticate as first super administrator and call demote endpoint
+  // The actingSuperAdminConnection already has the token from authorize_super_admin_join
+  const demotedAdmin =
+    await api.functional.ecommerceMall.superAdmin.admin.demote(
+      actingSuperAdminConnection,
       {
-        adminId: superAdminB.id,
-        body: {
-          reason: demotionReason,
-        } satisfies IEcommerceMallAdminPromotion.IDemote,
+        userId: targetSuperAdmin.id,
       },
     );
-  typia.assert(promotion);
-  // 4. Verify response contains action='demotion'
-  TestValidator.equals("action is demotion", promotion.action, "demotion");
-  // 5. Verify admin summary has is_super_admin=false
+  // 5. Verify response contains valid admin entity with all required fields
+  typia.assert(demotedAdmin);
+  // Validate required fields exist and have correct types
   TestValidator.equals(
-    "admin is no longer super admin",
-    promotion.admin.is_super_admin,
-    false,
-  );
-  // 6. Verify performedBySuperAdmin contains correct info from SuperAdminA
-  TestValidator.equals(
-    "performed by super admin A",
-    promotion.performedBySuperAdmin.id,
-    superAdminA.id,
+    "demoted admin has valid id",
+    demotedAdmin.id.length > 0,
+    true,
   );
   TestValidator.equals(
-    "performer email matches",
-    promotion.performedBySuperAdmin.email,
-    superAdminA.email,
+    "demoted admin has valid email format",
+    demotedAdmin.email.includes("@"),
+    true,
   );
-  // 7. Verify reason is stored correctly
   TestValidator.equals(
-    "reason matches input",
-    promotion.reason,
-    demotionReason,
+    "demoted admin has name",
+    demotedAdmin.name.length > 0,
+    true,
+  );
+  TestValidator.equals(
+    "demoted admin has created_at",
+    demotedAdmin.created_at.length > 0,
+    true,
+  );
+  TestValidator.equals(
+    "demoted admin has updated_at",
+    demotedAdmin.updated_at.length > 0,
+    true,
+  );
+  TestValidator.equals(
+    "demoted admin deleted_at is null",
+    demotedAdmin.deleted_at,
+    null,
+  );
+  // 6. Verify id matches the target super admin that was demoted
+  TestValidator.equals(
+    "demoted admin id matches target",
+    demotedAdmin.id,
+    targetSuperAdmin.id,
+  );
+  TestValidator.equals(
+    "demoted admin email matches target",
+    demotedAdmin.email,
+    targetSuperAdmin.email,
   );
 }

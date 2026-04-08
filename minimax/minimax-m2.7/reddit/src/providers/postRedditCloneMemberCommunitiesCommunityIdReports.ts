@@ -21,86 +21,92 @@ export async function postRedditCloneMemberCommunitiesCommunityIdReports(props: 
   communityId: string & tags.Format<"uuid">;
   body: IRedditCloneCommunityReport.ICreate;
 }): Promise<IRedditCloneCommunityReport> {
-  // 1. Validate community exists and is not soft-deleted
-  const community = await MyGlobal.prisma.reddit_clone_communities.findUnique({
-    where: { id: props.communityId },
-    select: { id: true, deleted_at: true },
+  // Validate community exists and is not deleted
+  const community = await MyGlobal.prisma.reddit_clone_communities.findFirst({
+    where: {
+      id: props.communityId,
+      deleted_at: null,
+    },
+    select: { id: true },
   });
-  if (community === null) {
+  if (!community) {
     throw new HttpException("Community not found", 404);
   }
-  if (community.deleted_at !== null) {
-    throw new HttpException("Community not found", 404);
-  }
-  // 2. Validate target content exists and belongs to community
-  let targetMemberId: string;
+  // Validate content based on target_type
   if (props.body.target_type === "post") {
-    const post = await MyGlobal.prisma.reddit_clone_posts.findUnique({
-      where: { id: props.body.target_id },
-      select: {
-        id: true,
-        reddit_clone_member_id: true,
-        reddit_clone_community_id: true,
+    // Verify post exists and belongs to the community
+    const post = await MyGlobal.prisma.reddit_clone_posts.findFirst({
+      where: {
+        id: props.body.target_id,
+        reddit_clone_community_id: props.communityId,
+        deleted_at: null,
       },
+      select: { reddit_clone_member_id: true },
     });
-    if (post === null) {
-      throw new HttpException("Post not found", 404);
+    if (!post) {
+      throw new HttpException("Post not found in this community", 404);
     }
-    if (post.reddit_clone_community_id !== props.communityId) {
-      throw new HttpException("Post not found", 404);
+    // Prevent self-reporting
+    if (post.reddit_clone_member_id === props.member.id) {
+      throw new HttpException("Cannot report your own content", 403);
     }
-    targetMemberId = post.reddit_clone_member_id;
   } else if (props.body.target_type === "comment") {
-    const comment = await MyGlobal.prisma.reddit_clone_comments.findUnique({
-      where: { id: props.body.target_id },
+    // Verify comment exists and its parent post belongs to the community
+    const comment = await MyGlobal.prisma.reddit_clone_comments.findFirst({
+      where: {
+        id: props.body.target_id,
+        deleted_at: null,
+      },
       select: {
-        id: true,
         reddit_clone_member_id: true,
         reddit_clone_post_id: true,
       },
     });
-    if (comment === null) {
+    if (!comment) {
       throw new HttpException("Comment not found", 404);
     }
     // Verify parent post belongs to the community
-    const post = await MyGlobal.prisma.reddit_clone_posts.findUnique({
-      where: { id: comment.reddit_clone_post_id },
-      select: { id: true, reddit_clone_community_id: true },
+    const post = await MyGlobal.prisma.reddit_clone_posts.findFirst({
+      where: {
+        id: comment.reddit_clone_post_id,
+        reddit_clone_community_id: props.communityId,
+        deleted_at: null,
+      },
+      select: { id: true },
     });
-    if (post === null || post.reddit_clone_community_id !== props.communityId) {
-      throw new HttpException("Comment not found", 404);
+    if (!post) {
+      throw new HttpException("Comment not found in this community", 404);
     }
-    targetMemberId = comment.reddit_clone_member_id;
+    // Prevent self-reporting
+    if (comment.reddit_clone_member_id === props.member.id) {
+      throw new HttpException("Cannot report your own content", 403);
+    }
   } else {
     throw new HttpException("Invalid target_type", 400);
   }
-  // 3. Self-report prevention
-  if (targetMemberId === props.member.id) {
-    throw new HttpException("Cannot report your own content", 403);
-  }
-  // 4. Duplicate report check
+  // Prevent duplicate reports (one per user per content)
   const existingReport = await MyGlobal.prisma.reddit_clone_reports.findFirst({
     where: {
       reddit_clone_member_id: props.member.id,
       target_type: props.body.target_type,
       target_id: props.body.target_id,
     },
+    select: { id: true },
   });
-  if (existingReport !== null) {
-    throw new HttpException("Report already exists", 409);
+  if (existingReport) {
+    throw new HttpException("You have already reported this content", 409);
   }
-  // 5. Create report using collector
-  const created = await MyGlobal.prisma.reddit_clone_reports.create({
+  // Create the report
+  const record = await MyGlobal.prisma.reddit_clone_reports.create({
     data: await RedditCloneCommunityReportCollector.collect({
       body: props.body,
-      redditCloneCommunities: { id: community.id },
+      redditCloneCommunities: { id: props.communityId },
       redditCloneMembers: { id: props.member.id },
       redditCloneMemberSessions: { id: props.member.session_id },
     }),
     ...RedditCloneCommunityReportTransformer.select(),
   });
-  // 6. Return transformed response
-  return await RedditCloneCommunityReportTransformer.transform(created);
+  return await RedditCloneCommunityReportTransformer.transform(record);
 }
 
 

@@ -15,46 +15,18 @@ export async function deleteMallPlatformCustomerReviewsReviewId(props: {
   customer: CustomerPayload;
   reviewId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  await MyGlobal.prisma.$transaction(async (prisma) => {
-    const review = await prisma.mall_platform_reviews.findUniqueOrThrow({
-      where: { id: props.reviewId },
-      select: {
-        id: true,
-        customer_id: true,
-        content: true,
-        rating: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-      },
-    });
-    if (review.customer_id !== props.customer.id) {
-      throw new HttpException("Forbidden", 403);
-    }
-    if (review.deleted_at !== null) return;
-    await prisma.mall_platform_review_snapshots.create({
-      data: {
-        id: v4(),
-        snapshot_action: "delete",
-        rating: review.rating,
-        content: review.content,
-        is_deleted: true,
-        created_at: new Date(),
-        review: {
-          connect: { id: review.id },
-        },
-        customer: {
-          connect: { id: props.customer.id },
-        },
-      },
-    });
-    await prisma.mall_platform_reviews.update({
-      where: { id: review.id },
-      data: {
-        deleted_at: new Date(),
-        updated_at: new Date(),
-      },
-    });
+  const review = await MyGlobal.prisma.mall_platform_reviews.findUnique({
+    where: { id: props.reviewId },
+    select: {
+      id: true,
+      customer_id: true,
+    },
+  });
+  if (review === null) throw new HttpException("Not Found", 404);
+  if (review.customer_id !== props.customer.id)
+    throw new HttpException("Forbidden", 403);
+  await MyGlobal.prisma.mall_platform_reviews.delete({
+    where: { id: props.reviewId },
   });
 }
 

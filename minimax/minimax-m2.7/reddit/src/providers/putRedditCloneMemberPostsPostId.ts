@@ -27,21 +27,21 @@ export async function putRedditCloneMemberPostsPostId(props: {
   postId: string & tags.Format<"uuid">;
   body: IRedditClonePost.IUpdate;
 }): Promise<IRedditClonePost> {
-  // 1. Fetch existing post and verify ownership
-  const existingPost =
-    await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
-      where: { id: props.postId, deleted_at: null },
-      select: {
-        id: true,
-        reddit_clone_member_id: true,
-        type: true,
-      },
-    });
-  // 2. Verify the authenticated user is the author
-  if (existingPost.reddit_clone_member_id !== props.member.id) {
+  const post = await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
+    where: { id: props.postId },
+    select: {
+      id: true,
+      reddit_clone_member_id: true,
+      deleted_at: true,
+      type: true,
+    },
+  });
+  if (post.deleted_at !== null) {
+    throw new HttpException("Post not found", 404);
+  }
+  if (post.reddit_clone_member_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // 3. Update the post title and timestamp
   await MyGlobal.prisma.reddit_clone_posts.update({
     where: { id: props.postId },
     data: {
@@ -49,118 +49,58 @@ export async function putRedditCloneMemberPostsPostId(props: {
       updated_at: new Date(),
     },
   });
-  // 4. Update type-specific content based on post type
-  if (existingPost.type === "text") {
-    const contentUpdate = props.body
-      .content as IRedditClonePostTextContent.IUpdate;
-    if (contentUpdate.body !== undefined) {
+  if (props.body.content !== undefined) {
+    if ("body" in props.body.content) {
+      const bodyValue = props.body.content.body;
       await MyGlobal.prisma.reddit_clone_post_text_contents.upsert({
         where: { reddit_clone_post_id: props.postId },
-        update: { body: contentUpdate.body },
         create: {
-          id: v4(),
+          id: v4() as string & tags.Format<"uuid">,
           reddit_clone_post_id: props.postId,
-          body: contentUpdate.body,
+          body: bodyValue ?? "",
+        },
+        update: {
+          body: bodyValue,
         },
       });
-    }
-  } else if (existingPost.type === "link") {
-    const contentUpdate = props.body.content as IRedditClonePostLink.IUpdate;
-    if (contentUpdate.url !== undefined) {
+    } else if ("url" in props.body.content) {
+      const urlValue = props.body.content.url;
       await MyGlobal.prisma.reddit_clone_post_links.upsert({
         where: { reddit_clone_post_id: props.postId },
-        update: { url: contentUpdate.url, updated_at: new Date() },
         create: {
-          id: v4(),
+          id: v4() as string & tags.Format<"uuid">,
           reddit_clone_post_id: props.postId,
-          url: contentUpdate.url,
+          url: urlValue ?? "",
           created_at: new Date(),
+          updated_at: new Date(),
+        },
+        update: {
+          url: urlValue,
+          updated_at: new Date(),
+        },
+      });
+    } else if ("redditCloneFileId" in props.body.content) {
+      await MyGlobal.prisma.reddit_clone_post_images.upsert({
+        where: { reddit_clone_post_id: props.postId },
+        create: {
+          id: v4() as string & tags.Format<"uuid">,
+          reddit_clone_post_id: props.postId,
+          reddit_clone_file_id: props.body.content.redditCloneFileId,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+        update: {
+          reddit_clone_file_id: props.body.content.redditCloneFileId,
           updated_at: new Date(),
         },
       });
     }
-  } else if (existingPost.type === "image") {
-    const contentUpdate = props.body.content as IRedditClonePostImage.IUpdate;
-    // Verify the file exists and is an image
-    const file = await MyGlobal.prisma.reddit_clone_files.findUniqueOrThrow({
-      where: { id: contentUpdate.redditCloneFileId },
-      select: { id: true, mime_type: true },
-    });
-    if (!file.mime_type.startsWith("image/")) {
-      throw new HttpException("File must be an image", 400);
-    }
-    await MyGlobal.prisma.reddit_clone_post_images.upsert({
-      where: { reddit_clone_post_id: props.postId },
-      update: {
-        reddit_clone_file_id: contentUpdate.redditCloneFileId,
-        updated_at: new Date(),
-      },
-      create: {
-        id: v4(),
-        reddit_clone_post_id: props.postId,
-        reddit_clone_file_id: contentUpdate.redditCloneFileId,
-        created_at: new Date(),
-        updated_at: new Date(),
-      },
-    });
   }
-  // 5. Fetch updated post with all relations using correct select
-  const updatedPost =
-    await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
-      where: { id: props.postId },
-      select: {
-        id: true,
-        title: true,
-        type: true,
-        vote_score: true,
-        comment_count: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        author: {
-          select: {
-            id: true,
-            username: true,
-          },
-        },
-        community: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            subscriber_count: true,
-            icon: {
-              select: {
-                file: {
-                  select: {
-                    storage_path: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-        postTextContent: {
-          select: {
-            body: true,
-          },
-        },
-        link: {
-          select: {
-            url: true,
-          },
-        },
-        image: {
-          select: {
-            reddit_clone_file_id: true,
-          },
-        },
-      },
-    });
-  // 6. Transform and return
-  return await RedditClonePostTransformer.transform(
-    updatedPost as Parameters<typeof RedditClonePostTransformer.transform>[0],
-  );
+  const updated = await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
+    where: { id: props.postId },
+    ...RedditClonePostTransformer.select(),
+  });
+  return await RedditClonePostTransformer.transform(updated);
 }
 
 

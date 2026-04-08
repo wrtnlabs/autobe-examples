@@ -2,9 +2,8 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import { IMallPlatformInventoryRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformInventoryRecord";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
-import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -30,14 +29,10 @@ export async function postMallPlatformSellerProductsProductIdVariantsVariantIdIn
       where: { id: props.productId },
       select: {
         id: true,
-        sellerAccount: {
-          select: {
-            id: true,
-          },
-        },
+        seller_account_id: true,
       },
     });
-    if (product.sellerAccount.id !== props.seller.id) {
+    if (product.seller_account_id !== props.seller.id) {
       throw new HttpException("Forbidden", 403);
     }
     const variant =
@@ -45,29 +40,22 @@ export async function postMallPlatformSellerProductsProductIdVariantsVariantIdIn
         where: { id: props.variantId },
         select: {
           id: true,
-          product: {
-            select: {
-              id: true,
-            },
-          },
+          mall_platform_product_id: true,
         },
       });
-    if (variant.product.id !== product.id) {
-      throw new HttpException(
-        "The variant does not belong to the specified product",
-        400,
-      );
+    if (variant.mall_platform_product_id !== product.id) {
+      throw new HttpException("Forbidden", 403);
     }
-    const created = await prisma.mall_platform_inventory_records.create({
+    const record = await prisma.mall_platform_inventory_records.create({
       data: await MallPlatformInventoryRecordCollector.collect({
         body: props.body,
-        mallPlatformProductVariants: {
+        productVariant: {
           id: variant.id,
         },
       }),
       ...MallPlatformInventoryRecordTransformer.select(),
     });
-    return await MallPlatformInventoryRecordTransformer.transform(created);
+    return await MallPlatformInventoryRecordTransformer.transform(record);
   });
 }
 
@@ -92,9 +80,8 @@ export async function postMallPlatformSellerProductsProductIdVariantsVariantIdIn
 // import { IMallPlatformInventoryRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformInventoryRecord";
 // import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 // import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 // import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
-// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.

@@ -5,10 +5,11 @@ import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMa
 import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import { IMallPlatformOrderItemSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItemSnapshot";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -42,7 +43,7 @@ export namespace MallPlatformOrderItemSnapshotAtSummaryTransformer {
         updated_at: true,
         deleted_at: true,
         orderItem: MallPlatformOrderItemAtSummaryTransformer.select(),
-        variantOptions: { select: {} } as never,
+        variantOptions: { select: {} },
       },
     } satisfies Prisma.mall_platform_order_item_snapshotsFindManyArgs;
   }

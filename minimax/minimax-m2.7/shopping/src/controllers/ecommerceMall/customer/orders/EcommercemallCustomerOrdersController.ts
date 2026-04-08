@@ -1,46 +1,76 @@
-import { TypedBody, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
-import typia from "typia";
+import typia, { tags } from "typia";
 
 import { IEcommerceMallOrder } from "../../../../api/structures/IEcommerceMallOrder";
 import { IPageIEcommerceMallOrder } from "../../../../api/structures/IPageIEcommerceMallOrder";
 import { CustomerAuth } from "../../../../decorators/CustomerAuth";
 import { CustomerPayload } from "../../../../decorators/payload/CustomerPayload";
+import { getEcommerceMallCustomerOrdersOrderId } from "../../../../providers/getEcommerceMallCustomerOrdersOrderId";
 import { patchEcommerceMallCustomerOrders } from "../../../../providers/patchEcommerceMallCustomerOrders";
 
 @Controller("/ecommerceMall/customer/orders")
 export class EcommercemallCustomerOrdersController {
   /**
-   * Retrieve a filtered and paginated list of the authenticated customer's orders.
+   * Retrieves a paginated list of order summaries matching the provided search criteria.
    *
-   * This endpoint allows customers to view their complete order history with support for filtering by order status, date ranges, and order number searches. Results are automatically sorted by creation date with the most recent orders appearing first.
+   * This endpoint allows filtering orders by customer, status, date range, order number, and shipping address details. Results are sorted by creation date in descending order (newest first) and paginated for efficient retrieval.
    *
-   * The response includes order summaries containing the order number, total amount, status, and creation timestamp. Each order summary is paginated to ensure optimal performance and manageable response sizes. Customers can only access their own orders; the system automatically filters results based on the authenticated session.
+   * **Filtering Options**:
+   * - Filter by customer ownership for customers
+   * - Filter by order status (paid, shipped, delivered, cancelled, refunded, partially_completed)
+   * - Filter by date range (created between start and end dates)
+   * - Search by order number (exact or partial match)
+   * - Search by shipping address city
    *
-   * Supported filters include searching by exact or partial order number, filtering by order status (paid, shipped, delivered, cancelled, refunded, partially_completed), and date range filtering for orders placed within specific periods.
+   * **Access Control**:
+   * - Customers can only view their own orders
+   * - Sellers can view orders containing their products
+   * - Admins and super admins can view all orders
+   *
+   * **Response Format**:
+   * The response includes paginated order summaries optimized for list display, containing order number, status, total amount, creation date, and customer summary. Full order details are available via the order detail endpoint.
+   *
+   * **Error Handling**:
+   * Returns 400 for invalid filter parameters, 401 for unauthenticated requests, and 403 for unauthorized access attempts.
    *
    * @param connection
-   * @param body Search criteria including status filter, date range, order number search, and pagination parameters
+   * @param body Search criteria including customer ID, status filter, date range, order number search, and pagination parameters.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor customer
-   * @x-autobe-specification Implement order listing with the following requirements:
+   * @x-autobe-specification Query ecommerce_mall_orders table with pagination and filtering.
    *
-   * 1. Authentication: Extract customer ID from authenticated session (JWT token in Authorization header)
-   * 2. Query ecommerce_mall_orders table filtered by ecommerce_mall_customer_id matching the authenticated customer
-   * 3. Apply search filters from request body:
-   *    - orderNumber: exact or partial match (LIKE %pattern%)
-   *    - status: exact match (paid, shipped, delivered, cancelled, refunded, partially_completed)
-   *    - createdAtFrom: >= filter on created_at
-   *    - createdAtTo: <= filter on created_at
-   * 4. Always sort by created_at DESC (newest first)
-   * 5. Apply pagination: page and limit from request body
-   * 6. Return only non-deleted orders (deleted_at IS NULL)
-   * 7. Join with ecommerce_mall_shipping_addresses to include shipping address summary if requested
-   * 8. Calculate total_count for pagination metadata
-   * 9. Handle edge cases:
-   *    - Empty result: return empty array with pagination metadata
-   *    - Invalid status: return 400 validation error
-   *    - Invalid date range (from > to): return 400 validation error
+   * **Search Criteria Validation**:
+   * - Validate all filter parameters are provided in request body
+   * - Normalize status values to lowercase for comparison
+   * - Parse and validate date formats (ISO 8601)
+   * - Support partial order number search with wildcard
+   *
+   * **Access Control Logic**:
+   * - For CUSTOMER role: automatically filter by authenticated customer's ID
+   * - For SELLER role: filter orders containing their products via order_items join
+   * - For ADMIN/SUPER_ADMIN: no customer filter applied
+   *
+   * **Database Query**:
+   * 1. Start with base query on ecommerce_mall_orders
+   * 2. Apply customer filter based on role
+   * 3. Apply status filter if provided (case-insensitive)
+   * 4. Apply date range filter on created_at if provided
+   * 5. Apply order number search (LIKE pattern if partial)
+   * 6. Join with ecommerce_mall_shipping_addresses for city filter
+   * 7. Exclude soft-deleted orders (deleted_at IS NULL)
+   * 8. Order by created_at DESC, id DESC for consistent pagination
+   * 9. Apply pagination limits and offsets
+   *
+   * **Response Construction**:
+   * - Map each order to IEcommerceMallOrder.ISummary
+   * - Include customer summary, order number, status, totals, date
+   * - Return pagination metadata (page, limit, total, totalPages)
+   *
+   * **Edge Cases**:
+   * - Empty result set: return empty array with pagination
+   * - Invalid date range: return 400 error
+   * - Order number with special characters: escape SQL patterns
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -54,6 +84,71 @@ export class EcommercemallCustomerOrdersController {
       return await patchEcommerceMallCustomerOrders({
         customer,
         body,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieves the details of a specific order by its unique identifier.
+   *
+   * This endpoint returns the complete order information including the order number, totals, status, shipping address used at purchase time, all order items with frozen product and seller snapshots, and associated shipments with tracking information.
+   *
+   * **Authorization:** Customers can only view their own orders. Sellers can view orders containing their products. Administrators can view any order.
+   *
+   * **Order Details:**
+   * - Order number for customer reference
+   * - Financial summary including subtotal, shipping cost, and total amount
+   * - Current status and timestamps
+   * - Shipping address as it appeared at checkout (historical record)
+   *
+   * **Order Items:**
+   * Each item includes the product snapshot (name, description, base price as purchased), the seller profile snapshot (shop name, logo), variant details, quantity, unit price, and item-level status.
+   *
+   * **Shipments:**
+   * All shipments associated with the order, including carrier name, tracking number, and shipped items for delivery tracking purposes.
+   *
+   * **Error Handling:**
+   * Returns 404 if the order does not exist or is soft-deleted. Returns 403 if the requester does not have permission to view this order.
+   *
+   * @param connection
+   * @param orderId Unique identifier (UUID) of the order to retrieve.
+   * @x-autobe-authorization-type null
+   * @x-autobe-authorization-actor customer
+   * @x-autobe-specification Query the ecommerce_mall_orders table by the provided orderId (UUID).
+   *
+   * Verify the order exists and deleted_at is null (not soft-deleted).
+   *
+   * Authorization check:
+   * - If requester is CUSTOMER: ensure order's ecommerce_mall_customer_id matches the authenticated customer
+   * - If requester is SELLER: ensure at least one order item belongs to the authenticated seller
+   * - If requester is ADMIN or SUPER_ADMIN: allow access
+   *
+   * If authorization fails, return 403 Forbidden.
+   *
+   * Join and include:
+   * 1. shipping_address: ecommerce_mall_shipping_addresses (historical address snapshot)
+   * 2. order_items: all items with their product_snapshot and seller_profile_snapshot relations
+   * 3. shipments: all shipments with their shipment_items
+   *
+   * Compute derived fields if needed for response formatting.
+   *
+   * Return 404 if order not found or soft-deleted.
+   * @nestia Generated by Nestia - https://github.com/samchon/nestia
+   */
+  @TypedRoute.Get(":orderId")
+  public async at(
+    @CustomerAuth()
+    customer: CustomerPayload,
+    @TypedParam("orderId")
+    orderId: string & tags.Format<"uuid">,
+  ): Promise<IEcommerceMallOrder> {
+    try {
+      return await getEcommerceMallCustomerOrdersOrderId({
+        customer,
+        orderId,
       });
     } catch (error) {
       console.log(error);

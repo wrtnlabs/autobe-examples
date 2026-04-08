@@ -1,3 +1,4 @@
+// File: src/decorators/payload/AdminPayload.ts
 import { tags } from "typia";
 
 export interface AdminPayload {

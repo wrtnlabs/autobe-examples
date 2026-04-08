@@ -10,87 +10,98 @@ Data ownership, privacy, retention, and recovery policies from a business perspe
 
 Define who owns what data, who can access it, and privacy boundaries between users.
 
-### Data Isolation
+### Data Ownership
 
-The system shall keep each user's account, profile, todos, and todo history isolated from other users.
-The system shall ensure that a user can access only the data that belongs to that user's own account.
-The system shall prevent a user from viewing another user's todos in any todo list, todo detail view, or edit history view.
-The system shall prevent a user from viewing another user's profile.
-The system shall treat private user data as separate by ownership so that one user's actions do not expose another user's data.
-
-```mermaid
-flowchart LR
-    A["User signs in"] --> B["System identifies the user's own account"]
-    B --> C["System shows only the user's own data"]
-    C --> D["Other users' data remains hidden"]
-```
-
-### Ownership
-
-The system shall treat each account as the owner of that account's profile data.
-The system shall treat each todo as owned by the user account that created it.
-The system shall treat each todo history entry as belonging to the todo it was created from.
-The system shall keep ownership attached to the data when a todo is edited, completed, marked incomplete, deleted, or restored.
-The system shall not allow ownership of a todo to be transferred to another user.
-The system shall not allow one user to act on another user's owned data.
+The user owns their account data, profile data, and todos that belong to that account.
+The system shall treat a todo as owned only by the user whose account it belongs to.
+The system shall treat a profile as owned only by the user whose account it belongs to.
+The system shall preserve ownership boundaries so that one user's data is not presented as another user's data.
+The system shall prevent changes to another user's owned data.
+The system shall ensure that deleting an account permanently removes all data owned by that account, including todos that are otherwise in a deleted state.
 
 ```mermaid
 flowchart LR
     A["User account"] --> B["Owns profile"]
     A --> C["Owns todos"]
-    C --> D["Owns edit history"]
+    C --> D["Todo edit history"]
+```
+
+### Data Isolation
+
+The system shall isolate each user's account data from every other user's account data.
+The system shall isolate each user's profile data from every other user's profile data.
+The system shall isolate each user's todo list from every other user's todo list.
+The system shall isolate each user's trash view from every other user's trash view.
+The system shall ensure that lists, details, and edit history are only available within the owning user's private data set.
+The system shall not expose the existence, content, or history of another user's todos through normal viewing or browsing actions.
+The system shall keep data isolation in place whether the todo is active, deleted, restored, or viewed through edit history.
+
+```mermaid
+flowchart LR
+    A["User A data"] --> B["Visible only to User A"]
+    C["User B data"] --> D["Visible only to User B"]
+    B --> E["No cross-user exposure"]
+    D --> E
 ```
 
 ### Access Control
 
-A guest shall not be able to view user-specific data.
-A member shall be able to access only the member's own profile and own todos.
-A member shall be able to view, edit, complete, mark incomplete, delete, restore, and permanently delete only the member's own todos.
-A member shall be able to view the edit history of only the member's own todos.
-If a user attempts to access another user's profile, todo, trash item, or edit history, the system shall deny access.
-If a user attempts to access a todo that does not belong to that user, the system shall treat the data as inaccessible.
+The system shall allow a user to access only their own account data.
+The system shall allow a user to access only their own profile.
+The system shall allow a user to access only their own todos.
+The system shall allow a user to access only their own deleted todos in the trash.
+The system shall allow a user to access only the edit history of their own todos.
+The system shall deny access when a user attempts to view, edit, delete, restore, or permanently delete data that does not belong to them.
+The system shall deny access when a guest attempts to access data that requires an account.
 
 ```mermaid
 sequenceDiagram
-    participant U as "User"
-    participant S as "System"
-    U->>S: "Request access to private data"
-    S->>S: "Check whether the data belongs to the user"
-    S-->>U: "Allow own data or deny other users' data"
+    participant G as Guest
+    participant M as Member
+    participant S as System
+    G->>S: Request protected data
+    S-->>G: Access denied
+    M->>S: Request own data
+    S-->>M: Access allowed
+    M->>S: Request another user's data
+    S-->>M: Access denied
 ```
 
 ### Privacy
 
-The system shall keep all todos private to their owning user.
-The system shall not provide any way to view, access, or share another user's todos.
-The system shall not provide any way to view another user's profile.
-The system shall keep the visibility of deleted todos limited to the owning user.
-The system shall keep the visibility of todo edit history limited to the owning user.
-The system shall maintain privacy boundaries consistently across normal lists, trash, single-todo views, and history views.
+The system shall keep user profiles private.
+The system shall keep todos private.
+The system shall keep deleted todos private.
+The system shall keep todo edit history private.
+The system shall not provide any way to view or access another user's profile, todos, deleted todos, or edit history.
+The system shall not provide any way to share a user's profile or todo data with another user.
+The system shall ensure that private data remains private across normal viewing, browsing, and recovery actions.
 
 ```mermaid
 flowchart LR
-    A["Private user data"] --> B["Visible to owning user"]
-    A --> C["Hidden from other users"]
-    C --> D["No viewing or sharing path"]
+    A["Private user data"] --> B["Not visible to other users"]
+    B --> C["Profiles"]
+    B --> D["Todos"]
+    B --> E["Deleted todos"]
+    B --> F["Edit history"]
 ```
 
 ## Data Retention and Recovery
 
 Define what happens to deleted data, how long it is retained, and how users can recover it.
 
-### Soft-Delete Policy
+### Soft Delete
 
-Deleted todos are retained in a recoverable state rather than being removed immediately. When a user deletes a todo, it must leave the normal todo list and be treated as deleted while still remaining available in the trash. The deleted todo must keep its user-visible identity and remain associated with its owner until it is either restored or permanently deleted. Soft-deleted todos are private to the owning user and are only available within that user's trash view.
+Deleted todos are retained in a soft-deleted state instead of being removed immediately. A soft-deleted todo no longer appears in the normal todo list, but it remains available in the trash until it is restored or permanently deleted. Soft deletion applies to the todo itself and preserves the todo's edit history while the todo remains in trash.
 
-### Retention in Trash
+### Retention
 
-Deleted todos remain in trash until the user chooses to restore them or permanently delete them. The system must preserve deleted todos for recovery during this trash-retention period. Trash retention applies to the deleted todo and its edit history as separate retained data: the todo remains recoverable in trash, while the edit history remains available only until the todo is permanently deleted. This retention policy ensures that a deleted todo is not lost at the moment of deletion.
+Soft-deleted todos remain available in trash until the user restores them or permanently deletes them. This retention policy exists so users can recover deleted todos when needed. No additional retention period is defined beyond keeping the deleted todo available in trash until one of those user actions occurs.
 
-### Recovery from Trash
+### Recovery
 
-A user can recover a deleted todo by restoring it from trash. Restored todos return to the user's normal todo list and no longer appear as deleted. Recovery applies only to todos that are currently in trash. If a todo has already been permanently deleted, it is no longer eligible for recovery. Restoring a todo does not remove or alter the todo's prior edit history.
+Users can recover a soft-deleted todo from trash. When a todo is restored, it returns to the normal todo list and is treated as an active todo again. After recovery, the todo no longer appears in trash.
 
 ### Permanent Deletion
 
-A user can permanently delete a todo from trash. Permanent deletion removes the todo from trash and makes it unavailable for restoration. When a todo is permanently deleted, its edit history is also deleted. Permanent deletion is final and applies only to deleted todos that are currently in trash. After permanent deletion, neither the todo nor its history is retained for later recovery.
+Users can permanently delete a todo from trash. Permanent deletion removes the todo so it can no longer be restored. Permanent deletion also removes the todo's edit history, and the deleted todo no longer appears in either the normal todo list or trash.

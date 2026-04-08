@@ -1,22 +1,25 @@
 import { IEcommerceMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCartItem";
-import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
-import { IEcommerceMallProductVariantOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOptionValue";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { EcommerceMallProductAtSummaryTransformer } from "./EcommerceMallProductAtSummaryTransformer";
 import { EcommerceMallProductVariantAtSummaryTransformer } from "./EcommerceMallProductVariantAtSummaryTransformer";
 
 export namespace EcommerceMallCartItemTransformer {
+  // Payload type derived from select() for type-safe transform
   export type Payload = Prisma.ecommerce_mall_cart_itemsGetPayload<
     ReturnType<typeof select>
   >;
+  // select() function - field selection for Prisma query
   export function select() {
     return {
       select: {
@@ -24,45 +27,40 @@ export namespace EcommerceMallCartItemTransformer {
         quantity: true,
         created_at: true,
         updated_at: true,
-        cart: true,
+        cart: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_cartsFindManyArgs,
         productVariant: {
           select: {
             ...EcommerceMallProductVariantAtSummaryTransformer.select().select,
-            deleted_at: true,
+            product: EcommerceMallProductAtSummaryTransformer.select(),
           },
-        },
+        } satisfies Prisma.ecommerce_mall_product_variantsFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_cart_itemsFindManyArgs;
   }
+  // transform() function - convert Prisma payload to DTO
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallCartItem> {
+    // Compute unit price: variant.price if not null, otherwise product.base_price
     const unitPrice =
       input.productVariant.price ?? input.productVariant.product.base_price;
-    const lineSubtotal = input.quantity * unitPrice;
-    const availabilityStatus: "available" | "unavailable" | "low_stock" =
-      input.productVariant.deleted_at !== null
-        ? "unavailable"
-        : input.quantity > input.productVariant.quantity
-          ? "low_stock"
-          : "available";
-    const stockWarning =
-      input.quantity > input.productVariant.quantity
-        ? `Only ${input.productVariant.quantity} units available for this product.`
-        : undefined;
+    const subtotal = input.quantity * unitPrice;
     return {
       id: input.id,
-      productVariant:
-        await EcommerceMallProductVariantAtSummaryTransformer.transform(
-          input.productVariant,
-        ),
       quantity: input.quantity,
-      unitPrice,
-      lineSubtotal,
-      availabilityStatus,
-      stockWarning,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
+      subtotal: subtotal,
+      variant: await EcommerceMallProductVariantAtSummaryTransformer.transform(
+        input.productVariant,
+      ),
+      product: await EcommerceMallProductAtSummaryTransformer.transform(
+        input.productVariant.product,
+      ),
+      createdAt: toISOStringSafe(input.created_at),
+      updatedAt: toISOStringSafe(input.updated_at),
     } satisfies IEcommerceMallCartItem;
   }
 }
@@ -80,10 +78,7 @@ export namespace EcommerceMallCartItemTransformer {
 //           select: {
 //             id: true,
 //             quantity: true,
-//             unitPrice: true,
-//             lineSubtotal: true,
-//             availabilityStatus: true,
-//             stockWarning: true,
+//             subtotal: true,
 //             createdAt: true,
 //             updatedAt: true,
 //             ...
@@ -94,12 +89,10 @@ export namespace EcommerceMallCartItemTransformer {
 //       export async function transform(input: Payload): Promise<IEcommerceMallCartItem> {
 //         return {
 //   id: {string},
-//   productVariant: {IEcommerceMallProductVariant.ISummary},
 //   quantity: {integer},
-//   unitPrice: {number},
-//   lineSubtotal: {number},
-//   availabilityStatus: {"available" | "unavailable" | "low_stock"},
-//   stockWarning: {string},
+//   subtotal: {number},
+//   variant: {IEcommerceMallProductVariant.ISummary},
+//   product: {IEcommerceMallProduct.ISummary},
 //   createdAt: {string},
 //   updatedAt: {string},
 //         };

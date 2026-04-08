@@ -19,14 +19,14 @@ export async function getRedditCloneMemberSessionsSessionId(props: {
   sessionId: string & tags.Format<"uuid">;
 }): Promise<IRedditCloneMemberSession> {
   const record =
-    await MyGlobal.prisma.reddit_clone_member_sessions.findUniqueOrThrow({
-      where: { id: props.sessionId },
+    await MyGlobal.prisma.reddit_clone_member_sessions.findFirstOrThrow({
       ...RedditCloneMemberSessionTransformer.select(),
+      where: { id: props.sessionId },
     });
-  if (record.member?.id !== props.member.id) {
+  if (record.member.id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  if (Date.now() < record.expired_at.getTime()) {
+  if (record.expired_at < new Date()) {
     throw new HttpException("Session has expired", 410);
   }
   return await RedditCloneMemberSessionTransformer.transform(record);

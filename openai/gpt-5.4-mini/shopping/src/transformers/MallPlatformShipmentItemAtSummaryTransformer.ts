@@ -4,12 +4,13 @@ import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { IMallPlatformShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShipment";
 import { IMallPlatformShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShipmentItem";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -34,9 +35,9 @@ export namespace MallPlatformShipmentItemAtSummaryTransformer {
       orderItem: await MallPlatformOrderItemAtSummaryTransformer.transform(
         input.orderItem,
       ),
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     } satisfies IMallPlatformShipmentItem.ISummary;
   }
   export function select() {
@@ -79,9 +80,9 @@ export namespace MallPlatformShipmentItemAtSummaryTransformer {
 //   id: {string},
 //   shipment: await MallPlatformShipmentAtSummaryTransformer.transform(input.shipment),
 //   orderItem: await MallPlatformOrderItemAtSummaryTransformer.transform(input.orderItem),
-//   createdAt: {string},
-//   updatedAt: {string},
-//   deletedAt: {string | null},
+//   created_at: {string},
+//   updated_at: {string},
+//   deleted_at: {string | null},
 //         };
 //       }
 //     }

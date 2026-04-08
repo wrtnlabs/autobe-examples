@@ -8,8 +8,9 @@ import typia, { tags } from "typia";
 /**
  * Prepare random mall platform category creation data for E2E testing.
  *
- * Generates a complete IMallPlatformCategory.ICreate payload with realistic
- * fallback values while allowing DeepPartial overrides for test customization.
+ * Generates a complete IMallPlatformCategory.ICreate object with realistic
+ * default values while allowing test cases to override any field through
+ * DeepPartial input.
  */
 export function prepare_random_mall_platform_category(
   input?: DeepPartial<IMallPlatformCategory.ICreate> | undefined,
@@ -18,7 +19,6 @@ export function prepare_random_mall_platform_category(
     name: input?.name ?? RandomGenerator.name(2),
     description:
       input?.description ?? RandomGenerator.paragraph({ sentences: 2 }),
-    parentCategoryId:
-      input?.parentCategoryId !== undefined ? input.parentCategoryId : null,
+    parentCategoryId: input?.parentCategoryId ?? null,
   };
 }

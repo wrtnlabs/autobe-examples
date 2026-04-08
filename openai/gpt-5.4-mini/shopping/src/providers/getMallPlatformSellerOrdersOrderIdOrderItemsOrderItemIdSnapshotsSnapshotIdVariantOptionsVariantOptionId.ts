@@ -1,0 +1,121 @@
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
+import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
+import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
+import { IMallPlatformOrderItemSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItemSnapshot";
+import { IMallPlatformOrderItemSnapshotVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItemSnapshotVariantOption";
+import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
+import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
+import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
+import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
+import { Prisma } from "@prisma/sdk";
+import jwt from "jsonwebtoken";
+import typia, { tags } from "typia";
+import { v4 } from "uuid";
+
+import { MyGlobal } from "../MyGlobal";
+import { SellerPayload } from "../decorators/payload/SellerPayload";
+import { MallPlatformOrderItemSnapshotVariantOptionTransformer } from "../transformers/MallPlatformOrderItemSnapshotVariantOptionTransformer";
+import { PasswordUtil } from "../utils/PasswordUtil";
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+
+export async function getMallPlatformSellerOrdersOrderIdOrderItemsOrderItemIdSnapshotsSnapshotIdVariantOptionsVariantOptionId(props: {
+  seller: SellerPayload;
+  orderId: string & tags.Format<"uuid">;
+  orderItemId: string & tags.Format<"uuid">;
+  snapshotId: string & tags.Format<"uuid">;
+  variantOptionId: string & tags.Format<"uuid">;
+}): Promise<IMallPlatformOrderItemSnapshotVariantOption> {
+  const order = await MyGlobal.prisma.mall_platform_orders.findUniqueOrThrow({
+    where: {
+      id: props.orderId,
+    },
+    select: {
+      id: true,
+    },
+  });
+  const orderItem =
+    await MyGlobal.prisma.mall_platform_order_items.findFirstOrThrow({
+      where: {
+        id: props.orderItemId,
+        mall_platform_order_id: order.id,
+        mall_platform_seller_id: props.seller.id,
+      },
+      select: {
+        id: true,
+      },
+    });
+  const snapshot =
+    await MyGlobal.prisma.mall_platform_order_item_snapshots.findFirstOrThrow({
+      where: {
+        id: props.snapshotId,
+        mall_platform_order_item_id: orderItem.id,
+      },
+      select: {
+        id: true,
+      },
+    });
+  const record =
+    await MyGlobal.prisma.mall_platform_order_item_snapshot_variant_options.findFirstOrThrow(
+      {
+        where: {
+          id: props.variantOptionId,
+          mall_platform_order_item_snapshot_id: snapshot.id,
+        },
+        ...MallPlatformOrderItemSnapshotVariantOptionTransformer.select(),
+      },
+    );
+  return await MallPlatformOrderItemSnapshotVariantOptionTransformer.transform(
+    record,
+  );
+}
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IMallPlatformOrderItemSnapshotVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItemSnapshotVariantOption";
+// import { IMallPlatformOrderItemSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItemSnapshot";
+// import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
+// import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
+// import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+// import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
+// import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
+// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
+// import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
+// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function getMallPlatformSellerOrdersOrderIdOrderItemsOrderItemIdSnapshotsSnapshotIdVariantOptionsVariantOptionId(props: {
+//   seller: SellerPayload;
+//   orderId: string & tags.Format<"uuid">;
+//   orderItemId: string & tags.Format<"uuid">;
+//   snapshotId: string & tags.Format<"uuid">;
+//   variantOptionId: string & tags.Format<"uuid">;
+// }): Promise<IMallPlatformOrderItemSnapshotVariantOption> {
+//   const record = await MyGlobal.prisma.mall_platform_order_item_snapshot_variant_options.findFirstOrThrow({
+//     ...MallPlatformOrderItemSnapshotVariantOptionTransformer.select(),
+//     where: { ... },
+//   });
+//   return await MallPlatformOrderItemSnapshotVariantOptionTransformer.transform(record);
+// }
+// ```
+//--------------------------------------------------------------

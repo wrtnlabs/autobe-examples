@@ -6,17 +6,16 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 /**
- * Prepare random mall platform cancellation request data for E2E testing.
+ * Prepare random cancellation request creation data for E2E testing.
  *
- * Generates a complete IMallPlatformCancellationRequest.ICreate object using a
- * custom reason when provided, or realistic fallback text when omitted.
+ * Generates a complete IMallPlatformCancellationRequest.ICreate payload with
+ * a customizable cancellation reason. Any provided deep-partial input overrides
+ * the generated default value.
  */
 export function prepare_random_mall_platform_cancellation_request(
   input?: DeepPartial<IMallPlatformCancellationRequest.ICreate> | undefined,
 ): IMallPlatformCancellationRequest.ICreate {
   return {
-    reason:
-      input?.reason ??
-      RandomGenerator.paragraph({ sentences: 2, wordMin: 4, wordMax: 10 }),
+    reason: input?.reason ?? RandomGenerator.paragraph({ sentences: 2 }),
   };
 }

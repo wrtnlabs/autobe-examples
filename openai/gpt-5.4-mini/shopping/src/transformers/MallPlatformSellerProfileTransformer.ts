@@ -1,14 +1,15 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { IMallPlatformSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerProfile";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { MallPlatformSellerAtSummaryTransformer } from "./MallPlatformSellerAtSummaryTransformer";
+import { MallPlatformSellerAccountAtSummaryTransformer } from "./MallPlatformSellerAccountAtSummaryTransformer";
 
 export namespace MallPlatformSellerProfileTransformer {
   export type Payload = Prisma.mall_platform_seller_profilesGetPayload<
@@ -24,8 +25,12 @@ export namespace MallPlatformSellerProfileTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        sellerAccount: MallPlatformSellerAtSummaryTransformer.select(),
-        sellerProfileSnapshots: true,
+        sellerAccount: MallPlatformSellerAccountAtSummaryTransformer.select(),
+        sellerProfileSnapshots: {
+          select: {
+            id: true,
+          },
+        },
       },
     } satisfies Prisma.mall_platform_seller_profilesFindManyArgs;
   }
@@ -34,9 +39,10 @@ export namespace MallPlatformSellerProfileTransformer {
   ): Promise<IMallPlatformSellerProfile> {
     return {
       id: input.id,
-      sellerAccount: await MallPlatformSellerAtSummaryTransformer.transform(
-        input.sellerAccount,
-      ),
+      sellerAccount:
+        await MallPlatformSellerAccountAtSummaryTransformer.transform(
+          input.sellerAccount,
+        ),
       shopName: input.shop_name,
       shopDescription: input.shop_description,
       logoImageUri: input.logo_image_uri ?? null,
@@ -65,8 +71,7 @@ export namespace MallPlatformSellerProfileTransformer {
 //             created_at: true,
 //             updated_at: true,
 //             deleted_at: true,
-//             seller_account_id: true,
-//             ...
+//             sellerAccount: MallPlatformSellerAccountAtSummaryTransformer.select(),
 //           },
 //         } satisfies Prisma.mall_platform_seller_profilesFindManyArgs;
 //       }
@@ -74,7 +79,7 @@ export namespace MallPlatformSellerProfileTransformer {
 //       export async function transform(input: Payload): Promise<IMallPlatformSellerProfile> {
 //         return {
 //   id: {string},
-//   sellerAccount: {IMallPlatformSeller.ISummary},
+//   sellerAccount: await MallPlatformSellerAccountAtSummaryTransformer.transform(input.sellerAccount),
 //   shopName: {string},
 //   shopDescription: {string},
 //   logoImageUri: {string | null},

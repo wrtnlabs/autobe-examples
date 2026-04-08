@@ -10,7 +10,6 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
-import { MallPlatformCancellationRequestSnapshotTransformer } from "../transformers/MallPlatformCancellationRequestSnapshotTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -25,26 +24,44 @@ export async function getMallPlatformCustomerOrderItemsOrderItemIdCancellationRe
       {
         where: {
           id: props.snapshotId,
-          cancellationRequest: {
-            id: props.cancellationRequestId,
-            orderItem: {
-              id: props.orderItemId,
-            },
-          },
+          mall_platform_cancellation_request_id: props.cancellationRequestId,
         },
         select: {
-          ...MallPlatformCancellationRequestSnapshotTransformer.select().select,
+          id: true,
+          snapshot_status: true,
+          review_result: true,
+          reason: true,
+          changed_at: true,
+          created_at: true,
+          updated_at: true,
+          deleted_at: true,
           cancellationRequest: {
             select: {
               id: true,
+              mall_platform_order_item_id: true,
             },
           },
         },
       },
     );
-  return await MallPlatformCancellationRequestSnapshotTransformer.transform(
-    record,
-  );
+  if (
+    record.cancellationRequest.mall_platform_order_item_id !== props.orderItemId
+  ) {
+    throw new HttpException("Not Found", 404);
+  }
+  return {
+    id: record.id,
+    cancellationRequest: {
+      id: record.cancellationRequest.id,
+    } satisfies IMallPlatformCancellationRequest.ISummary,
+    snapshotStatus: record.snapshot_status,
+    reviewResult: record.review_result,
+    reason: record.reason,
+    changedAt: record.changed_at.toISOString(),
+    createdAt: record.created_at.toISOString(),
+    updatedAt: record.updated_at.toISOString(),
+    deletedAt: record.deleted_at?.toISOString() ?? null,
+  } satisfies IMallPlatformCancellationRequestSnapshot;
 }
 
 

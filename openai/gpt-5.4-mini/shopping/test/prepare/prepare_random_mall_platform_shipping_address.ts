@@ -6,24 +6,31 @@ import { randint } from "tstl";
 import typia, { tags } from "typia";
 
 /**
- * Prepare random shipping address creation data for E2E testing.
+ * Prepare random mall platform shipping address creation data for E2E testing.
  *
- * Generates a complete `IMallPlatformShippingAddress.ICreate` payload with
- * realistic default values while allowing every field to be overridden through
- * `DeepPartial` input.
+ * Generates a complete IMallPlatformShippingAddress.ICreate payload with realistic recipient and address details.
+ * Caller-provided values override defaults, while omitted fields are filled with randomized but plausible data.
  */
 export function prepare_random_mall_platform_shipping_address(
   input?: DeepPartial<IMallPlatformShippingAddress.ICreate> | undefined,
 ): IMallPlatformShippingAddress.ICreate {
   return {
-    recipient_name: input?.recipient_name ?? RandomGenerator.name(2),
-    phone_number: input?.phone_number ?? RandomGenerator.mobile(),
-    street_address:
-      input?.street_address ?? RandomGenerator.paragraph({ sentences: 1 }),
+    recipientName: input?.recipientName ?? RandomGenerator.name(2),
+    phoneNumber: input?.phoneNumber ?? RandomGenerator.mobile(),
+    streetAddress:
+      input?.streetAddress ?? RandomGenerator.paragraph({ sentences: 1 }),
     city: input?.city ?? RandomGenerator.name(1),
-    state_province: input?.state_province ?? RandomGenerator.name(1),
-    postal_code: input?.postal_code ?? RandomGenerator.alphaNumeric(6),
-    country: input?.country ?? RandomGenerator.name(1),
-    is_default: input?.is_default ?? false,
+    stateProvince: input?.stateProvince ?? RandomGenerator.name(1),
+    postalCode: input?.postalCode ?? RandomGenerator.alphaNumeric(6),
+    country:
+      input?.country ??
+      RandomGenerator.pick([
+        "United States",
+        "South Korea",
+        "Japan",
+        "Canada",
+        "Australia",
+      ] as const),
+    isDefault: input?.isDefault ?? false,
   };
 }

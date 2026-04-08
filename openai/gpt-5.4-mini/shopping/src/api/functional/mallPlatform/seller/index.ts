@@ -1,12 +1,9 @@
-export * as account from "./account/index";
-export * as profile from "./profile/index";
+export * as sellerAccount from "./sellerAccount/index";
 export * as products from "./products/index";
 export * as orderItems from "./orderItems/index";
+export * as orders from "./orders/index";
 export * as shipments from "./shipments/index";
-export * as reviews from "./reviews/index";
-export * as productSnapshots from "./productSnapshots/index";
-export * as sellerProfileSnapshots from "./sellerProfileSnapshots/index";
-export * as orderItemSnapshots from "./orderItemSnapshots/index";
+export * as sellers from "./sellers/index";
+export * as administratorApprovalRequests from "./administratorApprovalRequests/index";
 export * as approvalRequests from "./approvalRequests/index";
-export * as approval_requests from "./approval_requests/index";
-export * as storefront_identity from "./storefront_identity/index";
+export * as account from "./account/index";

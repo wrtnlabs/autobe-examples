@@ -1,14 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
-import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
-import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
-import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 import { IMallPlatformShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShipment";
-import { IMallPlatformShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShipmentItem";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -18,29 +12,46 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
-import { MallPlatformShipmentTransformer } from "../transformers/MallPlatformShipmentTransformer";
+import { MallPlatformShipmentAtInvertTransformer } from "../transformers/MallPlatformShipmentAtInvertTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function getMallPlatformCustomerShipmentsShipmentIdTracking(props: {
   customer: CustomerPayload;
   shipmentId: string & tags.Format<"uuid">;
-}): Promise<IMallPlatformShipment> {
-  const record = await MyGlobal.prisma.mall_platform_shipments.findFirstOrThrow(
-    {
-      ...MallPlatformShipmentTransformer.select(),
+}): Promise<IMallPlatformShipment.IInvert> {
+  const authorization =
+    await MyGlobal.prisma.mall_platform_shipments.findFirstOrThrow({
       where: {
         id: props.shipmentId,
         deleted_at: null,
+      },
+      select: {
+        id: true,
         order: {
-          customer: {
-            id: props.customer.id,
+          select: {
+            customer: {
+              select: {
+                id: true,
+              },
+            },
           },
         },
       },
+    });
+  if (authorization.order.customer.id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
+  }
+  const record = await MyGlobal.prisma.mall_platform_shipments.findFirstOrThrow(
+    {
+      where: {
+        id: props.shipmentId,
+        deleted_at: null,
+      },
+      ...MallPlatformShipmentAtInvertTransformer.select(),
     },
   );
-  return await MallPlatformShipmentTransformer.transform(record);
+  return await MallPlatformShipmentAtInvertTransformer.transform(record);
 }
 
 
@@ -65,24 +76,18 @@ export async function getMallPlatformCustomerShipmentsShipmentIdTracking(props: 
 // import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 // import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 // import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
-// import { IMallPlatformShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShipmentItem";
-// import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
-// import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
-// import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-// import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
-// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 // export async function getMallPlatformCustomerShipmentsShipmentIdTracking(props: {
 //   customer: CustomerPayload;
 //   shipmentId: string & tags.Format<"uuid">;
-// }): Promise<IMallPlatformShipment> {
+// }): Promise<IMallPlatformShipment.IInvert> {
 //   const record = await MyGlobal.prisma.mall_platform_shipments.findFirstOrThrow({
-//     ...MallPlatformShipmentTransformer.select(),
+//     ...MallPlatformShipmentAtInvertTransformer.select(),
 //     where: { ... },
 //   });
-//   return await MallPlatformShipmentTransformer.transform(record);
+//   return await MallPlatformShipmentAtInvertTransformer.transform(record);
 // }
 // ```
 //--------------------------------------------------------------

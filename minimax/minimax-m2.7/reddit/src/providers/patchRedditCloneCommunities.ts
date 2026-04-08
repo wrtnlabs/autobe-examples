@@ -21,38 +21,42 @@ export async function patchRedditCloneCommunities(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
+  // Build where clause - exclude soft-deleted communities
   const whereInput = {
     deleted_at: null,
     ...(props.body.name !== undefined && {
-      name: { contains: props.body.name, mode: "insensitive" as const },
+      name: { contains: props.body.name, mode: "insensitive" },
     }),
   } satisfies Prisma.reddit_clone_communitiesWhereInput;
-  const orderByInput = (
-    props.body.sortBy === "name"
-      ? { name: "asc" as const }
-      : props.body.sortBy === "subscriberCount"
-        ? { subscriber_count: "desc" as const }
-        : { created_at: "desc" as const }
-  ) satisfies Prisma.reddit_clone_communitiesOrderByWithRelationInput;
-  const records = await MyGlobal.prisma.reddit_clone_communities.findMany({
+  // Build orderBy based on sortBy parameter
+  const orderByInput = ((
+    sortBy: IRedditCloneCommunity.IRequest["sortBy"],
+  ): Prisma.reddit_clone_communitiesOrderByWithRelationInput => {
+    if (sortBy === "name") return { name: "asc" };
+    if (sortBy === "subscriberCount") return { subscriber_count: "desc" };
+    return { created_at: "desc" };
+  })(props.body.sortBy);
+  // Query communities with pagination
+  const data = await MyGlobal.prisma.reddit_clone_communities.findMany({
     where: whereInput,
-    orderBy: orderByInput,
     skip,
     take: limit,
+    orderBy: orderByInput,
     ...RedditCloneCommunityAtSummaryTransformer.select(),
   });
+  // Get total count for pagination
   const total = await MyGlobal.prisma.reddit_clone_communities.count({
     where: whereInput,
   });
   return {
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
-      records,
+      data,
       RedditCloneCommunityAtSummaryTransformer.transform,
     ),
   };

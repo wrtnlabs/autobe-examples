@@ -6,276 +6,205 @@ Business rules, validation constraints, data browsing expectations, error scenar
 
 Per-concept business rules, validation logic, and domain constraints.
 
-## UserAccount Rules
+## User Rules
 
-A user account must be created with an email address and password. The email must be suitable for a login identity and must uniquely identify the account. The password is required and must meet whatever account security rule is applied by the application. A user account supports changing the password after creation, and the new password must replace the prior one as the active credential. Account deletion is allowed only for the account owner, and once deleted, the account's todos are permanently removed as part of the account removal rule. This means a deleted account cannot keep any todo content in the system, including items that were already moved to trash. The application treats the account as the owner of the user's private todo space, so account ownership remains a core constraint on account-related actions. Invalid or missing login credentials must prevent account use. If the email or password is not provided during account-related actions that require them, the operation should be rejected.
+A user account is identified by an email address and password credential. The email must be suitable for sign-in because users use it to create an account and log in. A user can change their password after account creation, and the new password must replace the old credential for future sign-ins. A user can also delete their account as a business action that removes the person from the application. When a user account is deleted, all todos owned by that user are permanently removed, including items that were already in trash. The account rules do not expose any other user accounts or shared access patterns. The user entity is therefore centered on identity, credential management, and account deletion consequences.
 
-### User Account Sign-Up and Login
+### User Account Identity
 
-A user account is created with an email address and a password.
-The email address is required at sign-up and is used as the account's login identity.
-The password is required at sign-up and is used for password-based login.
-The same email address cannot be used for more than one user account.
-If the email address is missing, sign-up is rejected.
-If the password is missing, sign-up is rejected.
-If the email address is already in use, sign-up is rejected.
-If login credentials are missing, account access is rejected.
-If login credentials do not match an existing account, account access is rejected.
+A user account is the business identity for one person in the application.
 
-### Password Change Rule
+A user account is identified by an email address and a password credential.
 
-A user account owner can change the password for their own account.
-When the password is changed, the new password becomes the active login credential for the account.
-After a password change, the prior password is no longer accepted for login.
-If the account owner does not provide the required password change information, the change is rejected.
+The account identity is used for sign-up, login, password changes, and account deletion.
 
-### Account Owner Constraint
+A user account belongs to one person only and does not represent a shared account.
 
-Account-related actions that change or remove a user account are allowed only for the account owner.
-A user cannot perform account deletion for another user's account.
-A user cannot change another user's account password.
-If an account-related action is attempted by a non-owner, the action is rejected.
+The account identity remains private to the owning user and is not used to expose other users' accounts.
 
-### Account Deletion and Todo Removal
+### Email-Based Sign-Up
 
-A user account owner can delete their own account.
-When an account is deleted, all todos owned by that account are permanently removed.
-This permanent removal includes todos that were previously moved to trash.
-After account deletion, no todo content from that account remains available in the system.
+A user signs up with an email address and a password credential.
 
-### Credential Rejection Rules
+The email address used during sign-up becomes the account identity for that user account.
 
-If provided account credentials are invalid, the system rejects the request.
-If the email address does not identify an existing account, the request is rejected.
-If the password does not match the account's active password, the request is rejected.
-If an account-related request requires credentials and they are not provided, the request is rejected.
+The sign-up rule applies to creating the user account and establishing the initial password credential.
 
-## UserProfile Rules
+A sign-up action does not create any additional account identity beyond the email-based user account.
 
-Each user account has one profile that contains a display name. The display name is editable and represents how the user wants to be identified within the private todo app. A profile must always belong to the same account that owns it. The application should accept profile updates only for the current user’s own profile. Display name changes should be saved as profile updates without affecting the user's todos or account credentials. If a display name is omitted during profile editing, the system should not treat that as a valid replacement value. The profile information is intentionally limited, so only the supported profile detail should be exposed or maintained. Because the app is private, profile information must not be used to reveal other users. Profile data should remain simple and consistent, centered on the user-chosen display name.
+### Email-Based Login
 
-### Display Name Profile Field
+A user logs in with the email address and password credential associated with the user account.
 
-The user profile shall include a display name as its supported profile detail.
-The display name shall represent how the user wants to be identified within the private todo app.
-The display name shall belong to exactly one user profile and shall not be shared across multiple profiles as a single profile field.
-The system shall expose only the display name as the profile detail for this unit.
-The system shall keep the profile centered on the display name and shall not require any additional profile details for this unit.
+The login rule uses the same email address that was established during sign-up.
 
-### Editable User Display Name
+The application treats the email address as the user-facing identity for account access.
 
-The user shall be able to edit the display name associated with their own profile.
-When the display name is edited, the system shall save the change as a profile update.
-The system shall preserve the user’s todos and account credentials when the display name changes.
-The system shall treat a display name change as a profile change only and shall not treat it as a change to account ownership or account identity.
-The system shall keep the updated display name consistent for the same user profile after it is saved.
+Login behavior is limited to authenticating the existing user account and does not alter the account identity.
 
-### Single Profile Per Account
+### Password Credential and Password Change
 
-Each user account shall have one and only one profile.
-A user profile shall belong to the same account that owns it.
-The system shall not allow a profile to be reassigned to a different account.
-The system shall keep the one-profile-per-account relationship stable for the lifetime of the account.
-If a profile is requested for an account, the system shall use that account’s single associated profile.
+A user account includes a password credential that is required for future logins.
 
-### Current User Profile Update
+A user can change the password credential after the account exists.
 
-The system shall accept profile updates only for the current user’s own profile.
-The system shall reject attempts to update a profile that does not belong to the current user.
-The system shall not allow one user to edit another user’s display name through profile update behavior.
-The system shall apply profile updates to the active user account only.
-The system shall keep profile editing limited to the profile owned by the user who is performing the update.
+When the password is changed, the new password replaces the previous password credential for future logins.
 
-### Profile Update Without Account Change
+A password change affects only the current user account and does not create a new user account.
 
-A profile update shall change only profile information and shall not change the user’s account.
-Updating the display name shall not change the user’s account credentials.
-Updating the display name shall not change account ownership.
-Updating the display name shall not affect the user’s todos.
-The system shall preserve the account as the same account before and after the profile update.
+### Account Deletion and Permanent Removal of Owned Todos
 
-### Missing Display Name Rejection
+A user can delete their account as a business action.
 
-If a display name is omitted during profile editing, the system shall reject the update as invalid.
-If the user attempts to replace the display name with no value, the system shall not accept that replacement.
-The system shall require a valid display name to complete a profile edit.
-The system shall not treat an omitted display name as an instruction to clear the profile field.
-The system shall leave the existing display name unchanged when the update is rejected for a missing display name.
+When account deletion occurs, the user account is removed from the application.
 
-### Private Profile Information
+When account deletion occurs, all todos owned by that user are permanently removed.
 
-The user profile information shall remain private within the app.
-The system shall not allow users to view other users’ profiles.
-The system shall not use profile information to reveal other users.
-The system shall keep profile information available only to the owning user account.
-The system shall treat profile visibility as restricted to the profile owner in this private todo app.
+The permanent removal includes owned todos that were already in trash.
 
-### Limited Profile Details
+After account deletion, the removed todos are no longer available anywhere in the application.
 
-The profile shall remain intentionally limited to the supported profile detail.
-The system shall expose only the profile information that is explicitly supported for this unit.
-The system shall not maintain extra profile details beyond the display name for this unit.
-The system shall not require users to provide additional profile information to keep their profile usable.
-The system shall keep profile data simple and consistent by avoiding unsupported profile details.
+### User Business Constraints
+
+The user rules are limited to identity management, credential management, and account deletion consequences.
+
+The user rules do not introduce shared access to other users' accounts.
+
+The user rules do not introduce visibility into other users' personal account information.
+
+The user rules remain aligned with the private nature of the application and with the requirement that user-owned todos are tied to the owning account only.
+
+## Profile Rules
+
+Each user has a profile that carries a display name. The display name is the editable profile value users can update over time. The profile exists to present the user in the app, not to expose private account details. The display name should be treated as the only profile attribute in scope for this document. Because the app is private, a profile is not meant to be browsed by other users. Profile rules therefore focus on what the user may present and change about themselves, while keeping the profile concept simple and personal. No additional profile fields are introduced here beyond the display name.
+
+### Profile Display Name
+
+THE todoApp SHALL treat the display name as the profile display name for a member.
+THE todoApp SHALL treat the display name as the editable display name on the profile.
+THE todoApp SHALL treat the display name as the personal profile value that identifies the member within their own profile.
+THE todoApp SHALL treat the display name as the user-facing name for the profile.
+THE todoApp SHALL keep the display name as the single profile attribute in scope for this unit.
+IF a profile rule in this unit references profile content, THEN THE todoApp SHALL apply it to the display name only.
+THE todoApp SHALL not introduce any additional profile attribute in this unit.
+
+### Private Profile
+
+THE todoApp SHALL treat the profile as private.
+THE todoApp SHALL keep the profile limited to the owning member.
+THE todoApp SHALL prevent the profile from being treated as a browsable profile for other members.
+THE todoApp SHALL keep profile rules focused on the member's own profile value rather than on shared profile information.
+IF a profile visibility rule is applied in this unit, THEN THE todoApp SHALL apply the private profile constraint.
+THE todoApp SHALL not define any shared-profile behavior in this unit.
+
+### Editable Display Name
+
+WHEN the owning member updates the profile, THE todoApp SHALL allow the display name to be edited.
+WHEN the display name is edited, THE todoApp SHALL keep the change within the profile's private scope.
+WHEN the owning member saves a profile change, THE todoApp SHALL treat the new display name as the current user-facing name.
+THE todoApp SHALL allow the editable display name to be changed over time.
+IF a profile update targets a value other than the display name, THEN THE todoApp SHALL treat it as outside the editable display name rule.
+
+### Profile Update Rule
+
+WHEN the owning member updates the profile, THE todoApp SHALL apply the update to the display name.
+WHEN the display name changes, THE todoApp SHALL keep the profile as a personal profile value for that member.
+WHEN a profile update is performed, THE todoApp SHALL preserve the private profile constraint.
+THE todoApp SHALL allow profile updates only for the display name in this unit.
+IF the profile update does not affect the display name, THEN THE todoApp SHALL not treat it as a valid profile update within this unit.
+
+### Profile Business Constraint
+
+THE todoApp SHALL limit the profile business rules in this unit to the display name.
+THE todoApp SHALL treat the display name as the single profile attribute.
+THE todoApp SHALL treat the display name as the user-facing name used to represent the member in the app.
+THE todoApp SHALL keep the profile as a personal profile value for the owning member only.
+IF a rule in this unit concerns profile behavior, THEN THE todoApp SHALL evaluate it against the private profile and the display name only.
+THE todoApp SHALL not define additional profile business behavior beyond the editable display name and its private profile constraint.
 
 ## Todo Rules
 
-A todo must have a title, and the title is the only required content field for creation. Description, start date, and due date are optional and may be left empty. A newly created todo must begin as incomplete. Users may update the title, description, start date, and due date of their own todos, and those changes must remain within the supported todo fields. The todo supports two completion states only: complete and incomplete. The completion state is a simple toggle, so the todo should never move into any third state. Start date and due date are independent optional values, and a todo may have either one, both, or neither. When a user leaves optional fields empty, the todo should remain valid. Todo content must stay readable as business information, so it should be limited to the supported user-entered details and completion status.
+A todo must have a title, and the title is required whenever a todo is created or edited. A description is optional and may be left empty. A start date is optional and may also be left empty. A due date is optional and may also be left empty. Newly created todos begin in an incomplete state by default. A todo can be switched between complete and incomplete, and those two states are the only completion states in scope. Users can edit the title, description, start date, and due date of their todos. A todo may be removed from normal use by deleting it, but the business rule here treats that as a soft delete rather than immediate permanent removal. Todo rules therefore center on required content, optional scheduling details, and completion status.
 
-### Required Todo Title
+### Todo Title Required
 
-THE system SHALL require a title when a user creates a todo.
-WHEN a todo is created without a title, THE system SHALL reject the request.
-THE system SHALL treat the title as the only required content field for a todo.
-THE system SHALL accept a created todo when the title is provided and the optional content fields are left empty.
+THE system SHALL require every todo to have a title.
+WHEN a todo is created, THE system SHALL reject the todo if the title is missing.
+WHEN a todo is edited, THE system SHALL reject the edit if the title is removed.
+The title is the required content for a todo.
 
-```mermaid
-flowchart LR
-    A["Create todo"] --> B["Title provided"]
-    A --> C["Title missing"]
-    B --> D["Todo is accepted"]
-    C --> E["Request is rejected"]
-```
+### Optional Description
 
-### Optional Description Field
-
-THE system SHALL allow a todo description to be left empty when a todo is created.
-THE system SHALL allow a user to edit a todo description.
-THE system SHALL treat the description as optional content, not as a required value for validity.
-THE system SHALL keep a todo valid when the description is empty.
-THE system SHALL preserve the description as user-entered business information when it is provided.
-
+THE system SHALL allow a todo description to be empty.
+WHEN a todo is created or edited without a description, THE system SHALL accept the todo.
+The description is optional content for a todo.
 
 ### Optional Start Date
 
-THE system SHALL allow a todo start date to be left empty when a todo is created.
-THE system SHALL allow a user to edit a todo start date.
-THE system SHALL treat the start date as optional content, not as a required value for validity.
-THE system SHALL keep a todo valid when the start date is empty.
-THE system SHALL allow a todo to have a start date by itself, independently of a due date.
-
+THE system SHALL allow a todo start date to be empty.
+WHEN a todo is created or edited without a start date, THE system SHALL accept the todo.
+The start date is optional content for a todo.
 
 ### Optional Due Date
 
-THE system SHALL allow a todo due date to be left empty when a todo is created.
-THE system SHALL allow a user to edit a todo due date.
-THE system SHALL treat the due date as optional content, not as a required value for validity.
-THE system SHALL keep a todo valid when the due date is empty.
-THE system SHALL allow a todo to have a due date by itself, independently of a start date.
+THE system SHALL allow a todo due date to be empty.
+WHEN a todo is created or edited without a due date, THE system SHALL accept the todo.
+The due date is optional content for a todo.
 
+### New Todo Incomplete by Default
 
-### New Todo Starts Incomplete
+WHEN a todo is created, THE system SHALL set the todo to incomplete by default.
+THE system SHALL apply the incomplete state to every newly created todo.
+This default applies before any later completion change.
 
-WHEN a todo is created, THE system SHALL set the completion status to incomplete by default.
-THE system SHALL not create a new todo in a complete state.
-THE system SHALL show the initial completion status of every newly created todo as incomplete.
+### Complete and Incomplete States
 
-```mermaid
-flowchart LR
-    A["Todo created"] --> B["Completion status set to incomplete"]
-    B --> C["Todo remains incomplete until changed by the user"]
-```
+THE system SHALL allow a todo to be either complete or incomplete.
+THE system SHALL treat complete and incomplete as the only completion states for a todo.
+WHEN a todo completion state is changed, THE system SHALL switch the todo between complete and incomplete only.
 
-### Complete and Incomplete Toggle
+### Todo Editing Fields
 
-THE system SHALL support only two completion states for a todo: complete and incomplete.
-WHEN a user marks a todo as complete, THE system SHALL set the completion status to complete.
-WHEN a user marks a todo as incomplete, THE system SHALL set the completion status to incomplete.
-THE system SHALL treat completion status as a simple toggle between the two supported states.
-THE system SHALL not allow any third completion state.
+THE system SHALL allow a user to edit a todo's title, description, start date, and due date.
+WHEN a todo is edited, THE system SHALL apply the change only to those editable fields.
+WHEN a todo is edited, THE system SHALL continue to enforce the title requirement defined in this section.
 
-```mermaid
-flowchart LR
-    A["Incomplete"] -->|"Mark complete"| B["Complete"]
-    B -->|"Mark incomplete"| A
-```
+### Soft Delete of Todo
 
-### Editable Todo Details
+THE system SHALL allow a todo to be deleted from normal use.
+WHEN a todo is deleted, THE system SHALL treat the deletion as a soft delete.
+THE system SHALL not treat a soft-deleted todo as permanently removed.
+A deleted todo remains subject to the later trash rules for restored or permanent removal behavior.
 
-THE system SHALL allow a user to edit the title of their todo.
-THE system SHALL allow a user to edit the description of their todo.
-THE system SHALL allow a user to edit the start date of their todo.
-THE system SHALL allow a user to edit the due date of their todo.
-THE system SHALL keep todo edits within the supported todo details only.
-THE system SHALL record an edit as a change to one or more supported todo details.
-THE system SHALL continue to treat a todo as valid after any supported detail is edited.
+### Todo Business Constraint
 
+THE system SHALL apply the todo rules in this unit consistently to every todo.
+IF a todo violates any rule defined in this unit, THEN the system SHALL reject the violating change.
+These rules cover required content, optional content, completion state, editing fields, and soft delete behavior only.
 
-### Empty Optional Fields Allowed
+## TodoEditHistory Rules
 
-THE system SHALL accept a todo when the description, start date, and due date are all empty.
-THE system SHALL accept a todo when any one of the optional fields is empty.
-THE system SHALL accept a todo when any combination of the optional fields is empty.
-THE system SHALL treat empty optional fields as valid input rather than as missing required content.
-THE system SHALL allow optional fields to remain empty after a todo is edited.
+Every time a todo is edited, a history entry must be created. The history entry records when the edit was made so users can understand the sequence of changes. If the title was changed, the new title value is recorded in the history entry. If the description was changed, the new description value is recorded in the history entry. If the start date was changed, the new start date value is recorded in the history entry. If the due date was changed, the new due date value is recorded in the history entry. History entries are kept as part of the todo’s change record and are shown from the most recent entry to the oldest entry. If a todo is permanently deleted from trash, its edit history is also permanently deleted. The history rules focus on capturing change details rather than duplicating the todo itself.
 
+### Todo Edit History
 
-### Todo Completion Status
+WHEN a todo is edited, THE system SHALL create one history entry for that edit.
 
-THE system SHALL store the completion status as part of the todo's business information.
-THE system SHALL present completion status as either complete or incomplete.
-THE system SHALL keep completion status consistent with the user's toggle action.
-THE system SHALL use completion status when a todo is evaluated for its current state.
-THE system SHALL not change completion status automatically for reasons other than the user's complete or incomplete toggle action.
+WHEN a history entry is created, THE system SHALL record the time the edit was made.
 
+WHEN the title changes during an edit, THE system SHALL record the changed title value in the history entry.
 
-## TodoHistory Rules
+WHEN the description changes during an edit, THE system SHALL record the changed description value in the history entry.
 
-Every edit to a todo creates a history entry. A history entry records when the edit was made, so the edit time is a required part of the record. Each entry also captures the title change, description change, start date change, and due date change when those values were actually modified. If a particular field was not changed, the history entry should not claim a change for that field. History entries belong to the todo they describe and must reflect the order of edits over time. When users review history, the entries should be understandable as a timeline of how the todo evolved. The history should preserve the fact that edits happened even when the change was limited to one field. If a todo is permanently deleted from trash, its history is deleted as well, so history only remains while the todo itself remains available. The ordering rule for history is most recent entry first, then older entries after it.
+WHEN the start date changes during an edit, THE system SHALL record the changed start date value in the history entry.
 
-### Edit Timestamp and Entry Creation
+WHEN the due date changes during an edit, THE system SHALL record the changed due date value in the history entry.
 
-Every edit to a todo creates exactly one history entry.
+THE system SHALL present edit history entries from the most recent entry to the oldest entry.
 
-Each history entry must record when the edit was made, and the edit timestamp is a required part of the entry.
+IF a todo is permanently deleted from trash, THEN THE system SHALL permanently delete that todo's edit history.
 
-A history entry exists to preserve the fact that an edit occurred, even when the edit changes only one field.
-
-The edit timestamp is the basis for understanding the todo edit timeline, so each entry must be understandable as part of a chronological record of how the todo changed over time.
-
-### Changed Fields Captured in History
-
-A history entry records the new value for the title when the title was changed.
-
-A history entry records the new value for the description when the description was changed.
-
-A history entry records the new value for the start date when the start date was changed.
-
-A history entry records the new value for the due date when the due date was changed.
-
-A history entry only claims a change for a field when that field was actually modified in the edit.
-
-### Unchanged Fields Are Not Recorded
-
-If a field was not changed in an edit, the corresponding history entry must not record a change for that field.
-
-A history entry must not imply that the title changed when only another field changed.
-
-A history entry must not imply that the description changed when only another field changed.
-
-A history entry must not imply that the start date changed when only another field changed.
-
-A history entry must not imply that the due date changed when only another field changed.
-
-### History Timeline and Ordering
-
-The edit history for a todo must read as a timeline of how that todo evolved.
-
-History entries are ordered from most recent to oldest.
-
-When users review the history, the newest edit must appear first and earlier edits must follow after it.
-
-The ordering must consistently reflect the sequence of edits over time so that the change history is understandable as a chronological record.
-
-### History Removal on Permanent Todo Deletion
-
-If a todo is permanently deleted from trash, its edit history is deleted as well.
-
-After permanent deletion, the history must no longer remain available for that todo.
-
-History is retained only while the todo itself remains available.
-
-Permanent deletion removes both the todo and its recorded history together.
+IF a todo is edited without changing one or more tracked values, THEN THE system SHALL not require a history value for each unchanged value.
 
 # Data Browsing Expectations
 
@@ -287,70 +216,29 @@ Define business expectations for how users find, filter, and browse lists.
 
 ### Filtering Todo Lists
 
-Users can filter their own todo list by completion status.
-
-When no filter is selected, the list shows all of the user's todos.
-When the complete filter is selected, the list shows only todos whose completion status is complete.
-When the incomplete filter is selected, the list shows only todos whose completion status is incomplete.
-
-The selected filter applies only to the user's own todos and does not expose todos that belong to other users.
-
-If a filter selection does not match one of the supported completion-status options, the request is rejected.
-
-```mermaid
-flowchart LR
-    A["All todos"] --> B["Complete todos"]
-    A --> C["Incomplete todos"]
-    B --> A
-    C --> A
-```
+WHERE the user is viewing their own todo list, THE system SHALL allow the user to filter the list by completion status.
+WHEN the user selects the all todos view, THE system SHALL show every todo in the user's list.
+WHEN the user selects the complete todos view, THE system SHALL show only todos with a complete completion status.
+WHEN the user selects the incomplete todos view, THE system SHALL show only todos with an incomplete completion status.
+IF a todo does not match the selected completion status, THEN THE system SHALL not show that todo in the filtered list.
+IF no completion-status filter is selected, THEN THE system SHALL show the list without applying a completion-status filter.
 
 ### Sorting Todo Lists
 
-Users can sort their own todo list by creation date, start date, or due date.
+WHERE the user is viewing their own todo list, THE system SHALL allow the user to sort the list by creation date, start date, or due date.
+WHEN the user sorts by creation date, THE system SHALL order the list by newest first or oldest first.
+WHEN the user sorts by start date, THE system SHALL order the list by earliest first or latest first.
+WHEN the user sorts by due date, THE system SHALL order the list by earliest first or latest first.
+IF a todo has no start date and the list is sorted by start date, THEN THE system SHALL place that todo at the end of the list.
+IF a todo has no due date and the list is sorted by due date, THEN THE system SHALL place that todo at the end of the list.
 
-When sorting by creation date, the list can be ordered from newest first or oldest first.
-When sorting by start date, the list can be ordered from earliest first or latest first.
-When sorting by due date, the list can be ordered from earliest first or latest first.
+### Pagination for Todo Lists and Trash
 
-Todos without a start date appear at the end of the list when sorting by start date.
-Todos without a due date appear at the end of the list when sorting by due date.
-
-Sorting applies only to the user's own todos and does not reveal todos that belong to other users.
-
-If a sorting choice does not match one of the supported sort fields or sort directions, the request is rejected.
-
-```mermaid
-flowchart LR
-    A["Creation date"] --> B["Newest first"]
-    A --> C["Oldest first"]
-    D["Start date"] --> E["Earliest first"]
-    D --> F["Latest first"]
-    G["Due date"] --> H["Earliest first"]
-    G --> I["Latest first"]
-```
-
-### Pagination of Todo and Trash Lists
-
-The user's todo list and trash list are paginated.
-
-Each paginated view shows only one page of results at a time.
-Users can move through the available pages to browse all items in the list.
-
-Pagination applies only to the user's own todos and trash items and does not expose items that belong to other users.
-
-If a requested page does not exist, the request is rejected.
-
-If a pagination request is made for a list that has no items, the result is an empty list.
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant S as System
-    U->>S: Request a list page
-    S->>S: Apply filtering and sorting first
-    S->>S: Return the requested page of the user's items
-```
+WHERE the user is viewing the todo list or the trash list, THE system SHALL present the list as paginated.
+THE system SHALL keep pagination in effect when the user changes the filter or sort choice for the same list view.
+THE system SHALL show only part of the selected list on each page.
+THE system SHALL allow the user to move through the remaining items by browsing additional pages.
+IF the current page does not contain any items, THEN THE system SHALL still preserve the pagination state for the selected list view.
 
 # Error Conditions
 
@@ -360,42 +248,46 @@ Business error scenarios and how the system should respond.
 
 Describe error conditions and expected system responses in natural language.
 
-### Error Scenarios
+### Error Scenarios for Todo Access
 
-If a guest attempts to create, edit, delete, restore, or permanently delete a todo, the request shall be rejected because those actions are available only to a member.
+WHEN a user tries to view a todo that does not belong to them, THE todoApp SHALL reject the request.
 
-If a user attempts to access a todo that does not belong to their own account, the request shall be rejected.
+WHEN a user tries to view a deleted todo outside the trash, THE todoApp SHALL reject the request.
 
-If a user attempts to view another user's profile, the request shall be rejected because profiles are private.
+WHEN a user tries to view a todo that no longer exists, THE todoApp SHALL reject the request.
 
-If a user attempts to view, edit, delete, restore, or permanently delete a todo that they do not own, the request shall be rejected.
+IF a todo access request targets a todo that the user cannot access, THEN the todoApp SHALL not reveal the todo's details.
 
-If a user attempts to view the normal todo list and there are no matching todos after the current filter is applied, the system shall return an empty list rather than an error.
+### Rejection Rules for Invalid Todo Changes
 
-If a user attempts to view the trash and there are no deleted todos, the system shall return an empty trash list rather than an error.
+WHEN a user tries to create a todo without a title, THE todoApp SHALL reject the request.
 
-If a user attempts to restore a todo that is not in the trash, the request shall be rejected.
+WHEN a user tries to edit a todo without a title, THE todoApp SHALL reject the request.
 
-If a user attempts to permanently delete a todo that is not in the trash, the request shall be rejected.
+WHEN a user tries to restore a todo that is not in the trash, THE todoApp SHALL reject the request.
 
-If a user attempts to edit a todo that has been permanently deleted, the request shall be rejected.
+WHEN a user tries to permanently delete a todo that is not in the trash, THE todoApp SHALL reject the request.
 
-If a user attempts to view the edit history of a todo that has been permanently deleted, the request shall be rejected because permanently deleted todos no longer have history available.
+IF a todo change request is rejected, THEN the todoApp SHALL leave the todo unchanged.
 
-If a user attempts to change a todo using values that are not allowed by the defined todo fields, the request shall be rejected.
+### Failure Cases for Private Profile Access
 
-If a user attempts to submit a todo without a title, the request shall be rejected.
+WHEN a user tries to view another user's profile, THE todoApp SHALL reject the request.
 
-If a user attempts to access another user's todos in any form, the request shall be rejected because all todos are private.
+WHEN a user tries to view another user's display name, THE todoApp SHALL reject the request.
 
-If a user attempts to delete their account, all of their todos, including todos in the trash, shall be permanently deleted as part of the account deletion outcome.
+IF a user requests private profile data that belongs to another user, THEN the todoApp SHALL not reveal that profile data.
 
-If an account is deleted, any later attempt to access that account's todos or history shall be rejected because the data no longer exists.
+IF a profile access request is rejected, THEN the todoApp SHALL treat the profile as private.
 
-```mermaid
-flowchart LR
-    A["Request on private todo data"] --> B["Verify ownership"]
-    B -->|"Own data"| C["Allow action"]
-    B -->|"Not own data"| D["Reject request"]
-    C --> E["Continue with requested operation"]
-```
+### Exceptions for Todo History and Recovery
+
+WHEN a user views the edit history of one of their todos, THE todoApp SHALL return the history in order from most recent to oldest.
+
+IF a todo has been permanently deleted, THEN the todoApp SHALL reject requests to view its edit history.
+
+IF a todo has been permanently deleted, THEN the todoApp SHALL reject requests to restore it.
+
+WHEN a todo is permanently deleted from the trash, THE todoApp SHALL also delete its edit history.
+
+IF a recovery request is invalid, THEN the todoApp SHALL reject the request.

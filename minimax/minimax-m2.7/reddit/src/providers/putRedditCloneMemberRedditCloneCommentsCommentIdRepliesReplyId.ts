@@ -22,7 +22,7 @@ export async function putRedditCloneMemberRedditCloneCommentsCommentIdRepliesRep
   replyId: string & tags.Format<"uuid">;
   body: IRedditCloneComment.IUpdate;
 }): Promise<IRedditCloneComment> {
-  // 1. Fetch the reply comment to verify ownership and existence
+  // 1. Find the reply and verify it exists (404 if not found)
   const reply = await MyGlobal.prisma.reddit_clone_comments.findUniqueOrThrow({
     where: { id: props.replyId },
     select: {
@@ -32,19 +32,22 @@ export async function putRedditCloneMemberRedditCloneCommentsCommentIdRepliesRep
       deleted_at: true,
     },
   });
-  // 2. Verify the reply is not soft-deleted
+  // 2. Verify reply is not soft-deleted
   if (reply.deleted_at !== null) {
-    throw new HttpException("Reply not found", 404);
+    throw new HttpException("Cannot update a deleted reply", 400);
   }
-  // 3. Verify the parent comment matches the commentId
+  // 3. Verify reply belongs to the specified parent comment
   if (reply.parent_comment_id !== props.commentId) {
-    throw new HttpException("Reply not found", 404);
+    throw new HttpException(
+      "Reply does not belong to the specified comment",
+      400,
+    );
   }
-  // 4. Verify the authenticated member is the author (ownership check)
+  // 4. Verify the authenticated member is the author of the reply
   if (reply.reddit_clone_member_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // 5. Update the reply content and timestamp
+  // 5. Update the reply content with ISO string timestamp
   await MyGlobal.prisma.reddit_clone_comments.update({
     where: { id: props.replyId },
     data: {
@@ -52,86 +55,13 @@ export async function putRedditCloneMemberRedditCloneCommentsCommentIdRepliesRep
       updated_at: new Date(),
     },
   });
-  // 6. Fetch the updated record with full relation data using include
+  // 6. Return the updated reply with author information using transformer
   const updated = await MyGlobal.prisma.reddit_clone_comments.findUniqueOrThrow(
     {
       where: { id: props.replyId },
-      include: {
-        member: {
-          select: {
-            id: true,
-            username: true,
-          },
-        },
-        post: {
-          include: {
-            author: {
-              select: {
-                id: true,
-                username: true,
-              },
-            },
-            community: {
-              include: {
-                member: {
-                  select: {
-                    id: true,
-                    username: true,
-                  },
-                },
-                icon: {
-                  include: {
-                    file: true,
-                  },
-                },
-              },
-            },
-            postTextContent: true,
-            link: true,
-            image: true,
-            comments: {
-              include: {
-                member: {
-                  select: {
-                    id: true,
-                    username: true,
-                  },
-                },
-                parent: true,
-                replies: true,
-              },
-            },
-            postVotes: true,
-          },
-        },
-        parent: {
-          include: {
-            member: {
-              select: {
-                id: true,
-                username: true,
-              },
-            },
-            parent: true,
-            replies: true,
-          },
-        },
-        replies: {
-          include: {
-            member: {
-              select: {
-                id: true,
-                username: true,
-              },
-            },
-            parent: true,
-            replies: true,
-          },
-        },
-      },
+      ...RedditCloneCommentTransformer.select(),
     },
   );
-  // 7. Return transformed response
   return await RedditCloneCommentTransformer.transform(updated);
 }
 

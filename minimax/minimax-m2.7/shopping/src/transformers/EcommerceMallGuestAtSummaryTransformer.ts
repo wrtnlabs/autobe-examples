@@ -1,6 +1,7 @@
 import { IEcommerceMallGuest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallGuest";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -35,10 +36,13 @@ export namespace EcommerceMallGuestAtSummaryTransformer {
     input: Payload,
   ): Promise<IEcommerceMallGuest.ISummary> {
     return {
-      id: input.id,
+      createdAt: input.created_at.toISOString(),
       fingerprint: input.fingerprint,
-      userAgent: input.user_agent,
-    };
+      id: input.id,
+      ipAddress: input.ip_address ?? null,
+      lastActiveAt: input.last_active_at?.toISOString() ?? null,
+      userAgent: input.user_agent ?? null,
+    } satisfies IEcommerceMallGuest.ISummary;
   }
 }
 
@@ -67,8 +71,11 @@ export namespace EcommerceMallGuestAtSummaryTransformer {
 // 
 //       export async function transform(input: Payload): Promise<IEcommerceMallGuest.ISummary> {
 //         return {
-//   id: {string},
+//   createdAt: {string},
 //   fingerprint: {string},
+//   id: {string},
+//   ipAddress: {string | null},
+//   lastActiveAt: {string | null},
 //   userAgent: {string | null},
 //         };
 //       }

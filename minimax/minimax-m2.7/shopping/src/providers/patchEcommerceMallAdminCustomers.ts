@@ -1,9 +1,7 @@
-import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
 import { IPageIEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallCustomer";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -23,59 +21,47 @@ export async function patchEcommerceMallAdminCustomers(props: {
   body: IEcommerceMallCustomer.IRequest;
 }): Promise<IPageIEcommerceMallCustomer.ISummary> {
   const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
+  const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const whereInput = {
+  const whereInput: Prisma.ecommerce_mall_customersWhereInput = {
     ...(props.body.search && {
-      email: { contains: props.body.search },
+      email: { contains: props.body.search, mode: "insensitive" as const },
     }),
-    ...(props.body.status === "active" && {
-      deleted_at: null,
+    ...(props.body.status === "active" && { deleted_at: null }),
+    ...(props.body.status === "deleted" && { deleted_at: { not: null } }),
+    ...(props.body.createdAtFrom && {
+      created_at: { gte: new Date(props.body.createdAtFrom) },
     }),
-    ...(props.body.status === "inactive" && {
-      deleted_at: { not: null },
+    ...(props.body.createdAtTo && {
+      created_at: { lte: new Date(props.body.createdAtTo) },
     }),
-    ...(props.body.createdFrom && {
-      created_at: { gte: new Date(props.body.createdFrom) },
-    }),
-    ...(props.body.createdTo && {
-      created_at: { lte: new Date(props.body.createdTo) },
-    }),
-    ...(props.body.displayName && {
-      profile: {
-        display_name: { contains: props.body.displayName },
-      },
-    }),
-  } satisfies Prisma.ecommerce_mall_customersWhereInput;
+  };
+  const sortBy = props.body.sortBy ?? "created_at";
+  const sortOrder = props.body.sortOrder ?? "desc";
   const orderByInput = (
-    props.body.sort === "email"
-      ? { email: props.body.order ?? ("desc" as const) }
-      : { created_at: props.body.order ?? ("desc" as const) }
+    sortOrder === "asc"
+      ? { [sortBy]: "asc" as const }
+      : { [sortBy]: "desc" as const }
   ) satisfies Prisma.ecommerce_mall_customersOrderByWithRelationInput;
-  const records = await MyGlobal.prisma.ecommerce_mall_customers.findMany({
-    ...EcommerceMallCustomerAtSummaryTransformer.select(),
+  const data = await MyGlobal.prisma.ecommerce_mall_customers.findMany({
     where: whereInput,
     orderBy: orderByInput,
     skip,
     take: limit,
+    ...EcommerceMallCustomerAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.ecommerce_mall_customers.count({
     where: whereInput,
   });
   return {
     pagination: {
-      pagination: {
-        current: page as number & tags.Type<"int32"> & tags.Minimum<0>,
-        limit: limit as number & tags.Type<"int32"> & tags.Minimum<0>,
-        records: total as number & tags.Type<"int32"> & tags.Minimum<0>,
-        pages: Math.ceil(total / limit) as number &
-          tags.Type<"int32"> &
-          tags.Minimum<0>,
-      },
-      data: [],
-    },
+      current: page,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
-      records,
+      data,
       EcommerceMallCustomerAtSummaryTransformer.transform,
     ),
   };
@@ -101,9 +87,7 @@ export async function patchEcommerceMallAdminCustomers(props: {
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 // import { IPageIEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallCustomer";
-// import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
 // import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-// import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
 // import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,

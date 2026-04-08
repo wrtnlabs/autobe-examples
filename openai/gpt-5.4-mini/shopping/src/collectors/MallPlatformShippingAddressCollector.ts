@@ -13,17 +13,17 @@ export namespace MallPlatformShippingAddressCollector {
     customer: IEntity;
   }) {
     const id: string = v4();
-    const now: Date = new Date();
+    const now = new Date();
     return {
       id,
-      recipient_name: props.body.recipient_name,
-      phone_number: props.body.phone_number,
-      street_address: props.body.street_address,
+      recipient_name: props.body.recipientName,
+      phone_number: props.body.phoneNumber,
+      street_address: props.body.streetAddress,
       city: props.body.city,
-      state_province: props.body.state_province,
-      postal_code: props.body.postal_code,
+      state_province: props.body.stateProvince,
+      postal_code: props.body.postalCode,
       country: props.body.country,
-      is_default: props.body.is_default,
+      is_default: props.body.isDefault ?? false,
       created_at: now,
       updated_at: now,
       deleted_at: null,
@@ -39,7 +39,7 @@ export namespace MallPlatformShippingAddressCollector {
 //       export namespace MallPlatformShippingAddressCollector {
 //         export async function collect(props: {
 //           body: IMallPlatformShippingAddress.ICreate;
-//           mallPlatformCustomers: IEntity; // from authorized session
+//           mallPlatformCustomers: IEntity; // from authorized actor
 //           
 //           
 //         }) {

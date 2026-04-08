@@ -5,17 +5,19 @@ import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformRefundRequest";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { MallPlatformAdministratorAtSummaryTransformer } from "./MallPlatformAdministratorAtSummaryTransformer";
 import { MallPlatformCustomerAtSummaryTransformer } from "./MallPlatformCustomerAtSummaryTransformer";
 import { MallPlatformOrderItemAtSummaryTransformer } from "./MallPlatformOrderItemAtSummaryTransformer";
 import { MallPlatformSellerAtSummaryTransformer } from "./MallPlatformSellerAtSummaryTransformer";
@@ -24,33 +26,6 @@ export namespace MallPlatformRefundRequestTransformer {
   export type Payload = Prisma.mall_platform_refund_requestsGetPayload<
     ReturnType<typeof select>
   >;
-  export function select() {
-    return {
-      select: {
-        id: true,
-        reason: true,
-        status: true,
-        reviewed_at: true,
-        review_note: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        orderItem: MallPlatformOrderItemAtSummaryTransformer.select(),
-        customer: MallPlatformCustomerAtSummaryTransformer.select(),
-        seller: MallPlatformSellerAtSummaryTransformer.select(),
-        administrator: {
-          select: {
-            id: true,
-          },
-        },
-        snapshots: {
-          select: {
-            id: true,
-          },
-        },
-      },
-    } satisfies Prisma.mall_platform_refund_requestsFindManyArgs;
-  }
   export async function transform(
     input: Payload,
   ): Promise<IMallPlatformRefundRequest> {
@@ -66,9 +41,9 @@ export namespace MallPlatformRefundRequestTransformer {
         input.seller,
       ),
       administrator: input.administrator
-        ? ({
-            id: input.administrator.id,
-          } as IMallPlatformAdministrator.ISummary)
+        ? await MallPlatformAdministratorAtSummaryTransformer.transform(
+            input.administrator,
+          )
         : null,
       reason: input.reason,
       status: input.status,
@@ -77,7 +52,32 @@ export namespace MallPlatformRefundRequestTransformer {
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
       deletedAt: input.deleted_at?.toISOString() ?? null,
+      create: { reason: input.reason },
+      update: undefined,
     } satisfies IMallPlatformRefundRequest;
+  }
+  export function select() {
+    return {
+      select: {
+        id: true,
+        reason: true,
+        status: true,
+        reviewed_at: true,
+        review_note: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        orderItem: MallPlatformOrderItemAtSummaryTransformer.select(),
+        customer: MallPlatformCustomerAtSummaryTransformer.select(),
+        seller: MallPlatformSellerAtSummaryTransformer.select(),
+        administrator: MallPlatformAdministratorAtSummaryTransformer.select(),
+        snapshots: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    } satisfies Prisma.mall_platform_refund_requestsFindManyArgs;
   }
 }
 
@@ -103,7 +103,7 @@ export namespace MallPlatformRefundRequestTransformer {
 //             orderItem: MallPlatformOrderItemAtSummaryTransformer.select(),
 //             customer: MallPlatformCustomerAtSummaryTransformer.select(),
 //             seller: MallPlatformSellerAtSummaryTransformer.select(),
-//             mall_platform_administrator_id: true,
+//             administrator: MallPlatformAdministratorAtSummaryTransformer.select(),
 //             ...
 //           },
 //         } satisfies Prisma.mall_platform_refund_requestsFindManyArgs;
@@ -115,7 +115,7 @@ export namespace MallPlatformRefundRequestTransformer {
 //   orderItem: await MallPlatformOrderItemAtSummaryTransformer.transform(input.orderItem),
 //   customer: await MallPlatformCustomerAtSummaryTransformer.transform(input.customer),
 //   seller: await MallPlatformSellerAtSummaryTransformer.transform(input.seller),
-//   administrator: {IMallPlatformAdministrator.ISummary | null},
+//   administrator: input.administrator ? await MallPlatformAdministratorAtSummaryTransformer.transform(input.administrator) : null,
 //   reason: {string},
 //   status: {string},
 //   reviewedAt: {string | null},
@@ -123,6 +123,8 @@ export namespace MallPlatformRefundRequestTransformer {
 //   createdAt: {string},
 //   updatedAt: {string},
 //   deletedAt: {string | null},
+//   create: {object},
+//   update: {boolean},
 //         };
 //       }
 //     }

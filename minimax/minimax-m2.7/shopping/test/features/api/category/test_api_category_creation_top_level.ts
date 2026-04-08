@@ -12,68 +12,77 @@ import typia, { tags } from "typia";
 import { authorize_super_admin_join } from "../../../authorize/authorize_super_admin_join";
 import { authorize_super_admin_login } from "../../../authorize/authorize_super_admin_login";
 import { authorize_super_admin_refresh } from "../../../authorize/authorize_super_admin_refresh";
-import { generate_random_ecommerce_mall_super_admin_categories_create } from "../../../generate/generate_random_ecommerce_mall_super_admin_categories_create";
+import { generate_random_ecommerce_mall_super_admin_admin_categories_create } from "../../../generate/generate_random_ecommerce_mall_super_admin_admin_categories_create";
 import { prepare_random_ecommerce_mall_category } from "../../../prepare/prepare_random_ecommerce_mall_category";
 
+/**
+ * Test creating a top-level category as a super administrator.
+ *
+ * Validates the category creation flow for super administrators. Tests that
+ * a top-level category can be created with a name and description, verifying
+ * that the response contains all expected fields including auto-generated UUID,
+ * null parent reference, correct timestamps, and empty subcategories.
+ *
+ * **Test Flow:**
+ * 1. Authenticate as superAdmin using the join endpoint
+ * 2. Create a new top-level category with name 'Electronics' and description
+ * 3. Validate the response contains all expected fields
+ * 4. Verify parent is null, subcategories_count is 0, and subcategories array is empty
+ *
+ * 1. Administrator registers with email and password.
+ * 2. Administrator creates a top-level category with name and description.
+ * 3. System validates and stores the category.
+ * 4. Response returns the created category with all fields.
+ */
 export async function test_api_category_creation_top_level(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Authenticate as super administrator
-  const superAdminAuth = await authorize_super_admin_join(connection, {});
-  const superAdminConnection: api.IConnection = {
-    host: connection.host,
-    headers: {
-      Authorization: `Bearer ${superAdminAuth.token.access}`,
-    },
-  };
-  // 2. Generate random category name and description for top-level category
-  const categoryName = RandomGenerator.paragraph({ sentences: 1 });
-  const categoryDescription = RandomGenerator.paragraph({ sentences: 2 });
-  // 3. Create a top-level category (no parent_id)
-  const category =
-    await generate_random_ecommerce_mall_super_admin_categories_create(
+  // 1. Authenticate as superAdmin
+  const superAdminConnection: api.IConnection = { host: connection.host };
+  const authorized: IEcommerceMallSuperAdmin.IAuthorized =
+    await authorize_super_admin_join(superAdminConnection, {});
+  // 2. Create a top-level category
+  const category: IEcommerceMallCategory =
+    await api.functional.ecommerceMall.superAdmin.admin.categories.create(
       superAdminConnection,
       {
         body: {
-          name: categoryName,
-          description: categoryDescription,
-          // parent_id is undefined to create top-level category
-        },
+          name: "Electronics",
+          description: "Electronic devices and accessories",
+        } satisfies IEcommerceMallCategory.ICreate,
       },
     );
-  // 4. Validate the response using typia.assert
   typia.assert(category);
-  // 5. Validate business logic
+  // 3. Validate category fields
+  TestValidator.equals("id is a valid UUID", category.id.length, 36);
+  TestValidator.equals("name matches input", category.name, "Electronics");
   TestValidator.equals(
-    "category name matches input",
-    category.name,
-    categoryName,
-  );
-  TestValidator.equals(
-    "category description matches input",
+    "description matches input",
     category.description,
-    categoryDescription,
+    "Electronic devices and accessories",
+  );
+  // 4. Validate parent is null (top-level category)
+  TestValidator.equals("parent is null for top-level", category.parent, null);
+  // 5. Validate timestamps exist
+  TestValidator.predicate(
+    "created_at is a valid date-time",
+    !isNaN(Date.parse(category.created_at)),
   );
   TestValidator.predicate(
-    "category has null parent (top-level)",
-    category.parent === null,
+    "updated_at is a valid date-time",
+    !isNaN(Date.parse(category.updated_at)),
   );
-  TestValidator.predicate(
-    "category has empty subcategories",
-    category.subcategories.length === 0,
+  // 6. Validate deleted_at is null
+  TestValidator.equals("deleted_at is null", category.deleted_at, null);
+  // 7. Validate subcategories are empty (top-level category)
+  TestValidator.equals(
+    "subcategories_count is 0",
+    category.subcategories_count,
+    0,
   );
-  TestValidator.predicate(
-    "category has valid UUID id",
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      category.id,
-    ),
-  );
-  TestValidator.predicate(
-    "products_count is zero for new category",
-    category.products_count === 0,
-  );
-  TestValidator.predicate(
-    "deleted_at is null for active category",
-    category.deleted_at === null,
+  TestValidator.equals(
+    "subcategories array is empty",
+    category.subcategories.length,
+    0,
   );
 }

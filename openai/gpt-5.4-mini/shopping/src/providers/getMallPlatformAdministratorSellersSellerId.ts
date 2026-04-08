@@ -19,12 +19,11 @@ export async function getMallPlatformAdministratorSellersSellerId(props: {
   administrator: AdministratorPayload;
   sellerId: string & tags.Format<"uuid">;
 }): Promise<IMallPlatformSeller> {
-  const record = await MyGlobal.prisma.mall_platform_sellers.findFirstOrThrow({
-    where: {
-      id: props.sellerId,
-    },
-    ...MallPlatformSellerTransformer.select(),
-  });
+  const record =
+    await MyGlobal.prisma.mall_platform_seller_accounts.findUniqueOrThrow({
+      where: { id: props.sellerId },
+      ...MallPlatformSellerTransformer.select(),
+    });
   return await MallPlatformSellerTransformer.transform(record);
 }
 
@@ -47,8 +46,8 @@ export async function getMallPlatformAdministratorSellersSellerId(props: {
 // 
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
-// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 // import { IMallPlatformSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerProfile";
+// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
@@ -56,7 +55,7 @@ export async function getMallPlatformAdministratorSellersSellerId(props: {
 //   administrator: AdministratorPayload;
 //   sellerId: string & tags.Format<"uuid">;
 // }): Promise<IMallPlatformSeller> {
-//   const record = await MyGlobal.prisma.mall_platform_sellers.findFirstOrThrow({
+//   const record = await MyGlobal.prisma.mall_platform_seller_accounts.findFirstOrThrow({
 //     ...MallPlatformSellerTransformer.select(),
 //     where: { ... },
 //   });

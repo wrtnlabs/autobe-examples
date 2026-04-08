@@ -1,4 +1,4 @@
-import { IEcommerceMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCancellationRequest";
+import { IEcommerceMallCancellationRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCancellationRequestSnapshot";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -9,7 +9,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
-import { EcommerceMallCancellationRequestTransformer } from "../transformers/EcommerceMallCancellationRequestTransformer";
+import { EcommerceMallCancellationRequestSnapshotTransformer } from "../transformers/EcommerceMallCancellationRequestSnapshotTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -17,39 +17,37 @@ export async function getEcommerceMallCustomerCancellationRequestsRequestIdSnaps
   customer: CustomerPayload;
   requestId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
-}): Promise<IEcommerceMallCancellationRequest> {
-  // Find the cancellation request to verify existence and get authorization context
+}): Promise<IEcommerceMallCancellationRequestSnapshot> {
+  // Query cancellation request to verify ownership
   const cancellationRequest =
-    await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findUniqueOrThrow(
-      {
-        where: { id: props.requestId },
-        select: {
-          id: true,
-          ecommerce_mall_customer_id: true,
-          ecommerce_mall_seller_id: true,
-        },
+    await MyGlobal.prisma.ecommerce_mall_cancellation_requests.findUnique({
+      where: { id: props.requestId },
+      select: {
+        id: true,
+        ecommerce_mall_customer_id: true,
       },
-    );
-  // Authorization: customer must be either the submitter or the seller who received the request
-  const isCustomerSubmitter =
-    cancellationRequest.ecommerce_mall_customer_id === props.customer.id;
-  const isSellerReceiver =
-    cancellationRequest.ecommerce_mall_seller_id === props.customer.id;
-  if (!isCustomerSubmitter && !isSellerReceiver) {
+    });
+  if (!cancellationRequest) {
+    throw new HttpException("Cancellation request not found", 404);
+  }
+  // Verify the customer owns this cancellation request
+  if (cancellationRequest.ecommerce_mall_customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // Find the snapshot by snapshotId matching the requestId
-  const record =
+  // Query the snapshot - findFirstOrThrow will handle 404 if not found
+  const snapshot =
     await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.findFirstOrThrow(
       {
-        ...EcommerceMallCancellationRequestTransformer.select(),
         where: {
           id: props.snapshotId,
           ecommerce_mall_cancellation_request_id: props.requestId,
         },
+        ...EcommerceMallCancellationRequestSnapshotTransformer.select(),
       },
     );
-  return await EcommerceMallCancellationRequestTransformer.transform(record);
+  return await EcommerceMallCancellationRequestSnapshotTransformer.transform(
+    snapshot,
+  );
 }
 
 
@@ -70,7 +68,7 @@ export async function getEcommerceMallCustomerCancellationRequestsRequestIdSnaps
 // import { toISOStringSafe } from "../utils/toISOStringSafe"
 // 
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-// import { IEcommerceMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCancellationRequest";
+// import { IEcommerceMallCancellationRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCancellationRequestSnapshot";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
@@ -78,12 +76,12 @@ export async function getEcommerceMallCustomerCancellationRequestsRequestIdSnaps
 //   customer: CustomerPayload;
 //   requestId: string & tags.Format<"uuid">;
 //   snapshotId: string & tags.Format<"uuid">;
-// }): Promise<IEcommerceMallCancellationRequest> {
+// }): Promise<IEcommerceMallCancellationRequestSnapshot> {
 //   const record = await MyGlobal.prisma.ecommerce_mall_cancellation_request_snapshots.findFirstOrThrow({
-//     ...EcommerceMallCancellationRequestTransformer.select(),
+//     ...EcommerceMallCancellationRequestSnapshotTransformer.select(),
 //     where: { ... },
 //   });
-//   return await EcommerceMallCancellationRequestTransformer.transform(record);
+//   return await EcommerceMallCancellationRequestSnapshotTransformer.transform(record);
 // }
 // ```
 //--------------------------------------------------------------

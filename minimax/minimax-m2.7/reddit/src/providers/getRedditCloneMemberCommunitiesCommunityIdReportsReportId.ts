@@ -20,24 +20,24 @@ export async function getRedditCloneMemberCommunitiesCommunityIdReportsReportId(
   communityId: string & tags.Format<"uuid">;
   reportId: string & tags.Format<"uuid">;
 }): Promise<IRedditCloneCommunityReport> {
-  // Verify the member is a moderator of this community
+  // Authorization: Verify member is a moderator of the community
   const moderator =
     await MyGlobal.prisma.reddit_clone_community_moderators.findFirst({
       where: {
-        reddit_clone_community_id: props.communityId,
         reddit_clone_member_id: props.member.id,
+        reddit_clone_community_id: props.communityId,
       },
     });
   if (!moderator) {
     throw new HttpException("Forbidden", 403);
   }
-  // Retrieve the report by id and communityId
+  // Query the report by id and community_id
   const record = await MyGlobal.prisma.reddit_clone_reports.findFirstOrThrow({
-    ...RedditCloneCommunityReportTransformer.select(),
     where: {
       id: props.reportId,
       reddit_clone_community_id: props.communityId,
     },
+    ...RedditCloneCommunityReportTransformer.select(),
   });
   return await RedditCloneCommunityReportTransformer.transform(record);
 }

@@ -2,33 +2,29 @@ import { Module } from "@nestjs/common";
 
 import { TodoappAuthGuestController } from "./controllers/todoApp/auth/guest/TodoappAuthGuestController";
 import { TodoappAuthMemberController } from "./controllers/todoApp/auth/member/TodoappAuthMemberController";
-import { TodoappGuestGuestsController } from "./controllers/todoApp/guest/guests/TodoappGuestGuestsController";
-import { TodoappGuestSessionsController } from "./controllers/todoApp/guest/sessions/TodoappGuestSessionsController";
-import { TodoappMemberEmail_verificationsController } from "./controllers/todoApp/member/email-verifications/TodoappMemberEmail_verificationsController";
-import { TodoappMemberMembersController } from "./controllers/todoApp/member/members/TodoappMemberMembersController";
+import { TodoappMemberAccountsController } from "./controllers/todoApp/member/accounts/TodoappMemberAccountsController";
 import { TodoappMemberPassword_resetsController } from "./controllers/todoApp/member/password-resets/TodoappMemberPassword_resetsController";
 import { TodoappMemberProfileController } from "./controllers/todoApp/member/profile/TodoappMemberProfileController";
+import { TodoappMemberSessionsController } from "./controllers/todoApp/member/sessions/TodoappMemberSessionsController";
 import { TodoappMemberTodosController } from "./controllers/todoApp/member/todos/TodoappMemberTodosController";
-import { TodoappMemberTodosCompletion_statusController } from "./controllers/todoApp/member/todos/completion-status/TodoappMemberTodosCompletion_statusController";
-import { TodoappMemberTodosHistoriesController } from "./controllers/todoApp/member/todos/histories/TodoappMemberTodosHistoriesController";
+import { TodoappMemberTodosEdithistoriesController } from "./controllers/todoApp/member/todos/editHistories/TodoappMemberTodosEdithistoriesController";
+import { TodoappMemberTodosPermanent_deleteController } from "./controllers/todoApp/member/todos/permanent-delete/TodoappMemberTodosPermanent_deleteController";
+import { TodoappMemberTodosRestoreController } from "./controllers/todoApp/member/todos/restore/TodoappMemberTodosRestoreController";
 import { TodoappMemberTodosTrashController } from "./controllers/todoApp/member/todos/trash/TodoappMemberTodosTrashController";
-import { TodoappMemberTodosTrashRestoreController } from "./controllers/todoApp/member/todos/trash/restore/TodoappMemberTodosTrashRestoreController";
 
 @Module({
   controllers: [
     TodoappAuthGuestController,
     TodoappAuthMemberController,
-    TodoappGuestGuestsController,
-    TodoappGuestSessionsController,
-    TodoappMemberMembersController,
-    TodoappMemberProfileController,
+    TodoappMemberAccountsController,
+    TodoappMemberSessionsController,
     TodoappMemberPassword_resetsController,
-    TodoappMemberEmail_verificationsController,
+    TodoappMemberProfileController,
     TodoappMemberTodosController,
     TodoappMemberTodosTrashController,
-    TodoappMemberTodosHistoriesController,
-    TodoappMemberTodosCompletion_statusController,
-    TodoappMemberTodosTrashRestoreController,
+    TodoappMemberTodosRestoreController,
+    TodoappMemberTodosPermanent_deleteController,
+    TodoappMemberTodosEdithistoriesController,
   ],
 })
 export class MyModule {}

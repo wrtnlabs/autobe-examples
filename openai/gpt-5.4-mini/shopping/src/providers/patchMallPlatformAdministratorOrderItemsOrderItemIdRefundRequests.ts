@@ -5,10 +5,10 @@ import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformRefundRequest";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIMallPlatformRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformRefundRequest";
 import { ArrayUtil } from "@nestia/e2e";
@@ -29,27 +29,17 @@ export async function patchMallPlatformAdministratorOrderItemsOrderItemIdRefundR
   orderItemId: string & tags.Format<"uuid">;
   body: IMallPlatformRefundRequest.IRequest;
 }): Promise<IPageIMallPlatformRefundRequest.ISummary> {
-  const orderItem =
-    await MyGlobal.prisma.mall_platform_order_items.findUniqueOrThrow({
-      where: { id: props.orderItemId },
-      select: {
-        id: true,
-        mall_platform_order_id: true,
-        mall_platform_seller_id: true,
-        deleted_at: true,
-      },
-    });
-  if (orderItem.deleted_at !== null) {
-    throw new HttpException("Forbidden", 403);
-  }
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
-  const skip = (page - 1) * limit;
-  const where: Prisma.mall_platform_refund_requestsWhereInput = {
-    mall_platform_order_item_id: props.orderItemId,
+  await MyGlobal.prisma.mall_platform_order_items.findUniqueOrThrow({
+    where: { id: props.orderItemId },
+    select: { id: true },
+  });
+  const page: number = props.body.page ?? 1;
+  const limit: number = props.body.limit ?? 100;
+  const skip: number = (page - 1) * limit;
+  const where = {
     deleted_at: null,
-    ...(props.body.status !== undefined ? { status: props.body.status } : {}),
-    ...(props.body.search !== undefined
+    mall_platform_order_item_id: props.orderItemId,
+    ...(props.body.search !== undefined && props.body.search.length > 0
       ? {
           OR: [
             { reason: { contains: props.body.search, mode: "insensitive" } },
@@ -59,42 +49,55 @@ export async function patchMallPlatformAdministratorOrderItemsOrderItemIdRefundR
           ],
         }
       : {}),
-    ...(props.body.reviewedAtFrom !== undefined ||
-    props.body.reviewedAtTo !== undefined
-      ? {
-          reviewed_at: {
-            ...(props.body.reviewedAtFrom !== undefined &&
-            props.body.reviewedAtFrom !== null
-              ? { gte: props.body.reviewedAtFrom }
-              : {}),
-            ...(props.body.reviewedAtTo !== undefined &&
-            props.body.reviewedAtTo !== null
-              ? { lte: props.body.reviewedAtTo }
-              : {}),
-          },
-        }
+    ...(props.body.status !== undefined ? { status: props.body.status } : {}),
+    ...(props.body.customerId !== undefined
+      ? { mall_platform_customer_id: props.body.customerId }
       : {}),
-    ...(props.body.createdAtFrom !== undefined ||
-    props.body.createdAtTo !== undefined
-      ? {
-          created_at: {
-            ...(props.body.createdAtFrom !== undefined &&
-            props.body.createdAtFrom !== null
-              ? { gte: props.body.createdAtFrom }
-              : {}),
-            ...(props.body.createdAtTo !== undefined &&
-            props.body.createdAtTo !== null
-              ? { lte: props.body.createdAtTo }
-              : {}),
-          },
-        }
+    ...(props.body.sellerId !== undefined
+      ? { mall_platform_seller_id: props.body.sellerId }
       : {}),
-  };
+    ...(props.body.administratorId !== undefined
+      ? { mall_platform_administrator_id: props.body.administratorId }
+      : {}),
+    ...(props.body.hasReviewed === undefined &&
+    props.body.reviewedAtFrom === undefined &&
+    props.body.reviewedAtTo === undefined
+      ? {}
+      : {
+          reviewed_at:
+            props.body.hasReviewed === false
+              ? null
+              : {
+                  ...(props.body.hasReviewed === true ? { not: null } : {}),
+                  ...(props.body.reviewedAtFrom !== undefined
+                    ? { gte: props.body.reviewedAtFrom }
+                    : {}),
+                  ...(props.body.reviewedAtTo !== undefined
+                    ? { lte: props.body.reviewedAtTo }
+                    : {}),
+                },
+        }),
+  } satisfies Prisma.mall_platform_refund_requestsWhereInput;
+  const orderBy = (
+    props.body.sort === "reviewedAtAsc"
+      ? { reviewed_at: "asc" }
+      : props.body.sort === "reviewedAtDesc"
+        ? { reviewed_at: "desc" }
+        : props.body.sort === "updatedAtAsc"
+          ? { updated_at: "asc" }
+          : props.body.sort === "updatedAtDesc"
+            ? { updated_at: "desc" }
+            : props.body.sort === "statusAsc"
+              ? { status: "asc" }
+              : props.body.sort === "statusDesc"
+                ? { status: "desc" }
+                : { created_at: "desc" }
+  ) satisfies Prisma.mall_platform_refund_requestsOrderByWithRelationInput;
   const records = await MyGlobal.prisma.mall_platform_refund_requests.findMany({
     where,
+    orderBy,
     skip,
     take: limit,
-    orderBy: [{ created_at: "desc" }, { id: "desc" }],
     ...MallPlatformRefundRequestAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.mall_platform_refund_requests.count({
@@ -140,9 +143,9 @@ export async function patchMallPlatformAdministratorOrderItemsOrderItemIdRefundR
 // import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 // import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 // import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 // import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
-// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
+// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 // import { IMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministrator";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,

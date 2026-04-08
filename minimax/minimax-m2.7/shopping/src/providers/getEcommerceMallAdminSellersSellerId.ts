@@ -18,29 +18,17 @@ export async function getEcommerceMallAdminSellersSellerId(props: {
   admin: AdminPayload;
   sellerId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallSeller.IInvert> {
-  // Query seller with profile using transformer select
   const record = await MyGlobal.prisma.ecommerce_mall_sellers.findFirstOrThrow({
-    ...EcommerceMallSellerAtInvertTransformer.select(),
     where: {
       id: props.sellerId,
+      approval_status: "approved",
       deleted_at: null,
+      profile: {
+        deleted_at: null,
+      },
     },
+    ...EcommerceMallSellerAtInvertTransformer.select(),
   });
-  // If seller is not approved, return basic info with null profile
-  if (record.approval_status !== "approved") {
-    return {
-      id: record.id,
-      approvalStatus: record.approval_status,
-      createdAt: toISOStringSafe(record.created_at),
-      updatedAt: toISOStringSafe(record.updated_at),
-      profile: typia.assert<IEcommerceMallSeller.IInvert["profile"]>(null),
-    } satisfies IEcommerceMallSeller.IInvert;
-  }
-  // For approved sellers, validate profile exists and is not deleted
-  if (record.profile === null || record.profile.deleted_at !== null) {
-    throw new HttpException("Seller profile not found", 404);
-  }
-  // Return full data with profile for approved sellers
   return await EcommerceMallSellerAtInvertTransformer.transform(record);
 }
 

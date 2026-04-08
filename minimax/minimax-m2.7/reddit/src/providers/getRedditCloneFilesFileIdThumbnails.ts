@@ -15,25 +15,33 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getRedditCloneFilesFileIdThumbnails(props: {
   fileId: string & tags.Format<"uuid">;
 }): Promise<IRedditCloneFileThumbnail> {
-  // Verify file exists and is not soft-deleted (404 if missing or deleted)
-  await MyGlobal.prisma.reddit_clone_files.findUniqueOrThrow({
-    where: { id: props.fileId, deleted_at: null },
-    select: { id: true },
+  // Verify file exists and is not soft-deleted
+  await MyGlobal.prisma.reddit_clone_files.findFirstOrThrow({
+    where: {
+      id: props.fileId,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+    },
   });
-  // Query thumbnails ordered by variant name
+  // Query thumbnails for the file, ordered by variant name
   const thumbnails =
     await MyGlobal.prisma.reddit_clone_file_thumbnails.findMany({
-      where: { reddit_clone_file_id: props.fileId },
-      orderBy: { variant: "asc" },
+      where: {
+        reddit_clone_file_id: props.fileId,
+      },
+      orderBy: {
+        variant: "asc",
+      },
       ...RedditCloneFileThumbnailAtSummaryTransformer.select(),
     });
-  const transformedItems = await ArrayUtil.asyncMap(
-    thumbnails,
-    RedditCloneFileThumbnailAtSummaryTransformer.transform,
+  // Transform the first thumbnail result
+  const item = await RedditCloneFileThumbnailAtSummaryTransformer.transform(
+    thumbnails[0],
   );
-  // Return with type assertion since interface has wrong type for items
   return {
-    items: transformedItems as unknown as IRedditCloneFileThumbnail["items"],
+    items: typia.assert<IRedditCloneFileThumbnail["items"]>(item),
   };
 }
 

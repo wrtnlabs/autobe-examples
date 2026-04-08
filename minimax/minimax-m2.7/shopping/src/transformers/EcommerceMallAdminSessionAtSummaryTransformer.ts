@@ -2,6 +2,7 @@ import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IE
 import { IEcommerceMallAdminSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminSession";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -35,11 +36,12 @@ export namespace EcommerceMallAdminSessionAtSummaryTransformer {
       admin: await EcommerceMallAdminAtSummaryTransformer.transform(
         input.admin,
       ),
-      ip: input.ip,
-      href: input.href,
-      referrer: input.referrer,
       createdAt: input.created_at.toISOString(),
       expiredAt: input.expired_at.toISOString(),
+      href: input.href,
+      ip: input.ip,
+      isActive: input.expired_at > new Date(),
+      referrer: input.referrer,
     } satisfies IEcommerceMallAdminSession.ISummary;
   }
 }
@@ -70,11 +72,12 @@ export namespace EcommerceMallAdminSessionAtSummaryTransformer {
 //         return {
 //   id: {string},
 //   admin: await EcommerceMallAdminAtSummaryTransformer.transform(input.admin),
-//   ip: {string},
-//   href: {string},
-//   referrer: {string},
 //   createdAt: {string},
 //   expiredAt: {string},
+//   href: {string},
+//   ip: {string},
+//   isActive: {boolean},
+//   referrer: {string},
 //         };
 //       }
 //     }

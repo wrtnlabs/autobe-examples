@@ -11,7 +11,6 @@ export namespace EcommerceMallProductVariantOptionValueCollector {
   export async function collect(props: {
     body: IEcommerceMallProductVariantOptionValue.ICreate;
     ecommerceMallProductVariants: IEntity;
-    ecommerceMallProducts: IEntity;
     ecommerceMallSellers: IEntity;
     ecommerceMallSellerSessions: IEntity;
   }) {
@@ -36,7 +35,6 @@ export namespace EcommerceMallProductVariantOptionValueCollector {
 //         export async function collect(props: {
 //           body: IEcommerceMallProductVariantOptionValue.ICreate;
 //           ecommerceMallProductVariants: IEntity; // from path parameter variantId
-// ecommerceMallProducts: IEntity; // from path parameter productId
 // ecommerceMallSellers: IEntity; // from authorized actor
 // ecommerceMallSellerSessions: IEntity; // from authorized session
 //           

@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 import { IMallPlatformShoppingCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShoppingCart";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -22,11 +23,6 @@ export namespace MallPlatformShoppingCartAtSummaryTransformer {
         updated_at: true,
         deleted_at: true,
         customer: MallPlatformCustomerAtSummaryTransformer.select(),
-        cartItems: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.mall_platform_cart_itemsFindManyArgs,
       },
     } satisfies Prisma.mall_platform_shopping_cartsFindManyArgs;
   }
@@ -38,9 +34,9 @@ export namespace MallPlatformShoppingCartAtSummaryTransformer {
       customer: await MallPlatformCustomerAtSummaryTransformer.transform(
         input.customer,
       ),
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     } satisfies IMallPlatformShoppingCart.ISummary;
   }
 }
@@ -69,9 +65,9 @@ export namespace MallPlatformShoppingCartAtSummaryTransformer {
 //         return {
 //   id: {string},
 //   customer: await MallPlatformCustomerAtSummaryTransformer.transform(input.customer),
-//   createdAt: {string},
-//   updatedAt: {string},
-//   deletedAt: {string | null},
+//   created_at: {string},
+//   updated_at: {string},
+//   deleted_at: {string | null},
 //         };
 //       }
 //     }

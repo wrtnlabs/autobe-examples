@@ -17,30 +17,22 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postMallPlatformAuthSellerRefresh(props: {
   body: IMallPlatformSeller.IRefresh;
 }): Promise<IMallPlatformSeller.IAuthorized> {
-  const decoded: unknown = await new Promise((resolve, reject) => {
-    jwt.verify(
-      props.body.refreshToken,
-      MyGlobal.env.JWT_SECRET_KEY,
-      { issuer: "autobe" },
-      (error, payload) => {
-        if (error) {
-          reject(new HttpException("Invalid or expired refresh token", 401));
-          return;
-        }
-        resolve(payload);
-      },
-    );
-  });
+  const decoded: unknown = jwt.verify(
+    props.body.refreshToken,
+    MyGlobal.env.JWT_SECRET_KEY,
+    { issuer: "autobe" },
+  );
   if (
-    decoded === null ||
     typeof decoded !== "object" ||
+    decoded === null ||
+    !("type" in decoded) ||
     !("id" in decoded) ||
     !("session_id" in decoded) ||
-    !("type" in decoded) ||
+    !("created_at" in decoded) ||
+    decoded.type !== "seller" ||
     typeof decoded.id !== "string" ||
     typeof decoded.session_id !== "string" ||
-    typeof decoded.type !== "string" ||
-    decoded.type !== "seller"
+    typeof decoded.created_at !== "string"
   ) {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
@@ -48,11 +40,14 @@ export async function postMallPlatformAuthSellerRefresh(props: {
     {
       where: {
         id: decoded.session_id,
-        mall_platform_seller_id: decoded.id,
+        seller: {
+          is: { id: decoded.id },
+        },
       },
       select: {
         id: true,
-        mall_platform_seller_id: true,
+        seller: true,
+        expired_at: true,
       },
     },
   );
@@ -66,80 +61,62 @@ export async function postMallPlatformAuthSellerRefresh(props: {
       email: true,
       status: true,
       rejection_reason: true,
+      deleted_at: true,
       created_at: true,
       updated_at: true,
-      deleted_at: true,
     },
   });
   if (seller.deleted_at !== null) {
     throw new HttpException("Account has been deleted", 403);
   }
-  const issuedAt = toISOStringSafe(seller.updated_at) as string &
-    tags.Format<"date-time">;
-  const accessExpiresAt = toISOStringSafe(seller.created_at) as string &
-    tags.Format<"date-time">;
-  const refreshExpiresAt = toISOStringSafe(seller.created_at) as string &
-    tags.Format<"date-time">;
-  const status: IMallPlatformSellerAccount = {
-    status:
-      seller.status === "pending" ||
-      seller.status === "approved" ||
-      seller.status === "rejected"
-        ? seller.status
-        : "pending",
-    rejectionReason: seller.rejection_reason,
-  };
-  const token: IAuthorizationToken = {
-    access: jwt.sign(
-      {
-        type: "seller",
-        id: seller.id,
-        session_id: session.id,
-        created_at: issuedAt,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { issuer: "autobe", expiresIn: "1h" },
-    ),
-    refresh: jwt.sign(
-      {
-        type: "seller",
-        id: seller.id,
-        session_id: session.id,
-        created_at: issuedAt,
-      },
-      MyGlobal.env.JWT_SECRET_KEY,
-      { issuer: "autobe", expiresIn: "7d" },
-    ),
-    expired_at: accessExpiresAt,
-    refreshable_until: refreshExpiresAt,
-  };
+  if (seller.status !== "approved" && seller.status !== "active") {
+    throw new HttpException("Seller account is not eligible for access", 403);
+  }
+  const issuedAt = toISOStringSafe(new Date());
+  const accessExpiredAt = toISOStringSafe(
+    new Date(Date.now() + 60 * 60 * 1000),
+  );
+  const refreshableUntil = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+  await MyGlobal.prisma.mall_platform_seller_sessions.update({
+    where: { id: session.id },
+    data: { expired_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+  });
   return {
     id: seller.id,
     email: seller.email,
-    status,
+    status: seller.status,
     rejectionReason: seller.rejection_reason,
-    sellerProfile: {
-      id: seller.id,
-      sellerAccount: {
-        id: seller.id,
-        email: seller.email,
-        status: status.status,
-        rejectionReason: status.rejectionReason,
-        createdAt: toISOStringSafe(seller.created_at),
-        updatedAt: toISOStringSafe(seller.updated_at),
-        deletedAt: null,
-      },
-      shopName: "",
-      shopDescription: "",
-      logoImageUri: null,
-      createdAt: toISOStringSafe(seller.created_at),
-      updatedAt: toISOStringSafe(seller.updated_at),
-      deletedAt: null,
-    },
+    suspendedAt: null,
+    deletedAt: null,
     createdAt: toISOStringSafe(seller.created_at),
     updatedAt: toISOStringSafe(seller.updated_at),
-    deletedAt: null,
-    token,
+    sellerProfile: null,
+    token: {
+      access: jwt.sign(
+        {
+          type: "seller",
+          id: seller.id,
+          session_id: session.id,
+          created_at: issuedAt,
+        },
+        MyGlobal.env.JWT_SECRET_KEY,
+        { expiresIn: "1h", issuer: "autobe" },
+      ),
+      refresh: jwt.sign(
+        {
+          type: "seller",
+          id: seller.id,
+          session_id: session.id,
+          created_at: issuedAt,
+        },
+        MyGlobal.env.JWT_SECRET_KEY,
+        { expiresIn: "7d", issuer: "autobe" },
+      ),
+      expired_at: accessExpiredAt,
+      refreshable_until: refreshableUntil,
+    },
   };
 }
 
@@ -162,8 +139,8 @@ export async function postMallPlatformAuthSellerRefresh(props: {
 // 
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
-// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 // import { IMallPlatformSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerProfile";
+// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 // import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
@@ -174,12 +151,13 @@ export async function postMallPlatformAuthSellerRefresh(props: {
 //   return {
 //     id: ...,
 //     email: ...,
-//     status: await MallPlatformSellerAccountTransformer.transform(...),
+//     status: ...,
 //     rejectionReason: ...,
-//     sellerProfile: await MallPlatformSellerProfileTransformer.transform(...),
+//     suspendedAt: ...,
+//     deletedAt: ...,
 //     createdAt: ...,
 //     updatedAt: ...,
-//     deletedAt: ...,
+//     sellerProfile: await MallPlatformSellerProfileTransformer.transform(...),
 //     token: ...,
 //   };
 // }

@@ -12,14 +12,14 @@ export async function guestAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const guestSession = await MyGlobal.prisma.reddit_platform_guest_sessions.findFirst({
+  const guest = await MyGlobal.prisma.reddit_community_guests.findFirst({
     where: {
-      id: payload.session_id,
-      expired_at: { gt: new Date() },
+      id: payload.id,
+      deleted_at: null,
     },
   });
 
-  if (guestSession === null) {
+  if (guest === null) {
     throw new ForbiddenException("You're not enrolled");
   }
 

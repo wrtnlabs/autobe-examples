@@ -12,6 +12,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { RedditClonePostVoteTransformer } from "../transformers/RedditClonePostVoteTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -21,15 +22,9 @@ export async function putRedditCloneMemberRedditClonePostsPostIdVotesVoteId(prop
   voteId: string & tags.Format<"uuid">;
   body: IRedditClonePostVote;
 }): Promise<IRedditClonePostVote> {
-  const post = await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
-    where: { id: props.postId },
-    select: { deleted_at: true, reddit_clone_member_id: true },
-  });
-  if (post.deleted_at !== null) {
-    throw new HttpException("Post not found", 404);
-  }
-  const existingVote =
-    await MyGlobal.prisma.reddit_clone_post_votes.findUniqueOrThrow({
+  // 1. Find the existing vote
+  const existingVote = await MyGlobal.prisma.reddit_clone_post_votes.findUnique(
+    {
       where: { id: props.voteId },
       select: {
         id: true,
@@ -37,126 +32,92 @@ export async function putRedditCloneMemberRedditClonePostsPostIdVotesVoteId(prop
         reddit_clone_post_id: true,
         direction: true,
       },
-    });
+    },
+  );
+  // 2. Verify vote exists
+  if (!existingVote) {
+    throw new HttpException("Vote not found", 404);
+  }
+  // 3. Verify vote belongs to authenticated member
   if (existingVote.reddit_clone_member_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  if (existingVote.reddit_clone_post_id !== props.postId) {
+  // 4. Verify post exists and is not deleted
+  const post = await MyGlobal.prisma.reddit_clone_posts.findUnique({
+    where: { id: props.postId },
+    select: {
+      id: true,
+      reddit_clone_member_id: true,
+      vote_score: true,
+      deleted_at: true,
+    },
+  });
+  if (!post || post.deleted_at !== null) {
     throw new HttpException("Post not found", 404);
   }
-  const authorId = post.reddit_clone_member_id;
+  // 5. Calculate score adjustment based on direction change
   const currentDirection = existingVote.direction;
   const newDirection = props.body.direction;
-  const adjustment = currentDirection === newDirection ? 0 : 2;
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    await tx.reddit_clone_post_votes.update({
+  let scoreAdjustment: number;
+  if (currentDirection === newDirection) {
+    scoreAdjustment = 0;
+  } else if (currentDirection === "upvote" && newDirection === "downvote") {
+    scoreAdjustment = -2;
+  } else if (currentDirection === "downvote" && newDirection === "upvote") {
+    scoreAdjustment = 2;
+  } else {
+    scoreAdjustment = 0;
+  }
+  // 6. Use Date object for Prisma (required at runtime), store ISO string for reference
+  const nowString = new Date().toISOString();
+  const nowDate = new Date();
+  // 7. Execute transaction to atomically update vote, post score, and author karma
+  const updatedVote = await MyGlobal.prisma.$transaction(async (tx) => {
+    // Update the vote record
+    const vote = await tx.reddit_clone_post_votes.update({
       where: { id: props.voteId },
       data: {
         direction: newDirection,
-        updated_at: new Date(),
+        updated_at: nowDate,
       },
+      ...RedditClonePostVoteTransformer.select(),
     });
-    if (adjustment !== 0) {
+    // Update post score and author karma if direction changed
+    if (scoreAdjustment !== 0) {
       await tx.reddit_clone_posts.update({
         where: { id: props.postId },
         data: {
-          vote_score: {
-            increment: newDirection === "upvote" ? adjustment : -adjustment,
+          vote_score: { increment: scoreAdjustment },
+          updated_at: nowDate,
+        },
+      });
+      const existingKarma = await tx.reddit_clone_user_karmas.findUnique({
+        where: { reddit_clone_member_id: post.reddit_clone_member_id },
+      });
+      if (existingKarma) {
+        await tx.reddit_clone_user_karmas.update({
+          where: { reddit_clone_member_id: post.reddit_clone_member_id },
+          data: {
+            karma_score: { increment: scoreAdjustment },
+            updated_at: nowDate,
           },
-        },
-      });
-      const memberKarma = await tx.reddit_clone_user_karmas.findUniqueOrThrow({
-        where: { reddit_clone_member_id: authorId },
-      });
-      const karmaAdjustment =
-        newDirection === "upvote" ? adjustment : -adjustment;
-      await tx.reddit_clone_user_karmas.update({
-        where: { id: memberKarma.id },
-        data: {
-          karma_score: { increment: karmaAdjustment },
-        },
-      });
+        });
+      } else {
+        const karmaId = typia.assert<string & tags.Format<"uuid">>(v4());
+        await tx.reddit_clone_user_karmas.create({
+          data: {
+            id: karmaId,
+            reddit_clone_member_id: post.reddit_clone_member_id,
+            karma_score: scoreAdjustment,
+            created_at: nowDate,
+            updated_at: nowDate,
+          },
+        });
+      }
     }
+    return vote;
   });
-  const updated =
-    await MyGlobal.prisma.reddit_clone_post_votes.findUniqueOrThrow({
-      where: { id: props.voteId },
-      select: {
-        id: true,
-        direction: true,
-        created_at: true,
-        updated_at: true,
-        member: {
-          select: {
-            id: true,
-            username: true,
-          },
-        },
-        post: {
-          select: {
-            id: true,
-            title: true,
-            type: true,
-            vote_score: true,
-            comment_count: true,
-            created_at: true,
-            author: {
-              select: {
-                id: true,
-                username: true,
-              },
-            },
-            community: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
-                subscriber_count: true,
-                member: {
-                  select: {
-                    id: true,
-                    username: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-  return {
-    id: updated.id,
-    direction: updated.direction,
-    created_at: updated.created_at.toISOString(),
-    updated_at: updated.updated_at.toISOString(),
-    member: {
-      id: updated.member.id,
-      username: updated.member.username,
-    } satisfies IRedditCloneMember.ISummary,
-    post: {
-      id: updated.post.id,
-      title: updated.post.title,
-      type: updated.post.type as "text" | "link" | "image",
-      contentPreview: "",
-      voteScore: updated.post.vote_score,
-      commentCount: updated.post.comment_count,
-      createdAt: updated.post.created_at.toISOString(),
-      author: {
-        id: updated.post.author.id,
-        username: updated.post.author.username,
-      } satisfies IRedditCloneMember.ISummary,
-      community: {
-        id: updated.post.community.id,
-        name: updated.post.community.name,
-        description: updated.post.community.description,
-        subscriberCount: updated.post.community.subscriber_count,
-        owner: {
-          id: updated.post.community.member.id,
-          username: updated.post.community.member.username,
-        } satisfies IRedditCloneMember.ISummary,
-      } satisfies IRedditCloneCommunity.ISummary,
-    } satisfies IRedditClonePost.ISummary,
-  };
+  return await RedditClonePostVoteTransformer.transform(updatedVote);
 }
 
 

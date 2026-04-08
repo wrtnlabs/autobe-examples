@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCloneCommunityModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunityModerator";
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -24,7 +25,9 @@ export namespace RedditCloneCommunityModeratorAtSummaryTransformer {
         community: true,
         member: RedditCloneMemberAtSummaryTransformer.select(),
         assigner: RedditCloneMemberAtSummaryTransformer.select(),
-        issuedBans: true,
+        issuedBans: {
+          select: { id: true },
+        } satisfies Prisma.reddit_clone_community_bansFindManyArgs,
       },
     } satisfies Prisma.reddit_clone_community_moderatorsFindManyArgs;
   }

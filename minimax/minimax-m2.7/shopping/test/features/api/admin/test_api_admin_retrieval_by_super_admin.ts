@@ -9,55 +9,67 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
+import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
+import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
 import { authorize_super_admin_join } from "../../../authorize/authorize_super_admin_join";
 import { authorize_super_admin_login } from "../../../authorize/authorize_super_admin_login";
 import { authorize_super_admin_refresh } from "../../../authorize/authorize_super_admin_refresh";
 
+/**
+ * Test that a super administrator can successfully retrieve detailed information
+ * for another administrator account.
+ *
+ * Validates the super admin's ability to view complete administrator profiles.
+ * The retrieved information includes id, email, name, created_at, and updated_at
+ * fields. Critically, password_hash must NOT be included in the response for
+ * security reasons. The deleted_at field should be null for active accounts.
+ *
+ * 1. Create a regular admin account via admin join.
+ * 2. Authenticate as super administrator.
+ * 3. Call the admin retrieval endpoint with the regular admin's UUID.
+ * 4. Validate response contains required fields and excludes password_hash.
+ */
 export async function test_api_admin_retrieval_by_super_admin(
   connection: api.IConnection,
 ): Promise<void> {
-  // Step 1: Create a super admin session to authenticate
-  const authenticatorConnection: api.IConnection = { host: connection.host };
-  const authenticator = await authorize_super_admin_join(
-    authenticatorConnection,
-    {},
+  // 1. Create a regular admin account
+  const adminConnection: api.IConnection = { host: connection.host };
+  const adminAuthorized = await authorize_admin_join(adminConnection, {});
+  // 2. Authenticate as super administrator
+  const superAdminConnection: api.IConnection = { host: connection.host };
+  await authorize_super_admin_join(superAdminConnection, {});
+  // 3. Retrieve the admin details using the super admin's credentials
+  const admin = await api.functional.ecommerceMall.superAdmin.admin.admins.at(
+    superAdminConnection,
+    {
+      adminId: adminAuthorized.id,
+    },
   );
-  // Step 2: Create another admin account (target admin to retrieve)
-  const targetConnection: api.IConnection = { host: connection.host };
-  const targetAdmin = await authorize_super_admin_join(targetConnection, {});
-  // Step 3: Retrieve the target admin's details using the authenticated super admin
-  const retrievedAdmin =
-    await api.functional.ecommerceMall.superAdmin.superAdmin.admins.at(
-      authenticatorConnection,
-      {
-        adminId: targetAdmin.id,
-      },
-    );
-  typia.assert(retrievedAdmin);
-  // Step 4 & 5: Validate the retrieved admin details match the created account
-  TestValidator.equals(
-    "retrieved admin id matches",
-    retrievedAdmin.id,
-    targetAdmin.id,
+  // 4. Validate response
+  typia.assert(admin);
+  // Verify retrieved admin matches the created admin
+  TestValidator.equals("admin id matches", admin.id, adminAuthorized.id);
+  TestValidator.equals("email matches", admin.email, adminAuthorized.email);
+  TestValidator.equals("name matches", admin.name, adminAuthorized.name);
+  // Verify timestamp fields exist
+  TestValidator.predicate(
+    "has created_at",
+    (admin.created_at?.length ?? 0) > 0,
   );
-  TestValidator.equals(
-    "retrieved admin email matches",
-    retrievedAdmin.email,
-    targetAdmin.email,
+  TestValidator.predicate(
+    "has updated_at",
+    (admin.updated_at?.length ?? 0) > 0,
   );
+  // Security: password_hash must NOT be in response
+  TestValidator.predicate(
+    "password_hash not exposed",
+    !("password_hash" in admin) || admin.password_hash === undefined,
+  );
+  // Active account check: deleted_at should be null
   TestValidator.equals(
-    "retrieved admin deleted_at is null",
-    retrievedAdmin.deleted_at,
+    "deleted_at is null for active account",
+    admin.deleted_at,
     null,
-  );
-  TestValidator.predicate(
-    "retrieved admin has valid created_at",
-    retrievedAdmin.created_at !== null &&
-      retrievedAdmin.created_at !== undefined,
-  );
-  TestValidator.predicate(
-    "retrieved admin has valid updated_at",
-    retrievedAdmin.updated_at !== null &&
-      retrievedAdmin.updated_at !== undefined,
   );
 }

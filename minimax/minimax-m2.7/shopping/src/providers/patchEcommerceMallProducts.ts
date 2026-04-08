@@ -1,9 +1,7 @@
-import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
-import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
 import { IPageIEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallProduct";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -23,23 +21,13 @@ export async function patchEcommerceMallProducts(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const whereClause = {
+  const whereInput = {
     deleted_at: null,
-    ...(props.body.q && {
-      OR: [
-        {
-          name: { contains: props.body.q, mode: Prisma.QueryMode.insensitive },
-        },
-        {
-          description: {
-            contains: props.body.q,
-            mode: Prisma.QueryMode.insensitive,
-          },
-        },
-      ],
+    ...(props.body.query && {
+      name: { contains: props.body.query, mode: "insensitive" },
     }),
-    ...(props.body.categoryId && {
-      ecommerce_mall_category_id: props.body.categoryId,
+    ...(props.body.category && {
+      ecommerce_mall_category_id: props.body.category,
     }),
     ...(props.body.minPrice !== undefined && {
       base_price: { gte: props.body.minPrice },
@@ -47,7 +35,7 @@ export async function patchEcommerceMallProducts(props: {
     ...(props.body.maxPrice !== undefined && {
       base_price: { lte: props.body.maxPrice },
     }),
-    ...(props.body.inStock === true && {
+    ...(props.body.inStock && {
       variants: {
         some: {
           quantity: { gt: 0 },
@@ -62,31 +50,28 @@ export async function patchEcommerceMallProducts(props: {
         ? { base_price: "desc" as const }
         : { created_at: "desc" as const }
   ) satisfies Prisma.ecommerce_mall_productsOrderByWithRelationInput;
-  const data = await MyGlobal.prisma.ecommerce_mall_products.findMany({
-    where: whereClause,
+  const records = await MyGlobal.prisma.ecommerce_mall_products.findMany({
+    where: whereInput,
+    orderBy: orderByInput,
     skip,
     take: limit,
-    orderBy: orderByInput,
     ...EcommerceMallProductAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.ecommerce_mall_products.count({
-    where: whereClause,
+    where: whereInput,
   });
   return {
     pagination: {
-      pagination: {
-        current: page,
-        limit: limit,
-        records: total,
-        pages: Math.ceil(total / limit),
-      },
-      data: [],
-    },
+      current: page,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
-      data,
+      records,
       EcommerceMallProductAtSummaryTransformer.transform,
     ),
-  };
+  } satisfies IPageIEcommerceMallProduct.ISummary;
 }
 
 
@@ -109,10 +94,8 @@ export async function patchEcommerceMallProducts(props: {
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 // import { IPageIEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallProduct";
-// import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
 // import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-// import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
-// import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.

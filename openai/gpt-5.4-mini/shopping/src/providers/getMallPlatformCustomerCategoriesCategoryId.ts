@@ -19,11 +19,11 @@ export async function getMallPlatformCustomerCategoriesCategoryId(props: {
 }): Promise<IMallPlatformCategory> {
   const record =
     await MyGlobal.prisma.mall_platform_categories.findFirstOrThrow({
+      ...MallPlatformCategoryTransformer.select(),
       where: {
         id: props.categoryId,
         deleted_at: null,
       },
-      ...MallPlatformCategoryTransformer.select(),
     });
   return await MallPlatformCategoryTransformer.transform(record);
 }

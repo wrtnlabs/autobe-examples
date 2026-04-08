@@ -30,68 +30,46 @@ export async function postRedditCloneMemberCommunitiesCommunityIdReportsReportId
       },
     });
   if (!moderator) {
-    throw new HttpException(
-      "Forbidden - You are not a moderator of this community",
-      403,
-    );
+    throw new HttpException("You are not a moderator of this community", 403);
   }
-  // Step 2: Find the report
-  const report = await MyGlobal.prisma.reddit_clone_community_reports.findFirst(
-    {
-      where: {
-        id: props.reportId,
-        reddit_clone_community_id: props.communityId,
-      },
-      select: {
-        id: true,
-        target_type: true,
-        target_id: true,
-        status: true,
-      },
+  // Step 2: Report lookup - verify report exists and belongs to community
+  const report = await MyGlobal.prisma.reddit_clone_reports.findFirst({
+    where: {
+      id: props.reportId,
+      reddit_clone_community_id: props.communityId,
     },
-  );
+    ...RedditCloneCommunityReportTransformer.select(),
+  });
   if (!report) {
     throw new HttpException("Report not found", 404);
   }
-  // Step 3: Idempotent - if not pending, return report as-is
+  // Step 3: Idempotent - if already approved or dismissed, return success
   if (report.status !== "pending") {
-    const existingReport =
-      await MyGlobal.prisma.reddit_clone_community_reports.findUniqueOrThrow({
-        where: { id: props.reportId },
-        ...RedditCloneCommunityReportTransformer.select(),
-      });
-    return await RedditCloneCommunityReportTransformer.transform(
-      existingReport,
-    );
+    return await RedditCloneCommunityReportTransformer.transform(report);
   }
-  // Step 4: Soft delete the reported content based on target_type
+  // Step 4: Content deletion - soft delete based on target_type
+  const now = new Date();
   if (report.target_type === "post") {
     await MyGlobal.prisma.reddit_clone_posts.update({
       where: { id: report.target_id },
-      data: { deleted_at: new Date() },
+      data: { deleted_at: now },
     });
   } else if (report.target_type === "comment") {
     await MyGlobal.prisma.reddit_clone_comments.update({
       where: { id: report.target_id },
-      data: { deleted_at: new Date() },
+      data: { deleted_at: now },
     });
   }
-  // Step 5: Update report status
-  await MyGlobal.prisma.reddit_clone_community_reports.update({
+  // Step 5: Report update - set status to approved
+  const updatedReport = await MyGlobal.prisma.reddit_clone_reports.update({
     where: { id: props.reportId },
     data: {
       status: "approved",
-      resolved_by_id: props.member.id,
-      resolved_at: new Date(),
-      updated_at: new Date(),
+      updated_at: now,
     },
+    ...RedditCloneCommunityReportTransformer.select(),
   });
-  // Step 6: Return updated report
-  const updatedReport =
-    await MyGlobal.prisma.reddit_clone_community_reports.findUniqueOrThrow({
-      where: { id: props.reportId },
-      ...RedditCloneCommunityReportTransformer.select(),
-    });
+  // Step 6: Response
   return await RedditCloneCommunityReportTransformer.transform(updatedReport);
 }
 

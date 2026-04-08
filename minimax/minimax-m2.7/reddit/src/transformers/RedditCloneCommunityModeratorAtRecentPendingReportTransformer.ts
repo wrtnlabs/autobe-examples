@@ -6,6 +6,7 @@ import { IRedditCloneFileAssociation } from "@ORGANIZATION/PROJECT-api/lib/struc
 import { IRedditCloneFileThumbnail } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileThumbnail";
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -27,35 +28,12 @@ export namespace RedditCloneCommunityModeratorAtRecentPendingReportTransformer {
         target_id: true,
         reason: true,
         status: true,
-        created_at: true,
-        reporter: RedditCloneMemberTransformer.select(),
-        community: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            subscriber_count: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
-            member: {
-              select: {
-                id: true,
-                username: true,
-              },
-            },
-            icon: true,
-          },
-        },
         resolution_note: true,
         resolved_at: true,
+        created_at: true,
         updated_at: true,
-        resolvedBy: {
-          select: {
-            id: true,
-            username: true,
-          },
-        },
+        community: RedditCloneCommunityAtSummaryTransformer.select(),
+        reporter: RedditCloneMemberTransformer.select(),
       },
     } satisfies Prisma.reddit_clone_community_reportsFindManyArgs;
   }
@@ -71,7 +49,7 @@ export namespace RedditCloneCommunityModeratorAtRecentPendingReportTransformer {
       createdAt: toISOStringSafe(input.created_at),
       reporter: await RedditCloneMemberTransformer.transform(input.reporter),
       community: await RedditCloneCommunityAtSummaryTransformer.transform(
-        input.community as any,
+        input.community,
       ),
     } satisfies IRedditCloneCommunityModerator.IRecentPendingReport;
   }
@@ -89,11 +67,17 @@ export namespace RedditCloneCommunityModeratorAtRecentPendingReportTransformer {
 //         return {
 //           select: {
 //             id: true,
-//             targetType: true,
-//             targetId: true,
+//             target_type: true,
+//             target_id: true,
 //             reason: true,
 //             status: true,
-//             createdAt: true,
+//             resolution_note: true,
+//             resolved_at: true,
+//             created_at: true,
+//             updated_at: true,
+//             community: RedditCloneCommunityAtSummaryTransformer.select(),
+//             reporter_id: true,
+//             resolved_by_id: true,
 //             ...
 //           },
 //         } satisfies Prisma.reddit_clone_community_reportsFindManyArgs;
@@ -108,7 +92,7 @@ export namespace RedditCloneCommunityModeratorAtRecentPendingReportTransformer {
 //   status: {string},
 //   createdAt: {string},
 //   reporter: {IRedditCloneMember},
-//   community: {IRedditCloneCommunity.ISummary},
+//   community: await RedditCloneCommunityAtSummaryTransformer.transform(input.community),
 //         };
 //       }
 //     }

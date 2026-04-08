@@ -20,27 +20,19 @@ export async function getMallPlatformAdministratorOrderItemsOrderItemIdCancellat
   cancellationRequestId: string & tags.Format<"uuid">;
   snapshotId: string & tags.Format<"uuid">;
 }): Promise<IMallPlatformCancellationRequestSnapshot> {
-  await MyGlobal.prisma.mall_platform_order_items.findUniqueOrThrow({
-    where: { id: props.orderItemId },
-    select: { id: true },
-  });
-  await MyGlobal.prisma.mall_platform_cancellation_requests.findFirstOrThrow({
-    where: {
-      id: props.cancellationRequestId,
-      mall_platform_order_item_id: props.orderItemId,
-    },
-    select: { id: true },
-  });
   const record =
     await MyGlobal.prisma.mall_platform_cancellation_request_snapshots.findFirstOrThrow(
       {
-        ...MallPlatformCancellationRequestSnapshotTransformer.select(),
         where: {
           id: props.snapshotId,
           cancellationRequest: {
             id: props.cancellationRequestId,
+            orderItem: {
+              id: props.orderItemId,
+            },
           },
         },
+        ...MallPlatformCancellationRequestSnapshotTransformer.select(),
       },
     );
   return await MallPlatformCancellationRequestSnapshotTransformer.transform(

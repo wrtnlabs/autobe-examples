@@ -15,61 +15,51 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postEcommerceMallAuthGuestRefresh(props: {
   body: IEcommerceMallGuest.IRefresh;
 }): Promise<IEcommerceMallGuest.IAuthorized> {
-  // 1. Verify refresh token with proper type narrowing
-  let decoded: {
+  // Token payload type with proper typing
+  interface ITokenPayload {
+    type: string;
     id: string;
     session_id: string;
-    type: string;
-    created_at: string;
-  } | null = null;
+    created_at?: string;
+    tokenType?: string;
+  }
+  // Helper to create ISO datetime string
+  const toDateTimeString = (date: Date): string & tags.Format<"date-time"> => {
+    return date.toISOString() as string & tags.Format<"date-time">;
+  };
+  // Helper to create UUID string
+  const toUuid = (value: string): string & tags.Format<"uuid"> => {
+    return value as string & tags.Format<"uuid">;
+  };
+  // Get current time as Date object for comparisons
+  const now = new Date();
+  // 1. Verify refresh token
+  let decoded: ITokenPayload | undefined;
   try {
     const verified = jwt.verify(
       props.body.refreshToken,
       MyGlobal.env.JWT_SECRET_KEY,
       { issuer: "autobe" },
     );
-    if (
-      typeof verified === "object" &&
-      verified !== null &&
-      "id" in verified &&
-      "session_id" in verified &&
-      "type" in verified
-    ) {
-      const v = verified as Record<string, unknown>;
-      if (
-        typeof v.id === "string" &&
-        typeof v.session_id === "string" &&
-        typeof v.type === "string" &&
-        (typeof v.created_at === "string" || v.created_at === undefined)
-      ) {
-        decoded = {
-          id: v.id,
-          session_id: v.session_id,
-          type: v.type,
-          created_at: v.created_at ?? "",
-        };
-      }
-    }
+    decoded = verified as ITokenPayload;
   } catch {
-    decoded = null;
-  }
-  if (!decoded) {
     throw new HttpException("Invalid or expired refresh token", 401);
+  }
+  // Validate decoded payload exists
+  if (!decoded) {
+    throw new HttpException("Invalid refresh token payload", 401);
   }
   // 2. Validate token type is guest
   if (decoded.type !== "guest") {
-    throw new HttpException("Invalid token type", 403);
+    throw new HttpException("Invalid token type for guest refresh", 401);
   }
-  // 3. Validate session exists and is not expired
-  const nowMs = Date.now();
+  // 3. Query session with all required fields
   const session = await MyGlobal.prisma.ecommerce_mall_guest_sessions.findFirst(
     {
       where: {
         id: decoded.session_id,
         ecommerce_mall_guest_id: decoded.id,
-        expired_at: {
-          gt: new Date(nowMs),
-        },
+        expired_at: { gt: now },
       },
       select: {
         id: true,
@@ -77,89 +67,98 @@ export async function postEcommerceMallAuthGuestRefresh(props: {
         ip: true,
         href: true,
         referrer: true,
+        created_at: true,
+        expired_at: true,
+        guest: {
+          select: {
+            id: true,
+            fingerprint: true,
+            ip_address: true,
+            user_agent: true,
+            last_active_at: true,
+            created_at: true,
+            updated_at: true,
+            deleted_at: true,
+          },
+        },
       },
     },
   );
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
-  // 4. Validate guest account is not soft-deleted
-  const guest = await MyGlobal.prisma.ecommerce_mall_guests.findFirst({
-    where: {
-      id: decoded.id,
-      deleted_at: null,
-    },
+  // 4. Verify guest not deleted
+  if (session.guest.deleted_at !== null) {
+    throw new HttpException("Guest account has been deleted", 410);
+  }
+  // 5. Update guest's last_active_at
+  const lastActiveTime = new Date();
+  const updatedGuest = await MyGlobal.prisma.ecommerce_mall_guests.update({
+    where: { id: session.ecommerce_mall_guest_id },
+    data: { last_active_at: lastActiveTime },
     select: {
       id: true,
+      ip_address: true,
+      user_agent: true,
+      last_active_at: true,
+      created_at: true,
+      updated_at: true,
     },
   });
-  if (!guest) {
-    throw new HttpException("Guest account has been deleted", 401);
-  }
-  // 5. Generate new token pair with token rotation (same session_id)
-  const nowIso: string & tags.Format<"date-time"> = new Date(
-    nowMs,
-  ).toISOString() as string & tags.Format<"date-time">;
-  const accessExpiresMs = nowMs + 60 * 60 * 1000;
-  const refreshExpiresMs = nowMs + 7 * 24 * 60 * 60 * 1000;
-  const accessExpiresIso: string & tags.Format<"date-time"> = new Date(
-    accessExpiresMs,
-  ).toISOString() as string & tags.Format<"date-time">;
-  const refreshExpiresIso: string & tags.Format<"date-time"> = new Date(
-    refreshExpiresMs,
-  ).toISOString() as string & tags.Format<"date-time">;
+  // 6. Calculate token expiration times
+  const oneHourMs = 60 * 60 * 1000;
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+  const accessExpires = new Date(Date.now() + oneHourMs);
+  const refreshExpires = new Date(Date.now() + sevenDaysMs);
+  const tokenCreatedAt = toDateTimeString(lastActiveTime);
+  // 7. Generate new access token
+  const accessTokenPayload = {
+    type: "guest" as const,
+    id: session.ecommerce_mall_guest_id,
+    session_id: session.id,
+    created_at: tokenCreatedAt,
+  };
   const accessToken = jwt.sign(
-    {
-      type: "guest",
-      id: decoded.id,
-      session_id: decoded.session_id,
-      created_at: nowIso,
-    },
+    accessTokenPayload,
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
   );
+  // 8. Generate new refresh token
+  const refreshTokenPayload = {
+    type: "guest" as const,
+    id: session.ecommerce_mall_guest_id,
+    session_id: session.id,
+    tokenType: "refresh" as const,
+    created_at: tokenCreatedAt,
+  };
   const refreshToken = jwt.sign(
-    {
-      type: "guest",
-      id: decoded.id,
-      session_id: decoded.session_id,
-      tokenType: "refresh",
-      created_at: nowIso,
-    },
+    refreshTokenPayload,
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 6. Update session expiration to new refresh token expiry
+  // 9. Update session expiration
   await MyGlobal.prisma.ecommerce_mall_guest_sessions.update({
-    where: { id: decoded.session_id },
-    data: {
-      expired_at: new Date(refreshExpiresMs),
-      ip: props.body.ip ?? session.ip,
-      href: props.body.href ?? session.href,
-      referrer: props.body.referrer ?? session.referrer,
-    },
+    where: { id: session.id },
+    data: { expired_at: refreshExpires },
   });
-  // 7. Update guest last active timestamp
-  await MyGlobal.prisma.ecommerce_mall_guests.update({
-    where: { id: decoded.id },
-    data: {
-      last_active_at: new Date(nowMs),
-    },
-  });
-  // 8. Return authorized response with proper branded types
-  const resultId: string & tags.Format<"uuid"> = decoded.id;
-  const resultExpiredAt: string & tags.Format<"date-time"> = accessExpiresIso;
-  const resultRefreshableUntil: string & tags.Format<"date-time"> =
-    refreshExpiresIso;
-  return {
-    id: resultId,
+  // 10. Build and return authorized response
+  const response: IEcommerceMallGuest.IAuthorized = {
+    id: toUuid(session.id),
+    ipAddress: session.ip || null,
+    userAgent: session.referrer || null,
+    lastActiveAt: updatedGuest.last_active_at
+      ? toDateTimeString(updatedGuest.last_active_at)
+      : null,
+    createdAt: toDateTimeString(updatedGuest.created_at),
+    updatedAt: toDateTimeString(updatedGuest.updated_at),
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: resultExpiredAt,
-      refreshable_until: resultRefreshableUntil,
+      expired_at: toDateTimeString(accessExpires),
+      refreshable_until: toDateTimeString(refreshExpires),
     },
   };
+  return response;
 }
 
 

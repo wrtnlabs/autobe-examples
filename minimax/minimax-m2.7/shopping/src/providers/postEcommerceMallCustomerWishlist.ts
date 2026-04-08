@@ -1,7 +1,7 @@
-import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlist";
 import { IEcommerceMallWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlistItem";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
@@ -15,59 +15,52 @@ import { v4 } from "uuid";
 import { MyGlobal } from "../MyGlobal";
 import { EcommerceMallWishlistItemCollector } from "../collectors/EcommerceMallWishlistItemCollector";
 import { CustomerPayload } from "../decorators/payload/CustomerPayload";
-import { EcommerceMallWishlistItemAtInvertTransformer } from "../transformers/EcommerceMallWishlistItemAtInvertTransformer";
+import { EcommerceMallWishlistItemTransformer } from "../transformers/EcommerceMallWishlistItemTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function postEcommerceMallCustomerWishlist(props: {
   customer: CustomerPayload;
   body: IEcommerceMallWishlistItem.ICreate;
-}): Promise<IEcommerceMallWishlistItem.IInvert> {
-  // Step 1: Get customer's wishlist (one-to-one relationship)
-  const wishlist =
-    await MyGlobal.prisma.ecommerce_mall_wishlists.findFirstOrThrow({
-      where: {
-        customer: {
-          id: props.customer.id,
-        },
-      },
-      select: {
-        id: true,
-      },
-    });
-  // Step 2: Verify product exists and is not soft-deleted
-  await MyGlobal.prisma.ecommerce_mall_products.findFirstOrThrow({
+}): Promise<IEcommerceMallWishlistItem> {
+  // Verify product exists and is not deleted
+  const product = await MyGlobal.prisma.ecommerce_mall_products.findFirst({
     where: {
       id: props.body.productId,
       deleted_at: null,
     },
-    select: {
-      id: true,
-    },
   });
-  // Step 3: Check if wishlist item already exists (idempotent behavior)
+  if (!product) {
+    throw new HttpException("Product not found", 404);
+  }
+  // Get customer's wishlist to check for duplicates
+  const wishlist =
+    await MyGlobal.prisma.ecommerce_mall_wishlists.findFirstOrThrow({
+      where: {
+        customer: { id: props.customer.id },
+      },
+    });
+  // Check if product already exists in wishlist
   const existingItem =
     await MyGlobal.prisma.ecommerce_mall_wishlist_items.findFirst({
       where: {
         ecommerce_mall_wishlist_id: wishlist.id,
         ecommerce_mall_product_id: props.body.productId,
       },
-      ...EcommerceMallWishlistItemAtInvertTransformer.select(),
     });
-  if (existingItem !== null) {
-    return await EcommerceMallWishlistItemAtInvertTransformer.transform(
-      existingItem,
-    );
+  if (existingItem) {
+    throw new HttpException("This product is already in your wishlist", 409);
   }
-  // Step 4: Create new wishlist item
-  const created = await MyGlobal.prisma.ecommerce_mall_wishlist_items.create({
+  // Create wishlist item using collector
+  const record = await MyGlobal.prisma.ecommerce_mall_wishlist_items.create({
     data: await EcommerceMallWishlistItemCollector.collect({
       body: props.body,
-      wishlist: wishlist,
+      ecommerceMallCustomers: { id: props.customer.id },
+      ecommerceMallCustomerSessions: { id: props.customer.session_id },
     }),
-    ...EcommerceMallWishlistItemAtInvertTransformer.select(),
+    ...EcommerceMallWishlistItemTransformer.select(),
   });
-  return await EcommerceMallWishlistItemAtInvertTransformer.transform(created);
+  return await EcommerceMallWishlistItemTransformer.transform(record);
 }
 
 
@@ -90,7 +83,7 @@ export async function postEcommerceMallCustomerWishlist(props: {
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IEcommerceMallWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlistItem";
 // import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
-// import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 // import { IEcommerceMallWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlist";
 // import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 // import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
@@ -100,15 +93,15 @@ export async function postEcommerceMallCustomerWishlist(props: {
 // export async function postEcommerceMallCustomerWishlist(props: {
 //   customer: CustomerPayload;
 //   body: IEcommerceMallWishlistItem.ICreate;
-// }): Promise<IEcommerceMallWishlistItem.IInvert> {
+// }): Promise<IEcommerceMallWishlistItem> {
 //   const record = await MyGlobal.prisma.ecommerce_mall_wishlist_items.create({
 //     data: await EcommerceMallWishlistItemCollector.collect({
 //       body: props.body,
 //       ...
 //     }),
-//     ...EcommerceMallWishlistItemAtInvertTransformer.select(),
+//     ...EcommerceMallWishlistItemTransformer.select(),
 //   });
-//   return await EcommerceMallWishlistItemAtInvertTransformer.transform(record);
+//   return await EcommerceMallWishlistItemTransformer.transform(record);
 // }
 // ```
 //--------------------------------------------------------------

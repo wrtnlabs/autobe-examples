@@ -21,79 +21,43 @@ export async function patchRedditCloneMemberCommunitiesCommunityIdModerators(pro
   communityId: string & tags.Format<"uuid">;
   body: IRedditCloneCommunityModerator.IRequest;
 }): Promise<IPageIRedditCloneCommunityModerator.ISummary> {
-  // Verify community exists
-  const community = await MyGlobal.prisma.reddit_clone_communities.findUnique({
+  // Validate community exists (404 if not found)
+  await MyGlobal.prisma.reddit_clone_communities.findUniqueOrThrow({
     where: { id: props.communityId },
     select: { id: true },
   });
-  if (!community) {
-    throw new HttpException("Community not found", 404);
-  }
-  // Verify requesting member is owner or moderator of this community
-  const moderatorRole =
-    await MyGlobal.prisma.reddit_clone_community_moderators.findFirst({
-      where: {
-        reddit_clone_community_id: props.communityId,
-        reddit_clone_member_id: props.member.id,
-        role: { in: ["owner", "moderator"] },
-      },
-      select: { id: true },
-    });
-  if (!moderatorRole) {
-    throw new HttpException("Forbidden", 403);
-  }
-  // Build where clause
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const skip = (page - 1) * limit;
+  // WHERE clause: filter by community and optional role
   const whereInput = {
     reddit_clone_community_id: props.communityId,
-    ...(props.body.role !== undefined && { role: props.body.role }),
+    ...(props.body.role && { role: props.body.role }),
   } satisfies Prisma.reddit_clone_community_moderatorsWhereInput;
-  // Pagination variables
-  const limit = props.body.limit ?? 20;
-  let skip: number | undefined;
-  let cursor:
-    | {
-        id: string;
-        created_at: Date;
-      }
-    | undefined;
-  if (props.body.cursor) {
-    // Cursor-based pagination
-    const decodedCursor = Buffer.from(props.body.cursor, "base64").toString(
-      "utf-8",
-    );
-    const [cursorId, cursorCreatedAt] = decodedCursor.split("|");
-    cursor = {
-      id: cursorId,
-      created_at: new Date(cursorCreatedAt),
-    };
-  } else {
-    // Offset-based pagination
-    const page = props.body.page ?? 1;
-    skip = (page - 1) * limit;
-  }
-  // Query moderators with ordering
+  // ORDER BY: role (owner first, alphabetically), then created_at ascending
+  const orderByInput = [
+    { role: "asc" as const },
+    { created_at: "asc" as const },
+  ] satisfies Prisma.reddit_clone_community_moderatorsOrderByWithRelationInput[];
+  // Execute queries sequentially (not parallel)
   const records =
     await MyGlobal.prisma.reddit_clone_community_moderators.findMany({
       where: whereInput,
-      ...(cursor ? { cursor, skip: 1 } : { skip }),
+      skip,
       take: limit,
-      orderBy: [{ role: "asc" }, { created_at: "asc" }],
+      orderBy: orderByInput,
       ...RedditCloneCommunityModeratorAtSummaryTransformer.select(),
     });
-  // Get total count for pagination
   const total = await MyGlobal.prisma.reddit_clone_community_moderators.count({
     where: whereInput,
   });
-  // Build pagination info
-  const currentPage = props.body.cursor ? 1 : (props.body.page ?? 1);
-  const pagination = {
-    current: currentPage,
-    limit: limit,
-    records: total,
-    pages: Math.ceil(total / limit),
-  } satisfies IPage.IPagination;
   return {
-    pagination,
+    pagination: {
+      current: page,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
       records,
       RedditCloneCommunityModeratorAtSummaryTransformer.transform,

@@ -10,8 +10,9 @@ export async function customerAuthorize(request: {
 
   try {
     payload = jwtAuthorize({ request }) as CustomerPayload;
-  } catch {
-    throw new UnauthorizedException("Invalid access token");
+  } catch (error) {
+    if (error instanceof UnauthorizedException) throw error;
+    throw new UnauthorizedException("Invalid token");
   }
 
   if (payload.type !== "customer") {
@@ -31,6 +32,10 @@ export async function customerAuthorize(request: {
   const session = await MyGlobal.prisma.mall_platform_customer_sessions.findFirst({
     where: {
       id: payload.session_id,
+      mall_platform_customer_id: payload.id,
+      expired_at: {
+        gt: new Date(),
+      },
     },
   });
 

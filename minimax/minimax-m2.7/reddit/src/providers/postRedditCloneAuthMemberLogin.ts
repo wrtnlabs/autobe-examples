@@ -12,7 +12,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditCloneMemberTransformer } from "../transformers/RedditCloneMemberTransformer";
+import { RedditCloneFileAssociationAtSummaryTransformer } from "../transformers/RedditCloneFileAssociationAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -27,49 +27,64 @@ export async function postRedditCloneAuthMemberLogin(props: {
       deleted_at: null,
     },
     select: {
-      ...RedditCloneMemberTransformer.select().select,
+      id: true,
+      email: true,
       password_hash: true,
+      username: true,
+      created_at: true,
+      updated_at: true,
+      deleted_at: true,
+      profile: {
+        select: {
+          id: true,
+          display_name: true,
+          bio: true,
+          reddit_clone_file_association_id: true,
+        },
+      },
+      karma: {
+        select: {
+          karma_score: true,
+        },
+      },
     },
   });
   if (!member) {
     throw new HttpException("Invalid credentials", 401);
   }
   // 2. Verify password
-  const isValid = await PasswordUtil.verify(
+  const isValidPassword = await PasswordUtil.verify(
     props.body.password,
     member.password_hash,
   );
-  if (!isValid) {
+  if (!isValidPassword) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 3. Create new session
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
-  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  // 4. Generate JWT tokens
-  const sessionId = v4() as string & tags.Format<"uuid">;
-  const accessToken = jwt.sign(
-    {
-      type: "member",
-      id: member.id,
-      session_id: sessionId,
-      created_at: new Date().toISOString(),
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
+  // 3. Generate session ID and token expiration times
+  const sessionId = v4();
+  const now = toISOStringSafe(new Date());
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   );
+  // 4. Create JWT tokens
+  const tokenPayload = {
+    type: "member" as const,
+    id: member.id,
+    session_id: sessionId,
+    created_at: now,
+  };
+  const accessToken = jwt.sign(tokenPayload, MyGlobal.env.JWT_SECRET_KEY, {
+    expiresIn: "1h",
+    issuer: "autobe",
+  });
   const refreshToken = jwt.sign(
-    {
-      type: "member",
-      id: member.id,
-      session_id: sessionId,
-      tokenType: "refresh",
-      created_at: new Date().toISOString(),
-    },
+    { ...tokenPayload, tokenType: "refresh" as const },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 5. Create session record in database
-  const session = await MyGlobal.prisma.reddit_clone_member_sessions.create({
+  // 5. Store session in database
+  await MyGlobal.prisma.reddit_clone_member_sessions.create({
     data: {
       id: sessionId,
       reddit_clone_member_id: member.id,
@@ -79,19 +94,42 @@ export async function postRedditCloneAuthMemberLogin(props: {
       href: props.body.href,
       referrer: props.body.referrer,
       created_at: new Date(),
-      expired_at: accessExpires,
+      expired_at: new Date(accessExpires),
     },
   });
-  // 6. Return IAuthorized response
+  // 6. Fetch avatar if exists
+  let avatar: IRedditCloneFileAssociation.ISummary | null = null;
+  if (member.profile?.reddit_clone_file_association_id) {
+    const fileAssociation =
+      await MyGlobal.prisma.reddit_clone_file_associations.findUnique({
+        where: { id: member.profile.reddit_clone_file_association_id },
+        ...RedditCloneFileAssociationAtSummaryTransformer.select(),
+      });
+    if (fileAssociation) {
+      avatar =
+        await RedditCloneFileAssociationAtSummaryTransformer.transform(
+          fileAssociation,
+        );
+    }
+  }
+  // 7. Return IAuthorized response
   return {
-    ...(await RedditCloneMemberTransformer.transform(member)),
+    id: member.id,
+    username: member.username,
+    displayName: member.profile?.display_name ?? member.username,
+    bio: member.profile?.bio ?? null,
+    avatar: avatar,
+    karmaScore: member.karma?.karma_score ?? 0,
+    createdAt: toISOStringSafe(member.created_at),
+    updatedAt: toISOStringSafe(member.updated_at),
+    deletedAt: member.deleted_at ? toISOStringSafe(member.deleted_at) : null,
     token: {
-      access: session.access_token,
-      refresh: session.refresh_token,
-      expired_at: session.expired_at.toISOString(),
-      refreshable_until: refreshExpires.toISOString(),
+      access: accessToken,
+      refresh: refreshToken,
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
     },
-  } satisfies IRedditCloneMember.IAuthorized;
+  };
 }
 
 

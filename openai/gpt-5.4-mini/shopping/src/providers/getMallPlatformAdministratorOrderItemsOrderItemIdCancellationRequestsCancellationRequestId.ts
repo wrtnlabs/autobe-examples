@@ -6,9 +6,9 @@ import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -18,7 +18,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdministratorPayload } from "../decorators/payload/AdministratorPayload";
-import { MallPlatformOrderItemAtSummaryTransformer } from "../transformers/MallPlatformOrderItemAtSummaryTransformer";
+import { MallPlatformCancellationRequestTransformer } from "../transformers/MallPlatformCancellationRequestTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -28,51 +28,16 @@ export async function getMallPlatformAdministratorOrderItemsOrderItemIdCancellat
   cancellationRequestId: string & tags.Format<"uuid">;
 }): Promise<IMallPlatformCancellationRequest> {
   const record =
-    await MyGlobal.prisma.mall_platform_cancellation_requests.findUniqueOrThrow(
-      {
-        where: {
-          id: props.cancellationRequestId,
-        },
-        select: {
-          id: true,
-          mall_platform_order_item_id: true,
-          reason: true,
-          status: true,
-          reviewed_at: true,
-          review_result: true,
-          reviewer_note: true,
-          created_at: true,
-          updated_at: true,
-          deleted_at: true,
-          orderItem: MallPlatformOrderItemAtSummaryTransformer.select(),
-          reviewer: {
-            select: {
-              id: true,
-            },
-          },
+    await MyGlobal.prisma.mall_platform_cancellation_requests.findFirstOrThrow({
+      where: {
+        id: props.cancellationRequestId,
+        orderItem: {
+          id: props.orderItemId,
         },
       },
-    );
-  if (record.mall_platform_order_item_id !== props.orderItemId) {
-    throw new HttpException("Relationship mismatch", 400);
-  }
-  return {
-    id: record.id,
-    orderItem: await MallPlatformOrderItemAtSummaryTransformer.transform(
-      record.orderItem,
-    ),
-    reviewer: record.reviewer === null ? null : {},
-    reason: record.reason,
-    status: record.status,
-    reviewedAt:
-      record.reviewed_at === null ? null : record.reviewed_at.toISOString(),
-    reviewResult: record.review_result,
-    reviewerNote: record.reviewer_note,
-    createdAt: record.created_at.toISOString(),
-    updatedAt: record.updated_at.toISOString(),
-    deletedAt:
-      record.deleted_at === null ? null : record.deleted_at.toISOString(),
-  } satisfies IMallPlatformCancellationRequest;
+      ...MallPlatformCancellationRequestTransformer.select(),
+    });
+  return await MallPlatformCancellationRequestTransformer.transform(record);
 }
 
 
@@ -99,9 +64,9 @@ export async function getMallPlatformAdministratorOrderItemsOrderItemIdCancellat
 // import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 // import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 // import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 // import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
-// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
+// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 // import { IMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministrator";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,

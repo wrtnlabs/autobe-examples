@@ -1,51 +1,54 @@
 import { tags } from "typia";
 
 import { IEcommerceMallCustomer } from "./IEcommerceMallCustomer";
-import { IEcommerceMallWishlistItem } from "./IEcommerceMallWishlistItem";
 
 export namespace IEcommerceMallWishlist {
   /**
-   * Request parameters for retrieving a customer's wishlist with pagination cursor and optional product name filtering.
-   */
-  export type IRequest = {
-    /**
-     * Pagination cursor token to retrieve the next page of wishlist items.
-     *
-     * @x-autobe-specification Pagination cursor token for cursor-based navigation through wishlist items. Format: base64 encoded wishlist item ID from previous response. When provided, returns wishlist items created after this item. Used for efficient pagination without offset calculations.
-     */
-    cursor?: string | undefined;
-
-    /**
-     * Maximum number of wishlist items to return per page.
-     *
-     * @x-autobe-specification Maximum number of wishlist items to return per page. Default: 20. Maximum: 100. When limit exceeds maximum, cap at 100.
-     */
-    limit?:
-      | (number & tags.Type<"int32"> & tags.Minimum<1> & tags.Maximum<100>)
-      | undefined;
-
-    /**
-     * Optional filter to search wishlist items by product name (case-insensitive partial match).
-     *
-     * @x-autobe-specification Case-insensitive partial match filter applied to product name via LEFT JOIN with ecommerce_mall_products table. Filters wishlist items to only those where the associated product name contains the provided search term.
-     */
-    name?: string | undefined;
-
-    /**
-     * Target page number to retrieve (1-indexed). Defaults to page 1.
-     *
-     * @x-autobe-specification 1-indexed page number for offset-based pagination. Defaults to 1 if not provided. Combined with limit to calculate offset: (page - 1) * limit. Can be used alongside cursor for hybrid pagination.
-     */
-    page?: (number & tags.Type<"int32"> & tags.Minimum<0>) | undefined;
-  };
-
-  /**
-   * Summary representation of a customer's wishlist containing saved product items.
+   * Summary representation of a customer's wishlist for list displays.
+   *
+   * Contains essential wishlist information including the wishlist identifier and ownership details. Each registered customer has exactly one wishlist that serves as a container for bookmarked products.
+   *
+   * **Ownership**: The wishlist belongs to exactly one customer, determined at wishlist creation time during customer registration. The customer relationship provides context for administrative views and customer ownership verification.
    */
   export type ISummary = {
-    createdAt: string & tags.Format<"date-time">;
-    customer: IEcommerceMallCustomer.ISummary;
+    /**
+     * Unique identifier of the wishlist.
+     *
+     * System-generated UUID that uniquely identifies this wishlist record. Each customer has exactly one wishlist, making this identifier directly tied to the customer account.
+     *
+     * @x-autobe-database-schema-property id
+     * @x-autobe-specification Direct mapping from ecommerce_mall_wishlists.id. UUID primary key.
+     */
     id: string & tags.Format<"uuid">;
-    wishlistItems: IEcommerceMallWishlistItem.ISummary[];
+
+    /**
+     * Timestamp when the wishlist was created.
+     *
+     * Records when the customer registered on the platform, as wishlists are automatically created during customer registration.
+     *
+     * @x-autobe-database-schema-property created_at
+     * @x-autobe-specification Direct mapping from ecommerce_mall_wishlists.created_at. Timestamptz stored in UTC.
+     */
+    createdAt: string & tags.Format<"date-time">;
+
+    /**
+     * Timestamp when the wishlist was last modified.
+     *
+     * Reflects the last time any item was added to or removed from the wishlist. Used for cache invalidation and displaying freshness indicators.
+     *
+     * @x-autobe-database-schema-property updated_at
+     * @x-autobe-specification Direct mapping from ecommerce_mall_wishlists.updated_at. Timestamptz stored in UTC.
+     */
+    updatedAt: string & tags.Format<"date-time">;
+
+    /**
+     * The customer who owns this wishlist.
+     *
+     * Reference to the customer account that owns this wishlist. Each wishlist belongs to exactly one customer, providing ownership context in administrative and customer-facing views.
+     *
+     * @x-autobe-database-schema-property customer
+     * @x-autobe-specification JOIN via ecommerce_mall_wishlists.shopping_customer_id to ecommerce_mall_customers.id. Returns IEcommerceMallCustomer.ISummary.
+     */
+    customer: IEcommerceMallCustomer.ISummary;
   };
 }

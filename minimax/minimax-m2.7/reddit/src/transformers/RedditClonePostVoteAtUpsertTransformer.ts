@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { IRedditClonePostVote } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePostVote";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -24,7 +25,6 @@ export namespace RedditClonePostVoteAtUpsertTransformer {
         member: RedditCloneMemberAtSummaryTransformer.select(),
         post: {
           select: {
-            id: true,
             comments: {
               select: {
                 vote_score: true,
@@ -32,8 +32,8 @@ export namespace RedditClonePostVoteAtUpsertTransformer {
             },
           },
         },
-      } satisfies Prisma.reddit_clone_post_votesSelect,
-    };
+      },
+    } satisfies Prisma.reddit_clone_post_votesFindManyArgs;
   }
   export async function transform(
     input: Payload,
@@ -47,7 +47,7 @@ export namespace RedditClonePostVoteAtUpsertTransformer {
         input.member,
       ),
       commentVoteScore: input.post.comments.reduce(
-        (sum, c) => sum + c.vote_score,
+        (sum, comment) => sum + comment.vote_score,
         0,
       ),
     } satisfies IRedditClonePostVote.IUpsert;

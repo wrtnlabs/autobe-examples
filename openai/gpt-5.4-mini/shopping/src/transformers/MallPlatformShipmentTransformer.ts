@@ -1,15 +1,10 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
-import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
-import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
-import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 import { IMallPlatformShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShipment";
-import { IMallPlatformShipmentItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformShipmentItem";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -18,7 +13,6 @@ import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { MallPlatformOrderAtSummaryTransformer } from "./MallPlatformOrderAtSummaryTransformer";
 import { MallPlatformSellerAtSummaryTransformer } from "./MallPlatformSellerAtSummaryTransformer";
-import { MallPlatformShipmentItemTransformer } from "./MallPlatformShipmentItemTransformer";
 
 export namespace MallPlatformShipmentTransformer {
   export type Payload = Prisma.mall_platform_shipmentsGetPayload<
@@ -39,10 +33,6 @@ export namespace MallPlatformShipmentTransformer {
       status: input.status,
       shippedAt: input.shipped_at?.toISOString() ?? null,
       deliveredAt: input.delivered_at?.toISOString() ?? null,
-      shipmentItems: await ArrayUtil.asyncMap(
-        input.shipmentItems,
-        MallPlatformShipmentItemTransformer.transform,
-      ),
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
       deletedAt: input.deleted_at?.toISOString() ?? null,
@@ -63,7 +53,7 @@ export namespace MallPlatformShipmentTransformer {
         deleted_at: true,
         seller: MallPlatformSellerAtSummaryTransformer.select(),
         order: MallPlatformOrderAtSummaryTransformer.select(),
-        shipmentItems: MallPlatformShipmentItemTransformer.select(),
+        shipmentItems: { select: {} },
       },
     } satisfies Prisma.mall_platform_shipmentsFindManyArgs;
   }
@@ -92,7 +82,6 @@ export namespace MallPlatformShipmentTransformer {
 //             deleted_at: true,
 //             seller: MallPlatformSellerAtSummaryTransformer.select(),
 //             order: MallPlatformOrderAtSummaryTransformer.select(),
-//             shipmentItems: MallPlatformShipmentItemTransformer.select(),
 //           },
 //         } satisfies Prisma.mall_platform_shipmentsFindManyArgs;
 //       }
@@ -108,7 +97,6 @@ export namespace MallPlatformShipmentTransformer {
 //   status: {string},
 //   shippedAt: {string | null},
 //   deliveredAt: {string | null},
-//   shipmentItems: await ArrayUtil.asyncMap(input.shipmentItems, MallPlatformShipmentItemTransformer.transform),
 //   createdAt: {string},
 //   updatedAt: {string},
 //   deletedAt: {string | null},

@@ -1,7 +1,29 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
+import { IEcommerceMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCancellationRequest";
+import { IEcommerceMallCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCart";
+import { IEcommerceMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCartItem";
+import { IEcommerceMallCheckout } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCheckout";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
+import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
+import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
+import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+import { IEcommerceMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshot";
+import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+import { IEcommerceMallProductVariantOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOptionValue";
+import { IEcommerceMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequest";
+import { IEcommerceMallRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequestSnapshot";
+import { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReview";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+import { IEcommerceMallSellerApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerApproval";
+import { IEcommerceMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfile";
+import { IEcommerceMallSellerProfileSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfileSnapshot";
+import { IEcommerceMallSellerSuspension } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerSuspension";
+import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
 import { IEcommerceMallShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShippingAddress";
+import { IEcommerceMallWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlist";
+import { IEcommerceMallWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlistItem";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -11,6 +33,7 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
+import { EcommerceMallCustomerTransformer } from "../transformers/EcommerceMallCustomerTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -18,23 +41,29 @@ export async function postEcommerceMallAuthCustomerJoin(props: {
   ip: string;
   body: IEcommerceMallCustomer.IJoin;
 }): Promise<IEcommerceMallCustomer.IAuthorized> {
-  // 1. Check duplicate email (case-sensitive)
+  // 1. Check email uniqueness
   const existing = await MyGlobal.prisma.ecommerce_mall_customers.findFirst({
     where: { email: props.body.email },
   });
   if (existing) {
     throw new HttpException("Email already registered", 409);
   }
-  // 2. Hash password
-  const passwordHash = await PasswordUtil.hash(props.body.password);
-  // 3. Generate IDs and timestamps
+  // 2. Generate UUIDs
   const customerId = v4();
   const profileId = v4();
   const wishlistId = v4();
   const cartId = v4();
+  const verificationId = v4();
   const sessionId = v4();
-  const now = toISOStringSafe(new Date());
-  // 4. Create customer
+  const verificationToken = v4();
+  // 3. Generate timestamps
+  const nowISO = new Date().toISOString();
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  // 4. Hash password
+  const passwordHash = await PasswordUtil.hash(props.body.password);
+  // 5. Create customer with profile, wishlist, cart
   await MyGlobal.prisma.ecommerce_mall_customers.create({
     data: {
       id: customerId,
@@ -43,48 +72,48 @@ export async function postEcommerceMallAuthCustomerJoin(props: {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
+      profile: {
+        create: {
+          id: profileId,
+          display_name: props.body.name,
+          phone: "",
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      },
+      wishlist: {
+        create: {
+          id: wishlistId,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      },
+      cart: {
+        create: {
+          id: cartId,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      },
     },
   });
-  // 5. Create customer profile (empty display_name and phone)
-  await MyGlobal.prisma.ecommerce_mall_customer_profiles.create({
+  // 6. Create email verification token
+  await MyGlobal.prisma.ecommerce_mall_customer_email_verifications.create({
     data: {
-      id: profileId,
+      id: verificationId,
       ecommerce_mall_customer_id: customerId,
-      display_name: "",
-      phone: "",
-      created_at: new Date(),
-      updated_at: new Date(),
+      token: verificationToken,
+      expires_at: verificationExpires,
+      verified_at: null,
     },
   });
-  // 6. Create empty wishlist
-  await MyGlobal.prisma.ecommerce_mall_wishlists.create({
-    data: {
-      id: wishlistId,
-      shopping_customer_id: customerId,
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
-  });
-  // 7. Create empty cart
-  await MyGlobal.prisma.ecommerce_mall_carts.create({
-    data: {
-      id: cartId,
-      ecommerce_mall_customer_id: customerId,
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
-  });
-  // 8. Generate JWT tokens
-  const accessExpires = toISOStringSafe(new Date(Date.now() + 60 * 60 * 1000));
-  const refreshExpires = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
+  // 7. Generate JWT tokens
   const accessToken = jwt.sign(
     {
       type: "customer",
       id: customerId,
       session_id: sessionId,
-      created_at: now,
+      created_at: nowISO,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
@@ -95,12 +124,12 @@ export async function postEcommerceMallAuthCustomerJoin(props: {
       id: customerId,
       session_id: sessionId,
       tokenType: "refresh",
-      created_at: now,
+      created_at: nowISO,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 9. Create session
+  // 8. Create session
   await MyGlobal.prisma.ecommerce_mall_customer_sessions.create({
     data: {
       id: sessionId,
@@ -112,80 +141,32 @@ export async function postEcommerceMallAuthCustomerJoin(props: {
       referrer: props.body.referrer,
       created_at: new Date(),
       updated_at: new Date(),
-      expired_at: new Date(accessExpires),
+      expired_at: accessExpires,
     },
   });
-  // 10. Fetch customer for response
+  // 9. Fetch customer with transformer
   const customer =
     await MyGlobal.prisma.ecommerce_mall_customers.findUniqueOrThrow({
       where: { id: customerId },
-      select: {
-        id: true,
-        email: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        profile: {
-          select: {
-            id: true,
-            display_name: true,
-            phone: true,
-            created_at: true,
-            updated_at: true,
-          },
-        },
-        shippingAddresses: {
-          where: { deleted_at: null },
-          select: {
-            id: true,
-            recipient_name: true,
-            phone: true,
-            street_address: true,
-            city: true,
-            state: true,
-            postal_code: true,
-            country: true,
-            is_default: true,
-            created_at: true,
-          },
-        },
-      },
+      ...EcommerceMallCustomerTransformer.select(),
     });
-  // 11. Return IAuthorized response
+  // 10. Build token response
+  const token: IAuthorizationToken = {
+    access: accessToken,
+    refresh: refreshToken,
+    expired_at: typia.assert<string & tags.Format<"date-time">>(
+      accessExpires.toISOString(),
+    ),
+    refreshable_until: typia.assert<string & tags.Format<"date-time">>(
+      refreshExpires.toISOString(),
+    ),
+  };
+  // 11. Transform and return IAuthorized
+  const transformed =
+    await EcommerceMallCustomerTransformer.transform(customer);
   return {
-    id: customer.id,
-    email: customer.email,
-    created_at: toISOStringSafe(customer.created_at),
-    updated_at: toISOStringSafe(customer.updated_at),
-    deleted_at:
-      customer.deleted_at === null
-        ? null
-        : toISOStringSafe(customer.deleted_at),
-    profile: {
-      id: customer.profile!.id,
-      displayName: customer.profile!.display_name,
-      phone: customer.profile!.phone,
-      createdAt: toISOStringSafe(customer.profile!.created_at),
-      updatedAt: toISOStringSafe(customer.profile!.updated_at),
-    },
-    addresses: customer.shippingAddresses.map((addr) => ({
-      id: addr.id,
-      recipientName: addr.recipient_name,
-      phone: addr.phone,
-      streetAddress: addr.street_address,
-      city: addr.city,
-      state: addr.state,
-      postalCode: addr.postal_code,
-      country: addr.country,
-      isDefault: addr.is_default,
-      createdAt: toISOStringSafe(addr.created_at),
-    })),
-    token: {
-      access: accessToken,
-      refresh: refreshToken,
-      expired_at: accessExpires,
-      refreshable_until: refreshExpires,
-    },
+    ...transformed,
+    token,
   };
 }
 
@@ -208,8 +189,30 @@ export async function postEcommerceMallAuthCustomerJoin(props: {
 // 
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
-// import { IEcommerceMallShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShippingAddress";
 // import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
+// import { IEcommerceMallShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShippingAddress";
+// import { IEcommerceMallWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlistItem";
+// import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+// import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+// import { IEcommerceMallWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlist";
+// import { IEcommerceMallCart } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCart";
+// import { IEcommerceMallCartItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCartItem";
+// import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
+// import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
+// import { IEcommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrderItem";
+// import { IEcommerceMallProductVariantOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOptionValue";
+// import { IEcommerceMallProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductSnapshot";
+// import { IEcommerceMallSellerProfileSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfileSnapshot";
+// import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
+// import { IEcommerceMallCheckout } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCheckout";
+// import { IEcommerceMallReview } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallReview";
+// import { IEcommerceMallCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCancellationRequest";
+// import { IEcommerceMallRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequest";
+// import { IEcommerceMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfile";
+// import { IEcommerceMallSellerApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerApproval";
+// import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
+// import { IEcommerceMallSellerSuspension } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerSuspension";
+// import { IEcommerceMallRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallRefundRequestSnapshot";
 // import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
@@ -219,13 +222,19 @@ export async function postEcommerceMallAuthCustomerJoin(props: {
 //   body: IEcommerceMallCustomer.IJoin;
 // }): Promise<IEcommerceMallCustomer.IAuthorized> {
 //   return {
-//     addresses: await ArrayUtil.asyncMap(..., (r) => EcommerceMallShippingAddressAtSummaryTransformer.transform(r)),
-//     created_at: ...,
-//     deleted_at: ...,
-//     email: ...,
 //     id: ...,
-//     profile: await EcommerceMallCustomerProfileAtSummaryTransformer.transform(...),
-//     updated_at: ...,
+//     email: ...,
+//     createdAt: ...,
+//     updatedAt: ...,
+//     deletedAt: ...,
+//     profile: await EcommerceMallCustomerProfileTransformer.transform(...),
+//     shippingAddresses: await ArrayUtil.asyncMap(..., (r) => EcommerceMallShippingAddressTransformer.transform(r)),
+//     wishlist: await EcommerceMallWishlistItemTransformer.transform(...),
+//     cart: await EcommerceMallCartTransformer.transform(...),
+//     orders: await ArrayUtil.asyncMap(..., (r) => EcommerceMallOrderTransformer.transform(r)),
+//     reviews: await ArrayUtil.asyncMap(..., (r) => EcommerceMallReviewTransformer.transform(r)),
+//     cancellationRequests: await ArrayUtil.asyncMap(..., (r) => EcommerceMallCancellationRequestTransformer.transform(r)),
+//     refundRequests: await ArrayUtil.asyncMap(..., (r) => EcommerceMallRefundRequestTransformer.transform(r)),
 //     token: ...,
 //   };
 // }

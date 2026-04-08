@@ -1,6 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -12,25 +13,6 @@ export namespace MallPlatformSellerAtSummaryTransformer {
   export type Payload = Prisma.mall_platform_sellersGetPayload<
     ReturnType<typeof select>
   >;
-  export function select() {
-    return {
-      select: {
-        id: true,
-        email: true,
-        password_hash: true,
-        status: true,
-        rejection_reason: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        sessions: true,
-        orderItems: true,
-        shipments: true,
-        refundRequests: true,
-        approvalRequests: true,
-      },
-    } satisfies Prisma.mall_platform_sellersFindManyArgs;
-  }
   export async function transform(
     input: Payload,
   ): Promise<IMallPlatformSeller.ISummary> {
@@ -43,6 +25,25 @@ export namespace MallPlatformSellerAtSummaryTransformer {
       updatedAt: input.updated_at.toISOString(),
       deletedAt: input.deleted_at?.toISOString() ?? null,
     } satisfies IMallPlatformSeller.ISummary;
+  }
+  export function select() {
+    return {
+      select: {
+        id: true,
+        email: true,
+        password_hash: true,
+        status: true,
+        rejection_reason: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        sessions: { select: {} },
+        orderItems: { select: {} },
+        shipments: { select: {} },
+        refundRequests: { select: {} },
+        approvalRequests: { select: {} },
+      },
+    } satisfies Prisma.mall_platform_sellersFindManyArgs;
   }
 }
 

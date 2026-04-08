@@ -1,11 +1,12 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
+import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
-import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { IMallPlatformWishlist } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformWishlist";
 import { IMallPlatformWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformWishlistItem";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -19,6 +20,18 @@ export namespace MallPlatformWishlistItemAtSummaryTransformer {
   export type Payload = Prisma.mall_platform_wishlist_itemsGetPayload<
     ReturnType<typeof select>
   >;
+  export function select() {
+    return {
+      select: {
+        id: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        wishlist: MallPlatformWishlistAtSummaryTransformer.select(),
+        product: MallPlatformProductAtSummaryTransformer.select(),
+      },
+    } satisfies Prisma.mall_platform_wishlist_itemsFindManyArgs;
+  }
   export async function transform(
     input: Payload,
   ): Promise<IMallPlatformWishlistItem.ISummary> {
@@ -34,18 +47,6 @@ export namespace MallPlatformWishlistItemAtSummaryTransformer {
       updatedAt: input.updated_at.toISOString(),
       deletedAt: input.deleted_at?.toISOString() ?? null,
     } satisfies IMallPlatformWishlistItem.ISummary;
-  }
-  export function select() {
-    return {
-      select: {
-        id: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        wishlist: MallPlatformWishlistAtSummaryTransformer.select(),
-        product: MallPlatformProductAtSummaryTransformer.select(),
-      },
-    } satisfies Prisma.mall_platform_wishlist_itemsFindManyArgs;
   }
 }
 
@@ -64,9 +65,8 @@ export namespace MallPlatformWishlistItemAtSummaryTransformer {
 //             created_at: true,
 //             updated_at: true,
 //             deleted_at: true,
-//             mall_platform_wishlist_id: true,
+//             wishlist: MallPlatformWishlistAtSummaryTransformer.select(),
 //             product: MallPlatformProductAtSummaryTransformer.select(),
-//             ...
 //           },
 //         } satisfies Prisma.mall_platform_wishlist_itemsFindManyArgs;
 //       }
@@ -74,7 +74,7 @@ export namespace MallPlatformWishlistItemAtSummaryTransformer {
 //       export async function transform(input: Payload): Promise<IMallPlatformWishlistItem.ISummary> {
 //         return {
 //   id: {string},
-//   wishlist: {IMallPlatformWishlist.ISummary},
+//   wishlist: await MallPlatformWishlistAtSummaryTransformer.transform(input.wishlist),
 //   product: await MallPlatformProductAtSummaryTransformer.transform(input.product),
 //   createdAt: {string},
 //   updatedAt: {string},

@@ -19,36 +19,51 @@ export async function putMallPlatformAdministratorApprovalRequestsApprovalReques
   approvalRequestId: string & tags.Format<"uuid">;
   body: IMallPlatformAdministratorApprovalRequest.IUpdate;
 }): Promise<IMallPlatformAdministratorApprovalRequest> {
-  const current =
-    await MyGlobal.prisma.mall_platform_administrator_approval_requests.findUniqueOrThrow(
-      {
+  const administrator =
+    await MyGlobal.prisma.mall_platform_administrators.findUniqueOrThrow({
+      where: { id: props.administrator.id },
+      select: {
+        id: true,
+        grade: true,
+      },
+    });
+  if (administrator.grade !== "super") {
+    throw new HttpException("Forbidden", 403);
+  }
+  const updated = await MyGlobal.prisma.$transaction(async (prisma) => {
+    const current =
+      await prisma.mall_platform_administrator_approval_requests.findUnique({
         where: { id: props.approvalRequestId },
         select: {
           id: true,
           status: true,
         },
+      });
+    if (current === null) {
+      throw new HttpException("Not Found", 404);
+    }
+    if (current.status !== "pending") {
+      throw new HttpException("This request cannot be processed again.", 409);
+    }
+    await prisma.mall_platform_administrator_approval_requests.update({
+      where: { id: props.approvalRequestId },
+      data: {
+        status: props.body.status,
+        ...(props.body.rejectionReason !== undefined
+          ? { rejection_reason: props.body.rejectionReason }
+          : {}),
+        ...(props.body.reviewerAdministratorId !== undefined
+          ? { reviewer_administrator_id: props.body.reviewerAdministratorId }
+          : {}),
       },
-    );
-  if (current.status !== "pending") {
-    throw new HttpException("Conflict", 409);
-  }
-  const updatedAt = new Date().toISOString();
-  await MyGlobal.prisma.mall_platform_administrator_approval_requests.update({
-    where: { id: props.approvalRequestId },
-    data: {
-      status: props.body.status,
-      rejection_reason: props.body.rejectionReason ?? null,
-      reviewed_at: props.body.reviewedAt ?? null,
-      updated_at: updatedAt,
-    },
-  });
-  const updated =
-    await MyGlobal.prisma.mall_platform_administrator_approval_requests.findUniqueOrThrow(
+    });
+    return await prisma.mall_platform_administrator_approval_requests.findUniqueOrThrow(
       {
         where: { id: props.approvalRequestId },
         ...MallPlatformAdministratorApprovalRequestTransformer.select(),
       },
     );
+  });
   return await MallPlatformAdministratorApprovalRequestTransformer.transform(
     updated,
   );

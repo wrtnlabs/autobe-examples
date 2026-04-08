@@ -15,21 +15,14 @@ export async function deleteMallPlatformAdministratorCategoriesCategoryId(props:
   administrator: AdministratorPayload;
   categoryId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  if (props.administrator.type !== "administrator") {
-    throw new HttpException("Forbidden", 403);
-  }
-  await MyGlobal.prisma.mall_platform_categories.findUniqueOrThrow({
-    where: {
-      id: props.categoryId,
-    },
-    select: {
-      id: true,
-    },
-  });
-  await MyGlobal.prisma.mall_platform_categories.delete({
-    where: {
-      id: props.categoryId,
-    },
+  await MyGlobal.prisma.$transaction(async (prisma) => {
+    await prisma.mall_platform_categories.findUniqueOrThrow({
+      where: { id: props.categoryId },
+      select: { id: true },
+    });
+    await prisma.mall_platform_categories.delete({
+      where: { id: props.categoryId },
+    });
   });
 }
 

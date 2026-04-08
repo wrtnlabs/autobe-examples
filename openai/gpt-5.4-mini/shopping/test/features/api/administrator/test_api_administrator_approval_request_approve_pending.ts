@@ -17,67 +17,71 @@ export async function test_api_administrator_approval_request_approve_pending(
   connection: api.IConnection,
 ): Promise<void> {
   /**
-   * Approve a pending administrator approval request and verify governance record preservation.
+   * Approves an administrator approval request and verifies the persisted decision record.
    *
-   * This test validates the administrator approval workflow for a pending governance request.
-   * It focuses on the finalization behavior of the request record after a super administrator
-   * approves it, ensuring that the request is marked approved, reviewer metadata is populated,
-   * and the record remains available for accountability review.
+   * This test validates the governance workflow for administrator onboarding approval.
+   * It authenticates a reviewer administrator, submits an approval decision against a request
+   * identifier, and verifies that the returned request record reflects the approved state while
+   * preserving the applicant's original reason and capturing review metadata.
    *
-   * 1. Authenticate as an administrator using an isolated connection.
-   * 2. Submit an approval decision against the administrator approval request endpoint.
-   * 3. Verify the resulting request record reflects approval and preserves lifecycle metadata.
+   * The scenario focuses on the resource properties exposed by the approval request DTO and
+   * avoids assuming unavailable APIs for applicant-account verification or request creation.
    */
-  const administratorConnection: api.IConnection = { host: connection.host };
-  await authorize_administrator_join(administratorConnection, {
+  const reviewerConnection: api.IConnection = { host: connection.host };
+  const reviewer = await authorize_administrator_join(reviewerConnection, {
     body: {
-      email: typia.random<string & tags.Format<"email">>(),
-      password: RandomGenerator.alphabets(12),
+      email: `reviewer_${RandomGenerator.alphabets(8)}@test.com`,
+      password: `P@ssw0rd_${RandomGenerator.alphabets(8)}`,
     } satisfies IMallPlatformAdministrator.IJoin,
   });
+  typia.assert(reviewer);
   const approvalRequestId = typia.random<string & tags.Format<"uuid">>();
-  const originalReason = RandomGenerator.paragraph({ sentences: 2 });
-  const approvalRequest =
+  const reviewedAt = new Date().toISOString();
+  const approval =
     await api.functional.mallPlatform.administrator.approvalRequests.update(
-      administratorConnection,
+      reviewerConnection,
       {
         approvalRequestId,
         body: {
           status: "approved",
-          reviewedAt: new Date().toISOString(),
+          reviewedAt,
+          reviewerAdministratorId: reviewer.id,
         } satisfies IMallPlatformAdministratorApprovalRequest.IUpdate,
       },
     );
-  typia.assert(approvalRequest);
+  typia.assert(approval);
   TestValidator.equals(
-    "approval request status",
-    approvalRequest.status,
+    "approval request id should match the target",
+    approval.id,
+    approvalRequestId,
+  );
+  TestValidator.equals(
+    "approval request should be approved",
+    approval.status,
     "approved",
   );
   TestValidator.predicate(
-    "reviewer administrator populated",
-    approvalRequest.reviewerAdministrator !== null,
-  );
-  TestValidator.predicate(
-    "reviewedAt populated",
-    approvalRequest.reviewedAt !== null,
+    "applicant reason should be preserved",
+    approval.reason.length > 0,
   );
   TestValidator.equals(
-    "rejection reason remains null",
-    approvalRequest.rejectionReason,
+    "reviewer administrator should be recorded",
+    approval.reviewerAdministrator?.id,
+    reviewer.id,
+  );
+  TestValidator.equals(
+    "review timestamp should be persisted",
+    approval.reviewedAt,
+    reviewedAt,
+  );
+  TestValidator.equals(
+    "approved request should remain available as governance history",
+    approval.deletedAt,
     null,
   );
-  TestValidator.predicate(
-    "request remains active",
-    approvalRequest.deletedAt === null,
-  );
-  TestValidator.predicate(
-    "applicant reference exists",
-    approvalRequest.administrator !== null,
-  );
   TestValidator.equals(
-    "original reason preserved",
-    approvalRequest.reason,
-    originalReason,
+    "reviewer email should be preserved",
+    approval.reviewerAdministrator?.email,
+    reviewer.email,
   );
 }

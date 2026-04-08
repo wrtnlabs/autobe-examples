@@ -23,51 +23,62 @@ export async function getRedditCloneMemberCommunitiesCommunityIdModerationDashbo
   member: MemberPayload;
   communityId: string & tags.Format<"uuid">;
 }): Promise<IRedditCloneCommunityModerator> {
-  // Verify moderator/owner access
-  const moderator =
-    await MyGlobal.prisma.reddit_clone_community_moderators.findFirst({
-      where: {
-        reddit_clone_community_id: props.communityId,
-        reddit_clone_member_id: props.member.id,
+  // Verify community exists and get owner info for authorization
+  const community =
+    await MyGlobal.prisma.reddit_clone_communities.findUniqueOrThrow({
+      where: { id: props.communityId },
+      select: {
+        id: true,
+        reddit_clone_member_id: true,
       },
     });
-  if (moderator === null) {
-    throw new HttpException("You are not a moderator of this community", 403);
+  // Authorization: Check if member is owner or moderator of the community
+  const isOwner = community.reddit_clone_member_id === props.member.id;
+  if (!isOwner) {
+    const moderator =
+      await MyGlobal.prisma.reddit_clone_community_moderators.findFirst({
+        where: {
+          reddit_clone_community_id: props.communityId,
+          reddit_clone_member_id: props.member.id,
+        },
+        select: { id: true },
+      });
+    if (!moderator) {
+      throw new HttpException("Forbidden", 403);
+    }
   }
-  // Query summary statistics
-  const [
-    pendingReportsCount,
-    approvedReportsCount,
-    dismissedReportsCount,
-    activeBansCount,
-  ] = await Promise.all([
-    MyGlobal.prisma.reddit_clone_community_reports.count({
+  // Query report counts by status
+  const pendingReportsCount =
+    await MyGlobal.prisma.reddit_clone_community_reports.count({
       where: {
         reddit_clone_community_id: props.communityId,
         status: "pending",
       },
-    }),
-    MyGlobal.prisma.reddit_clone_community_reports.count({
+    });
+  const approvedReportsCount =
+    await MyGlobal.prisma.reddit_clone_community_reports.count({
       where: {
         reddit_clone_community_id: props.communityId,
         status: "approved",
       },
-    }),
-    MyGlobal.prisma.reddit_clone_community_reports.count({
+    });
+  const dismissedReportsCount =
+    await MyGlobal.prisma.reddit_clone_community_reports.count({
       where: {
         reddit_clone_community_id: props.communityId,
         status: "dismissed",
       },
-    }),
-    MyGlobal.prisma.reddit_clone_community_bans.count({
+    });
+  // Query active bans count (permanent or not yet expired)
+  const activeBansCount =
+    await MyGlobal.prisma.reddit_clone_community_bans.count({
       where: {
         reddit_clone_community_id: props.communityId,
         OR: [{ expires_at: null }, { expires_at: { gt: new Date() } }],
       },
-    }),
-  ]);
-  // Query recent pending reports
-  const recentReports =
+    });
+  // Query recent pending reports (max 10, ordered by created_at DESC)
+  const recentPendingReportsData =
     await MyGlobal.prisma.reddit_clone_community_reports.findMany({
       where: {
         reddit_clone_community_id: props.communityId,
@@ -77,29 +88,28 @@ export async function getRedditCloneMemberCommunitiesCommunityIdModerationDashbo
       take: 10,
       ...RedditCloneCommunityModeratorAtRecentPendingReportTransformer.select(),
     });
-  // Query recent bans
-  const recentBans = await MyGlobal.prisma.reddit_clone_community_bans.findMany(
-    {
+  // Query recent bans (max 10, ordered by created_at DESC)
+  const recentBansData =
+    await MyGlobal.prisma.reddit_clone_community_bans.findMany({
       where: {
         reddit_clone_community_id: props.communityId,
       },
       orderBy: { created_at: "desc" },
       take: 10,
       ...RedditCloneCommunityModeratorAtRecentBanTransformer.select(),
-    },
-  );
-  // Transform and return response
+    });
+  // Transform and return dashboard response
   return {
-    pendingReportsCount: pendingReportsCount,
-    approvedReportsCount: approvedReportsCount,
-    dismissedReportsCount: dismissedReportsCount,
-    activeBansCount: activeBansCount,
+    pendingReportsCount,
+    approvedReportsCount,
+    dismissedReportsCount,
+    activeBansCount,
     recentPendingReports: await ArrayUtil.asyncMap(
-      recentReports,
+      recentPendingReportsData,
       RedditCloneCommunityModeratorAtRecentPendingReportTransformer.transform,
     ),
     recentBans: await ArrayUtil.asyncMap(
-      recentBans,
+      recentBansData,
       RedditCloneCommunityModeratorAtRecentBanTransformer.transform,
     ),
   };

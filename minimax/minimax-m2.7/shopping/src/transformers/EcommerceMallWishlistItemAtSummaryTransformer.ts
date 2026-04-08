@@ -1,12 +1,16 @@
+import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
+import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallWishlistItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallWishlistItem";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { EcommerceMallProductAtSummaryTransformer } from "./EcommerceMallProductAtSummaryTransformer";
 
 export namespace EcommerceMallWishlistItemAtSummaryTransformer {
   export type Payload = Prisma.ecommerce_mall_wishlist_itemsGetPayload<
@@ -22,11 +26,7 @@ export namespace EcommerceMallWishlistItemAtSummaryTransformer {
             id: true,
           },
         } satisfies Prisma.ecommerce_mall_wishlistsFindManyArgs,
-        product: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.ecommerce_mall_productsFindManyArgs,
+        product: EcommerceMallProductAtSummaryTransformer.select(),
       },
     } satisfies Prisma.ecommerce_mall_wishlist_itemsFindManyArgs;
   }
@@ -34,7 +34,11 @@ export namespace EcommerceMallWishlistItemAtSummaryTransformer {
     input: Payload,
   ): Promise<IEcommerceMallWishlistItem.ISummary> {
     return {
-      createdAt: input.created_at.toISOString(),
+      id: input.id,
+      created_at: input.created_at.toISOString(),
+      product: await EcommerceMallProductAtSummaryTransformer.transform(
+        input.product,
+      ),
     } satisfies IEcommerceMallWishlistItem.ISummary;
   }
 }
@@ -53,14 +57,16 @@ export namespace EcommerceMallWishlistItemAtSummaryTransformer {
 //             id: true,
 //             created_at: true,
 //             ecommerce_mall_wishlist_id: true,
-//             ecommerce_mall_product_id: true,
+//             product: EcommerceMallProductAtSummaryTransformer.select(),
 //           },
 //         } satisfies Prisma.ecommerce_mall_wishlist_itemsFindManyArgs;
 //       }
 // 
 //       export async function transform(input: Payload): Promise<IEcommerceMallWishlistItem.ISummary> {
 //         return {
-//   createdAt: {string},
+//   id: {string},
+//   created_at: {string},
+//   product: await EcommerceMallProductAtSummaryTransformer.transform(input.product),
 //         };
 //       }
 //     }

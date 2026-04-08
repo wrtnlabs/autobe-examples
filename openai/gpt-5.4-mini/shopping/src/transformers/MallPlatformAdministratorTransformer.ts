@@ -1,6 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministrator";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -23,12 +24,12 @@ export namespace MallPlatformAdministratorTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        sessions: true,
-        passwordResets: true,
-        reviewedCancellationRequests: true,
-        refundRequests: true,
-        administratorApprovalRequests: true,
-        reviewedAdministratorApprovalRequests: true,
+        sessions: { select: {} },
+        passwordResets: { select: {} },
+        reviewedCancellationRequests: { select: {} },
+        refundRequests: { select: {} },
+        administratorApprovalRequests: { select: {} },
+        reviewedAdministratorApprovalRequests: { select: {} },
       },
     } satisfies Prisma.mall_platform_administratorsFindManyArgs;
   }
@@ -40,9 +41,9 @@ export namespace MallPlatformAdministratorTransformer {
       email: input.email,
       grade: input.grade,
       status: input.status,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     } satisfies IMallPlatformAdministrator;
   }
 }
@@ -76,9 +77,9 @@ export namespace MallPlatformAdministratorTransformer {
 //   email: {string},
 //   grade: {string},
 //   status: {string},
-//   createdAt: {string},
-//   updatedAt: {string},
-//   deletedAt: {string | null},
+//   created_at: {string},
+//   updated_at: {string},
+//   deleted_at: {string | null},
 //         };
 //       }
 //     }

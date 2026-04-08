@@ -16,17 +16,14 @@ export async function postEcommerceMallAuthAdminLogin(props: {
   ip: string;
   body: IEcommerceMallAdmin.ILogin;
 }): Promise<IEcommerceMallAdmin.IAuthorized> {
-  // Find admin by email with password_hash explicitly selected
+  // 1. Find admin by email with password_hash for verification
   const admin = await MyGlobal.prisma.ecommerce_mall_admins.findFirst({
-    where: {
-      email: props.body.email,
-      deleted_at: null,
-    },
+    where: { email: props.body.email },
     select: {
       id: true,
       email: true,
-      name: true,
       password_hash: true,
+      name: true,
       created_at: true,
       updated_at: true,
       deleted_at: true,
@@ -35,7 +32,7 @@ export async function postEcommerceMallAuthAdminLogin(props: {
   if (!admin) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // Verify password using PasswordUtil
+  // 2. Verify password against stored bcrypt hash
   const isValid = await PasswordUtil.verify(
     props.body.password,
     admin.password_hash,
@@ -43,33 +40,33 @@ export async function postEcommerceMallAuthAdminLogin(props: {
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // Calculate token expiration times as ISO strings (no native Date type)
-  const nowMs = Date.now();
-  const accessExpiresMs = nowMs + 60 * 60 * 1000; // 1 hour
-  const refreshExpiresMs = nowMs + 7 * 24 * 60 * 60 * 1000; // 7 days
-  const createdAtIso = new Date(nowMs).toISOString();
-  const accessExpiresIso = new Date(accessExpiresMs).toISOString();
-  const refreshExpiresIso = new Date(refreshExpiresMs).toISOString();
-  // Create new session
+  // 3. Calculate token expiration times
+  const now = new Date().toISOString();
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  const refreshExpires = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000,
+  ).toISOString();
+  const sessionId = v4();
+  // 4. Create new session in database
   const session = await MyGlobal.prisma.ecommerce_mall_admin_sessions.create({
     data: {
-      id: v4(),
+      id: sessionId,
       ecommerce_mall_admin_id: admin.id,
       ip: props.body.ip ?? props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
-      created_at: new Date(accessExpiresMs),
-      expired_at: new Date(accessExpiresMs),
+      created_at: now,
+      expired_at: accessExpires,
     },
   });
-  // Generate JWT tokens
+  // 5. Generate JWT tokens with admin id and session_id
   const token: IAuthorizationToken = {
     access: jwt.sign(
       {
         type: "admin",
         id: admin.id,
         session_id: session.id,
-        created_at: createdAtIso,
+        created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "1h", issuer: "autobe" },
@@ -80,25 +77,26 @@ export async function postEcommerceMallAuthAdminLogin(props: {
         id: admin.id,
         session_id: session.id,
         tokenType: "refresh",
-        created_at: createdAtIso,
+        created_at: now,
       },
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpiresIso,
-    refreshable_until: refreshExpiresIso,
+    expired_at: accessExpires,
+    refreshable_until: refreshExpires,
   };
-  // Return authorized admin with tokens
-  return {
+  // 6. Return authorized admin with tokens
+  const result: IEcommerceMallAdmin.IAuthorized = {
     id: admin.id,
     email: admin.email,
     name: admin.name,
-    created_at: admin.created_at.toISOString(),
-    updated_at: admin.updated_at.toISOString(),
+    created_at: toISOStringSafe(admin.created_at),
+    updated_at: toISOStringSafe(admin.updated_at),
     deleted_at:
-      admin.deleted_at !== null ? admin.deleted_at.toISOString() : null,
+      admin.deleted_at !== null ? toISOStringSafe(admin.deleted_at) : null,
     token,
   };
+  return result;
 }
 
 

@@ -6,10 +6,11 @@ import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IMallPlatformOrderItemSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItemSnapshot";
 import { IMallPlatformOrderItemSnapshotVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItemSnapshotVariantOption";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -23,12 +24,37 @@ export namespace MallPlatformOrderItemSnapshotTransformer {
   export type Payload = Prisma.mall_platform_order_item_snapshotsGetPayload<
     ReturnType<typeof select>
   >;
+  export function select() {
+    return {
+      select: {
+        id: true,
+        snapshot_at: true,
+        snapshot_reason: true,
+        order_item_status: true,
+        product_name: true,
+        product_description: true,
+        product_sku: true,
+        variant_sku_code: true,
+        seller_shop_name: true,
+        seller_shop_description: true,
+        seller_logo_image_url: true,
+        unit_price: true,
+        quantity: true,
+        line_total: true,
+        created_at: true,
+        updated_at: true,
+        deleted_at: true,
+        orderItem: MallPlatformOrderItemAtSummaryTransformer.select(),
+        variantOptions:
+          MallPlatformOrderItemSnapshotVariantOptionTransformer.select(),
+      },
+    } satisfies Prisma.mall_platform_order_item_snapshotsFindManyArgs;
+  }
   export async function transform(
     input: Payload,
   ): Promise<IMallPlatformOrderItemSnapshot> {
     return {
       id: input.id,
-      mallPlatformOrderItemId: input.mall_platform_order_item_id,
       orderItem: await MallPlatformOrderItemAtSummaryTransformer.transform(
         input.orderItem,
       ),
@@ -53,33 +79,6 @@ export namespace MallPlatformOrderItemSnapshotTransformer {
       updatedAt: input.updated_at.toISOString(),
       deletedAt: input.deleted_at?.toISOString() ?? null,
     } satisfies IMallPlatformOrderItemSnapshot;
-  }
-  export function select() {
-    return {
-      select: {
-        id: true,
-        mall_platform_order_item_id: true,
-        snapshot_at: true,
-        snapshot_reason: true,
-        order_item_status: true,
-        product_name: true,
-        product_description: true,
-        product_sku: true,
-        variant_sku_code: true,
-        seller_shop_name: true,
-        seller_shop_description: true,
-        seller_logo_image_url: true,
-        unit_price: true,
-        quantity: true,
-        line_total: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        orderItem: MallPlatformOrderItemAtSummaryTransformer.select(),
-        variantOptions:
-          MallPlatformOrderItemSnapshotVariantOptionTransformer.select(),
-      },
-    } satisfies Prisma.mall_platform_order_item_snapshotsFindManyArgs;
   }
 }
 
@@ -120,7 +119,6 @@ export namespace MallPlatformOrderItemSnapshotTransformer {
 //       export async function transform(input: Payload): Promise<IMallPlatformOrderItemSnapshot> {
 //         return {
 //   id: {string},
-//   mallPlatformOrderItemId: {string},
 //   orderItem: await MallPlatformOrderItemAtSummaryTransformer.transform(input.orderItem),
 //   snapshotAt: {string},
 //   snapshotReason: {string},

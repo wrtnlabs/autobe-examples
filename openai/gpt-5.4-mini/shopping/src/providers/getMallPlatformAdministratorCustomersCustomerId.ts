@@ -1,5 +1,6 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+import { IMallPlatformCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomerProfile";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -17,12 +18,20 @@ export async function getMallPlatformAdministratorCustomersCustomerId(props: {
   administrator: AdministratorPayload;
   customerId: string & tags.Format<"uuid">;
 }): Promise<IMallPlatformCustomer> {
+  await MyGlobal.prisma.mall_platform_administrators.findFirstOrThrow({
+    where: {
+      id: props.administrator.id,
+    },
+    select: {
+      id: true,
+    },
+  });
   const record = await MyGlobal.prisma.mall_platform_customers.findFirstOrThrow(
     {
-      ...MallPlatformCustomerTransformer.select(),
       where: {
         id: props.customerId,
       },
+      ...MallPlatformCustomerTransformer.select(),
     },
   );
   return await MallPlatformCustomerTransformer.transform(record);
@@ -47,6 +56,7 @@ export async function getMallPlatformAdministratorCustomersCustomerId(props: {
 // 
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+// import { IMallPlatformCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomerProfile";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.

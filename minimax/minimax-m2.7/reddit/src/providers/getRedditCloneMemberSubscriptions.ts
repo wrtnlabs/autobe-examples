@@ -20,24 +20,32 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getRedditCloneMemberSubscriptions(props: {
   member: MemberPayload;
 }): Promise<IPageIRedditCloneSubscription.ISummary> {
+  // Pagination parameters
   const page = 1;
   const limit = 20;
   const skip = (page - 1) * limit;
-  const whereInput = {
-    reddit_clone_member_id: props.member.id,
-    community: {
-      deleted_at: null,
+  // Query subscriptions for the authenticated member
+  // Exclude soft-deleted communities
+  const records = await MyGlobal.prisma.reddit_clone_subscriptions.findMany({
+    where: {
+      reddit_clone_member_id: props.member.id,
+      community: {
+        deleted_at: null,
+      },
     },
-  } satisfies Prisma.reddit_clone_subscriptionsWhereInput;
-  const data = await MyGlobal.prisma.reddit_clone_subscriptions.findMany({
-    where: whereInput,
+    orderBy: { created_at: "desc" },
     skip,
     take: limit,
-    orderBy: { created_at: "desc" },
     ...RedditCloneSubscriptionAtSummaryTransformer.select(),
   });
+  // Get total count for pagination metadata
   const total = await MyGlobal.prisma.reddit_clone_subscriptions.count({
-    where: whereInput,
+    where: {
+      reddit_clone_member_id: props.member.id,
+      community: {
+        deleted_at: null,
+      },
+    },
   });
   return {
     pagination: {
@@ -47,7 +55,7 @@ export async function getRedditCloneMemberSubscriptions(props: {
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
-      data,
+      records,
       RedditCloneSubscriptionAtSummaryTransformer.transform,
     ),
   };

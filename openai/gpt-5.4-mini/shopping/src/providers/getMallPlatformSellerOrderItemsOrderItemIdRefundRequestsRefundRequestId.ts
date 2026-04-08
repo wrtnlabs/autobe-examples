@@ -5,10 +5,10 @@ import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformRefundRequest";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -28,22 +28,15 @@ export async function getMallPlatformSellerOrderItemsOrderItemIdRefundRequestsRe
   refundRequestId: string & tags.Format<"uuid">;
 }): Promise<IMallPlatformRefundRequest> {
   const record =
-    await MyGlobal.prisma.mall_platform_refund_requests.findUniqueOrThrow({
+    await MyGlobal.prisma.mall_platform_refund_requests.findFirstOrThrow({
       where: {
         id: props.refundRequestId,
+        mall_platform_order_item_id: props.orderItemId,
+        mall_platform_seller_id: props.seller.id,
+        deleted_at: null,
       },
-      select: {
-        ...MallPlatformRefundRequestTransformer.select().select,
-        mall_platform_order_item_id: true,
-        mall_platform_seller_id: true,
-      },
+      ...MallPlatformRefundRequestTransformer.select(),
     });
-  if (record.mall_platform_order_item_id !== props.orderItemId) {
-    throw new HttpException("Not Found", 404);
-  }
-  if (record.mall_platform_seller_id !== props.seller.id) {
-    throw new HttpException("Forbidden", 403);
-  }
   return await MallPlatformRefundRequestTransformer.transform(record);
 }
 
@@ -71,9 +64,9 @@ export async function getMallPlatformSellerOrderItemsOrderItemIdRefundRequestsRe
 // import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 // import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 // import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 // import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
-// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
+// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 // import { IMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministrator";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,

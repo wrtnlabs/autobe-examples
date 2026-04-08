@@ -3,50 +3,61 @@ import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IEcommerceMallSellerApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerApproval";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallAdminAtSummaryTransformer } from "./EcommerceMallAdminAtSummaryTransformer";
-import { EcommerceMallSellerAtSummaryTransformer } from "./EcommerceMallSellerAtSummaryTransformer";
+import { EcommerceMallSellerApprovalAtSummaryTransformer } from "./EcommerceMallSellerApprovalAtSummaryTransformer";
 
 export namespace EcommerceMallSellerApprovalTransformer {
-  export type Payload = Prisma.ecommerce_mall_seller_approvalsGetPayload<
+  export type Payload = Prisma.ecommerce_mall_sellersGetPayload<
     ReturnType<typeof select>
   >;
   export function select() {
     return {
       select: {
         id: true,
-        status: true,
+        email: true,
+        password_hash: true,
+        approval_status: true,
         rejection_reason: true,
+        rejected_at: true,
         created_at: true,
         updated_at: true,
-        seller: EcommerceMallSellerAtSummaryTransformer.select(),
-        reviewedByAdmin: EcommerceMallAdminAtSummaryTransformer.select(),
+        deleted_at: true,
+        sellerSessions: true,
+        passwordResets: true,
+        emailVerifications: true,
+        adminRequest: true,
+        profile: true,
+        adminRequests: true,
+        products: true,
+        productSnapshots: true,
+        shipments: true,
+        cancellationRequests: true,
+        refundRequests: true,
+        refundRequestSnapshots: true,
+        sellerApprovals:
+          EcommerceMallSellerApprovalAtSummaryTransformer.select(),
+        sellerSuspensions: true,
       },
-    } satisfies Prisma.ecommerce_mall_seller_approvalsFindManyArgs;
+    } satisfies Prisma.ecommerce_mall_sellersFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallSellerApproval> {
     return {
-      id: input.id,
-      status: input.status,
+      approvalStatus: input.approval_status,
       rejectionReason: input.rejection_reason,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      seller: await EcommerceMallSellerAtSummaryTransformer.transform(
-        input.seller,
+      rejectedAt: input.rejected_at ? input.rejected_at.toISOString() : null,
+      approvalHistory: await ArrayUtil.asyncMap(
+        input.sellerApprovals,
+        EcommerceMallSellerApprovalAtSummaryTransformer.transform,
       ),
-      reviewedByAdmin: input.reviewedByAdmin
-        ? await EcommerceMallAdminAtSummaryTransformer.transform(
-            input.reviewedByAdmin,
-          )
-        : null,
-    } satisfies IEcommerceMallSellerApproval;
+    };
   }
 }
 
@@ -55,32 +66,32 @@ export namespace EcommerceMallSellerApprovalTransformer {
 // TEMPLATE CODE
 //--------------------------------------------------------------
 //     export namespace EcommerceMallSellerApprovalTransformer {
-//       export type Payload = Prisma.ecommerce_mall_seller_approvalsGetPayload<ReturnType<typeof select>>;
+//       export type Payload = Prisma.ecommerce_mall_sellersGetPayload<ReturnType<typeof select>>;
 // 
 //       export function select() {
 //         // implicit return type for better type inference
 //         return {
 //           select: {
 //             id: true,
-//             status: true,
+//             email: true,
+//             password_hash: true,
+//             approval_status: true,
 //             rejection_reason: true,
+//             rejected_at: true,
 //             created_at: true,
 //             updated_at: true,
-//             seller: EcommerceMallSellerAtSummaryTransformer.select(),
-//             reviewedByAdmin: EcommerceMallAdminAtSummaryTransformer.select(),
+//             deleted_at: true,
+//             sellerApprovals: EcommerceMallSellerApprovalAtSummaryTransformer.select(),
 //           },
-//         } satisfies Prisma.ecommerce_mall_seller_approvalsFindManyArgs;
+//         } satisfies Prisma.ecommerce_mall_sellersFindManyArgs;
 //       }
 // 
 //       export async function transform(input: Payload): Promise<IEcommerceMallSellerApproval> {
 //         return {
-//   id: {string},
-//   status: {string},
+//   approvalStatus: {string},
 //   rejectionReason: {string | null},
-//   seller: await EcommerceMallSellerAtSummaryTransformer.transform(input.seller),
-//   reviewedByAdmin: input.reviewedByAdmin ? await EcommerceMallAdminAtSummaryTransformer.transform(input.reviewedByAdmin) : null,
-//   createdAt: {string},
-//   updatedAt: {string},
+//   rejectedAt: {string | null},
+//   approvalHistory: await ArrayUtil.asyncMap(input.sellerApprovals, EcommerceMallSellerApprovalAtSummaryTransformer.transform),
 //         };
 //       }
 //     }

@@ -10,8 +10,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallProductCollector {
   export async function collect(props: {
     body: IEcommerceMallProduct.ICreate;
-    ecommerceMallSellers: IEntity;
-    ecommerceMallSellerSessions: IEntity;
+    seller: IEntity;
   }) {
     return {
       id: v4(),
@@ -21,7 +20,7 @@ export namespace EcommerceMallProductCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      seller: { connect: { id: props.ecommerceMallSellers.id } },
+      seller: { connect: { id: props.seller.id } },
       category: { connect: { id: props.body.categoryId } },
     } satisfies Prisma.ecommerce_mall_productsCreateInput;
   }

@@ -1,17 +1,13 @@
-import { IEcommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCategory";
-import { IEcommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProduct";
 import { IEcommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariant";
-import { IEcommerceMallProductVariantOptionValue } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallProductVariantOptionValue";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
-import { EcommerceMallProductAtSummaryTransformer } from "./EcommerceMallProductAtSummaryTransformer";
-import { EcommerceMallProductVariantOptionValueAtSummaryTransformer } from "./EcommerceMallProductVariantOptionValueAtSummaryTransformer";
 
 export namespace EcommerceMallProductVariantAtSummaryTransformer {
   export type Payload = Prisma.ecommerce_mall_product_variantsGetPayload<
@@ -27,9 +23,16 @@ export namespace EcommerceMallProductVariantAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        product: EcommerceMallProductAtSummaryTransformer.select(),
-        optionValues:
-          EcommerceMallProductVariantOptionValueAtSummaryTransformer.select(),
+        product: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_productsFindFirstArgs,
+        optionValues: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_product_variant_option_valuesFindManyArgs,
         inventoryRecords: {
           select: {
             id: true,
@@ -52,20 +55,13 @@ export namespace EcommerceMallProductVariantAtSummaryTransformer {
     input: Payload,
   ): Promise<IEcommerceMallProductVariant.ISummary> {
     return {
-      created_at: input.created_at.toISOString(),
       id: input.id,
-      in_stock: input.quantity > 0,
-      optionValues: await ArrayUtil.asyncMap(
-        input.optionValues,
-        EcommerceMallProductVariantOptionValueAtSummaryTransformer.transform,
-      ),
+      skuCode: input.sku_code,
       price: input.price,
-      product: await EcommerceMallProductAtSummaryTransformer.transform(
-        input.product,
-      ),
       quantity: input.quantity,
-      sku_code: input.sku_code,
-      updated_at: input.updated_at.toISOString(),
+      productId: input.product.id,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
     } satisfies IEcommerceMallProductVariant.ISummary;
   }
 }
@@ -88,23 +84,20 @@ export namespace EcommerceMallProductVariantAtSummaryTransformer {
 //             created_at: true,
 //             updated_at: true,
 //             deleted_at: true,
-//             product: EcommerceMallProductAtSummaryTransformer.select(),
-//             optionValues: EcommerceMallProductVariantOptionValueAtSummaryTransformer.select(),
+//             ecommerce_mall_product_id: true,
 //           },
 //         } satisfies Prisma.ecommerce_mall_product_variantsFindManyArgs;
 //       }
 // 
 //       export async function transform(input: Payload): Promise<IEcommerceMallProductVariant.ISummary> {
 //         return {
-//   created_at: {string},
 //   id: {string},
-//   in_stock: {boolean},
-//   optionValues: await ArrayUtil.asyncMap(input.optionValues, EcommerceMallProductVariantOptionValueAtSummaryTransformer.transform),
+//   skuCode: {string},
 //   price: {number | null},
-//   product: await EcommerceMallProductAtSummaryTransformer.transform(input.product),
 //   quantity: {integer},
-//   sku_code: {string},
-//   updated_at: {string},
+//   productId: {string},
+//   createdAt: {string},
+//   updatedAt: {string},
 //         };
 //       }
 //     }

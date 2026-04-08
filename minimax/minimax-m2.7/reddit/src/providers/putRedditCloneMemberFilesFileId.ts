@@ -22,58 +22,66 @@ export async function putRedditCloneMemberFilesFileId(props: {
   fileId: string & tags.Format<"uuid">;
   body: IRedditCloneFile.IUpdate;
 }): Promise<IRedditCloneFile> {
-  // 1. Retrieve the file and verify it exists and is not soft-deleted
-  const file = await MyGlobal.prisma.reddit_clone_files.findUniqueOrThrow({
+  // 1. Fetch and verify file exists, not soft-deleted
+  const file = await MyGlobal.prisma.reddit_clone_files.findUnique({
     where: { id: props.fileId },
-    select: { id: true, uploader_id: true, deleted_at: true },
+    select: {
+      id: true,
+      uploader_id: true,
+      status: true,
+      deleted_at: true,
+    },
   });
-  if (file.deleted_at !== null) {
+  if (!file || file.deleted_at !== null) {
     throw new HttpException("File not found", 404);
   }
-  // 2. Handle target reassignment if target parameters are provided
-  if (
-    props.body.targetType !== undefined ||
-    props.body.targetId !== undefined
-  ) {
-    // Authorization: Only the uploader can reassign the target
-    if (file.uploader_id !== props.member.id) {
-      throw new HttpException("Forbidden", 403);
-    }
-    // Business rule: Post images cannot be modified after creation
-    if (props.body.targetType === "post") {
-      throw new HttpException(
-        "Post images cannot be modified after creation",
-        403,
-      );
-    }
-    // Update the target association in reddit_clone_file_associations
-    const existingAssociation =
-      await MyGlobal.prisma.reddit_clone_file_associations.findUnique({
-        where: { reddit_clone_file_id: props.fileId },
-      });
-    if (existingAssociation) {
-      await MyGlobal.prisma.reddit_clone_file_associations.update({
-        where: { reddit_clone_file_id: props.fileId },
-        data: {
-          target_type: props.body.targetType,
-          target_id: props.body.targetId,
-          updated_at: new Date(),
-        },
-      });
-    }
+  // 2. Verify uploader matches authenticated member
+  if (file.uploader_id !== props.member.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  // 3. Update file status if provided (only admin can change status, members cannot)
-  if (props.body.status !== undefined) {
-    // Note: Status update is restricted - in production, add admin role check here
-    await MyGlobal.prisma.reddit_clone_files.update({
-      where: { id: props.fileId },
+  // 3. Reject if target_type is 'post' (post images cannot be modified)
+  if (props.body.targetType === "post") {
+    throw new HttpException(
+      "Post images cannot be modified after creation",
+      403,
+    );
+  }
+  // 4. Update target association if target parameters provided
+  if (
+    props.body.targetId !== undefined &&
+    props.body.targetType !== undefined
+  ) {
+    // Delete existing association
+    await MyGlobal.prisma.reddit_clone_file_associations.deleteMany({
+      where: { reddit_clone_file_id: props.fileId },
+    });
+    // Create new association
+    await MyGlobal.prisma.reddit_clone_file_associations.create({
       data: {
-        status: props.body.status,
+        id: v4(),
+        reddit_clone_file_id: props.fileId,
+        target_type: props.body.targetType,
+        target_id: props.body.targetId,
+        created_at: new Date(),
         updated_at: new Date(),
       },
     });
   }
-  // 4. Return the updated file with all related data
+  // 5. Update file status and timestamp
+  const updateData: {
+    updated_at: Date;
+    status?: string;
+  } = {
+    updated_at: new Date(),
+  };
+  if (props.body.status !== undefined) {
+    updateData.status = props.body.status;
+  }
+  await MyGlobal.prisma.reddit_clone_files.update({
+    where: { id: props.fileId },
+    data: updateData,
+  });
+  // 6. Return updated file using transformer
   const updated = await MyGlobal.prisma.reddit_clone_files.findUniqueOrThrow({
     where: { id: props.fileId },
     ...RedditCloneFileTransformer.select(),

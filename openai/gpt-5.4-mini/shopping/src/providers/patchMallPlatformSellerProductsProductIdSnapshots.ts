@@ -1,9 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductSnapshot";
-import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 import { IPageIMallPlatformProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformProductSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
@@ -24,41 +23,53 @@ export async function patchMallPlatformSellerProductsProductIdSnapshots(props: {
   productId: string & tags.Format<"uuid">;
   body: IMallPlatformProductSnapshot.IRequest;
 }): Promise<IPageIMallPlatformProductSnapshot.ISummary> {
-  const page: number = props.body.page ?? 1;
-  const limit: number = props.body.limit ?? 100;
-  const skip: number = (page - 1) * limit;
-  const product = await MyGlobal.prisma.mall_platform_products.findFirst({
-    where: {
-      id: props.productId,
-      seller_account_id: props.seller.id,
-    },
-    select: {
-      id: true,
-    },
-  });
-  if (product === null) {
+  const product =
+    await MyGlobal.prisma.mall_platform_products.findUniqueOrThrow({
+      where: { id: props.productId },
+      select: {
+        id: true,
+        seller_account_id: true,
+      },
+    });
+  if (product.seller_account_id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  const where: Prisma.mall_platform_product_snapshotsWhereInput = {
-    mall_platform_product_id: product.id,
-  };
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
+  const where = {
+    mall_platform_product_id: props.productId,
+    ...(props.body.snapshotKind !== undefined &&
+    props.body.snapshotKind !== null
+      ? { snapshot_kind: props.body.snapshotKind }
+      : {}),
+  } satisfies Prisma.mall_platform_product_snapshotsWhereInput;
+  const orderBy =
+    props.body.sort === "created_at_asc"
+      ? ({
+          created_at: "asc",
+        } satisfies Prisma.mall_platform_product_snapshotsOrderByWithRelationInput)
+      : ({
+          created_at: "desc",
+        } satisfies Prisma.mall_platform_product_snapshotsOrderByWithRelationInput);
   const records =
     await MyGlobal.prisma.mall_platform_product_snapshots.findMany({
       where,
+      orderBy,
       skip,
       take: limit,
-      orderBy: { created_at: "desc" },
       ...MallPlatformProductSnapshotAtSummaryTransformer.select(),
     });
-  const total = await MyGlobal.prisma.mall_platform_product_snapshots.count({
-    where,
-  });
+  const recordsCount =
+    await MyGlobal.prisma.mall_platform_product_snapshots.count({
+      where,
+    });
   return {
     pagination: {
       current: page,
       limit,
-      records: total,
-      pages: Math.ceil(total / limit),
+      records: recordsCount,
+      pages: Math.ceil(recordsCount / limit),
     },
     data: await ArrayUtil.asyncMap(
       records,
@@ -89,9 +100,8 @@ export async function patchMallPlatformSellerProductsProductIdSnapshots(props: {
 // import { IPageIMallPlatformProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformProductSnapshot";
 // import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 // import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 // import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
-// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.

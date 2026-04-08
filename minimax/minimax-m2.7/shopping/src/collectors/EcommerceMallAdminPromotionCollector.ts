@@ -10,17 +10,17 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallAdminPromotionCollector {
   export async function collect(props: {
     body: IEcommerceMallAdminPromotion.ICreate;
-    admin: IEntity;
-    performedBySuperAdmin: IEntity;
+    ecommerceMallAdmins: IEntity;
+    ecommerceMallSuperAdmins: IEntity;
   }) {
     return {
       id: v4(),
-      action: "promotion",
+      action: "promotion" as const,
       reason: props.body.reason ?? null,
       created_at: new Date(),
-      admin: { connect: { id: props.admin.id } },
+      admin: { connect: { id: props.ecommerceMallAdmins.id } },
       performedBySuperAdmin: {
-        connect: { id: props.performedBySuperAdmin.id },
+        connect: { id: props.ecommerceMallSuperAdmins.id },
       },
     } satisfies Prisma.ecommerce_mall_admin_promotionsCreateInput;
   }
@@ -33,7 +33,7 @@ export namespace EcommerceMallAdminPromotionCollector {
 //       export namespace EcommerceMallAdminPromotionCollector {
 //         export async function collect(props: {
 //           body: IEcommerceMallAdminPromotion.ICreate;
-//           ecommerceMallAdmins: IEntity; // from path parameter adminId
+//           ecommerceMallAdmins: IEntity; // from path parameter userId
 // ecommerceMallSuperAdmins: IEntity; // from authorized actor
 //           
 //           

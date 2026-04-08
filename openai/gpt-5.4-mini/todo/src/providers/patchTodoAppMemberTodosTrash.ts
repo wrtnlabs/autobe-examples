@@ -12,6 +12,7 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { MemberPayload } from "../decorators/payload/MemberPayload";
+import { TodoAppTodoAtSummaryTransformer } from "../transformers/TodoAppTodoAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
@@ -19,109 +20,105 @@ export async function patchTodoAppMemberTodosTrash(props: {
   member: MemberPayload;
   body: ITodoAppTodo.IRequest;
 }): Promise<IPageITodoAppTodo.ISummary> {
-  const page: number = props.body.page ?? 1;
-  const limit: number = props.body.limit ?? 100;
-  const skip: number = (page - 1) * limit;
-  const where: Prisma.todo_app_todosWhereInput = {
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 100;
+  const skip = (page - 1) * limit;
+  const where = {
     todo_app_member_id: props.member.id,
-    deleted_at: {
-      not: null,
-    },
+    deleted_at: { not: null },
     ...(props.body.completionStatus === "complete"
       ? { is_completed: true }
       : props.body.completionStatus === "incomplete"
         ? { is_completed: false }
         : {}),
-  };
-  const orderBy = (
-    props.body.sort === "createdAtAsc"
-      ? [
-          { created_at: "asc" as const },
-          { deleted_at: "asc" as const },
-          { created_at: "asc" as const },
-        ]
-      : props.body.sort === "createdAtDesc"
-        ? [
-            { created_at: "desc" as const },
-            { deleted_at: "desc" as const },
-            { created_at: "desc" as const },
-          ]
-        : props.body.sort === "startAtAsc"
-          ? [
-              { start_at: "asc" as const },
-              { deleted_at: "desc" as const },
-              { created_at: "desc" as const },
-            ]
-          : props.body.sort === "startAtDesc"
-            ? [
-                { start_at: "desc" as const },
-                { deleted_at: "desc" as const },
-                { created_at: "desc" as const },
-              ]
-            : props.body.sort === "dueAtAsc"
-              ? [
-                  { due_at: "asc" as const },
-                  { deleted_at: "desc" as const },
-                  { created_at: "desc" as const },
-                ]
-              : props.body.sort === "dueAtDesc"
-                ? [
-                    { due_at: "desc" as const },
-                    { deleted_at: "desc" as const },
-                    { created_at: "desc" as const },
-                  ]
-                : [
-                    { deleted_at: "desc" as const },
-                    { created_at: "desc" as const },
-                  ]
-  ) satisfies Prisma.todo_app_todosOrderByWithRelationInput[];
-  const data = await MyGlobal.prisma.todo_app_todos.findMany({
+  } satisfies Prisma.todo_app_todosWhereInput;
+  const orderBy = (() => {
+    const direction = props.body.sortOrder ?? "desc";
+    if (props.body.sortBy === "startDate") {
+      return [
+        { start_date: direction },
+        { created_at: "desc" },
+      ] satisfies Prisma.todo_app_todosOrderByWithRelationInput[];
+    }
+    if (props.body.sortBy === "dueDate") {
+      return [
+        { due_date: direction },
+        { created_at: "desc" },
+      ] satisfies Prisma.todo_app_todosOrderByWithRelationInput[];
+    }
+    if (props.body.sortBy === "createdAt") {
+      return [
+        { created_at: direction },
+      ] satisfies Prisma.todo_app_todosOrderByWithRelationInput[];
+    }
+    return [
+      { created_at: "desc" },
+    ] satisfies Prisma.todo_app_todosOrderByWithRelationInput[];
+  })();
+  const records = await MyGlobal.prisma.todo_app_todos.findMany({
     where,
+    orderBy,
     skip,
     take: limit,
-    orderBy,
-    select: {
-      id: true,
-      title: true,
-      is_completed: true,
-      start_at: true,
-      due_at: true,
-      created_at: true,
-      deleted_at: true,
-      member: {
-        select: {
-          id: true,
-          email: true,
-          created_at: true,
-          updated_at: true,
-          deleted_at: true,
-        },
-      },
-    },
+    ...TodoAppTodoAtSummaryTransformer.select(),
   });
-  const records = await MyGlobal.prisma.todo_app_todos.count({ where });
+  const total = await MyGlobal.prisma.todo_app_todos.count({ where });
   return {
-    data: data.map((todo) => ({
-      id: todo.id,
-      title: todo.title,
-      member: {
-        id: todo.member.id,
-        email: todo.member.email,
-        created_at: todo.member.created_at.toISOString(),
-        updated_at: todo.member.updated_at.toISOString(),
-        deleted_at: todo.member.deleted_at?.toISOString() ?? null,
-      } satisfies ITodoAppMember.ISummary,
-      is_completed: todo.is_completed,
-      start_at: todo.start_at?.toISOString() ?? null,
-      due_at: todo.due_at?.toISOString() ?? null,
-      created_at: todo.created_at.toISOString(),
-      deleted_at: todo.deleted_at?.toISOString() ?? null,
-    })),
     pagination: {
       current: page,
       limit,
-      records,
-      pages: Math.ceil(records / limit),
+      records: total,
+      pages: Math.ceil(total / limit),
     },
+    data: await ArrayUtil.asyncMap(
+      records,
+      TodoAppTodoAtSummaryTransformer.transform,
+    ),
   };
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { ITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppTodo";
+// import { IPageITodoAppTodo } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageITodoAppTodo";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { ITodoAppMember } from "@ORGANIZATION/PROJECT-api/lib/structures/ITodoAppMember";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchTodoAppMemberTodosTrash(props: {
+//   member: MemberPayload;
+//   body: ITodoAppTodo.IRequest;
+// }): Promise<IPageITodoAppTodo.ISummary> {
+//   const records = await MyGlobal.prisma.todo_app_todos.findMany({
+//     ...TodoAppTodoAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, TodoAppTodoAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

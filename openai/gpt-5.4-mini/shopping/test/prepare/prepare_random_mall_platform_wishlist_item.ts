@@ -8,9 +8,9 @@ import typia, { tags } from "typia";
 /**
  * Prepare random mall platform wishlist item creation data for E2E testing.
  *
- * Generates a complete IMallPlatformWishlistItem.ICreate payload with a valid
- * product UUID. Any provided input overrides the generated default so tests can
- * target a specific product while keeping the request body valid.
+ * Generates a complete IMallPlatformWishlistItem.ICreate object with a valid
+ * product UUID, while allowing tests to override any field through DeepPartial
+ * input.
  */
 export function prepare_random_mall_platform_wishlist_item(
   input?: DeepPartial<IMallPlatformWishlistItem.ICreate> | undefined,

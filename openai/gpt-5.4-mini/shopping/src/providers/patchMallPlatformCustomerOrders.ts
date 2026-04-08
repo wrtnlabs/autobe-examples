@@ -22,42 +22,42 @@ export async function patchMallPlatformCustomerOrders(props: {
 }): Promise<IPageIMallPlatformOrder.ISummary> {
   const page: number = props.body.page ?? 1;
   const limit: number = props.body.limit ?? 100;
-  if (page < 1) {
-    throw new HttpException("Invalid page", 400);
-  }
-  if (limit < 1 || limit > 100) {
-    throw new HttpException("Invalid limit", 400);
-  }
+  const skip: number = (page - 1) * limit;
   const where: Prisma.mall_platform_ordersWhereInput = {
     customer_id: props.customer.id,
-    ...(props.body.search !== undefined
+    ...(props.body.status !== undefined ? { status: props.body.status } : {}),
+    ...(props.body.createdAtFrom !== undefined ||
+    props.body.createdAtTo !== undefined
       ? {
-          OR: [
-            {
-              order_number: {
-                contains: props.body.search,
-                mode: "insensitive",
-              },
-            },
-            {
-              status: {
-                contains: props.body.search,
-                mode: "insensitive",
-              },
-            },
-          ],
+          created_at: {
+            ...(props.body.createdAtFrom !== undefined
+              ? { gte: props.body.createdAtFrom }
+              : {}),
+            ...(props.body.createdAtTo !== undefined
+              ? { lte: props.body.createdAtTo }
+              : {}),
+          },
         }
       : {}),
-    ...(props.body.status !== undefined ? { status: props.body.status } : {}),
   };
+  const orderBy: Prisma.mall_platform_ordersOrderByWithRelationInput =
+    props.body.sort === "createdAtAsc"
+      ? { created_at: "asc" }
+      : props.body.sort === "totalAmountAsc"
+        ? { total_amount: "asc" }
+        : props.body.sort === "totalAmountDesc"
+          ? { total_amount: "desc" }
+          : { created_at: "desc" };
   const records = await MyGlobal.prisma.mall_platform_orders.findMany({
-    where,
-    orderBy: { created_at: "desc" },
-    skip: (page - 1) * limit,
-    take: limit,
     ...MallPlatformOrderAtSummaryTransformer.select(),
+    where,
+    orderBy,
+    skip,
+    take: limit,
   });
-  const total = await MyGlobal.prisma.mall_platform_orders.count({ where });
+  const total = await MyGlobal.prisma.mall_platform_orders.count({
+    where,
+  });
   return {
     pagination: {
       current: page,

@@ -22,27 +22,31 @@ export async function putRedditCloneMemberRedditClonePostsPostIdCommentsCommentI
   commentId: string & tags.Format<"uuid">;
   body: IRedditCloneComment.IUpdate;
 }): Promise<IRedditCloneComment> {
-  const comment = await MyGlobal.prisma.reddit_clone_comments.findUnique({
-    where: { id: props.commentId },
-    select: {
-      id: true,
-      reddit_clone_post_id: true,
-      reddit_clone_member_id: true,
-      deleted_at: true,
+  // Find the comment to validate ownership and existence
+  const comment = await MyGlobal.prisma.reddit_clone_comments.findUniqueOrThrow(
+    {
+      where: { id: props.commentId },
+      select: {
+        id: true,
+        reddit_clone_member_id: true,
+        reddit_clone_post_id: true,
+        deleted_at: true,
+      },
     },
-  });
-  if (comment === null) {
-    throw new HttpException("Comment not found", 404);
-  }
+  );
+  // Verify comment belongs to the specified post
   if (comment.reddit_clone_post_id !== props.postId) {
-    throw new HttpException("Comment does not belong to this post", 404);
+    throw new HttpException("Comment not found in this post", 404);
   }
+  // Check if comment is soft-deleted
   if (comment.deleted_at !== null) {
-    throw new HttpException("Cannot edit a deleted comment", 400);
+    throw new HttpException("Cannot update a deleted comment", 400);
   }
+  // Validate that the authenticated user is the author
   if (comment.reddit_clone_member_id !== props.member.id) {
-    throw new HttpException("Forbidden", 403);
+    throw new HttpException("You can only edit your own comments", 403);
   }
+  // Update the comment with new content and updated timestamp
   await MyGlobal.prisma.reddit_clone_comments.update({
     where: { id: props.commentId },
     data: {
@@ -50,108 +54,14 @@ export async function putRedditCloneMemberRedditClonePostsPostIdCommentsCommentI
       updated_at: new Date(),
     },
   });
+  // Fetch the updated comment with all related data using transformer
   const updated = await MyGlobal.prisma.reddit_clone_comments.findUniqueOrThrow(
     {
       where: { id: props.commentId },
-      select: {
-        id: true,
-        content: true,
-        vote_score: true,
-        created_at: true,
-        updated_at: true,
-        deleted_at: true,
-        post: {
-          select: {
-            id: true,
-            title: true,
-            type: true,
-            vote_score: true,
-            comment_count: true,
-            created_at: true,
-            updated_at: true,
-            deleted_at: true,
-            author: {
-              select: {
-                id: true,
-                username: true,
-              },
-            },
-            community: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
-                subscriber_count: true,
-                member: {
-                  select: {
-                    id: true,
-                    username: true,
-                  },
-                },
-                icon: true,
-              },
-            },
-            postTextContent: {
-              select: {
-                body: true,
-              },
-            },
-            link: {
-              select: {
-                url: true,
-              },
-            },
-            image: {
-              select: {
-                reddit_clone_file_id: true,
-              },
-            },
-            comments: true,
-            postVotes: true,
-          },
-        },
-        member: {
-          select: {
-            id: true,
-            username: true,
-          },
-        },
-        parent: {
-          select: {
-            id: true,
-            content: true,
-            vote_score: true,
-            created_at: true,
-            member: {
-              select: {
-                id: true,
-                username: true,
-              },
-            },
-            parent: true,
-            replies: true,
-          },
-        },
-        replies: {
-          select: {
-            id: true,
-            content: true,
-            vote_score: true,
-            created_at: true,
-            member: {
-              select: {
-                id: true,
-                username: true,
-              },
-            },
-            parent: true,
-            replies: true,
-          },
-        },
-      },
+      ...RedditCloneCommentTransformer.select(),
     },
   );
-  return RedditCloneCommentTransformer.transform(updated);
+  return await RedditCloneCommentTransformer.transform(updated);
 }
 
 

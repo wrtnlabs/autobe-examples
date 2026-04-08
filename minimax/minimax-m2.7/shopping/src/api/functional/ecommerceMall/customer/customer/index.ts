@@ -1,3 +1,3 @@
 export * as sessions from "./sessions/index";
-export * as password_resets from "./password_resets/index";
-export * as email_verifications from "./email_verifications/index";
+export * as password from "./password/index";
+export * as account from "./account/index";

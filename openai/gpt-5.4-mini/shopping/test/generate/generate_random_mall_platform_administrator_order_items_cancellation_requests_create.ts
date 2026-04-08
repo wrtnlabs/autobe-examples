@@ -7,9 +7,9 @@ import type { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/struct
 import type { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 import type { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import type { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import type { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import type { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import type { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import type { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -19,11 +19,16 @@ import typia, { tags } from "typia";
 import { prepare_random_mall_platform_cancellation_request } from "../prepare/prepare_random_mall_platform_cancellation_request";
 
 /**
- * Generate a random mall platform cancellation request via the API for E2E testing.
+ * Generate a random cancellation request via the API for E2E testing.
  *
- * Prepares cancellation request data using the prepare function, then submits it to the order-item scoped cancellation request endpoint for the specified order item.
+ * Prepares random cancellation request data using the prepare function, then
+ * submits it to the cancellation request creation endpoint for the specified
+ * order item. The created cancellation request entity is returned for use in
+ * end-to-end test scenarios.
  *
- * The created entity is returned so E2E tests can immediately use the pending cancellation request in follow-up review, approval, or rejection scenarios.
+ * The caller must provide the target order item identifier through params.
+ * Optional body overrides are merged into the prepared payload before the API
+ * call is made.
  */
 export async function generate_random_mall_platform_administrator_order_items_cancellation_requests_create(
   connection: api.IConnection,

@@ -19,21 +19,18 @@ export async function getEcommerceMallCustomerCustomerSessionsSessionId(props: {
   customer: CustomerPayload;
   sessionId: string & tags.Format<"uuid">;
 }): Promise<IEcommerceMallCustomerSession> {
-  const session =
-    await MyGlobal.prisma.ecommerce_mall_customer_sessions.findFirst({
-      ...EcommerceMallCustomerSessionTransformer.select(),
+  const query = EcommerceMallCustomerSessionTransformer.select();
+  const record =
+    await MyGlobal.prisma.ecommerce_mall_customer_sessions.findFirstOrThrow({
+      ...query,
       where: {
         id: props.sessionId,
-        ecommerce_mall_customer_id: props.customer.id,
-        expired_at: {
-          gt: new Date(),
-        },
       },
     });
-  if (session === null) {
-    throw new HttpException("Session not found or expired", 404);
+  if (record.customer?.id !== props.customer.id) {
+    throw new HttpException("Forbidden", 403);
   }
-  return await EcommerceMallCustomerSessionTransformer.transform(session);
+  return await EcommerceMallCustomerSessionTransformer.transform(record);
 }
 
 

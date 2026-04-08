@@ -15,22 +15,17 @@ export async function deleteMallPlatformAdministratorShipmentsShipmentId(props: 
   administrator: AdministratorPayload;
   shipmentId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  const shipment =
-    await MyGlobal.prisma.mall_platform_shipments.findFirstOrThrow({
-      where: {
-        id: props.shipmentId,
-        deleted_at: null,
-      },
-      select: {
-        id: true,
-      },
-    });
-  await MyGlobal.prisma.mall_platform_shipments.update({
+  await MyGlobal.prisma.mall_platform_shipments.findUniqueOrThrow({
     where: {
-      id: shipment.id,
+      id: props.shipmentId,
     },
-    data: {
-      deleted_at: toISOStringSafe(new Date()),
+    select: {
+      id: true,
+    },
+  });
+  await MyGlobal.prisma.mall_platform_shipments.delete({
+    where: {
+      id: props.shipmentId,
     },
   });
 }

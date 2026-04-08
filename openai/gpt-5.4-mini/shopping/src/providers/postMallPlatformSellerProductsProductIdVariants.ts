@@ -1,9 +1,8 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
-import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -25,40 +24,42 @@ export async function postMallPlatformSellerProductsProductIdVariants(props: {
 }): Promise<IMallPlatformProductVariant> {
   const product =
     await MyGlobal.prisma.mall_platform_products.findUniqueOrThrow({
-      where: {
-        id: props.productId,
-      },
+      where: { id: props.productId },
       select: {
         id: true,
-        seller_account_id: true,
+        sellerAccount: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
-  if (product.seller_account_id !== props.seller.id) {
+  if (product.sellerAccount.id !== props.seller.id) {
     throw new HttpException("Forbidden", 403);
   }
-  const created = await MyGlobal.prisma.$transaction(async (prisma) => {
-    const duplicate = await prisma.mall_platform_product_variants.findUnique({
-      where: {
-        sku_code: props.body.skuCode,
+  try {
+    const created = await MyGlobal.prisma.mall_platform_product_variants.create(
+      {
+        data: await MallPlatformProductVariantCollector.collect({
+          body: props.body,
+          product: { id: product.id },
+        }),
+        ...MallPlatformProductVariantTransformer.select(),
       },
-      select: {
-        id: true,
-      },
-    });
-    if (duplicate !== null) {
+    );
+    return await MallPlatformProductVariantTransformer.transform(created);
+  } catch (error: unknown) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      typeof error.code === "string" &&
+      error.code === "P2002"
+    ) {
       throw new HttpException("SKU code already exists", 409);
     }
-    return await prisma.mall_platform_product_variants.create({
-      data: await MallPlatformProductVariantCollector.collect({
-        body: props.body,
-        product: {
-          id: props.productId,
-        },
-      }),
-      ...MallPlatformProductVariantTransformer.select(),
-    });
-  });
-  return await MallPlatformProductVariantTransformer.transform(created);
+    throw error;
+  }
 }
 
 
@@ -81,9 +82,8 @@ export async function postMallPlatformSellerProductsProductIdVariants(props: {
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 // import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-// import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+// import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 // import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
-// import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.

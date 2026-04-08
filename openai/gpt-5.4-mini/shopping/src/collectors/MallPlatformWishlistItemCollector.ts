@@ -18,8 +18,16 @@ export namespace MallPlatformWishlistItemCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
-      wishlist: { connect: { id: props.wishlist.id } },
-      product: { connect: { id: props.body.product_id } },
+      wishlist: {
+        connect: {
+          id: props.wishlist.id,
+        },
+      },
+      product: {
+        connect: {
+          id: props.body.product_id,
+        },
+      },
     } satisfies Prisma.mall_platform_wishlist_itemsCreateInput;
   }
 }
@@ -31,7 +39,8 @@ export namespace MallPlatformWishlistItemCollector {
 //       export namespace MallPlatformWishlistItemCollector {
 //         export async function collect(props: {
 //           body: IMallPlatformWishlistItem.ICreate;
-//           mallPlatformWishlists: IEntity; // from authorized actor
+//           mallPlatformCustomers: IEntity; // from authorized actor
+// mallPlatformWishlists: IEntity; // from authorized session
 //           
 //           
 //         }) {

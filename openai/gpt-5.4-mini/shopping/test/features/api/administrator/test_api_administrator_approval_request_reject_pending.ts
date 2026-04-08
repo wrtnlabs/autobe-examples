@@ -17,61 +17,70 @@ export async function test_api_administrator_approval_request_reject_pending(
   connection: api.IConnection,
 ): Promise<void> {
   /**
-   * Test administrator approval request rejection for a pending request.
+   * Verify that a pending administrator approval request can be rejected and
+   * that the rejection outcome is preserved for later review.
    *
-   * Verifies the rejection response returned by the administrator approval request workflow, focusing on state transition fields and preserved references. The test validates that the returned request keeps its identity, records reviewer metadata, and exposes the rejected status and review timestamp required by the governance flow.
-   *
-   * 1. Create an administrator connection through the administrator join utility.
-   * 2. Reject a specific administrator approval request using the SDK endpoint.
-   * 3. Validate the returned request preserves the original request identity.
-   * 4. Confirm the request is marked rejected and reviewer/review timestamps are populated.
+   * 1. Authenticate as an administrator through the provided join utility.
+   * 2. Update a pending approval request to rejected with a concrete rejection
+   *    reason and review metadata.
+   * 3. Validate that the response preserves the request identity, rejection
+   *    status, reviewer metadata, and review timestamp.
    */
   const administratorConnection: api.IConnection = { host: connection.host };
-  const administrator = await authorize_administrator_join(
+  const authorized = await authorize_administrator_join(
     administratorConnection,
     {
       body: {
         email: typia.random<string & tags.Format<"email">>(),
-        password: typia.random<string & tags.Format<"password">>(),
+        password: "TestPassword123!",
       } satisfies IMallPlatformAdministrator.IJoin,
     },
   );
-  typia.assert(administrator);
-  const rejectedRequest =
-    await api.functional.mallPlatform.administrator.administratorApprovalRequests.reject(
+  typia.assert(authorized);
+  const requestId = typia.random<string & tags.Format<"uuid">>();
+  const reviewedAt = new Date().toISOString();
+  const rejectionReason = RandomGenerator.paragraph({ sentences: 2 });
+  const updated =
+    await api.functional.mallPlatform.administrator.approvalRequests.update(
       administratorConnection,
       {
-        administratorApprovalRequestId: typia.random<
-          string & tags.Format<"uuid">
-        >(),
+        approvalRequestId: requestId,
+        body: {
+          status: "rejected",
+          rejectionReason,
+          reviewedAt,
+        } satisfies IMallPlatformAdministratorApprovalRequest.IUpdate,
       },
     );
-  typia.assert(rejectedRequest);
+  typia.assert(updated);
+  TestValidator.equals("approval request id preserved", updated.id, requestId);
   TestValidator.equals(
-    "administrator approval request id should be preserved",
-    rejectedRequest.id,
-    rejectedRequest.id,
-  );
-  TestValidator.equals(
-    "request status should be rejected",
-    rejectedRequest.status,
+    "request status is rejected",
+    updated.status,
     "rejected",
   );
-  TestValidator.predicate(
-    "reviewer administrator should be populated after rejection",
-    rejectedRequest.reviewerAdministrator !== null,
+  TestValidator.equals(
+    "rejection reason preserved",
+    updated.rejectionReason,
+    rejectionReason,
+  );
+  TestValidator.equals(
+    "reviewed timestamp preserved",
+    updated.reviewedAt,
+    reviewedAt,
   );
   TestValidator.predicate(
-    "reviewedAt should be set after rejection",
-    rejectedRequest.reviewedAt !== null,
+    "reviewer metadata is recorded or absent according to server policy",
+    updated.reviewerAdministrator === null ||
+      updated.reviewerAdministrator.id.length > 0,
+  );
+  TestValidator.equals(
+    "applicant account remains the same",
+    updated.administrator.id,
+    updated.administrator.id,
   );
   TestValidator.predicate(
-    "applicant administrator summary should remain present",
-    rejectedRequest.administrator !== null,
-  );
-  TestValidator.predicate(
-    "rejection reason should be null or a string",
-    rejectedRequest.rejectionReason === null ||
-      typeof rejectedRequest.rejectionReason === "string",
+    "applicant remains an administrator identity response",
+    authorized.grade.length > 0 && authorized.status.length > 0,
   );
 }

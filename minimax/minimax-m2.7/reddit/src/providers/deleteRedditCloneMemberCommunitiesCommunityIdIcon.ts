@@ -15,28 +15,30 @@ export async function deleteRedditCloneMemberCommunitiesCommunityIdIcon(props: {
   member: MemberPayload;
   communityId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // Verify ownership
   const community =
     await MyGlobal.prisma.reddit_clone_communities.findUniqueOrThrow({
       where: { id: props.communityId },
-      select: { id: true, reddit_clone_member_id: true },
+      select: {
+        id: true,
+        reddit_clone_member_id: true,
+      },
     });
   if (community.reddit_clone_member_id !== props.member.id) {
-    throw new HttpException("Forbidden", 403);
+    throw new HttpException("You are not the owner of this community", 403);
   }
-  // Check if icon exists
   const icon = await MyGlobal.prisma.reddit_clone_community_icons.findUnique({
     where: { reddit_clone_community_id: props.communityId },
-    select: { id: true, reddit_clone_file_id: true },
+    select: {
+      id: true,
+      reddit_clone_file_id: true,
+    },
   });
   if (!icon) {
     return;
   }
-  // Delete icon record (cascade handles reddit_clone_file_associations)
   await MyGlobal.prisma.reddit_clone_community_icons.delete({
     where: { id: icon.id },
   });
-  // Delete associated file record
   await MyGlobal.prisma.reddit_clone_files.delete({
     where: { id: icon.reddit_clone_file_id },
   });

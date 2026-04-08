@@ -13,7 +13,7 @@ export namespace MallPlatformProductVariantCollector {
     product: IEntity;
   }) {
     const id: string = v4();
-    const now = new Date();
+    const now: Date = new Date();
     return {
       id,
       sku_code: props.body.skuCode,
@@ -24,9 +24,7 @@ export namespace MallPlatformProductVariantCollector {
       updated_at: now,
       deleted_at: null,
       product: {
-        connect: {
-          id: props.product.id,
-        },
+        connect: { id: props.product.id },
       },
     } satisfies Prisma.mall_platform_product_variantsCreateInput;
   }
@@ -39,7 +37,7 @@ export namespace MallPlatformProductVariantCollector {
 //       export namespace MallPlatformProductVariantCollector {
 //         export async function collect(props: {
 //           body: IMallPlatformProductVariant.ICreate;
-//           mallPlatformProducts: IEntity; // from path parameter productId
+//           mallPlatformProducts: IEntity; // from path parameter {productId}
 //           
 //           
 //         }) {

@@ -24,73 +24,103 @@ export async function patchRedditCloneMemberCommunitiesCommunityIdModeratorsMode
   body: IRedditCloneModeratorSnapshot.IRequest;
 }): Promise<IPageIRedditCloneModeratorSnapshot.ISummary> {
   // Authorization: Verify requesting member has moderator authority in the community
-  const requestingModerator =
-    await MyGlobal.prisma.reddit_clone_community_moderators.findFirst({
+  const requesterModerator =
+    await MyGlobal.prisma.reddit_clone_moderators.findFirst({
       where: {
         reddit_clone_community_id: props.communityId,
         reddit_clone_member_id: props.member.id,
+        deleted_at: null,
+      },
+      select: {
+        id: true,
+        role: true,
+      },
+    });
+  if (!requesterModerator) {
+    throw new HttpException(
+      "You do not have moderator authority in this community",
+      403,
+    );
+  }
+  // Validate: Verify moderatorId exists and belongs to the community
+  const targetModerator =
+    await MyGlobal.prisma.reddit_clone_moderators.findFirst({
+      where: {
+        id: props.moderatorId,
+        reddit_clone_community_id: props.communityId,
+        deleted_at: null,
       },
       select: {
         id: true,
       },
     });
-  if (requestingModerator === null) {
-    throw new HttpException("Forbidden", 403);
+  if (!targetModerator) {
+    throw new HttpException("Moderator not found in this community", 404);
   }
-  // Pagination with defaults
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
-  // Build where clause with conditional filters
-  const whereInput = {
-    reddit_clone_community_id: props.communityId,
+  // Build date range filter for created_at
+  const createdAtFilter: {
+    gte?: Date;
+    lte?: Date;
+  } = {};
+  if (props.body.createdAtRange?.from !== undefined) {
+    createdAtFilter.gte = new Date(props.body.createdAtRange.from);
+  }
+  if (props.body.createdAtRange?.to !== undefined) {
+    createdAtFilter.lte = new Date(props.body.createdAtRange.to);
+  }
+  // Build date range filter for assigned_at
+  const assignedAtFilter: {
+    gte?: Date;
+    lte?: Date;
+  } = {};
+  if (props.body.assignedAtRange?.from !== undefined) {
+    assignedAtFilter.gte = new Date(props.body.assignedAtRange.from);
+  }
+  if (props.body.assignedAtRange?.to !== undefined) {
+    assignedAtFilter.lte = new Date(props.body.assignedAtRange.to);
+  }
+  // Pagination parameters
+  const page: number = props.body.page ?? 1;
+  const limit: number = props.body.limit ?? 20;
+  const skip: number = (page - 1) * limit;
+  // Build where clause
+  const whereInput: Prisma.reddit_clone_moderator_snapshotsWhereInput = {
     reddit_clone_moderator_id: props.moderatorId,
-    ...(props.body.createdAtRange !== undefined && {
-      created_at: {
-        ...(props.body.createdAtRange.from !== undefined && {
-          gte: new Date(props.body.createdAtRange.from),
-        }),
-        ...(props.body.createdAtRange.to !== undefined && {
-          lte: new Date(props.body.createdAtRange.to),
-        }),
-      },
-    }),
-    ...(props.body.assignedAtRange !== undefined && {
-      assigned_at: {
-        ...(props.body.assignedAtRange.from !== undefined && {
-          gte: new Date(props.body.assignedAtRange.from),
-        }),
-        ...(props.body.assignedAtRange.to !== undefined && {
-          lte: new Date(props.body.assignedAtRange.to),
-        }),
-      },
-    }),
+    reddit_clone_community_id: props.communityId,
     ...(props.body.role !== undefined && { role: props.body.role }),
-  } satisfies Prisma.reddit_clone_moderator_snapshotsWhereInput;
-  // Query snapshots with transformer select
+    ...(Object.keys(createdAtFilter).length > 0 && {
+      created_at: createdAtFilter,
+    }),
+    ...(Object.keys(assignedAtFilter).length > 0 && {
+      assigned_at: assignedAtFilter,
+    }),
+  };
+  // Query snapshots with pagination
   const records =
     await MyGlobal.prisma.reddit_clone_moderator_snapshots.findMany({
       where: whereInput,
-      skip,
+      skip: skip,
       take: limit,
       orderBy: { created_at: "desc" },
       ...RedditCloneModeratorSnapshotAtSummaryTransformer.select(),
     });
-  const total = await MyGlobal.prisma.reddit_clone_moderator_snapshots.count({
-    where: whereInput,
-  });
+  // Get total count for pagination
+  const totalRecords: number =
+    await MyGlobal.prisma.reddit_clone_moderator_snapshots.count({
+      where: whereInput,
+    });
   return {
     pagination: {
       current: page,
       limit: limit,
-      records: total,
-      pages: Math.ceil(total / limit),
+      records: totalRecords,
+      pages: Math.ceil(totalRecords / limit),
     } satisfies IPage.IPagination,
     data: await ArrayUtil.asyncMap(
       records,
       RedditCloneModeratorSnapshotAtSummaryTransformer.transform,
     ),
-  };
+  } satisfies IPageIRedditCloneModeratorSnapshot.ISummary;
 }
 
 

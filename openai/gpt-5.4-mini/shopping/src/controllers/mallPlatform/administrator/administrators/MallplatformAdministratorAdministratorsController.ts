@@ -3,35 +3,31 @@ import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
 import { IMallPlatformAdministrator } from "../../../../api/structures/IMallPlatformAdministrator";
-import { IMallPlatformAdministratorApprovalRequest } from "../../../../api/structures/IMallPlatformAdministratorApprovalRequest";
-import { IPageIMallPlatformAdministratorApprovalRequest } from "../../../../api/structures/IPageIMallPlatformAdministratorApprovalRequest";
+import { IPageIMallPlatformAdministrator } from "../../../../api/structures/IPageIMallPlatformAdministrator";
 import { AdministratorAuth } from "../../../../decorators/AdministratorAuth";
 import { AdministratorPayload } from "../../../../decorators/payload/AdministratorPayload";
 import { getMallPlatformAdministratorAdministratorsAdministratorId } from "../../../../providers/getMallPlatformAdministratorAdministratorsAdministratorId";
 import { patchMallPlatformAdministratorAdministrators } from "../../../../providers/patchMallPlatformAdministratorAdministrators";
-import { postMallPlatformAdministratorAdministratorsAdministratorIdDemote } from "../../../../providers/postMallPlatformAdministratorAdministratorsAdministratorIdDemote";
-import { postMallPlatformAdministratorAdministratorsAdministratorIdPromote } from "../../../../providers/postMallPlatformAdministratorAdministratorsAdministratorIdPromote";
 
 @Controller("/mallPlatform/administrator/administrators")
 export class MallplatformAdministratorAdministratorsController {
   /**
-   * Lists administrator approval requests for governance review.
+   * Search and browse administrator accounts for platform governance.
    *
-   * This endpoint returns a paginated queue of administrator approval requests, including request status and review metadata needed by super administrators to evaluate pending applications. It is intended for review workflows rather than public browsing, and the result set should support filtering by status, searching by applicant or reason text, and sorting by submission or review timestamps.
+   * This endpoint returns a paginated list of administrator summaries so authorized administrative users can review administrator accounts, privilege grade, and account status from a single collection view. It is intended for governance and oversight workflows rather than self-service account management.
    *
-   * Only authorized super administrators should access this endpoint. Pending requests remain visible until they are approved or rejected, and rejected or approved records should still be retrievable through the same list for audit and follow-up purposes. If the caller is not authorized, return an access error. If the request body contains invalid pagination or filter values, return a validation error.
+   * Filtering, sorting, and pagination are provided through the request body so the client can drive review screens efficiently. The service must enforce administrator-level authorization before querying, apply deterministic ordering, and reject invalid pagination or filter values with a validation error. Sensitive credential data must not be exposed in the response.
    *
    * @param connection
-   * @param body Search, filter, pagination, and sorting criteria for administrator approval request review.
+   * @param body Pagination, search, and sorting criteria for browsing administrator accounts.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Query mall_platform_administrator_approval_requests with pagination, status filtering, free-text search, and sortable ordering.
-   * Use the request body as a search specification rather than path parameters because the list may need multiple filters.
-   * Filter by approval request status and search across applicant-related text fields and submitted reason fields available in the schema.
-   * Return the list as paginated summary rows ordered by the requested sort field, with a stable secondary sort for deterministic paging.
-   * If the user lacks super administrator privileges, reject the request before querying.
-   * If pagination values are out of range or sort keys are unsupported, return a validation error.
-   * Do not include mutable workflow actions in this endpoint; approval and rejection must be handled by dedicated update operations.
+   * @x-autobe-specification Query the mall_platform_administrators table for administrative browsing.
+   * Apply request-body filters for account status, privilege grade, and keyword search if the shared DTO contract defines them.
+   * Support pagination and sorting from the request body, defaulting to a deterministic order when the client omits sort settings.
+   * Return summary rows only; do not include password hashes or other authentication secrets.
+   * Enforce authorization so only administrators can access the collection.
+   * If no rows match, return an empty page with valid pagination metadata. If filters or pagination values are invalid, return a validation error rather than a partial result.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Patch()
@@ -39,8 +35,8 @@ export class MallplatformAdministratorAdministratorsController {
     @AdministratorAuth()
     administrator: AdministratorPayload,
     @TypedBody()
-    body: IMallPlatformAdministratorApprovalRequest.IRequest,
-  ): Promise<IPageIMallPlatformAdministratorApprovalRequest.ISummary> {
+    body: IMallPlatformAdministrator.IRequest,
+  ): Promise<IPageIMallPlatformAdministrator.ISummary> {
     try {
       return await patchMallPlatformAdministratorAdministrators({
         administrator,
@@ -53,17 +49,22 @@ export class MallplatformAdministratorAdministratorsController {
   }
 
   /**
-   * Retrieve a single administrator account by identifier.
+   * Retrieve a single administrator account by its UUID identifier.
    *
-   * This endpoint returns the persisted administrator record used for platform governance, moderation, and oversight. It is intended for authorized administrative users who need to inspect one administrator account’s current state and account-level metadata.
+   * This operation supports platform governance and administrative account inspection. It returns the administrator's identity, grade, status, and lifecycle timestamps as stored in the administrator table.
    *
-   * The response is read-only and does not include sessions, passwords, or other authentication data. If the administrator does not exist, the service should return a not-found error. Access must remain restricted according to administrator governance permissions.
+   * The response does not include the password hash or any session-related data. If the administrator record does not exist, the request fails with a not-found error. If the caller is not authorized to inspect administrator accounts, the request fails with an authorization error.
    *
    * @param connection
    * @param administratorId The administrator account identifier in UUID format.
    * @x-autobe-authorization-type null
    * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Load the administrator record from mall_platform_administrators using the administratorId path parameter. Validate that the parameter is a UUID before querying. Return a not-found error when no row matches, and do not join session or password reset tables. The response must map directly to the administrator entity schema and must not expose secrets or derived auth state.
+   * @x-autobe-specification Fetch the administrator row from mall_platform_administrators by primary key id.
+   * Project the record into the public administrator DTO and exclude password_hash from the response.
+   * Do not join session or password reset tables because this endpoint is limited to the account record itself.
+   * Use the path parameter as a UUID lookup key and return 404 when no record matches.
+   * Preserve the stored deleted_at value only if the public administrator DTO is designed to expose lifecycle metadata; otherwise omit it from the API response and keep it internal.
+   * Surface authorization failures through the standard access control layer before any database read is returned.
    * @nestia Generated by Nestia - https://github.com/samchon/nestia
    */
   @TypedRoute.Get(":administratorId")
@@ -78,80 +79,6 @@ export class MallplatformAdministratorAdministratorsController {
         administrator,
         administratorId,
       });
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Promote a regular administrator to super administrator.
-   *
-   * This endpoint changes the privilege grade of an existing administrator account as part of platform governance. The target account is identified by the path parameter, and the caller must already be a super administrator.
-   *
-   * The system must reject the request if the target administrator does not exist, if the target is already a super administrator, or if the caller lacks the required authority. The update must be performed atomically so the privilege hierarchy remains consistent.
-   *
-   * @param connection
-   * @param administratorId The administrator identifier of the account to promote.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Authorize the request using the administrator session and require super administrator privileges. Load the target row from mall_platform_administrators by its identifier, verify that the account exists, and verify that its current grade is regular administrator. Update the grade to super administrator in a single transaction. Return forbidden when the caller is not a super administrator, not found when the target administrator does not exist, and conflict when the target is already a super administrator. Do not accept a request body, and do not create any snapshot unless the broader administrator governance model explicitly requires one for grade changes.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post(":administratorId/promote")
-  public async promote(
-    @AdministratorAuth()
-    administrator: AdministratorPayload,
-    @TypedParam("administratorId")
-    administratorId: string & tags.Format<"uuid">,
-  ): Promise<void> {
-    try {
-      return await postMallPlatformAdministratorAdministratorsAdministratorIdPromote(
-        {
-          administrator,
-          administratorId,
-        },
-      );
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  /**
-   * Demote a targeted administrator account to regular administrator status.
-   *
-   * This operation is restricted to super administrators and is used for platform governance. It changes only the administrator privilege grade and does not modify unrelated account fields.
-   *
-   * The target administrator is identified by the path parameter. The service must reject callers who are not super administrators. The service must also reject attempts by a super administrator to demote themselves. If the target account does not exist, the service must return not found. On success, the updated administrator record is returned so clients can immediately reflect the new access level.
-   *
-   * @param connection
-   * @param administratorId The administrator account to demote, identified in global scope.
-   * @x-autobe-authorization-type null
-   * @x-autobe-authorization-actor administrator
-   * @x-autobe-specification Load the target administrator by administratorId and verify the authenticated actor is a super administrator before any update occurs. If the caller lacks sufficient privilege, return forbidden.
-   *
-   * Enforce the self-demotion restriction by comparing the target administrator identity with the authenticated super administrator identity. If they match, reject the request and do not persist any change.
-   *
-   * Execute the privilege downgrade in a transaction and update only the role/grade-related fields that exist in the administrator schema. Do not assume audit columns or unrelated status columns unless they are explicitly present in the schema.
-   *
-   * If the administrator does not exist, return not found. Preserve all non-privilege account data and do not alter sessions, approval requests, or other related records as part of this operation.
-   * @nestia Generated by Nestia - https://github.com/samchon/nestia
-   */
-  @TypedRoute.Post(":administratorId/demote")
-  public async demote(
-    @AdministratorAuth()
-    administrator: AdministratorPayload,
-    @TypedParam("administratorId")
-    administratorId: string & tags.Format<"uuid">,
-  ): Promise<IMallPlatformAdministrator> {
-    try {
-      return await postMallPlatformAdministratorAdministratorsAdministratorIdDemote(
-        {
-          administrator,
-          administratorId,
-        },
-      );
     } catch (error) {
       console.log(error);
       throw error;

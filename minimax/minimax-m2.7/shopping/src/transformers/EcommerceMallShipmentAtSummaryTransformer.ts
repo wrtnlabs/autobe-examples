@@ -1,13 +1,18 @@
+import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
+import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
+import { IEcommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallOrder";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallShipment } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShipment";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
 
 import { MyGlobal } from "../MyGlobal";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
+import { EcommerceMallOrderAtSummaryTransformer } from "./EcommerceMallOrderAtSummaryTransformer";
 import { EcommerceMallSellerAtSummaryTransformer } from "./EcommerceMallSellerAtSummaryTransformer";
 
 export namespace EcommerceMallShipmentAtSummaryTransformer {
@@ -23,11 +28,7 @@ export namespace EcommerceMallShipmentAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        order: {
-          select: {
-            id: true,
-          },
-        },
+        order: EcommerceMallOrderAtSummaryTransformer.select(),
         seller: EcommerceMallSellerAtSummaryTransformer.select(),
         shipmentItems: {
           select: {
@@ -41,14 +42,18 @@ export namespace EcommerceMallShipmentAtSummaryTransformer {
     input: Payload,
   ): Promise<IEcommerceMallShipment.ISummary> {
     return {
-      carrier: input.carrier,
-      createdAt: input.created_at.toISOString(),
       id: input.id,
-      itemCount: input.shipmentItems.length,
+      carrier: input.carrier,
+      tracking_number: input.tracking_number,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      order: await EcommerceMallOrderAtSummaryTransformer.transform(
+        input.order,
+      ),
       seller: await EcommerceMallSellerAtSummaryTransformer.transform(
         input.seller,
       ),
-      trackingNumber: input.tracking_number,
+      item_count: input.shipmentItems.length,
     } satisfies IEcommerceMallShipment.ISummary;
   }
 }
@@ -70,7 +75,7 @@ export namespace EcommerceMallShipmentAtSummaryTransformer {
 //             created_at: true,
 //             updated_at: true,
 //             deleted_at: true,
-//             ecommerce_mall_order_id: true,
+//             order: EcommerceMallOrderAtSummaryTransformer.select(),
 //             seller: EcommerceMallSellerAtSummaryTransformer.select(),
 //           },
 //         } satisfies Prisma.ecommerce_mall_shipmentsFindManyArgs;
@@ -78,12 +83,14 @@ export namespace EcommerceMallShipmentAtSummaryTransformer {
 // 
 //       export async function transform(input: Payload): Promise<IEcommerceMallShipment.ISummary> {
 //         return {
-//   carrier: {string},
-//   createdAt: {string},
 //   id: {string},
-//   itemCount: {integer},
+//   carrier: {string},
+//   tracking_number: {string},
+//   created_at: {string},
+//   updated_at: {string},
+//   order: await EcommerceMallOrderAtSummaryTransformer.transform(input.order),
 //   seller: await EcommerceMallSellerAtSummaryTransformer.transform(input.seller),
-//   trackingNumber: {string},
+//   item_count: {integer},
 //         };
 //       }
 //     }

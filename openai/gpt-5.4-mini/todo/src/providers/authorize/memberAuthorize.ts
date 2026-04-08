@@ -11,7 +11,7 @@ export async function memberAuthorize(request: {
   try {
     payload = jwtAuthorize({ request }) as MemberPayload;
   } catch {
-    throw new UnauthorizedException("Invalid or missing authorization token");
+    throw new UnauthorizedException();
   }
 
   if (payload.type !== "member") {
@@ -31,15 +31,14 @@ export async function memberAuthorize(request: {
   const session = await MyGlobal.prisma.todo_app_member_sessions.findFirst({
     where: {
       id: payload.session_id,
-      todo_app_member_id: payload.id,
-      expired_at: {
-        gt: new Date(),
+      member: {
+        id: payload.id,
       },
     },
   });
 
   if (session === null) {
-    throw new ForbiddenException("Your session is not active");
+    throw new UnauthorizedException();
   }
 
   return payload;

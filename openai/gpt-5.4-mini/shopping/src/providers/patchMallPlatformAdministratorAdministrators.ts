@@ -1,8 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministrator";
-import { IMallPlatformAdministratorApprovalRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministratorApprovalRequest";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIMallPlatformAdministratorApprovalRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformAdministratorApprovalRequest";
+import { IPageIMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformAdministrator";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
@@ -12,65 +11,60 @@ import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
 import { AdministratorPayload } from "../decorators/payload/AdministratorPayload";
-import { MallPlatformAdministratorApprovalRequestAtSummaryTransformer } from "../transformers/MallPlatformAdministratorApprovalRequestAtSummaryTransformer";
+import { MallPlatformAdministratorAtSummaryTransformer } from "../transformers/MallPlatformAdministratorAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchMallPlatformAdministratorAdministrators(props: {
   administrator: AdministratorPayload;
-  body: IMallPlatformAdministratorApprovalRequest.IRequest;
-}): Promise<IPageIMallPlatformAdministratorApprovalRequest.ISummary> {
+  body: IMallPlatformAdministrator.IRequest;
+}): Promise<IPageIMallPlatformAdministrator.ISummary> {
+  if (props.body.page !== undefined && props.body.page < 1) {
+    throw new HttpException("Invalid page value.", 400);
+  }
+  if (props.body.limit !== undefined && props.body.limit < 1) {
+    throw new HttpException("Invalid limit value.", 400);
+  }
   const page: number = props.body.page ?? 1;
   const limit: number = props.body.limit ?? 20;
-  const search: string | undefined = props.body.search?.trim() || undefined;
-  const status: string | undefined = props.body.status?.trim() || undefined;
-  const order: "asc" | "desc" = props.body.order ?? "desc";
-  if (page < 1) throw new HttpException("Invalid page", 400);
-  if (limit < 1) throw new HttpException("Invalid limit", 400);
-  const sortKey: string = props.body.sort ?? "createdAt";
-  if (
-    sortKey !== "createdAt" &&
-    sortKey !== "updatedAt" &&
-    sortKey !== "reviewedAt" &&
-    sortKey !== "status"
-  ) {
-    throw new HttpException("Unsupported sort field", 400);
-  }
-  const sort: Prisma.mall_platform_administrator_approval_requestsOrderByWithRelationInput =
-    sortKey === "status"
-      ? { status: order }
-      : sortKey === "reviewedAt"
-        ? { reviewed_at: order }
-        : sortKey === "updatedAt"
-          ? { updated_at: order }
-          : { created_at: order };
-  const where: Prisma.mall_platform_administrator_approval_requestsWhereInput =
-    {
-      deleted_at: null,
-      ...(status !== undefined ? { status } : {}),
-      ...(search !== undefined
-        ? {
-            OR: [
-              { reason: { contains: search, mode: "insensitive" } },
-              { rejection_reason: { contains: search, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    };
-  const records =
-    await MyGlobal.prisma.mall_platform_administrator_approval_requests.findMany(
-      {
-        where,
-        orderBy: [sort, { id: "desc" }],
-        skip: (page - 1) * limit,
-        take: limit,
-        ...MallPlatformAdministratorApprovalRequestAtSummaryTransformer.select(),
-      },
-    );
-  const total =
-    await MyGlobal.prisma.mall_platform_administrator_approval_requests.count({
-      where,
-    });
+  const skip: number = (page - 1) * limit;
+  const where: Prisma.mall_platform_administratorsWhereInput = {
+    deleted_at: null,
+    ...(props.body.grade !== undefined ? { grade: props.body.grade } : {}),
+    ...(props.body.status !== undefined ? { status: props.body.status } : {}),
+    ...(props.body.search !== undefined && props.body.search !== ""
+      ? {
+          OR: [
+            { email: { contains: props.body.search, mode: "insensitive" } },
+            { grade: { contains: props.body.search, mode: "insensitive" } },
+            { status: { contains: props.body.search, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
+  const orderBy: Prisma.mall_platform_administratorsOrderByWithRelationInput[] =
+    props.body.sort === "email"
+      ? [{ email: "asc" }, { id: "asc" }]
+      : props.body.sort === "email_desc"
+        ? [{ email: "desc" }, { id: "desc" }]
+        : props.body.sort === "grade"
+          ? [{ grade: "asc" }, { id: "asc" }]
+          : props.body.sort === "grade_desc"
+            ? [{ grade: "desc" }, { id: "desc" }]
+            : props.body.sort === "status"
+              ? [{ status: "asc" }, { id: "asc" }]
+              : props.body.sort === "status_desc"
+                ? [{ status: "desc" }, { id: "desc" }]
+                : [{ created_at: "desc" }, { id: "desc" }];
+  const records = await MyGlobal.prisma.mall_platform_administrators.findMany({
+    ...MallPlatformAdministratorAtSummaryTransformer.select(),
+    where,
+    orderBy,
+    skip,
+    take: limit,
+  });
+  const total: number =
+    await MyGlobal.prisma.mall_platform_administrators.count({ where });
   return {
     pagination: {
       current: page,
@@ -80,7 +74,7 @@ export async function patchMallPlatformAdministratorAdministrators(props: {
     },
     data: await ArrayUtil.asyncMap(
       records,
-      MallPlatformAdministratorApprovalRequestAtSummaryTransformer.transform,
+      MallPlatformAdministratorAtSummaryTransformer.transform,
     ),
   };
 }
@@ -103,19 +97,18 @@ export async function patchMallPlatformAdministratorAdministrators(props: {
 // import { toISOStringSafe } from "../utils/toISOStringSafe"
 // 
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
-// import { IMallPlatformAdministratorApprovalRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministratorApprovalRequest";
-// import { IPageIMallPlatformAdministratorApprovalRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformAdministratorApprovalRequest";
-// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 // import { IMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministrator";
+// import { IPageIMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIMallPlatformAdministrator";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
 // export async function patchMallPlatformAdministratorAdministrators(props: {
 //   administrator: AdministratorPayload;
-//   body: IMallPlatformAdministratorApprovalRequest.IRequest;
-// }): Promise<IPageIMallPlatformAdministratorApprovalRequest.ISummary> {
-//   const records = await MyGlobal.prisma.mall_platform_administrator_approval_requests.findMany({
-//     ...MallPlatformAdministratorApprovalRequestAtSummaryTransformer.select(),
+//   body: IMallPlatformAdministrator.IRequest;
+// }): Promise<IPageIMallPlatformAdministrator.ISummary> {
+//   const records = await MyGlobal.prisma.mall_platform_administrators.findMany({
+//     ...MallPlatformAdministratorAtSummaryTransformer.select(),
 //     ...,
 //   });
 //   return {
@@ -125,7 +118,7 @@ export async function patchMallPlatformAdministratorAdministrators(props: {
 //       records: ...,
 //       pages: ...,
 //     },
-//     data: await ArrayUtil.asyncMap(records, MallPlatformAdministratorApprovalRequestAtSummaryTransformer.transform),
+//     data: await ArrayUtil.asyncMap(records, MallPlatformAdministratorAtSummaryTransformer.transform),
 //   };
 // }
 // ```

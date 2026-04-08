@@ -3,6 +3,7 @@ import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { IRedditClonePost } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditClonePost";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -45,11 +46,7 @@ export namespace RedditClonePostAtSummaryTransformer {
             },
             icon: {
               select: {
-                file: {
-                  select: {
-                    url: true,
-                  },
-                },
+                reddit_clone_file_id: true,
               },
             },
           },
@@ -66,24 +63,46 @@ export namespace RedditClonePostAtSummaryTransformer {
         },
         image: {
           select: {
-            reddit_clone_file_id: true,
+            file: {
+              select: {
+                thumbnails: {
+                  select: {
+                    thumbnail_path: true,
+                  },
+                },
+              },
+            },
           },
         },
-        comments: true,
-        postVotes: true,
       },
     } satisfies Prisma.reddit_clone_postsFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IRedditClonePost.ISummary> {
+    const contentPreview =
+      input.type === "text"
+        ? (input.postTextContent?.body ?? "").slice(0, 200)
+        : input.type === "link"
+          ? (() => {
+              const url = input.link?.url;
+              if (!url) return "";
+              try {
+                return new URL(url).hostname;
+              } catch {
+                return url;
+              }
+            })()
+          : input.type === "image"
+            ? (input.image?.file?.thumbnails?.[0]?.thumbnail_path ?? "")
+            : "";
     return {
       id: input.id,
       title: input.title,
       type: input.type as "text" | "link" | "image",
-      voteScore: input.vote_score,
-      commentCount: input.comment_count,
-      createdAt: toISOStringSafe(input.created_at),
+      voteScore: input.vote_score satisfies number as number,
+      commentCount: input.comment_count satisfies number as number,
+      createdAt: input.created_at.toISOString(),
       author: {
         id: input.author.id,
         username: input.author.username,
@@ -92,31 +111,16 @@ export namespace RedditClonePostAtSummaryTransformer {
         id: input.community.id,
         name: input.community.name,
         description: input.community.description,
-        subscriberCount: input.community.subscriber_count,
+        subscriberCount: input.community
+          .subscriber_count satisfies number as number,
         owner: {
           id: input.community.member.id,
           username: input.community.member.username,
         } satisfies IRedditCloneMember.ISummary,
-        icon: input.community.icon?.file?.url ?? undefined,
+        icon: input.community.icon?.reddit_clone_file_id ?? null,
       } satisfies IRedditCloneCommunity.ISummary,
-      contentPreview: getContentPreview(input),
+      contentPreview,
     } satisfies IRedditClonePost.ISummary;
-  }
-  function getContentPreview(input: Payload): string {
-    switch (input.type) {
-      case "text":
-        return input.postTextContent?.body?.substring(0, 200) ?? "";
-      case "image":
-        return input.image?.reddit_clone_file_id ?? "";
-      case "link":
-        try {
-          return input.link?.url ? new URL(input.link.url).hostname : "";
-        } catch {
-          return input.link?.url ?? "";
-        }
-      default:
-        return "";
-    }
   }
 }
 

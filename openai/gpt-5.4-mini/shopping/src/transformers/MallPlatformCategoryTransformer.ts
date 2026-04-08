@@ -1,6 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -17,36 +18,59 @@ export namespace MallPlatformCategoryTransformer {
     return {
       select: {
         id: true,
-        parentCategory: MallPlatformCategoryAtSummaryTransformer.select(),
+        parent_category_id: true,
         name: true,
         description: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        products: true,
-        subcategories: MallPlatformCategoryAtSummaryTransformer.select(),
+        parentCategory: MallPlatformCategoryAtSummaryTransformer.select(),
+        products: { select: { id: true } },
       },
     } satisfies Prisma.mall_platform_categoriesFindManyArgs;
   }
   export async function transform(
     input: Payload,
+    cache: VariadicSingleton<
+      Promise<IMallPlatformCategory[]>,
+      [string]
+    > = createChildrenCache(),
   ): Promise<IMallPlatformCategory> {
     return {
       id: input.id,
+      parentCategoryId: input.parent_category_id,
+      name: input.name,
+      description: input.description,
       parentCategory: input.parentCategory
         ? await MallPlatformCategoryAtSummaryTransformer.transform(
             input.parentCategory,
           )
         : null,
-      name: input.name,
-      description: input.description,
-      createdAt: toISOStringSafe(input.created_at),
-      updatedAt: toISOStringSafe(input.updated_at),
-      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
-      subcategories: await ArrayUtil.asyncMap(input.subcategories, (item) =>
-        MallPlatformCategoryAtSummaryTransformer.transform(item),
-      ),
+      subcategories: await cache.get(input.id),
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
     } satisfies IMallPlatformCategory;
+  }
+  export async function transformAll(
+    inputs: Payload[],
+  ): Promise<IMallPlatformCategory[]> {
+    const cache = createChildrenCache();
+    return await ArrayUtil.asyncMap(inputs, (x) => transform(x, cache));
+  }
+  function createChildrenCache() {
+    const cache = new VariadicSingleton(
+      async (parentId: string): Promise<IMallPlatformCategory[]> => {
+        const records = await MyGlobal.prisma.mall_platform_categories.findMany(
+          {
+            ...select(),
+            where: { parent_category_id: parentId },
+          },
+        );
+        return await ArrayUtil.asyncMap(records, (r) => transform(r, cache));
+      },
+    );
+    return cache;
   }
 }
 
@@ -64,25 +88,52 @@ export namespace MallPlatformCategoryTransformer {
 //             id: true,
 //             name: true,
 //             description: true,
-//             createdAt: true,
-//             updatedAt: true,
-//             deletedAt: true,
+//             created_at: true,
+//             updated_at: true,
+//             deleted_at: true,
+//             parent_category_id: true,
+//             subcategories: undefined, // DO NOT select recursive relation
 //             ...
 //           },
 //         } satisfies Prisma.mall_platform_categoriesFindManyArgs;
 //       }
 // 
-//       export async function transform(input: Payload): Promise<IMallPlatformCategory> {
+//       export async function transform(
+//         input: Payload,
+//         cache: VariadicSingleton<Promise<IMallPlatformCategory[]>, [string]> = createChildrenCache(),
+//       ): Promise<IMallPlatformCategory> {
 //         return {
 //   id: {string},
-//   parentCategory: {IMallPlatformCategory.ISummary | null},
+//   parentCategoryId: {string | null},
 //   name: {string},
 //   description: {string},
+//   parentCategory: {IMallPlatformCategory.ISummary | null},
+//   subcategories: await cache.get(input.id),
 //   createdAt: {string},
 //   updatedAt: {string},
 //   deletedAt: {string | null},
-//   subcategories: {Array<IMallPlatformCategory.ISummary>},
 //         };
+//       }
+// 
+//       export async function transformAll(
+//         inputs: Payload[],
+//       ): Promise<IMallPlatformCategory[]> {
+//         const cache = createChildrenCache();
+//         return await ArrayUtil.asyncMap(inputs, (x) => transform(x, cache));
+//       }
+// 
+//       function createChildrenCache() {
+//         const cache = new VariadicSingleton(
+//           async (parentId: string): Promise<IMallPlatformCategory[]> => {
+//             const records =
+//               await MyGlobal.prisma.mall_platform_categories.findMany({
+//                 ...select(),
+//                 where: { parent_category_id: parentId },
+//               });
+//             return await ArrayUtil.asyncMap(records, (r) => transform(r, cache));
+//           },
+//         );
+//         return cache;
 //       }
 //     }
 //--------------------------------------------------------------

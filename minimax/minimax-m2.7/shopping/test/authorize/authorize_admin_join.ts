@@ -8,6 +8,22 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+/**
+ * Register and authenticate a new admin for E2E testing.
+ *
+ * Creates an administrator account with randomized credentials, mutates the connection with the auth token.
+ *
+ * **Authentication Flow:**
+ *
+ * 1. Generates random email, password (16 alphanumeric chars), and name for the admin account.
+ * 2. Creates session context with random href/referrer URIs and optional client IP.
+ * 3. Calls the admin join endpoint to register the account.
+ * 4. Extracts the access token from the response and sets it on the connection headers for subsequent authenticated requests.
+ *
+ * @param connection - API connection object that will be mutated with the auth token
+ * @param props.body - Optional overrides for the join request body
+ * @returns Promise resolving to the authorized admin data including JWT tokens
+ */
 export async function authorize_admin_join(
   connection: api.IConnection,
   props: {
@@ -15,23 +31,14 @@ export async function authorize_admin_join(
   },
 ): Promise<IEcommerceMallAdmin.IAuthorized> {
   const joinInput = {
-    actorType:
-      props.body?.actorType ??
-      RandomGenerator.pick(["customer", "seller"] as const),
-    requestedGrade:
-      props.body?.requestedGrade ??
-      RandomGenerator.pick(["admin", "super_admin"] as const),
-    reason:
-      props.body?.reason ??
-      RandomGenerator.paragraph({ sentences: 5, wordMin: 3, wordMax: 8 }),
+    email: props.body?.email ?? typia.random<string & tags.Format<"email">>(),
+    password: props.body?.password ?? RandomGenerator.alphaNumeric(16),
+    name: props.body?.name ?? RandomGenerator.name(),
     href: props.body?.href ?? typia.random<string & tags.Format<"uri">>(),
     referrer:
       props.body?.referrer ?? typia.random<string & tags.Format<"uri">>(),
   } satisfies IEcommerceMallAdmin.IJoin;
-  return await api.functional.ecommerceMall.auth.admin.request.join(
-    connection,
-    {
-      body: joinInput,
-    },
-  );
+  return await api.functional.ecommerceMall.auth.admin.join(connection, {
+    body: joinInput,
+  });
 }

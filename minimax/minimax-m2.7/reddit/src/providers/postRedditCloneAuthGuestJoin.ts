@@ -16,74 +16,65 @@ export async function postRedditCloneAuthGuestJoin(props: {
   ip: string;
   body: IRedditCloneGuest.IJoin;
 }): Promise<IRedditCloneGuest.IAuthorized> {
-  // 1. Check if guest already exists by fingerprint
+  const now = toISOStringSafe(new Date());
+  // Check if guest already exists with this fingerprint (idempotent)
   const existingGuest = await MyGlobal.prisma.reddit_clone_guests.findFirst({
     where: { fingerprint: props.body.fingerprint },
+    select: { id: true },
   });
-  // 2. Create guest if not exists (idempotent for same fingerprint)
-  const guestId: string & tags.Format<"uuid"> = v4();
-  const createdAt: string & tags.Format<"date-time"> =
-    new Date().toISOString() as string & tags.Format<"date-time">;
-  const guest =
-    existingGuest ??
-    (await MyGlobal.prisma.reddit_clone_guests.create({
-      data: {
-        id: guestId,
-        fingerprint: props.body.fingerprint,
-        created_at: createdAt,
-        updated_at: createdAt,
-      },
-    }));
-  // 3. Calculate token expiration times
-  const now: string & tags.Format<"date-time"> =
-    new Date().toISOString() as string & tags.Format<"date-time">;
-  const accessExpiresMs: number = 15 * 60 * 1000;
-  const refreshExpiresMs: number = 7 * 24 * 60 * 60 * 1000;
-  const accessExpires: string & tags.Format<"date-time"> = new Date(
-    Date.now() + accessExpiresMs,
-  ).toISOString() as string & tags.Format<"date-time">;
-  const refreshExpires: string & tags.Format<"date-time"> = new Date(
-    Date.now() + refreshExpiresMs,
-  ).toISOString() as string & tags.Format<"date-time">;
-  // 4. Create guest session
-  const sessionId: string & tags.Format<"uuid"> = v4();
-  const sessionIp: string = props.body.ip ?? props.ip;
+  const guestId: string & tags.Format<"uuid"> = existingGuest
+    ? existingGuest.id
+    : (
+        await MyGlobal.prisma.reddit_clone_guests.create({
+          data: {
+            id: v4(),
+            fingerprint: props.body.fingerprint,
+            created_at: now,
+            updated_at: now,
+          },
+          select: { id: true },
+        })
+      ).id;
+  // Calculate token expiration times
+  const accessExpires = toISOStringSafe(new Date(Date.now() + 15 * 60 * 1000));
+  const refreshExpires = toISOStringSafe(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
+  // Create session
+  const sessionId = v4();
   await MyGlobal.prisma.reddit_clone_guest_sessions.create({
     data: {
       id: sessionId,
-      reddit_clone_guest_id: guest.id,
-      ip: sessionIp,
+      reddit_clone_guest_id: guestId,
+      ip: props.body.ip ?? props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
       created_at: now,
       expired_at: refreshExpires,
     },
   });
-  // 5. Generate JWT tokens
+  // Generate JWT tokens
+  const tokenPayload = {
+    type: "guest" as const,
+    id: guestId,
+    session_id: sessionId,
+    created_at: now,
+  };
   const accessToken: string = jwt.sign(
-    {
-      type: "guest",
-      id: guest.id,
-      session_id: sessionId,
-      created_at: now,
-    },
+    tokenPayload,
     MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "15m", issuer: "autobe" },
+    {
+      expiresIn: "15m",
+      issuer: "autobe",
+    },
   );
   const refreshToken: string = jwt.sign(
-    {
-      type: "guest",
-      id: guest.id,
-      session_id: sessionId,
-      tokenType: "refresh",
-      created_at: now,
-    },
+    { ...tokenPayload, tokenType: "refresh" as const },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
   );
-  // 6. Return IAuthorized response
   return {
-    id: guest.id,
+    id: guestId,
     token: {
       access: accessToken,
       refresh: refreshToken,

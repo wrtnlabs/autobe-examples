@@ -20,78 +20,53 @@ export async function patchRedditCloneGuestGuestSessions(props: {
   guest: GuestPayload;
   body: IRedditCloneGuestSession.IRequest;
 }): Promise<IPageIRedditCloneGuestSession.ISummary> {
-  // Pagination parameters with defaults
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Build where clause from filter options
-  const whereClause: Prisma.reddit_clone_guest_sessionsWhereInput = {
-    ...(props.body.redditCloneGuestId !== undefined && {
+  const whereInput = {
+    ...(props.body.redditCloneGuestId && {
       reddit_clone_guest_id: props.body.redditCloneGuestId,
     }),
-    ...(props.body.ip !== undefined && {
-      ip: {
-        contains: props.body.ip,
-      },
+    ...(props.body.ip && {
+      ip: { contains: props.body.ip },
     }),
-    ...(props.body.href !== undefined && {
-      href: {
-        contains: props.body.href,
-      },
+    ...(props.body.href && {
+      href: { contains: props.body.href },
     }),
-    ...(props.body.isActive !== undefined && {
-      expired_at: props.body.isActive
-        ? { gt: new Date() }
-        : { lte: new Date() },
+    ...(props.body.isActive === true && {
+      expired_at: { gt: new Date() },
     }),
-    ...(props.body.createdAtFrom !== undefined && {
-      created_at: {
-        gte: new Date(props.body.createdAtFrom),
-        ...(props.body.createdAtTo !== undefined && {
-          lte: new Date(props.body.createdAtTo),
-        }),
-      },
+    ...(props.body.isActive === false && {
+      expired_at: { lte: new Date() },
     }),
-    ...(props.body.createdAtTo !== undefined &&
-      props.body.createdAtFrom === undefined && {
-        created_at: {
-          lte: new Date(props.body.createdAtTo),
-        },
-      }),
-    ...(props.body.expiredAtFrom !== undefined && {
-      expired_at: {
-        gte: new Date(props.body.expiredAtFrom),
-        ...(props.body.expiredAtTo !== undefined && {
-          lte: new Date(props.body.expiredAtTo),
-        }),
-      },
+    ...(props.body.createdAtFrom && {
+      created_at: { gte: new Date(props.body.createdAtFrom) },
     }),
-    ...(props.body.expiredAtTo !== undefined &&
-      props.body.expiredAtFrom === undefined && {
-        expired_at: {
-          lte: new Date(props.body.expiredAtTo),
-        },
-      }),
-  };
-  // Determine sort field and order
-  const sortField = props.body.sort ?? "created_at";
-  const sortOrder = props.body.order ?? "desc";
-  const orderByInput: Prisma.reddit_clone_guest_sessionsOrderByWithRelationInput =
-    sortField === "expired_at"
-      ? { expired_at: sortOrder }
-      : { created_at: sortOrder };
-  // Execute queries sequentially (not in parallel as per rules)
+    ...(props.body.createdAtTo && {
+      created_at: { lte: new Date(props.body.createdAtTo) },
+    }),
+    ...(props.body.expiredAtFrom && {
+      expired_at: { gte: new Date(props.body.expiredAtFrom) },
+    }),
+    ...(props.body.expiredAtTo && {
+      expired_at: { lte: new Date(props.body.expiredAtTo) },
+    }),
+  } satisfies Prisma.reddit_clone_guest_sessionsWhereInput;
+  const orderByInput = (
+    props.body.sort === "expired_at"
+      ? { expired_at: props.body.order ?? "desc" }
+      : { created_at: props.body.order ?? "desc" }
+  ) satisfies Prisma.reddit_clone_guest_sessionsOrderByWithRelationInput;
   const records = await MyGlobal.prisma.reddit_clone_guest_sessions.findMany({
-    where: whereClause,
+    ...RedditCloneGuestSessionAtSummaryTransformer.select(),
+    where: whereInput,
     skip,
     take: limit,
     orderBy: orderByInput,
-    ...RedditCloneGuestSessionAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.reddit_clone_guest_sessions.count({
-    where: whereClause,
+    where: whereInput,
   });
-  // Return paginated response
   return {
     pagination: {
       current: page,

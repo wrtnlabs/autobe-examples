@@ -4,6 +4,7 @@ import { IRedditCloneFileScan } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IRedditCloneFileThumbnail } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileThumbnail";
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -13,11 +14,9 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 import { RedditCloneFileAtSummaryTransformer } from "./RedditCloneFileAtSummaryTransformer";
 
 export namespace RedditCloneFileScanTransformer {
-  // 1. Payload type first (inferred from select)
   export type Payload = Prisma.reddit_clone_file_scansGetPayload<
     ReturnType<typeof select>
   >;
-  // 2. select() function second
   export function select() {
     return {
       select: {
@@ -33,7 +32,6 @@ export namespace RedditCloneFileScanTransformer {
       },
     } satisfies Prisma.reddit_clone_file_scansFindManyArgs;
   }
-  // 3. transform() function last
   export async function transform(
     input: Payload,
   ): Promise<IRedditCloneFileScan> {
@@ -42,8 +40,8 @@ export namespace RedditCloneFileScanTransformer {
       scannedAt: input.scanned_at.toISOString(),
       scanner: input.scanner,
       status: input.status,
-      threatName: input.threat_name ?? undefined,
-      details: input.details ?? undefined,
+      threatName: input.threat_name ?? null,
+      details: input.details ?? null,
       createdAt: input.created_at.toISOString(),
       updatedAt: input.updated_at.toISOString(),
       file: await RedditCloneFileAtSummaryTransformer.transform(input.file),

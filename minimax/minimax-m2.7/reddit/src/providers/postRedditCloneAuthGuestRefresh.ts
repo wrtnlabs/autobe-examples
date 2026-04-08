@@ -15,39 +15,45 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function postRedditCloneAuthGuestRefresh(props: {
   body: IRedditCloneGuest.IRefresh;
 }): Promise<IRedditCloneGuest.IAuthorized> {
-  // 1. Verify refresh token
+  // 1. Verify and decode the refresh token
   let decoded: {
     id: string;
     session_id: string;
     type: string;
+    tokenType?: string;
+    created_at: string;
   };
   try {
-    decoded = jwt.verify(props.body.refreshToken, MyGlobal.env.JWT_SECRET_KEY, {
-      issuer: "autobe",
-    }) as typeof decoded;
+    const verified = jwt.verify(
+      props.body.refreshToken,
+      MyGlobal.env.JWT_SECRET_KEY,
+      { issuer: "autobe" },
+    );
+    decoded = verified as typeof decoded;
   } catch {
     throw new HttpException("Invalid or expired refresh token", 401);
   }
-  // 2. Validate token type is guest
+  // 2. Validate token type
   if (decoded.type !== "guest") {
-    throw new HttpException("Invalid token type", 403);
+    throw new HttpException("Invalid token type", 401);
   }
   // 3. Validate session exists and not expired
+  const currentTimestamp = new Date().toISOString();
   const session = await MyGlobal.prisma.reddit_clone_guest_sessions.findFirst({
     where: {
       id: decoded.session_id,
       reddit_clone_guest_id: decoded.id,
-      expired_at: { gt: new Date() },
+      expired_at: { gt: currentTimestamp },
     },
   });
   if (!session) {
     throw new HttpException("Session expired or revoked", 401);
   }
   // 4. Validate guest exists
-  await MyGlobal.prisma.reddit_clone_guests.findUniqueOrThrow({
+  const guest = await MyGlobal.prisma.reddit_clone_guests.findUniqueOrThrow({
     where: { id: decoded.id },
   });
-  // 5. Generate new tokens with same session_id
+  // 5. Generate new tokens (SAME session_id for continuity)
   const accessExpires = new Date(Date.now() + 60 * 60 * 1000).toISOString();
   const refreshExpires = new Date(
     Date.now() + 7 * 24 * 60 * 60 * 1000,
@@ -55,9 +61,9 @@ export async function postRedditCloneAuthGuestRefresh(props: {
   const accessToken = jwt.sign(
     {
       type: "guest",
-      id: decoded.id,
+      id: guest.id,
       session_id: decoded.session_id,
-      created_at: new Date().toISOString(),
+      created_at: currentTimestamp,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "1h", issuer: "autobe" },
@@ -65,10 +71,10 @@ export async function postRedditCloneAuthGuestRefresh(props: {
   const refreshToken = jwt.sign(
     {
       type: "guest",
-      id: decoded.id,
+      id: guest.id,
       session_id: decoded.session_id,
       tokenType: "refresh",
-      created_at: new Date().toISOString(),
+      created_at: currentTimestamp,
     },
     MyGlobal.env.JWT_SECRET_KEY,
     { expiresIn: "7d", issuer: "autobe" },
@@ -76,16 +82,16 @@ export async function postRedditCloneAuthGuestRefresh(props: {
   // 6. Update session expiration
   await MyGlobal.prisma.reddit_clone_guest_sessions.update({
     where: { id: decoded.session_id },
-    data: { expired_at: new Date(refreshExpires) },
+    data: { expired_at: refreshExpires },
   });
-  // 7. Return authorized response
+  // 7. Return authorized response with proper branded types
   return {
-    id: decoded.id,
+    id: guest.id,
     token: {
       access: accessToken,
       refresh: refreshToken,
-      expired_at: toISOStringSafe(accessExpires),
-      refreshable_until: toISOStringSafe(refreshExpires),
+      expired_at: accessExpires,
+      refreshable_until: refreshExpires,
     },
   };
 }

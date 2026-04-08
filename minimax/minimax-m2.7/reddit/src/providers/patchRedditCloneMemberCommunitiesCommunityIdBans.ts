@@ -21,7 +21,7 @@ export async function patchRedditCloneMemberCommunitiesCommunityIdBans(props: {
   communityId: string & tags.Format<"uuid">;
   body: IRedditCloneCommunityBan.IRequest;
 }): Promise<IPageIRedditCloneCommunityBan.ISummary> {
-  // Authorization: Verify member is moderator or owner of the community
+  // Authorization: Verify member is a moderator or owner of the community
   const moderator =
     await MyGlobal.prisma.reddit_clone_community_moderators.findFirst({
       where: {
@@ -36,89 +36,83 @@ export async function patchRedditCloneMemberCommunitiesCommunityIdBans(props: {
     where: { id: props.communityId },
     select: { reddit_clone_member_id: true },
   });
-  if (!moderator && community?.reddit_clone_member_id !== props.member.id) {
-    throw new HttpException(
-      "You are not a moderator or owner of this community",
-      403,
-    );
+  const isOwner = community?.reddit_clone_member_id === props.member.id;
+  if (!moderator && !isOwner) {
+    throw new HttpException("Forbidden", 403);
   }
   // Build where clause with filters
-  const whereClause: Prisma.reddit_clone_bansWhereInput = {
-    reddit_clone_community_id: props.communityId,
-  };
+  const conditions: Prisma.reddit_clone_bansWhereInput[] = [];
   // Filter by banned user ID
-  if (props.body.bannedUserId !== undefined) {
-    whereClause.reddit_clone_user_id = props.body.bannedUserId;
+  if (props.body.bannedUserId) {
+    conditions.push({ reddit_clone_user_id: props.body.bannedUserId });
   }
-  // Filter by banned username (JOIN via relation)
-  if (props.body.bannedUsername !== undefined) {
-    whereClause.bannedUser = {
-      username: {
-        contains: props.body.bannedUsername,
-        mode: "insensitive",
-      },
-    };
+  // Filter by issuer moderator ID
+  if (props.body.issuerId) {
+    conditions.push({ issued_by_reddit_clone_user_id: props.body.issuerId });
   }
-  // Filter by issuer (moderator who issued the ban)
-  if (props.body.issuerId !== undefined) {
-    whereClause.issued_by_reddit_clone_user_id = props.body.issuerId;
+  // Filter by username (requires join with bannedUser relation)
+  if (props.body.bannedUsername) {
+    conditions.push({
+      bannedUser: { username: { contains: props.body.bannedUsername } },
+    });
   }
   // Filter by status
-  if (props.body.status !== undefined) {
+  if (props.body.status) {
     switch (props.body.status) {
       case "active":
-        whereClause.deleted_at = null;
-        whereClause.OR = [
-          { expires_at: null },
-          { expires_at: { gt: new Date() } },
-        ];
+        conditions.push({ deleted_at: null });
+        conditions.push({
+          OR: [{ expires_at: null }, { expires_at: { gt: new Date() } }],
+        });
         break;
       case "expired":
-        whereClause.expires_at = { lte: new Date() };
+        conditions.push({ expires_at: { not: null } });
+        conditions.push({ expires_at: { lte: new Date() } });
         break;
       case "revoked":
-        whereClause.deleted_at = { not: null };
+        conditions.push({ deleted_at: { not: null } });
         break;
     }
   }
   // Filter by date range
-  if (props.body.startDate !== undefined) {
-    whereClause.created_at = { gte: new Date(props.body.startDate) };
+  if (props.body.startDate) {
+    conditions.push({ created_at: { gte: new Date(props.body.startDate) } });
   }
-  if (props.body.endDate !== undefined) {
-    if (!whereClause.created_at) {
-      whereClause.created_at = {};
-    }
-    (whereClause.created_at as Prisma.DateTimeFilter).lte = new Date(
-      props.body.endDate,
-    );
+  if (props.body.endDate) {
+    conditions.push({ created_at: { lte: new Date(props.body.endDate) } });
   }
-  // Build order by clause
-  const sortField = props.body.sort ?? "created_at";
-  const sortOrder = props.body.order ?? "desc";
-  const orderByInput: Prisma.reddit_clone_bansOrderByWithRelationInput = {
-    [sortField]: sortOrder,
-  };
+  const whereInput = {
+    reddit_clone_community_id: props.communityId,
+    ...(conditions.length > 0 && { AND: conditions }),
+  } satisfies Prisma.reddit_clone_bansWhereInput;
+  // Sorting
+  const order = props.body.order ?? "desc";
+  const orderByInput = (
+    props.body.sort === "reason"
+      ? { reason: order }
+      : props.body.sort === "expires_at"
+        ? { expires_at: order }
+        : { created_at: order }
+  ) satisfies Prisma.reddit_clone_bansOrderByWithRelationInput;
   // Pagination
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  // Query bans with filters and pagination
+  // Execute queries
   const records = await MyGlobal.prisma.reddit_clone_bans.findMany({
-    where: whereClause,
-    orderBy: orderByInput,
+    where: whereInput,
     skip,
     take: limit,
+    orderBy: orderByInput,
     ...RedditCloneCommunityBanAtSummaryTransformer.select(),
   });
-  // Get total count for pagination
   const total = await MyGlobal.prisma.reddit_clone_bans.count({
-    where: whereClause,
+    where: whereInput,
   });
   return {
     pagination: {
       current: page,
-      limit,
+      limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,

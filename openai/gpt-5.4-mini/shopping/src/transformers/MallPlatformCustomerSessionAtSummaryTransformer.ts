@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
 import { IMallPlatformCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomerSession";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -32,14 +33,14 @@ export namespace MallPlatformCustomerSessionAtSummaryTransformer {
   ): Promise<IMallPlatformCustomerSession.ISummary> {
     return {
       id: input.id,
-      ip: input.ip,
-      href: input.href,
-      referrer: input.referrer,
-      created_at: input.created_at.toISOString(),
-      expired_at: input.expired_at.toISOString(),
       customer: await MallPlatformCustomerAtSummaryTransformer.transform(
         input.customer,
       ),
+      ip: input.ip,
+      href: input.href,
+      referrer: input.referrer,
+      createdAt: input.created_at.toISOString(),
+      expiredAt: input.expired_at.toISOString(),
     } satisfies IMallPlatformCustomerSession.ISummary;
   }
 }
@@ -69,12 +70,12 @@ export namespace MallPlatformCustomerSessionAtSummaryTransformer {
 //       export async function transform(input: Payload): Promise<IMallPlatformCustomerSession.ISummary> {
 //         return {
 //   id: {string},
+//   customer: await MallPlatformCustomerAtSummaryTransformer.transform(input.customer),
 //   ip: {string},
 //   href: {string},
 //   referrer: {string},
-//   created_at: {string},
-//   expired_at: {string},
-//   customer: await MallPlatformCustomerAtSummaryTransformer.transform(input.customer),
+//   createdAt: {string},
+//   expiredAt: {string},
 //         };
 //       }
 //     }

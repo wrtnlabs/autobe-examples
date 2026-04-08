@@ -3,6 +3,7 @@ import { IMallPlatformAdministrator } from "@ORGANIZATION/PROJECT-api/lib/struct
 import { IMallPlatformAdministratorApprovalRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministratorApprovalRequest";
 import { IMallPlatformAdministratorApprovalRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformAdministratorApprovalRequestSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -32,12 +33,12 @@ export namespace MallPlatformAdministratorApprovalRequestSnapshotAtSummaryTransf
   ): Promise<IMallPlatformAdministratorApprovalRequestSnapshot.ISummary> {
     return {
       id: input.id,
+      snapshotReason: input.snapshot_reason,
+      createdAt: input.created_at.toISOString(),
       administratorApprovalRequest:
         await MallPlatformAdministratorApprovalRequestAtSummaryTransformer.transform(
           input.administratorApprovalRequest,
         ),
-      snapshotReason: input.snapshot_reason,
-      createdAt: input.created_at.toISOString(),
     } satisfies IMallPlatformAdministratorApprovalRequestSnapshot.ISummary;
   }
 }
@@ -64,9 +65,9 @@ export namespace MallPlatformAdministratorApprovalRequestSnapshotAtSummaryTransf
 //       export async function transform(input: Payload): Promise<IMallPlatformAdministratorApprovalRequestSnapshot.ISummary> {
 //         return {
 //   id: {string},
-//   administratorApprovalRequest: await MallPlatformAdministratorApprovalRequestAtSummaryTransformer.transform(input.administratorApprovalRequest),
 //   snapshotReason: {string},
 //   createdAt: {string},
+//   administratorApprovalRequest: await MallPlatformAdministratorApprovalRequestAtSummaryTransformer.transform(input.administratorApprovalRequest),
 //         };
 //       }
 //     }

@@ -1,10 +1,10 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductSnapshot";
-import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -17,25 +17,6 @@ export namespace MallPlatformProductSnapshotAtSummaryTransformer {
   export type Payload = Prisma.mall_platform_product_snapshotsGetPayload<
     ReturnType<typeof select>
   >;
-  export async function transform(
-    input: Payload,
-  ): Promise<IMallPlatformProductSnapshot.ISummary> {
-    return {
-      id: input.id,
-      product: await MallPlatformProductAtSummaryTransformer.transform(
-        input.product,
-      ),
-      snapshotKind: input.snapshot_kind,
-      productName: input.product_name,
-      productDescription: input.product_description,
-      categoryName: input.category_name,
-      basePrice: Number(input.base_price),
-      mainImageUri: input.main_image_uri ?? null,
-      imageCount: input.image_count,
-      variantCount: input.variant_count,
-      createdAt: input.created_at.toISOString(),
-    } satisfies IMallPlatformProductSnapshot.ISummary;
-  }
   export function select() {
     return {
       select: {
@@ -50,8 +31,29 @@ export namespace MallPlatformProductSnapshotAtSummaryTransformer {
         variant_count: true,
         created_at: true,
         product: MallPlatformProductAtSummaryTransformer.select(),
+        variants: { select: {} },
+        images: { select: {} },
       },
     } satisfies Prisma.mall_platform_product_snapshotsFindManyArgs;
+  }
+  export async function transform(
+    input: Payload,
+  ): Promise<IMallPlatformProductSnapshot.ISummary> {
+    return {
+      id: input.id,
+      product: await MallPlatformProductAtSummaryTransformer.transform(
+        input.product,
+      ),
+      snapshotKind: input.snapshot_kind,
+      productName: input.product_name,
+      productDescription: input.product_description,
+      categoryName: input.category_name ?? null,
+      basePrice: input.base_price,
+      mainImageUri: input.main_image_uri ?? null,
+      imageCount: input.image_count,
+      variantCount: input.variant_count,
+      createdAt: input.created_at.toISOString(),
+    } satisfies IMallPlatformProductSnapshot.ISummary;
   }
 }
 

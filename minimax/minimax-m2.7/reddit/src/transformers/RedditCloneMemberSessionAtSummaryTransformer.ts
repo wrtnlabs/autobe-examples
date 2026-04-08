@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { IRedditCloneMemberSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMemberSession";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -20,12 +21,12 @@ export namespace RedditCloneMemberSessionAtSummaryTransformer {
         id: true,
         access_token: true,
         refresh_token: true,
+        member: RedditCloneMemberAtSummaryTransformer.select(),
         ip: true,
         href: true,
         referrer: true,
         created_at: true,
         expired_at: true,
-        member: RedditCloneMemberAtSummaryTransformer.select(),
       },
     } satisfies Prisma.reddit_clone_member_sessionsFindManyArgs;
   }

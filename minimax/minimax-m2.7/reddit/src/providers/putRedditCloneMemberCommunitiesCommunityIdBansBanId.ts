@@ -21,51 +21,56 @@ export async function putRedditCloneMemberCommunitiesCommunityIdBansBanId(props:
   banId: string & tags.Format<"uuid">;
   body: IRedditCloneCommunityBan.IUpdate;
 }): Promise<IRedditCloneCommunityBan> {
-  // Verify member has moderator or owner permissions in the community
+  // 1. Authorization: Verify the authenticated user has moderator or owner role
   const moderator =
     await MyGlobal.prisma.reddit_clone_community_moderators.findFirst({
       where: {
-        reddit_clone_community_id: props.communityId,
         reddit_clone_member_id: props.member.id,
+        reddit_clone_community_id: props.communityId,
+        role: { in: ["owner", "moderator"] },
       },
       select: {
         id: true,
-        role: true,
       },
     });
-  if (!moderator) {
+  if (moderator === null) {
     throw new HttpException("Forbidden", 403);
   }
-  // Fetch the ban record and verify it belongs to the community
-  const existingBan = await MyGlobal.prisma.reddit_clone_bans.findUniqueOrThrow(
-    {
-      where: { id: props.banId },
-      select: {
-        id: true,
-        reddit_clone_community_id: true,
-        deleted_at: true,
-      },
+  // 2. Retrieve ban record and verify it belongs to the specified community
+  const ban = await MyGlobal.prisma.reddit_clone_bans.findUnique({
+    where: { id: props.banId },
+    select: {
+      id: true,
+      reddit_clone_community_id: true,
+      deleted_at: true,
     },
-  );
-  // Verify ban belongs to specified community
-  if (existingBan.reddit_clone_community_id !== props.communityId) {
-    throw new HttpException("Ban does not belong to this community", 404);
+  });
+  if (ban === null) {
+    throw new HttpException("Not Found", 404);
   }
-  // Verify ban is currently active (not already unbanned)
-  if (existingBan.deleted_at !== null) {
+  if (ban.reddit_clone_community_id !== props.communityId) {
+    throw new HttpException("Ban does not belong to this community", 400);
+  }
+  // 3. Verify the ban is currently active (not already unbanned)
+  if (ban.deleted_at !== null) {
     throw new HttpException("Ban is already lifted", 400);
   }
-  // Update the ban - set deleted_at to unban the user
-  const updatedBan = await MyGlobal.prisma.reddit_clone_bans.update({
+  // 4. Lift the ban by setting deleted_at and updated_at timestamps
+  const now = new Date();
+  await MyGlobal.prisma.reddit_clone_bans.update({
     where: { id: props.banId },
     data: {
-      deleted_at: new Date(),
-      updated_at: new Date(),
+      deleted_at: now,
+      updated_at: now,
       ...(props.body.reason !== undefined && { reason: props.body.reason }),
     },
+  });
+  // 5. Return the updated ban record with all relations loaded
+  const updated = await MyGlobal.prisma.reddit_clone_bans.findUniqueOrThrow({
+    where: { id: props.banId },
     ...RedditCloneCommunityBanTransformer.select(),
   });
-  return await RedditCloneCommunityBanTransformer.transform(updatedBan);
+  return await RedditCloneCommunityBanTransformer.transform(updated);
 }
 
 

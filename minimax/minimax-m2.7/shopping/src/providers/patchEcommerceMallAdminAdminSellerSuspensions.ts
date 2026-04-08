@@ -1,10 +1,8 @@
-import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
 import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEcommerceMallSellerSuspension } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerSuspension";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
 import { IPageIEcommerceMallSellerSuspension } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallSellerSuspension";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -23,85 +21,151 @@ export async function patchEcommerceMallAdminAdminSellerSuspensions(props: {
   admin: AdminPayload;
   body: IEcommerceMallSellerSuspension.IRequest;
 }): Promise<IPageIEcommerceMallSellerSuspension.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 100;
+  const body = props.body;
+  // Pagination settings
+  const limit = Math.min(body.limit ?? 20, 100);
+  const page = body.page ?? 1;
   const skip = (page - 1) * limit;
-  const whereInput: Prisma.ecommerce_mall_seller_suspensionsWhereInput = {
-    ...(props.body.seller_id !== undefined && {
-      ecommerce_mall_seller_id: props.body.seller_id,
+  const sortOrder = body.sortOrder ?? "desc";
+  // Build date range filter for suspended_at
+  const getSuspendedAtFilter = ():
+    | Record<string, string | undefined>
+    | undefined => {
+    if (body.suspendedAtFrom && body.suspendedAtTo) {
+      return {
+        gte: body.suspendedAtFrom,
+        lte: body.suspendedAtTo,
+      };
+    }
+    if (body.suspendedAtFrom) {
+      return { gte: body.suspendedAtFrom };
+    }
+    if (body.suspendedAtTo) {
+      return { lte: body.suspendedAtTo };
+    }
+    return undefined;
+  };
+  // Build date range filter for restored_at
+  const getRestoredAtFilter = ():
+    | Record<string, string | undefined>
+    | undefined => {
+    if (body.restoredAtFrom && body.restoredAtTo) {
+      return {
+        gte: body.restoredAtFrom,
+        lte: body.restoredAtTo,
+      };
+    }
+    if (body.restoredAtFrom) {
+      return { gte: body.restoredAtFrom };
+    }
+    if (body.restoredAtTo) {
+      return { lte: body.restoredAtTo };
+    }
+    return undefined;
+  };
+  // Call filters to get actual filter objects
+  const suspendedAtFilter = getSuspendedAtFilter();
+  const restoredAtFilter = getRestoredAtFilter();
+  // Build final where clause
+  const whereClause: Prisma.ecommerce_mall_seller_suspensionsWhereInput = {
+    ...(body.sellerId && {
+      ecommerce_mall_seller_id: body.sellerId,
     }),
-    ...(props.body.suspended_by_id !== undefined && {
-      suspended_by_id: props.body.suspended_by_id,
+    ...(body.suspendedById && {
+      suspended_by_id: body.suspendedById,
     }),
-    ...(props.body.restored_by_id !== undefined && {
-      restored_by_id: props.body.restored_by_id,
+    ...(body.restoredById !== undefined && {
+      restored_by_id: body.restoredById,
     }),
-    ...(props.body.suspended_at_from !== undefined ||
-    props.body.suspended_at_to !== undefined
-      ? {
-          suspended_at: {
-            ...(props.body.suspended_at_from !== undefined && {
-              gte: new Date(props.body.suspended_at_from),
-            }),
-            ...(props.body.suspended_at_to !== undefined && {
-              lte: new Date(props.body.suspended_at_to),
-            }),
-          },
-        }
-      : undefined),
-    ...((props.body.restored_at_from !== null &&
-      props.body.restored_at_from !== undefined) ||
-    (props.body.restored_at_to !== null &&
-      props.body.restored_at_to !== undefined)
-      ? {
-          restored_at: {
-            ...(props.body.restored_at_from !== null &&
-              props.body.restored_at_from !== undefined && {
-                gte: new Date(props.body.restored_at_from),
-              }),
-            ...(props.body.restored_at_to !== null &&
-              props.body.restored_at_to !== undefined && {
-                lte: new Date(props.body.restored_at_to),
-              }),
-          },
-        }
-      : undefined),
-    ...(props.body.status !== undefined && {
-      restored_at:
-        props.body.status === "active"
-          ? { equals: null }
-          : props.body.status === "restored"
-            ? { not: null }
-            : undefined,
+    ...(body.status === "active" && {
+      restored_at: null,
+    }),
+    ...(body.status === "resolved" && {
+      restored_at: { not: null },
+    }),
+    ...(suspendedAtFilter && {
+      suspended_at: suspendedAtFilter,
+    }),
+    ...(restoredAtFilter && {
+      restored_at: restoredAtFilter,
     }),
   };
-  const records =
-    await MyGlobal.prisma.ecommerce_mall_seller_suspensions.findMany({
-      where: whereInput,
-      skip,
-      take: limit,
-      orderBy: { suspended_at: "desc" },
-      ...EcommerceMallSellerSuspensionAtSummaryTransformer.select(),
-    });
-  const total = await MyGlobal.prisma.ecommerce_mall_seller_suspensions.count({
-    where: whereInput,
-  });
-  const transformedRecords = await ArrayUtil.asyncMap(
-    records,
-    EcommerceMallSellerSuspensionAtSummaryTransformer.transform,
-  );
-  return {
-    pagination: {
+  // OrderBy configuration
+  const orderByConfig: Prisma.ecommerce_mall_seller_suspensionsOrderByWithRelationInput =
+    {
+      suspended_at: sortOrder,
+    };
+  // Determine pagination strategy
+  if (body.cursor) {
+    // Cursor-based pagination
+    const cursorFilter =
+      sortOrder === "desc"
+        ? { suspended_at: { lt: body.cursor } }
+        : { suspended_at: { gt: body.cursor } };
+    const records =
+      await MyGlobal.prisma.ecommerce_mall_seller_suspensions.findMany({
+        where: {
+          ...whereClause,
+          ...cursorFilter,
+        },
+        orderBy: orderByConfig,
+        take: limit,
+        ...EcommerceMallSellerSuspensionAtSummaryTransformer.select(),
+      });
+    // Get total count for pagination metadata
+    const total = await MyGlobal.prisma.ecommerce_mall_seller_suspensions.count(
+      {
+        where: {
+          ...whereClause,
+          ...cursorFilter,
+        },
+      },
+    );
+    // Transform records to response DTOs
+    const data = await ArrayUtil.asyncMap(
+      records,
+      EcommerceMallSellerSuspensionAtSummaryTransformer.transform,
+    );
+    return {
       pagination: {
         current: page,
         limit: limit,
         records: total,
         pages: Math.ceil(total / limit),
       } satisfies IPage.IPagination,
-      data: transformedRecords as IEcommerceMall.IPagination[],
-    } satisfies IPageIEcommerceMall.IPagination,
-    data: transformedRecords,
-  };
+      data: data,
+    };
+  } else {
+    // Offset-based pagination
+    const records =
+      await MyGlobal.prisma.ecommerce_mall_seller_suspensions.findMany({
+        where: whereClause,
+        orderBy: orderByConfig,
+        skip,
+        take: limit,
+        ...EcommerceMallSellerSuspensionAtSummaryTransformer.select(),
+      });
+    // Get total count for pagination metadata
+    const total = await MyGlobal.prisma.ecommerce_mall_seller_suspensions.count(
+      {
+        where: whereClause,
+      },
+    );
+    // Transform records to response DTOs
+    const data = await ArrayUtil.asyncMap(
+      records,
+      EcommerceMallSellerSuspensionAtSummaryTransformer.transform,
+    );
+    return {
+      pagination: {
+        current: page,
+        limit: limit,
+        records: total,
+        pages: Math.ceil(total / limit),
+      } satisfies IPage.IPagination,
+      data: data,
+    };
+  }
 }
 
 
@@ -124,9 +188,7 @@ export async function patchEcommerceMallAdminAdminSellerSuspensions(props: {
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IEcommerceMallSellerSuspension } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerSuspension";
 // import { IPageIEcommerceMallSellerSuspension } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallSellerSuspension";
-// import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
 // import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-// import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
 // import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 // import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
 // 

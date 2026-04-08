@@ -1,10 +1,8 @@
-import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
 import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 import { IEcommerceMallCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerSession";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
 import { IPageIEcommerceMallCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallCustomerSession";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -23,35 +21,50 @@ export async function patchEcommerceMallCustomerCustomerSessions(props: {
   customer: CustomerPayload;
   body: IEcommerceMallCustomerSession.IRequest;
 }): Promise<IPageIEcommerceMallCustomerSession.ISummary> {
+  // Pagination parameters with defaults
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
+  // Build where clause with customer filter (required) and optional filters
   const whereInput = {
     ecommerce_mall_customer_id: props.customer.id,
-    ...(props.body.status === "active" && {
+    ...(props.body.createdAfter && {
+      created_at: { gte: new Date(props.body.createdAfter) },
+    }),
+    ...(props.body.createdBefore && {
+      created_at: { lte: new Date(props.body.createdBefore) },
+    }),
+    ...(props.body.showExpired === false && {
       expired_at: { gt: new Date() },
     }),
-    ...(props.body.status === "expired" && {
-      expired_at: { lte: new Date() },
-    }),
-    ...(props.body.createdFrom && {
-      created_at: { gte: new Date(props.body.createdFrom) },
-    }),
-    ...(props.body.createdTo && {
-      created_at: { lte: new Date(props.body.createdTo) },
+    ...(props.body.ipPattern && {
+      ip: { contains: props.body.ipPattern },
     }),
   } satisfies Prisma.ecommerce_mall_customer_sessionsWhereInput;
+  // Build order by clause
+  const orderByInput = (
+    props.body.sortBy === "expiredAt"
+      ? { expired_at: props.body.sortOrder ?? ("desc" as const) }
+      : { created_at: props.body.sortOrder ?? ("desc" as const) }
+  ) satisfies Prisma.ecommerce_mall_customer_sessionsOrderByWithRelationInput;
+  // Query sessions with transformer select
   const records =
     await MyGlobal.prisma.ecommerce_mall_customer_sessions.findMany({
       where: whereInput,
+      orderBy: orderByInput,
       skip,
       take: limit,
-      orderBy: { created_at: "desc" },
       ...EcommerceMallCustomerSessionAtSummaryTransformer.select(),
     });
+  // Get total count for pagination metadata
   const total = await MyGlobal.prisma.ecommerce_mall_customer_sessions.count({
     where: whereInput,
   });
+  // Transform records using transformer
+  const data = await ArrayUtil.asyncMap(
+    records,
+    EcommerceMallCustomerSessionAtSummaryTransformer.transform,
+  );
   return {
     pagination: {
       current: page,
@@ -59,10 +72,7 @@ export async function patchEcommerceMallCustomerCustomerSessions(props: {
       records: total,
       pages: Math.ceil(total / limit),
     } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(
-      records,
-      EcommerceMallCustomerSessionAtSummaryTransformer.transform,
-    ),
+    data: data,
   };
 }
 
@@ -86,9 +96,7 @@ export async function patchEcommerceMallCustomerCustomerSessions(props: {
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IEcommerceMallCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerSession";
 // import { IPageIEcommerceMallCustomerSession } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallCustomerSession";
-// import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
 // import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-// import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
 // import { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 // import { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
 // 

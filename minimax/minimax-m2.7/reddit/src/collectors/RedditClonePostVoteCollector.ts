@@ -32,7 +32,8 @@ export namespace RedditClonePostVoteCollector {
 //         export async function collect(props: {
 //           body: IRedditClonePostVote.ICreate;
 //           redditCloneMembers: IEntity; // from authorized actor
-// redditClonePosts: IEntity; // from path parameter postId
+// redditCloneMemberSessions: IEntity; // from authorized session
+// redditClonePosts: IEntity; // from path parameter {postId}
 //           
 //           
 //         }) {

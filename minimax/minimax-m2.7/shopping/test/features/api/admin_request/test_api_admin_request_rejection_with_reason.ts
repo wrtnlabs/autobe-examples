@@ -1,10 +1,14 @@
 import api from "@ORGANIZATION/PROJECT-api";
 import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 import type { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
-import type { IEcommerceMallAdminRequestOfCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminRequestOfCustomer";
+import type { IEcommerceMallAdminRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdminRequest";
 import type { IEcommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomer";
 import type { IEcommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallCustomerProfile";
-import type { IEcommerceMallShippingAddress } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallShippingAddress";
+import type { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+import type { IEcommerceMallSellerAdminRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerAdminRequest";
+import type { IEcommerceMallSellerApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerApproval";
+import type { IEcommerceMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfile";
+import type { IEcommerceMallSellerSuspension } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerSuspension";
 import type { IEcommerceMallSuperAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSuperAdmin";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
@@ -13,82 +17,91 @@ import { IConnection } from "@nestia/fetcher";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
-import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
-import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
-import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
-import { authorize_customer_join } from "../../../authorize/authorize_customer_join";
-import { authorize_customer_login } from "../../../authorize/authorize_customer_login";
-import { authorize_customer_refresh } from "../../../authorize/authorize_customer_refresh";
+import { authorize_seller_join } from "../../../authorize/authorize_seller_join";
+import { authorize_seller_login } from "../../../authorize/authorize_seller_login";
+import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
 import { authorize_super_admin_join } from "../../../authorize/authorize_super_admin_join";
 import { authorize_super_admin_login } from "../../../authorize/authorize_super_admin_login";
 import { authorize_super_admin_refresh } from "../../../authorize/authorize_super_admin_refresh";
+import { generate_random_ecommerce_mall_seller_sellers_me_admin_requests_create } from "../../../generate/generate_random_ecommerce_mall_seller_sellers_me_admin_requests_create";
+import { prepare_random_ecommerce_mall_seller_admin_request } from "../../../prepare/prepare_random_ecommerce_mall_seller_admin_request";
 
+/**
+ * Test super administrator rejecting a seller's pending admin request with proper review reason.
+ *
+ * Validates the complete rejection workflow where a super administrator reviews and rejects
+ * a seller's administrative privilege request. The test ensures that:
+ *
+ * - The super administrator can authenticate and access admin request management endpoints
+ * - A seller can submit an admin request with a justification reason
+ * - The super admin can reject the request with a detailed review reason
+ * - The request status transitions from 'pending' to 'rejected'
+ * - The rejection reason is stored and returned in the response
+ * - The reviewer (super admin) information is recorded in the request
+ *
+ * 1. Register a super administrator who will perform the rejection
+ * 2. Register a seller who will submit the admin request
+ * 3. Seller submits an admin request with a reason explaining their need for admin privileges
+ * 4. Super admin rejects the request with a detailed review reason
+ * 5. Validate response contains correct status, reviewer info, and rejection reason
+ */
 export async function test_api_admin_request_rejection_with_reason(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Authenticate as super administrator
+  // 1. Register super administrator who will reject the admin request
   const superAdminConnection: api.IConnection = { host: connection.host };
-  const superAdmin = await authorize_super_admin_join(superAdminConnection, {});
-  // 2. Create a customer who will submit an admin request
-  const customerConnection: api.IConnection = { host: connection.host };
-  await authorize_customer_join(customerConnection, {});
-  // 3. Submit an admin request from the customer
-  await api.functional.ecommerceMall.auth.admin.request.join(
-    customerConnection,
-    {
-      body: {
-        actorType: "customer",
-        requestedGrade: "admin",
-        reason:
-          "I would like to help manage this platform and ensure quality service for all users.",
-        href: "https://example.com/admin-request",
-        referrer: "https://example.com/",
-      } satisfies IEcommerceMallAdmin.IJoin,
-    },
-  );
-  // Note: The admin request join returns IAuthorized (tokens only), not the request object.
-  // Since there's no GET endpoint for admin requests, we use a generated UUID.
-  // The test validates the rejection endpoint structure and authentication.
-  const requestId = typia.random<string & tags.Format<"uuid">>();
-  // 4. Call POST /ecommerceMall/superAdmin/admin/requests/{requestId}/reject with a rejection reason
-  const rejectionReason =
-    "Your request does not meet our current criteria for administrator privileges. Please consider gaining more experience on the platform first.";
-  const rejectedRequest =
-    await api.functional.ecommerceMall.superAdmin.admin.requests.reject(
-      superAdminConnection,
+  await authorize_super_admin_join(superAdminConnection, {});
+  // 2. Register seller who will submit the admin request
+  const sellerConnection: api.IConnection = { host: connection.host };
+  await authorize_seller_join(sellerConnection, {});
+  // 3. Seller submits an admin request with a reason
+  const adminRequest =
+    await api.functional.ecommerceMall.seller.sellers.me.admin_requests.create(
+      sellerConnection,
       {
-        requestId: requestId,
         body: {
-          reviewedReason: rejectionReason,
-        } satisfies IEcommerceMallAdminRequestOfCustomer.IReject,
+          reason:
+            "I would like to help moderate the platform and ensure quality standards are maintained across all seller listings.",
+        } satisfies IEcommerceMallSellerAdminRequest.ICreate,
       },
     );
-  typia.assert(rejectedRequest);
-  // 5. Verify the response body contains expected values
+  typia.assert(adminRequest);
+  // 4. Super admin rejects the request with a detailed review reason
+  const rejectionReason =
+    "Insufficient qualifications for administrator role. Please gain more platform experience.";
+  const updatedRequest =
+    await api.functional.ecommerceMall.superAdmin.admin.admin_requests.update(
+      superAdminConnection,
+      {
+        requestId: adminRequest.id,
+        body: {
+          action: "reject",
+          reviewed_reason: rejectionReason,
+        } satisfies IEcommerceMallAdminRequest.IUpdate,
+      },
+    );
+  typia.assert(updatedRequest);
+  // 5. Validate response contains correct status
   TestValidator.equals(
-    "status is rejected",
-    rejectedRequest.status,
+    "request status should be rejected",
+    updatedRequest.status,
     "rejected",
   );
+  // 6. Validate rejection reason matches input
   TestValidator.equals(
-    "reviewed_reason matches",
-    rejectedRequest.reviewedReason,
+    "reviewed reason should match",
+    updatedRequest.reviewedReason,
     rejectionReason,
   );
+  // 7. Validate reviewer (super admin) information is recorded
   TestValidator.predicate(
-    "reviewer is not null",
-    rejectedRequest.reviewer !== null,
+    "reviewedBySuperAdmin should not be null",
+    updatedRequest.reviewer !== null && updatedRequest.reviewer !== undefined,
   );
-  if (rejectedRequest.reviewer !== null) {
-    TestValidator.equals(
-      "reviewer id matches super admin",
-      rejectedRequest.reviewer.id,
-      superAdmin.id,
-    );
-  }
-  TestValidator.predicate(
-    "updated_at exists",
-    rejectedRequest.updatedAt !== undefined &&
-      rejectedRequest.updatedAt !== null,
+  // 8. Validate request contains proper seller information
+  TestValidator.equals(
+    "seller id should match original request",
+    updatedRequest.seller?.id,
+    adminRequest.seller.id,
   );
 }

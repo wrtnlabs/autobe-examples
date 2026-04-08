@@ -23,7 +23,6 @@ export namespace MallPlatformCategoryCollector {
       parentCategory: props.body.parentCategoryId
         ? { connect: { id: props.body.parentCategoryId } }
         : undefined,
-      subcategories: undefined,
     } satisfies Prisma.mall_platform_categoriesCreateInput;
   }
 }

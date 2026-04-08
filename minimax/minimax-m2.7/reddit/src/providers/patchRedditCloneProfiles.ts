@@ -13,56 +13,85 @@ import typia, { tags } from "typia";
 import { v4 } from "uuid";
 
 import { MyGlobal } from "../MyGlobal";
-import { RedditCloneUserProfileAtSummaryTransformer } from "../transformers/RedditCloneUserProfileAtSummaryTransformer";
+import { RedditCloneFileAtSummaryTransformer } from "../transformers/RedditCloneFileAtSummaryTransformer";
+import { RedditCloneMemberAtSummaryTransformer } from "../transformers/RedditCloneMemberAtSummaryTransformer";
 import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchRedditCloneProfiles(props: {
   body: IRedditCloneUserProfile.IRequest;
 }): Promise<IPageIRedditCloneUserProfile.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
-  const whereInput = {
-    ...(props.body.search && {
-      display_name: {
-        contains: props.body.search,
-        mode: "insensitive" as const,
-      },
+  const { search, page, limit, sort, order, created_after, created_before } =
+    props.body;
+  const currentPage = page ?? 1;
+  const pageLimit = limit ?? 20;
+  const skip = (currentPage - 1) * pageLimit;
+  const where = {
+    ...(search && {
+      display_name: { contains: search, mode: "insensitive" as const },
     }),
-    ...(props.body.created_after && {
-      created_at: { gte: props.body.created_after },
-    }),
-    ...(props.body.created_before && {
-      created_at: { lte: props.body.created_before },
-    }),
+    ...(created_after && { created_at: { gte: new Date(created_after) } }),
+    ...(created_before && { created_at: { lte: new Date(created_before) } }),
   } satisfies Prisma.reddit_clone_user_profilesWhereInput;
   const orderByInput = (
-    props.body.sort === "display_name"
-      ? { display_name: props.body.order ?? "desc" }
-      : { created_at: props.body.order ?? "desc" }
+    sort === "display_name"
+      ? { display_name: order ?? "desc" }
+      : { created_at: order ?? "desc" }
   ) satisfies Prisma.reddit_clone_user_profilesOrderByWithRelationInput;
-  const records = await MyGlobal.prisma.reddit_clone_user_profiles.findMany({
-    where: whereInput,
-    skip,
-    take: limit,
+  const profiles = await MyGlobal.prisma.reddit_clone_user_profiles.findMany({
+    where,
     orderBy: orderByInput,
-    ...RedditCloneUserProfileAtSummaryTransformer.select(),
+    skip,
+    take: pageLimit,
+    select: {
+      id: true,
+      display_name: true,
+      bio: true,
+      created_at: true,
+      reddit_clone_member_id: true,
+      avatarFileAssociation: {
+        select: {
+          file: RedditCloneFileAtSummaryTransformer.select(),
+        },
+      } satisfies Prisma.reddit_clone_file_associationsFindManyArgs,
+      member: RedditCloneMemberAtSummaryTransformer.select(),
+    },
   });
   const total = await MyGlobal.prisma.reddit_clone_user_profiles.count({
-    where: whereInput,
+    where,
   });
+  const memberIds = profiles.map((p) => p.reddit_clone_member_id);
+  const karmaRecords = await MyGlobal.prisma.reddit_clone_user_karmas.findMany({
+    where: { reddit_clone_member_id: { in: memberIds } },
+    select: { reddit_clone_member_id: true, karma_score: true },
+  });
+  const karmaMap = new Map(
+    karmaRecords.map((k) => [k.reddit_clone_member_id, k.karma_score]),
+  );
+  const data = await ArrayUtil.asyncMap(profiles, async (profile) => ({
+    id: profile.id as string & tags.Format<"uuid">,
+    displayName: profile.display_name,
+    bio: profile.bio ?? undefined,
+    createdAt: profile.created_at.toISOString() as string &
+      tags.Format<"date-time">,
+    avatar: profile.avatarFileAssociation?.file
+      ? await RedditCloneFileAtSummaryTransformer.transform(
+          profile.avatarFileAssociation.file,
+        )
+      : undefined,
+    member: await RedditCloneMemberAtSummaryTransformer.transform(
+      profile.member,
+    ),
+    karmaScore: karmaMap.get(profile.reddit_clone_member_id) ?? 0,
+  }));
   return {
     pagination: {
-      current: page,
-      limit: limit,
+      current: currentPage,
+      limit: pageLimit,
       records: total,
-      pages: Math.ceil(total / limit),
+      pages: Math.ceil(total / pageLimit),
     } satisfies IPage.IPagination,
-    data: await ArrayUtil.asyncMap(
-      records,
-      RedditCloneUserProfileAtSummaryTransformer.transform,
-    ),
+    data,
   };
 }
 

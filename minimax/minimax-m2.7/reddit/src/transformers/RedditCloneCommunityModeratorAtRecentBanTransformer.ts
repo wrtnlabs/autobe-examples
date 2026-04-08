@@ -1,6 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCloneCommunityModerator } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunityModerator";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -24,17 +25,17 @@ export namespace RedditCloneCommunityModeratorAtRecentBanTransformer {
           select: {
             id: true,
           },
-        } satisfies Prisma.reddit_clone_communitiesFindManyArgs,
+        },
         member: {
           select: {
             id: true,
           },
-        } satisfies Prisma.reddit_clone_membersFindManyArgs,
+        },
         moderator: {
           select: {
             id: true,
           },
-        } satisfies Prisma.reddit_clone_community_moderatorsFindManyArgs,
+        },
       },
     } satisfies Prisma.reddit_clone_community_bansFindManyArgs;
   }

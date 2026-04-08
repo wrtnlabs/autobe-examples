@@ -12,10 +12,13 @@ import { prepare_random_mall_platform_category } from "../prepare/prepare_random
 /**
  * Generate a random mall platform category via the API for E2E testing.
  *
- * Prepares category creation data using the matching prepare function, then
- * calls the administrator category creation endpoint to persist the resource.
- * This is intended for end-to-end test setups that need a real category entity
- * created through the API.
+ * Prepares random category creation data using the prepare function, then calls the administrator category creation endpoint.
+ *
+ * This is intended for creating top-level categories or direct subcategories during end-to-end test setup.
+ *
+ * @param connection The API connection to use when creating the category.
+ * @param props Optional body overrides for the category creation payload.
+ * @returns The created mall platform category.
  */
 export async function generate_random_mall_platform_administrator_categories_create(
   connection: api.IConnection,

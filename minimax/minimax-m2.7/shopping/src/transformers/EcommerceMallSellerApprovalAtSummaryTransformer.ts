@@ -3,6 +3,7 @@ import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IEcommerceMallSellerApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerApproval";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -34,7 +35,10 @@ export namespace EcommerceMallSellerApprovalAtSummaryTransformer {
   ): Promise<IEcommerceMallSellerApproval.ISummary> {
     return {
       id: input.id,
-      status: input.status as "pending" | "approved" | "rejected",
+      status: input.status,
+      rejection_reason: input.rejection_reason,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
       seller: await EcommerceMallSellerAtSummaryTransformer.transform(
         input.seller,
       ),
@@ -42,9 +46,7 @@ export namespace EcommerceMallSellerApprovalAtSummaryTransformer {
         ? await EcommerceMallAdminAtSummaryTransformer.transform(
             input.reviewedByAdmin,
           )
-        : undefined,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
+        : null,
     } satisfies IEcommerceMallSellerApproval.ISummary;
   }
 }
@@ -73,12 +75,13 @@ export namespace EcommerceMallSellerApprovalAtSummaryTransformer {
 // 
 //       export async function transform(input: Payload): Promise<IEcommerceMallSellerApproval.ISummary> {
 //         return {
+//   created_at: {string},
 //   id: {string},
-//   status: {"pending" | "approved" | "rejected"},
+//   rejection_reason: {string | null},
+//   reviewedByAdmin: input.reviewedByAdmin ? await EcommerceMallAdminAtSummaryTransformer.transform(input.reviewedByAdmin) : null,
 //   seller: await EcommerceMallSellerAtSummaryTransformer.transform(input.seller),
-//   reviewedByAdmin: await EcommerceMallAdminAtSummaryTransformer.transform(input.reviewedByAdmin),
-//   createdAt: {string},
-//   updatedAt: {string},
+//   status: {string},
+//   updated_at: {string},
 //         };
 //       }
 //     }

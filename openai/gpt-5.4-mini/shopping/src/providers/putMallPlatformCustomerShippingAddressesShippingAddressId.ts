@@ -25,53 +25,37 @@ export async function putMallPlatformCustomerShippingAddressesShippingAddressId(
       select: {
         id: true,
         customer_id: true,
+        deleted_at: true,
       },
     });
   if (current.customer_id !== props.customer.id) {
     throw new HttpException("Forbidden", 403);
   }
-  await MyGlobal.prisma.$transaction(async (tx) => {
-    if (props.body.isDefault === true) {
-      await tx.mall_platform_shipping_addresses.updateMany({
-        where: {
-          customer_id: props.customer.id,
-          deleted_at: null,
-          is_default: true,
-          NOT: { id: props.shippingAddressId },
-        },
-        data: {
-          is_default: false,
-        },
-      });
-    }
-    await tx.mall_platform_shipping_addresses.update({
-      where: { id: props.shippingAddressId },
-      data: {
-        ...(props.body.recipientName !== undefined && {
-          recipient_name: props.body.recipientName,
-        }),
-        ...(props.body.phoneNumber !== undefined && {
-          phone_number: props.body.phoneNumber,
-        }),
-        ...(props.body.streetAddress !== undefined && {
-          street_address: props.body.streetAddress,
-        }),
-        ...(props.body.city !== undefined && { city: props.body.city }),
-        ...(props.body.stateProvince !== undefined && {
-          state_province: props.body.stateProvince,
-        }),
-        ...(props.body.postalCode !== undefined && {
-          postal_code: props.body.postalCode,
-        }),
-        ...(props.body.country !== undefined && {
-          country: props.body.country,
-        }),
-        ...(props.body.isDefault !== undefined && {
-          is_default: props.body.isDefault,
-        }),
-        updated_at: new Date(),
-      },
-    });
+  if (current.deleted_at !== null) {
+    throw new HttpException("Conflict", 409);
+  }
+  await MyGlobal.prisma.mall_platform_shipping_addresses.update({
+    where: { id: props.shippingAddressId },
+    data: {
+      ...(props.body.recipientName !== undefined && {
+        recipient_name: props.body.recipientName,
+      }),
+      ...(props.body.phoneNumber !== undefined && {
+        phone_number: props.body.phoneNumber,
+      }),
+      ...(props.body.streetAddress !== undefined && {
+        street_address: props.body.streetAddress,
+      }),
+      ...(props.body.city !== undefined && { city: props.body.city }),
+      ...(props.body.stateProvince !== undefined && {
+        state_province: props.body.stateProvince,
+      }),
+      ...(props.body.postalCode !== undefined && {
+        postal_code: props.body.postalCode,
+      }),
+      ...(props.body.country !== undefined && { country: props.body.country }),
+      updated_at: new Date().toISOString(),
+    },
   });
   const updated =
     await MyGlobal.prisma.mall_platform_shipping_addresses.findUniqueOrThrow({

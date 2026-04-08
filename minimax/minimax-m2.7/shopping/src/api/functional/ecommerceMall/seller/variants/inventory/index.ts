@@ -7,47 +7,60 @@ import {
 import typia, { tags } from "typia";
 
 import { IEcommerceMallInventoryRecord } from "../../../../../structures/IEcommerceMallInventoryRecord";
-import { IPageIEcommerceMallInventoryRecord } from "../../../../../structures/IPageIEcommerceMallInventoryRecord";
-
-export * as history from "./history/index";
 
 /**
- * Retrieve inventory change history for a specific product variant with filtering and pagination support.
+ * Adds or adjusts inventory stock for a product variant.
  *
- * This endpoint allows sellers to view the complete audit trail of stock changes for their product variants. Each inventory record captures a specific quantity change event, the business reason (such as restock, order placement, cancellation, refund, or adjustment), and the timestamp when the change occurred.
+ * This endpoint allows sellers to modify the stock quantity of their product variants. Positive quantity values increase stock (restocking), while the operation supports inventory subtraction through adjustment with negative values. Each inventory change is recorded with a reason for audit purposes.
  *
- * The response includes paginated inventory records sorted by creation time, showing the most recent changes first. Sellers can filter records by reason type and date range to analyze inventory patterns. The current stock quantity is calculated by summing all inventory records for the variant.
+ * **Stock Increase (Restocking)**: Sellers add new inventory to their variants by providing a positive quantity and a reason such as 'restock' or 'new shipment'.
  *
- * Only inventory records belonging to variants owned by the authenticated seller are accessible. Attempting to view inventory for variants belonging to other sellers will result in a not found error.
+ * **Stock Decrease (Adjustment)**: Sellers subtract inventory for damaged goods, expired products, or inventory corrections by providing a negative quantity change value and a reason such as 'adjustment' or 'damaged'.
+ *
+ * The current stock quantity is calculated by summing all inventory records for the variant. Adjustments that would result in negative stock are rejected.
+ *
+ * **Ownership Verification**: The variant must belong to a product owned by the authenticated seller. Requests for variants not owned by the seller are rejected with 403 Forbidden.
  *
  * @param props.connection
- * @param props.variantId Unique identifier of the product variant
- * @param props.body Filtering and pagination parameters for inventory search
+ * @param props.variantId Unique identifier of the product variant to update inventory for.
+ * @param props.body Inventory change details containing the quantity to add or subtract and the business reason for the change.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query the ecommerce_mall_inventory_records table filtered by ecommerce_mall_product_variant_id matching the path parameter variantId.
+ * @x-autobe-specification Implement the inventory creation endpoint with the following steps:
  *
- * Verify the variant belongs to a product owned by the authenticated seller by joining with ecommerce_mall_product_variants and ecommerce_mall_products tables. If the variant does not exist or belongs to another seller, return a not found error.
+ * 1. **Authentication & Authorization**: Extract authenticated seller from request context. Verify seller session is valid.
  *
- * Apply filters from the request body:
- * - Filter by reason using pattern matching (e.g., 'restock%', 'order%') if reason filter is provided
- * - Filter by date range (created_at >= startDate AND created_at <= endDate) if date range is provided
+ * 2. **Path Parameter Validation**: Parse variantId as UUID from path. Validate variantId format.
  *
- * Sort by created_at in descending order (most recent first).
+ * 3. **Ownership Verification**: Query the ecommerce_mall_product_variants table to find the variant. Join with ecommerce_mall_products to verify the product's seller ownership. Reject with 403 if variant does not exist or does not belong to the authenticated seller.
  *
- * Return paginated results with configurable page size (default 20, max 100). Include total count for pagination metadata.
+ * 4. **Request Body Validation**:
+ *    - quantityChange: Required, integer, must be non-zero
+ *    - reason: Required, string, minimum 1 character, maximum 500 characters
+ *    - Validate against business rules:
+ *      - If quantityChange > 0 (restock): Accept any positive value
+ *      - If quantityChange < 0 (adjustment): Calculate new stock = currentQuantity + quantityChange; reject if new stock would be negative
  *
- * Calculate the current stock quantity by summing all quantity_change values for this variant as reference data.
+ * 5. **Create Inventory Record**: Insert new record into ecommerce_mall_inventory_records with:
+ *    - id: Generate UUID
+ *    - ecommerce_mall_product_variant_id: variantId from path
+ *    - quantity_change: quantityChange from request body
+ *    - reason: reason from request body
+ *    - created_at: Current timestamp
+ *
+ * 6. **Update Variant Quantity**: Update ecommerce_mall_product_variants.quantity by adding quantityChange. This recalculates the running total.
+ *
+ * 7. **Response**: Return the created inventory record with variant ID and updated quantity.
  * @path /ecommerceMall/seller/variants/:variantId/inventory
- * @accessor api.functional.ecommerceMall.seller.variants.inventory.index
+ * @accessor api.functional.ecommerceMall.seller.variants.inventory.create
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
-export async function index(
+export async function create(
   connection: IConnection,
-  props: index.Props,
-): Promise<index.Response> {
+  props: create.Props,
+): Promise<create.Response> {
   return true === connection.simulate
-    ? index.simulate(connection, props)
+    ? create.simulate(connection, props)
     : await PlainFetcher.fetch(
         {
           ...connection,
@@ -57,30 +70,30 @@ export async function index(
           },
         },
         {
-          ...index.METADATA,
-          path: index.path(props),
+          ...create.METADATA,
+          path: create.path(props),
           status: null,
         },
         props.body,
       );
 }
-export namespace index {
+export namespace create {
   export type Props = {
     /**
-     * Unique identifier of the product variant
+     * Unique identifier of the product variant to update inventory for.
      */
     variantId: string & tags.Format<"uuid">;
 
     /**
-     * Filtering and pagination parameters for inventory search
+     * Inventory change details containing the quantity to add or subtract and the business reason for the change.
      */
-    body: IEcommerceMallInventoryRecord.IRequest;
+    body: IEcommerceMallInventoryRecord.ICreate;
   };
-  export type Body = IEcommerceMallInventoryRecord.IRequest;
-  export type Response = IPageIEcommerceMallInventoryRecord.ISummary;
+  export type Body = IEcommerceMallInventoryRecord.ICreate;
+  export type Response = IEcommerceMallInventoryRecord;
 
   export const METADATA = {
-    method: "PATCH",
+    method: "POST",
     path: "/ecommerceMall/seller/variants/:variantId/inventory",
     request: {
       type: "application/json",
@@ -94,16 +107,16 @@ export namespace index {
 
   export const path = (props: Omit<Props, "body">) =>
     `/ecommerceMall/seller/variants/${encodeURIComponent(props.variantId ?? "null")}/inventory`;
-  export const random = (): IPageIEcommerceMallInventoryRecord.ISummary =>
-    typia.random<IPageIEcommerceMallInventoryRecord.ISummary>();
+  export const random = (): IEcommerceMallInventoryRecord =>
+    typia.random<IEcommerceMallInventoryRecord>();
   export const simulate = (
     connection: IConnection,
-    props: index.Props,
+    props: create.Props,
   ): Response => {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: index.path(props),
+      path: create.path(props),
       contentType: "application/json",
     });
     try {
@@ -123,31 +136,153 @@ export namespace index {
 }
 
 /**
- * Retrieve a specific inventory record for a product variant.
+ * Modifies the stock quantity of a product variant by creating an inventory record.
  *
- * This endpoint allows sellers to view the details of a single inventory change event. Each inventory record captures a quantity change, the business reason for the change (such as restock, order_placement, order_cancellation, refund, or adjustment), and the timestamp when the change occurred.
+ * This endpoint allows sellers to add inventory (restock) or subtract inventory (adjustment) for their product variants. Each operation creates an immutable inventory record that captures the quantity change and reason, maintaining a complete audit trail of all stock modifications.
  *
- * The operation validates that the inventory record belongs to the specified variant, ensuring data isolation. Sellers can only view inventory records for variants they own.
+ * **Stock Addition (Restock):** Sellers can increase stock by specifying a positive quantity and a reason such as 'restock', 'return', or 'transfer'.
+ *
+ * **Stock Subtraction (Adjustment):** Sellers can decrease stock by specifying a positive quantity value with an adjustment reason like 'damaged', 'expired', or 'correction'. The system validates that the adjustment quantity does not exceed current available stock.
+ *
+ * **Ownership Verification:** The system verifies that the variant belongs to a product owned by the requesting seller before processing the inventory change.
+ *
+ * **Audit Trail:** All inventory changes are recorded with timestamp, quantity change, and reason for traceability and dispute resolution.
  *
  * @param props.connection
- * @param props.variantId Product variant identifier (UUID)
- * @param props.inventoryId Inventory record identifier (UUID)
+ * @param props.variantId Unique identifier of the product variant to modify inventory for.
+ * @param props.body Inventory change details including the quantity to add or subtract and the business reason for the change. For restocking, provide the quantity to add. For adjustments, provide the quantity to subtract.
  * @x-autobe-authorization-type null
  * @x-autobe-authorization-actor seller
- * @x-autobe-specification Query ecommerce_mall_inventory_records table using inventoryId as the primary key.
+ * @x-autobe-specification 1. Extract variantId from path parameter.
+ * 2. Validate seller authentication and extract sellerId from JWT token.
+ * 3. Query the variant by variantId and verify it exists and is not soft-deleted.
+ * 4. Verify ownership: query the variant's product and confirm product.ecommerce_mall_seller_id matches the authenticated seller's sellerId.
+ * 5. Validate request body:
+ *    - quantity must be a positive integer greater than 0
+ *    - reason must be a non-empty string (valid reasons: 'restock', 'adjustment', 'damaged', 'expired', 'correction', 'return', 'transfer')
+ * 6. If operation is subtraction (adjustment), verify that quantity does not exceed variant.quantity (current stock).
+ * 7. Create a new inventory record:
+ *    - id: generate UUID
+ *    - ecommerce_mall_product_variant_id: variantId
+ *    - quantity_change: positive value for addition, negative for subtraction
+ *    - reason: from request body
+ *    - created_at: current timestamp
+ * 8. Return the created inventory record.
+ * 9. Handle errors:
+ *    - 404: Variant not found or soft-deleted
+ *    - 403: Seller does not own the variant's product
+ *    - 400: Invalid quantity or reason
+ *    - 400: Adjustment quantity exceeds available stock
+ * @path /ecommerceMall/seller/variants/:variantId/inventory
+ * @accessor api.functional.ecommerceMall.seller.variants.inventory.restock
+ * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
+ */
+export async function restock(
+  connection: IConnection,
+  props: restock.Props,
+): Promise<restock.Response> {
+  return true === connection.simulate
+    ? restock.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        {
+          ...connection,
+          headers: {
+            ...connection.headers,
+            "Content-Type": "application/json",
+          },
+        },
+        {
+          ...restock.METADATA,
+          path: restock.path(props),
+          status: null,
+        },
+        props.body,
+      );
+}
+export namespace restock {
+  export type Props = {
+    /**
+     * Unique identifier of the product variant to modify inventory for.
+     */
+    variantId: string & tags.Format<"uuid">;
+
+    /**
+     * Inventory change details including the quantity to add or subtract and the business reason for the change. For restocking, provide the quantity to add. For adjustments, provide the quantity to subtract.
+     */
+    body: IEcommerceMallInventoryRecord.ICreate;
+  };
+  export type Body = IEcommerceMallInventoryRecord.ICreate;
+  export type Response = IEcommerceMallInventoryRecord;
+
+  export const METADATA = {
+    method: "PATCH",
+    path: "/ecommerceMall/seller/variants/:variantId/inventory",
+    request: {
+      type: "application/json",
+      encrypted: false,
+    },
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (props: Omit<Props, "body">) =>
+    `/ecommerceMall/seller/variants/${encodeURIComponent(props.variantId ?? "null")}/inventory`;
+  export const random = (): IEcommerceMallInventoryRecord =>
+    typia.random<IEcommerceMallInventoryRecord>();
+  export const simulate = (
+    connection: IConnection,
+    props: restock.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: restock.path(props),
+      contentType: "application/json",
+    });
+    try {
+      assert.param("variantId")(() => typia.assert(props.variantId));
+      assert.body(() => typia.assert(props.body));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
+
+/**
+ * Retrieves a specific inventory record for a product variant.
  *
- * Join with ecommerce_mall_product_variants to verify variant ownership.
+ * This endpoint returns the detailed information of a single inventory record, including the quantity change value, the business reason for the change, and the timestamp when the change occurred.
  *
- * Verify the inventory record belongs to the specified variantId (ecommerce_mall_product_variant_id).
+ * **Authorization**: The requesting user must be the owner of the product variant (seller) to access its inventory records. The system verifies that the variant belongs to the authenticated seller before returning the record.
  *
- * Verify the requesting seller owns the variant (join through ecommerce_mall_products to ecommerce_mall_sellers).
+ * **Response**: Returns the complete inventory record including ID, variant reference, quantity change value, reason description, and creation timestamp.
  *
- * Return the inventory record with all fields: id, ecommerce_mall_product_variant_id, quantity_change, reason, created_at.
+ * **Error Handling**: Returns 404 Not Found if the inventory record does not exist or does not belong to a variant owned by the requesting seller.
  *
- * Return 404 if inventory record not found.
- * Return 404 if variant not found.
- * Return 403 if seller does not own the variant.
- * @path /ecommerceMall/seller/variants/:variantId/inventory/:inventoryId
+ * @param props.connection
+ * @param props.variantId Unique identifier of the product variant (UUID format). The variant must belong to the authenticated seller.
+ * @param props.recordId Unique identifier of the inventory record (UUID format).
+ * @x-autobe-authorization-type null
+ * @x-autobe-authorization-actor seller
+ * @x-autobe-specification Implement the following steps:
+ *
+ * 1. Extract the variantId and recordId from the path parameters.
+ * 2. Validate that both IDs are valid UUIDs.
+ * 3. Query the ecommerce_mall_product_variants table to verify the variant exists and belongs to the authenticated seller.
+ * 4. Query the ecommerce_mall_inventory_records table to find the record by id where ecommerce_mall_product_variant_id matches the variantId.
+ * 5. If the record is not found or the variant does not belong to the seller, return 404 Not Found.
+ * 6. Return the inventory record data including: id, quantity_change, reason, created_at.
+ * 7. Join with the product_variant table to include variant information (sku_code) in the response if needed.
+ * @path /ecommerceMall/seller/variants/:variantId/inventory/:recordId
  * @accessor api.functional.ecommerceMall.seller.variants.inventory.at
  * @autobe Generated by AutoBE - https://github.com/wrtnlabs/autobe
  */
@@ -175,20 +310,20 @@ export async function at(
 export namespace at {
   export type Props = {
     /**
-     * Product variant identifier (UUID)
+     * Unique identifier of the product variant (UUID format). The variant must belong to the authenticated seller.
      */
     variantId: string & tags.Format<"uuid">;
 
     /**
-     * Inventory record identifier (UUID)
+     * Unique identifier of the inventory record (UUID format).
      */
-    inventoryId: string & tags.Format<"uuid">;
+    recordId: string & tags.Format<"uuid">;
   };
   export type Response = IEcommerceMallInventoryRecord;
 
   export const METADATA = {
     method: "GET",
-    path: "/ecommerceMall/seller/variants/:variantId/inventory/:inventoryId",
+    path: "/ecommerceMall/seller/variants/:variantId/inventory/:recordId",
     request: null,
     response: {
       type: "application/json",
@@ -197,7 +332,7 @@ export namespace at {
   } as const;
 
   export const path = (props: Props) =>
-    `/ecommerceMall/seller/variants/${encodeURIComponent(props.variantId ?? "null")}/inventory/${encodeURIComponent(props.inventoryId ?? "null")}`;
+    `/ecommerceMall/seller/variants/${encodeURIComponent(props.variantId ?? "null")}/inventory/${encodeURIComponent(props.recordId ?? "null")}`;
   export const random = (): IEcommerceMallInventoryRecord =>
     typia.random<IEcommerceMallInventoryRecord>();
   export const simulate = (
@@ -212,7 +347,7 @@ export namespace at {
     });
     try {
       assert.param("variantId")(() => typia.assert(props.variantId));
-      assert.param("inventoryId")(() => typia.assert(props.inventoryId));
+      assert.param("recordId")(() => typia.assert(props.recordId));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

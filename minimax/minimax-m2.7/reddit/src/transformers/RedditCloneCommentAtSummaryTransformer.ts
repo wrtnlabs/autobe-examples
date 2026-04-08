@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCloneComment } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneComment";
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -23,9 +24,9 @@ export namespace RedditCloneCommentAtSummaryTransformer {
         created_at: true,
         updated_at: true,
         deleted_at: true,
-        post: true,
+        post: undefined,
         member: RedditCloneMemberAtSummaryTransformer.select(),
-        parent: true,
+        parent: undefined,
         replies: undefined,
       },
     } satisfies Prisma.reddit_clone_commentsFindManyArgs;

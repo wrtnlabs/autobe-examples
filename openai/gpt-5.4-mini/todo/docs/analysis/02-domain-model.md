@@ -6,150 +6,90 @@ Business concepts, relationships, and states from user perspective
 
 Describe what each concept means in the business domain and its key attributes.
 
-## UserAccount Concept
+## User Concept
 
-A UserAccount represents the private account a person uses to participate in the todo application. It identifies the owner of todos and separates one user's data from another user's data. The account is tied to authentication credentials used for access to the application. It also reflects the user's account status within the system. In this domain, the account is the basis for ownership of personal todos and profile information. Because the app is private, a UserAccount is associated only with that user's own content. Account data is distinct from the user's profile details, which are represented separately. The account concept also supports the idea that all content belongs to one specific user. When an account is removed, the user's associated todo content is no longer retained in the application domain.
+A User represents a private account holder in the todo application. It is the business identity that owns todos and a personal profile. The User concept centers on account identity, password credential, and account status as the core attributes. A user is treated as a distinct person within the app, with no shared visibility into other users’ data. The account status reflects whether the account is active or no longer available in the business sense. The password credential is part of the user’s private account security and is not exposed as a shared business detail. Because the application is multi-user, the User concept is the basis for separating ownership and privacy across all todo data. This concept does not include todo content itself, only the identity that controls it.
 
-### UserAccount Concept
+### User Concept
 
-A UserAccount is the private business record that represents one person’s access to the todo application. It is the account-level concept that distinguishes one user from another and provides the basis for personal application access. A UserAccount is not a shared account and does not represent a group or organization.
+A User is the business concept that represents a private account holder in the todo application. In the domain, the User is the account-level identity that owns personal data and establishes the boundary between one person’s todos and another person’s todos.
 
-The UserAccount concept means that each person has one private account identity within the application. This identity is used to keep that person’s content separate from other users’ content. Because the application is private, a UserAccount belongs to only one person and is not visible as a general public profile.
+The User concept has these core attributes:
+- Account identity, which distinguishes one private account holder from another
+- Password credential, which belongs to the user’s private account
+- Account status, which expresses whether the account is active or no longer available in the business sense
 
-A UserAccount includes authentication credentials for email and password sign-in. These credentials are part of the account concept and are used to recognize the person’s access to the application. The account also has an account status that reflects whether the account is active within the system.
+Multi-user ownership is part of the User concept because each user owns their own data rather than shared data. Personal data separation is the business meaning of that ownership boundary: one user’s content remains separate from every other user’s content.
 
-### Account Ownership and Personal Data Separation
+Todo ownership is derived from the User concept. A todo belongs to the user who owns the account, and that ownership relationship is what keeps each user’s todo set private within the application.
 
-A UserAccount represents the owner of that user’s todos and profile information. All todos created under the account belong to that account owner, and the account is the business boundary that separates one user’s data from another user’s data.
+## Profile Concept
 
-The application keeps each user’s personal content isolated at the account level. A UserAccount does not provide access to another user’s todos, and it does not expose another user’s private account identity. This separation is part of the meaning of a private todo application.
+A Profile represents the public-facing personal identity information attached to a user account within the app. In this domain, the profile is limited to the display name attribute. The display name is the label other parts of the application use to identify the person in a readable way. The Profile concept exists separately from the user’s password credential so that identity presentation is distinct from account security. It is still private within the application because users cannot view other users’ profiles. The profile belongs to one user and reflects that user’s chosen name within the system. This concept does not describe editing behavior or viewing behavior, only the business meaning of the profile data itself. The profile helps define how a user is represented while still preserving the app’s private nature.
 
-When business concepts refer to content belonging to a user, the UserAccount is the concept that establishes that ownership. The account is therefore the point of reference for personal data, personal todo ownership, and private access within the application.
+### Profile Concept
 
-### Authentication Credentials
+A profile is the business concept that represents a user's personal account label within the application domain. It describes how the user is identified in a readable, private way inside the todo app.
 
-A UserAccount is tied to authentication credentials made up of an email address and a password. These credentials identify the account for sign-in and support access to the application from the user’s perspective.
+The profile's key attribute is the display name. The display name is the account identity display used for user identity presentation throughout the business domain.
 
-The credentials belong to the UserAccount rather than to the profile. This keeps account access separate from profile details such as display name, which are represented as a different business concept.
+A profile is a single-user profile. It belongs to one user and is not shared with any other user.
 
-The email and password account concept means that access is based on the user’s account credentials, and not on a shared or public identity. The UserAccount remains the business concept that holds those credentials and defines access to the private application.
+A profile is private. Other users cannot view another user's profile, so profile privacy is part of the concept's business meaning.
 
-### Account Status
+The profile exists separately from the user's password credential. This separation keeps identity presentation distinct from account security while preserving the private nature of the application.
 
-A UserAccount has an account status that reflects its condition within the application domain. This status is part of the account concept and helps describe whether the account is usable as a private access record.
-
-The account status belongs to the UserAccount itself and is separate from the user’s profile or todo content. It describes the account as a business object, not the todos stored under it.
-
-When the account changes in the system, the account status remains the business concept used to describe that account’s current state.
-
-## UserProfile Concept
-
-A UserProfile represents the personal display information associated with a user account. In this application, the profile is limited to a display name. The profile gives a human-readable way to identify the user within their own private experience. It is separate from authentication details and separate from todo content. The profile belongs to the same person who owns the account and the todos. Because the application is private, profile information is not used to expose one user to other users. The display name is the only profile attribute named in the requirements. This concept helps distinguish what a user is called in the interface from how the user signs in. It is part of the user's identity in the business domain without adding broader social profile features.
-
-### UserProfile
-
-A UserProfile represents the personal profile information associated with a user account. Its purpose is to give the account holder a human-readable identity within the private todo application. The profile is not used for sign-in and is separate from authentication details.
-
-The only profile attribute defined for this concept is the display name. The display name is the user identification label shown for the person in their own experience of the application. It is the business-facing name by which the user is recognized in the profile context, rather than the name used to access the account.
-
-The UserProfile belongs to one UserAccount and represents personal profile information for that account holder. Because the application is private, the profile is not intended to expose one user to other users, and it does not create any shared or public profile meaning.
+In business terms, the profile is the personal account label that represents a user in human-readable form. The label is the display name, and it is the only profile attribute defined in this concept.
 
 ```mermaid
 flowchart LR
-    A["UserAccount"] -->|"has one"| B["UserProfile"]
-    B -->|"contains"| C["Display Name"]
-    D["Authentication Details"] -->|"separate from"| B
+    U["User"] -->|"owns"| P["Profile"]
+    P -->|"has"| D["Display name"]
+    D -->|"supports"| I["User identity presentation"]
 ```
-
-### Display Name
-
-The display name is the only profile domain attribute defined for a UserProfile. It is the personal profile information that gives the account holder a readable label inside the application.
-
-The display name supports user identification within the private profile context. It is part of how the person is recognized as an account holder, but it is not the same thing as account credentials and does not define how the user logs in.
-
-A UserProfile is defined around this attribute and does not introduce any broader profile fields beyond the display name.
-
-### Private Profile Meaning
-
-In this application, a UserProfile has private profile meaning. It exists to represent the account holder’s personal identity information for their own use in the todo application, not as a public social profile.
-
-The private profile meaning means the profile belongs to the same person who owns the account and is not intended to make that person visible to other users. This keeps the profile distinct from any shared or discoverable user presentation.
-
-The private nature of the profile is part of the UserProfile concept itself and does not add extra profile features beyond the display name.
-
-### Profile Relationship to Account
-
-A UserProfile belongs to one UserAccount. This relationship means the profile is part of the account holder’s personal domain representation and is not an independent business object.
-
-The profile exists as the personal profile information for the account and remains tied to that account for identification purposes. The UserProfile concept therefore depends on the account concept for its ownership and identity context.
-
-This relationship does not change the fact that the profile is separate from authentication details.
-
-### Profile Separation from Authentication
-
-A UserProfile is separate from authentication details. The profile describes who the person is in the business sense through the display name, while authentication details describe how the person signs in to the application.
-
-This separation means the UserProfile concept does not serve as login information and does not replace account credentials. The profile identity is used for personal identification inside the private todo application, not for access control or sign-in behavior.
-
-The separation between profile identity and authentication is a defining characteristic of the UserProfile concept.
 
 ## Todo Concept
 
-A Todo represents a single task item owned by one user. It stores the task title, which is required and serves as the main label for the item. It may also include a description for additional detail. A Todo can optionally carry a start date and a due date to express scheduling expectations. Each todo has a completion status that shows whether it is complete or incomplete. Newly created todos begin in the incomplete state, so the todo always has a defined status. The todo also carries its creation date as part of its business meaning. In the private app, a todo belongs only to the account that created it and is not shared with others. The concept covers both the visible task content and the status needed to organize personal work. It is the central business item that users manage in their own todo lists.
+A Todo represents a private task item owned by a single user. It captures the task’s title as the core required business attribute. It may also include a description, a start date, and a due date when those details are available. The todo concept carries both content and timing information so users can plan and track work. A todo also has a completion status that shows whether it is complete or incomplete. Creation date is part of the todo’s business identity because it helps place the item in time. The concept is designed for one owner only, since every todo belongs to the user who created it. This means the todo is not a shared object and is understood only within that user’s private workspace.
 
 ### Todo Concept
 
-A todo is a single task item that represents one piece of work owned by one user. It is the main business item in the application and serves as the thing a user organizes, tracks, and completes in a private personal list.
+A todo is a private task item in the todoApp business domain. It is a user-owned todo and a single-owner task, meaning it belongs to one user only and is not shared with other users.
 
-The title is a required part of a todo. It is the primary label used to identify the task item in lists and detail views. A todo may also include a description for additional detail, but the description is optional and may be left empty.
+The business meaning of a todo is to capture one user’s work item in a way that can be tracked privately over time. The concept exists as a personal task record rather than a collaborative item.
 
-A todo may also include a start date and a due date. These dates are optional and are used to describe when the task is planned to begin and when it is expected to be completed. A todo can exist without either date.
+A todo has the following core attributes:
+- Title: the required core attribute that identifies the task
+- Description: optional supporting detail
+- Start date: optional timing information for when work may begin
+- Due date: optional timing information for when work should be finished
+- Completion status: indicates whether the todo is complete or incomplete
+- Creation date: identifies when the todo was created
 
-Every todo has a completion status. The completion status shows whether the todo is complete or incomplete. Newly created todos are incomplete by default, so every todo begins in a defined state.
+The title is the essential business attribute because every todo must have one. The description, start date, and due date add detail when available, but they are not required for the todo to exist. The completion status captures the todo’s current state as complete or incomplete. The creation date provides a time reference for the todo as part of its business identity.
 
-Every todo has a creation date. The creation date identifies when the todo was first added and is part of its business meaning as a personal record.
+A todo remains private throughout its life as a user-owned todo. Its meaning is limited to the owner’s private workspace, and it is not intended to be visible as a shared business object.
 
-A todo is private and belongs only to the user who owns it. It is not shared with other users and is visible only within that user’s own todo list. This private ownership is part of the todo’s meaning in the application.
+## TodoEditHistory Concept
 
-```mermaid
-flowchart LR
-    A["User"] --> B["Todo"]
-    B --> C["Required title"]
-    B --> D["Optional description"]
-    B --> E["Optional start date"]
-    B --> F["Optional due date"]
-    B --> G["Completion status"]
-    G --> H["Incomplete by default"]
-    B --> I["Creation date"]
-    B --> J["Private ownership"]
-```
+A TodoEditHistory entry represents one recorded change made to a todo over time. It exists as part of the business record for a todo and preserves how the todo has evolved. Each entry includes the moment the edit was made as its central tracking attribute. It also records the new title value when the title changes. It records the new description value when the description changes. The history concept can also capture changes to the start date and due date when those values are updated. A todo can have multiple history entries, creating a chronological account of changes. This concept is about preserving edit records for user review and accountability, not about describing how edits are performed.
 
-## TodoHistory Concept
+### TodoEditHistory Concept
 
-A TodoHistory entry represents a recorded snapshot of a change made to a todo. It preserves when the edit happened so the sequence of changes can be understood over time. Each history entry may record the updated title if the title changed. It may also record the updated description if the description changed. The same idea applies to the start date and due date when those values are changed. A todo can have multiple history entries, reflecting repeated edits to the same item. The history belongs to the todo that was changed and helps explain how the item evolved. In the business domain, this concept captures the audit-like record of user edits without exposing implementation details. The history is part of the todo's record and is separate from the current todo state. It supports understanding the latest state alongside what was changed previously.
+A TodoEditHistory entry is a domain concept that represents the edit record for a todo. It is the business record that preserves how a todo changes over time and provides a chronological change log for that todo.
 
-### TodoHistory Concept
+A history entry is one recorded change within that log. Each history entry captures a single edit point and belongs to one todo. A todo can have many history entries, and together those entries form the todo's chronological change log.
 
-A TodoHistory entry is the business record of a change made to a todo. It represents one history entry in the todo change timeline and shows how the todo evolved over time.
+The attributes of a history entry are:
+- Edited at timestamp, which identifies when the edit was made.
+- Changed title value, which records the title value associated with that edit when the title changed.
+- Changed description value, which records the description value associated with that edit when the description changed.
+- Changed start date value, which records the start date value associated with that edit when the start date changed.
+- Changed due date value, which records the due date value associated with that edit when the due date changed.
 
-A TodoHistory entry includes the edit timestamp, which identifies when the change record was made. This timestamp is part of the edit history domain meaning because it establishes the order in which changes occurred.
+A history entry may contain one or more changed values depending on which todo attributes were updated in that edit. If an attribute did not change, it is not represented as a changed value in that history entry.
 
-A TodoHistory entry may record the title changed to value when the title was changed. It may also record the description changed to value when the description was changed. The same applies to the start date changed to value and the due date changed to value when those details were changed.
-
-A TodoHistory entry belongs to one todo and helps preserve the todo change timeline as a sequence of recorded edits. Multiple TodoHistory entries can exist for the same todo, with each entry representing a separate change record. Together, these entries show the history of edits without replacing the current todo state.
-
-The todohistory concept is the business notion of preserving edit history for a todo. It exists so the application can show what changed, when it changed, and how the todo developed across repeated edits.
-
-```mermaid
-flowchart LR
-    A["Todo"] --> B["TodoHistory entry"]
-    B --> C["edit timestamp"]
-    B --> D["title changed to"]
-    B --> E["description changed to"]
-    B --> F["start date changed to"]
-    B --> G["due date changed to"]
-    B --> H["todo change timeline"]
-```
+This concept is a todo change record used to preserve edit history for user review. It describes the structure and meaning of the edit record, not the process of creating or viewing it.
 
 # Domain Relationships
 
@@ -159,133 +99,95 @@ Describe how concepts relate to each other from a business perspective.
 
 Describe how concepts relate to each other in business terms.
 
-### UserAccount and UserProfile Relationship
+### User Ownership and Profile Relationship
 
-A UserAccount and a UserProfile are in a one-to-one relationship.
-A UserProfile belongs to one UserAccount, and each UserAccount has one UserProfile.
-The UserProfile represents the personal display name information for the account, while the UserAccount represents the private account identity for the user.
-This relationship is private and is not visible to other users.
+A user owns one profile. The profile belongs to that user and represents the user's private identity details within the application. This ownership relationship means the profile is not shared with other users.
 
 ```mermaid
 flowchart LR
-    A["UserAccount"] -->|"has one"| B["UserProfile"]
-    B -->|"belongs to"| A
+    U["User"] -->|"owns one"| P["Profile"]
+    P -->|"belongs to one"| U
 ```
 
-### UserAccount and Todo Ownership
+### User and Todo Association
 
-A UserAccount owns many Todo items.
-Each Todo belongs to one UserAccount.
-This ownership relationship means every Todo is associated with exactly one account and is part of that account's private todo collection.
-Users can only see Todo items that belong to their own UserAccount.
+A user has many todos. Each todo belongs to one user and is part of that user's private todo collection. This association defines the business boundary for todo ownership and keeps each todo linked to a single account.
 
 ```mermaid
 flowchart LR
-    A["UserAccount"] -->|"owns many"| B["Todo"]
-    B -->|"belongs to"| A
+    U["User"] -->|"has many"| T["Todo"]
+    T -->|"belongs to one"| U
 ```
 
-### Todo and TodoHistory Association
+### Todo and Edit History Association
 
-A Todo has many TodoHistory entries.
-Each TodoHistory belongs to one Todo.
-The association exists so that every edit record is kept with the Todo it describes.
-TodoHistory is a dependent business concept and does not exist independently of its Todo.
+A todo has many edit history entries. Each edit history entry belongs to one todo and records a change made to that todo over time. This relationship keeps the history attached to the specific todo it describes.
 
 ```mermaid
 flowchart LR
-    A["Todo"] -->|"has many"| B["TodoHistory"]
-    B -->|"belongs to"| A
-```
-
-### Private Ownership Boundaries
-
-All domain ownership in the application is private to a single user account.
-A UserAccount is the ownership boundary for both the UserProfile and the Todo items it contains.
-A TodoHistory entry is also private because it belongs to a Todo that is owned by one UserAccount.
-There is no shared ownership between user accounts, and no domain concept is jointly owned by multiple users.
-
-```mermaid
-flowchart LR
-    A["UserAccount"] -->|"owns"| B["UserProfile"]
-    A -->|"owns"| C["Todo"]
-    C -->|"has many"| D["TodoHistory"]
+    T["Todo"] -->|"has many"| H["TodoEditHistory"]
+    H -->|"belongs to one"| T
 ```
 
 ## Lifecycle and Retention
 
 Describe concept lifecycle states and transitions only. Detailed retention/recovery policies belong in 05-non-functional. Operation details belong in 03-functional-requirements.
 
-### Lifecycle
+### Todo Lifecycle
 
-The todo lifecycle consists of the business states a todo can pass through during its lifetime in the application.
+A todo follows a business lifecycle from creation to either temporary removal or permanent removal. The lifecycle begins when the todo is created and becomes active in the owner's normal todo list.
 
-A todo begins in an active state when it is created and is incomplete by default. From that point, its completion status can move between incomplete and complete as the user changes it.
+A todo can move from active use into a deleted state when the owner removes it. In the deleted state, the todo remains associated with the same owner but is no longer part of the normal todo list. The deleted state is temporary when the todo is intended to be recovered later.
 
-A todo can later move out of the normal active listing when it is deleted by the user. Deletion changes the todo into a deleted state rather than removing it immediately from the application’s stored history of that todo.
-
-A deleted todo can return to the active state if it is restored from trash. If it is permanently deleted from trash, its lifecycle ends and the todo is no longer available in the application.
-
-Todo history entries have their own lifecycle tied to the todo. A history entry is created when a todo is edited, remains associated with that todo while the todo exists, and is removed when the todo is permanently deleted.
+A todo ends its lifecycle when it is permanently deleted. At that point, the todo is no longer recoverable and no longer exists as part of the owner's todo set.
 
 ```mermaid
 flowchart LR
-    A["active todo"] -->|"Delete"| B["deleted todo in trash"]
-    B -->|"Restore"| A
-    B -->|"Permanently delete"| C["removed from application"]
-    A -->|"Mark complete"| D["complete todo"]
-    D -->|"Mark incomplete"| A
+    A["Created"] --> B["Active"]
+    B -->|"Delete"| C["Deleted"]
+    C -->|"Restore"| B
+    C -->|"Permanent delete"| D["Removed"]
 ```
 
-### Retention
+### Retention of Deleted Todos
 
-Retention describes how long a deleted todo and its edit history remain available in the application.
+Retention describes how deleted todos remain available for a period of recovery instead of being removed immediately. While retained, a deleted todo stays linked to the same owner and can still be restored.
 
-A deleted todo is retained in trash instead of being removed immediately. While it is retained there, it remains available for restoration or permanent deletion.
+Retention applies only while the todo is in the deleted state. A retained todo is excluded from the normal todo list, but it remains part of the owner's private todo collection until it is restored or permanently deleted.
 
-A todo’s edit history is retained as part of the todo for as long as the todo exists in the application. If the todo is permanently deleted, its history is no longer retained.
+If a todo is permanently deleted, retention ends and the todo is no longer kept for recovery.
 
-When a user deletes their account, all of that user’s todos are permanently deleted, including todos that are in trash. In that case, retained deleted todos and their histories do not remain available.
+### Archival in the Trash
 
-Retention applies only to the user’s own data. A user’s todo data, including deleted items in trash, remains private to that user and is not available to other users.
+Archival is the business behavior that places a deleted todo into the trash. The trash is the archive for deleted todos, meaning it stores todos in a recoverable deleted state rather than removing them at once.
 
-### Archival
+Archived todos remain available for review as deleted items until they are restored or permanently deleted. Archival does not change the todo's owner or its place in the edit history of that todo.
 
-In this application, archival refers to the deleted state of a todo after it has been removed from the normal todo list.
-
-A deleted todo is archived in the trash list rather than being erased immediately. This archived state allows the user to review deleted todos separately from active todos.
-
-Archived todos remain associated with the user who owns them and can be restored or permanently deleted from trash.
-
-Archival does not change the todo’s ownership, and it does not make the todo visible to other users.
+The archived state is the same business state as being in the trash, and it exists only to support later recovery or permanent removal.
 
 ### Deletion Policy
 
-The deletion policy defines how todo removal behaves in the application.
+The deletion policy distinguishes between soft deletion and permanent deletion. Soft deletion moves a todo into the trash and preserves it for later recovery. Permanent deletion removes the todo from the trash and ends retention.
 
-When a user deletes a todo, the todo is moved out of the normal todo list and kept in trash instead of being removed permanently.
+A permanently deleted todo is not kept for later recovery. A permanently deleted todo also loses its edit history, because the edit history is deleted together with the todo.
 
-When a user permanently deletes a todo from trash, the todo is removed completely from the application and its edit history is also removed.
+A deleted todo does not return to the normal todo list unless it is restored. Permanent deletion is the final deletion outcome.
 
-When a user deletes their account, all of their todos are permanently deleted, including todos that are currently in trash.
+### Recovery of Deleted Todos
 
-Deletion applies only to the user’s own todos. A user cannot delete another user’s todos because todos are private to their owner.
+Recovery applies to todos that are currently archived in the trash. Recovery returns the same todo to the normal todo list and makes it active again.
 
-### Recovery
+A recovered todo keeps its existing details and remains the same todo rather than becoming a new one. Its edit history remains attached when the todo is restored.
 
-Recovery describes how a deleted todo can return to the normal todo list.
+A todo that has been permanently deleted cannot be recovered because permanent deletion removes both the todo and its edit history.
 
-A deleted todo can be restored from trash and return to the active todo list.
+### Edit History Retention During Lifecycle Changes
 
-After recovery, the todo is treated as one of the user’s normal todos again and is no longer listed as deleted.
+A todo's edit history follows the todo through its lifecycle while the todo is retained. When a todo is deleted and later restored, the edit history remains associated with that same todo.
 
-Recovery is available only for todos that are still in trash. Once a todo has been permanently deleted, it cannot be recovered because it no longer exists in the application.
+The edit history is removed together with the todo when the todo is permanently deleted. After permanent deletion, the edit history is not retained as a separate recoverable record.
 
-```mermaid
-flowchart LR
-    A["deleted todo in trash"] -->|"Restore"| B["active todo"]
-    A -->|"Permanently delete"| C["removed from application"]
-```
+This means lifecycle changes do not break the link between a todo and its edit history unless the todo is permanently deleted.
 
 # Business Categories and State Flows
 
@@ -297,100 +199,68 @@ Define all business category classifications with their allowed values and descr
 
 ### Business Category
 
-A business category is a top-level way to group the core concepts of the todo app for shared understanding.
+The business category definitions describe the named domain concepts used by the todo application from the user perspective. In this unit, the business categories are the user account, profile, todo item, and todo edit history.
 
-The business category classification for this file is limited to the domain concepts that the user directly interacts with or that describe the user-owned data in the app.
+These categories provide the shared domain vocabulary for the application and are used to distinguish identity, personal information, task data, and change records as separate business concepts.
 
-The allowed values for the business category classification are:
-- User account
-- User profile
-- Todo
-- Todo history
+### Classification
 
-Each allowed value represents one distinct business concept in the app. A concept must be treated as its own category and must not be merged with another category.
+The classification of the domain concepts is based on how each concept behaves in the business model.
 
-The business category classification is used to keep the concepts separate and clear, especially where the same user owns more than one kind of business object.
+- User is the account identity that belongs to a person using the application.
+- Profile is the personal display information associated with a user.
+- Todo is the task item that a user creates and manages.
+- Todo edit history is the record of changes made to a todo.
 
-### Classification of Core Concepts
+Each concept is classified once so the domain model remains clear and the concepts do not overlap in meaning.
 
-The core concepts are classified by purpose rather than by technical structure.
+### Allowed Values
 
-- User account is the category for account ownership and authentication credentials.
-- User profile is the category for display name information.
-- Todo is the category for task items created and managed by a user.
-- Todo history is the category for recorded changes made to a todo.
+The allowed values for this unit are limited to the approved domain concept names used by the application: user, profile, todo, and todo edit history.
 
-Each concept belongs to exactly one primary classification. The classification explains what the concept represents in the business meaning of the app and helps distinguish it from the other concepts.
-
-The allowed values for this classification are fixed to the four core concepts above. No additional business concept is part of this file scope.
+These are the only permitted business category values in this section. They define the complete set of concept names for the domain model and prevent additional categories from being introduced here.
 
 ### Status Type
 
-Status type is the business classification used to describe whether a todo is finished or not finished.
+The status type for this unit refers to the completion state of a todo. A todo uses a simple two-state completion model: complete and incomplete.
 
-The allowed values for status type are:
-- Complete
-- Incomplete
-
-A todo starts in the incomplete status type when it is created.
-
-A todo can move between the two allowed values as the user marks it complete or marks it incomplete.
-
-Status type applies only to a todo and does not describe the user account, user profile, or todo history.
+This status type applies only to todo completion. It does not define any other business condition, and it expresses whether a todo is finished or still pending from the user perspective.
 
 ## State Transitions
 
 Define valid state transition paths for stateful concepts.
 
-### Todo Completion State Transitions
+### Todo Completion State Flow
 
-A todo has a completion status that supports two states: complete and incomplete.
-
-A newly created todo starts in the incomplete state.
-
-A user can change a todo from incomplete to complete.
-
-A user can change a todo from complete to incomplete.
-
-The completion workflow is a simple toggle between these two states, and no other completion states are used.
+A todo has two completion states: incomplete and complete. A newly created todo starts in the incomplete state. A user can change the completion status from incomplete to complete, and can change it back from complete to incomplete. This workflow is a direct two-state transition with no additional completion states.
 
 ```mermaid
 flowchart LR
-    A["incomplete"] -->|"Mark as complete"| B["complete"]
-    B -->|"Mark as incomplete"| A
+    A["Incomplete"] -->|"Mark complete"| B["Complete"]
+    B -->|"Mark incomplete"| A
 ```
 
-### Todo Deletion and Recovery State Transitions
+### Todo Deletion Transition
 
-A todo can move from active status to deleted status when the user deletes it.
-
-When a todo is deleted, it is removed from the normal todo list but is not permanently removed.
-
-A deleted todo can move from deleted status back to active status when the user restores it from the trash.
-
-A deleted todo can also move from deleted status to permanently deleted status when the user deletes it from the trash.
-
-A permanently deleted todo no longer exists in the application, and its edit history is also deleted.
+A todo can move from the active state to the deleted state when the user deletes it. A deleted todo is no longer part of the normal todo list. The user can restore a deleted todo, which returns it to the active state. The user can also permanently delete a deleted todo, which ends the todo's lifecycle and removes its edit history at the same time.
 
 ```mermaid
 flowchart LR
-    A["active"] -->|"Delete todo"| B["deleted in trash"]
-    B -->|"Restore todo"| A
-    B -->|"Permanently delete"| C["permanently deleted"]
+    A["Active"] -->|"Delete"| B["Deleted"]
+    B -->|"Restore"| A
+    B -->|"Permanently delete"| C["Removed"]
 ```
 
-### Account Deletion State Transition Effects
+### Todo Edit History Status Change
 
-A user account can move to a deleted account state when the user deletes their account.
-
-When the account is deleted, all of the user's todos are permanently deleted.
-
-This includes todos that are currently active and todos that are already in the trash.
-
-After account deletion, none of the user's todos remain available for viewing, restoration, or further editing.
+A todo's edit history changes whenever the todo is edited. Each edit creates a new history entry, and the history is kept in reverse chronological order from most recent to oldest. When a todo is permanently deleted, its edit history is also deleted, so the history is no longer available for that todo.
 
 ```mermaid
-flowchart LR
-    A["active account"] -->|"Delete account"| B["deleted account"]
-    B -->|"Remove all todos and trash items"| C["no remaining user data"]
+sequenceDiagram
+    participant U as User
+    participant S as System
+    U->>S: Edit todo details
+    S->>S: Update todo state
+    S->>S: Add history entry
+    S-->>U: Todo remains available with updated history
 ```

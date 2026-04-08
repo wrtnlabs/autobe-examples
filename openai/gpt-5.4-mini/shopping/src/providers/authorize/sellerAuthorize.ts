@@ -12,7 +12,7 @@ export async function sellerAuthorize(request: {
     payload = jwtAuthorize({ request }) as SellerPayload;
   } catch (error) {
     if (error instanceof UnauthorizedException) throw error;
-    throw new UnauthorizedException("Invalid authorization token");
+    throw new UnauthorizedException("Invalid authentication token");
   }
 
   if (payload.type !== "seller") {
@@ -27,6 +27,16 @@ export async function sellerAuthorize(request: {
 
   if (seller === null) {
     throw new ForbiddenException("You're not enrolled");
+  }
+
+  const session = await MyGlobal.prisma.mall_platform_seller_sessions.findFirst({
+    where: {
+      id: payload.session_id,
+    },
+  });
+
+  if (session === null) {
+    throw new UnauthorizedException("Your session is not found");
   }
 
   return payload;

@@ -7,7 +7,6 @@ import type { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structure
 import type { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import type { IMallPlatformOrderItemSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItemSnapshot";
 import type { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import type { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import type { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import type { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
 import type { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
@@ -25,15 +24,13 @@ import { authorize_seller_login } from "../../../authorize/authorize_seller_logi
 import { authorize_seller_refresh } from "../../../authorize/authorize_seller_refresh";
 
 /**
- * Verify seller-scoped access control for order item snapshot history.
+ * Verifies that an authenticated seller cannot access another seller's order item snapshot history.
  *
- * Confirms that a seller cannot read immutable snapshot history for an order item owned by another seller. The test exercises the protected snapshot-history endpoint and expects the API to reject cross-seller access with a forbidden response rather than exposing preserved purchase history.
+ * This test focuses on seller ownership boundaries for immutable snapshot access. It ensures that a valid seller session is required before the system evaluates whether the requested order item belongs to the caller, and that foreign order item snapshot history is not exposed across seller accounts.
  *
- * This scenario focuses on authorization boundaries for audit records, where historical purchase snapshots must remain readable only to the relevant merchant and authorized actors.
- *
- * 1. Authenticate a seller account for the requesting actor.
- * 2. Call the snapshot-history endpoint for a foreign order item identifier.
- * 3. Assert that the request is rejected with HTTP 403 Forbidden.
+ * 1. Register and authenticate a seller as the caller.
+ * 2. Request snapshot history for a foreign order item identifier.
+ * 3. Assert the request is rejected and no snapshot page is returned.
  */
 export async function test_api_order_item_snapshot_history_forbidden_for_other_seller(
   connection: api.IConnection,
@@ -42,21 +39,17 @@ export async function test_api_order_item_snapshot_history_forbidden_for_other_s
   await authorize_seller_join(sellerConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: typia.random<string & tags.Format<"password">>(),
+      password: RandomGenerator.alphaNumeric(16),
     } satisfies IMallPlatformSeller.IJoin,
   });
-  const orderItemId: string & tags.Format<"uuid"> = typia.random<
-    string & tags.Format<"uuid">
-  >();
   await TestValidator.httpError(
-    "seller should not access another seller's order item snapshots",
-    403,
+    "foreign seller order item snapshot history should be denied",
+    [403, 404],
     async () => {
-      await api.functional.mallPlatform.seller.orderItems.snapshots.index(
+      await api.functional.mallPlatform.seller.orderItems.snapshots.getByOrderitemid(
         sellerConnection,
         {
-          orderItemId,
-          body: {} satisfies IMallPlatformOrderItemSnapshot.IRequest,
+          orderItemId: typia.random<string & tags.Format<"uuid">>(),
         },
       );
     },

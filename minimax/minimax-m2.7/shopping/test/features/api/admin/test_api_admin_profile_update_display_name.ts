@@ -12,43 +12,54 @@ import { authorize_admin_join } from "../../../authorize/authorize_admin_join";
 import { authorize_admin_login } from "../../../authorize/authorize_admin_login";
 import { authorize_admin_refresh } from "../../../authorize/authorize_admin_refresh";
 
+/**
+ * Test admin profile update workflow with valid display name.
+ *
+ * Validates the complete admin profile update flow including admin registration,
+ * profile modification via PATCH endpoint, and response validation. Ensures that
+ * the display name is successfully updated while immutable fields (email, id,
+ * created_at) remain unchanged and the updated_at timestamp reflects the
+ * modification.
+ *
+ * 1. Administrator registers via auth/admin/join endpoint.
+ * 2. New random display name is generated.
+ * 3. PATCH /admin/admins/me is called with the new name.
+ * 4. Validates response contains updated name with preserved email.
+ * 5. Confirms id and created_at remain unchanged.
+ * 6. Verifies updated_at timestamp reflects modification time.
+ */
 export async function test_api_admin_profile_update_display_name(
   connection: api.IConnection,
 ): Promise<void> {
-  // 1. Authenticate as admin
-  const authorized = await authorize_admin_join(connection, {});
-  // 2. Create admin connection with token
+  // 1. Register new admin account
   const adminConnection: api.IConnection = { host: connection.host };
-  adminConnection.headers ??= {};
-  adminConnection.headers.Authorization = authorized.token.access;
-  // 3. Generate new display name
-  const newName = RandomGenerator.name();
-  // 4. Update admin profile with new display name
-  const updatedProfile =
-    await api.functional.ecommerceMall.admin.admin.profile.update(
-      adminConnection,
-      {
-        body: {
-          name: newName,
-        } satisfies IEcommerceMallAdmin.IUpdate,
-      },
-    );
-  // 5. Validate response structure
-  typia.assert(updatedProfile);
-  // 6. Validate business logic
+  const originalAdmin = await authorize_admin_join(adminConnection, {});
+  typia.assert(originalAdmin);
+  // 2. Generate new display name for update
+  const newDisplayName = RandomGenerator.name();
+  // 3. Store original values for validation
+  const originalId = originalAdmin.id;
+  const originalEmail = originalAdmin.email;
+  const originalCreatedAt = originalAdmin.created_at;
+  // 4. Update profile with new display name
+  const updatedAdmin =
+    await api.functional.ecommerceMall.admin.admins.me.update(adminConnection, {
+      body: {
+        name: newDisplayName,
+      } satisfies IEcommerceMallAdmin.IUpdate,
+    });
+  typia.assert(updatedAdmin);
+  // 5. Validate the response
+  TestValidator.equals("new name is set", updatedAdmin.name, newDisplayName);
+  TestValidator.equals("email unchanged", updatedAdmin.email, originalEmail);
+  TestValidator.equals("id unchanged", updatedAdmin.id, originalId);
   TestValidator.equals(
-    "updated name matches input",
-    updatedProfile.name,
-    newName,
+    "created_at unchanged",
+    updatedAdmin.created_at,
+    originalCreatedAt,
   );
-  TestValidator.equals(
-    "email unchanged",
-    updatedProfile.email,
-    authorized.email,
-  );
-  TestValidator.equals("deleted_at is null", updatedProfile.deleted_at, null);
   TestValidator.predicate(
-    "updated_at is after created_at",
-    new Date(updatedProfile.updated_at) >= new Date(updatedProfile.created_at),
+    "updated_at reflects modification",
+    new Date(updatedAdmin.updated_at) >= new Date(originalCreatedAt),
   );
 }

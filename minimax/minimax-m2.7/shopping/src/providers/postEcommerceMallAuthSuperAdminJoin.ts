@@ -24,58 +24,54 @@ export async function postEcommerceMallAuthSuperAdminJoin(props: {
   if (existing) {
     throw new HttpException("Email already registered", 409);
   }
-  // 2. Hash password
+  // 2. Hash password and create super admin actor
   const passwordHash = await PasswordUtil.hash(props.body.password);
-  // 3. Create super admin record
-  const superAdminId = v4();
-  await MyGlobal.prisma.ecommerce_mall_super_admins.create({
+  const now = new Date();
+  const created = await MyGlobal.prisma.ecommerce_mall_super_admins.create({
     data: {
-      id: superAdminId,
+      id: v4(),
       email: props.body.email,
       password_hash: passwordHash,
-      created_at: new Date(),
-      updated_at: new Date(),
+      created_at: now,
+      updated_at: now,
       deleted_at: null,
     },
+    ...EcommerceMallSuperAdminTransformer.select(),
   });
-  // 4. Fetch created record using transformer
-  const created =
-    await MyGlobal.prisma.ecommerce_mall_super_admins.findUniqueOrThrow({
-      where: { id: superAdminId },
-      ...EcommerceMallSuperAdminTransformer.select(),
-    });
-  // 5. Create session record
-  const sessionId = v4();
-  const now = new Date();
-  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  // 3. Transform to DTO
+  const superAdmin =
+    await EcommerceMallSuperAdminTransformer.transform(created);
+  // 4. Create session
+  const accessExpires = new Date(Date.now() + 15 * 60 * 1000);
   const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const sessionId = v4();
   await MyGlobal.prisma.ecommerce_mall_super_admin_sessions.create({
     data: {
       id: sessionId,
-      ecommerce_mall_super_admin_id: superAdminId,
+      ecommerce_mall_super_admin_id: superAdmin.id,
       ip: props.body.ip ?? props.ip,
       href: props.body.href,
       referrer: props.body.referrer,
       created_at: now,
-      expired_at: refreshExpires,
+      expired_at: accessExpires,
     },
   });
-  // 6. Generate JWT tokens
+  // 5. Generate JWT tokens
   const token: IAuthorizationToken = {
     access: jwt.sign(
       {
         type: "super_admin",
-        id: superAdminId,
+        id: superAdmin.id,
         session_id: sessionId,
         created_at: now.toISOString(),
       },
       MyGlobal.env.JWT_SECRET_KEY,
-      { expiresIn: "1h", issuer: "autobe" },
+      { expiresIn: "15m", issuer: "autobe" },
     ),
     refresh: jwt.sign(
       {
         type: "super_admin",
-        id: superAdminId,
+        id: superAdmin.id,
         session_id: sessionId,
         tokenType: "refresh",
         created_at: now.toISOString(),
@@ -83,12 +79,14 @@ export async function postEcommerceMallAuthSuperAdminJoin(props: {
       MyGlobal.env.JWT_SECRET_KEY,
       { expiresIn: "7d", issuer: "autobe" },
     ),
-    expired_at: accessExpires.toISOString(),
-    refreshable_until: refreshExpires.toISOString(),
+    expired_at: accessExpires.toISOString() as string &
+      tags.Format<"date-time">,
+    refreshable_until: refreshExpires.toISOString() as string &
+      tags.Format<"date-time">,
   };
-  // 7. Return authorized response
+  // 6. Return IAuthorized response
   return {
-    ...(await EcommerceMallSuperAdminTransformer.transform(created)),
+    ...superAdmin,
     token,
   };
 }

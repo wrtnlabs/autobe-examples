@@ -24,51 +24,110 @@ export async function patchMallPlatformSellerShipments(props: {
 }): Promise<IPageIMallPlatformShipment.ISummary> {
   const page: number = props.body.page ?? 1;
   const limit: number = props.body.limit ?? 100;
-  const skip: number = (page - 1) * limit;
+  if (page < 1) throw new HttpException("Invalid page", 400);
+  if (limit < 1 || limit > 100) throw new HttpException("Invalid limit", 400);
   if (
     props.body.sort !== undefined &&
     props.body.sort !== "newest" &&
     props.body.sort !== "oldest" &&
-    props.body.sort !== "status" &&
-    props.body.sort !== "carrierName"
+    props.body.sort !== "status_asc" &&
+    props.body.sort !== "status_desc"
   ) {
-    throw new HttpException("Unsupported sort key", 400);
+    throw new HttpException("Invalid sort", 400);
   }
+  if (
+    props.body.status !== undefined &&
+    props.body.status !== "preparing" &&
+    props.body.status !== "shipped" &&
+    props.body.status !== "delivered" &&
+    props.body.status !== "cancelled"
+  ) {
+    throw new HttpException("Invalid status", 400);
+  }
+  const where: Prisma.mall_platform_shipmentsWhereInput = {
+    deleted_at: null,
+    seller: {
+      id: props.seller.id,
+    },
+    ...(props.body.status !== undefined && {
+      status: props.body.status,
+    }),
+    ...(props.body.carrierName !== undefined &&
+      props.body.carrierName.length > 0 && {
+        carrier_name: {
+          contains: props.body.carrierName,
+          mode: "insensitive",
+        },
+      }),
+    ...(props.body.trackingNumber !== undefined &&
+      props.body.trackingNumber.length > 0 && {
+        tracking_number: {
+          contains: props.body.trackingNumber,
+          mode: "insensitive",
+        },
+      }),
+    ...(props.body.trackingUrl !== undefined && {
+      tracking_url: props.body.trackingUrl,
+    }),
+    ...(props.body.orderNumber !== undefined &&
+      props.body.orderNumber.length > 0 && {
+        order: {
+          order_number: {
+            contains: props.body.orderNumber,
+            mode: "insensitive",
+          },
+        },
+      }),
+    ...(props.body.search !== undefined &&
+      props.body.search.length > 0 && {
+        OR: [
+          {
+            carrier_name: {
+              contains: props.body.search,
+              mode: "insensitive",
+            },
+          },
+          {
+            tracking_number: {
+              contains: props.body.search,
+              mode: "insensitive",
+            },
+          },
+          {
+            order: {
+              order_number: {
+                contains: props.body.search,
+                mode: "insensitive",
+              },
+            },
+          },
+        ],
+      }),
+  };
   const orderBy: Prisma.mall_platform_shipmentsOrderByWithRelationInput =
     props.body.sort === "oldest"
       ? { created_at: "asc" }
-      : props.body.sort === "status"
+      : props.body.sort === "status_asc"
         ? { status: "asc" }
-        : props.body.sort === "carrierName"
-          ? { carrier_name: "asc" }
+        : props.body.sort === "status_desc"
+          ? { status: "desc" }
           : { created_at: "desc" };
-  const where: Prisma.mall_platform_shipmentsWhereInput = {
-    deleted_at: null,
-    mall_platform_seller_id: props.seller.id,
-    ...(props.body.status !== undefined ? { status: props.body.status } : {}),
-    ...(props.body.carrierName !== undefined
-      ? { carrier_name: props.body.carrierName }
-      : {}),
-    ...(props.body.trackingNumber !== undefined
-      ? { tracking_number: props.body.trackingNumber }
-      : {}),
-  };
   const records = await MyGlobal.prisma.mall_platform_shipments.findMany({
     where,
-    orderBy,
-    skip,
+    skip: (page - 1) * limit,
     take: limit,
+    orderBy,
     ...MallPlatformShipmentAtSummaryTransformer.select(),
   });
-  const recordsCount = await MyGlobal.prisma.mall_platform_shipments.count({
+  const total = await MyGlobal.prisma.mall_platform_shipments.count({
     where,
   });
   return {
     pagination: {
       current: page,
       limit,
-      records: recordsCount,
-      pages: Math.ceil(recordsCount / limit),
+      records: total,
+      pages: Math.ceil(total / limit),
     },
     data: await ArrayUtil.asyncMap(
       records,

@@ -22,6 +22,7 @@ export async function getMallPlatformCustomerProfile(props: {
       ...MallPlatformCustomerProfileTransformer.select(),
       where: {
         mall_platform_customer_id: props.customer.id,
+        deleted_at: null,
       },
     });
   return await MallPlatformCustomerProfileTransformer.transform(record);

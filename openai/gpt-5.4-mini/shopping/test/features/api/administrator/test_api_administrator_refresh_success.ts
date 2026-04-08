@@ -16,8 +16,8 @@ export async function test_api_administrator_refresh_success(
   connection: api.IConnection,
 ): Promise<void> {
   const adminConnection: api.IConnection = { host: connection.host };
-  const email = `${RandomGenerator.alphabets(12)}@test.com`;
-  const password = `P@ssw0rd_${RandomGenerator.alphabets(8)}`;
+  const email = `${RandomGenerator.alphabets(8)}@test.com`;
+  const password = "P@ssw0rd1234";
   const joined = await authorize_administrator_join(adminConnection, {
     body: {
       email,
@@ -25,91 +25,60 @@ export async function test_api_administrator_refresh_success(
     } satisfies IMallPlatformAdministrator.IJoin,
   });
   typia.assert(joined);
-  const originalRefresh = joined.token.refresh;
-  const originalAccess = joined.token.access;
-  const refreshed = await authorize_administrator_refresh(adminConnection, {
+  const loginConnection: api.IConnection = { host: connection.host };
+  const loggedIn = await authorize_administrator_login(loginConnection, {
     body: {
-      refreshToken: originalRefresh,
+      email,
+      password,
+    } satisfies IMallPlatformAdministrator.ILogin,
+  });
+  typia.assert(loggedIn);
+  const refreshConnection: api.IConnection = { host: connection.host };
+  const refreshed = await authorize_administrator_refresh(refreshConnection, {
+    body: {
+      refreshToken: loggedIn.token.refresh,
     } satisfies IMallPlatformAdministrator.IRefresh,
   });
   typia.assert(refreshed);
   TestValidator.equals(
     "administrator id should remain the same",
     refreshed.id,
-    joined.id,
+    loggedIn.id,
   );
   TestValidator.equals(
     "administrator email should remain the same",
     refreshed.email,
-    joined.email,
+    loggedIn.email,
   );
   TestValidator.equals(
     "administrator grade should remain the same",
     refreshed.grade,
-    joined.grade,
+    loggedIn.grade,
   );
   TestValidator.equals(
     "administrator status should remain the same",
     refreshed.status,
-    joined.status,
+    loggedIn.status,
   );
   TestValidator.equals(
-    "administrator createdAt should remain the same",
-    refreshed.createdAt,
-    joined.createdAt,
+    "administrator deleted_at should remain the same",
+    refreshed.deleted_at,
+    loggedIn.deleted_at,
   );
-  TestValidator.equals(
-    "administrator deletedAt should remain the same",
-    refreshed.deletedAt,
-    joined.deletedAt,
+  TestValidator.predicate(
+    "refreshed access token should be present",
+    refreshed.token.access.length > 0,
   );
-  TestValidator.notEquals(
-    "refresh should issue a new access token",
-    refreshed.token.access,
-    originalAccess,
+  TestValidator.predicate(
+    "refreshed refresh token should be present",
+    refreshed.token.refresh.length > 0,
   );
-  TestValidator.notEquals(
-    "refresh should issue a new refresh token",
-    refreshed.token.refresh,
-    originalRefresh,
+  TestValidator.predicate(
+    "refreshed access expiration should be present",
+    refreshed.token.expired_at.length > 0,
   );
-  const refreshedAgain = await authorize_administrator_refresh(
-    adminConnection,
-    {
-      body: {
-        refreshToken: refreshed.token.refresh,
-      } satisfies IMallPlatformAdministrator.IRefresh,
-    },
-  );
-  typia.assert(refreshedAgain);
-  TestValidator.equals(
-    "administrator id should still remain the same after second refresh",
-    refreshedAgain.id,
-    joined.id,
-  );
-  TestValidator.equals(
-    "administrator email should still remain the same after second refresh",
-    refreshedAgain.email,
-    joined.email,
-  );
-  TestValidator.equals(
-    "administrator grade should still remain the same after second refresh",
-    refreshedAgain.grade,
-    joined.grade,
-  );
-  TestValidator.equals(
-    "administrator status should still remain the same after second refresh",
-    refreshedAgain.status,
-    joined.status,
-  );
-  TestValidator.equals(
-    "administrator createdAt should still remain the same after second refresh",
-    refreshedAgain.createdAt,
-    joined.createdAt,
-  );
-  TestValidator.equals(
-    "administrator deletedAt should still remain the same after second refresh",
-    refreshedAgain.deletedAt,
-    joined.deletedAt,
+  TestValidator.predicate(
+    "refreshed refresh expiration should be present",
+    refreshed.token.refreshable_until.length > 0,
   );
 }

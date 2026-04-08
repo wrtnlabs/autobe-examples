@@ -6,10 +6,11 @@ import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures
 import { IMallPlatformOrderItemSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItemSnapshot";
 import { IMallPlatformOrderItemSnapshotVariantOption } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItemSnapshotVariantOption";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -23,6 +24,22 @@ export namespace MallPlatformOrderItemSnapshotVariantOptionTransformer {
     Prisma.mall_platform_order_item_snapshot_variant_optionsGetPayload<
       ReturnType<typeof select>
     >;
+  export async function transform(
+    input: Payload,
+  ): Promise<IMallPlatformOrderItemSnapshotVariantOption> {
+    return {
+      id: input.id,
+      optionName: input.option_name,
+      optionValue: input.option_value,
+      orderItemSnapshot:
+        await MallPlatformOrderItemSnapshotAtSummaryTransformer.transform(
+          input.orderItemSnapshot,
+        ),
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
+    } satisfies IMallPlatformOrderItemSnapshotVariantOption;
+  }
   export function select() {
     return {
       select: {
@@ -36,22 +53,6 @@ export namespace MallPlatformOrderItemSnapshotVariantOptionTransformer {
           MallPlatformOrderItemSnapshotAtSummaryTransformer.select(),
       },
     } satisfies Prisma.mall_platform_order_item_snapshot_variant_optionsFindManyArgs;
-  }
-  export async function transform(
-    input: Payload,
-  ): Promise<IMallPlatformOrderItemSnapshotVariantOption> {
-    return {
-      id: input.id,
-      orderItemSnapshot:
-        await MallPlatformOrderItemSnapshotAtSummaryTransformer.transform(
-          input.orderItemSnapshot,
-        ),
-      optionName: input.option_name,
-      optionValue: input.option_value,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
-    } satisfies IMallPlatformOrderItemSnapshotVariantOption;
   }
 }
 
@@ -80,9 +81,9 @@ export namespace MallPlatformOrderItemSnapshotVariantOptionTransformer {
 //       export async function transform(input: Payload): Promise<IMallPlatformOrderItemSnapshotVariantOption> {
 //         return {
 //   id: {string},
-//   orderItemSnapshot: await MallPlatformOrderItemSnapshotAtSummaryTransformer.transform(input.orderItemSnapshot),
 //   optionName: {string},
 //   optionValue: {string},
+//   orderItemSnapshot: await MallPlatformOrderItemSnapshotAtSummaryTransformer.transform(input.orderItemSnapshot),
 //   createdAt: {string},
 //   updatedAt: {string},
 //   deletedAt: {string | null},

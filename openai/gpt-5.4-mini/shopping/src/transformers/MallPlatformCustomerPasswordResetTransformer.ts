@@ -1,6 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCustomerPasswordReset } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomerPasswordReset";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -16,13 +17,17 @@ export namespace MallPlatformCustomerPasswordResetTransformer {
     return {
       select: {
         id: true,
-        mall_platform_customer_id: true,
         token: true,
         expired_at: true,
         used_at: true,
         created_at: true,
         updated_at: true,
         deleted_at: true,
+        customer: {
+          select: {
+            email: true,
+          },
+        },
       },
     } satisfies Prisma.mall_platform_customer_password_resetsFindManyArgs;
   }
@@ -31,13 +36,8 @@ export namespace MallPlatformCustomerPasswordResetTransformer {
   ): Promise<IMallPlatformCustomerPasswordReset> {
     return {
       id: input.id,
-      mallPlatformCustomerId: input.mall_platform_customer_id,
-      token: input.token,
-      expiredAt: input.expired_at.toISOString(),
-      usedAt: input.used_at?.toISOString() ?? null,
-      createdAt: input.created_at.toISOString(),
+      email: input.customer.email,
       updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
     } satisfies IMallPlatformCustomerPasswordReset;
   }
 }
@@ -68,13 +68,8 @@ export namespace MallPlatformCustomerPasswordResetTransformer {
 //       export async function transform(input: Payload): Promise<IMallPlatformCustomerPasswordReset> {
 //         return {
 //   id: {string},
-//   mallPlatformCustomerId: {string},
-//   token: {string},
-//   expiredAt: {string},
-//   usedAt: {string | null},
-//   createdAt: {string},
+//   email: {string},
 //   updatedAt: {string},
-//   deletedAt: {string | null},
 //         };
 //       }
 //     }

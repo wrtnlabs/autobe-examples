@@ -12,16 +12,12 @@ export async function memberAuthorize(request: {
     throw new ForbiddenException(`You're not ${payload.type}`);
   }
 
-  const session = await MyGlobal.prisma.reddit_platform_member_sessions.findFirst({
+  const session = await MyGlobal.prisma.reddit_community_member_sessions.findFirst({
     where: {
       id: payload.session_id,
       expired_at: { gt: new Date() },
-      revoked_at: null,
       deleted_at: null,
-      reddit_platform_member_id: payload.id,
-      member: {
-        deleted_at: null,
-      },
+      reddit_community_member_id: payload.id,
     },
   });
 

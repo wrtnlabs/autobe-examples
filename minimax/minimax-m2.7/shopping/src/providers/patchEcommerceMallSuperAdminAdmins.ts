@@ -1,8 +1,6 @@
-import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
 import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
 import { IPageIEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallAdmin";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -21,52 +19,52 @@ export async function patchEcommerceMallSuperAdminAdmins(props: {
   superAdmin: SuperadminPayload;
   body: IEcommerceMallAdmin.IRequest;
 }): Promise<IPageIEcommerceMallAdmin.ISummary> {
-  const page = props.body.page ?? 1;
-  const limit = Math.min(props.body.limit ?? 20, 100);
+  const page = props.body.page ?? (1 as const);
+  const limit = props.body.limit ?? (20 as const);
   const skip = (page - 1) * limit;
-  const whereInput: Prisma.ecommerce_mall_adminsWhereInput = {
-    ...(props.body.search && {
-      OR: [
-        { name: { contains: props.body.search, mode: "insensitive" as const } },
-        {
-          email: { contains: props.body.search, mode: "insensitive" as const },
-        },
-      ],
+  const whereInput = {
+    deleted_at: props.body.status === "deleted" ? { not: null } : null,
+    ...(props.body.email !== undefined && {
+      email: { contains: props.body.email, mode: "insensitive" as const },
     }),
-    ...(props.body.status === "active" && { deleted_at: null }),
-    ...(props.body.status === "deleted" && { deleted_at: { not: null } }),
-  };
+    ...(props.body.name !== undefined && {
+      name: { contains: props.body.name, mode: "insensitive" as const },
+    }),
+    ...(props.body.createdAfter !== undefined && {
+      created_at: { gte: new Date(props.body.createdAfter as string) },
+    }),
+    ...(props.body.createdBefore !== undefined && {
+      created_at: { lte: new Date(props.body.createdBefore as string) },
+    }),
+  } satisfies Prisma.ecommerce_mall_adminsWhereInput;
+  const orderByInput = (
+    props.body.sortBy === "email"
+      ? { email: props.body.sort ?? "desc" }
+      : props.body.sortBy === "name"
+        ? { name: props.body.sort ?? "desc" }
+        : { created_at: props.body.sort ?? "desc" }
+  ) satisfies Prisma.ecommerce_mall_adminsOrderByWithRelationInput;
   const records = await MyGlobal.prisma.ecommerce_mall_admins.findMany({
-    ...EcommerceMallAdminAtSummaryTransformer.select(),
     where: whereInput,
-    skip: skip,
+    orderBy: orderByInput,
+    skip,
     take: limit,
-    orderBy: { created_at: "desc" },
+    ...EcommerceMallAdminAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.ecommerce_mall_admins.count({
     where: whereInput,
   });
-  const data = await ArrayUtil.asyncMap(records, async (record) => {
-    const isSuperAdmin =
-      await MyGlobal.prisma.ecommerce_mall_admin_promotions.findFirst({
-        where: { admin_id: record.id },
-      });
-    return {
-      ...(await EcommerceMallAdminAtSummaryTransformer.transform(record)),
-      is_super_admin: isSuperAdmin !== null,
-    };
-  });
   return {
     pagination: {
-      pagination: {
-        current: page,
-        limit: limit,
-        records: total,
-        pages: Math.ceil(total / limit),
-      },
-      data: data as IEcommerceMall.IPagination[],
-    },
-    data: data,
+      current: page,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      records,
+      EcommerceMallAdminAtSummaryTransformer.transform,
+    ),
   };
 }
 
@@ -90,9 +88,7 @@ export async function patchEcommerceMallSuperAdminAdmins(props: {
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
 // import { IPageIEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMallAdmin";
-// import { IPageIEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIEcommerceMall";
 // import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
-// import { IEcommerceMall } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMall";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
 // // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.

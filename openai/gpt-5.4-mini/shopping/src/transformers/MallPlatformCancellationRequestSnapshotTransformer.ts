@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCancellationRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCancellationRequest";
 import { IMallPlatformCancellationRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCancellationRequestSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -26,9 +27,7 @@ export namespace MallPlatformCancellationRequestSnapshotTransformer {
         updated_at: true,
         deleted_at: true,
         cancellationRequest: {
-          select: {
-            id: true,
-          },
+          select: {},
         },
       },
     } satisfies Prisma.mall_platform_cancellation_request_snapshotsFindManyArgs;
@@ -38,9 +37,7 @@ export namespace MallPlatformCancellationRequestSnapshotTransformer {
   ): Promise<IMallPlatformCancellationRequestSnapshot> {
     return {
       id: input.id,
-      cancellationRequest: {
-        id: input.cancellationRequest.id,
-      } satisfies IMallPlatformCancellationRequest.ISummary,
+      cancellationRequest: {} as IMallPlatformCancellationRequest.ISummary,
       snapshotStatus: input.snapshot_status,
       reviewResult: input.review_result,
       reason: input.reason,

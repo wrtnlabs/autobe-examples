@@ -1,6 +1,7 @@
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -15,72 +16,103 @@ export namespace EcommerceMallSellerAtSummaryTransformer {
   export function select() {
     return {
       select: {
-        // Scalars for DTO
         id: true,
         email: true,
-        approval_status: true,
-        created_at: true,
-        // Required schema scalars
         password_hash: true,
+        approval_status: true,
         rejection_reason: true,
         rejected_at: true,
+        created_at: true,
         updated_at: true,
         deleted_at: true,
-        // Required schema relations - hasMany
         sellerSessions: {
-          select: { id: true },
+          select: {
+            id: true,
+          },
         } satisfies Prisma.ecommerce_mall_seller_sessionsFindManyArgs,
         passwordResets: {
-          select: { id: true },
+          select: {
+            id: true,
+          },
         } satisfies Prisma.ecommerce_mall_seller_password_resetsFindManyArgs,
         emailVerifications: {
-          select: { id: true },
+          select: {
+            id: true,
+          },
         } satisfies Prisma.ecommerce_mall_seller_email_verificationsFindManyArgs,
+        adminRequest: {
+          select: {
+            id: true,
+          },
+        } satisfies Prisma.ecommerce_mall_admin_request_of_sellersFindManyArgs,
+        profile: {
+          select: {
+            name: true,
+          },
+        } satisfies Prisma.ecommerce_mall_seller_profilesFindManyArgs,
         adminRequests: {
-          select: { id: true },
+          select: {
+            id: true,
+          },
         } satisfies Prisma.ecommerce_mall_seller_admin_requestsFindManyArgs,
         products: {
-          select: { id: true },
+          select: {
+            id: true,
+          },
         } satisfies Prisma.ecommerce_mall_productsFindManyArgs,
         productSnapshots: {
-          select: { id: true },
+          select: {
+            id: true,
+          },
         } satisfies Prisma.ecommerce_mall_product_snapshotsFindManyArgs,
         shipments: {
-          select: { id: true },
+          select: {
+            id: true,
+          },
         } satisfies Prisma.ecommerce_mall_shipmentsFindManyArgs,
         cancellationRequests: {
-          select: { id: true },
+          select: {
+            id: true,
+          },
         } satisfies Prisma.ecommerce_mall_cancellation_requestsFindManyArgs,
         refundRequests: {
-          select: { id: true },
+          select: {
+            id: true,
+          },
         } satisfies Prisma.ecommerce_mall_refund_requestsFindManyArgs,
         refundRequestSnapshots: {
-          select: { id: true },
+          select: {
+            id: true,
+          },
         } satisfies Prisma.ecommerce_mall_refund_request_snapshotsFindManyArgs,
         sellerApprovals: {
-          select: { id: true },
+          select: {
+            id: true,
+          },
         } satisfies Prisma.ecommerce_mall_seller_approvalsFindManyArgs,
         sellerSuspensions: {
-          select: { id: true },
+          select: {
+            restored_at: true,
+          },
         } satisfies Prisma.ecommerce_mall_seller_suspensionsFindManyArgs,
-        // Required schema relations - hasOne
-        adminRequest: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_admin_request_of_sellersFindFirstArgs,
-        profile: {
-          select: { id: true },
-        } satisfies Prisma.ecommerce_mall_seller_profilesFindFirstArgs,
       },
     } satisfies Prisma.ecommerce_mall_sellersFindManyArgs;
   }
   export async function transform(
     input: Payload,
   ): Promise<IEcommerceMallSeller.ISummary> {
+    const hasActiveSuspension = input.sellerSuspensions.some(
+      (s) => s.restored_at === null,
+    );
     return {
       id: input.id,
       email: input.email,
       approvalStatus: input.approval_status,
       createdAt: input.created_at.toISOString(),
+      rejectedAt: input.rejected_at?.toISOString() ?? null,
+      rejectionReason: input.rejection_reason ?? null,
+      shopName: input.profile?.name ?? null,
+      suspensionStatus: hasActiveSuspension ? "suspended" : "active",
     } satisfies IEcommerceMallSeller.ISummary;
   }
 }
@@ -111,10 +143,14 @@ export namespace EcommerceMallSellerAtSummaryTransformer {
 // 
 //       export async function transform(input: Payload): Promise<IEcommerceMallSeller.ISummary> {
 //         return {
-//   id: {string},
-//   email: {string},
 //   approvalStatus: {string},
 //   createdAt: {string},
+//   email: {string},
+//   id: {string},
+//   rejectedAt: {string | null},
+//   rejectionReason: {string | null},
+//   shopName: {string | null},
+//   suspensionStatus: {string},
 //         };
 //       }
 //     }

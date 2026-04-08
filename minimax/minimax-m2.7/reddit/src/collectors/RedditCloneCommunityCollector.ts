@@ -13,12 +13,21 @@ import { MyGlobal } from "../MyGlobal";
 import { PasswordUtil } from "../utils/PasswordUtil";
 
 export namespace RedditCloneCommunityCollector {
+  /**
+   * Collects community creation data from DTO and auth context.
+   * Maps IRedditCloneCommunity.ICreate to Prisma.reddit_clone_communitiesCreateInput.
+   *
+   * @param props.body - DTO containing name and description for new community
+   * @param props.redditCloneMembers - IEntity of the authenticated member creating the community (becomes owner)
+   * @param props.redditCloneMemberSessions - IEntity of the authenticated session
+   */
   export async function collect(props: {
     body: IRedditCloneCommunity.ICreate;
     redditCloneMembers: IEntity;
     redditCloneMemberSessions: IEntity;
   }) {
     return {
+      // Scalar fields
       id: v4(),
       name: props.body.name,
       description: props.body.description,
@@ -26,16 +35,10 @@ export namespace RedditCloneCommunityCollector {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
+      // BelongsTo relation - connect owner from auth context
       member: { connect: { id: props.redditCloneMembers.id } },
-      icon: props.body.icon
-        ? {
-            create: {
-              id: v4(),
-              reddit_clone_file_id: props.body.icon.id,
-              created_at: new Date(),
-            },
-          }
-        : undefined,
+      // NOTE: icon field from DTO is ignored - file association is created separately
+      // NOTE: All hasMany relations are reverse relations - cannot be created from parent
     } satisfies Prisma.reddit_clone_communitiesCreateInput;
   }
 }

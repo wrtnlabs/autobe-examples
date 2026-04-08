@@ -19,19 +19,22 @@ export async function getRedditCloneRedditCloneCommentsCommentIdRepliesReplyId(p
   commentId: string & tags.Format<"uuid">;
   replyId: string & tags.Format<"uuid">;
 }): Promise<IRedditCloneComment> {
-  // Verify parent comment exists (throws 404 if not found)
+  // Verify parent comment exists and belongs to a valid post
   await MyGlobal.prisma.reddit_clone_comments.findUniqueOrThrow({
     where: { id: props.commentId },
-    select: { id: true },
   });
-  // Query reply using transformer select to ensure proper type inference
+  // Query reply ensuring it belongs to the specified parent comment
   const reply = await MyGlobal.prisma.reddit_clone_comments.findFirstOrThrow({
-    ...RedditCloneCommentTransformer.select(),
     where: {
       id: props.replyId,
       parent_comment_id: props.commentId,
     },
+    ...RedditCloneCommentTransformer.select(),
   });
+  // Apply soft-delete visibility: show placeholder for deleted content
+  if (reply.deleted_at !== null) {
+    reply.content = "[deleted]";
+  }
   return await RedditCloneCommentTransformer.transform(reply);
 }
 

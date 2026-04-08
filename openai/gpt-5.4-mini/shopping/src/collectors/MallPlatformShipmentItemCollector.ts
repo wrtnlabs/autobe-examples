@@ -11,17 +11,15 @@ export namespace MallPlatformShipmentItemCollector {
   export async function collect(props: {
     body: IMallPlatformShipmentItem.ICreate;
     shipment: IEntity;
-    orderItem: IEntity;
   }) {
-    const id: string = v4();
-    return {
-      id,
+    return props.body.orderItemIds.map((orderItemId) => ({
+      id: v4(),
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
       shipment: { connect: { id: props.shipment.id } },
-      orderItem: { connect: { id: props.orderItem.id } },
-    } satisfies Prisma.mall_platform_shipment_itemsCreateInput;
+      orderItem: { connect: { id: orderItemId } },
+    })) satisfies Prisma.mall_platform_shipment_itemsCreateInput[];
   }
 }
 
@@ -32,7 +30,7 @@ export namespace MallPlatformShipmentItemCollector {
 //       export namespace MallPlatformShipmentItemCollector {
 //         export async function collect(props: {
 //           body: IMallPlatformShipmentItem.ICreate;
-//           mallPlatformShipments: IEntity; // from path parameter shipmentId
+//           mallPlatformShipments: IEntity; // from path parameter {shipmentId}
 //           
 //           
 //         }) {

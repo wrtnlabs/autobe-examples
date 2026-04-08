@@ -5,12 +5,13 @@ import { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 import { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import { IMallPlatformRefundRequest } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformRefundRequest";
 import { IMallPlatformRefundRequestSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformRefundRequestSnapshot";
 import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -46,12 +47,12 @@ export namespace MallPlatformRefundRequestSnapshotAtSummaryTransformer {
         await MallPlatformRefundRequestAtSummaryTransformer.transform(
           input.refundRequest,
         ),
-      snapshot_reason: input.snapshot_reason,
-      status_before: input.status_before,
-      status_after: input.status_after,
-      reviewer_role: input.reviewer_role,
-      reviewer_note: input.reviewer_note,
-      created_at: input.created_at.toISOString(),
+      snapshotReason: input.snapshot_reason,
+      statusBefore: input.status_before,
+      statusAfter: input.status_after,
+      reviewerRole: input.reviewer_role ?? null,
+      reviewerNote: input.reviewer_note ?? null,
+      createdAt: input.created_at.toISOString(),
     } satisfies IMallPlatformRefundRequestSnapshot.ISummary;
   }
 }
@@ -83,12 +84,12 @@ export namespace MallPlatformRefundRequestSnapshotAtSummaryTransformer {
 //         return {
 //   id: {string},
 //   refundRequest: await MallPlatformRefundRequestAtSummaryTransformer.transform(input.refundRequest),
-//   snapshot_reason: {string},
-//   status_before: {string},
-//   status_after: {string},
-//   reviewer_role: {string | null},
-//   reviewer_note: {string | null},
-//   created_at: {string},
+//   snapshotReason: {string},
+//   statusBefore: {string},
+//   statusAfter: {string},
+//   reviewerRole: {string | null},
+//   reviewerNote: {string | null},
+//   createdAt: {string},
 //         };
 //       }
 //     }

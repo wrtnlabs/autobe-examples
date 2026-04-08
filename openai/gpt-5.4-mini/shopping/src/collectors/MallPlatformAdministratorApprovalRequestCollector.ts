@@ -24,6 +24,7 @@ export namespace MallPlatformAdministratorApprovalRequestCollector {
       updated_at: now,
       deleted_at: null,
       administrator: { connect: { id: props.administrator.id } },
+      reviewerAdministrator: undefined,
     } satisfies Prisma.mall_platform_administrator_approval_requestsCreateInput;
   }
 }
@@ -35,7 +36,8 @@ export namespace MallPlatformAdministratorApprovalRequestCollector {
 //       export namespace MallPlatformAdministratorApprovalRequestCollector {
 //         export async function collect(props: {
 //           body: IMallPlatformAdministratorApprovalRequest.ICreate;
-//           
+//           mallPlatformAdministrators: IEntity; // from authorized actor
+// mallPlatformAdministrators: IEntity; // from authorized session
 //           
 //           
 //         }) {

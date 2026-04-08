@@ -9,8 +9,8 @@ import typia, { tags } from "typia";
  * Prepare random mall platform product creation data for E2E testing.
  *
  * Generates a complete IMallPlatformProduct.ICreate object with realistic
- * default values. Every field can be overridden through the DeepPartial input,
- * making it suitable for both happy-path and edge-case test customization.
+ * defaults while allowing test cases to override any field through DeepPartial
+ * input.
  */
 export function prepare_random_mall_platform_product(
   input?: DeepPartial<IMallPlatformProduct.ICreate> | undefined,
@@ -18,20 +18,13 @@ export function prepare_random_mall_platform_product(
   return {
     name: input?.name ?? RandomGenerator.name(2),
     description:
-      input?.description ??
-      RandomGenerator.content({
-        paragraphs: 2,
-        sentenceMin: 3,
-        sentenceMax: 7,
-        wordMin: 4,
-        wordMax: 9,
-      }),
+      input?.description ?? RandomGenerator.paragraph({ sentences: 3 }),
     categoryId:
-      input?.categoryId ?? typia.random<string & tags.Format<"uuid">>(),
+      input?.categoryId !== undefined
+        ? input.categoryId
+        : typia.random<string & tags.Format<"uuid">>(),
     basePrice:
       input?.basePrice ??
-      typia.random<
-        number & tags.Type<"uint32"> & tags.Minimum<1> & tags.Maximum<1000000>
-      >(),
+      typia.random<number & tags.Type<"double"> & tags.Minimum<0>>(),
   };
 }

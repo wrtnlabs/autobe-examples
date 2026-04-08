@@ -1,6 +1,7 @@
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCloneFileThumbnail } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileThumbnail";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -22,11 +23,7 @@ export namespace RedditCloneFileThumbnailAtSummaryTransformer {
         thumbnail_path: true,
         created_at: true,
         updated_at: true,
-        file: {
-          select: {
-            id: true,
-          },
-        } satisfies Prisma.reddit_clone_filesFindManyArgs,
+        file: true,
       },
     } satisfies Prisma.reddit_clone_file_thumbnailsFindManyArgs;
   }

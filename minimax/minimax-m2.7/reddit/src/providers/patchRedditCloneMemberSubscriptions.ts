@@ -24,26 +24,28 @@ export async function patchRedditCloneMemberSubscriptions(props: {
   const page = props.body.page ?? 1;
   const limit = props.body.limit ?? 20;
   const skip = (page - 1) * limit;
-  const order: "asc" | "desc" = props.body.order ?? "desc";
-  const search = props.body.search;
-  const whereInput = {
+  const order = props.body.order ?? "desc";
+  const whereClause = {
     reddit_clone_member_id: props.member.id,
     community: {
       deleted_at: null,
-      ...(search && {
-        name: { contains: search, mode: "insensitive" as const },
+      ...(props.body.search && {
+        name: {
+          contains: props.body.search,
+          mode: "insensitive" as const,
+        },
       }),
     },
   } satisfies Prisma.reddit_clone_subscriptionsWhereInput;
   const records = await MyGlobal.prisma.reddit_clone_subscriptions.findMany({
-    where: whereInput,
+    where: whereClause,
     skip,
     take: limit,
     orderBy: { created_at: order },
     ...RedditCloneSubscriptionAtSummaryTransformer.select(),
   });
   const total = await MyGlobal.prisma.reddit_clone_subscriptions.count({
-    where: whereInput,
+    where: whereClause,
   });
   return {
     pagination: {
@@ -51,7 +53,7 @@ export async function patchRedditCloneMemberSubscriptions(props: {
       limit: limit,
       records: total,
       pages: Math.ceil(total / limit),
-    } satisfies IPage.IPagination,
+    },
     data: await ArrayUtil.asyncMap(
       records,
       RedditCloneSubscriptionAtSummaryTransformer.transform,

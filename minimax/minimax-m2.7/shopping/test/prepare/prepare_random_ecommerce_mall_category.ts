@@ -5,17 +5,24 @@ import { ArrayUtil, RandomGenerator } from "@nestia/e2e";
 import { randint } from "tstl";
 import typia, { tags } from "typia";
 
+/**
+ * Prepare random e-commerce mall category creation data for E2E testing.
+ *
+ * Generates a complete IEcommerceMallCategory.ICreate with randomized values.
+ * Supports both top-level categories (parent_id = null) and subcategories
+ * (parent_id = valid UUID). The description field can be null to test
+ * nullable database column handling.
+ *
+ * @param input Optional DeepPartial override for specific fields
+ * @returns Complete category creation payload
+ */
 export function prepare_random_ecommerce_mall_category(
   input?: DeepPartial<IEcommerceMallCategory.ICreate>,
 ): IEcommerceMallCategory.ICreate {
   return {
-    name:
-      input?.name ??
-      RandomGenerator.paragraph({ sentences: 2, wordMin: 3, wordMax: 6 }),
     description:
-      input?.description === undefined
-        ? RandomGenerator.paragraph({ sentences: 1, wordMin: 5, wordMax: 10 })
-        : input.description,
-    parent_id: input?.parent_id,
+      input?.description ?? RandomGenerator.paragraph({ sentences: 2 }),
+    name: input?.name ?? RandomGenerator.name(),
+    parent_id: input?.parent_id ?? null,
   };
 }

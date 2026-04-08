@@ -1,6 +1,9 @@
 import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
+import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
 import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
+import { IEcommerceMallSellerApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerApproval";
 import { IEcommerceMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfile";
+import { IEcommerceMallSellerSuspension } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerSuspension";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
 import { HttpException } from "@nestjs/common";
@@ -18,16 +21,18 @@ export async function postEcommerceMallAuthSellerLogin(props: {
   ip: string;
   body: IEcommerceMallSeller.ILogin;
 }): Promise<IEcommerceMallSeller.IAuthorized> {
-  // 1. Find seller by email with password_hash for verification
+  // 1. Find seller by email with password_hash explicitly selected
   const seller = await MyGlobal.prisma.ecommerce_mall_sellers.findFirst({
     where: { email: props.body.email },
-    ...EcommerceMallSellerTransformer.select(),
+    select: {
+      ...EcommerceMallSellerTransformer.select().select,
+      password_hash: true,
+    },
   });
-  // 2. Check seller exists and not deleted
-  if (!seller || seller.deleted_at !== null) {
+  if (!seller) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 3. Verify password
+  // 2. Verify password
   const isValid = await PasswordUtil.verify(
     props.body.password,
     seller.password_hash,
@@ -35,72 +40,91 @@ export async function postEcommerceMallAuthSellerLogin(props: {
   if (!isValid) {
     throw new HttpException("Invalid credentials", 401);
   }
-  // 4. Check approval status - only approved sellers can login
-  if (seller.approval_status !== "approved") {
-    const message =
-      seller.approval_status === "rejected"
-        ? `Account rejected: ${seller.rejection_reason ?? "No reason provided"}`
-        : "Account pending approval";
-    throw new HttpException(message, 403);
+  // 3. Check approval status
+  if (seller.approval_status === "pending") {
+    throw new HttpException(
+      "Your account is pending approval. Please wait for administrator review.",
+      403,
+    );
   }
-  // 5. Create new session with ISO datetime strings
-  const accessExpiresStr = toISOStringSafe(
-    new Date(Date.now() + 60 * 60 * 1000),
+  if (seller.approval_status === "rejected") {
+    throw new HttpException(
+      "Your account registration was rejected. Please submit a new registration request.",
+      403,
+    );
+  }
+  // 4. Check for soft deletion (deleted_at not null)
+  if (seller.deleted_at !== null) {
+    throw new HttpException(
+      "Your account has been suspended. Please contact support.",
+      403,
+    );
+  }
+  // 5. Check for active suspension (restored_at is null)
+  const hasActiveSuspension = seller.sellerSuspensions.some(
+    (s) => s.restored_at === null,
   );
-  const refreshExpiresStr = toISOStringSafe(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  );
-  const sessionId = v4();
+  if (hasActiveSuspension) {
+    throw new HttpException(
+      "Your account has been suspended. Please contact support.",
+      403,
+    );
+  }
+  // 6. Create session
+  const accessExpires = new Date(Date.now() + 60 * 60 * 1000);
+  const refreshExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const session = await MyGlobal.prisma.ecommerce_mall_seller_sessions.create({
     data: {
-      id: sessionId,
+      id: v4(),
       ecommerce_mall_seller_id: seller.id,
-      ip: props.ip,
-      href: props.ip,
-      referrer: "",
+      ip: props.body.ip ?? props.ip,
+      href: props.body.href,
+      referrer: props.body.referrer,
       created_at: new Date(),
-      expired_at: new Date(accessExpiresStr),
+      expired_at: accessExpires,
     },
   });
-  // 6. Generate JWT tokens
-  const currentTime = toISOStringSafe(new Date());
-  const accessToken = jwt.sign(
-    {
-      type: "seller",
-      id: seller.id,
-      session_id: session.id,
-      created_at: currentTime,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "1h", issuer: "autobe" },
-  );
-  const refreshToken = jwt.sign(
-    {
-      type: "seller",
-      id: seller.id,
-      session_id: session.id,
-      tokenType: "refresh",
-      created_at: currentTime,
-    },
-    MyGlobal.env.JWT_SECRET_KEY,
-    { expiresIn: "7d", issuer: "autobe" },
-  );
+  // 7. Generate JWT tokens
   const token: IAuthorizationToken = {
-    access: accessToken,
-    refresh: refreshToken,
-    expired_at: accessExpiresStr,
-    refreshable_until: refreshExpiresStr,
+    access: jwt.sign(
+      {
+        type: "seller",
+        id: seller.id,
+        session_id: session.id,
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "1h", issuer: "autobe" },
+    ),
+    refresh: jwt.sign(
+      {
+        type: "seller",
+        id: seller.id,
+        session_id: session.id,
+        tokenType: "refresh",
+        created_at: toISOStringSafe(new Date()),
+      },
+      MyGlobal.env.JWT_SECRET_KEY,
+      { expiresIn: "7d", issuer: "autobe" },
+    ),
+    expired_at: toISOStringSafe(accessExpires),
+    refreshable_until: toISOStringSafe(refreshExpires),
   };
-  // 7. Return authorized response
+  // 8. Update session with tokens
+  await MyGlobal.prisma.ecommerce_mall_seller_sessions.update({
+    where: { id: session.id },
+    data: {
+      access_token: token.access,
+      refresh_token: token.refresh,
+    },
+  });
+  // 9. Return IAuthorized - cast approvalStatus to literal after checks
   const transformed = await EcommerceMallSellerTransformer.transform(seller);
   return {
     ...transformed,
-    approvalStatus: transformed.approvalStatus as
-      | "pending"
-      | "approved"
-      | "rejected",
+    approvalStatus: "approved" as const,
     token,
-  };
+  } satisfies IEcommerceMallSeller.IAuthorized;
 }
 
 
@@ -123,6 +147,9 @@ export async function postEcommerceMallAuthSellerLogin(props: {
 // import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 // import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSeller";
 // import { IEcommerceMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfile";
+// import { IEcommerceMallSellerApproval } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerApproval";
+// import { IEcommerceMallAdmin } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallAdmin";
+// import { IEcommerceMallSellerSuspension } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerSuspension";
 // import { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structures/IAuthorizationToken";
 // 
 // // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
@@ -137,8 +164,11 @@ export async function postEcommerceMallAuthSellerLogin(props: {
 //     approvalStatus: ...,
 //     rejectionReason: ...,
 //     rejectedAt: ...,
-//     profile: await EcommerceMallSellerProfileTransformer.transform(...),
-//     productsCount: ...,
+//     profile: await EcommerceMallSellerProfileAtSummaryTransformer.transform(...),
+//     sellerApprovals: await ArrayUtil.asyncMap(..., (r) => EcommerceMallSellerApprovalAtSummaryTransformer.transform(r)),
+//     sellerSuspensions: await ArrayUtil.asyncMap(..., (r) => EcommerceMallSellerSuspensionAtSummaryTransformer.transform(r)),
+//     approvalCount: ...,
+//     suspensionCount: ...,
 //     createdAt: ...,
 //     updatedAt: ...,
 //     deletedAt: ...,

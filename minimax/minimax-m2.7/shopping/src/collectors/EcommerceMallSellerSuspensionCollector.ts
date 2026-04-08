@@ -10,6 +10,7 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallSellerSuspensionCollector {
   export async function collect(props: {
     body: IEcommerceMallSellerSuspension.ICreate;
+    ecommerceMallSellers: IEntity;
     ecommerceMallAdmins: IEntity;
   }) {
     return {
@@ -20,7 +21,7 @@ export namespace EcommerceMallSellerSuspensionCollector {
       restored_at: null,
       created_at: new Date(),
       updated_at: new Date(),
-      seller: { connect: { id: props.body.sellerId } },
+      seller: { connect: { id: props.ecommerceMallSellers.id } },
       suspendedBy: { connect: { id: props.ecommerceMallAdmins.id } },
       restoredBy: undefined,
     } satisfies Prisma.ecommerce_mall_seller_suspensionsCreateInput;
@@ -34,7 +35,8 @@ export namespace EcommerceMallSellerSuspensionCollector {
 //       export namespace EcommerceMallSellerSuspensionCollector {
 //         export async function collect(props: {
 //           body: IEcommerceMallSellerSuspension.ICreate;
-//           ecommerceMallAdmins: IEntity; // from authorized actor
+//           ecommerceMallSellers: IEntity; // from path parameter sellerId
+// ecommerceMallAdmins: IEntity; // from authorized actor
 //           
 //           
 //         }) {

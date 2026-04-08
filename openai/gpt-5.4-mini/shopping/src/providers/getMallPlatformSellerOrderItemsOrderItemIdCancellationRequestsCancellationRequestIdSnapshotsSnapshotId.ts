@@ -45,13 +45,13 @@ export async function getMallPlatformSellerOrderItemsOrderItemIdCancellationRequ
   const record =
     await MyGlobal.prisma.mall_platform_cancellation_request_snapshots.findFirstOrThrow(
       {
-        ...MallPlatformCancellationRequestSnapshotTransformer.select(),
         where: {
           id: props.snapshotId,
           cancellationRequest: {
             id: props.cancellationRequestId,
           },
         },
+        ...MallPlatformCancellationRequestSnapshotTransformer.select(),
       },
     );
   return await MallPlatformCancellationRequestSnapshotTransformer.transform(

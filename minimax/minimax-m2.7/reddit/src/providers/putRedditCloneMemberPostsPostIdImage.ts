@@ -23,73 +23,75 @@ export async function putRedditCloneMemberPostsPostIdImage(props: {
   postId: string & tags.Format<"uuid">;
   body: IRedditClonePostImage.IUpdate;
 }): Promise<IRedditClonePostImage> {
-  // 1. Fetch the post and verify it exists
+  // 1. Validate post exists and belongs to the requesting member
   const post = await MyGlobal.prisma.reddit_clone_posts.findUniqueOrThrow({
     where: { id: props.postId },
     select: {
       id: true,
       reddit_clone_member_id: true,
       type: true,
-      updated_at: true,
+      deleted_at: true,
     },
   });
-  // 2. Validate post type is 'image'
-  if (post.type !== "image") {
-    throw new HttpException("Post is not an image type", 400);
-  }
-  // 3. Validate requester is the post author
+  // 2. Validate ownership — user must be the post author
   if (post.reddit_clone_member_id !== props.member.id) {
     throw new HttpException("Forbidden", 403);
   }
-  // 4. Fetch the new file
-  const file = await MyGlobal.prisma.reddit_clone_files.findUniqueOrThrow({
+  // 3. Validate post type is 'image' — only image posts have an image to replace
+  if (post.type !== "image") {
+    throw new HttpException("Post is not an image post", 400);
+  }
+  // 4. Validate new file exists, is processed, and is owned by the member
+  const file = await MyGlobal.prisma.reddit_clone_files.findUnique({
     where: { id: props.body.redditCloneFileId },
     select: {
       id: true,
       uploader_id: true,
       status: true,
+      deleted_at: true,
     },
   });
-  // 5. Validate file is in 'processed' status
+  if (!file || file.deleted_at !== null) {
+    throw new HttpException("File not found", 400);
+  }
   if (file.status !== "processed") {
     throw new HttpException("File is not in processed status", 400);
   }
-  // 6. Validate file is owned by the authenticated member
   if (file.uploader_id !== props.member.id) {
-    throw new HttpException("File not owned by user", 400);
+    throw new HttpException("You do not own this file", 400);
   }
-  // 7. Use transaction to update the post image
+  // 5. Pre-generate values needed inside the transaction scope
+  const newPostImageId = v4() as string & tags.Format<"uuid">;
   const now = new Date();
+  // 6. Atomic transaction: replace the image association
   await MyGlobal.prisma.$transaction(async (tx) => {
-    // Delete existing post image if any
+    // Remove existing post-image link (if any)
     await tx.reddit_clone_post_images.deleteMany({
       where: { reddit_clone_post_id: props.postId },
     });
-    // Create new post image record
+    // Insert the new post-image link
     await tx.reddit_clone_post_images.create({
       data: {
-        id: v4(),
+        id: newPostImageId,
         reddit_clone_post_id: props.postId,
         reddit_clone_file_id: props.body.redditCloneFileId,
         created_at: now,
         updated_at: now,
       },
     });
-    // Update post timestamp
+    // Touch the parent post's updated_at
     await tx.reddit_clone_posts.update({
       where: { id: props.postId },
-      data: {
-        updated_at: now,
-      },
+      data: { updated_at: now },
     });
   });
-  // 8. Fetch and return the updated post image with file details
-  const updatedPostImage =
+  // 7. Fetch and return the updated post image with file details
+  const updated =
     await MyGlobal.prisma.reddit_clone_post_images.findUniqueOrThrow({
       where: { reddit_clone_post_id: props.postId },
       ...RedditClonePostImageTransformer.select(),
     });
-  return await RedditClonePostImageTransformer.transform(updatedPostImage);
+  return await RedditClonePostImageTransformer.transform(updated);
 }
 
 

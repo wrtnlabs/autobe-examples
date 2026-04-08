@@ -9,17 +9,16 @@ import typia, { tags } from "typia";
  * Prepare random product image creation data for E2E testing.
  *
  * Generates a complete IMallPlatformProductImage.ICreate payload with realistic
- * defaults while allowing test cases to override any field through DeepPartial
- * input.
+ * defaults while allowing any field to be overridden through DeepPartial input.
  */
 export function prepare_random_mall_platform_product_image(
   input?: DeepPartial<IMallPlatformProductImage.ICreate> | undefined,
 ): IMallPlatformProductImage.ICreate {
   return {
-    imageUrl: input?.imageUrl ?? typia.random<string & tags.Format<"uri">>(),
+    imageUrl: input?.imageUrl ?? typia.random<string & tags.Format<"url">>(),
     sortOrder:
       input?.sortOrder ??
       typia.random<number & tags.Type<"int32"> & tags.Minimum<0>>(),
-    isMain: input?.isMain ?? false,
+    isMain: input?.isMain ?? typia.random<boolean>(),
   };
 }

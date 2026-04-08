@@ -15,65 +15,65 @@ import { authorize_administrator_refresh } from "../../../authorize/authorize_ad
 export async function test_api_administrator_join_success(
   connection: api.IConnection,
 ): Promise<void> {
+  /**
+   * Validate administrator registration success with authorization payload and account state.
+   *
+   * Confirms that a new administrator can join successfully, that the returned
+   * authorized payload contains the expected identity and token metadata, and that
+   * sensitive credential data is not exposed in the response. Also validates that
+   * the created account is active and timestamps are populated as part of the
+   * successful sign-up flow.
+   *
+   * 1. Create an isolated administrator connection.
+   * 2. Submit a unique administrator join request.
+   * 3. Validate the authorized response payload.
+   * 4. Confirm account identity, status, timestamps, and token presence.
+   */
   const administratorConnection: api.IConnection = { host: connection.host };
-  const email = typia.random<string & tags.Format<"email">>();
-  const response = await authorize_administrator_join(administratorConnection, {
-    body: {
-      email,
-      password: "StrongP@ssw0rd123!",
-    } satisfies IMallPlatformAdministrator.IJoin,
+  const body = {
+    email: typia.random<string & tags.Format<"email">>(),
+    password: `${RandomGenerator.alphaNumeric(12)}A1!`,
+  } satisfies IMallPlatformAdministrator.IJoin;
+  const output = await authorize_administrator_join(administratorConnection, {
+    body,
   });
-  typia.assert(response);
-  TestValidator.equals(
-    "administrator email should match request",
-    response.email,
-    email,
+  typia.assert(output);
+  TestValidator.equals("administrator email", output.email, body.email);
+  TestValidator.predicate(
+    "administrator id is populated",
+    output.id.length > 0,
   );
   TestValidator.predicate(
-    "administrator id should be present",
-    response.id.length > 0,
+    "administrator grade is populated",
+    output.grade.length > 0,
   );
   TestValidator.predicate(
-    "administrator grade should be present",
-    response.grade.length > 0,
+    "administrator status is populated",
+    output.status.length > 0,
   );
   TestValidator.predicate(
-    "administrator status should be present",
-    response.status.length > 0,
+    "created timestamp is populated",
+    output.created_at.length > 0,
   );
   TestValidator.predicate(
-    "administrator createdAt should be present",
-    response.createdAt.length > 0,
+    "updated timestamp is populated",
+    output.updated_at.length > 0,
+  );
+  TestValidator.equals("deleted timestamp is null", output.deleted_at, null);
+  TestValidator.predicate(
+    "access token is populated",
+    output.token.access.length > 0,
   );
   TestValidator.predicate(
-    "administrator updatedAt should be present",
-    response.updatedAt.length > 0,
+    "refresh token is populated",
+    output.token.refresh.length > 0,
   );
   TestValidator.predicate(
-    "administrator token access should be issued",
-    response.token.access.length > 0,
+    "access token expiration is populated",
+    output.token.expired_at.length > 0,
   );
   TestValidator.predicate(
-    "administrator token refresh should be issued",
-    response.token.refresh.length > 0,
-  );
-  TestValidator.predicate(
-    "administrator token expiry should be present",
-    response.token.expired_at.length > 0,
-  );
-  TestValidator.predicate(
-    "administrator refresh deadline should be present",
-    response.token.refreshable_until.length > 0,
-  );
-  const authenticatedAdminConnection: api.IConnection = {
-    host: connection.host,
-    headers: {
-      Authorization: response.token.access,
-    },
-  };
-  TestValidator.predicate(
-    "administrator connection should be usable immediately after join",
-    authenticatedAdminConnection.headers?.Authorization ===
-      response.token.access,
+    "refreshable until is populated",
+    output.token.refreshable_until.length > 0,
   );
 }

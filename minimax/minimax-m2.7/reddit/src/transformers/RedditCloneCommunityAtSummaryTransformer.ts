@@ -2,6 +2,7 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneCommunity";
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -27,22 +28,37 @@ export namespace RedditCloneCommunityAtSummaryTransformer {
         member: RedditCloneMemberAtSummaryTransformer.select(),
         icon: {
           select: {
-            file: {
-              select: {
-                storage_path: true,
-              },
-            },
+            id: true,
+            reddit_clone_file_id: true,
           },
         },
-        communityModerators: true,
-        communityBans: true,
-        communityReports: true,
-        subscriptions: true,
-        posts: true,
-        moderators: true,
-        moderatorSnapshots: true,
-        bans: true,
-        reports: true,
+        communityModerators: {
+          select: {},
+        } satisfies Prisma.reddit_clone_community_moderatorsFindManyArgs,
+        communityBans: {
+          select: {},
+        } satisfies Prisma.reddit_clone_community_bansFindManyArgs,
+        communityReports: {
+          select: {},
+        } satisfies Prisma.reddit_clone_community_reportsFindManyArgs,
+        subscriptions: {
+          select: {},
+        } satisfies Prisma.reddit_clone_subscriptionsFindManyArgs,
+        posts: {
+          select: {},
+        } satisfies Prisma.reddit_clone_postsFindManyArgs,
+        moderators: {
+          select: {},
+        } satisfies Prisma.reddit_clone_moderatorsFindManyArgs,
+        moderatorSnapshots: {
+          select: {},
+        } satisfies Prisma.reddit_clone_moderator_snapshotsFindManyArgs,
+        bans: {
+          select: {},
+        } satisfies Prisma.reddit_clone_bansFindManyArgs,
+        reports: {
+          select: {},
+        } satisfies Prisma.reddit_clone_reportsFindManyArgs,
       },
     } satisfies Prisma.reddit_clone_communitiesFindManyArgs;
   }
@@ -57,7 +73,7 @@ export namespace RedditCloneCommunityAtSummaryTransformer {
       owner: await RedditCloneMemberAtSummaryTransformer.transform(
         input.member,
       ),
-      icon: input.icon?.file?.storage_path ?? null,
+      icon: input.icon?.reddit_clone_file_id ?? null,
     } satisfies IRedditCloneCommunity.ISummary;
   }
 }
@@ -76,11 +92,9 @@ export namespace RedditCloneCommunityAtSummaryTransformer {
 //             id: true,
 //             name: true,
 //             description: true,
-//             subscriber_count: true,
-//             created_at: true,
-//             updated_at: true,
-//             deleted_at: true,
-//             member: RedditCloneMemberAtSummaryTransformer.select(),
+//             subscriberCount: true,
+//             icon: true,
+//             ...
 //           },
 //         } satisfies Prisma.reddit_clone_communitiesFindManyArgs;
 //       }
@@ -91,7 +105,7 @@ export namespace RedditCloneCommunityAtSummaryTransformer {
 //   name: {string},
 //   description: {string},
 //   subscriberCount: {integer},
-//   owner: await RedditCloneMemberAtSummaryTransformer.transform(input.member),
+//   owner: {IRedditCloneMember.ISummary},
 //   icon: {string | null},
 //         };
 //       }

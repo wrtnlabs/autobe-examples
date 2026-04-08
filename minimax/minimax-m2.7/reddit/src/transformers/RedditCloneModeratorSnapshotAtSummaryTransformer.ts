@@ -3,6 +3,7 @@ import { IRedditCloneCommunity } from "@ORGANIZATION/PROJECT-api/lib/structures/
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { IRedditCloneModeratorSnapshot } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneModeratorSnapshot";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -27,7 +28,7 @@ export namespace RedditCloneModeratorSnapshotAtSummaryTransformer {
           select: {
             id: true,
           },
-        } satisfies Prisma.reddit_clone_moderatorsFindFirstArgs,
+        } satisfies Prisma.reddit_clone_moderatorsFindManyArgs,
         community: RedditCloneCommunityAtSummaryTransformer.select(),
         member: RedditCloneMemberAtSummaryTransformer.select(),
         assignedBy: RedditCloneMemberAtSummaryTransformer.select(),
@@ -40,8 +41,8 @@ export namespace RedditCloneModeratorSnapshotAtSummaryTransformer {
     return {
       id: input.id,
       role: input.role,
-      assignedAt: toISOStringSafe(input.assigned_at),
-      createdAt: toISOStringSafe(input.created_at),
+      assignedAt: input.assigned_at.toISOString(),
+      createdAt: input.created_at.toISOString(),
       community: await RedditCloneCommunityAtSummaryTransformer.transform(
         input.community,
       ),

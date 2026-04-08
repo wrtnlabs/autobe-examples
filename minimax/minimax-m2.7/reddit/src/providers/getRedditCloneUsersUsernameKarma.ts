@@ -15,26 +15,19 @@ import { toISOStringSafe } from "../utils/toISOStringSafe";
 export async function getRedditCloneUsersUsernameKarma(props: {
   username: string;
 }): Promise<IRedditCloneUserKarma.ISummary> {
-  const member = await MyGlobal.prisma.reddit_clone_members.findFirst({
-    select: {
-      id: true,
-      username: true,
-    },
-    where: {
-      username: props.username,
-    },
+  const member = await MyGlobal.prisma.reddit_clone_members.findUniqueOrThrow({
+    where: { username: props.username },
+    select: { id: true },
   });
-  if (member === null) {
-    throw new HttpException("Not Found", 404);
+  const karma = await MyGlobal.prisma.reddit_clone_user_karmas.findUnique({
+    where: { reddit_clone_member_id: member.id },
+    ...RedditCloneUserKarmaAtSummaryTransformer.select(),
+  });
+  if (karma === null) {
+    return {
+      karmaScore: 0,
+    };
   }
-  const karma = await MyGlobal.prisma.reddit_clone_user_karmas.findFirstOrThrow(
-    {
-      ...RedditCloneUserKarmaAtSummaryTransformer.select(),
-      where: {
-        reddit_clone_member_id: member.id,
-      },
-    },
-  );
   return await RedditCloneUserKarmaAtSummaryTransformer.transform(karma);
 }
 

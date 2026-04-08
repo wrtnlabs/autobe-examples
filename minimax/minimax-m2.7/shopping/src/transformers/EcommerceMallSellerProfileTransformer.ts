@@ -2,6 +2,7 @@ import { IEcommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/I
 import { IEcommerceMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IEcommerceMallSellerProfile";
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -26,7 +27,9 @@ export namespace EcommerceMallSellerProfileTransformer {
         deleted_at: true,
         seller: EcommerceMallSellerAtSummaryTransformer.select(),
         snapshots: {
-          select: { id: true },
+          select: {
+            id: true,
+          },
         } satisfies Prisma.ecommerce_mall_seller_profile_snapshotsFindManyArgs,
       },
     } satisfies Prisma.ecommerce_mall_seller_profilesFindManyArgs;
@@ -38,7 +41,7 @@ export namespace EcommerceMallSellerProfileTransformer {
       id: input.id,
       name: input.name,
       description: input.description,
-      logo_uri: input.logo_uri,
+      logo_uri: input.logo_uri ?? undefined,
       seller: await EcommerceMallSellerAtSummaryTransformer.transform(
         input.seller,
       ),
@@ -81,7 +84,7 @@ export namespace EcommerceMallSellerProfileTransformer {
 //   seller: await EcommerceMallSellerAtSummaryTransformer.transform(input.seller),
 //   created_at: {string},
 //   updated_at: {string},
-//   deleted_at: {string | null},
+//   deleted_at: {null | string},
 //         };
 //       }
 //     }

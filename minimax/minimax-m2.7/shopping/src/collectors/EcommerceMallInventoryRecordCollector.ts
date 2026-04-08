@@ -10,17 +10,16 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 export namespace EcommerceMallInventoryRecordCollector {
   export async function collect(props: {
     body: IEcommerceMallInventoryRecord.ICreate;
-    productVariant: IEntity;
+    ecommerceMallProductVariants: IEntity;
   }) {
     return {
       id: v4(),
-      quantity_change:
-        props.body.operationType === "restock"
-          ? props.body.quantity
-          : -props.body.quantity,
+      quantity_change: props.body.quantityChange,
       reason: props.body.reason,
       created_at: new Date(),
-      productVariant: { connect: { id: props.productVariant.id } },
+      productVariant: {
+        connect: { id: props.ecommerceMallProductVariants.id },
+      },
     } satisfies Prisma.ecommerce_mall_inventory_recordsCreateInput;
   }
 }

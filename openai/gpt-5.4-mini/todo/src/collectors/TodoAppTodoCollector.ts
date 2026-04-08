@@ -18,8 +18,8 @@ export namespace TodoAppTodoCollector {
       id,
       title: props.body.title,
       description: props.body.description ?? null,
-      start_at: props.body.start_at ? new Date(props.body.start_at) : null,
-      due_at: props.body.due_at ? new Date(props.body.due_at) : null,
+      start_date: props.body.startDate ? new Date(props.body.startDate) : null,
+      due_date: props.body.dueDate ? new Date(props.body.dueDate) : null,
       is_completed: false,
       created_at: now,
       updated_at: now,
@@ -30,3 +30,32 @@ export namespace TodoAppTodoCollector {
     } satisfies Prisma.todo_app_todosCreateInput;
   }
 }
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+//       export namespace TodoAppTodoCollector {
+//         export async function collect(props: {
+//           body: ITodoAppTodo.ICreate;
+//           todoAppMembers: IEntity; // from authorized actor
+// todoAppMemberSessions: IEntity; // from authorized session
+//           
+//           
+//         }) {
+//           return {
+//       id: ...,
+//       title: ...,
+//       description: ...,
+//       start_date: ...,
+//       due_date: ...,
+//       is_completed: ...,
+//       created_at: ...,
+//       updated_at: ...,
+//       deleted_at: ...,
+//       member: ...,
+//       todoEditHistories: ...,
+//           } satisfies Prisma.todo_app_todosCreateInput;
+//         }
+//       }
+//--------------------------------------------------------------

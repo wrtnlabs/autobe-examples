@@ -7,9 +7,9 @@ import type { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/struct
 import type { IMallPlatformOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrder";
 import type { IMallPlatformOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformOrderItem";
 import type { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import type { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import type { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
 import type { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import type { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -19,17 +19,19 @@ import typia, { tags } from "typia";
 import { prepare_random_mall_platform_cancellation_request } from "../prepare/prepare_random_mall_platform_cancellation_request";
 
 /**
- * Generate a random cancellation request for a mall platform customer order item.
+ * Generate a random mall platform cancellation request via the API for E2E testing.
  *
- * Prepares cancellation request data using the dedicated prepare function, then
- * submits it to the customer order-item cancellation request endpoint for E2E
- * testing. The order item is identified by the required orderItemId path
- * parameter.
+ * Prepares cancellation request data using the prepare function, then creates the
+ * request for the specified order item through the customer cancellation-request
+ * endpoint.
  *
- * @param connection API connection information used to call the backend.
- * @param props Request input containing an optional deep-partial body and the
- *   required order item identifier.
- * @returns The created mall platform cancellation request.
+ * The generated request is tied to a specific order item identified by
+ * `orderItemId`. The request body is produced by the prepare function so tests
+ * always use valid creation payloads while still allowing deep-partial overrides.
+ *
+ * @param connection - API connection information used to call the backend.
+ * @param props - Input payload overrides and the target order item identifier.
+ * @returns The created mall platform cancellation request entity.
  */
 export async function generate_random_mall_platform_customer_order_items_cancellation_requests_post_by_orderitemid(
   connection: api.IConnection,

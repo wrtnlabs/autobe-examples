@@ -8,120 +8,108 @@ Define all user actor types with their identity, permissions, and access boundar
 
 ## guest Actor
 
-A guest is a person who has not signed in to the application. This actor has only the most limited access and cannot use member-only functions. A guest can reach the sign-up and log-in entry points needed to begin using the application. A guest does not have permission to act on any saved todo information because no account session is active. Guest access ends once the person signs in as a member. If a guest tries to reach protected areas, the application must prevent access. The guest role exists only as an unauthenticated state and does not carry ownership of any user data. Guests should be treated separately from signed-in members at all times.
+A guest is a person who has not yet created an account or signed in. The guest role represents the lowest level of access in the application. Guests do not have permission to use member-only areas of the app. They are outside the authenticated user boundary until they complete sign-up and sign in. Guest access is limited to the unauthenticated entry experience only. Once a person becomes an authenticated user, they are no longer treated as a guest. The guest role does not carry ownership of any private content. Guest access should never be confused with access to another user's private space. The application treats guests as separate from active members in all permission checks.
 
-### Guest Actor
+### Guest Actor Identity
 
-A guest is an unauthenticated visitor who has not signed in to the application.
-A guest exists only in a pre-authentication state and has no active account session.
-A guest has limited access and may reach only the sign-up entry point and the log-in entry point.
-A guest is outside the non-member access boundary for saved user content and cannot act on any todo information.
-If a guest attempts to access a protected area, the application denies access.
-Guest access ends when the person becomes a signed-in member.
+A guest is an unauthenticated visitor who has not signed in and is in the pre-sign-in state. The guest role describes anonymous access at the entry access boundary before a person becomes an authenticated user. A guest is not a member and has no member permissions. Once sign-in is completed, the person is no longer treated as a guest.
+
+### Guest Access Boundary
+
+The guest role applies only at the entry access boundary for unauthenticated visitors. Guests remain outside the signed-in account boundary and cannot be treated as authenticated users. Guest access is limited to the pre-sign-in state and does not extend into member-only areas of the application. The application must separate guest access from member access in permission checks.
+
+### Guest Permission Scope
+
+A guest has no member permissions. The guest role does not include access to private user content, ownership of private content, or any capability reserved for signed-in members. The system must treat anonymous access as distinct from authenticated access whenever permissions are evaluated.
 
 ## member Actor
 
-A member is a signed-in user with an active account in the application. This actor represents the normal authenticated user experience. Members have permission to use the application areas reserved for logged-in users. Their access is broader than a guest's access, but it is still limited to what the app allows for the account holder. A member is identified as the current user within the private app experience. Member access should remain tied to the authenticated account state. If the session is no longer valid, the member no longer has member-level access and is treated as a guest. The member role is the primary actor for all protected user interactions in the application.
+A member is a user who has successfully created an account and signed in. The member role is the authenticated actor for the application. Members have access to the private areas reserved for account holders. Their permissions are broader than a guest's because they are recognized by the system as signed-in users. A member acts within a personal account boundary rather than as a public visitor. This role is the standard identity used for all private app interactions. Members are expected to operate only within their own access scope. The application treats each member as a distinct authenticated person. When a member signs out, they no longer hold active authenticated access.
 
 ### Member Actor
 
-A member is a signed-in account holder with an active session state in the application. The member represents the authenticated user experience and is the current user within the private app context.
+A member actor is a user who has successfully created an account and signed in.
 
-A member has member-only access to the areas of the application reserved for logged-in users. This access boundary applies only while the account remains signed in and the session remains active.
+The member actor is the authenticated user for the application. This role represents the signed-in account holder who is recognized by the system as the current private user.
 
-A member is the primary actor for protected user experience areas. When the authenticated state is no longer valid, the same person is no longer treated as a member and falls back to guest access.
+The member actor is the standard role used for private app access. The role exists so that a person can use the application after authentication and within a personal account boundary.
 
-Member access is limited to the account holder permissions assigned to the current signed-in account holder. A member cannot act as another user within the application.
+A member actor is distinct from a guest actor. A guest is an unauthenticated visitor, while a member is a signed-in account holder with member permissions.
 
+Mermaid diagram:
 ```mermaid
 flowchart LR
-    A["guest"] -->|"Sign in"| B["member"]
-    B["member"] -->|"Session ends"| A["guest"]
+    A["Guest Actor"] -->|"Sign in"| B["Member Actor"]
+    B -->|"Private app access"| C["Personal account boundary"]
+    B -->|"Sign out"| A
 ```
 
 ### Authenticated User
 
-The authenticated user is the account holder whose identity is currently recognized by the application.
+An authenticated user is a member who has completed sign-in and is recognized by the application as the current user.
 
-The authenticated user is the only person who can use member-level access for that account. The application treats the authenticated user as the current user for all protected user experience areas.
+The authenticated user is also the logged-in user while the sign-in state remains active.
 
-If the account is not signed in, there is no authenticated user and member-level access is not available.
+This term refers to the same business role as the signed-in account holder and member actor in this file. The different names describe the same private-app identity after authentication.
 
-The authenticated user definition is used only to describe the access state of the signed-in account holder and does not introduce any additional permissions beyond those already assigned to the member actor.
+### Signed-in Account Holder
 
-### Signed-In Account Holder
+A signed-in account holder is a member who currently has active access after successful sign-in.
 
-A signed-in account holder is the person whose account is currently active in the application.
+The signed-in account holder is the person to whom private app access applies.
 
-This status identifies the user who is allowed to operate within the protected user experience reserved for logged-in access.
+The signed-in account holder operates within a personal account boundary and does not represent a public visitor.
 
-The signed-in account holder remains the current user only while the active session state is valid. If the session is no longer valid, the signed-in account holder is no longer treated as a member.
+### Private App Access
 
-This section defines identity and access status only; the actions available to the account holder are defined in the permission sections of this file.
+Private app access is the access scope available only to a member after authentication.
 
-### Member-Only Access
+This access scope is reserved for the signed-in account holder and is not available to a guest.
 
-Member-only access means access that is available only to an authenticated user with an active session state.
+Private app access means the application recognizes the member as the current private user rather than as an unauthenticated visitor.
 
-The application shall treat member-only access as the logged-in access boundary for the private user experience.
+### Member Permissions
 
-When a user is not signed in, member-only access is not available.
+Member permissions are the access rights granted to the member actor.
 
-When a member’s session becomes invalid, access to member-only areas ends and the user is treated as a guest.
+Member permissions apply only after sign-in.
+Member permissions belong to the signed-in account holder.
+Member permissions are limited to the member's personal account boundary.
+Member permissions do not apply to a guest actor.
 
-Member-only access is exclusive to the current user and does not extend to other users or shared access within the application.
+Member permissions define who can use private app access in this file. Operation-specific permissions are defined in later sections.
 
-### Protected User Experience
+### Personal Account Boundary
 
-The protected user experience is the part of the application that is reserved for member actors.
+A personal account boundary is the private scope associated with one signed-in account holder.
 
-Only the current user with an active session state can use the protected user experience.
+The member actor acts only within this boundary.
 
-The protected user experience is private by design, meaning the authenticated user can only operate within their own logged-in access boundary.
+The personal account boundary separates one member's private app access from another member's private app access. It is the access boundary used to describe private use of the application.
 
-If the account holder is not signed in, the protected user experience is not available to that person.
+### Active Session User
 
-### Current User
+An active session user is a member whose sign-in state is currently active.
 
-The current user is the authenticated user whose session is active at the time they are using the application.
+While the sign-in state remains active, the active session user is also the logged-in user.
 
-The current user is the only account holder recognized for member-level access during that session.
+When the active session ends, the user is no longer treated as an active session user and no longer has private app access.
 
-The current user concept is used to identify who the application should treat as the active member actor.
+### Member Role
 
-When the active session state ends, there is no current user for member-level access until a new sign-in occurs.
+The member role is the authenticated role used by a signed-in account holder.
 
-### Active Session State
+The member role is the same business role as the member actor and authenticated user in this file.
 
-Active session state means the account holder is currently signed in and recognized as a member.
+A person has the member role only after successful sign-in and while private app access remains available.
 
-While the active session state exists, the application treats the person as the current user with member-only access.
+### Logged-in User
 
-When the active session state ends, member access ends as well.
+A logged-in user is a member whose sign-in is currently active.
 
-This section defines the relationship between sign-in state and member status only; session lifecycle details are handled in the session section of this file.
+The logged-in user is the same business concept as the active session user and authenticated user in this file.
 
-### Account Holder Permissions
-
-Account holder permissions define what the signed-in account holder may do within the member actor boundary.
-
-These permissions apply only to the current user and only while the active session state remains valid.
-
-The authenticated user does not inherit permissions belonging to any other user.
-
-The account holder permissions are restricted to the private, protected user experience and do not create any shared or public access.
-
-Any permissions not granted to the member actor are outside the logged-in access boundary.
-
-### Logged-In Access Boundary
-
-The logged-in access boundary is the limit of what a member actor can reach in the application.
-
-Within this boundary, the authenticated user is treated as the current user and may use member-only access.
-
-Outside this boundary, access is not available to the signed-in account holder as a member actor.
-
-The logged-in access boundary is private and account-specific, so it does not allow one user to enter another user’s experience.
+The logged-in user is the person the application recognizes for private app access until sign-out or the end of the active session.
 
 # Authentication Flows
 
@@ -133,59 +121,50 @@ Define user registration and login flows including validation and error handling
 
 ### Registration
 
-Guests can create a user account by signing up with an email address and password.
-A successful registration creates a new member account and establishes the user as a member actor.
-A registered account is associated with one user profile that includes a display name.
-The registration flow must support the creation of a display name for the new profile.
-If the email address is already associated with an existing account, the registration request is rejected.
-If the email address or password is missing, the registration request is rejected.
-If the registration attempt does not create a valid account, the user remains a guest.
+Members can register a new account with an email address and a password.
+The system shall create a user account only after the submitted registration details are accepted.
+The system shall create a profile for the new account with a display name.
+If the registration details are incomplete or invalid, the system shall reject the registration request.
+If the email address is already associated with an existing account, the system shall reject the registration request.
 
 ```mermaid
 sequenceDiagram
     participant G as "Guest"
     participant S as "System"
     G->>S: "Submit registration details"
-    S->>S: "Validate required account information"
-    S->>S: "Create user account and profile"
-    S-->>G: "Registration succeeds or is rejected"
+    S->>S: "Validate registration details"
+    S-->>G: "Account created or request rejected"
 ```
 
 ### Login
 
-Guests and returning users can log in with email and password.
-A successful login grants access as a member and allows the user to use member-only features.
-The login flow only accepts credentials that match an existing user account.
-If the email address does not match an existing account, the login request is rejected.
-If the password does not match the selected account, the login request is rejected.
-If the login attempt fails, the user remains a guest.
-A user who is already signed in remains a member while using member-only features.
+Members can log in with an email address and password.
+The system shall authenticate a user only when the submitted email address and password match an existing account.
+If the login details are invalid, the system shall reject the login request.
+If the account does not exist, the system shall reject the login request.
+A successful login establishes signed-in access for the member.
 
 ```mermaid
 sequenceDiagram
-    participant U as "User"
+    participant M as "Member"
     participant S as "System"
-    U->>S: "Submit login credentials"
-    S->>S: "Verify the account exists"
-    S->>S: "Check the password"
-    S-->>U: "Login succeeds or is rejected"
+    M->>S: "Submit login details"
+    S->>S: "Verify credentials"
+    S-->>M: "Signed-in access or request rejected"
 ```
 
 ### Authentication
 
-Authentication distinguishes guests from members.
-A guest has limited access and can only use the public entry points needed to sign up or log in.
-A member is an authenticated user who can access the protected todo experience.
-The system must treat the signed-in account holder as the current member for account-bound actions.
-If a user is not authenticated, the system rejects member-only access.
-If a user is authenticated, the system permits access to member-only actions defined for the member actor.
-Authentication state controls whether the user is handled as a guest or a member.
+Authentication is the process the system uses to confirm that a member is the holder of the submitted account credentials.
+Only authenticated members can access member-only capabilities in the private todo application.
+Unauthenticated visitors remain guests and do not receive member access.
+If authentication cannot be confirmed, the system shall deny member access.
 
 ```mermaid
 flowchart LR
-    A["Guest"] -->|"Register"| B["Member"]
-    A -->|"Login"| B
-    B -->|"Lose authenticated access"| A
+    A["Guest"] -->|"Provide valid credentials"| B["Authenticated member"]
+    A -->|"Provide invalid credentials"| C["Unauthenticated guest"]
+    B -->|"Access member-only capabilities"| D["Private todo application access"]
 ```
 
 ## Session and Logout
@@ -194,56 +173,57 @@ Define session behavior and logout from a user perspective.
 
 ### Session
 
-Members remain signed in until they explicitly log out or their session ends.
-A member who is signed in can continue using protected features without signing in again during that session.
-A signed-in session belongs to one member account and must not be usable by another user.
-If a session is no longer active, the system treats the user as not signed in.
+A session represents a member's signed-in access to the private todo application.
+A session begins when a member signs in with the correct email and password.
+While a session is active, the member remains signed in and can use member-only capabilities.
+While a session is not active, the user is a guest and cannot use member-only capabilities.
+A member can continue using the application only while the session remains active.
+If the session ends, the member must sign in again before using member-only capabilities.
+If the account is deleted, the session ends with the account.
 
 ```mermaid
-sequenceDiagram
-    participant U as "User"
-    participant S as "System"
-    U->>S: "Sign in"
-    S-->>U: "Session begins"
-    U->>S: "Use protected features"
-    S-->>U: "Access continues while session is active"
-    U->>S: "Session ends"
-    S-->>U: "User is no longer signed in"
+flowchart LR
+    A["Guest"] -->|"Successful sign in"| B["Active session"]
+    B -->|"Logout"| C["No active session"]
+    B -->|"Account deletion"| C
+    C -->|"Sign in again"| B
 ```
 
 ### Logout
 
-A signed-in member can log out from their account.
+A signed-in member can log out at any time.
 When a member logs out, the current session ends.
-After logout, the user must sign in again before accessing protected member features.
-Logging out does not delete the user's account, profile, or todos.
-Logging out does not delete any todo history.
-If a user is not signed in, the system does not offer logout as an account action.
+After logout, the member is treated as a guest until signing in again.
+Logout removes signed-in access from the current session only.
+Logout does not delete the account.
+Logout does not delete the member's profile or todos.
+If a user is already a guest, there is no active session to end.
 
 ```mermaid
-flowchart LR
-    A["Signed-in member"] -->|"Logout"| B["Session ends"]
-    B --> C["User is signed out"]
-    C --> D["Protected features require sign-in again"]
+sequenceDiagram
+    participant M as Member
+    participant S as System
+    M->>S: Request logout
+    S->>S: End current session
+    S-->>M: Signed-in access removed
 ```
 
 ### Account Security
 
-A user can change their password while signed in.
-After a password change, the user's account remains the same account and the user stays responsible for the same todos and profile.
-A user can delete their account while signed in.
-When an account is deleted, all of the user's todos are permanently deleted, including todos in trash.
-When an account is deleted, the user's profile is also removed with the account.
-After account deletion, the account can no longer be used to sign in.
-The system treats account deletion as final for that account.
-If an account has been deleted, the system rejects any attempt to use it as an active member account.
+Account access is private to the account holder.
+A member must use the correct email and password to sign in before a session can begin.
+A member can change the password for the signed-in account.
+After a password change, the account remains the same account and the member can continue using the application.
+A member can delete the account while signed in.
+When the account is deleted, the account and all associated todos, including todos in trash, are permanently deleted.
+After account deletion, the former member can no longer use that account.
+Other users cannot view another user's profile or todos.
 
 ```mermaid
 flowchart LR
-    A["Signed-in account"] -->|"Change password"| B["Same account remains active"]
-    A -->|"Delete account"| C["All todos permanently deleted"]
-    C --> D["Profile removed"]
-    C --> E["Account can no longer be used to sign in"]
+    A["Signed-in account"] -->|"Change password"| B["Same account"]
+    A -->|"Delete account"| C["Account permanently deleted"]
+    C -->|"Sign in again"| D["Not possible"]
 ```
 
 # Account Lifecycle
@@ -256,47 +236,51 @@ Define how users create accounts, delete accounts, and change passwords.
 
 ### Account Creation
 
-Users can create an account using an email address and a password.
-Account creation results in a new user account with a private profile.
-The account is associated with a display name profile from the start.
-A newly created account is available for the owner to use after creation.
+#### Account Creation
+The system shall allow a guest to create a member account using an email address and password.
+The system shall create a profile for the new account with a display name.
+The system shall make the new account available for sign-in after creation.
+The system shall reject account creation when the email address is already associated with an existing account.
+The system shall reject account creation when the email address or password is missing.
 
 ```mermaid
 sequenceDiagram
     participant G as "Guest"
     participant S as "System"
-    G->>S: "Request account creation"
-    S->>S: "Create account and profile"
-    S-->>G: "Account created"
+    G->>S: "Create account request"
+    S->>S: "Validate credentials and create account"
+    S-->>G: "Account created or rejected"
+```
+
+### Account Deletion
+
+#### Account Deletion
+The system shall allow a member to delete their own account.
+The system shall permanently delete the member's profile when the account is deleted.
+The system shall permanently delete all of the member's todos, including todos in trash, when the account is deleted.
+The system shall prevent further use of a deleted account.
+The system shall reject account deletion requests for accounts that do not belong to the requesting member.
+
+```mermaid
+flowchart LR
+    A["Active account"] -->|"Delete account"| B["Account removed"]
+    B -->|"Delete profile and todos"| C["Permanent removal complete"]
 ```
 
 ### Password Change
 
-A signed-in user can change the password for their own account.
-The system accepts the current password and a new password for a password change request.
-If the current password is valid, the system updates the account password.
-If the current password is not valid, the password change request is rejected.
-A successful password change keeps the account owned by the same user.
+#### Password Change
+The system shall allow a member to change their own password.
+The system shall require the member to provide the current password before accepting a password change.
+The system shall reject a password change when the current password is incorrect.
+The system shall use the new password for future sign-in attempts after a successful change.
+The system shall reject password change requests for accounts that do not belong to the requesting member.
 
 ```mermaid
 sequenceDiagram
     participant M as "Member"
     participant S as "System"
     M->>S: "Request password change"
-    S->>S: "Validate current password"
-    S->>S: "Update password if valid"
-    S-->>M: "Success or rejection"
-```
-
-### Account Deletion
-
-A signed-in user can delete their own account.
-Deleting an account permanently deletes all todos owned by that account, including todos in trash.
-Deleting an account permanently removes the associated account profile as part of the account lifecycle.
-After account deletion, the account can no longer be used to access the application.
-
-```mermaid
-flowchart LR
-    A["Active account"] -->|"Delete account"| B["Account deleted"]
-    B -->|"Remove owned todos, including trash"| C["All account data permanently deleted"]
+    S->>S: "Verify current password and update password"
+    S-->>M: "Password changed or rejected"
 ```

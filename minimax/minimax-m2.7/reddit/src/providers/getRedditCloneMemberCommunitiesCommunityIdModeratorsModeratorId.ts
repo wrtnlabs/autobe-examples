@@ -24,16 +24,26 @@ export async function getRedditCloneMemberCommunitiesCommunityIdModeratorsModera
   communityId: string & tags.Format<"uuid">;
   moderatorId: string & tags.Format<"uuid">;
 }): Promise<IRedditCloneCommunityModerator> {
-  // Verify community exists
-  await MyGlobal.prisma.reddit_clone_communities.findUniqueOrThrow({
-    where: { id: props.communityId },
+  // Query the moderator record - must exist and belong to the community
+  await MyGlobal.prisma.reddit_clone_moderators.findUniqueOrThrow({
+    where: {
+      id: props.moderatorId,
+      reddit_clone_community_id: props.communityId,
+      deleted_at: null,
+    },
+    select: {
+      id: true,
+      reddit_clone_community_id: true,
+    },
   });
-  // Compute all aggregation counts in parallel
+  // Perform all aggregation queries in parallel for efficiency
   const [
     pendingReportsCount,
     approvedReportsCount,
     dismissedReportsCount,
     activeBansCount,
+    recentPendingReports,
+    recentBans,
   ] = await Promise.all([
     MyGlobal.prisma.reddit_clone_community_reports.count({
       where: {
@@ -59,10 +69,7 @@ export async function getRedditCloneMemberCommunitiesCommunityIdModeratorsModera
         OR: [{ expires_at: null }, { expires_at: { gt: new Date() } }],
       },
     }),
-  ]);
-  // Fetch recent pending reports (top 10, ordered by created_at desc)
-  const recentReports =
-    await MyGlobal.prisma.reddit_clone_community_reports.findMany({
+    MyGlobal.prisma.reddit_clone_community_reports.findMany({
       where: {
         reddit_clone_community_id: props.communityId,
         status: "pending",
@@ -70,40 +77,34 @@ export async function getRedditCloneMemberCommunitiesCommunityIdModeratorsModera
       orderBy: { created_at: "desc" },
       take: 10,
       ...RedditCloneCommunityModeratorAtRecentPendingReportTransformer.select(),
-    });
-  // Fetch recent bans (top 10, ordered by created_at desc)
-  const recentBans = await MyGlobal.prisma.reddit_clone_community_bans.findMany(
-    {
+    }),
+    MyGlobal.prisma.reddit_clone_community_bans.findMany({
       where: {
         reddit_clone_community_id: props.communityId,
       },
       orderBy: { created_at: "desc" },
       take: 10,
       ...RedditCloneCommunityModeratorAtRecentBanTransformer.select(),
-    },
-  );
-  // Return complete moderation dashboard response
-  return {
-    pendingReportsCount: pendingReportsCount as number &
-      tags.Type<"int32"> &
-      tags.Minimum<0>,
-    approvedReportsCount: approvedReportsCount as number &
-      tags.Type<"int32"> &
-      tags.Minimum<0>,
-    dismissedReportsCount: dismissedReportsCount as number &
-      tags.Type<"int32"> &
-      tags.Minimum<0>,
-    activeBansCount: activeBansCount as number &
-      tags.Type<"int32"> &
-      tags.Minimum<0>,
-    recentPendingReports: await ArrayUtil.asyncMap(recentReports, (r) =>
+    }),
+  ]);
+  // Transform recent reports and bans using transformers
+  const transformedReports = await ArrayUtil.asyncMap(
+    recentPendingReports,
+    async (r) =>
       RedditCloneCommunityModeratorAtRecentPendingReportTransformer.transform(
         r,
       ),
-    ),
-    recentBans: await ArrayUtil.asyncMap(recentBans, (r) =>
-      RedditCloneCommunityModeratorAtRecentBanTransformer.transform(r),
-    ),
+  );
+  const transformedBans = await ArrayUtil.asyncMap(recentBans, async (r) =>
+    RedditCloneCommunityModeratorAtRecentBanTransformer.transform(r),
+  );
+  return {
+    pendingReportsCount,
+    approvedReportsCount,
+    dismissedReportsCount,
+    activeBansCount,
+    recentPendingReports: transformedReports,
+    recentBans: transformedBans,
   };
 }
 

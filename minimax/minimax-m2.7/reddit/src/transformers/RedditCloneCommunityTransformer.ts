@@ -5,6 +5,7 @@ import { IRedditCloneFile } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedd
 import { IRedditCloneFileThumbnail } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneFileThumbnail";
 import { IRedditCloneMember } from "@ORGANIZATION/PROJECT-api/lib/structures/IRedditCloneMember";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -30,6 +31,15 @@ export namespace RedditCloneCommunityTransformer {
         deleted_at: true,
         member: RedditCloneMemberAtSummaryTransformer.select(),
         icon: RedditCloneCommunityIconAtInvertTransformer.select(),
+        communityModerators: true,
+        communityBans: true,
+        communityReports: true,
+        subscriptions: true,
+        posts: true,
+        moderators: true,
+        moderatorSnapshots: true,
+        bans: true,
+        reports: true,
       },
     } satisfies Prisma.reddit_clone_communitiesFindManyArgs;
   }
@@ -41,6 +51,9 @@ export namespace RedditCloneCommunityTransformer {
       name: input.name,
       description: input.description,
       subscriberCount: input.subscriber_count,
+      createdAt: input.created_at.toISOString(),
+      updatedAt: input.updated_at.toISOString(),
+      deletedAt: input.deleted_at?.toISOString() ?? null,
       member: await RedditCloneMemberAtSummaryTransformer.transform(
         input.member,
       ),
@@ -49,9 +62,6 @@ export namespace RedditCloneCommunityTransformer {
             input.icon,
           )
         : undefined,
-      createdAt: toISOStringSafe(input.created_at),
-      updatedAt: toISOStringSafe(input.updated_at),
-      deletedAt: input.deleted_at ? toISOStringSafe(input.deleted_at) : null,
     } satisfies IRedditCloneCommunity;
   }
 }

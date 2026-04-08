@@ -1,4 +1,4 @@
-**redditPlatform — Business rules, validation constraints, data browsing expectations, error scenarios**
+**redditCommunity — Business rules, validation constraints, data browsing expectations, error scenarios**
 
 Business rules, validation constraints, data browsing expectations, error scenarios
 
@@ -8,665 +8,501 @@ Per-concept business rules, validation logic, and domain constraints.
 
 ## User Rules
 
-Users create accounts by providing an email address, password, and choosing a unique username. The username must be unique across all users in the system. Users can log in using their email and password combination. Users have the ability to change their password at any time. When a user deletes their account, all of their posts and comments are permanently removed from the platform. Users earn a single karma score that can be positive or negative depending on their received votes. The username serves as the user's primary identifier throughout the platform.
+Users must sign up with an email address and password, and choose a unique username that no other user has claimed. When logging in, users provide their email and password to access their account. Users have the ability to change their password at any time through their account settings. When a user deletes their account, all their posts and comments are automatically removed from the platform as part of the deletion process. The system must validate that the email follows a valid email format and that the username is unique across all users before allowing account creation. Password changes require the user to provide their current password before setting a new one. Email addresses must follow a valid email format to ensure proper authentication.
 
-### Username Uniqueness and Identity
+### Email Format Validation
 
-Each user must choose a unique username when creating an account. The username cannot be the same as any existing username in the system. When a user attempts to register with a username that already exists, the registration request is rejected. The system validates username uniqueness at the time of account creation. Usernames remain unique for the lifetime of the platform—when an account is deleted, the username is permanently unavailable for reuse by any user. The username serves as the user's primary identifier throughout the platform.
+Users must provide an email address that follows a valid email format when creating an account or performing any authenticated action. The email must contain a properly formatted local part, the @ symbol, and a valid domain part. If the email does not match a valid email format, the system rejects the request. This validation applies to account creation, login attempts, and any operation requiring user authentication.
 
-### Account Creation Validation
+### Username Uniqueness and Availability
 
-When creating an account, users must provide an email address, password, and unique username. The email address must not already be registered in the system. The username must be unique and follow platform naming rules. The password must meet minimum security requirements set by the system. Users must agree to the platform terms before completing registration. When logging in, users must provide both their email address and password. The system rejects login attempts where either the email or password is missing. Login requests are rejected when the email or password does not match any existing account.
+Each username must be unique across all users in the system. When users create an account, they must choose a username that no other user has claimed. The system checks username availability before allowing account creation. If the chosen username is already in use, the registration request is rejected. This uniqueness requirement ensures that each user can be uniquely identified by their username throughout the platform.
 
-### Password Change Requirements
+### Account Creation Requirements
 
-Users can change their password at any time from their account settings. When changing a password, users must provide their current password and a new password. The system validates that the current password is correct before allowing the password to be updated. If the current password is incorrect, the password change request is rejected. Users cannot set their new password to be the same as their current password. Password changes take effect immediately upon successful validation.
+To create an account, users must provide a valid email address with proper format, a password, and a unique username that is not already taken. All three requirements must be satisfied for successful account creation. If the email format is invalid, the username is unavailable, or no password is provided, the account creation request is rejected.
 
-### Account Deletion with Cascade Effects
+### Login Authentication Process
 
-Users can delete their own account at any time from their account settings. When a user deletes their account, all content created by that user is permanently removed from the platform. This includes all posts, comments, votes, and reports submitted by the user. The username becomes permanently unavailable after account deletion and cannot be reused. Deleting an account is permanent and cannot be undone. Users must confirm account deletion before it takes effect.
+Users log in by providing their email address and password. The system validates that the email exists in the system and that the provided password matches the stored credentials. If the email is not found or the password is incorrect, the login request is rejected. Only authenticated users can perform actions that require membership, such as creating posts, commenting, voting, or subscribing to communities.
 
-### Karma Score Calculation
+### Password Change Security
 
-Each user has a single karma score that can be positive, negative, or zero. The karma score increases by one point when another user upvotes the user's post or comment. The karma score decreases by one point when another user downvotes the user's post or comment. When a user removes their vote from a post or comment, the karma score of the content author is adjusted accordingly by adding back the previously deducted points or subtracting previously added points. Karma scoring is automatic and cannot be manually modified by users or moderators.
+Users can change their password through their account settings. To change a password, users must provide their current password along with the new password. The system verifies the current password before accepting the change. If the current password is incorrect, the password change request is rejected. This verification ensures that only the account owner can modify the password.
 
-### Profile Ownership and Management
+### Account Deletion and Content Removal
 
-Each user owns and controls their own profile information, including display name, bio text, and avatar image. Profile ownership is determined by the account association with the profile. Users can only edit their own profile information. Users cannot view or modify another user's profile information directly. Users can view any other user's public profile page to see their display name, bio, avatar, and karma score. Users can view their own karma score and all posts and comments they have created on their own profile page. When a user account is deleted, their profile information is also permanently removed.
+When a user deletes their account, the system automatically removes all posts and comments authored by that user. This deletion happens as part of the account deletion process and cannot be undone. The account deletion permanently removes the user profile, including the user's username, email, and all associated content. The system does not retain any data from the deleted user account.
 
 ## Profile Rules
 
-Each user has a profile containing a display name, bio text, and avatar image. Users can edit their own display name, bio, and avatar at any time. Other users can view any user's profile on the platform. A user's profile page displays their display name, bio, avatar, total karma score, all posts they created, and all comments they wrote. The display name is what appears to other users when viewing their content. The bio text allows users to provide personal information about themselves. Avatar images represent users visually across the platform.
+Each user has a profile containing a display name, bio text, and avatar image that they can edit at any time. Users can only modify their own display name, bio, and avatar—no other user can change another user's profile information. Any user on the platform can view any other user's profile to see their public information. A user's profile page displays their display name, bio, avatar, total karma score, a list of all posts they have created, and a list of all comments they have written. The system tracks and maintains a user's total karma score which reflects their engagement across the platform through posts and comments. Display names and bio text can be updated freely by the profile owner.
 
-### Display Name Visibility
+### Profile Editing Permissions
 
-A user's display name is visible to all users on the platform when viewing posts and comments. The display name appears next to the author's content in feeds, on post pages, and on comment threads. The display name is also visible on the user's own profile page and on other users' profile pages when viewing their content lists.
+Users can only edit their own profile information. No user can modify another user's display name, bio text, or avatar image. The system enforces ownership by comparing the requesting user against the profile owner before allowing any updates. If a user attempts to edit a profile that does not belong to them, the request is rejected. Profile editing permissions are scoped to the authenticated user's account only.
 
-### Bio Text Editing
+### Display Name Updates
 
-Users can edit their own bio text at any time by accessing their profile settings. The bio text is displayed on the user's profile page and is visible to all other users who view that profile. The bio text can be changed by the user at any time without affecting the user's account status or visibility.
+Display names can be updated by the profile owner at any time. Users are required to provide a new display name value when updating their profile. The system maintains the most recently submitted display name for each user. Display name changes take effect immediately upon successful submission. There is no restriction on how frequently a user may update their display name.
+
+### Bio Text Management
+
+Users may update their bio text at any time. Bio text is optional during initial profile creation but can be added or modified later. Users can update their bio text multiple times without restriction. The system stores the most recently submitted bio text for display on the user's profile page. Bio text content is managed independently from display name and avatar updates.
 
 ### Avatar Image Management
 
-Users can upload, change, or remove their avatar image at any time through their profile settings. The avatar image is displayed on the user's own profile page and is visible to all other users when viewing the user's profile. The avatar image is also displayed next to the user's content in feeds, on post pages, and on comment threads. Users must provide a valid image file when uploading or changing their avatar.
+Users may upload an avatar image for their profile. Users can replace their existing avatar image with a new image at any time. The system maintains a single avatar image per user profile. When a new avatar is uploaded, it replaces the previous avatar image. Avatar image uploads are subject to file validation including file type and size restrictions enforced by the system.
 
-### Profile Viewing Permissions
+### Profile Viewing Access
 
-Any user on the platform can view the profile of any other user, regardless of whether they are subscribed to the same communities. Guest users (logged-out users) can also view any user's profile. Profile viewing does not require any special permissions or subscriptions to the user's communities.
-
-### Karma Display on Profile
-
-Each user's profile page displays their current karma score as a single number. The karma score shown on the profile is the sum of all points the user has gained from upvotes and lost from downvotes on their posts and comments. The karma score updates in real-time as other users vote on the user's content. The karma score can be negative if the user has received more downvotes than upvotes.
-
-### Posts List on Profile
-
-Each user's profile page displays a list of all posts they have created. The list shows all posts from any community the user is subscribed to or has created. The posts list includes posts that have been deleted by the author (marked as deleted) but excludes posts deleted by moderators. Each post in the list shows the title, community name, vote score, comment count, and when it was posted.
-
-### Comments List on Profile
-
-Each user's profile page displays a list of all comments they have written. The list shows all comments across all posts the user has commented on. The comments list includes comments that have been deleted by the author (marked as deleted) but excludes comments deleted by moderators. Each comment in the list shows the post title, comment content preview, vote score, time since posted, and the community where it was written.
-
-### Own Profile Editing Rights
-
-Only the owner of a profile can edit that profile's display name, bio text, and avatar image. Users cannot edit another user's profile information under any circumstances. To edit their own profile, users must be logged in with their account credentials. Profile editing changes take effect immediately and are visible to all users who view the profile.
-
-## Community Rules
-
-Any user can create a community with a unique name, description text, and icon image. The user who creates a community automatically becomes its owner. Community names must be unique across the platform. Users can browse all communities in a list view. Users can search for communities by their name. Each community displays its subscriber count to all users. Owners have the highest authority within their community. Communities serve as spaces for users to share posts and comments on specific topics.
-
-### Community Creation
-
-Any user can create a community by providing a unique name, description text, and icon image.
-The community name must be unique across the entire platform—no two communities can have the same name.
-The user who creates a community automatically becomes its owner with the highest authority.
-The description text is required and contains text describing the community's purpose.
-The icon image is required and displays on the community's profile page.
-
-### Owner Authority
-
-The owner has the highest authority within their community.
-The owner can add moderators to the community.
-The owner can remove moderators from the community.
-The owner cannot be removed as moderator by any other user.
-Moderators cannot remove the owner from their community.
-
-### Community Browsing
-
-Users can browse all communities in a list view.
-Each community in the browse list displays its name, description, icon, and subscriber count.
-Users can search for communities by entering part or all of the community name in the search field.
-The search returns communities whose names match the search query.
-
-### Subscriber Count Display
-
-Each community displays its current subscriber count to all users.
-The subscriber count increases by one when a user subscribes to the community.
-The subscriber count decreases by one when a user unsubscribes from the community.
-The subscriber count is visible on all community listing and detail pages.
-
-### Community Name Validation
-
-Community names must be unique across the platform.
-If a user attempts to create a community with a name that already exists, the creation is rejected.
-The system checks for exact name matches when validating uniqueness.
-Duplicate community names are not allowed under any circumstances.
-
-### Community Description Requirements
-
-The description text is required when creating a community.
-The description must contain text content—empty descriptions are not permitted.
-Users can edit the description text after creation.
-There is no minimum or maximum character limit specified for descriptions.
-
-### Community Icon Requirements
-
-The icon image is required when creating a community.
-The icon displays on all community listing and detail pages.
-Users can update the icon image after creation.
-The system accepts image files for the community icon.
-
-### Community Search Behavior
-
-Users can search for communities by entering text in the search field.
-The search matches against community names.
-Search results display community names, icons, descriptions, and subscriber counts.
-Searching returns communities that contain the search text in their name.
-
-### Community Ownership Error Handling
-
-If a user attempts to perform an owner-only action on a community they do not own, the action is rejected.
-If a user attempts to remove another moderator from a community, the action is rejected.
-If a user attempts to remove themselves as owner, the action is rejected.
-Only the owner can add new moderators to the community.
-
-### Moderator Action Constraints
-
-Moderators can add other moderators to the community.
-Moderators cannot remove other moderators from the community.
-Moderators cannot remove the owner from the community.
-Only the owner can remove moderators from the community.
-Moderators have full moderation powers except for owner-related actions.
-
-## Subscription Rules
-
-Users can subscribe to any community on the platform. Users can unsubscribe from any community they are subscribed to. Users can view a list of all communities they are subscribed to. Subscribing to a community is required before a user can create posts in that community. Subscription status determines posting permissions within each community. Users must subscribe to a community before they can participate by creating posts. The subscription relationship is reversible at any time.
-
-### Subscribe to Community
-
-Any user can subscribe to any community on the platform.
-When a user subscribes to a community, they become a subscriber of that community.
-The subscriber count for the community increases by one when a new subscription is created.
-A user can only have one subscription relationship with each community at any time.
-
-### Unsubscribe from Community
-
-Users can unsubscribe from any community they are currently subscribed to.
-When a user unsubscribes from a community, their subscriber count for that community decreases by one.
-Unsubscribing does not delete the user's previously created posts or comments in that community.
-Users may subscribe to a community again after unsubscribing.
-
-### Subscription List Viewing
-
-Users can view a list of all communities they are subscribed to.
-The list displays each subscribed community's name and icon.
-Guest users cannot view their subscription list as they cannot be subscribers.
-
-### Required Subscription for Posting
-
-Users must be subscribed to a community before they can create posts in that community.
-If a user is not subscribed to a community, the system rejects their attempt to create a post in that community.
-After unsubscribing from a community, users can no longer create new posts in that community until they resubscribe.
-
-### Community Access Control
-
-Subscription status determines what actions a user can perform within a community.
-Subscribed users can create posts in the community.
-Subscribed users can view the community's feed and browse its posts.
-Unsubscribed users can view the community's public posts but cannot create new content.
-
-### Subscription Status Management
-
-Users can change their subscription status at any time without restriction.
-Subscription status is immediately updated when a user subscribes or unsubscribes.
-A user cannot have multiple subscription statuses for the same community simultaneously.
-The subscription relationship persists until the user explicitly unsubscribes.
-
-### Subscription Relationship
-
-Each subscription relationship links a user to a community.
-The subscription includes the date when the user subscribed.
-A user can be subscribed to multiple communities simultaneously.
-A user can be unsubscribed from all communities while still maintaining an active account.
-
-## Post Rules
-
-Users can create a post in any community they are subscribed to. Every post must have a title, which is a required field. A post must be one of three types: text post with text content, link post with a URL, or image post with an uploaded image. Users can edit their own posts after creation. Users can delete their own posts. When viewing a single post, users see the title, full content, author, community, vote score, comment count, and posting time. Text posts show the first 200 characters in list views. Image posts display thumbnails in list views. Link posts show the domain name of the URL in list views.
-
-### Post Creation Subscription Requirement
-
-A user can create a post only in a community where they have an active subscription. Users who are not subscribed to a community cannot create posts in that community. This restriction applies to all users, including new accounts and returning users.
-
-### Post Title Requirement
-
-Every post must have a title, which is a required field. A post cannot be created without providing a title. If the title is missing when creating a post, the request is rejected.
-
-### Post Type Classification
-
-Posts must be classified into one of three types: text post, link post, or image post. A post cannot exist without a type classification. Each type has specific content requirements as defined in the following sections.
-
-### Text Post Content
-
-Text posts must include text content in addition to the title. The text content can be of any length. When viewing text posts in a list view, the first 200 characters of the content are displayed. Users can view the full text content when viewing the post individually.
-
-### Link Post URL
-
-Link posts must include a valid URL. The URL represents the external link the user is sharing. When viewing link posts in a list view, only the domain name of the URL (such as youtube.com) is displayed. Users can view the full URL when viewing the post individually.
-
-### Image Post Upload
-
-Image posts must include an uploaded image file. The image serves as the primary content of the post. When viewing image posts in a list view, a thumbnail of the image is displayed. Users can view the full image when viewing the post individually.
-
-### Own Post Editing Rights
-
-Users can edit their own posts after creation. Only the user who created the post has the right to edit it. Other users, including community moderators, cannot edit a user's post. Moderators can only delete posts, not edit them.
-
-### Own Post Deletion Rights
-
-Users can delete their own posts after creation. When a user deletes their post, the post is removed from all views. Users cannot delete posts created by other users. Moderators can delete any post in their community, including posts created by other users.
-
-### Post Full Content Viewing
-
-When viewing a single post individually, users see the complete content regardless of post type. This includes the full title, full text content (for text posts), full URL (for link posts), and full image (for image posts). Users also see the author, community, vote score, comment count, and posting time.
-
-### Post List Display Format
-
-When viewing posts in any feed list, each post shows: title, author username, community name, vote score, comment count, and time since posted. Additionally, each post type shows specific preview content: text posts show the first 200 characters of content, image posts show a thumbnail, and link posts show the domain name. Full content is only visible when viewing the post individually.
-
-## Comment Rules
-
-Users can write a comment on any post. Users can reply to any comment with unlimited nesting depth. Users can edit their own comments after creation. Users can delete their own comments. Each comment displays the author, content, vote score, posting time, and nested replies. Replies can have their own replies with no depth limit, creating a threaded discussion structure. Comments exist independently and can be viewed as part of any post's discussion thread.
-
-### Comment Creation
-
-the system shall allow authenticated members to create a comment on any post.
-
-When a member submits comment content, the system shall associate the comment with the member who authored it.
-
-Where the post exists, the system shall display the comment as part of the post's discussion thread.
-
-When the post does not exist, the system shall reject the comment creation request.
-
-Where the member does not have access to view the post, the system shall reject the comment creation request.
-
-When a guest member attempts to create a comment, the system shall reject the request and require authentication.
-
-the system shall display the comment to members who have access to view the post.
-
-### Reply to Comment
-
-When a member creates a reply to a comment, the system shall associate the reply with the parent comment.
-
-the system shall allow replies to any comment regardless of its position in the thread hierarchy.
-
-When the parent comment does not exist, the system shall reject the reply creation request.
-
-Where the member does not have access to view the parent comment, the system shall reject the reply creation request.
-
-the system shall maintain the parent-child relationship between comments and replies.
-
-the system shall display replies within the context of their parent comment.
-
-### Unlimited Reply Depth
-
-the system shall support unlimited nesting depth for comment replies.
-
-Where a member creates a reply to a reply, the system shall allow additional levels of nesting.
-
-the system shall maintain the complete hierarchy of parent and child comments regardless of depth.
-
-When a member views a comment thread, the system shall show all nested levels without depth restriction.
-
-deleting a parent comment shall not automatically delete child replies.
-
-### Own Comment Editing
-
-Where the member is the author of a comment, the system shall allow the member to edit the comment content.
-
-When an authenticated member edits their own comment, the system shall update the comment content.
-
-Where the member is not the author of the comment, the system shall reject the edit request.
-
-When the requested comment does not exist, the system shall reject the edit request.
-
-the system shall display the updated content after editing is complete.
-
-### Own Comment Deletion
-
-Where the member is the author of a comment, the system shall allow the member to delete the comment.
-
-When a member deletes their comment, the system shall remove the comment from all discussion threads.
-
-Where the member is not the author of the comment, the system shall reject the deletion request.
-
-When the requested comment does not exist, the system shall reject the deletion request.
-
-the system shall remove all content associated with the deleted comment.
-
-### Comment Thread Structure
-
-the system shall organize comments in a threaded structure where each comment belongs to a parent.
-
-When a comment is created at the root level, the system shall associate it directly with the post.
-
-Where a comment is a reply, the system shall record the parent comment reference.
-
-the system shall maintain the parent-child hierarchy across all comment levels.
-
-the system shall display comments in a threaded format showing the discussion flow.
-
-the system shall preserve the chronological order of comments within the thread.
-
-### Comment Author Display
-
-When displaying a comment, the system shall show the author's username.
-
-the system shall display the author's identity in the comment metadata.
-
-the system shall NOT display the author's karma score as part of the comment.
-
-guest members shall see the author's username on all comments.
-
-member members shall see the author's username on all comments.
-
-### Comment Content Viewing
-
-When displaying a comment, the system shall show the full content text.
-
-the system shall display complete comment content in the comment thread.
-
-When a comment is deleted, the system shall NOT display the comment content.
-
-all members with access to view the post shall be able to read the comment content.
-
-the system shall preserve the chronological order of comments within the thread.
-
-## Vote Rules
-
-Users can upvote a post, which adds 1 to its score. Users can downvote a post, which subtracts 1 from its score. Each user can only vote once per post at any given time. Users can change their vote from upvote to downvote or vice versa. Users can remove their vote entirely from a post. Vote score equals the total upvotes minus total downvotes. The same voting rules apply to comments as to posts. When someone upvotes or downvotes a post or comment, the author's karma changes accordingly by plus or minus 1. When a user removes their vote, the karma adjusts accordingly.
-
-### Post Upvote
-
-A logged-in user may upvote a post they view. When a post is upvoted, the post's score increases by one. If the user has not yet voted on the post, the upvote is recorded and added to the score. If the user has already downvoted the post, the downvote is replaced with an upvote, and the score increases by two (removing the downvote and adding the upvote). If the user has already upvoted the post, the upvote is rejected as a duplicate action. When a post is upvoted, the author's karma score increases by one.
-
-### Post Downvote
-
-A logged-in user may downvote a post they view. When a post is downvoted, the post's score decreases by one. If the user has not yet voted on the post, the downvote is recorded and subtracted from the score. If the user has already upvoted the post, the upvote is replaced with a downvote, and the score decreases by two (removing the upvote and adding the downvote). If the user has already downvoted the post, the downvote is rejected as a duplicate action. When a post is downvoted, the author's karma score decreases by one.
-
-### Single Vote Per User Per Post
-
-Each user may cast only one vote on any given post at any time. A user cannot upvote and downvote the same post simultaneously. If a user attempts to vote on a post they have already voted on, the system must first process the vote change or removal before accepting the new vote. This rule applies equally to posts and comments throughout the platform.
-
-### Change Vote From Up to Down
-
-A user who has upvoted a post may change their vote to downvote that same post. When this action occurs, the downvote replaces the upvote. The post's score decreases by two (removing the upvote of plus one and adding the downvote of minus one). The author's karma score decreases by two. A user may similarly change a downvote to an upvote, which increases the post's score by two and the author's karma by two.
-
-### Remove Vote Action
-
-A user who has voted on a post may remove their vote entirely. When a vote is removed, the post's score is adjusted by removing the effect of that vote. If the user had upvoted, the score decreases by one. If the user had downvoted, the score increases by one. The vote record is deleted and no longer counts toward the post's score or the author's karma.
-
-### Vote Score Calculation
-
-The score of a post equals the total number of upvotes minus the total number of downvotes. Each user's vote counts as exactly one: upvotes contribute plus one, downvotes contribute minus one. The score may be positive, zero, or negative. The score is recalculated dynamically each time it is displayed based on current votes. The score does not depend on the age of the post or the time when votes were cast; it only reflects the current net vote count.
-
-### Comment Upvote and Downvote
-
-The same voting rules that apply to posts also apply to comments. A logged-in user may upvote a comment, increasing the comment's score by one. A user may downvote a comment, decreasing the comment's score by one. Each user may cast only one vote per comment. Users may change their vote from upvote to downvote or vice versa. Users may remove their vote entirely. When a comment is voted on, the author's karma adjusts accordingly by plus one for an upvote or minus one for a downvote. The comment score equals total upvotes minus total downvotes.
-
-### Karma Adjustment on Vote
-
-Every user has a single karma score displayed on their profile. When a user's post receives an upvote, their karma score increases by one. When a user's post receives a downvote, their karma score decreases by one. The same applies to comments: when a user's comment is upvoted, their karma increases by one; when downvoted, their karma decreases by one. Karma adjustments occur immediately when the vote is recorded. Karma may become negative if a user receives more downvotes than upvotes. The karma score is the sum of all net votes received across all of the user's posts and comments.
-
-### Vote Removal Karma Adjustment
-
-When a user removes their vote from another user's post or comment, the karma adjustment is reversed. If the removed vote was an upvote, the author's karma decreases by one. If the removed vote was a downvote, the author's karma increases by one. The karma adjustment reflects the removal of the vote's effect, returning the author's karma to what it was before the vote was cast. This ensures karma accurately represents the current state of all votes on the user's content.
-
-### Guest Voting Restriction
-
-Guests (logged-out users) may view posts, comments, vote scores, and karma scores, but may not cast votes. Voting actions require a logged-in member account. Attempting to vote without being logged in results in the action being rejected with a message to log in before voting.
-
-## Report Rules
-
-Users can report any post or comment on the platform. When reporting, users must provide a reason as text. Moderators can view all reports for their community. Each report shows the reported content, who reported it, and the reason provided. Moderators can approve a report, which deletes the reported content. Moderators can dismiss a report, which keeps the content and removes it from the report list. Dismissed reports are removed from the report list entirely. Reports allow the community to self-moderate content quality and appropriateness.
-
-### Report Post Action
-
-Any member can report a post that violates community standards.
-
-When reporting a post, the member must provide a reason as text explaining why the post should be reviewed.
-
-The report is submitted to the moderators of the community where the post was published.
-
-Guests cannot report posts; only logged-in members have this capability.
-
-### Report Comment Action
-
-Any member can report a comment that violates community standards.
-
-When reporting a comment, the member must provide a reason as text explaining why the comment should be reviewed.
-
-The report is submitted to the moderators of the community where the comment's parent post was published.
-
-Guests cannot report comments; only logged-in members have this capability.
-
-### Report Reason Text Required
-
-Every report must include a reason text provided by the reporting member.
-
-The reason field is required and cannot be empty when submitting a report.
-
-The reason should describe the specific violation or concern about the content.
-
-If a report is submitted without a reason text, the submission is rejected.
-
-Moderators review the reason text as part of their evaluation of whether to approve or dismiss the report.
-
-### Moderator Report Viewing
-
-Moderators can view all reports for posts and comments in their community.
-
-Each moderator sees the complete list of reports affecting content in their community.
-
-Reports are organized by the reported content and the date the report was submitted.
-
-The owner of a community can view reports for their community, in addition to any moderator privileges they have.
-
-Only moderators of the relevant community can access reports for that community; other users cannot see reports.
-
-### Report Content Display
-
-When viewing a report, moderators see the full content of the reported post or comment.
-
-For posts, moderators see the title and all content (text, link URL, or image).
-
-For comments, moderators see the full comment text and the post it belongs to.
-
-The original author's username is displayed for the reported content.
-
-The timestamp of when the content was created is shown alongside the report.
-
-### Reporter Identity Display
-
-When viewing a report, moderators see the username of the member who submitted the report.
-
-The reporter's identity is displayed so moderators can understand who raised the concern.
-
-The date and time when the report was submitted is shown alongside the reporter's username.
-
-The reporter's identity is not shown to the user whose content was reported.
-
-Reports from the same reporter about the same piece of content are grouped together.
-
-### Approve Report Delete Content
-
-When a moderator approves a report, the reported content is deleted.
-
-For a post report, approving the report deletes the entire post and all its replies.
-
-For a comment report, approving the report deletes the reported comment.
-
-Once content is deleted, it is no longer visible to any users on the platform.
-
-The deletion is permanent; deleted content cannot be restored after report approval.
-
-The user who created the deleted content is notified that their content was removed for violating community standards.
-
-### Dismiss Report Keep Content
-
-When a moderator dismisses a report, the reported content remains on the platform.
-
-Dismissing indicates the moderator has reviewed the report and determined no action is needed.
-
-The content continues to be visible and accessible to all users who can view it.
-
-The dismissed report is removed from the active report queue.
-
-The original author's content is not affected by a dismissed report.
-
-### Dismissed Report Removal
-
-Dismissed reports are removed from the report list that moderators view.
-
-The report no longer appears in the active reports for the community.
-
-Dismissing a report closes it; it cannot be reopened or reviewed again.
-
-The removal of dismissed reports keeps the report queue focused on pending items.
-
-The content of a dismissed report is no longer accessible through the moderation interface.
-
-Dismissed reports may be retained for historical record-keeping purposes but are not displayed to moderators.
-
-## Ban Rules
-
-Moderators can ban users from their community. Moderators can unban previously banned users. Moderators can view the list of banned users in their community. Banned users cannot create posts or comments in that community. Banned users can still view content in that community. Banning prevents participation but allows reading in the specific community. Ban status is per community, not platform-wide.
-
-### Moderator Ban Action
-
-A moderator can ban a user from their community. The ban takes effect immediately upon the moderator's action. The ban requires a reason text that describes why the user is being banned.
-
-### Moderator Unban Action
-
-A moderator can unban a previously banned user from their community. The unban action restores the user's ability to create posts and comments in that community.
-
-### View Banned Users List
-
-Moderators can view a list of all users who are banned from their community. The list includes each banned user's username and ban reason.
-
-### Banned User Posting Restriction
-
-A user who is banned from a community cannot create posts in that community. The system rejects any attempt by a banned user to create a post in the banned community.
-
-### Banned User Commenting Restriction
-
-A user who is banned from a community cannot create comments in that community. The system rejects any attempt by a banned user to write a comment on posts in the banned community.
-
-### Banned User Viewing Allowance
-
-A banned user can still view content in the community they are banned from. They can browse posts, view posts, read comments, and access community information. Banning prevents participation but allows reading.
-
-### Community-Specific Ban Status
-
-A ban applies only to the specific community where it was issued. A user banned from one community can still create posts and comments in other communities they are subscribed to. Ban status is not platform-wide.
-
-## ModeratorRole Rules
-
-The community creator is the owner with the highest authority. The owner can add moderators to their community. The owner can remove moderators from their community. Moderators can add other moderators to the community. Moderators cannot remove the owner under any circumstances. Moderators cannot remove each other; only the owner can remove moderators. This creates a hierarchy where the owner has ultimate control. Moderator actions include deleting posts, deleting comments, banning and unbanning users, and viewing reports.
-
-### Owner Authority
-
-The user who creates a community is designated as the owner and holds the highest authority within that community.
-The owner has exclusive powers that moderators do not possess.
-Only the owner can remove moderators from the community.
-Other users cannot remove the owner from their role.
-The owner's authority is permanent unless the owner voluntarily transfers ownership.
-
-### Adding Moderators
-
-The owner can add any user as a moderator of their community.
-Moderators can also add other users as moderators to assist with community management.
-When a user is added as a moderator, they immediately gain moderator privileges for that community.
-The list of all moderators for a community is visible to all members.
-A user can hold moderator roles in multiple different communities simultaneously.
-
-### Removing Moderators
-
-Only the owner can remove moderators from the community.
-Moderators cannot remove other moderators under any circumstances.
-When the owner removes a moderator, that user immediately loses all moderator privileges.
-The owner can remove any number of moderators at their discretion.
-Removed moderators cannot reapply for moderator status without the owner's approval.
-
-### Moderator Restrictions
-
-Moderators cannot remove the owner from their role under any circumstances.
-Moderators cannot remove each other from moderator status.
-These restrictions ensure the owner maintains ultimate control over the community.
-If a moderator attempts these restricted actions, the request is rejected.
-The only way to remove an owner or another moderator is for the owner to perform the action.
-
-### Delete Post Action
-
-Moderators can delete any post within their community, including posts by other users.
-When a moderator deletes a post, the post is removed from all views of the community.
-The deleted post is permanently removed and cannot be restored.
-Post authors are not notified when their posts are deleted by moderators.
-Deleting a post does not affect the poster's karma score or account status.
-
-### Delete Comment Action
-
-Moderators can delete any comment within their community, including comments on posts in their community.
-When a moderator deletes a comment, the comment is removed from all views.
-The deleted comment is permanently removed and cannot be restored.
-Comment authors are not notified when their comments are deleted by moderators.
-Deleting a comment does not affect the commenter's karma score.
-
-### Ban and Unban Actions
-
-Moderators can ban users from their community for violating community rules.
-When a user is banned, they cannot create posts or comments in that community.
-Banned users can still view content in the community but cannot participate.
-Moderators can unban previously banned users to restore their participation rights.
-A user banned from a community cannot be unbanned by other moderators; only the moderator who banned them or the owner can unban.
-
-### View Reports
-
-Moderators can view all reports submitted for their community.
-Each report displays: the reported content (post or comment), who reported it, and the reason text provided.
-Moderators can approve a report, which deletes the reported content.
-Moderators can dismiss a report, which keeps the content and removes it from the report list.
-Dismissed reports are no longer visible in the report list.
-
-### Report Approval and Dismissal
-
-When a moderator approves a report, the reported content is automatically deleted.
-After approval, the report is marked as resolved and removed from the active report list.
-When a moderator dismisses a report, the reported content remains unchanged.
-Dismissed reports are immediately removed from the report list and cannot be restored.
-Multiple moderators can review the same report; only one approval action is needed to delete the content.
-
-### Banned Users List
-
-Moderators can view a complete list of all users currently banned from the community.
-The list shows: banned user username, ban reason, and ban expiration date if applicable.
-Banned users appear in this list until they are unbanned or the ban expires.
-Users cannot view the list of banned users from other communities.
-Moderators can search or filter the banned users list by username or ban status.
-
-### Owner Transfers
-
-The owner can transfer ownership of the community to another moderator.
-When ownership is transferred, the previous owner becomes a regular moderator.
-The new owner immediately gains all owner privileges and authority.
-Ownership transfer requires the current owner's explicit action.
-A community can only have one owner at any time.
-
-## Karma Rules
-
-Every user has a single karma score, which is one number. When someone upvotes your post or comment, your karma increases by 1. When someone downvotes your post or comment, your karma decreases by 1. When someone removes their vote, your karma adjusts accordingly to reflect the removal. Karma can be negative if a user receives more downvotes than upvotes. Karma is calculated as a running total across all user activity. Users earn karma through community engagement and contributions.
-
-### Karma Score Overview
-
-Every user has a single karma score, which is one number representing their overall reputation on the platform.
-
-The karma score is calculated as a running total from all user activity across the platform.
-
-Users can have a negative karma score if they receive more downvotes than upvotes on their posts and comments.
-
-The karma score is updated in real-time as votes are cast, changed, or removed on the user's content.
-
-### Karma Changes from Votes
-
-When someone upvotes a user's post or comment, the user's karma increases by 1.
-
-When someone downvotes a user's post or comment, the user's karma decreases by 1.
-
-When a user removes their vote on someone's post or comment, the karma adjusts accordingly to reflect the removal of that vote.
-
-Users earn karma through community engagement and contributions on posts and comments they have created.
-
-Karma changes only occur when the user's own content receives votes.
+Any user on the platform can view any other user's profile. Viewing access is not restricted by subscription status, membership level, or relationship between users. Guest users can also view profiles of registered users. Profile viewing does not require any special permissions or approval from the profile owner. All public profile information is visible to any viewer.
 
 ### Karma Score Display
 
-A user's karma score is visible on their profile page.
+Each user's profile displays their total karma score as a single numeric value. The karma score is calculated automatically based on votes received on the user's posts and comments. The karma score may be positive, negative, or zero. Users can see their own karma score and the karma scores of other users on their profile pages. The karma score updates in real-time when vote actions are performed.
 
-Users can view their own karma score.
+### User Content Aggregation
 
-Users can view other users' karma scores by viewing their profiles.
+A user's profile page displays a complete list of all posts they have created on the platform. A user's profile page also displays a complete list of all comments they have written. Both lists show all content regardless of whether the content is currently visible or has been deleted. The system aggregates and presents all posts and comments authored by the user on their profile page.
 
-The karma score is displayed prominently on the user profile along with their display name, bio, and avatar.
+### Profile Modification Constraints
 
-The karma score updates immediately when visible after any vote is cast, changed, or removed.
+Users cannot modify another user's profile information under any circumstances. Profile modification actions are validated against the authenticated user's identity before execution. If profile modification is attempted on a profile that does not belong to the authenticated user, the request is rejected with an access denial error. The system prevents all unauthorized profile modifications.
+
+## Community Rules
+
+Any user can create a new community by providing a unique name, description text, and an icon image. The user who creates a community automatically becomes its owner and receives the highest authority level within that community. Users can browse all communities in a list view to discover what's available on the platform. Users can search for communities by their name to find specific communities of interest. Each community displays its subscriber count so users can see how many people are following it. The system must validate that the community name is unique before allowing a new community to be created. Description text and icon images are optional when creating a community.
+
+### Community Creation Requirements
+
+A user can create a new community by providing a name, an optional description, and an optional icon image. The community name is required and must meet all uniqueness requirements. The description and icon image are optional fields that can be left empty during creation.
+
+### Unique Community Name
+
+Every community must have a unique name that no other community on the platform has used. When creating a community, the system validates that the proposed name does not already exist in the platform. If the name is already taken, the community creation request is rejected and the user receives an error message indicating that the name is unavailable. The system must check for name uniqueness before allowing any community to be created.
+
+### Owner Role Assignment
+
+The user who creates a community automatically becomes the owner of that community. Owner status is assigned at the moment of community creation and cannot be transferred to another user. The owner has the highest authority level within the community and receives all owner privileges immediately upon creation.
+
+### Community Description Text
+
+A community description is optional text that provides information about the community's purpose or topic. The description can be any length and does not have a minimum or maximum character limit. If no description is provided during creation, the community is created without a description. Users can edit the description at any time after creation.
+
+### Icon Image Uploads
+
+A community icon is an optional image that represents the community visually. The icon can be uploaded during community creation or added later by the owner or moderators. If no icon is provided, the community displays without an image. The system accepts standard image file formats for icon uploads.
+
+### Community Browsing List
+
+All users, including those not logged in, can browse a complete list of all communities in the platform. The list view displays basic information about each community including its name, subscriber count, and other key details. The browse list is paginated to manage large numbers of communities and allows users to navigate through multiple pages.
+
+### Community Search by Name
+
+Users can search for communities by entering part or all of a community name. The search functionality matches against community names and returns results that contain the search term. Search results can be viewed in a list format showing matching communities with their subscriber counts. The search is case-insensitive and supports partial name matching.
+
+### Subscriber Count Display
+
+Each community displays its subscriber count on its listing and detail pages. The subscriber count shows the total number of users who have subscribed to the community. This count updates in real-time as users subscribe or unsubscribe from the community. All users can view the subscriber count, regardless of whether they are subscribed themselves.
+
+### Community Name Uniqueness Validation
+
+The system must reject any attempt to create a community with a name that already exists. When a duplicate name is detected during the creation process, the request fails and the user is informed that the chosen name is not available. The system provides feedback indicating that the name must be unique and can only be used by one community.
+
+### Account Status Validation
+
+A user cannot create a community if their account is suspended or deleted. The system validates the account status before allowing community creation. If the account has been banned or deleted, the community creation request is rejected with an appropriate error message.
+
+### Community Name Format
+
+Community names must not be empty or contain only whitespace characters. The system validates that the name field contains at least one non-whitespace character. Empty or whitespace-only names are rejected during the creation validation process.
+
+### Ban Restrictions on Creation
+
+Users who are banned from a community cannot create new communities. The ban restriction applies to the user account level and prevents any community creation activity while the ban is active.
+
+## Subscription Rules
+
+Users can subscribe to any community they want to follow and receive content from. Users can unsubscribe from any community they are currently subscribed to at any time. Users can view a list of all communities they have subscribed to in their subscription management area. Subscribing to a community is a required condition before a user can create posts within that community. The system enforces that users cannot post in a community unless they have first subscribed to it. Users may subscribe and unsubscribe freely without restrictions on how many times they can switch their subscription status.
+
+### Subscribe to Community
+
+Users can subscribe to any community they want to follow and receive content from.
+
+When a user subscribes to a community, the system creates a subscription record linking the user to that community with the current date and time as the subscription date.
+
+The subscription status is set to active immediately upon successful subscription.
+
+Users can subscribe to any number of communities without restriction.
+
+Subscribing to a community allows the user to view that community's feed and participate in community activities.
+
+If the requested community does not exist, the subscription request is rejected.
+
+If the user has already subscribed to the requested community, the system confirms the existing subscription and does not create a duplicate.
+
+### Unsubscribe from Community
+
+Users can unsubscribe from any community they are currently subscribed to at any time.
+
+When a user unsubscribes from a community, the subscription status is updated to inactive.
+
+The original subscription record is retained for historical tracking purposes.
+
+Users can re-subscribe to a community after unsubscribing without any waiting period.
+
+Unsubscribing from a community prevents the user from receiving new posts from that community in their home feed.
+
+If the user is not currently subscribed to the requested community, the unsubscribe request is rejected with a confirmation that the user is not subscribed.
+
+The user's previous posts and comments in the community remain accessible after unsubscribing.
+
+The user retains the ability to view the community content as a guest after unsubscribing.
+
+### Subscription Management List
+
+Users can view a list of all communities they have subscribed to in their subscription management area.
+
+The subscription list displays the community name, community icon, and current subscription status (active or inactive).
+
+The list includes the subscription date for each community.
+
+The subscription list is paginated to handle large numbers of subscribed communities.
+
+Users can filter the subscription list to show only currently active subscriptions.
+
+Users can sort the subscription list by subscription date (newest or oldest first).
+
+The system displays the total count of subscribed communities in the header of the subscription list.
+
+If the user has no subscriptions, the system displays a message indicating there are no subscribed communities.
+
+### Post Creation Prerequisite
+
+Subscribing to a community is a required condition before a user can create posts within that community.
+
+The system checks subscription status before allowing post creation in any community.
+
+If the user is not subscribed to the target community, the post creation request is rejected.
+
+The error message indicates that subscription to the community is required before posting.
+
+Users can be redirected to the community page to subscribe before attempting to post.
+
+If the requested community does not exist, the post creation request is rejected.
+
+If the user's account is deleted, the subscription prerequisite cannot be satisfied and post creation is not possible.
+
+If the community has been deleted or is no longer accessible, the subscription prerequisite cannot be satisfied and post creation is not possible.
+
+### Community Subscription Requirement
+
+The system enforces that users cannot post in a community unless they have first subscribed to it.
+
+This requirement applies to all post types: text posts, link posts, and image posts.
+
+The subscription requirement is validated at the time of post creation, before any content is saved.
+
+The system verifies that the subscription status is active at the moment of post creation.
+
+Users who are banned from a community cannot subscribe and therefore cannot post in that community.
+
+The subscription requirement does not apply to viewing content in a community.
+
+Guest users cannot post in any community, regardless of subscription status.
+
+### Subscription Status Tracking
+
+The system tracks the subscription status for each user-community pair.
+
+Subscription status can be active or inactive.
+
+The system records the date and time when subscription status changes occur.
+
+The system maintains the subscription history for each user.
+
+Subscription status is used to determine which communities appear in the user's home feed.
+
+The system updates the subscription count displayed on the community page when subscription status changes.
+
+Subscription status changes are logged for auditing purposes.
+
+The system ensures that subscription status changes are atomic and consistent.
+
+### Free Subscription Changes
+
+Users may subscribe and unsubscribe freely without restrictions on how many times they can switch their subscription status.
+
+There is no limit to the number of subscriptions a user can have simultaneously.
+
+There is no cooldown period between subscribing and unsubscribing.
+
+There is no limit to the number of times a user can switch between subscribe and unsubscribe states for a given community.
+
+Subscription changes are applied immediately and take effect without delay.
+
+Users can subscribe to all available communities on the platform if they choose.
+
+Subscription changes do not affect the user's ability to view or interact with previously viewed content.
+
+## Post Rules
+
+Users can create a post in any community they are subscribed to, but must first subscribe before posting. Every post requires a title—this is a mandatory field that cannot be left blank. A post must be one of three types: text post with text content, link post with a URL, or image post with an uploaded image. Users can edit their own posts after creating them to make changes or corrections. Users can delete their own posts at any time, which removes the post from all views. When viewing a single post, users see the title, full content, author username, community name, vote score, comment count, and when it was posted. Text posts contain text content, link posts contain a URL, and image posts contain an uploaded image.
+
+### Post Creation and Subscription
+
+A user can create a post in any community. Before creating a post, the user must be subscribed to that community. If the user is not subscribed, the post creation request is rejected.
+
+### Required Post Title
+
+Every post must have a title. The title is a required field that cannot be left blank. If the title is missing or empty when creating a post, the request is rejected.
+
+### Post Type Selection
+
+A post must be one of three types: text post, link post, or image post. The user must select the post type when creating the post. The post type determines what content can be included.
+
+### Text Post Content
+
+A text post contains text content. The text content is required for text posts. Users can create text posts with content describing any topic.
+
+### Link Post URL
+
+A link post contains a URL. The URL is required for link posts. The URL must be a valid web address that can be accessed.
+
+### Image Post Upload
+
+An image post contains an uploaded image. An image file must be uploaded for image posts. The uploaded image is required and must be a valid image file format.
+
+### Own Post Editing Rights
+
+A user can edit a post that they created. Only the author of a post can edit it. Other users cannot modify a post they did not create. The author can update the title and content at any time.
+
+### Own Post Deletion Rights
+
+A user can delete a post that they created. Only the author of a post can delete it. When a post is deleted, it is removed from all views and cannot be recovered. Users cannot delete posts created by others.
+
+### Post Details Display
+
+When viewing a single post, users see the title, full content, author username, community name, vote score, comment count, and when it was posted. All this information is displayed together on the post detail page.
+
+## Vote Rules
+
+Users can upvote a post to add 1 to its vote score or downvote to subtract 1 from its score. Each user can only cast one vote per post at any given time—they cannot have both an upvote and downvote simultaneously. Users can change their vote from upvote to downvote or vice versa at any time. Users can remove their vote entirely, which returns the post score to its previous state before their vote. The vote score is calculated as the total number of upvotes minus the total number of downvotes received. Karma is affected when users vote on posts or comments—an upvote increases karma by 1 and a downvote decreases it by 1. When a user removes their vote from a post or comment, the karma is adjusted accordingly to reflect the change. Karma can be negative if a user receives more downvotes than upvotes across all their content. The vote rules apply equally to posts and comments.
+
+### Post Upvote Action
+
+A user may upvote a post to express approval. Each upvote adds 1 to the post's vote score. A user can upvote a post only if they have not previously voted on it, or if they have removed their previous vote. The upvote action is available to logged-in members; guests cannot vote on posts.
+
+### Post Downvote Action
+
+A user may downvote a post to express disapproval. Each downvote subtracts 1 from the post's vote score. A user can downvote a post only if they have not previously voted on it, or if they have removed their previous vote. The downvote action is available to logged-in members; guests cannot vote on posts.
+
+### Single Vote Per User
+
+Each user may cast only one vote per post at any given time. A user cannot have both an upvote and a downvote on the same post simultaneously. If a user has already voted on a post, they must change their existing vote or remove it before casting a new vote. The system enforces this constraint to prevent vote manipulation.
+
+### Vote Change Capability
+
+A user who has already voted on a post may change their vote from upvote to downvote, or from downvote to upvote. When changing a vote, the post's score is adjusted accordingly: changing from upvote to downvote subtracts 2 from the score, and changing from downvote to upvote adds 2 to the score. The change is immediate and affects the visible vote score in real time.
+
+### Vote Removal Action
+
+A user may remove their vote from a post at any time. When a vote is removed, the post's vote score is adjusted to its state before that user voted. If the user had upvoted, the score decreases by 1; if they had downvoted, the score increases by 1. The removal action is permanent unless the user casts a new vote.
+
+### Vote Score Calculation
+
+A post's vote score is calculated as the total number of upvotes received minus the total number of downvotes received. The score is computed dynamically based on all current votes and reflects the aggregate user sentiment. The score may be zero, positive, or negative depending on the balance of upvotes and downvotes.
+
+### Karma Vote Adjustment
+
+When a user's post or comment receives an upvote, the post or comment author's karma score increases by 1. When a user's post or comment receives a downvote, the author's karma score decreases by 1. Karma is affected only by votes received on content, not by votes cast on other users' content. Karma can become negative if a user receives more downvotes than upvotes across all their content.
+
+### Karma Removal Adjustment
+
+When a user removes their vote from a post or comment, the karma score of the content author is adjusted accordingly. If the user removes an upvote, the author's karma decreases by 1. If the user removes a downvote, the author's karma increases by 1. This adjustment ensures karma accurately reflects the current state of all votes on the user's content.
+
+### Negative Karma
+
+A user's karma score may be negative if they have received more downvotes than upvotes across all their posts and comments. There is no minimum floor for karma; it can decrease indefinitely based on the balance of votes received. The negative karma state does not restrict user functionality; users with negative karma retain all platform privileges.
+
+### Comment Voting Rules
+
+The same voting rules that apply to posts also apply to comments. Users may upvote or downvote comments, with each user limited to one vote per comment at any time. Users may change or remove their vote on a comment following the same adjustment rules as post voting. Comment karma is calculated independently from post karma, but both contribute to the user's total karma score displayed on their profile.
+
+## Comment Rules
+
+Users can write a comment on any post to share their thoughts or reactions. Users can reply to any existing comment, creating a nested conversation thread. Replies can have their own replies with no depth limit, allowing for unlimited conversation nesting. Users can edit their own comments after posting to make corrections or updates. Users can delete their own comments at any time, which removes them from all views. Each comment displays the author username, content, vote score, time since posted, and any nested replies beneath it. The vote score for comments follows the same rules as post voting—users can upvote or downvote comments.
+
+### Comment on Post
+
+Users can write a comment on any post to share their thoughts or reactions. A comment requires text content; requests with empty content are rejected. A comment is automatically associated with the commenting user and the target post. If the post does not exist, the request is rejected. If the user is banned from the post's community, the request is rejected.
+
+### Reply to Comment
+
+Users can reply to any existing comment, creating a nested conversation thread. A reply is a comment that links to a parent comment. The reply follows the same content requirements as a top-level comment—text content is required. If the parent comment does not exist, the request is rejected. If the parent comment's post does not exist, the request is rejected.
+
+### Unlimited Reply Depth
+
+Replies can have their own replies with no depth limit, allowing for unlimited conversation nesting. There are no restrictions on how many levels of nested replies can exist within a comment thread. The system does not enforce any maximum nesting depth.
+
+### Own Comment Editing
+
+Users can edit their own comments after posting to make corrections or updates. The original comment author is the only user who can edit the comment. When a comment is edited, the updated content replaces the previous content in all views. Requests to edit a comment that is not owned by the requesting user are rejected. Requests to edit a deleted comment are rejected.
+
+### Own Comment Deletion
+
+Users can delete their own comments at any time, which removes them from all views. When a comment is deleted, it is no longer visible in comment lists, threads, or posts. The deletion is permanent; deleted comments cannot be recovered. Requests to delete a comment that is not owned by the requesting user are rejected. If the comment does not exist, the request is rejected.
+
+### Nested Reply Structure
+
+Comments can be organized into nested threads where replies display beneath their parent comment. A comment can have multiple direct replies, and each reply can have its own nested replies. The thread structure is preserved and displayed with proper indentation or visual hierarchy. When viewing a post's comments, users see the complete nested conversation structure.
+
+### Comment Content Display
+
+Each comment displays the author username, content, vote score, time since posted, and any nested replies beneath it. The comment author is shown as the username of the user who wrote the comment. The content displays the full text of the comment. The vote score shows the current tally of upvotes minus downvotes. The time display shows when the comment was originally posted, not when it was last edited.
+
+### Comment Vote Score
+
+The vote score for comments follows the same rules as post voting—users can upvote or downvote comments. When someone upvotes a comment, the comment's vote score increases by 1. When someone downvotes a comment, the comment's vote score decreases by 1. When someone removes their vote, the vote score adjusts accordingly. Each user can only vote once per comment. Users can change their vote from upvote to downvote or vice versa. If the post that the comment belongs to does not exist, the request is rejected.
+
+## ModeratorRole Rules
+
+The user who creates a community automatically becomes its owner with the highest authority level. The owner can add moderators to help manage the community and delegate certain responsibilities. The owner can remove moderators from their community at any time if needed. Moderators can add other moderators to the community but cannot remove them. Moderators cannot remove the owner from their position under any circumstances. Moderators cannot remove other moderators—only the owner has the power to remove moderators. Moderators can delete any post or comment in their community. Moderators can ban users from their community and view the list of banned users. Moderators can view all reports for their community in a centralized report management area.
+
+### Owner Role and Authority
+
+The user who creates a community automatically becomes the owner of that community with the highest authority level.
+
+The owner has complete control over the community and can perform all moderation actions available to moderators, plus the exclusive ability to remove moderators.
+
+### Moderator Assignment and Removal
+
+The owner can add moderators to their community to help with management responsibilities.
+
+The owner can remove any moderator from their community at any time.
+
+Moderators can add other moderators to the community to assist with management.
+
+Moderators cannot remove the owner from their position under any circumstances.
+
+Moderators cannot remove other moderators; only the owner has the power to remove moderators from the community.
+
+### Content Moderation
+
+Moderators can delete any post in their community regardless of who created it.
+
+Moderators can delete any comment in their community regardless of who wrote it.
+
+### User Moderation
+
+Moderators can ban users from their community. When a user is banned, they cannot create posts or comments in that community.
+
+Moderators can unban users who were previously banned from their community.
+
+Moderators can view the list of banned users in their community. Banned users can still view content in the community but cannot participate by posting or commenting.
+
+### Report Management
+
+Moderators can view all reports submitted for their community in a centralized report management area.
+
+Each report shows the reported content, who reported it, and the reason provided by the reporter.
+
+Moderators can approve a report, which deletes the reported content.
+
+Moderators can dismiss a report, which keeps the content and removes the report from the report list.
+
+## BanRecord Rules
+
+Moderators can ban users from their community, which prevents those users from creating posts or comments in that specific community. Moderators can unban previously banned users to restore their ability to interact with the community. Moderators can view the list of all users who are currently banned from the community. Banned users retain the ability to view content in the community but cannot create posts or comments while banned. Each ban record includes the reason for the ban and when it was applied for transparency. Users who are banned from a community cannot participate in posting or commenting until the ban is removed by a moderator. Moderators can track when bans were applied using the ban timestamp.
+
+### Moderator Ban User Action
+
+Moderators can ban users from their community. When a moderator bans a user, the user is immediately prevented from creating new posts in that community. When a moderator bans a user, the user is immediately prevented from writing new comments in that community. A ban applies only to the specific community where the ban is issued, not to other communities. Moderators can only ban users in communities where they have moderator permissions. If the user to be banned does not exist, the ban request is rejected. If the moderator does not have permission to ban users in the community, the ban request is rejected.
+
+### Moderator Unban User Action
+
+Moderators can unban users who were previously banned from their community. When a moderator unbans a user, the user's ability to create posts and comments in that community is immediately restored. A ban record must exist for the user before a moderator can perform an unban action. Unban actions permanently remove the ban for that specific community. If the user is not currently banned from the community, the unban request is rejected. If the moderator does not have permission to manage bans in the community, the unban request is rejected.
+
+### Ban List Viewing
+
+Moderators can view a complete list of all users currently banned from their community. The ban list displays all active ban records for the community. Moderators can filter the ban list by specific users or search by username. The ban list shows the banned user, ban reason, and when the ban was applied. Only moderators and owners of the community can access the ban list. Guests and non-moderator members cannot view the ban list.
+
+### Banned User Restrictions
+
+Banned users cannot create new posts in the community from which they are banned. Banned users cannot write new comments in the community from which they are banned. Banned users cannot reply to existing comments in the community from which they are banned. Banned users cannot create new communities in the platform. The restrictions apply immediately upon ban activation and remain in effect until the ban is removed. A banned user attempting to create restricted content will have the action rejected with an error.
+
+### Banned User Viewing Rights
+
+Banned users retain full viewing access to content in the community from which they are banned. Banned users can read posts and comments in the community. Banned users can view the community's main page and browse existing content. Banned users can access other users' profiles in the community. Banned users cannot view the ban list even though they are listed in it. Viewing rights remain unchanged regardless of ban status.
+
+### Ban Reason Tracking
+
+Every ban record must include a reason text that explains why the ban was issued. The ban reason must be provided by the moderator at the time the ban is created. The ban reason is displayed in the ban list for transparency and accountability. The ban reason cannot be modified or deleted after the ban is issued. If no reason is provided, the ban creation is rejected.
+
+### Ban Timestamp Tracking
+
+Each ban record automatically includes a timestamp indicating when the ban was applied. The ban timestamp is recorded at the exact moment the ban action is completed. The timestamp cannot be modified by moderators or any other user. The ban timestamp is displayed in the ban list for audit and accountability purposes. Moderators can sort the ban list by ban timestamp to see the most recent bans first. The ban timestamp allows tracking of ban duration and history.
+
+### Ban Removal and Access Restoration
+
+When a ban is removed through the unban action, all access restrictions are immediately lifted. The user's ability to create posts is restored immediately upon unban. The user's ability to write comments is restored immediately upon unban. The user's ability to reply to comments is restored immediately upon unban. All previous posts and comments made by the user before the ban remain visible. The ban record is removed from the ban list upon unban action. If the user attempts to post or comment before the unban completes, the action is rejected.
+
+## Report Rules
+
+Users can report any post or comment on the platform when they believe it violates community standards. When reporting content, users must provide a reason in text form explaining why they are reporting it. Moderators can view all reports for their community in a centralized report management area. Each report displays the reported content, the user who reported it, and the reason provided by the reporter. Moderators can approve a report, which results in the reported content being deleted from the platform. Moderators can dismiss a report, which keeps the content in place and removes the report from the report list. Dismissed reports are no longer visible in the active reports and the content remains untouched. Reports are scoped to individual communities—moderators only see reports for their own community.
+
+### Report Actions
+
+Users can report any post or comment on the platform when they believe it violates community standards.
+
+To report a post, a user selects the report option and provides a text reason explaining why they are reporting the content.
+
+To report a comment, a user selects the report option and provides a text reason explaining why they are reporting the content.
+
+The report reason field is required. Users cannot submit a report without providing a reason.
+
+A user can report the same post or comment only once. If they have already reported it, they cannot submit another report for the same content.
+
+### Moderator Report View
+
+Moderators can view all reports for their community in a centralized report management area.
+
+Each report displayed to moderators shows: the reported content, the user who reported it, and the reason provided by the reporter.
+
+Moderators can only view reports for communities where they hold moderator privileges. Reports from other communities are not visible.
+
+Reports are organized by the content type (post or comment) and the community they belong to.
+
+### Report Approval Action
+
+Moderators can approve a report for any reported post or comment in their community.
+
+When a report is approved, the reported content is deleted from the platform. This applies to both posts and comments.
+
+Approved reports are marked as resolved and removed from the active reports list.
+
+The deletion is permanent and cannot be undone by moderators or users.
+
+### Report Dismissal Action
+
+Moderators can dismiss a report for any reported post or comment in their community.
+
+When a report is dismissed, the reported content remains in place and is not deleted.
+
+Dismissed reports are removed from the active report list and are no longer visible in the reports area.
+
+The content that was dismissed is not affected and remains visible to users according to normal visibility rules.
+
+### Community Report Isolation
+
+Reports are scoped to individual communities. Moderators only see reports for their own communities.
+
+A moderator for one community cannot view, approve, or dismiss reports for a different community.
+
+Each community maintains its own separate report queue, isolated from other communities.
+
+The report reason and reporter information are kept confidential and are only visible to moderators of that specific community.
 
 # Data Browsing Expectations
 
@@ -676,141 +512,49 @@ Business expectations for how users browse, find, and navigate through lists of 
 
 Define business expectations for how users find, filter, and browse lists.
 
-### Post Filtering Rules
+### Post Sorting
 
-Users can filter posts by time range when using Top sorting: today, this week, this month, this year, or all time.
+Posts in all feeds support four primary sorting options: hot, new, top, and controversial.
 
-Users cannot filter posts by author, community, or content type in the general feed search.
+The "hot" sort displays recent posts with many upvotes first, balancing recency and popularity.
 
-Users can filter comments by sorting method: best, new, or controversial.
+The "new" sort displays most recently created posts first, regardless of vote score.
 
-Comment filtering by time range is not supported.
+The "top" sort displays posts with the highest vote score first. When sorting by top, users may optionally filter by time period: today, this week, this month, this year, or all time.
 
-### Post Sorting Rules
+The "controversial" sort displays posts that have received many votes but have a score close to zero, indicating polarized opinions.
 
-Hot sort displays posts by recency combined with vote score, so recent posts with many upvotes appear first.
+The same sorting options apply to comments on a post, with three options: best, new, and controversial. The "best" sort displays comments with the highest vote score first.
 
-New sort displays posts by creation time, with the most recently created posts appearing first.
+### Post Filtering
 
-Top sort displays posts by vote score, highest score first. When Top is selected, users can choose a time range filter.
+Posts in feeds can be filtered by the following criteria:
 
-Controversial sort displays posts with many total votes but a score close to zero, appearing first.
+For the "top" sort, posts can be filtered by time period: today, this week, this month, this year, or all time. When a time period is selected, only posts created within that period are included in the results.
 
-The same sorting options apply to posts in Home Feed, Popular Feed, and Community Feed.
+For the home feed, posts are automatically filtered to include only posts from communities the user has subscribed to. Guests cannot access the home feed.
 
-The same sorting options apply to comments within a single post view.
+For the popular feed, all posts from all communities are included, regardless of subscription status.
 
-### Comment Sorting Rules
+For the community feed, posts are automatically filtered to include only posts from the selected community.
 
-Best sort displays comments by vote score, with highest vote score appearing first.
+When searching for communities, users can filter the community list by entering a search term in the name field. Only communities whose names match the search term are returned.
 
-New sort displays comments by creation time, with the most recently created comments appearing first.
+### Pagination
 
-Controversial sort displays comments with many total votes but a score close to zero, appearing first.
+All feeds are paginated to display posts in manageable chunks.
 
-### Pagination Rules
+Each page displays a fixed number of posts. When the user requests the next page, additional posts are loaded.
 
-All post feeds are paginated: Home Feed, Popular Feed, and Community Feed.
+If no more posts are available, the system indicates that there are no more results.
 
-All comment lists are paginated when viewing comments on a post.
+Comments on a post are also paginated when the total number of comments exceeds the display limit.
 
-Users can load more content by scrolling or requesting the next page.
+When a user is viewing a community list, the list is paginated. Each page displays a fixed number of communities. Users can navigate to subsequent pages to view additional communities.
 
-Pagination does not apply to individual post or comment detail views.
+When a user is viewing their list of subscribed communities, the list is paginated. Each page displays a fixed number of subscriptions.
 
-### Feed Visibility Rules
-
-Home Feed is only available to logged-in members.
-
-Guests cannot access the Home Feed.
-
-Popular Feed is available to all users, including logged-out guests.
-
-Community Feed is available to all users, including logged-out guests.
-
-Posts from banned communities are excluded from all feeds for banned users.
-
-### Post List Display Rules
-
-Each post in a feed list displays: title, author username, community name, vote score, comment count, and time since posted.
-
-For text posts, the first 200 characters of content are displayed in the list.
-
-For image posts, a thumbnail of the image is displayed in the list.
-
-For link posts, the domain name of the URL is displayed (e.g., youtube.com).
-
-Guests see the same post list display as members, except in Home Feed which they cannot access.
-
-### Sorting and Filtering Error Conditions
-
-If a user requests a sorting option that does not exist, the system defaults to the default sort (Hot for posts, Best for comments).
-
-If a user requests a time range filter that is invalid, the system ignores the filter and uses all time.
-
-If sorting is requested but no posts or comments exist, an empty list is returned.
-
-### Vote Score Display Rules
-
-Vote score on posts equals total upvotes minus total downvotes.
-
-Vote score on comments equals total upvotes minus total downvotes.
-
-Vote score can be negative.
-
-Vote score is displayed as a whole number, not as a count of upvotes and downvotes separately.
-
-### Time Display Rules
-
-Time since posted is displayed relative to the current user's timezone.
-
-Time is shown in human-readable format (e.g., 3 hours ago, 2 days ago, 1 week ago).
-
-Absolute timestamps are not displayed in list views.
-
-### Comment Hierarchy Display Rules
-
-Replies to comments are nested hierarchically in the display.
-
-There is no limit to the depth of comment replies.
-
-Nested replies are indented to show the relationship between parent and child comments.
-
-### Controversial Sort Calculation Rules
-
-A post or comment is considered controversial if it has many total votes but the score is close to zero.
-
-The threshold for what constitutes "close to zero" is determined by the system based on overall voting patterns.
-
-Controversial sorting requires at least a minimum number of total votes to be included in results.
-
-### Feed Content Aggregation Rules
-
-Home Feed aggregates posts only from communities the logged-in user is subscribed to.
-
-Popular Feed aggregates posts from all communities across the platform.
-
-Community Feed aggregates posts from exactly one specific community.
-
-Posts are excluded from feeds if the author has been banned from that community.
-
-### Subscription Status Display Rules
-
-When viewing a community in a list of communities, the subscriber count is displayed.
-
-The subscriber count reflects the total number of users currently subscribed to that community.
-
-The subscriber count is updated in real time as users subscribe or unsubscribe.
-
-### List Browsing Error Conditions
-
-If the requested feed contains no posts, an empty list is displayed.
-
-If sorting or filtering parameters are invalid, the system applies default values without erroring.
-
-If a user accesses a feed while logged out, only feeds available to guests are returned.
-
-If all communities a user is subscribed to have no posts, the Home Feed returns an empty list.
+When a moderator is viewing the list of banned users for a community, the list is paginated if there are more banned users than can be displayed on a single page.
 
 # Error Conditions
 
@@ -820,117 +564,97 @@ Business error scenarios and how the system should respond.
 
 Describe error conditions and expected system responses in natural language.
 
-### Authentication and Access Errors
+### User Account Validation Errors
 
-When a user attempts to log in with an email address that has not been registered in the system, the login request is rejected with an authentication failure message.
+When a user attempts to sign up with an email address that is already registered in the system, the request is rejected and the user is notified that the email is in use. When a user attempts to sign up with a username that is already taken, the request is rejected and the user is prompted to choose a different username. When a user attempts to log in with incorrect credentials, the request is rejected and an authentication failure message is displayed. When a user attempts to log in with an email address that does not exist in the system, the request is rejected with a generic authentication failure message to prevent information disclosure.
 
-If a user submits an incorrect password for their email address, the login request is rejected and the system displays a generic authentication failure message without revealing whether the email exists.
+### Account Modification Errors
 
-When a user attempts to sign up with a username that is already in use, the registration request is rejected and the user is notified that the username is unavailable.
+When a user attempts to change their password without providing the current password, the request is rejected. When a user attempts to delete their account while having open moderation actions or pending reports, the request is rejected until all pending actions are resolved. When a user attempts to access a deleted account, access to the account is denied.
 
-If a user attempts to sign up with an email address that is already registered, the registration request is rejected with a message indicating the email is already in use.
+### Profile View and Edit Errors
 
-When an unauthenticated user (guest) attempts to view the home feed, the request is rejected and the user is prompted to log in.
+When a user attempts to view another user's profile, the request is successful and the profile is displayed regardless of whether the viewing user has a subscription relationship with the profile owner. When a user attempts to edit their own profile, all edits are permitted as long as the new display name is not already taken by another user. When a user attempts to upload an avatar that exceeds the maximum file size limit, the upload is rejected. When a user attempts to upload an avatar with an unsupported file format, the upload is rejected.
 
-### Account Management Errors
+### Community Creation Errors
 
-When a user attempts to edit another user's profile, the request is rejected as users can only edit their own profiles.
+When a user attempts to create a community with a name that already exists, the request is rejected. When a user attempts to create a community with an empty description, the request is rejected. When a user attempts to upload a community icon that exceeds the maximum file size limit, the upload is rejected. When a user attempts to upload a community icon with an unsupported file format, the upload is rejected.
 
-If a user attempts to delete another user's account, the request is rejected as account deletion is restricted to the account owner.
+### Community Browsing Errors
 
-When a user changes their password with the current password being incorrect, the password change request is rejected.
+When a user attempts to view a community that has been deleted, access to the community is denied. When a user attempts to browse all communities, communities that have been deleted are not included in the results. When a user attempts to search for communities, deleted communities are not included in the search results.
 
-When a user deletes their account, all posts and comments written by that user are simultaneously deleted and cannot be recovered.
+### Subscription Management Errors
 
-If a user's profile is being viewed and no avatar image has been uploaded, the profile displays a default avatar image.
+When a user attempts to subscribe to a community, the subscription is created successfully. When a user attempts to subscribe to a community they are already subscribed to, the request is rejected with a message indicating they are already a subscriber. When a user attempts to subscribe to a deleted community, the request is rejected. When a user attempts to unsubscribe from a community they are not subscribed to, the request is rejected.
 
-When a user's profile is being viewed and no display name has been set, the profile displays the username.
+### Post Creation Errors
 
-### Community Management Errors
+When a user attempts to create a post in a community they are not subscribed to, the request is rejected and the user is required to subscribe first. When a user attempts to create a post in a community where they are banned, the request is rejected. When a user attempts to create a post with an empty or missing title, the request is rejected. When a user attempts to create a text post without providing content, the request is rejected. When a user attempts to create a link post without providing a URL, the request is rejected. When a user attempts to create a link post with an invalid URL format, the request is rejected. When a user attempts to create an image post without providing an image, the request is rejected. When a user attempts to upload an image that exceeds the maximum file size limit, the upload is rejected. When a user attempts to upload an image with an unsupported file format, the upload is rejected.
 
-When a user attempts to create a community with a name that is already in use, the community creation request is rejected and the user is notified to choose a different name.
+### Post Modification and Access Errors
 
-If a user attempts to subscribe to a community they are already subscribed to, the subscription request is rejected and the system does not create a duplicate subscription.
+When a user attempts to edit a post that does not belong to them, the request is rejected. When a user attempts to edit a post in a community where they are banned, the request is rejected. When a user attempts to delete a post that does not belong to them, the request is rejected. When a user attempts to delete a post in a community where they are banned, the request is rejected. When a user attempts to view a post that has been deleted, access to the post is denied. When a user attempts to view a post in a community where they are banned, the request is rejected and the user is notified they cannot view content.
 
-If a user attempts to unsubscribe from a community they are not subscribed to, the unsubscription request is rejected with a message indicating they are not a subscriber.
+### Post Voting Errors
 
-When a user attempts to create a post in a community they have not subscribed to, the post creation request is rejected and the user is informed that subscription is required.
+When a user attempts to upvote a post they have already upvoted, the request is rejected as no change is needed. When a user attempts to upvote a post they have already downvoted, the request is successful and changes the vote from downvote to upvote. When a user attempts to upvote a post they have not yet voted on, the request is successful. When a user attempts to downvote a post they have already downvoted, the request is rejected as no change is needed. When a user attempts to downvote a post they have already upvoted, the request is successful and changes the vote from upvote to downvote. When a user attempts to downvote a post they have not yet voted on, the request is successful. When a user attempts to remove their vote from a post they have not voted on, the request is rejected. When a user attempts to vote on a post they do not have access to, the request is rejected.
 
-If a community has been deleted, any attempt to access its posts, comments, or perform any community action is rejected with a community not found message.
+### Post Creation Validation
 
-When a user who is banned from a community attempts to create a post or comment, the request is rejected with a ban violation message.
+When a user attempts to create a post and the community does not exist, the request is rejected. When a user attempts to create a post in a deleted community, the request is rejected.
 
-### Post Operation Errors
+### Post Feed Display Errors
 
-When a user attempts to create a post without providing a title, the post creation request is rejected as title is required.
+When a user attempts to view a post in a feed, posts from communities where the user is banned are excluded from the results. When a user attempts to view a post in a feed, posts from communities the user is not subscribed to are excluded from the Home Feed. When a user attempts to view a post that does not exist, the request is rejected. When a user attempts to view a deleted post, the request is rejected.
 
-If a user attempts to create a text post without providing text content, the post creation request is rejected.
+### Comment Creation Errors
 
-When a user attempts to create a link post without providing a URL, the post creation request is rejected.
+When a user attempts to write a comment on a post, the comment is created successfully. When a user attempts to reply to a comment, the reply is created successfully with no depth limit. When a user attempts to write a comment on a post in a community where they are banned, the request is rejected. When a user attempts to write a comment on a deleted post, the request is rejected. When a user attempts to write a comment with empty content, the request is rejected.
 
-If a user attempts to create an image post without uploading an image file, the post creation request is rejected.
+### Comment Modification and Access Errors
 
-When a user attempts to edit another user's post, the edit request is rejected as users can only edit their own posts.
+When a user attempts to edit a comment that does not belong to them, the request is rejected. When a user attempts to edit a comment in a community where they are banned, the request is rejected. When a user attempts to delete a comment that does not belong to them, the request is rejected. When a user attempts to delete a comment in a community where they are banned, the request is rejected. When a user attempts to view a comment that has been deleted, access to the comment is denied. When a user attempts to view a comment on a post they do not have access to, the request is rejected.
 
-If a user attempts to delete another user's post, the deletion request is rejected.
+### Comment Voting Errors
 
-When a user attempts to delete a post that has already been deleted, the deletion request is rejected with a content not found message.
+When a user attempts to upvote a comment they have already upvoted, the request is rejected as no change is needed. When a user attempts to upvote a comment they have already downvoted, the request is successful and changes the vote from downvote to upvote. When a user attempts to upvote a comment they have not yet voted on, the request is successful. When a user attempts to downvote a comment they have already downvoted, the request is rejected as no change is needed. When a user attempts to downvote a comment they have already upvoted, the request is successful and changes the vote from upvote to downvote. When a user attempts to downvote a comment they have not yet voted on, the request is successful. When a user attempts to remove their vote from a comment they have not voted on, the request is rejected. When a user attempts to vote on a comment they do not have access to, the request is rejected.
 
-### Comment Operation Errors
+### Comment Display and Sorting Errors
 
-When a user attempts to reply to a post that has been deleted, the comment request is rejected with a post not found message.
+When a user attempts to view comments on a post, the comments are sorted according to the selected sorting option. When a user attempts to view comments on a deleted post, access to the comments is denied. When a user attempts to view comments on a post in a community where they are banned, the request is rejected.
 
-If a user attempts to reply to a comment that has been deleted, the reply request is rejected.
+### Moderator Addition Errors
 
-When a user attempts to edit another user's comment, the edit request is rejected as users can only edit their own comments.
+When the owner attempts to add a moderator, the moderator role is assigned successfully. When the owner attempts to add a moderator who is already a moderator, the request is rejected. When the owner attempts to add a moderator to a deleted community, the request is rejected. When a moderator attempts to add another moderator, the action is successful. When a moderator attempts to add the owner as a moderator, the request is rejected. When a moderator attempts to add themselves as a moderator, the request is rejected. When a moderator attempts to add a moderator who is already a moderator, the request is rejected. When a moderator attempts to add a moderator to a deleted community, the request is rejected.
 
-If a user attempts to delete another user's comment, the deletion request is rejected.
+### Moderator Removal Errors
 
-When a user who is banned from a community attempts to write a comment or reply, the request is rejected with a ban violation message.
+When the owner attempts to remove a moderator, the moderator role is revoked successfully. When the owner attempts to remove themselves as a moderator, the request is rejected. When the owner attempts to remove a moderator from a deleted community, the request is rejected. When a moderator attempts to remove the owner as a moderator, the request is rejected. When a moderator attempts to remove another moderator as a moderator, the request is rejected. When a moderator attempts to remove themselves as a moderator, the request is rejected. When a moderator attempts to remove a moderator from a deleted community, the request is rejected.
 
-### Vote Operation Errors
+### Moderation Content Deletion Errors
 
-When a user attempts to vote on a post or comment they have already voted on with the same vote direction, the vote request is rejected as only one vote per user per item is allowed.
+When a moderator attempts to delete a post in their community, the post is deleted successfully. When a moderator attempts to delete a post in a community where they are not a moderator, the request is rejected. When a moderator attempts to delete a post in a deleted community, the request is rejected. When a moderator attempts to delete a comment in their community, the comment is deleted successfully. When a moderator attempts to delete a comment in a community where they are not a moderator, the request is rejected. When a moderator attempts to delete a comment in a deleted community, the request is rejected.
 
-If a user attempts to vote on their own post or comment, the vote request is rejected as users cannot vote on their own content.
+### Ban Management Errors
 
-When a user attempts to vote on content that has been deleted, the vote request is rejected with a content not found message.
+When a moderator attempts to ban a user from their community, the ban record is created successfully. When a moderator attempts to ban a user who is already banned, the request is rejected. When a moderator attempts to ban the owner as a user, the request is rejected. When a moderator attempts to ban themselves, the request is rejected. When a moderator attempts to ban a user in a community where they are not a moderator, the request is rejected. When a moderator attempts to ban a user in a deleted community, the request is rejected. When a moderator attempts to unban a user who is not banned, the request is rejected. When a moderator attempts to unban a user in a community where they are not a moderator, the request is rejected. When a moderator attempts to unban a user in a deleted community, the request is rejected. When a moderator attempts to view the list of banned users in a community where they are not a moderator, the request is rejected. When a moderator attempts to view the list of banned users in a deleted community, the request is rejected.
 
-If a user attempts to vote on a post or comment that is not accessible, the vote request is rejected.
+### Deleted Entity Access
 
-### Moderation Action Errors
+When a user attempts to view a post and the post is associated with a deleted community, access to the post is denied. When a user attempts to view a comment and the comment is associated with a deleted post, access to the comment is denied. When a user attempts to perform any action on a community that has been deleted, the request is rejected with a message indicating the community no longer exists.
 
-When a moderator attempts to ban a user without providing a ban reason, the ban request is rejected as reason is required.
+### Report Creation Errors
 
-If a moderator attempts to ban a user who is already banned from the community, the ban request is rejected with a user already banned message.
+When a user attempts to report a post, they must provide a reason for the report. When a user attempts to report a post without providing a reason, the request is rejected. When a user attempts to report a comment, they must provide a reason for the report. When a user attempts to report a comment without providing a reason, the request is rejected. When a user attempts to report a post that does not exist, the request is rejected. When a user attempts to report a comment that does not exist, the request is rejected. When a user attempts to report a post in a community where they are banned, the request is rejected.
 
-When a moderator attempts to remove the community owner from being a moderator, the request is rejected as moderators cannot remove the owner.
+### Moderator Report Handling Errors
 
-If a moderator attempts to remove another moderator from the community, the removal request is rejected as only the owner can remove moderators.
+When a moderator attempts to view reports for their community, the reports are displayed. When a moderator attempts to view reports for a community where they are not a moderator, the request is rejected. When a moderator attempts to view reports for a deleted community, the request is rejected. When a moderator attempts to approve a report, the report is approved and the content is deleted. When a moderator attempts to dismiss a report, the report is dismissed and removed from the report list. When a moderator attempts to approve a report for content that has already been deleted, the request is rejected. When a moderator attempts to approve a report for content they do not have access to, the request is rejected. When a moderator attempts to dismiss a report for content they do not have access to, the request is rejected.
 
-When an owner attempts to remove another owner from a different community, the request is rejected as owners are independent per community.
+### Authentication and Session Errors
 
-If a moderator attempts to delete a post or comment that has already been deleted, the deletion request is rejected with a content not found message.
-
-When a non-moderator attempts to view the list of banned users, the request is rejected.
-
-### Report Operation Errors
-
-When a user attempts to report a post or comment without providing a reason text, the report submission request is rejected as reason is required.
-
-If a user attempts to report content that does not exist, the report request is rejected with a content not found message.
-
-When a user attempts to report their own post or comment, the report request is rejected as users cannot report their own content.
-
-If a user who is banned from a community attempts to submit a report, the report request is rejected.
-
-When a moderator attempts to approve a report that has already been processed, the action request is rejected.
-
-If a moderator attempts to dismiss a report that has already been dismissed, the dismissal request is rejected.
-
-When a report is approved by a moderator, the reported content is deleted and the report status is updated to approved.
-
-If a moderator dismisses a report, the content remains unchanged and the report status is updated to dismissed.
+When a user attempts to access the system without being logged in, access to member-only features is denied. When a user attempts to perform an action that requires authentication, the request is redirected to the login page. When a user's session expires, all requests are rejected and the user is redirected to re-authenticate. When a user's account is deleted, all their sessions are terminated and access is denied.
 
 # File Validation Rules
 
@@ -940,26 +664,42 @@ Validation rules and policies for file uploads and storage.
 
 Define file type restrictions, virus scanning requirements, content validation, and retention policies for uploaded files.
 
-### Image Content Type Validation
+### File Type Validation
 
-Avatar images, community icons, and image posts must be valid image files. When users upload an avatar, community icon, or image post, the system validates that the uploaded file is a properly formatted image. Files that are not valid image files are rejected, and the user is informed that the upload failed.
+Users can upload avatar images for their profile, icon images for communities they create, and image posts. The system validates each uploaded file to ensure it is an image file. Files that do not meet the image format requirements are rejected and cannot be uploaded.
 
-If an uploaded file does not meet the image format requirements, the system rejects the file and prompts the user to select a different file.
+When a file is rejected due to format validation, the user receives a notification explaining that the file type is not supported. The user must select a valid image file and retry the upload.
 
-### File Size Limits for Images
+Each image upload is associated with the user performing the action. Avatar images are linked to a user's profile. Community icon images are linked to a specific community. Image post content is linked to a specific post.
 
-Avatar images, community icons, and image posts must not exceed the maximum allowed file size. When the file size exceeds the limit, the upload is rejected.
+### Virus Scanning
 
-Users attempting to upload files larger than the allowed maximum are informed that the file is too large and must choose a smaller file.
+All uploaded files are scanned for malicious content before being accepted by the system. The virus scanning process runs automatically on every file upload.
 
-### Account Deletion and Image Retention
+If a file is detected to contain malicious content, the upload is rejected. The file is not stored in the system, and the user receives a notification that the file failed security validation. The user cannot upload that specific file again.
 
-When a user deletes their account, all content associated with that user is also deleted. This includes the user's avatar image, all posts created by the user (including image posts), and all comments written by the user.
+The system maintains records of rejected files that failed virus scanning for security monitoring purposes. Moderators and administrators may review these records to identify patterns of abuse or coordinated malicious uploads.
 
-When a community is deleted, the community icon associated with that community is also removed from the platform. Image posts in deleted communities are also deleted along with the community.
+Files that pass virus scanning are marked as safe and proceed to be stored in the system.
 
-### Image Display and Thumbnail Generation
+### Content Type Restrictions
 
-Image posts are displayed in post lists with a thumbnail preview showing a smaller version of the image. When users view an image post in full, the complete image is displayed.
+Only image file types are permitted for avatar uploads, community icons, and image posts. The system enforces these restrictions at the time of upload to prevent non-image files from being stored.
 
-The system generates thumbnails for image posts to display in feed views and post lists. Users can view the full-size image when accessing the individual post page.
+When a user attempts to upload a non-image file, the system immediately rejects the file and displays an error message. The error message specifies that only image files are allowed and provides guidance on acceptable formats.
+
+The system does not permit uploading files with excessive size beyond what is reasonable for image content. If an image file exceeds the acceptable size threshold, the upload is rejected with a message indicating the file is too large. The user may resize the image and retry the upload.
+
+All uploaded images undergo content validation to ensure they contain valid image data. Corrupted or invalid image files are rejected.
+
+### File Retention Policies
+
+Uploaded files are retained for as long as the associated entity exists in the system. When a user deletes their account, all associated avatar images are permanently removed from the system. The deletion of a user account includes immediate removal of their avatar file.
+
+When a community is deleted, all associated icon images are permanently removed from the system. The deletion of a community includes immediate removal of its icon file.
+
+When a post containing an image is deleted, the associated image file is permanently removed from the system. The deletion of a post includes immediate removal of its image content.
+
+The system maintains file storage records for audit purposes. These records indicate which files are associated with which entities and when they were uploaded. However, no backup copies of deleted files are retained after permanent deletion.
+
+Moderators and administrators have access to file storage records for operational and compliance purposes. These records are retained according to organizational policy.

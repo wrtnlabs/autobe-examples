@@ -1,0 +1,243 @@
+/// Core community entity representing a subreddit-like space where members
+/// create posts, engage in discussions, and interact through votes and
+/// comments.
+///
+/// ## Identity and Metadata
+///
+/// Each community has a unique name (used as the identifier in URLs), an
+/// optional description that explains the community's purpose.
+///
+/// ## Governance
+///
+/// Communities are created by users and can have moderators appointed by the
+/// owner or existing moderators. Only subscribed members can create posts
+/// within a community.
+///
+/// ## Lifecycle
+///
+/// Communities are soft-deleted (deleted_at) to preserve referential
+/// integrity with posts, subscriptions, moderator roles, and bans.
+///
+/// @namespace reddit_community_communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_communities {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Unique community name used in URLs and as the primary identifier.
+  ///
+  /// Must be unique across all communities and follow naming rules
+  /// (alphanumeric, hyphens, underscores). The name is case-insensitive and
+  /// cannot be empty.
+  name String
+  
+  /// Optional text description that explains the community's purpose, rules,
+  /// and topics.
+  description String?
+  
+  /// Timestamp when the community was created.
+  created_at DateTime
+  
+  /// Timestamp when the community was last updated (metadata, icon, etc.).
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the community is marked as deleted but
+  /// remains in the database for referential integrity.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots reddit_community_community_snapshots[]
+  files reddit_community_community_files[]
+  subscriptions reddit_community_subscriptions[]
+  posts reddit_community_posts[]
+  postSnapshots reddit_community_post_snapshots[]
+  postReports reddit_community_post_reports[]
+  commentReports reddit_community_comment_reports[]
+  moderatorRoles reddit_community_moderator_roles[]
+  banRecords reddit_community_ban_records[]
+  reports reddit_community_reports[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([name])
+  @@index([created_at])
+}
+
+/// Point-in-time snapshots of community metadata for audit trail and
+/// historical review.
+///
+/// Stores immutable copies of community state at specific moments, enabling
+/// reconstruction of community history and audit capabilities.
+///
+/// @namespace reddit_community_communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the community this snapshot represents.
+  ///
+  /// Enables retrieval of all historical snapshots for a specific community.
+  reddit_community_id String
+  
+  /// Reference to the icon file captured in this snapshot.
+  ///
+  /// May be null if the community had no icon at the time of snapshot.
+  /// Reference to {@link reddit_community_community_files}.
+  icon_file_id String?
+  
+  /// The community's unique name at the time of snapshot.
+  ///
+  /// The internal identifier for the community, used in URLs and system
+  /// references.
+  name String
+  
+  /// The community's display name shown to users at the time of snapshot.
+  ///
+  /// Human-readable name displayed in the user interface.
+  display_name String
+  
+  /// The community's description text at the time of snapshot.
+  ///
+  /// Brief overview of the community's purpose and topic.
+  description String
+  
+  /// Timestamp when this snapshot was captured.
+  ///
+  /// Records the point in time when this snapshot was created.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_community_communities @relation(fields: [reddit_community_id], references: [id], onDelete: Cascade)
+  iconFile reddit_community_community_files? @relation(fields: [icon_file_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([icon_file_id])
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_id, created_at], map: "reddit_community_community_snapshots_reddit_community__5e76e852")
+}
+
+/// File attachments for community branding assets including icons, logos,
+/// and thumbnails.
+///
+/// ### Core Purpose
+///
+/// Stores metadata and storage references for community-branded files such
+/// as logo images, icon files, and other visual assets uploaded by community
+/// creators or administrators. Each file record is linked to exactly one
+/// community through a foreign key relationship.
+///
+/// ### File Storage Fields
+///
+/// - `file_path`: URI path to the stored file in object storage (e.g., S3, GCS)
+/// - `filename`: Original filename provided by the uploader at upload time
+/// - `mime_type`: MIME type of the file content (e.g., image/png,
+/// image/jpeg, image/svg+xml)
+/// - `file_size`: File size in bytes for validation and display purposes
+///
+/// ### Relationship Semantics
+///
+/// Each file belongs to exactly one {@link reddit_community_communities}
+/// entity. Communities can have zero or more associated files, allowing for
+/// logo files, banner images, and icon variations. The relationship is 1:N
+/// with cascade delete enabled to remove files when the community is
+/// soft-deleted.
+///
+/// @namespace reddit_community_communities
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model reddit_community_community_files {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Links this file to its parent community entity.
+  ///
+  /// Each file belongs to exactly one community. When the community is
+  /// soft-deleted, associated files are cascaded to maintain referential
+  /// integrity. This relationship enables efficient lookups of all files for a
+  /// given community.
+  reddit_community_community_id String
+  
+  /// Storage path to the file in object storage.
+  ///
+  /// Contains the URI or path reference to locate the actual file content in
+  /// external storage (e.g., S3 bucket path, GCS object URL). Used by file
+  /// access APIs to retrieve file content.
+  file_path String
+  
+  /// Original filename provided by the uploader.
+  ///
+  /// Stores the filename as provided during file upload. This value is used
+  /// for display purposes and may be preserved for user context, though the
+  /// actual stored file may have a different internal name.
+  filename String
+  
+  /// MIME type of the file content.
+  ///
+  /// Specifies the media type of the file (e.g., image/png, image/jpeg,
+  /// image/svg+xml, image/gif). Used for content validation, browser display,
+  /// and storage optimization.
+  mime_type String
+  
+  /// File size in bytes.
+  ///
+  /// Stores the exact size of the file in bytes. Used for validation against
+  /// upload size limits, display of file metadata, and storage quota tracking.
+  file_size Int
+  
+  /// Timestamp when this file record was created.
+  ///
+  /// Records the exact date and time when the file was uploaded and this
+  /// record was first inserted. Used for audit trails and chronological file
+  /// listing.
+  created_at DateTime
+  
+  /// Timestamp when this file record was last updated.
+  ///
+  /// Records the exact date and time when this record was most recently
+  /// modified. Used for detecting changes and supporting optimistic
+  /// concurrency control.
+  updated_at DateTime
+  
+  /// Soft delete timestamp.
+  ///
+  /// When set to a non-null value, indicates this file has been soft-deleted
+  /// and should be excluded from normal queries. The actual file may be
+  /// retained for backup purposes. NULL indicates the file is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  community reddit_community_communities @relation(fields: [reddit_community_community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  communitySnapshots reddit_community_community_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([reddit_community_community_id], map: "reddit_community_community_files_reddit_community_comm_71a0ad98")
+}

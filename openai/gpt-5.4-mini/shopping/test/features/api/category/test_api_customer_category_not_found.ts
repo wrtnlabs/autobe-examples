@@ -3,6 +3,7 @@ import type { IAuthorizationToken } from "@ORGANIZATION/PROJECT-api/lib/structur
 import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import type { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import type { IMallPlatformCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomer";
+import type { IMallPlatformCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCustomerProfile";
 import { DeepPartial } from "@ORGANIZATION/PROJECT-api/lib/typings/DeepPartial";
 import { ArrayUtil, RandomGenerator, TestValidator } from "@nestia/e2e";
 import { IConnection } from "@nestia/fetcher";
@@ -20,20 +21,19 @@ export async function test_api_customer_category_not_found(
   await authorize_customer_join(customerConnection, {
     body: {
       email: typia.random<string & tags.Format<"email">>(),
-      password: "1234",
-      href: "https://example.com/join",
+      password: typia.random<string & tags.Format<"password">>(),
+      href: "https://example.com/register",
       referrer: "https://example.com/landing",
-      ip: "127.0.0.1",
     } satisfies IMallPlatformCustomer.IJoin,
   });
-  await TestValidator.httpError(
-    "customer category detail should return not found for a missing category",
-    404,
+  const categoryId = typia.random<string & tags.Format<"uuid">>();
+  await TestValidator.error(
+    "unknown category should return not found",
     async () => {
-      await api.functional.mallPlatform.customer.categories.at(
+      await api.functional.mallPlatform.customer.categories.getByCategoryid(
         customerConnection,
         {
-          categoryId: typia.random<string & tags.Format<"uuid">>(),
+          categoryId,
         },
       );
     },

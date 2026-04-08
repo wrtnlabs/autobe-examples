@@ -16,7 +16,7 @@ export async function deleteRedditCloneMemberCommunitiesCommunityIdModeratorsMod
   communityId: string & tags.Format<"uuid">;
   moderatorId: string & tags.Format<"uuid">;
 }): Promise<void> {
-  // 1. Authorization Check: Verify the authenticated user is the owner of the community
+  // Step 1: Authorization - Verify the current member is the owner of the community
   const ownerRecord =
     await MyGlobal.prisma.reddit_clone_community_moderators.findFirst({
       where: {
@@ -28,11 +28,11 @@ export async function deleteRedditCloneMemberCommunitiesCommunityIdModeratorsMod
         id: true,
       },
     });
-  if (!ownerRecord) {
-    throw new HttpException("Forbidden", 403);
+  if (ownerRecord === null) {
+    throw new HttpException("Only the owner can remove moderators", 403);
   }
-  // 2. Target Validation: Query the moderator record to be removed
-  const targetModerator =
+  // Step 2: Target Validation - Find the moderator to remove
+  const moderatorRecord =
     await MyGlobal.prisma.reddit_clone_community_moderators.findFirst({
       where: {
         reddit_clone_community_id: props.communityId,
@@ -43,17 +43,17 @@ export async function deleteRedditCloneMemberCommunitiesCommunityIdModeratorsMod
         role: true,
       },
     });
-  if (!targetModerator) {
+  if (moderatorRecord === null) {
     throw new HttpException("Moderator not found", 404);
   }
-  // 3. Owner Protection: Verify the target moderator's role is NOT 'owner'
-  if (targetModerator.role === "owner") {
-    throw new HttpException("Cannot remove the owner", 400);
+  // Step 3: Owner Protection - Cannot remove the owner
+  if (moderatorRecord.role === "owner") {
+    throw new HttpException("The owner cannot be removed", 400);
   }
-  // 4. Hard Delete: Remove the moderator record
+  // Step 4: Hard Delete - Remove the moderator assignment
   await MyGlobal.prisma.reddit_clone_community_moderators.delete({
     where: {
-      id: targetModerator.id,
+      id: moderatorRecord.id,
     },
   });
 }

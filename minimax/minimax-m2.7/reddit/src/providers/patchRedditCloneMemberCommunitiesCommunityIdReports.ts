@@ -22,18 +22,25 @@ export async function patchRedditCloneMemberCommunitiesCommunityIdReports(props:
   communityId: string & tags.Format<"uuid">;
   body: IRedditCloneCommunityReport.IRequest;
 }): Promise<IPageIRedditCloneCommunityReport.ISummary> {
-  // 1. Verify member is moderator/owner of the community
+  // Authorization: Verify the requesting user is a moderator of the specified community
   const moderator =
     await MyGlobal.prisma.reddit_clone_community_moderators.findFirst({
       where: {
-        reddit_clone_member_id: props.member.id,
         reddit_clone_community_id: props.communityId,
+        reddit_clone_member_id: props.member.id,
+      },
+      select: {
+        id: true,
       },
     });
   if (!moderator) {
     throw new HttpException("Forbidden", 403);
   }
-  // 2. Build WHERE clause with filters
+  // Pagination defaults
+  const page = props.body.page ?? 1;
+  const limit = props.body.limit ?? 20;
+  const skip = (page - 1) * limit;
+  // Build where clause with filters
   const whereInput = {
     reddit_clone_community_id: props.communityId,
     ...(props.body.status !== undefined && { status: props.body.status }),
@@ -44,30 +51,21 @@ export async function patchRedditCloneMemberCommunitiesCommunityIdReports(props:
       reason: { contains: props.body.search, mode: "insensitive" as const },
     }),
   } satisfies Prisma.reddit_clone_community_reportsWhereInput;
-  // 3. Pagination parameters
-  const page = props.body.page ?? 1;
-  const limit = props.body.limit ?? 20;
-  const skip = (page - 1) * limit;
-  // 4. Sort configuration
-  const orderByInput = (
-    props.body.sort === "status"
-      ? { status: "asc" as const }
-      : { created_at: "desc" as const }
-  ) satisfies Prisma.reddit_clone_community_reportsOrderByWithRelationInput;
-  // 5. Execute queries sequentially (findMany + count)
+  // Query reports with filters, pagination, and sorting
   const records = await MyGlobal.prisma.reddit_clone_community_reports.findMany(
     {
       where: whereInput,
-      skip,
+      skip: skip,
       take: limit,
-      orderBy: orderByInput,
+      orderBy: { created_at: "desc" },
       ...RedditCloneCommunityReportAtSummaryTransformer.select(),
     },
   );
+  // Count total records for pagination
   const total = await MyGlobal.prisma.reddit_clone_community_reports.count({
     where: whereInput,
   });
-  // 6. Return paginated response
+  // Return paginated response
   return {
     pagination: {
       current: page,

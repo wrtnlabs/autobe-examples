@@ -2,10 +2,10 @@ import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
 import { IMallPlatformCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformCategory";
 import { IMallPlatformInventoryRecord } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformInventoryRecord";
 import { IMallPlatformProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProduct";
-import { IMallPlatformProductImage } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductImage";
 import { IMallPlatformProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformProductVariant";
-import { IMallPlatformSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSeller";
+import { IMallPlatformSellerAccount } from "@ORGANIZATION/PROJECT-api/lib/structures/IMallPlatformSellerAccount";
 import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
 import { Prisma } from "@prisma/sdk";
 import { VariadicSingleton } from "tstl";
 import typia, { tags } from "typia";
@@ -22,6 +22,7 @@ export namespace MallPlatformInventoryRecordTransformer {
     return {
       select: {
         id: true,
+        mall_platform_product_variant_id: true,
         quantity_change: true,
         reason: true,
         created_at: true,
@@ -40,11 +41,12 @@ export namespace MallPlatformInventoryRecordTransformer {
         await MallPlatformProductVariantAtSummaryTransformer.transform(
           input.productVariant,
         ),
-      quantityChange: input.quantity_change,
+      mall_platform_product_variant_id: input.mall_platform_product_variant_id,
+      quantity_change: input.quantity_change,
       reason: input.reason,
-      createdAt: input.created_at.toISOString(),
-      updatedAt: input.updated_at.toISOString(),
-      deletedAt: input.deleted_at?.toISOString() ?? null,
+      created_at: input.created_at.toISOString(),
+      updated_at: input.updated_at.toISOString(),
+      deleted_at: input.deleted_at?.toISOString() ?? null,
     } satisfies IMallPlatformInventoryRecord;
   }
 }
@@ -75,11 +77,12 @@ export namespace MallPlatformInventoryRecordTransformer {
 //         return {
 //   id: {string},
 //   productVariant: await MallPlatformProductVariantAtSummaryTransformer.transform(input.productVariant),
-//   quantityChange: {integer},
+//   mall_platform_product_variant_id: {string},
+//   quantity_change: {integer},
 //   reason: {string},
-//   createdAt: {string},
-//   updatedAt: {string},
-//   deletedAt: {string | null},
+//   created_at: {string},
+//   updated_at: {string},
+//   deleted_at: {string | null},
 //         };
 //       }
 //     }
