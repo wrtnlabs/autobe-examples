@@ -1,4 +1,4 @@
-# AutoBe Generated Examples
+# AutoBe Generated Examples 
 
 ## Benchmark
 
