@@ -1,0 +1,216 @@
+/// Immutable audit trail entries recording significant organizational actions.
+///
+/// Each entry captures a single auditable event within an organization,
+/// including the timestamp of occurrence, the actor (member) who performed
+/// the action, the action type classification, and references to the target
+/// entity. Entries are created automatically by the system whenever a
+/// significant action occurs (employee lifecycle events, contract changes,
+/// project operations, task status transitions, timesheet workflow events,
+/// role assignments). Once created, entries are never modified or deleted —
+/// they form a permanent, tamper-proof audit trail for organizational
+/// governance.
+///
+/// Activity log entries strictly belong to exactly one organization. Only
+/// users with the org:manage permission within that organization can view
+/// its activity log. Entries support filtering by action type, actor member,
+/// and date range for investigation and compliance purposes.
+///
+/// @namespace hrm_time_tracking.activity_logs
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_activity_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the activity log entry.
+  id String @id
+  
+  /// Foreign key to the organization this activity log entry belongs to.
+  ///
+  /// Each activity log entry is strictly scoped to exactly one organization.
+  /// Users can only view entries within their currently selected organization
+  /// context, enforcing data isolation between organizations. When an
+  /// organization is deleted, all associated activity log entries are
+  /// permanently removed.
+  hrm_time_tracking_organization_id String
+  
+  /// Foreign key to the member who performed the action.
+  ///
+  /// Identifies the user whose action triggered this activity log entry. The
+  /// actor's identity (display name and email) is preserved as part of the
+  /// immutable record — even if the user account is later deactivated or
+  /// deleted, the activity log entry remains intact and continues to display
+  /// the original actor's identity.
+  hrm_time_tracking_member_id String
+  
+  /// Foreign key to the activity log type classification.
+  ///
+  /// Categorizes the action into a predefined action type (e.g., employee
+  /// invited, project created, timesheet approved). The action type
+  /// classification enables filtering and grouping of activity log entries for
+  /// audit and investigation purposes.
+  hrm_time_tracking_activity_log_type_id String
+  
+  /// Type of the business entity that was acted upon.
+  ///
+  /// Identifies the kind of entity targeted by the action (e.g., Employee,
+  /// Contract, Project, Task, Timesheet, Role). Used in conjunction with
+  /// targetEntityId to uniquely reference the affected entity. Stored as a
+  /// string rather than a foreign key because the target could reference any
+  /// of several entity types.
+  target_entity_type String
+  
+  /// UUID of the business entity that was acted upon.
+  ///
+  /// Identifies the specific entity instance that was affected by the action.
+  /// Used in conjunction with targetEntityType to uniquely reference the
+  /// affected entity. This field stores the entity's UUID but is not a formal
+  /// foreign key constraint since the target could be any of several entity
+  /// types.
+  target_entity_id String
+  
+  /// Human-readable name of the target entity at the time of the action.
+  ///
+  /// Stores the display name or title of the entity (e.g., employee name,
+  /// project name, task title) as it existed when the action occurred. This
+  /// field is intentionally denormalized — it preserves the entity's name even
+  /// if the entity is later renamed or deleted, ensuring the audit record
+  /// remains meaningful over time.
+  target_entity_name String
+  
+  /// Free-form contextual information about the action.
+  ///
+  /// Captures a human-readable summary of what changed, such as status
+  /// transitions, modified values, or relevant identifiers. Examples include
+  /// 'Status changed from draft to submitted', 'Pay rate updated from $40/hr
+  /// to $45/hr', or 'Role changed from Employee to Manager'. This field is
+  /// nullable as some action types may not require additional context beyond
+  /// the action type and target reference.
+  details String?
+  
+  /// Timestamp when the action occurred and the entry was created.
+  ///
+  /// Records the exact moment the action was performed, used for chronological
+  /// ordering and date range filtering. Displayed in the organization's
+  /// configured timezone. Since activity log entries are immutable, this
+  /// timestamp never changes after creation.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_time_tracking_organizations @relation(fields: [hrm_time_tracking_organization_id], references: [id], onDelete: Cascade)
+  member hrm_time_tracking_members @relation(fields: [hrm_time_tracking_member_id], references: [id], onDelete: Cascade)
+  activityLogType hrm_time_tracking_activity_log_types @relation(fields: [hrm_time_tracking_activity_log_type_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_member_id], map: "hrm_time_tracking_activity_logs_hrm_time_tracking_memb_66e697d9")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_activity_log_type_id], map: "hrm_time_tracking_activity_logs_hrm_time_tracking_acti_5a5e37f4")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_organization_id, created_at], map: "hrm_time_tracking_activity_logs_hrm_time_tracking_orga_992a70ec")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_organization_id, hrm_time_tracking_member_id], map: "hrm_time_tracking_activity_logs_hrm_time_tracking_orga_f7119911")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_organization_id, hrm_time_tracking_activity_log_type_id], map: "hrm_time_tracking_activity_logs_hrm_time_tracking_orga_887b027a")
+}
+
+/// Lookup table enumerating all action type classifications used by {@link
+/// hrm_time_tracking_activity_logs} entries.
+///
+/// Each record defines a distinct action category such as employee lifecycle
+/// events (employee.invited, employee.deactivated, employee.reactivated),
+/// contract events (contract.created, contract.edited), project lifecycle
+/// events (project.created, project.archived, project.completed,
+/// project.deleted), task status changes (task.status_changed), timesheet
+/// workflow events (timesheet.submitted, timesheet.approved,
+/// timesheet.rejected), and role assignment events (role.assigned,
+/// role.changed).
+///
+/// These types are system-defined and seeded during organization
+/// initialization — users cannot create, modify, or delete them directly.
+/// The code field uses a stable dot-notation format ({category}.{action})
+/// for consistent identification across the audit system.
+///
+/// @namespace hrm_time_tracking.activity_logs
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_activity_log_types {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Unique action type identifier using dot notation (e.g.,
+  /// "employee.invited", "project.created", "timesheet.approved",
+  /// "role.assigned").
+  ///
+  /// This code serves as the stable reference key used by {@link
+  /// hrm_time_tracking_activity_logs} entries to classify recorded actions.
+  /// The format follows the pattern {category}.{action} for consistent
+  /// identification across the audit system.
+  code String
+  
+  /// Logical grouping category for this action type (e.g., "employee",
+  /// "contract", "project", "task", "timesheet", "role").
+  ///
+  /// Used for filtering and organizing action types by the business domain
+  /// they belong to. This enables organization managers to filter the activity
+  /// log by specific categories of actions.
+  category String?
+  
+  /// Human-readable display name for this action type (e.g., "Employee
+  /// Invited", "Project Created", "Timesheet Approved").
+  ///
+  /// Provides a user-friendly label shown in the activity log UI when
+  /// displaying log entries, making it easy for organization managers to
+  /// understand what action was performed.
+  name String
+  
+  /// Detailed explanation of what this action type represents and when it is
+  /// recorded.
+  ///
+  /// Provides context for organization administrators to understand the
+  /// purpose and trigger conditions of each action type. For example,
+  /// "employee.invited" is recorded when a user with employee:manage
+  /// permission invites a new employee to the organization.
+  description String?
+  
+  /// Timestamp when this action type record was created.
+  ///
+  /// System-defined types are seeded during organization initialization and
+  /// this timestamp reflects when the record was first inserted into the
+  /// database.
+  created_at DateTime
+  
+  /// Timestamp when this action type record was last updated.
+  ///
+  /// Updated if the action type definition (name or description) is modified
+  /// during system updates. This field tracks the history of changes to the
+  /// reference data.
+  updated_at DateTime
+  
+  /// Timestamp when this action type record was soft-deleted, or null if the
+  /// record is still active.
+  ///
+  /// System-defined action types are typically never deleted, but this field
+  /// provides a safety mechanism should a system update need to retire an
+  /// action type while preserving referential integrity with existing activity
+  /// log entries.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  activityLogs hrm_time_tracking_activity_logs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([code])
+  @@index([category, code])
+}

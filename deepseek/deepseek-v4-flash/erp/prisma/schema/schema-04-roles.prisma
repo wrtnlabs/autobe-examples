@@ -1,0 +1,169 @@
+/// Defines named permission sets within an organization, including three
+/// immutable built-in roles (Owner, Manager, Employee) seeded at
+/// organization creation and user-created custom roles with configurable
+/// permission sets.
+///
+/// Each role belongs to exactly one {@link hrm_time_tracking_organizations}.
+/// The `type` field distinguishes built-in roles (which cannot be deleted or
+/// renamed) from custom roles (which can be created, edited, and deleted by
+/// organization owners). Role names must be unique within the organization
+/// to prevent ambiguity.
+///
+/// Permissions are assigned to roles via the {@link
+/// hrm_time_tracking_role_permissions} junction table, which supports a
+/// many-to-many relationship between roles and the 9 fixed system
+/// permissions (org:manage, employee:manage, employee:view, project:manage,
+/// project:view, time:manage, time:approve, time:view_all, report:view).
+///
+/// Each {@link hrm_time_tracking_employees} is assigned exactly one role,
+/// which governs their permissions within the organization. Role assignments
+/// can be changed by users with `employee:manage` permission. Built-in roles
+/// cannot be deleted; custom roles can only be deleted if no employees are
+/// currently assigned to them.
+///
+/// @namespace hrm_time_tracking.roles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_roles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Foreign key to the organization that owns this role. Every role is scoped
+  /// within exactly one organization, enforcing multi-tenant data isolation.
+  ///
+  /// Built-in roles (Owner, Manager, Employee) are seeded automatically when
+  /// an organization is created. Custom roles are created by organization
+  /// owners or users with `org:manage` permission. Deleting an organization
+  /// cascades to all its associated roles.
+  hrm_time_tracking_organization_id String
+  
+  /// Display name of the role. For built-in roles, this is one of "Owner",
+  /// "Manager", or "Employee". For custom roles, this is a user-defined name
+  /// that must be unique within the organization.
+  ///
+  /// Built-in role names are immutable and cannot be changed by any user.
+  /// Custom role names can be edited by users with `org:manage` permission.
+  name String
+  
+  /// Classification distinguishing immutable system-defined roles from
+  /// user-managed custom roles.
+  ///
+  /// - `built_in`: One of the three seeded roles (Owner, Manager, Employee).
+  /// Cannot be deleted or renamed by any user.
+  /// - `custom`: User-created role with configurable permissions. Can be
+  /// created, renamed, and deleted by organization owners, provided no active
+  /// employees are currently assigned to it.
+  type String
+  
+  /// Timestamp when this role was created. For built-in roles, this is set at
+  /// organization creation time when the three default roles are seeded. For
+  /// custom roles, this is set when an organization owner creates the role
+  /// through the role management interface.
+  created_at DateTime
+  
+  /// Timestamp when this role was last modified. Tracks updates to role
+  /// properties such as name changes (custom roles only) or metadata updates.
+  /// Built-in roles should never have their name or type changed, and ideally
+  /// their updated_at remains unchanged after creation.
+  updated_at DateTime
+  
+  /// Timestamp when this role was soft-deleted. Only applies to custom roles —
+  /// built-in roles cannot be deleted under any circumstances.
+  ///
+  /// When null, the role is active and can be assigned to employees. When set,
+  /// the role is considered deleted and cannot be assigned to new employees.
+  /// The system enforces that a custom role cannot be deleted if any active
+  /// employees are currently assigned to it. Soft deletion preserves
+  /// referential integrity with historical employee records and activity log
+  /// entries that reference this role.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_time_tracking_organizations @relation(fields: [hrm_time_tracking_organization_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  rolePermissions hrm_time_tracking_role_permissions[]
+  employees hrm_time_tracking_employees[]
+  employeeSnapshots hrm_time_tracking_employee_snapshots[]
+  invitations hrm_time_tracking_invitations[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrm_time_tracking_organization_id, name], map: "hrm_time_tracking_roles_hrm_time_tracking_organization_2bcab36d")
+}
+
+/// Junction table mapping individual system permissions to roles within an
+/// organization.
+///
+/// Each row associates one {@link hrm_time_tracking_roles} with one
+/// permission code from the 9 fixed system permissions (org:manage,
+/// employee:manage, employee:view, project:manage, project:view,
+/// time:manage, time:approve, time:view_all, report:view). This enables the
+/// many-to-many relationship between roles and permissions, allowing custom
+/// roles to have configurable permission sets while built-in roles (Owner,
+/// Manager, Employee) receive their predefined permission sets at
+/// organization creation.
+///
+/// The composite unique constraint on (hrm_time_tracking_role_id,
+/// permission_code) ensures no role has duplicate permission assignments.
+/// When a role is deleted, its associated permission mappings are
+/// cascade-deleted.
+///
+/// @namespace hrm_time_tracking.roles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_role_permissions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the role this permission belongs to.
+  ///
+  /// Each row associates exactly one permission code with one {@link
+  /// hrm_time_tracking_roles}. When a role is deleted, all its permission
+  /// mappings are cascade-deleted.
+  hrm_time_tracking_role_id String
+  
+  /// The permission code assigned to the role.
+  ///
+  /// One of 9 fixed system permissions: org:manage, employee:manage,
+  /// employee:view, project:manage, project:view, time:manage, time:approve,
+  /// time:view_all, report:view. Built-in roles (Owner, Manager, Employee)
+  /// receive predefined sets of these permissions at organization creation,
+  /// while custom roles have configurable selections by users with org:manage
+  /// permission.
+  permission_code String
+  
+  /// Timestamp when this role-permission mapping was created.
+  created_at DateTime
+  
+  /// Timestamp when this role-permission mapping was last updated.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. If set, this role-permission mapping is considered
+  /// deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  role hrm_time_tracking_roles @relation(fields: [hrm_time_tracking_role_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrm_time_tracking_role_id, permission_code], map: "hrm_time_tracking_role_permissions_hrm_time_tracking_r_8d6486d7")
+}

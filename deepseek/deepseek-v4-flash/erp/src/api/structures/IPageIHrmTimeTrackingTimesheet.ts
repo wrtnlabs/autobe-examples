@@ -1,0 +1,25 @@
+import { IHrmTimeTrackingTimesheet } from "./IHrmTimeTrackingTimesheet";
+import { IPage } from "./IPage";
+
+export namespace IPageIHrmTimeTrackingTimesheet {
+  /**
+   * A page.
+   *
+   * Collection of records with pagination information.
+   */
+  export type ISummary = {
+    /**
+     * Page information.
+     *
+     * @x-autobe-specification Pagination information for the page.
+     */
+    pagination: IPage.IPagination;
+
+    /**
+     * List of records.
+     *
+     * @x-autobe-specification List of records of type IHrmTimeTrackingTimesheet.ISummary.
+     */
+    data: IHrmTimeTrackingTimesheet.ISummary[];
+  };
+}

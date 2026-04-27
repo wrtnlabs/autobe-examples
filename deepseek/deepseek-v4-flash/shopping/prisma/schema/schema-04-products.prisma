@@ -1,0 +1,661 @@
+/// Core product entity representing a sellable item on the e-commerce
+/// platform, owned by a seller and assigned to a category. Products contain
+/// basic descriptive information (name, description, base price) and a
+/// visibility state controlling their appearance in search results and
+/// category listings. A product must have at least one {@link
+/// e_commerce_mall_product_variants variant} to be purchasable; products
+/// with no variants are visible but shown as unavailable.
+///
+/// **Visibility states**: "visible" (default — appears in search results and
+/// category listings), "unavailable_but_visible" (no variants exist, shown
+/// as unavailable for purchase), "deleted" (seller or administrator deleted,
+/// hidden from all listings), "suspended" (seller account suspended by
+/// administrator, hidden from listings and non-purchasable until suspension
+/// is lifted).
+///
+/// **Ownership and lifecycle**: Each product belongs to a single {@link
+/// e_commerce_mall_sellers seller}. Sellers can edit their products (each
+/// edit triggers a {@link e_commerce_mall_product_snapshots product
+/// snapshot}) and delete them provided no pending order items exist for any
+/// variant. Administrators can delete any product (e.g., for policy
+/// violations) or suspend sellers (which hides all their products). When a
+/// category is deleted, the product's category_id is set to null and it
+/// becomes uncategorized but remains visible in search.
+///
+/// @namespace products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_products {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the {@link e_commerce_mall_sellers seller} who owns this
+  /// product. Establishes product ownership — a seller can have many products,
+  /// and each product belongs to exactly one seller. Required at creation
+  /// time. When a seller deletes their account, their products are
+  /// soft-deleted (visibility set to "deleted").
+  seller_id String
+  
+  /// Foreign key to the {@link e_commerce_mall_categories category} assigned
+  /// to this product for catalog organization. Products are assigned to a
+  /// category at creation time (can be a top-level category or a subcategory).
+  /// Nullable because when an administrator deletes a category, all products
+  /// previously assigned to that category become uncategorized (category_id
+  /// set to null) but remain visible in search results.
+  category_id String?
+  
+  /// Product display name shown in search results, category listings, wishlist
+  /// views, and on the product detail page. Used for full-text search when
+  /// customers search by product name. Required at creation time.
+  name String
+  
+  /// Detailed textual description of the product shown on the product detail
+  /// page. Provides customers with information about features, specifications,
+  /// usage instructions, and other relevant details. Required at creation
+  /// time.
+  description String
+  
+  /// Base price of the product in the platform's currency. This price serves
+  /// as the default price displayed on listing pages and is used when a
+  /// product variant does not specify a price override. Displayed as a price
+  /// range on listing pages when variants have different prices.
+  base_price Float
+  
+  /// Current visibility state controlling the product's appearance in search
+  /// results and category listings. Valid values: "visible" (default, appears
+  /// normally in all listings), "unavailable_but_visible" (no variants exist,
+  /// shown as unavailable for purchase but still visible), "deleted" (seller
+  /// or administrator soft-deleted, hidden from all customer-facing listings),
+  /// "suspended" (seller account suspended by administrator, hidden from
+  /// listings and cannot be purchased until suspension is lifted).
+  visibility String
+  
+  /// Timestamp when this product was first created and listed on the platform.
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to this product's fields. Updated
+  /// whenever the seller edits any product attribute (name, description, base
+  /// price, category assignment).
+  updated_at DateTime
+  
+  /// Timestamp when this product was soft-deleted (visibility set to
+  /// "deleted"). Null until the product is deleted. After deletion, the
+  /// product no longer appears in search results or category listings. Used
+  /// for data retention and potential recovery.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller e_commerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  category e_commerce_mall_categories? @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  images e_commerce_mall_product_images[]
+  variants e_commerce_mall_product_variants[]
+  productSnapshots e_commerce_mall_product_snapshots[]
+  wishlistItems e_commerce_mall_wishlist_items[]
+  reviews e_commerce_mall_reviews[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([seller_id, created_at])
+  @@index([category_id, created_at])
+  @@index([visibility, created_at])
+}
+
+/// Images belonging to a product with a URL reference to the stored image
+/// file and a sort order determining display sequence.
+///
+/// Each product can have multiple images. The image with the lowest
+/// sort_order (typically 0) serves as the main thumbnail displayed in search
+/// results, category listings, and wishlist pages. All images are displayed
+/// on the product detail page in ascending sort_order order.
+///
+/// Image changes are captured in {@link e_commerce_mall_product_snapshots}
+/// via the {@link e_commerce_mall_product_snapshot_images} table for
+/// historical preservation, following the Snapshot Principle. When a seller
+/// deletes an image, the record is hard-deleted from this table but the
+/// snapshot retains the historical state. No soft delete is required because
+/// snapshots serve as the immutable audit trail.
+///
+/// @namespace products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_product_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the product this image belongs to.
+  ///
+  /// A product can have multiple images. When a product is deleted, all its
+  /// associated images are also removed via cascade. This establishes the
+  /// parent-child relationship between {@link e_commerce_mall_products} and
+  /// this table.
+  e_commerce_mall_product_id String
+  
+  /// URL pointing to the stored image file on the platform's file storage
+  /// system.
+  ///
+  /// This URL is used to fetch and render the image across the platform
+  /// including search results, category listings, product detail pages, and
+  /// wishlist displays, as specified in the Image URL Attribute requirement.
+  url String
+  
+  /// Display order of this image within the product's image set, with 0
+  /// indicating the main thumbnail image.
+  ///
+  /// The image with the lowest sort_order (typically 0) serves as the main
+  /// thumbnail displayed in search results, category listings, wishlist, and
+  /// as the primary image on the product detail page. Images are displayed in
+  /// ascending order of this field.
+  sort_order Int
+  
+  /// Timestamp when this image record was created.
+  created_at DateTime
+  
+  /// Timestamp when this image record was last updated, typically when the
+  /// sort_order is changed through image reordering.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product e_commerce_mall_products @relation(fields: [e_commerce_mall_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([e_commerce_mall_product_id, sort_order], map: "e_commerce_mall_product_images_e_commerce_mall_product_17e42af1")
+}
+
+/// Specific purchasable configuration of a product identified by a globally
+/// unique SKU code and a set of option values (e.g., color, size) with an
+/// optional price override.
+///
+/// Each {@link e_commerce_mall_product_variant} belongs to exactly one
+/// {@link e_commerce_mall_product}. A product must have at least one variant
+/// to be purchasable — products with no variants are shown as unavailable.
+/// The variant's current stock quantity is derived by summing the quantity
+/// changes of all {@link e_commerce_mall_inventory_record}s for that
+/// variant.
+///
+/// Variant lifecycle includes In Stock (stock quantity > 0), Out of Stock
+/// (stock quantity = 0), and Deleted (soft-deleted via `deleted_at`). When a
+/// variant is edited, a snapshot is automatically created preserving the
+/// previous state for audit and dispute resolution. A variant cannot be
+/// deleted if it has any order items with status "paid" referencing it.
+///
+/// @namespace products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_product_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key — unique identifier for the product variant.
+  id String @id
+  
+  /// Foreign key to the parent {@link e_commerce_mall_product} that this
+  /// variant belongs to.
+  ///
+  /// Each variant is a specific configuration of exactly one product. Deleting
+  /// the parent product cascades to delete all its variants.
+  e_commerce_mall_product_id String
+  
+  /// Globally unique SKU (Stock Keeping Unit) code identifying this variant
+  /// across the entire platform.
+  ///
+  /// Duplicates are rejected at the database level via a unique index. The SKU
+  /// code is required and must be unique across all variants.
+  sku_code String
+  
+  /// Optional price override for this variant. If set, this price is used
+  /// instead of the parent product's base price.
+  ///
+  /// When null, the variant inherits the product's base price. This allows
+  /// variants with different pricing (e.g., a larger size costing more) while
+  /// maintaining a base price for the product.
+  price Float?
+  
+  /// Timestamp when this variant was first created.
+  created_at DateTime
+  
+  /// Timestamp when this variant was last modified. Updated on every field
+  /// change including SKU, price, or option value edits.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. When set, the variant is considered deleted — it
+  /// is removed from product listings and cannot be added to cart.
+  ///
+  /// Deleted variants remain in the database for historical reference (order
+  /// items, snapshots). Null indicates the variant is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product e_commerce_mall_products @relation(fields: [e_commerce_mall_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  inventoryRecords e_commerce_mall_inventory_records[]
+  options e_commerce_mall_product_variant_options[]
+  cartItems e_commerce_mall_cart_items[]
+  orderItems e_commerce_mall_order_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([sku_code])
+  // spellchecker: ignore-next-line
+  @@index([e_commerce_mall_product_id, sku_code], map: "e_commerce_mall_product_variants_e_commerce_mall_produ_35408876")
+  // spellchecker: ignore-next-line
+  @@index([e_commerce_mall_product_id, created_at], map: "e_commerce_mall_product_variants_e_commerce_mall_produ_53d51ced")
+}
+
+/// Append-only stock change history for product variants.
+///
+/// Each record captures a single inventory movement — either positive
+/// (restocking, return, cancellation restoration) or negative (customer
+/// order, manual adjustment). The current stock quantity of a {@link
+/// e_commerce_mall_product_variants} is derived by summing the
+/// `quantity_change` values of all its inventory records.
+///
+/// Records are automatically created by the system during order placement,
+/// cancellation approval, and refund approval. Sellers may also create
+/// manual records for restocking or inventory adjustments. All records are
+/// immutable — once created, they cannot be edited or deleted, ensuring a
+/// complete audit trail.
+///
+/// @namespace products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_inventory_records {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// The {@link e_commerce_mall_product_variants} whose stock quantity was
+  /// changed.
+  ///
+  /// Each inventory record belongs to exactly one product variant. All records
+  /// for a given variant form its complete stock history, and the current
+  /// stock quantity is calculated by summing all `quantity_change` values
+  /// across these records.
+  e_commerce_mall_product_variant_id String
+  
+  /// The change in stock quantity for this inventory movement.
+  ///
+  /// Positive values represent stock increases (e.g., restocking, cancellation
+  /// restoration, refund restoration). Negative values represent stock
+  /// decreases (e.g., customer purchase, manual adjustment for loss). The
+  /// current stock of the parent variant is the sum of all quantity_change
+  /// values across all its inventory records.
+  quantity_change Int
+  
+  /// Textual explanation of why the stock change occurred.
+  ///
+  /// Provides business context for each inventory movement, such as "seller
+  /// restock", "order placed - Order #12345", "cancellation approved -
+  /// Cancellation #67890", "refund approved - Refund #11121", "damaged item
+  /// removed from inventory", or "inventory count correction".
+  reason String
+  
+  /// Timestamp when this inventory change was recorded.
+  ///
+  /// Establishes the chronological ordering of stock movements for audit trail
+  /// purposes.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  productVariant e_commerce_mall_product_variants @relation(fields: [e_commerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([e_commerce_mall_product_variant_id, created_at], map: "e_commerce_mall_inventory_records_e_commerce_mall_prod_a44cf7ae")
+}
+
+/// Immutable historical records preserving the complete product-level state
+/// at the moment of each product edit.
+///
+/// This model captures the product name, description, base price, and
+/// category assignment as they existed when a snapshot was triggered.
+/// Together with its child tables {@link
+/// e_commerce_mall_product_snapshot_variants} and {@link
+/// e_commerce_mall_product_snapshot_images}, it provides an authoritative
+/// record of a product listing's appearance at any past point in time for
+/// dispute resolution and audit purposes.
+///
+/// Snapshots are created automatically whenever a seller edits their
+/// product. They are immutable — once created, the data stored in a snapshot
+/// can never be modified or deleted, ensuring a permanent audit trail
+/// preserved even after the source product is deleted.
+///
+/// Each snapshot belongs to exactly one {@link e_commerce_mall_products} and
+/// may reference the {@link e_commerce_mall_categories} assignment as it
+/// existed at snapshot time. If the category is later deleted by an
+/// administrator, the snapshot still records what category the product
+/// belonged to at capture time.
+///
+/// @namespace products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_product_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key — unique identifier for each product snapshot record.
+  id String @id
+  
+  /// Foreign key to the {@link e_commerce_mall_products} that this snapshot
+  /// captures the state of.
+  ///
+  /// A product may have many snapshots over its lifetime, each triggered by a
+  /// seller edit. This field links the snapshot to its source product for
+  /// historical querying. Snapshots are preserved even after the source
+  /// product is deleted.
+  e_commerce_mall_product_id String
+  
+  /// Foreign key to the {@link e_commerce_mall_categories} that the product
+  /// belonged to at snapshot time.
+  ///
+  /// Nullable because administrators may later delete the category from the
+  /// system. The snapshot preserves the category assignment as it existed at
+  /// capture time for historical accuracy.
+  e_commerce_mall_category_id String?
+  
+  /// The product name as it appeared at snapshot time.
+  ///
+  /// This is a denormalized copy of the product's name at the moment the
+  /// snapshot was taken, ensuring historical accuracy even if the product name
+  /// is later changed or the product is deleted.
+  name String
+  
+  /// The product description as it appeared at snapshot time.
+  ///
+  /// This is a denormalized copy of the product's description text at the
+  /// moment the snapshot was taken, preserving the exact listing copy
+  /// customers saw for dispute resolution.
+  description String
+  
+  /// The product base price as it appeared at snapshot time.
+  ///
+  /// This is a denormalized copy of the product's base price at the moment the
+  /// snapshot was taken, ensuring historical pricing records are available for
+  /// financial auditing and dispute resolution.
+  base_price Float
+  
+  /// Timestamp indicating when this snapshot was created.
+  ///
+  /// This serves as the chronological reference point and corresponds to the
+  /// exact moment the product edit was saved. Snapshots are ordered by this
+  /// timestamp for historical browsing. As snapshots are immutable, this field
+  /// is never updated.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  product e_commerce_mall_products @relation(fields: [e_commerce_mall_product_id], references: [id], onDelete: Cascade)
+  category e_commerce_mall_categories? @relation(fields: [e_commerce_mall_category_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  variantSnapshots e_commerce_mall_product_snapshot_variants[]
+  snapshotImages e_commerce_mall_product_snapshot_images[]
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([e_commerce_mall_category_id], map: "e_commerce_mall_product_snapshots_e_commerce_mall_cate_9cffd771")
+  // spellchecker: ignore-next-line
+  @@index([e_commerce_mall_product_id, created_at], map: "e_commerce_mall_product_snapshots_e_commerce_mall_prod_76aaa1b0")
+}
+
+/// Immutable variant configurations preserved as part of a parent product
+/// snapshot for historical reference.
+///
+/// Each record captures the complete state of a single product variant (SKU
+/// code, option values, and price) at the moment the parent {@link
+/// e_commerce_mall_product_snapshots} was created. When a seller edits a
+/// product, a product snapshot is created which atomically preserves all
+/// variants (via this table) and images (via {@link
+/// e_commerce_mall_product_snapshot_images}) as they existed before the
+/// edit.
+///
+/// These snapshot variant records are immutable and survive the deletion of
+/// the original variant or product, ensuring a complete audit trail for
+/// dispute resolution, policy enforcement, and historical reference. Sellers
+/// can view snapshots of their own product variants, and administrators can
+/// view snapshots of any variant on the platform.
+///
+/// @namespace products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_product_snapshot_variants {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the parent product snapshot that this variant snapshot
+  /// belongs to.
+  ///
+  /// Each variant snapshot is part of exactly one {@link
+  /// e_commerce_mall_product_snapshots}. A single product snapshot captures
+  /// all variants of the product at that point in time, creating a one-to-many
+  /// relationship between the product snapshot and its variant snapshots.
+  e_commerce_mall_product_snapshot_id String
+  
+  /// The unique SKU code of the variant as it existed at the time of snapshot
+  /// creation.
+  ///
+  /// This is the variant's stock-keeping unit identifier preserved for
+  /// historical tracking. The SKU enables traceability of which specific
+  /// variant configuration was available at any point in time, supporting
+  /// order fulfillment verification and inventory audit.
+  sku String
+  
+  /// The display name combining the variant's option values (e.g., 'Red /
+  /// Large') as it appeared at the time of snapshot creation.
+  ///
+  /// This field stores the human-readable description of the variant's
+  /// configuration — such as color, size, or other distinguishing options — in
+  /// a formatted display format. It serves as the historical record of what
+  /// options the variant offered at that specific point in time.
+  name String
+  
+  /// The variant's own price at the time of snapshot creation, if it had one.
+  ///
+  /// A variant can optionally override the product's base price with its own
+  /// price. This field captures that override value. If null, it means the
+  /// variant did not have its own price and the product's base price
+  /// (preserved in the parent {@link e_commerce_mall_product_snapshots})
+  /// applied to this variant at that time.
+  price Float?
+  
+  /// Timestamp of when this variant snapshot was created, which corresponds to
+  /// the moment the parent product snapshot was generated upon a product edit.
+  ///
+  /// This timestamp establishes the historical context of when the variant's
+  /// state was captured. It matches the {@link
+  /// e_commerce_mall_product_snapshots.created_at} of the parent snapshot.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  snapshot e_commerce_mall_product_snapshots @relation(fields: [e_commerce_mall_product_snapshot_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([e_commerce_mall_product_snapshot_id], map: "e_commerce_mall_product_snapshot_variants_e_commerce_m_82293e2d")
+}
+
+/// Preserved image URLs and display order within a parent product snapshot.
+///
+/// When a product is edited, the system captures the complete state of all
+/// product images at that moment. Each row in this table stores one
+/// historical image's URL and its sort order within the parent {@link
+/// e_commerce_mall_product_snapshots} record. This enables full
+/// reconstruction of how a product's images appeared at any point in time.
+///
+/// These records are immutable — they are created atomically as part of the
+/// parent product snapshot and are never modified or deleted.
+///
+/// @namespace products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_product_snapshot_images {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the parent product snapshot that this image belongs to.
+  ///
+  /// Each product snapshot captures the complete state of a product at the
+  /// time of an edit, including all images. This field links each preserved
+  /// image to its parent snapshot record.
+  e_commerce_mall_product_snapshot_id String
+  
+  /// The historical image URL preserved at the time of the product snapshot.
+  ///
+  /// This stores the exact URL (typically a file storage reference) of the
+  /// product image as it existed when the parent product snapshot was created.
+  url String
+  
+  /// Display order of this image within the parent snapshot's image collection.
+  ///
+  /// Lower values indicate higher priority. The first image (sort_order = 0)
+  /// serves as the thumbnail. The sort order reflects the arrangement of
+  /// images at the time the snapshot was taken.
+  sort_order Int
+  
+  /// Timestamp when this snapshot image record was created.
+  ///
+  /// Since snapshot records are immutable, this field indicates when the image
+  /// state was captured as part of the parent product snapshot.
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to this record.
+  ///
+  /// For immutable snapshot records, this value equals created_at since these
+  /// records are never modified after creation.
+  updated_at DateTime
+  
+  /// Timestamp indicating soft deletion, or null if the record is active.
+  ///
+  /// Snapshot records are immutable and cannot be deleted, so this field is
+  /// always null for preserved product snapshot images.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  productSnapshot e_commerce_mall_product_snapshots @relation(fields: [e_commerce_mall_product_snapshot_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([e_commerce_mall_product_snapshot_id, sort_order], map: "e_commerce_mall_product_snapshot_images_e_commerce_mal_7d86b012")
+}
+
+/// Key-value pairs storing product variant option values (e.g., color="Red",
+/// size="Large") for 1NF compliance.
+///
+/// Each option belongs to exactly one {@link
+/// e_commerce_mall_product_variants} and stores a single attribute of that
+/// variant's configuration. The combination of variant and option key is
+/// unique, ensuring each variant has at most one value per option type.
+///
+/// This table replaces what would otherwise be a JSON or array field on the
+/// variant, providing proper relational integrity, indexability, and
+/// queryability for individual option values. Soft deletion is supported for
+/// pruning obsolete option definitions without losing historical referential
+/// integrity.
+///
+/// @namespace products
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_product_variant_options {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for this product variant option record.
+  id String @id
+  
+  /// Foreign key to the {@link e_commerce_mall_product_variants} that this
+  /// option belongs to.
+  ///
+  /// Establishes a many-to-one relationship where each variant can have
+  /// multiple option key-value pairs defining its configuration dimensions
+  /// (e.g., color, size, material).
+  e_commerce_mall_product_variant_id String
+  
+  /// The option name identifying this attribute dimension (e.g., "color",
+  /// "size", "material").
+  ///
+  /// Combined with the variant FK, this forms a unique constraint ensuring
+  /// each variant has at most one value per option type.
+  key String
+  
+  /// The option value describing this dimension for the variant (e.g., "Red",
+  /// "Large", "Cotton").
+  ///
+  /// Represents the actual selection for the option key within this specific
+  /// variant's configuration.
+  value String
+  
+  /// Timestamp when this variant option record was created.
+  created_at DateTime
+  
+  /// Timestamp when this variant option record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when this variant option record was soft-deleted, if applicable.
+  ///
+  /// Supports pruning obsolete option definitions while preserving historical
+  /// referential integrity for order snapshots and audit records. Null
+  /// indicates the record is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  variant e_commerce_mall_product_variants @relation(fields: [e_commerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([e_commerce_mall_product_variant_id, key], map: "e_commerce_mall_product_variant_options_e_commerce_mal_4b9b15e9")
+}

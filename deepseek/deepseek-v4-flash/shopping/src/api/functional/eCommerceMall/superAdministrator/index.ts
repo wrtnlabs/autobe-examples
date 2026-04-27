@@ -1,0 +1,10 @@
+export * as customers from "./customers/index";
+export * as sellers from "./sellers/index";
+export * as approval_requests from "./approval_requests/index";
+export * as administrators from "./administrators/index";
+export * as super_administrators from "./super_administrators/index";
+export * as admin_registration_requests from "./admin_registration_requests/index";
+export * as categories from "./categories/index";
+export * as reviews from "./reviews/index";
+export * as order_items from "./order_items/index";
+export * as orders from "./orders/index";
