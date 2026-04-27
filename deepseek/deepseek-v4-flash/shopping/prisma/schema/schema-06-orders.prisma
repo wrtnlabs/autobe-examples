@@ -1,0 +1,657 @@
+/// Customer orders containing purchased items from one or more sellers with
+/// a calculated total price and a shipping address snapshot captured at
+/// checkout.
+///
+/// Each order belongs to exactly one {@link e_commerce_mall_customers
+/// customer} and is created upon successful payment completion. The order
+/// contains one or more {@link e_commerce_mall_order_items order items} that
+/// track individually purchased product variants with independent statuses
+/// (paid, shipped, delivered, cancelled, refunded). Since items from
+/// different sellers can exist in the same order, fulfillment is handled
+/// through separate {@link e_commerce_mall_shipments shipments} per seller.
+///
+/// The total price is calculated at order creation from the sum of all order
+/// item subtotals and does not change afterward. The shipping address is a
+/// snapshot copy of the customer's selected address at checkout — it is not
+/// linked to the customer's current address records and does not change when
+/// the customer edits or deletes their addresses.
+///
+/// The overall order status is derived from the independent statuses of its
+/// constituent order items and is not stored independently. The order status
+/// computation follows these rules: paid (all items paid), shipped (at least
+/// one shipped, none delivered), delivered (all delivered), cancelled (all
+/// cancelled), refunded (all refunded), or partially completed (mixed
+/// terminal states).
+///
+/// Orders and their associated data are permanently preserved even after the
+/// customer deletes their account, for seller record-keeping and legal
+/// purposes.
+///
+/// @namespace orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_orders {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the customer who placed this order.
+  ///
+  /// Each order belongs to exactly one customer who is the purchaser. This
+  /// relationship is preserved even after the customer deletes their account —
+  /// the order record remains for historical and legal purposes per the data
+  /// preservation policy.
+  e_commerce_mall_customer_id String
+  
+  /// Unique order number assigned at order creation for customer reference and
+  /// communication purposes.
+  ///
+  /// This is a human-readable identifier used in order confirmation emails,
+  /// shipment notifications, and customer support interactions.
+  code String
+  
+  /// Total price of the order calculated as the sum of all order item
+  /// subtotals at the time of order creation.
+  ///
+  /// This value is immutable after creation and does not change even if
+  /// individual items are later cancelled or refunded. It represents the
+  /// original transaction amount and serves as the authoritative financial
+  /// record of the purchase.
+  total_price Float
+  
+  /// Snapshot of the shipping recipient's full name as provided at checkout.
+  ///
+  /// This is a copy made at order creation time and is not linked to the
+  /// customer's current address records. The address snapshot ensures
+  /// historical accuracy even if the customer later modifies or deletes their
+  /// addresses.
+  shipping_recipient_name String
+  
+  /// Snapshot of the shipping contact phone number as provided at checkout.
+  ///
+  /// This is a copy made at order creation time and is not linked to the
+  /// customer's current address records.
+  shipping_phone String
+  
+  /// Snapshot of the shipping street address as provided at checkout.
+  ///
+  /// This is a copy made at order creation time and is not linked to the
+  /// customer's current address records.
+  shipping_street_address String
+  
+  /// Snapshot of the shipping city as provided at checkout.
+  ///
+  /// This is a copy made at order creation time and is not linked to the
+  /// customer's current address records.
+  shipping_city String
+  
+  /// Snapshot of the shipping state or province as provided at checkout.
+  ///
+  /// This is a copy made at order creation time and is not linked to the
+  /// customer's current address records.
+  shipping_state_province String
+  
+  /// Snapshot of the shipping postal code as provided at checkout.
+  ///
+  /// This is a copy made at order creation time and is not linked to the
+  /// customer's current address records.
+  shipping_postal_code String
+  
+  /// Snapshot of the shipping country as provided at checkout.
+  ///
+  /// This is a copy made at order creation time and is not linked to the
+  /// customer's current address records.
+  shipping_country String
+  
+  /// Timestamp when the order was created upon successful payment completion.
+  created_at DateTime
+  
+  /// Timestamp when the order was last updated (e.g., when order items change
+  /// status affecting the derived overall order status).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer e_commerce_mall_customers @relation(fields: [e_commerce_mall_customer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  orderItems e_commerce_mall_order_items[]
+  reviews e_commerce_mall_reviews[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([code])
+  // spellchecker: ignore-next-line
+  @@index([e_commerce_mall_customer_id, created_at], map: "e_commerce_mall_orders_e_commerce_mall_customer_id_cre_ab6f4b5b")
+}
+
+/// Individual purchased product variants within a customer order, with
+/// quantity, unit price snapshot, and per-item status tracking.
+///
+/// Each order item represents a specific product variant that was purchased
+/// as part of a customer order. When a customer purchases multiple units of
+/// the same variant, they are consolidated into a single order item with a
+/// quantity attribute. The unit price captures the variant's price at the
+/// time of purchase as a historical record that does not change even if the
+/// seller later updates the variant's current price.
+///
+/// **Status Lifecycle**: Each order item has its own independent status
+/// tracking its fulfillment progress. The status begins as `paid` upon
+/// successful order placement, transitions to `shipped` when the seller
+/// creates a shipment containing the item, and to `delivered` when the
+/// customer confirms delivery or the 14-day auto-delivery period expires.
+/// Items in `paid` status may be cancelled (transitioning to `cancelled`),
+/// and items in `delivered` status may be refunded within 7 days
+/// (transitioning to `refunded`). Once an item reaches `cancelled` or
+/// `refunded`, no further status changes occur. Refer to the Order Item
+/// Status Classification for detailed allowed values and lifecycle rules.
+///
+/// **Relationships**: Each order item belongs to exactly one {@link
+/// e_commerce_mall_orders} and references one {@link
+/// e_commerce_mall_product_variants}. Order items are grouped into {@link
+/// e_commerce_mall_shipments} through the {@link
+/// e_commerce_mall_shipment_items} junction table. Each order item may have
+/// at most one {@link e_commerce_mall_cancellation_requests}, one {@link
+/// e_commerce_mall_refund_requests}, and one {@link
+/// e_commerce_mall_reviews}. Order-time snapshots preserving product,
+/// variant, and seller profile state at the time of purchase are stored in
+/// {@link e_commerce_mall_order_item_snapshots} and {@link
+/// e_commerce_mall_order_item_seller_snapshots}.
+///
+/// @namespace orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_order_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the {@link e_commerce_mall_orders} that contains this
+  /// order item. Establishes the parent-child relationship between an order
+  /// and its constituent line items. All items within the same order share the
+  /// same shipping address and customer association.
+  ///
+  /// When the order is created, each purchased variant becomes a separate
+  /// order item linked to this order. The order's overall status is derived
+  /// from the statuses of all its order items.
+  e_commerce_mall_order_id String
+  
+  /// Foreign key to the {@link e_commerce_mall_product_variants} that was
+  /// purchased. Identifies the specific product variant (SKU) the customer
+  /// bought at the time of order placement.
+  ///
+  /// Through this variant association, the order item is indirectly linked to
+  /// the parent product, the seller who owns the product, and the product's
+  /// category. This relationship enables per-item operations such as
+  /// individual cancellation, refund, and review submission.
+  e_commerce_mall_product_variant_id String
+  
+  /// The number of units of this product variant purchased in this order item.
+  /// Multiple units of the same variant from the same customer order are
+  /// consolidated into a single order item with the total quantity — they are
+  /// not created as separate line items.
+  ///
+  /// The subtotal for this order item is calculated as `quantity * unit_price`
+  /// at the application layer.
+  quantity Int
+  
+  /// The unit price of the product variant at the time of purchase, recorded
+  /// as a historical snapshot. This price is captured once at order placement
+  /// and does not change even if the seller later updates the variant's
+  /// current price.
+  ///
+  /// This field is a business record — not a derived or calculated value. It
+  /// preserves exactly what the customer agreed to pay per unit at the time of
+  /// the transaction.
+  unit_price Float
+  
+  /// The current fulfillment status of this order item, tracked independently
+  /// per item. Allowed values:
+  ///
+  /// - `paid`: Payment completed, awaiting seller to ship
+  /// - `shipped`: Seller has dispatched the item via a carrier
+  /// - `delivered`: Customer confirmed delivery or 14-day auto-confirmation
+  /// elapsed
+  /// - `cancelled`: Item cancelled before shipping (via cancellation request
+  /// approval)
+  /// - `refunded`: Item refunded after delivery (via refund request approval)
+  ///
+  /// Status transitions are forward-only. Once an item reaches `cancelled` or
+  /// `refunded`, no further changes occur. The {@link
+  /// e_commerce_mall_order_item_status_logs} table records the history of all
+  /// status changes for audit purposes.
+  status String
+  
+  /// Timestamp when this order item was created upon successful order
+  /// placement and payment confirmation.
+  created_at DateTime
+  
+  /// Timestamp when this order item was last updated, typically reflecting
+  /// status transitions (e.g., paid→shipped, shipped→delivered).
+  updated_at DateTime
+  
+  /// Timestamp when this order item was soft-deleted. Null indicates the
+  /// record is active.
+  ///
+  /// Order items are preserved indefinitely for order history and legal
+  /// purposes even after account deletion. This field supports internal
+  /// cleanup workflows if needed.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  order e_commerce_mall_orders @relation(fields: [e_commerce_mall_order_id], references: [id], onDelete: Cascade)
+  productVariant e_commerce_mall_product_variants @relation(fields: [e_commerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  productVariantSnapshot e_commerce_mall_order_item_snapshots?
+  sellerSnapshot e_commerce_mall_order_item_seller_snapshots?
+  statusLogs e_commerce_mall_order_item_status_logs[]
+  shipmentItem e_commerce_mall_shipment_items?
+  cancellationRequests e_commerce_mall_cancellation_requests[]
+  refundRequest e_commerce_mall_refund_requests?
+  review e_commerce_mall_reviews?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([e_commerce_mall_order_id, status])
+  // spellchecker: ignore-next-line
+  @@index([e_commerce_mall_product_variant_id, status], map: "e_commerce_mall_order_items_e_commerce_mall_product_va_ff06241a")
+  @@index([status, created_at])
+}
+
+/// Immutable record preserving the exact product and variant details as they
+/// existed at the moment of purchase for each order item.
+///
+/// Each {@link e_commerce_mall_order_items} has exactly one product-variant
+/// snapshot created at the time of order placement. This snapshot captures
+/// the product name, description, base price, variant SKU, option values,
+/// and variant price at the historical moment of purchase. Together with the
+/// seller snapshot ({@link e_commerce_mall_order_item_seller_snapshots}), it
+/// ensures a complete audit trail of what was purchased.
+///
+/// Snapshots are immutable and cannot be deleted or modified, ensuring
+/// financial audit compliance and enabling accurate dispute resolution even
+/// if the seller later edits or deletes the product or variant.
+///
+/// @namespace orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_order_item_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the {@link e_commerce_mall_order_items} that this snapshot
+  /// belongs to. Establishes a one-to-one relationship where each order item
+  /// has exactly one product-variant snapshot created at purchase time.
+  e_commerce_mall_order_item_id String
+  
+  /// Name of the product at the time of purchase, preserved from the product
+  /// snapshot. This ensures the historical product name is available even if
+  /// the seller later renames the product.
+  product_name String
+  
+  /// Description of the product at the time of purchase, preserved from the
+  /// product snapshot for historical reference and dispute resolution.
+  product_description String
+  
+  /// Base price of the product at the time of purchase, preserved from the
+  /// product snapshot. Records the listed price before any variant-specific
+  /// price override.
+  product_base_price Float
+  
+  /// SKU code of the purchased variant at the time of purchase, preserved from
+  /// the variant snapshot for inventory tracking and identification.
+  variant_sku String
+  
+  /// Human-readable representation of the variant option values (e.g., 'Color:
+  /// Red, Size: Large') at the time of purchase, preserved from the variant
+  /// snapshot. Stored as a formatted string to capture the exact option
+  /// combination the customer selected.
+  variant_options String
+  
+  /// Optional variant-specific price override at the time of purchase. Null if
+  /// the variant did not override the product's base price. Together with
+  /// product_base_price, this captures what the customer actually paid per
+  /// unit.
+  variant_price Float?
+  
+  /// Timestamp when this snapshot was created, which corresponds to the time
+  /// of order placement. Used for chronological audit and dispute timing.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem e_commerce_mall_order_items @relation(fields: [e_commerce_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([e_commerce_mall_order_item_id], map: "e_commerce_mall_order_item_snapshots_e_commerce_mall_o_6bea73f6")
+}
+
+/// Immutable snapshot preserving the seller's shop name and logo at the time
+/// of purchase for each order item.
+///
+/// This table captures the seller profile state (shop name and logo) as it
+/// existed when an order was placed, ensuring historical order records
+/// accurately reflect the seller's identity at the time of the transaction.
+/// Even if the seller later changes their shop name or logo, the snapshot
+/// preserves the original values for dispute resolution, audit, and
+/// historical reference.
+///
+/// Each {@link e_commerce_mall_order_items} has exactly one seller snapshot,
+/// created automatically at order placement time. These snapshots are
+/// immutable and cannot be modified or deleted, providing a permanent audit
+/// trail of the seller's identity at the point of sale.
+///
+/// Snapshots are viewable by the customer who placed the order, the seller
+/// who sold the items, and administrators for order history review and
+/// dispute resolution purposes.
+///
+/// @namespace orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_order_item_seller_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the {@link e_commerce_mall_order_items} this seller
+  /// snapshot belongs to.
+  ///
+  /// Establishes a 1:1 relationship where each order item has exactly one
+  /// seller snapshot, created at order placement time to preserve the seller's
+  /// shop identity for historical record-keeping and dispute resolution.
+  e_commerce_mall_order_item_id String
+  
+  /// The seller's shop name at the time of purchase.
+  ///
+  /// Preserved from the seller's profile at the moment the order was placed.
+  /// This ensures that even if the seller later changes their shop name, the
+  /// historical order record reflects the name as it appeared to the customer
+  /// at checkout.
+  shop_name String
+  
+  /// URL of the seller's shop logo image at the time of purchase.
+  ///
+  /// Preserved from the seller's profile at the moment the order was placed.
+  /// Nullable because a seller may not have set a logo image at the time of
+  /// the transaction.
+  shop_logo String?
+  
+  /// Timestamp when this seller snapshot was created.
+  ///
+  /// Set at the time of order placement to record when the seller profile
+  /// state was captured. Immutable after creation, providing a chronological
+  /// reference point for the snapshot.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem e_commerce_mall_order_items @relation(fields: [e_commerce_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([e_commerce_mall_order_item_id], map: "e_commerce_mall_order_item_seller_snapshots_e_commerce_1505edd1")
+}
+
+/// Tracks the history of status changes for each order item. Each record
+/// represents a single status transition from one status to another,
+/// providing a complete audit trail for all order item lifecycle events.
+///
+/// This log is essential for compliance and dispute resolution, as it
+/// records when and why each status change occurred. The `created_at`
+/// timestamp of the "shipped" status entry is used to calculate the 14-day
+/// auto-delivery timeout — if a customer does not manually confirm delivery
+/// within 14 days of shipping, the order item is automatically transitioned
+/// to "delivered".
+///
+/// Each record belongs to exactly one {@link e_commerce_mall_order_items}
+/// and records the `from_status` (previous state, null for the initial
+/// "paid" status) and `to_status` (new state). The `reason` field captures
+/// the cause of the transition, such as "shipment_created" for shipping or
+/// "auto_delivery_timeout" for automatic delivery confirmation.
+///
+/// @namespace orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_order_item_status_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the order item whose status changed.
+  ///
+  /// The parent {@link e_commerce_mall_order_items} that this log entry
+  /// tracks. Each order item can have multiple status log entries, one for
+  /// each transition in its lifecycle, ordered chronologically by
+  /// `created_at`.
+  e_commerce_mall_order_item_id String
+  
+  /// The previous status before the transition, or null if this is the initial
+  /// status entry ("paid").
+  ///
+  /// Used to reconstruct the complete state history of an order item. Null for
+  /// the very first log entry when the item is created with status "paid",
+  /// representing that there was no prior state.
+  from_status String?
+  
+  /// The new status after the transition.
+  ///
+  /// Valid values include: "paid", "shipped", "delivered", "cancelled",
+  /// "refunded". This field represents the next state in the order item's
+  /// lifecycle and is used to derive the overall order status.
+  to_status String
+  
+  /// Optional description of why the status change occurred.
+  ///
+  /// Examples include: "shipment_created" (when shipped via a shipment),
+  /// "customer_delivery_confirmation" (customer confirmed delivery),
+  /// "auto_delivery_timeout" (14-day auto-delivery), "cancellation_approved"
+  /// (seller approved cancellation), "refund_approved" (seller approved
+  /// refund), "administrator_force_cancel" or "administrator_force_refund"
+  /// (admin actions). Provides audit context for each transition.
+  reason String?
+  
+  /// Timestamp when this status change was recorded.
+  ///
+  /// For "shipped" status entries, this timestamp is the reference point for
+  /// the 14-day auto-delivery window. If no delivery confirmation is received
+  /// within 14 days of this timestamp, the item is automatically transitioned
+  /// to "delivered".
+  created_at DateTime
+  
+  /// Timestamp when this log entry was last modified.
+  ///
+  /// This field is included for consistency with the standard temporal field
+  /// pattern. In practice, status log entries are immutable once created and
+  /// this value will equal `created_at`.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  orderItem e_commerce_mall_order_items @relation(fields: [e_commerce_mall_order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([e_commerce_mall_order_item_id, created_at], map: "e_commerce_mall_order_item_status_logs_e_commerce_mall_7591c139")
+  @@index([to_status, created_at])
+}
+
+/// Shipments represent physical packages dispatched by sellers to fulfill
+/// customer orders. Each shipment groups one or more order items from the
+/// same seller into a single package with shared carrier name, tracking
+/// number, and shipped timestamp.
+///
+/// Shipments belong to the seller who created and dispatched them ({@link
+/// e_commerce_mall_sellers}). The seller selects which of their sold order
+/// items to include in each shipment (via the {@link
+/// e_commerce_mall_shipment_items} junction table handled by another agent),
+/// enters the carrier name and tracking number, and upon creation all
+/// bundled order items automatically transition to shipped status.
+///
+/// Delivery confirmation is performed per-shipment: when the customer
+/// confirms receipt of the package, all order items within that shipment
+/// transition to delivered status simultaneously. If the customer does not
+/// confirm delivery within 14 days of the shipped timestamp, automatic
+/// delivery processing marks the shipment as delivered. The delivered_at
+/// field records this confirmation timestamp.
+///
+/// @namespace orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_shipments {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key uniquely identifying this shipment record.
+  id String @id
+  
+  /// Foreign key to the {@link e_commerce_mall_sellers} who created and
+  /// dispatched this shipment.
+  ///
+  /// Each shipment is associated with exactly one seller who packs the items,
+  /// selects the shipping carrier, enters the tracking information, and hands
+  /// the package to the carrier. Different sellers always ship separately —
+  /// order items from different sellers cannot be combined into the same
+  /// shipment.
+  seller_id String
+  
+  /// Name of the shipping carrier company responsible for delivering this
+  /// package. Examples include local postal services, courier companies, or
+  /// logistics providers. Entered by the seller when the shipment is created
+  /// and displayed to the customer for package tracking purposes.
+  carrier_name String
+  
+  /// Unique tracking identifier assigned by the carrier for this package.
+  /// Together with carrier_name, this enables the customer to monitor the
+  /// package's transit status through the carrier's tracking system.
+  tracking_number String
+  
+  /// Timestamp recording when the seller dispatched this package.
+  /// Automatically set when the seller creates the shipment and enters the
+  /// tracking information. Serves as the official dispatch time and marks the
+  /// starting point for the 14-day auto-delivery window.
+  shipped_at DateTime
+  
+  /// Nullable timestamp indicating when the customer confirmed delivery of
+  /// this package, or when automatic delivery processing occurred after 14
+  /// days from shipped_at. When set, all order items within this shipment
+  /// transition to delivered status simultaneously. Remains null while the
+  /// package is in transit.
+  delivered_at DateTime?
+  
+  /// Timestamp when this shipment record was created.
+  created_at DateTime
+  
+  /// Timestamp of the last update to this shipment record. Updated when
+  /// delivery is confirmed or auto-delivery processing occurs.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, the shipment record is considered
+  /// deleted but historical data is preserved for order history and audit
+  /// purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller e_commerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  shipmentItems e_commerce_mall_shipment_items[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([seller_id, created_at])
+  @@index([shipped_at, delivered_at])
+}
+
+/// Junction table linking order items to their parent shipment within a
+/// seller's fulfillment group.
+///
+/// A shipment can contain one or more order items from the same seller. This
+/// junction table records which order items are packed together in each
+/// shipment package. Each order item can be assigned to at most one shipment
+/// at a time, enforced by a unique constraint on {@link
+/// e_commerce_mall_order_items}. Items from different sellers are never
+/// linked to the same shipment.
+///
+/// When a shipment is created by a seller, all associated order items
+/// transition to "shipped" status. When delivery is confirmed per shipment,
+/// all items in the shipment transition to "delivered" status together.
+///
+/// @namespace orders
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_shipment_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the {@link e_commerce_mall_shipments} shipment that
+  /// contains this order item. A single shipment can bundle multiple order
+  /// items from the same seller into one package.
+  shipment_id String
+  
+  /// Foreign key to the {@link e_commerce_mall_order_items} order item
+  /// included in this shipment. Each order item can be assigned to at most one
+  /// shipment at a time, enforced by the unique constraint. This ensures an
+  /// order item is never split across multiple packages.
+  order_item_id String
+  
+  /// Timestamp when this shipment-item association was created, indicating
+  /// when the seller assigned the order item to the shipment.
+  created_at DateTime
+  
+  /// Timestamp when this shipment-item association was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  shipment e_commerce_mall_shipments @relation(fields: [shipment_id], references: [id], onDelete: Cascade)
+  orderItem e_commerce_mall_order_items @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([shipment_id])
+  @@unique([order_item_id])
+}

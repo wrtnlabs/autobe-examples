@@ -1,3 +1,4 @@
+export * as profile from "./profile/index";
 export * as products from "./products/index";
 export * as profileSnapshots from "./profileSnapshots/index";
 export * as orders from "./orders/index";

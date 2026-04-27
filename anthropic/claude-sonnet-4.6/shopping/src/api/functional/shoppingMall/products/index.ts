@@ -76,45 +76,50 @@ export async function index(
   return true === connection.simulate
     ? index.simulate(connection, props)
     : await PlainFetcher.fetch(
-        {
-          ...connection,
-          headers: {
-            ...connection.headers,
-            "Content-Type": "application/json",
-          },
-        },
+        connection,
         {
           ...index.METADATA,
-          path: index.path(),
+          path: index.path(props.query),
           status: null,
         },
-        props.body,
       );
 }
 export namespace index {
   export type Props = {
     /**
-     * Search criteria, filters, pagination, and sorting options for the product list
+     * Search criteria, filters, and pagination options as query parameters
      */
-    body: IShoppingMallProduct.IRequest;
+    query: IShoppingMallProduct.IRequest;
   };
-  export type Body = IShoppingMallProduct.IRequest;
   export type Response = IPageIShoppingMallProduct.ISummary;
 
   export const METADATA = {
-    method: "PATCH",
+    method: "GET",
     path: "/shoppingMall/products",
-    request: {
-      type: "application/json",
-      encrypted: false,
-    },
+    request: null,
     response: {
       type: "application/json",
       encrypted: false,
     },
   } as const;
 
-  export const path = () => "/shoppingMall/products";
+  export const path = (query: IShoppingMallProduct.IRequest) => {
+    const params = new URLSearchParams();
+    if (query.keyword != null) params.set("keyword", query.keyword);
+    if (query.categoryId != null) params.set("categoryId", query.categoryId);
+    if (query.sellerId != null) params.set("sellerId", query.sellerId);
+    if (query.minPrice != null) params.set("minPrice", String(query.minPrice));
+    if (query.maxPrice != null) params.set("maxPrice", String(query.maxPrice));
+    if (query.createdAfter != null) params.set("createdAfter", query.createdAfter);
+    if (query.createdBefore != null) params.set("createdBefore", query.createdBefore);
+    if (query.includeDeleted != null) params.set("includeDeleted", String(query.includeDeleted));
+    if (query.sort != null) params.set("sort", query.sort);
+    if (query.sortDirection != null) params.set("sortDirection", query.sortDirection);
+    if (query.page != null) params.set("page", String(query.page));
+    if (query.limit != null) params.set("limit", String(query.limit));
+    const str = params.toString();
+    return str.length ? `/shoppingMall/products?${str}` : `/shoppingMall/products`;
+  };
   export const random = (): IPageIShoppingMallProduct.ISummary =>
     typia.random<IPageIShoppingMallProduct.ISummary>();
   export const simulate = (
@@ -124,11 +129,11 @@ export namespace index {
     const assert = NestiaSimulator.assert({
       method: METADATA.method,
       host: connection.host,
-      path: index.path(),
+      path: index.path(props.query),
       contentType: "application/json",
     });
     try {
-      assert.body(() => typia.assert(props.body));
+      assert.query(() => typia.assert(props.query));
     } catch (exp) {
       if (!typia.is<HttpError>(exp)) throw exp;
       return {

@@ -155,6 +155,30 @@ export namespace IShoppingMallOrder {
      * @x-autobe-specification Direct mapping from shopping_mall_orders.created_at (Timestamptz). Represents the timestamp when the customer completed checkout and the order was formally created.
      */
     createdAt: string & tags.Format<"date-time">;
+
+    /**
+     * The total number of distinct line items (product variant + quantity entries) in this order.
+     *
+     * @x-autobe-specification Computed by COUNT(*) from shopping_mall_order_items WHERE shopping_mall_order_id = order.id.
+     */
+    itemCount: number & tags.Type<"int32"> & tags.Minimum<1>;
+
+    /**
+     * Name of the first product in the order, derived from the earliest order item's snapshot.
+     * Used for display in order list views without fetching full order details.
+     *
+     * @x-autobe-specification Join shopping_mall_order_items on order.id, take the item with the lowest created_at,
+     * then join to shopping_mall_product_snapshots or shopping_mall_products to get the product name.
+     */
+    firstProductName: string;
+
+    /**
+     * Thumbnail URL of the first product in the order. Null if no image is available.
+     *
+     * @x-autobe-specification Derived from the primary image (lowest sequence) of the product referenced by
+     * the first order item. Returns null when no image exists for the product.
+     */
+    firstProductThumbnailUrl: (string & tags.Format<"url">) | null;
   };
 
   /**

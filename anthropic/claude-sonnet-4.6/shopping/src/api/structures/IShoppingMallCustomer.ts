@@ -135,8 +135,8 @@ export namespace IShoppingMallCustomer {
      * @x-autobe-database-schema-property phone
      */
     phone?: string | null | undefined;
-    href: string & tags.Format<"uri">;
-    referrer: string & tags.Format<"uri">;
+    href?: (string & tags.Format<"uri">) | undefined;
+    referrer?: (string & tags.Format<"uri">) | undefined;
     ip?: (string & tags.Format<"ipv4">) | undefined;
   };
 

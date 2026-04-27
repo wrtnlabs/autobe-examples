@@ -64,6 +64,7 @@ import { ShoppingmallSellerProductsSnapshotsSkusesController } from "./controlle
 import { ShoppingmallSellerProductsSnapshotsSkusesOptionsController } from "./controllers/shoppingMall/seller/products/snapshots/skuses/options/ShoppingmallSellerProductsSnapshotsSkusesOptionsController";
 import { ShoppingmallSellerProductsVariantsController } from "./controllers/shoppingMall/seller/products/variants/ShoppingmallSellerProductsVariantsController";
 import { ShoppingmallSellerProductsVariantsInventoryrecordsController } from "./controllers/shoppingMall/seller/products/variants/inventoryRecords/ShoppingmallSellerProductsVariantsInventoryrecordsController";
+import { ShoppingmallSellerProfileController } from "./controllers/shoppingMall/seller/profile/ShoppingmallSellerProfileController";
 import { ShoppingmallSellerProfilesnapshotsController } from "./controllers/shoppingMall/seller/profileSnapshots/ShoppingmallSellerProfilesnapshotsController";
 import { ShoppingmallSellerRefundrequestsController } from "./controllers/shoppingMall/seller/refundRequests/ShoppingmallSellerRefundrequestsController";
 import { ShoppingmallSellersController } from "./controllers/shoppingMall/sellers/ShoppingmallSellersController";
@@ -132,6 +133,7 @@ import { ShoppingmallSuperadminSuperadminsOfsellerController } from "./controlle
     ShoppingmallAdminSnapshotsSkusesOptionsController,
     ShoppingmallSellerProductsSnapshotsImagesController,
     ShoppingmallAdminSnapshotsImagesController,
+    ShoppingmallSellerProfileController,
     ShoppingmallSellerProfilesnapshotsController,
     ShoppingmallAdminSellersProfilesnapshotsController,
     ShoppingmallSellerProductsVariantsInventoryrecordsController,

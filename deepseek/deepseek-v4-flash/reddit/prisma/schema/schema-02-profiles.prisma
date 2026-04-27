@@ -1,0 +1,169 @@
+/// User profiles storing public identity attributes and cumulative karma
+/// score for community platform members.
+///
+/// Each {@link community_platform_members} has exactly one profile (1:1
+/// relationship), created automatically upon member registration. The
+/// profile serves as the member's public-facing identity within the
+/// platform, carrying their display name, biography text, avatar image, and
+/// total karma score reflecting how the community has received their
+/// contributions.
+///
+/// Profiles are viewable by all actors (guests and members) and editable
+/// only by the owning member. Karma is a denormalized aggregate updated
+/// whenever votes are cast on the member's posts or comments, increasing by
+/// 1 for upvotes and decreasing by 1 for downvotes.
+///
+/// @namespace profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key referencing {@link community_platform_members}. Establishes a
+  /// strict 1:1 relationship where each member has exactly one profile,
+  /// enforced via unique constraint.
+  ///
+  /// When a member account is deleted, the associated profile is also removed
+  /// (cascade delete).
+  member_id String
+  
+  /// The user's chosen public display name shown alongside their posts and
+  /// comments throughout the platform. This is distinct from the unique
+  /// username used for authentication and may differ from it.
+  display_name String
+  
+  /// Short free-form biography text where the user can describe themselves.
+  /// Visible on the profile page to introduce the user to visitors. Optional
+  /// field — members may choose not to set a biography.
+  biography String?
+  
+  /// URI pointing to the user's avatar image file. Provides quick visual
+  /// recognition in feeds, post listings, and comment threads. Optional field
+  /// — members may choose not to set an avatar.
+  avatar_uri String?
+  
+  /// Cumulative karma score representing the net sum of all upvotes minus all
+  /// downvotes received across the member's posts and comments. Starts at 0
+  /// and can be positive, zero, or negative. Denormalized from vote aggregates
+  /// for efficient reads on profile pages and content displays.
+  karma Int
+  
+  /// Timestamp when the profile was first created (automatically upon member
+  /// registration).
+  created_at DateTime
+  
+  /// Timestamp when the profile was last updated (display name, biography,
+  /// avatar, or karma changes).
+  updated_at DateTime
+  
+  /// Timestamp when the profile was soft-deleted due to account deletion. Null
+  /// indicates the profile is active. Soft deletion supports potential
+  /// recovery within data retention periods.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots community_platform_profile_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([member_id])
+}
+
+/// Point-in-time snapshots of user profile state for audit trail, rollback,
+/// and retention period recovery support.
+///
+/// Each record captures the complete set of profile attributes — display
+/// name, biography text, avatar image reference, and cumulative karma score
+/// — at the moment the snapshot was taken. Snapshots are immutable records
+/// that enable reconstruction of any user's profile history over time.
+///
+/// This table is append-only: records are never modified or deleted after
+/// creation. Multiple snapshots may exist per profile, each identified by
+/// its unique creation timestamp. Queries typically filter by {@link
+/// community_platform_members} or {@link community_platform_profiles}
+/// combined with {@link #created_at} for chronological ordering.
+///
+/// @namespace profiles
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_profile_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the {@link community_platform_profiles} entity being
+  /// snapshotted.
+  ///
+  /// Associates this snapshot record with the profile whose state was captured
+  /// at the time of creation. Multiple snapshots may reference the same
+  /// profile, each recording a different point in time.
+  community_platform_profile_id String
+  
+  /// Denormalized foreign key reference to the {@link
+  /// community_platform_members} entity that owns the profile.
+  ///
+  /// Included for direct lookup and query efficiency when retrieving all
+  /// snapshots associated with a specific member without requiring a join
+  /// through the profiles table.
+  community_platform_member_id String
+  
+  /// The profile's display name at the time the snapshot was taken.
+  ///
+  /// Captures the user-chosen public-facing name displayed on their profile
+  /// page.
+  display_name String
+  
+  /// The profile's biography text at the time the snapshot was taken.
+  ///
+  /// Captures the user-written self-description displayed on their profile
+  /// page. May be null if no biography was set.
+  biography String?
+  
+  /// The URI reference to the profile's avatar image at the time the snapshot
+  /// was taken.
+  ///
+  /// Captures the user's chosen profile picture. May be null if no avatar was
+  /// set.
+  avatar String?
+  
+  /// The user's cumulative karma score at the time the snapshot was taken.
+  ///
+  /// Captures the net sum of all upvotes minus downvotes received on the
+  /// user's posts and comments. Can be negative.
+  karma Int
+  
+  /// Timestamp indicating when this snapshot was created.
+  ///
+  /// Records the exact moment the profile state was captured. Used for
+  /// chronological ordering and time-based queries such as "show snapshots
+  /// taken within the retention period."
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  profile community_platform_profiles @relation(fields: [community_platform_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_platform_profile_id, created_at], map: "community_platform_profile_snapshots_community_platfor_b6a5fdb8")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_profile_snapshots_community_platfor_eb842c10")
+}

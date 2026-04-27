@@ -1,16 +1,42 @@
-import { TypedBody, TypedParam, TypedRoute } from "@nestia/core";
+import { TypedBody, TypedParam, TypedQuery, TypedRoute } from "@nestia/core";
 import { Controller } from "@nestjs/common";
 import typia, { tags } from "typia";
 
+import { IPageIShoppingMallProduct } from "../../../../api/structures/IPageIShoppingMallProduct";
 import { IShoppingMallProduct } from "../../../../api/structures/IShoppingMallProduct";
 import { SellerAuth } from "../../../../decorators/SellerAuth";
 import { SellerPayload } from "../../../../decorators/payload/SellerPayload";
 import { deleteShoppingMallSellerProductsProductId } from "../../../../providers/deleteShoppingMallSellerProductsProductId";
+import { getShoppingMallSellerProducts } from "../../../../providers/getShoppingMallSellerProducts";
 import { postShoppingMallSellerProducts } from "../../../../providers/postShoppingMallSellerProducts";
 import { putShoppingMallSellerProductsProductId } from "../../../../providers/putShoppingMallSellerProductsProductId";
 
 @Controller("/shoppingMall/seller/products")
 export class ShoppingmallSellerProductsController {
+  /**
+   * Retrieve a paginated list of products owned by the authenticated seller.
+   *
+   * Returns only the products belonging to the currently authenticated seller.
+   * Supports filtering by keyword, category, price range, and deletion status.
+   *
+   * @param seller Authenticated seller payload from session
+   * @param query Filter criteria and pagination options
+   */
+  @TypedRoute.Get()
+  public async index(
+    @SellerAuth()
+    seller: SellerPayload,
+    @TypedQuery()
+    query: IShoppingMallProduct.IRequest,
+  ): Promise<IPageIShoppingMallProduct.ISummary> {
+    try {
+      return await getShoppingMallSellerProducts({ seller, query });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
   /**
    * Create a new product listing owned by the authenticated seller.
    *

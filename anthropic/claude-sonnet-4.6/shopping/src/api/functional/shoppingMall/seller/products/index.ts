@@ -6,11 +6,97 @@ import {
 } from "@nestia/fetcher";
 import typia, { tags } from "typia";
 
+import { IPageIShoppingMallProduct } from "../../../../structures/IPageIShoppingMallProduct";
 import { IShoppingMallProduct } from "../../../../structures/IShoppingMallProduct";
 
 export * as images from "./images/index";
 export * as variants from "./variants/index";
 export * as snapshots from "./snapshots/index";
+
+/**
+ * Retrieve a paginated list of products owned by the authenticated seller.
+ *
+ * Returns the seller's own product listings with optional filtering by keyword, category,
+ * price range, and active/deleted status. Pagination and sorting are supported.
+ *
+ * @param props.connection
+ * @param props.query Filter criteria and pagination options for the seller's product list
+ * @path /shoppingMall/seller/products
+ * @accessor api.functional.shoppingMall.seller.products.index
+ */
+export async function index(
+  connection: IConnection,
+  props: index.Props,
+): Promise<index.Response> {
+  return true === connection.simulate
+    ? index.simulate(connection, props)
+    : await PlainFetcher.fetch(
+        connection,
+        {
+          ...index.METADATA,
+          path: index.path(props.query),
+          status: null,
+        },
+      );
+}
+export namespace index {
+  export type Props = {
+    query: IShoppingMallProduct.IRequest;
+  };
+  export type Response = IPageIShoppingMallProduct.ISummary;
+
+  export const METADATA = {
+    method: "GET",
+    path: "/shoppingMall/seller/products",
+    request: null,
+    response: {
+      type: "application/json",
+      encrypted: false,
+    },
+  } as const;
+
+  export const path = (query: IShoppingMallProduct.IRequest) => {
+    const params = new URLSearchParams();
+    if (query.keyword != null) params.set("keyword", query.keyword);
+    if (query.categoryId != null) params.set("categoryId", query.categoryId);
+    if (query.minPrice != null) params.set("minPrice", String(query.minPrice));
+    if (query.maxPrice != null) params.set("maxPrice", String(query.maxPrice));
+    if (query.createdAfter != null) params.set("createdAfter", query.createdAfter);
+    if (query.createdBefore != null) params.set("createdBefore", query.createdBefore);
+    if (query.includeDeleted != null) params.set("includeDeleted", String(query.includeDeleted));
+    if (query.sort != null) params.set("sort", query.sort);
+    if (query.sortDirection != null) params.set("sortDirection", query.sortDirection);
+    if (query.page != null) params.set("page", String(query.page));
+    if (query.limit != null) params.set("limit", String(query.limit));
+    const str = params.toString();
+    return str.length ? `/shoppingMall/seller/products?${str}` : `/shoppingMall/seller/products`;
+  };
+  export const random = (): IPageIShoppingMallProduct.ISummary =>
+    typia.random<IPageIShoppingMallProduct.ISummary>();
+  export const simulate = (
+    connection: IConnection,
+    props: index.Props,
+  ): Response => {
+    const assert = NestiaSimulator.assert({
+      method: METADATA.method,
+      host: connection.host,
+      path: index.path(props.query),
+      contentType: "application/json",
+    });
+    try {
+      assert.query(() => typia.assert(props.query));
+    } catch (exp) {
+      if (!typia.is<HttpError>(exp)) throw exp;
+      return {
+        success: false,
+        status: exp.status,
+        headers: exp.headers,
+        data: exp.toJSON().message,
+      } as any;
+    }
+    return random();
+  };
+}
 
 /**
  * Create a new product listing owned by the authenticated seller.

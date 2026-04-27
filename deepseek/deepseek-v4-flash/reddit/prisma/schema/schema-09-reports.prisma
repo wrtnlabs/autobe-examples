@@ -1,0 +1,223 @@
+/// Reports submitted by members flagging posts or comments that violate
+/// community standards, tracked through a moderation review workflow from
+/// pending to approved or dismissed.
+///
+/// Each report is filed by a {@link community_platform_members member}
+/// against a post or a comment (discriminated via target_type) within a
+/// specific {@link community_platform_communities community}. The report
+/// carries a free-text reason from the reporter and transitions through a
+/// lifecycle: pending (awaiting review) → approved (content deleted by
+/// moderator action) or dismissed (no action taken). Reports are visible
+/// only to moderators of the scoped community.
+///
+/// This table serves as the main reporting entity. The actual foreign key to
+/// the target content (post or comment) is stored in subtype tables {@link
+/// community_platform_report_post_targets} and {@link
+/// community_platform_report_comment_targets}, linked via a unique 1:1
+/// relationship.
+///
+/// @namespace reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_reports {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the report record.
+  id String @id
+  
+  /// The {@link community_platform_members member} who submitted this report.
+  ///
+  /// Links the report to the reporting user for accountability and tracking of
+  /// submission history. Set at creation time and immutable afterward.
+  reporter_id String
+  
+  /// The {@link community_platform_communities community} where the reported
+  /// content resides.
+  ///
+  /// Scopes the report to a specific community so only that community's
+  /// moderators can view and act on it. Set at creation time based on the
+  /// reported content's community affiliation.
+  community_id String
+  
+  /// Free-text explanation provided by the reporter describing why the content
+  /// violates community standards.
+  ///
+  /// Required at submission time. Used by moderators during review to
+  /// understand the nature of the violation.
+  reason String
+  
+  /// Discriminator indicating whether the reported content is a post ("post")
+  /// or a comment ("comment").
+  ///
+  /// Determines which subtype table ({@link
+  /// community_platform_report_post_targets} or {@link
+  /// community_platform_report_comment_targets}) holds the actual foreign key
+  /// to the reported content. Set at creation time and immutable.
+  target_type String
+  
+  /// Current lifecycle state of the report.
+  ///
+  /// - "pending": Report submitted and awaiting moderator review.
+  /// - "approved": Moderator approved the report; the reported content was
+  /// deleted.
+  /// - "dismissed": Moderator dismissed the report; the reported content
+  /// remains unchanged.
+  ///
+  /// Transitions: pending → approved, pending → dismissed. Once resolved,
+  /// status is final.
+  status String
+  
+  /// Timestamp when the report was submitted.
+  created_at DateTime
+  
+  /// Timestamp of the last status change or field update.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. When set, the report is considered permanently
+  /// removed from the system (e.g., after retention period expiry).
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  reporter community_platform_members @relation(fields: [reporter_id], references: [id], onDelete: Cascade)
+  community community_platform_communities @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  reportPostTarget community_platform_report_post_targets?
+  commentTarget community_platform_report_comment_targets?
+  
+  //----
+  // INDEXES
+  //----
+  @@index([community_id, status])
+  @@index([reporter_id, created_at])
+}
+
+/// Links a report to the reported post when the target content is a post.
+/// Enforces a 1:1 relationship where each report can target at most one post
+/// via a unique foreign key constraint on the report reference.
+///
+/// This table implements one branch of the polymorphic report targeting
+/// pattern. A report targets either a post (via this table) or a comment
+/// (via {@link community_platform_report_comment_targets}). The unique
+/// constraint on `community_platform_report_id` guarantees that each report
+/// links to at most one post target, preventing duplicate or conflicting
+/// target assignments. Multiple distinct reports can independently target
+/// the same post, enabling moderators to review all flags on a given post.
+///
+/// Soft deletion is supported via `deleted_at` for data retention and
+/// recovery purposes in accordance with platform content lifecycle policies.
+/// When a post is deleted, cascading effects remove associated report target
+/// rows.
+///
+/// @namespace reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_post_targets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key referencing the {@link community_platform_reports} this post
+  /// target belongs to. The unique constraint enforces a 1:1 relationship,
+  /// ensuring each report can target at most one post. When a report targets a
+  /// post, this row is created; the complementary comment target row must
+  /// remain absent, enforced by the mutually exclusive polymorphic pattern.
+  community_platform_report_id String
+  
+  /// Foreign key referencing the {@link community_platform_posts} being
+  /// reported. Multiple reports can independently target the same post across
+  /// different report submissions, enabling community moderators to aggregate
+  /// and review all flags on a given post.
+  community_platform_post_id String
+  
+  /// Timestamp in UTC indicating when this report-to-post link was created.
+  /// Set immediately upon report submission when a post is the target.
+  created_at DateTime
+  
+  /// Timestamp in UTC indicating when this report-to-post link was last
+  /// updated.
+  updated_at DateTime
+  
+  /// Soft deletion timestamp in UTC. If set, this report-to-post target is
+  /// considered deleted for data retention and recovery purposes. Null
+  /// indicates the link is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report community_platform_reports @relation(fields: [community_platform_report_id], references: [id], onDelete: Cascade)
+  post community_platform_posts @relation(fields: [community_platform_post_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_platform_post_id], map: "community_platform_report_post_targets_community_platf_47b5b888")
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_report_id], map: "community_platform_report_post_targets_community_platf_def12127")
+}
+
+/// Links a {@link community_platform_reports} to the reported {@link
+/// community_platform_comments} when the target content is a comment.
+///
+/// Part of the polymorphic report targeting pattern alongside {@link
+/// community_platform_report_post_targets}. A single report targets either a
+/// post or a comment exclusively — this table handles the comment branch
+/// with a 1:1 unique foreign key constraint on the report reference. A
+/// comment may appear in multiple rows when reported by different users
+/// across separate reports.
+///
+/// @namespace reports
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_report_comment_targets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the {@link community_platform_reports} this target entry
+  /// belongs to.
+  ///
+  /// Enforces a 1:1 relationship — each report may target exactly one post or
+  /// one comment, never both. The unique constraint ensures that a report
+  /// cannot have multiple target records of any type.
+  community_platform_report_id String
+  
+  /// Foreign key to the reported {@link community_platform_comments}.
+  ///
+  /// A comment can be reported by multiple users in separate reports, so this
+  /// field does not carry a unique constraint. Multiple rows may reference the
+  /// same comment when different reporters flag it independently.
+  community_platform_comment_id String
+  
+  /// Timestamp when this report-to-comment link was created.
+  created_at DateTime
+  
+  /// Timestamp when this report-to-comment link was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  report community_platform_reports @relation(fields: [community_platform_report_id], references: [id], onDelete: Cascade)
+  comment community_platform_comments @relation(fields: [community_platform_comment_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([community_platform_report_id], map: "community_platform_report_comment_targets_community_pl_ae4e465c")
+  // spellchecker: ignore-next-line
+  @@index([community_platform_comment_id], map: "community_platform_report_comment_targets_community_pl_88ed3675")
+}

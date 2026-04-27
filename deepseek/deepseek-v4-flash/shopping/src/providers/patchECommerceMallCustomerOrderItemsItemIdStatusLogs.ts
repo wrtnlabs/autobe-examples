@@ -1,0 +1,156 @@
+import { IECommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallCategory";
+import { IECommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallCustomer";
+import { IECommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallCustomerProfile";
+import { IECommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallOrder";
+import { IECommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallOrderItem";
+import { IECommerceMallOrderItemStatusLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallOrderItemStatusLog";
+import { IECommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallProduct";
+import { IECommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallProductVariant";
+import { IECommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallSeller";
+import { IECommerceMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallSellerProfile";
+import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+import { IPageIECommerceMallOrderItemStatusLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIECommerceMallOrderItemStatusLog";
+import { ArrayUtil } from "@nestia/e2e";
+import { HttpException } from "@nestjs/common";
+import { Prisma } from "@prisma/sdk";
+import jwt from "jsonwebtoken";
+import typia, { tags } from "typia";
+import { v4 } from "uuid";
+
+import { MyGlobal } from "../MyGlobal";
+import { CustomerPayload } from "../decorators/payload/CustomerPayload";
+import { ECommerceMallOrderItemStatusLogAtSummaryTransformer } from "../transformers/ECommerceMallOrderItemStatusLogAtSummaryTransformer";
+import { PasswordUtil } from "../utils/PasswordUtil";
+import { toISOStringSafe } from "../utils/toISOStringSafe";
+
+// DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+export async function patchECommerceMallCustomerOrderItemsItemIdStatusLogs(props: {
+  customer: CustomerPayload;
+  itemId: string & tags.Format<"uuid">;
+  body: IECommerceMallOrderItemStatusLog.IRequest;
+}): Promise<IPageIECommerceMallOrderItemStatusLog.ISummary> {
+  // Verify the order item exists and belongs to this customer
+  const orderItem = await MyGlobal.prisma.e_commerce_mall_order_items.findFirst(
+    {
+      where: {
+        id: props.itemId,
+        order: { e_commerce_mall_customer_id: props.customer.id },
+      },
+      select: { id: true },
+    },
+  );
+  if (orderItem === null) {
+    throw new HttpException("Order item not found", 404);
+  }
+  const page: number = props.body.page ?? 1;
+  const limit: number = props.body.limit ?? 20;
+  const skip: number = (page - 1) * limit;
+  // Build WHERE conditions with all optional filters
+  const whereInput = {
+    e_commerce_mall_order_item_id: props.itemId,
+    ...(props.body.to_status !== undefined && {
+      to_status: props.body.to_status,
+    }),
+    ...(props.body.from_status !== undefined && {
+      from_status: props.body.from_status,
+    }),
+    ...(props.body.reason !== undefined && {
+      reason:
+        props.body.reason === null ? null : { contains: props.body.reason },
+    }),
+    ...((props.body.created_at_from !== undefined ||
+      props.body.created_at_to !== undefined) && {
+      created_at: {
+        ...(props.body.created_at_from !== undefined && {
+          gte: props.body.created_at_from,
+        }),
+        ...(props.body.created_at_to !== undefined && {
+          lte: props.body.created_at_to,
+        }),
+      },
+    }),
+  } satisfies Prisma.e_commerce_mall_order_item_status_logsWhereInput;
+  const records =
+    await MyGlobal.prisma.e_commerce_mall_order_item_status_logs.findMany({
+      where: whereInput,
+      skip,
+      take: limit,
+      orderBy: {
+        created_at: "desc",
+      } satisfies Prisma.e_commerce_mall_order_item_status_logsOrderByWithRelationInput,
+      ...ECommerceMallOrderItemStatusLogAtSummaryTransformer.select(),
+    });
+  const total =
+    await MyGlobal.prisma.e_commerce_mall_order_item_status_logs.count({
+      where: whereInput,
+    });
+  return {
+    pagination: {
+      current: page,
+      limit: limit,
+      records: total,
+      pages: Math.ceil(total / limit),
+    } satisfies IPage.IPagination,
+    data: await ArrayUtil.asyncMap(
+      records,
+      ECommerceMallOrderItemStatusLogAtSummaryTransformer.transform,
+    ),
+  };
+}
+
+
+//--------------------------------------------------------------
+// TEMPLATE CODE
+//--------------------------------------------------------------
+// Complete the code below, disregard the import part and return only the function part.
+// 
+// ```typescript
+// import { ArrayUtil } from "@nestia/e2e";
+// import { HttpException } from "@nestjs/common";
+// import { Prisma } from "@prisma/sdk";
+// import jwt from "jsonwebtoken";
+// import typia, { tags } from "typia";
+// import { v4 } from "uuid";
+// import { MyGlobal } from "../MyGlobal";
+// import { PasswordUtil } from "../utils/PasswordUtil";
+// import { toISOStringSafe } from "../utils/toISOStringSafe"
+// 
+// import { IEntity } from "@ORGANIZATION/PROJECT-api/lib/structures/IEntity";
+// import { IECommerceMallOrderItemStatusLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallOrderItemStatusLog";
+// import { IPageIECommerceMallOrderItemStatusLog } from "@ORGANIZATION/PROJECT-api/lib/structures/IPageIECommerceMallOrderItemStatusLog";
+// import { IPage } from "@ORGANIZATION/PROJECT-api/lib/structures/IPage";
+// import { IECommerceMallOrderItem } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallOrderItem";
+// import { IECommerceMallOrder } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallOrder";
+// import { IECommerceMallCustomer } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallCustomer";
+// import { IECommerceMallCustomerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallCustomerProfile";
+// import { IECommerceMallProductVariant } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallProductVariant";
+// import { IECommerceMallProduct } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallProduct";
+// import { IECommerceMallSeller } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallSeller";
+// import { IECommerceMallSellerProfile } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallSellerProfile";
+// import { IECommerceMallCategory } from "@ORGANIZATION/PROJECT-api/lib/structures/IECommerceMallCategory";
+// 
+// // DON'T CHANGE FUNCTION NAME AND PARAMETERS,
+// // ONLY YOU HAVE TO WRITE THIS FUNCTION BODY, AND USE IMPORTED.
+// export async function patchECommerceMallCustomerOrderItemsItemIdStatusLogs(props: {
+//   customer: CustomerPayload;
+//   itemId: string & tags.Format<"uuid">;
+//   body: IECommerceMallOrderItemStatusLog.IRequest;
+// }): Promise<IPageIECommerceMallOrderItemStatusLog.ISummary> {
+//   const records = await MyGlobal.prisma.e_commerce_mall_order_item_status_logs.findMany({
+//     ...ECommerceMallOrderItemStatusLogAtSummaryTransformer.select(),
+//     ...,
+//   });
+//   return {
+//     pagination: {
+//       current: ...,
+//       limit: ...,
+//       records: ...,
+//       pages: ...,
+//     },
+//     data: await ArrayUtil.asyncMap(records, ECommerceMallOrderItemStatusLogAtSummaryTransformer.transform),
+//   };
+// }
+// ```
+//--------------------------------------------------------------

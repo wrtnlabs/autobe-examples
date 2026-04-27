@@ -1,0 +1,464 @@
+/// Shop profile information for each seller including shop name,
+/// description, and logo image.
+///
+/// Each {@link e_commerce_mall_sellers} account has exactly one profile
+/// record that defines their public-facing merchant identity. The shop name
+/// appears alongside products in search results, category listings, and
+/// product detail pages. The shop description and logo are displayed on the
+/// seller's public profile page for customers to view.
+///
+/// Edits to this profile are preserved as immutable snapshots in {@link
+/// e_commerce_mall_seller_profile_snapshots} for audit and dispute
+/// resolution. When a seller deletes their account, this profile is
+/// soft-deleted (deleted_at is set) but the data is retained so the shop
+/// name and seller identity remain visible in past order snapshots for
+/// historical and legal purposes.
+///
+/// @namespace sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_seller_profiles {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the {@link e_commerce_mall_sellers} table.
+  ///
+  /// Establishes the 1:1 relationship between a seller's authentication record
+  /// and their shop profile. Each seller has exactly one profile, enforced by
+  /// the unique constraint. This field is required — every seller must have a
+  /// profile upon approval.
+  e_commerce_mall_seller_id String
+  
+  /// The public-facing brand name of the seller's store.
+  ///
+  /// This name appears alongside products in search results, category
+  /// listings, product detail pages, and is preserved in order history
+  /// snapshots even after the seller's account is deleted.
+  shop_name String
+  
+  /// A textual description of the seller's business displayed on the seller's
+  /// public profile page for customers to read when learning about the
+  /// merchant.
+  shop_description String?
+  
+  /// URI of the image representing the seller's brand.
+  ///
+  /// Displayed on the seller's public profile alongside the shop name and
+  /// description.
+  logo_image String?
+  
+  /// Timestamp when this profile was first created.
+  created_at DateTime
+  
+  /// Timestamp when this profile was last updated.
+  updated_at DateTime
+  
+  /// Timestamp when the seller's account was deleted.
+  ///
+  /// When set, the profile is considered soft-deleted. The data is preserved
+  /// for order history and legal purposes even after the seller account is
+  /// removed from the system.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller e_commerce_mall_sellers @relation(fields: [e_commerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sellerProfileSnapshots e_commerce_mall_seller_profile_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([e_commerce_mall_seller_id])
+}
+
+/// Tracks seller registration approval requests through the review lifecycle.
+///
+/// Each request is submitted by a {@link e_commerce_mall_sellers} account
+/// pending administrator review. The request progresses through statuses as
+/// defined in the Seller Approval Status Classification: "pending" (awaiting
+/// administrator review), "approved" (registration accepted), or "rejected"
+/// (registration declined with a reason provided by the administrator).
+///
+/// When rejected, the seller may submit a new registration request, which
+/// creates a new approval record. The rejection reason provided by the
+/// administrator is stored and visible to the seller for transparency. A
+/// reference to the reviewing {@link e_commerce_mall_administrators} is
+/// recorded when the review is completed, along with the review timestamp.
+///
+/// @namespace sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_seller_approval_requests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// The seller who submitted this registration approval request.
+  ///
+  /// References {@link e_commerce_mall_sellers}. Each seller can have multiple
+  /// approval requests over time if they resubmit after a rejection.
+  seller_id String
+  
+  /// The administrator who reviewed and decided on this approval request.
+  ///
+  /// References {@link e_commerce_mall_administrators}. Set when an
+  /// administrator approves or rejects the request. Remains null while the
+  /// request is in "pending" status.
+  reviewer_id String?
+  
+  /// Current status of this approval request.
+  ///
+  /// Possible values: "pending" (awaiting administrator review, the initial
+  /// state upon submission), "approved" (seller registration accepted, seller
+  /// can access all selling features), or "rejected" (registration declined
+  /// with a reason provided by the administrator).
+  status String
+  
+  /// Administrator's reason for rejecting this registration request.
+  ///
+  /// Required when status is "rejected". Remains null for "pending" and
+  /// "approved" requests. Visible to the seller so they understand why their
+  /// registration was declined, as described in the seller registration and
+  /// approval workflow.
+  rejection_reason String?
+  
+  /// Timestamp when an administrator reviewed this request.
+  ///
+  /// Set when the status transitions from "pending" to either "approved" or
+  /// "rejected". Remains null while the request is pending review.
+  reviewed_at DateTime?
+  
+  /// Timestamp when this approval request was submitted by the seller.
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to this approval request record.
+  ///
+  /// Updated automatically whenever the request's status, rejection reason,
+  /// reviewer assignment, or other mutable fields change.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null indicates the record is active. Set when the
+  /// associated seller account is deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller e_commerce_mall_sellers @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  reviewer e_commerce_mall_administrators? @relation(fields: [reviewer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([reviewer_id])
+  // spellchecker: ignore-next-line
+  @@index([seller_id, created_at], map: "e_commerce_mall_seller_approval_requests_seller_id_cre_f3a2687f")
+  @@index([status, created_at])
+}
+
+/// Immutable point-in-time records preserving the state of a {@link
+/// e_commerce_mall_seller_profiles} before each profile edit. Each snapshot
+/// captures the shop name, shop description, and logo image as they existed
+/// prior to modification, enabling audit trails, dispute resolution, and
+/// historical reconstruction of seller identity.
+///
+/// Snapshots are created automatically before every seller profile edit
+/// operation. They are immutable and cannot be modified or deleted by any
+/// user, including administrators and super administrators. Sellers can view
+/// snapshots of their own profile, while administrators can view snapshots
+/// of any seller profile on the platform. Snapshots are preserved
+/// indefinitely even after the seller account is deleted.
+///
+/// @namespace sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_seller_profile_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Reference to the seller profile that was snapshotted. Identifies which
+  /// seller's profile state is preserved at the time of this snapshot.
+  ///
+  /// Each snapshot belongs to exactly one seller profile, and a seller profile
+  /// can have many snapshots over its lifetime as the seller makes edits.
+  e_commerce_mall_seller_profile_id String
+  
+  /// Shop name at the time this snapshot was taken.
+  ///
+  /// This field preserves the seller profile's shop name value before the edit
+  /// was applied, allowing historical review of how the shop name changed over
+  /// time.
+  name String
+  
+  /// Shop description at the time this snapshot was taken.
+  ///
+  /// This field preserves the seller profile's shop description value before
+  /// the edit was applied, allowing historical review of how the shop
+  /// description changed over time.
+  description String
+  
+  /// Logo image URL at the time this snapshot was taken.
+  ///
+  /// This field preserves the seller profile's logo image URL before the edit
+  /// was applied, allowing historical review of how the logo changed over
+  /// time.
+  logo String
+  
+  /// Timestamp when this snapshot was created.
+  ///
+  /// Records exactly when the profile edit occurred, providing the temporal
+  /// reference point for the preserved state. Snapshots are ordered by this
+  /// timestamp to reconstruct the chronological sequence of profile changes.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  sellerProfile e_commerce_mall_seller_profiles @relation(fields: [e_commerce_mall_seller_profile_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([e_commerce_mall_seller_profile_id, created_at], map: "e_commerce_mall_seller_profile_snapshots_e_commerce_ma_c62fc007")
+}
+
+/// Audit log recording seller suspension and unsuspension actions performed
+/// by administrators or super administrators.
+///
+/// Each record captures a single action (suspend or unsuspend) taken against
+/// a {@link e_commerce_mall_sellers} account, including the reason provided
+/// by the acting administrator. The actor identity is tracked via
+/// polymorphic subtype tables: {@link
+/// e_commerce_mall_seller_suspension_log_of_administrators} for regular
+/// administrators and {@link
+/// e_commerce_mall_seller_suspension_log_of_super_administrators} for super
+/// administrators, using an actor_type discriminator field.
+///
+/// This log is append-only and immutable, providing a complete audit trail
+/// for dispute resolution and platform governance reviews.
+///
+/// @namespace sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_seller_suspension_logs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the {@link e_commerce_mall_sellers} account that was
+  /// suspended or unsuspended.
+  ///
+  /// Each log entry references exactly one seller account affected by the
+  /// administrative action.
+  e_commerce_mall_seller_id String
+  
+  /// The action performed on the seller account.
+  ///
+  /// Valid values are "suspend" to revoke selling privileges or "unsuspend" to
+  /// restore full selling functionality. This field captures the type of
+  /// administrative action taken.
+  action String
+  
+  /// Free-text explanation provided by the administrator or super
+  /// administrator for performing this suspension or unsuspension action.
+  ///
+  /// May be null if the acting administrator did not provide a reason.
+  reason String?
+  
+  /// Discriminator field identifying which actor type performed this action.
+  ///
+  /// Valid values are "administrator" for {@link
+  /// e_commerce_mall_administrators} or "super_administrator" for {@link
+  /// e_commerce_mall_super_administrators}. Join with the corresponding
+  /// subtype table using the log primary key to retrieve the specific actor
+  /// identity.
+  actor_type String
+  
+  /// Timestamp when this suspension or unsuspension action was recorded.
+  ///
+  /// Auto-set on creation. Establishes chronological order of administrative
+  /// actions against a seller account.
+  created_at DateTime
+  
+  /// Timestamp when this record was last modified.
+  ///
+  /// For this immutable audit log, this value is set equal to created_at on
+  /// creation and never changes. Included for schema consistency.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Always null for this immutable audit log as
+  /// records are never removed.
+  ///
+  /// Included for schema consistency across all business entity tables.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  seller e_commerce_mall_sellers @relation(fields: [e_commerce_mall_seller_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  administratorRecord e_commerce_mall_seller_suspension_log_of_administrators?
+  suspensionLogOfSuperAdministrator e_commerce_mall_seller_suspension_log_of_super_administrators?
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([e_commerce_mall_seller_id, created_at], map: "e_commerce_mall_seller_suspension_logs_e_commerce_mall_af1fe2ff")
+}
+
+/// Polymorphic subtype table resolving which regular administrator performed
+/// a seller suspension or unsuspension action.
+///
+/// This table implements the polymorphic actor pattern for {@link
+/// e_commerce_mall_seller_suspension_logs}. When the parent suspension log's
+/// `actorType` discriminator equals "administrator", this table provides the
+/// 1:1 link to the specific {@link e_commerce_mall_administrators} who
+/// executed the action. The sibling subtype {@link
+/// e_commerce_mall_seller_suspension_log_of_super_administrators} handles
+/// the "superAdministrator" discriminator value.
+///
+/// The unique constraint on `seller_suspension_log_id` enforces the 1:1
+/// relationship, ensuring each suspension log is resolved to exactly one
+/// actor subtype record.
+///
+/// @namespace sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_seller_suspension_log_of_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the parent {@link e_commerce_mall_seller_suspension_logs}
+  /// record this subtype entry belongs to.
+  ///
+  /// The unique constraint enforces a 1:1 relationship: each suspension log
+  /// can have at most one administrator subtype record. When the parent log's
+  /// `actorType` is "administrator", this record must exist.
+  seller_suspension_log_id String
+  
+  /// Foreign key to the {@link e_commerce_mall_administrators} who performed
+  /// the seller suspension or unsuspension action.
+  ///
+  /// Identifies the specific regular administrator responsible for executing
+  /// the action recorded in the parent suspension log entry. This field is
+  /// never null because this subtype table only exists when a regular
+  /// administrator performed the action.
+  administrator_id String
+  
+  /// Timestamp when this subtype record was created.
+  created_at DateTime
+  
+  /// Timestamp when this subtype record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp for soft deletion. Null indicates the record is active.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  suspensionLog e_commerce_mall_seller_suspension_logs @relation(fields: [seller_suspension_log_id], references: [id], onDelete: Cascade)
+  administrator e_commerce_mall_administrators @relation(fields: [administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([seller_suspension_log_id], map: "e_commerce_mall_seller_suspension_log_of_administrator_08b7dedd")
+  // spellchecker: ignore-next-line
+  @@index([administrator_id], map: "e_commerce_mall_seller_suspension_log_of_administrator_54b7ef92")
+}
+
+/// Subtype table resolving the polymorphic performer reference for super
+/// administrator actions recorded in {@link
+/// e_commerce_mall_seller_suspension_logs}. Each record links a suspension
+/// log entry to the specific {@link e_commerce_mall_super_administrator} who
+/// performed the suspension or unsuspension action.
+///
+/// This table is part of a polymorphic ownership pattern where {@link
+/// e_commerce_mall_seller_suspension_logs} uses an actor_type discriminator
+/// field to distinguish between regular administrators and super
+/// administrators as performers. The 1:1 unique foreign key constraint on
+/// the suspension log reference ensures that each suspension log entry has
+/// at most one super administrator performer subtype record.
+///
+/// Sibling table: {@link
+/// e_commerce_mall_seller_suspension_log_of_administrators} handles the
+/// regular administrator case.
+///
+/// @namespace sellers
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_seller_suspension_log_of_super_administrators {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id(map: "e_commerce_mall_seller_suspension_log_of_super_adminis_8a8e042c")
+  
+  /// Foreign key to the parent {@link e_commerce_mall_seller_suspension_logs}
+  /// entry. Establishes a 1:1 relationship where each suspension log record
+  /// can be linked to at most one super administrator subtype record. The
+  /// unique constraint prevents multiple subtype records from pointing to the
+  /// same suspension log entry.
+  e_commerce_mall_seller_suspension_log_id String
+  
+  /// Foreign key to the {@link e_commerce_mall_super_administrator} who
+  /// performed the suspension or unsuspension action. References the super
+  /// administrator actor from the authorization component, identifying which
+  /// super administrator executed the action recorded in the parent suspension
+  /// log entry.
+  e_commerce_mall_super_administrator_id String
+  
+  /// Timestamp when this subtype record was created, indicating when the link
+  /// between the suspension log entry and the super administrator was
+  /// established.
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to this record.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. When set, indicates that this subtype association
+  /// has been logically removed while preserving the parent suspension log
+  /// entry and the super administrator record.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  suspensionLog e_commerce_mall_seller_suspension_logs @relation(fields: [e_commerce_mall_seller_suspension_log_id], references: [id], onDelete: Cascade)
+  superAdministrator e_commerce_mall_super_administrators @relation(fields: [e_commerce_mall_super_administrator_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([e_commerce_mall_seller_suspension_log_id], map: "e_commerce_mall_seller_suspension_log_of_super_adminis_88bbd229")
+  // spellchecker: ignore-next-line
+  @@index([e_commerce_mall_super_administrator_id, created_at], map: "e_commerce_mall_seller_suspension_log_of_super_adminis_3e88cbbd")
+}

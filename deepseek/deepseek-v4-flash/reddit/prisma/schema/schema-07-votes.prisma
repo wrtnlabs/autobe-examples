@@ -1,0 +1,135 @@
+/// Polymorphic votes cast by members on posts or comments, with upvote (+1)
+/// or downvote (-1) values, enforcing one vote per member per target
+/// content.
+///
+/// Each vote represents a member's reaction to a piece of content, either
+/// approving (upvote, +1) or disapproving (downvote, -1). A vote targets
+/// either a {@link community_platform_posts} or a {@link
+/// community_platform_comments}, identified by the target_type discriminator
+/// and target_id UUID. A member can cast at most one vote on any given post
+/// and at most one vote on any given comment. Re-voting replaces the
+/// previous vote (upsert behavior), and removing a vote hard-deletes the
+/// record.
+///
+/// The voter_id field establishes a required relationship to {@link
+/// community_platform_members}, ensuring only authenticated members can
+/// vote. The value field stores +1 or -1, enabling aggregate vote score
+/// calculation (total upvotes minus total downvotes) and influencing the
+/// content author's karma score.
+///
+/// @namespace votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_votes {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the {@link community_platform_members} who cast this vote.
+  /// Establishes the voter identity and enables authorization checks (only
+  /// authenticated members can vote).
+  voter_id String
+  
+  /// Discriminator indicating the type of content this vote targets. Must be
+  /// either 'post' for votes on {@link community_platform_posts} or 'comment'
+  /// for votes on {@link community_platform_comments}. Used together with
+  /// target_id to form a polymorphic reference.
+  target_type String
+  
+  /// UUID of the target content this vote applies to. Combined with
+  /// target_type to form a polymorphic reference to either a {@link
+  /// community_platform_posts} or {@link community_platform_comments}.
+  target_id String
+  
+  /// Vote value: +1 for upvote (increases content score and author karma by 1)
+  /// or -1 for downvote (decreases content score and author karma by 1).
+  /// Enforced at the application layer to only allow these two values.
+  value Int
+  
+  /// Timestamp when this vote was first cast.
+  created_at DateTime
+  
+  /// Timestamp when this vote was last modified (e.g., changed from upvote to
+  /// downvote or vice versa).
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  voter community_platform_members @relation(fields: [voter_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([voter_id, target_type, target_id])
+  @@index([target_type, target_id])
+  @@index([voter_id, target_type])
+}
+
+/// Precomputed vote score aggregates (net_score, upvote_count,
+/// downvote_count) per target post or comment for efficient reads.
+///
+/// This summary table stores denormalized vote statistics for each post and
+/// comment, avoiding expensive aggregate queries on the vote tables. Each
+/// row represents the aggregated vote state of one target entity at the
+/// current time. Updates are performed by application logic whenever a vote
+/// is cast, changed, or removed.
+///
+/// The `target_type` field discriminates between posts ({@link
+/// community_platform_posts}) and comments ({@link
+/// community_platform_comments}). The unique constraint on (`target_type`,
+/// `target_id`) ensures exactly one summary row per target entity.
+///
+/// Vote summaries are queried extensively by feed and detail view endpoints
+/// to display vote scores, upvote counts, and downvote counts alongside
+/// posts and comments without scanning individual vote records.
+///
+/// @namespace votes
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_vote_summaries {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Discriminator indicating whether this summary targets a post or a
+  /// comment. Value is "post" for post vote summaries or "comment" for comment
+  /// vote summaries. Used together with `target_id` to identify the target
+  /// entity.
+  target_type String
+  
+  /// UUID of the target post ({@link community_platform_posts}) or comment
+  /// ({@link community_platform_comments}). Combined with `target_type` to
+  /// uniquely identify the target entity for this vote summary.
+  target_id String
+  
+  /// Total number of upvotes cast on this target post or comment. Updated
+  /// whenever a vote is added, changed, or removed on the target.
+  upvote_count Int
+  
+  /// Total number of downvotes cast on this target post or comment. Updated
+  /// whenever a vote is added, changed, or removed on the target.
+  downvote_count Int
+  
+  /// Net vote score calculated as `upvote_count - downvote_count`. Positive
+  /// values indicate more approvals than disapprovals, zero indicates a tie or
+  /// no votes, negative values indicate more disapprovals than approvals.
+  net_score Int
+  
+  /// Timestamp when this summary row was first created, typically when the
+  /// first vote is cast on the target.
+  created_at DateTime
+  
+  /// Timestamp when this summary row was last updated due to a vote being
+  /// cast, changed, or removed on the target.
+  updated_at DateTime
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([target_type, target_id])
+  @@index([target_type, net_score])
+}

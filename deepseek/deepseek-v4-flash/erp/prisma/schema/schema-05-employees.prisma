@@ -1,0 +1,335 @@
+/// Employee records representing user membership within an organization.
+/// Employees bridge a {@link hrm_time_tracking_members user account} with an
+/// {@link hrm_time_tracking_organizations organization}, granting the user
+/// permissions and access within that organization's multi-tenant boundary.
+///
+/// Each employee is assigned exactly one {@link hrm_time_tracking_roles
+/// role} defining their permissions. An employee may optionally belong to a
+/// {@link hrm_time_tracking_departments department} for structural grouping.
+/// The employee's employment type (full-time, part-time, contractor, intern)
+/// and status (active, deactivated) determine their participation in time
+/// tracking operations.
+///
+/// An employee can have multiple {@link hrm_time_tracking_employee_contracts
+/// contracts} over time (only one active at a time) and is linked to
+/// historical snapshots via {@link hrm_time_tracking_employee_snapshots
+/// employee snapshots}. Deactivated employees retain all historical data
+/// (timelogs, timesheets, contracts) but cannot create new time entries.
+///
+/// @namespace hrm_time_tracking.employees
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_employees {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the employee record.
+  id String @id
+  
+  /// Foreign key to the {@link hrm_time_tracking_organizations organization}
+  /// this employee belongs to. All employee operations are scoped within this
+  /// organization's multi-tenant boundary.
+  hrm_time_tracking_organization_id String
+  
+  /// Foreign key to the {@link hrm_time_tracking_members user account} that
+  /// owns this employee record. A single user may be an employee in multiple
+  /// organizations, but only once per organization (enforced by unique
+  /// constraint).
+  hrm_time_tracking_member_id String
+  
+  /// Foreign key to the {@link hrm_time_tracking_roles role} assigned to this
+  /// employee. Each employee has exactly one role defining their permissions
+  /// within the organization.
+  hrm_time_tracking_role_id String
+  
+  /// Optional foreign key to the {@link hrm_time_tracking_departments
+  /// department} this employee belongs to. Null when the employee is not
+  /// assigned to any department.
+  hrm_time_tracking_department_id String?
+  
+  /// Job position or title of the employee within the organization (e.g.,
+  /// "Software Engineer", "Team Lead"). Optional field providing
+  /// organizational context about the employee's function.
+  position String?
+  
+  /// Classification of the employee's work arrangement. Allowed values:
+  /// full-time, part-time, contractor, intern. Determines compensation model
+  /// and work schedule expectations.
+  employment_type String
+  
+  /// Current operational status of the employee record. Allowed values:
+  /// active, deactivated. Active employees can log time, submit timesheets,
+  /// and access organization features. Deactivated employees are blocked from
+  /// time tracking operations but their historical data (timelogs, timesheets,
+  /// contracts) is preserved.
+  status String
+  
+  /// Timestamp when the employee record was first created within the
+  /// organization.
+  created_at DateTime
+  
+  /// Timestamp when the employee record was last modified, including role
+  /// changes, department reassignments, position updates, employment type
+  /// changes, or status transitions.
+  updated_at DateTime
+  
+  /// Soft delete timestamp indicating the employee record has been
+  /// deactivated. Null when the employee is active. Deactivated employees
+  /// retain all historical data (timelogs, timesheets, contracts) but cannot
+  /// perform time tracking operations.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  organization hrm_time_tracking_organizations @relation(fields: [hrm_time_tracking_organization_id], references: [id], onDelete: Cascade)
+  member hrm_time_tracking_members @relation(fields: [hrm_time_tracking_member_id], references: [id], onDelete: Cascade)
+  role hrm_time_tracking_roles @relation(fields: [hrm_time_tracking_role_id], references: [id], onDelete: Cascade)
+  department hrm_time_tracking_departments? @relation(fields: [hrm_time_tracking_department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  snapshots hrm_time_tracking_employee_snapshots[]
+  employeeContracts hrm_time_tracking_employee_contracts[]
+  projectMembers hrm_time_tracking_project_members[]
+  assignedTasks hrm_time_tracking_tasks[]
+  taskHistories hrm_time_tracking_task_histories[]
+  timelogs hrm_time_tracking_timelogs[]
+  timesheets hrm_time_tracking_timesheets[]
+  timers hrm_time_tracking_timers[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_time_tracking_role_id])
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_department_id], map: "hrm_time_tracking_employees_hrm_time_tracking_departme_146d22c4")
+  // spellchecker: ignore-next-line
+  @@unique([hrm_time_tracking_member_id, hrm_time_tracking_organization_id], map: "hrm_time_tracking_employees_hrm_time_tracking_member_i_3506e7da")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_organization_id, status], map: "hrm_time_tracking_employees_hrm_time_tracking_organiza_f4666f2f")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_organization_id, hrm_time_tracking_department_id], map: "hrm_time_tracking_employees_hrm_time_tracking_organiza_73dc7104")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_organization_id, hrm_time_tracking_role_id], map: "hrm_time_tracking_employees_hrm_time_tracking_organiza_65ccd2b8")
+}
+
+/// Immutable point-in-time snapshots capturing employee record state changes
+/// for audit trail purposes.
+///
+/// Each snapshot records the full state of an {@link
+/// hrm_time_tracking_employees} record at the moment of a significant
+/// change, including denormalized employee attributes (status,
+/// employment_type, position) and foreign key references to the employee's
+/// role and department assignments at that time. Change metadata fields
+/// (`changed_field`, `old_value`, `new_value`) identify what was modified
+/// and the before/after values.
+///
+/// This table serves as an immutable audit trail for employee record
+/// changes, enabling historical review of all modifications to an employee's
+/// record throughout their lifecycle within an organization. Snapshots are
+/// created automatically on events such as status transitions (active ↔
+/// deactivated), role re-assignments, employment type changes, and position
+/// or department updates.
+///
+/// @namespace hrm_time_tracking.employees
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_employee_snapshots {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Foreign key to the {@link hrm_time_tracking_employees} record whose state
+  /// is captured by this snapshot.
+  hrm_time_tracking_employee_id String
+  
+  /// Foreign key to the {@link hrm_time_tracking_members} record representing
+  /// the authenticated user who performed the change that triggered this
+  /// snapshot.
+  hrm_time_tracking_member_id String
+  
+  /// Foreign key to the {@link hrm_time_tracking_roles} record representing
+  /// the employee's role assignment at the time this snapshot was taken. This
+  /// captures the role state as it was when the change occurred, preserving
+  /// the historical role assignment for audit purposes.
+  hrm_time_tracking_role_id String
+  
+  /// Foreign key to the {@link hrm_time_tracking_departments} record
+  /// representing the employee's department assignment at the time this
+  /// snapshot was taken. Nullable because employees may not be assigned to any
+  /// department.
+  hrm_time_tracking_department_id String?
+  
+  /// The employee's status at the time this snapshot was taken. Possible
+  /// values are "active" and "deactivated".
+  status String
+  
+  /// The employee's employment type at the time this snapshot was taken.
+  /// Possible values are "full-time", "part-time", "contractor", and "intern".
+  employment_type String
+  
+  /// The employee's position or job title at the time this snapshot was taken.
+  /// Nullable because employees may not have a position set.
+  position String?
+  
+  /// The name of the employee record field that was modified, triggering this
+  /// snapshot. Possible values include "status", "role_id", "employment_type",
+  /// "department_id", and "position".
+  changed_field String
+  
+  /// The previous value of the changed field before the modification. Nullable
+  /// because the initial snapshot when an employee is first created has no
+  /// prior state to record.
+  old_value String?
+  
+  /// The new value of the changed field after the modification. Nullable when
+  /// the change clears a previously set value (e.g., removing a department
+  /// assignment or clearing a position field).
+  new_value String?
+  
+  /// Timestamp recording when this snapshot was created, capturing the exact
+  /// moment of the employee record change.
+  created_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_time_tracking_employees @relation(fields: [hrm_time_tracking_employee_id], references: [id], onDelete: Cascade)
+  actor hrm_time_tracking_members @relation(fields: [hrm_time_tracking_member_id], references: [id], onDelete: Cascade)
+  role hrm_time_tracking_roles @relation(fields: [hrm_time_tracking_role_id], references: [id], onDelete: Cascade)
+  department hrm_time_tracking_departments? @relation(fields: [hrm_time_tracking_department_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_member_id], map: "hrm_time_tracking_employee_snapshots_hrm_time_tracking_8ee8da53")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_role_id], map: "hrm_time_tracking_employee_snapshots_hrm_time_tracking_589b21ca")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_department_id], map: "hrm_time_tracking_employee_snapshots_hrm_time_tracking_9245b36d")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_employee_id, created_at], map: "hrm_time_tracking_employee_snapshots_hrm_time_tracking_9ca322c3")
+  @@index([changed_field])
+}
+
+/// Employment contracts documenting pay terms, working hours, pay period,
+/// and duration for each employee.
+///
+/// Each contract belongs to exactly one {@link hrm_time_tracking_employees}.
+/// An employee may have multiple contracts over time, forming a complete
+/// compensation history. Only one contract can be active (end_date IS NULL)
+/// per employee at any given time. When a new contract is created, the
+/// system automatically ends the previous active contract by setting its
+/// end_date to the day before the new contract's start_date.
+///
+/// Contracts follow a lifecycle: active contracts (end_date IS NULL) can be
+/// edited by authorized users to update compensation terms; past contracts
+/// (end_date IS NOT NULL) become immutable historical records preserving the
+/// employee's pay history accurately.
+///
+/// @namespace hrm_time_tracking.employees
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_employee_contracts {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the employee who owns this contract.
+  ///
+  /// Each contract is owned by exactly one {@link hrm_time_tracking_employees}
+  /// and records that employee's pay terms for a specific time period. An
+  /// employee may have multiple contracts over their employment history
+  /// forming a gapless timeline, but only one contract can be active (end_date
+  /// IS NULL) at any given time.
+  hrm_time_tracking_employee_id String
+  
+  /// The date when this contract becomes effective.
+  ///
+  /// This required field marks the beginning of the contract term. The unique
+  /// constraint on (hrm_time_tracking_employee_id, start_date) ensures no two
+  /// contracts for the same employee start on the same day. When a new
+  /// contract is created, the system uses its start_date to automatically end
+  /// the previous active contract by setting its end_date to the day before.
+  start_date DateTime
+  
+  /// The date when this contract ends.
+  ///
+  /// When null, the contract is currently active (ongoing with no
+  /// predetermined end). When set, the contract has ended on this date. Only
+  /// one contract per employee can have a null end_date at any time. The
+  /// system automatically sets this field on the previously active contract
+  /// when a new contract is created, setting it to the day before the new
+  /// contract's start_date to ensure gapless coverage. Users with
+  /// employee:manage permission can also set or update this field on active
+  /// contracts.
+  end_date DateTime?
+  
+  /// The monetary compensation rate for this contract.
+  ///
+  /// Represents the pay amount per the specified pay_period unit. For example,
+  /// if pay_period is 'hourly' and pay_rate is 25.00, the employee earns
+  /// $25.00 per hour worked. If pay_period is 'monthly' and pay_rate is
+  /// 4000.00, the employee earns $4,000.00 per month. Required field with
+  /// numeric precision.
+  pay_rate Float
+  
+  /// The time unit for the pay_rate.
+  ///
+  /// One of: hourly, daily, weekly, monthly. Determines how the pay_rate value
+  /// is interpreted (e.g., hourly = rate per hour worked, monthly = fixed
+  /// amount per month). Validated at the application layer against the allowed
+  /// set of values.
+  pay_period String
+  
+  /// The expected number of working hours per week under this contract.
+  ///
+  /// Used for scheduling, capacity planning, and overtime calculations. A
+  /// typical value is 40 for full-time employees. Required field recorded per
+  /// contract since working arrangements may change between contracts.
+  working_hours_per_week Float
+  
+  /// Optional notes about this contract.
+  ///
+  /// May contain additional terms, conditions, or remarks about the employment
+  /// arrangement such as specific benefits, location details, equipment
+  /// provisions, or special provisions not covered by the structured fields.
+  notes String?
+  
+  /// Timestamp when this contract record was created.
+  created_at DateTime
+  
+  /// Timestamp when this contract record was last updated.
+  ///
+  /// Active contracts (end_date IS NULL) can be updated by users with
+  /// employee:manage permission to modify pay rate, pay period, working hours,
+  /// end date, or notes. Past contracts (end_date IS NOT NULL) are immutable
+  /// and should not receive updates.
+  updated_at DateTime
+  
+  /// Timestamp when this contract was soft-deleted.
+  ///
+  /// When set, the contract is considered deleted but retained for historical
+  /// record and audit purposes. Past contracts that are immutable may still be
+  /// soft-deleted for data management purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_time_tracking_employees @relation(fields: [hrm_time_tracking_employee_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([hrm_time_tracking_employee_id, start_date], map: "hrm_time_tracking_employee_contracts_hrm_time_tracking_e0c08bb5")
+}

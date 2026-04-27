@@ -1,0 +1,367 @@
+/// Time entries recording work done by an employee on a specific date for a
+/// project, with duration in minutes, optional task, optional description,
+/// and billable flag.
+///
+/// A timelog represents a discrete time entry that captures the work
+/// performed by an {@link hrm_time_tracking_employees Employee} on a
+/// specific date for a given {@link hrm_time_tracking_projects Project}.
+/// Each timelog records the duration in minutes, optionally links to an
+/// associated {@link hrm_time_tracking_tasks Task} within that project, and
+/// provides a description of the work performed. The billable flag indicates
+/// whether the logged time is chargeable.
+///
+/// Timelogs can be grouped into weekly {@link hrm_time_tracking_timesheets
+/// Timesheets} for submission and approval. When a timesheet is approved,
+/// all included timelogs become locked and cannot be edited or deleted.
+/// Timelogs may also be created automatically when an employee stops a
+/// {@link hrm_time_tracking_timers Timer}.
+///
+/// @namespace hrm_time_tracking.time_tracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_timelogs {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the timelog record.
+  id String @id
+  
+  /// Foreign key to the {@link hrm_time_tracking_employees Employee} who
+  /// logged this time entry.
+  ///
+  /// Each timelog belongs to exactly one employee. Employees can only create
+  /// timelogs for themselves, but users with time:manage permission can edit
+  /// or delete any employee's timelogs.
+  hrm_time_tracking_employee_id String
+  
+  /// Foreign key to the {@link hrm_time_tracking_projects Project} against
+  /// which this time is logged.
+  ///
+  /// Each timelog must reference a project that the employee is assigned to
+  /// via a ProjectMember record. Archived or completed projects cannot receive
+  /// new timelogs.
+  hrm_time_tracking_project_id String
+  
+  /// Foreign key to the optional {@link hrm_time_tracking_tasks Task}
+  /// associated with this timelog.
+  ///
+  /// When specified, the task must belong to the same project referenced by
+  /// hrm_time_tracking_project_id. This allows granular tracking of time spent
+  /// on specific work items within a project.
+  hrm_time_tracking_task_id String?
+  
+  /// Foreign key to the optional {@link hrm_time_tracking_timesheets
+  /// Timesheet} that includes this timelog.
+  ///
+  /// Timelogs are grouped into weekly timesheets for submission and approval.
+  /// When a timesheet is approved, all included timelogs become locked and
+  /// cannot be edited or deleted. Timelogs that are not yet part of any
+  /// timesheet have a null value here.
+  hrm_time_tracking_timesheet_id String?
+  
+  /// The date on which the work was performed.
+  ///
+  /// This represents the calendar date when the work actually occurred, not
+  /// the date the timelog was created. Used for filtering and reporting by
+  /// date range.
+  date DateTime
+  
+  /// The duration of the time entry in minutes.
+  ///
+  /// Must be a positive integer value. When a timelog is created by stopping a
+  /// {@link hrm_time_tracking_timers Timer}, the duration is calculated from
+  /// the timer's elapsed time and rounded to the nearest minute.
+  duration_minutes Int
+  
+  /// Free-text description of the work performed during this time entry.
+  ///
+  /// Provides context about what was done, such as specific work completed,
+  /// meetings attended, or deliverables produced. Supports full-text search
+  /// for finding specific timelogs.
+  description String?
+  
+  /// Indicates whether this time entry is billable to a client or project
+  /// budget.
+  ///
+  /// Defaults to true. Billable hours count toward billed hours for reporting
+  /// and invoicing. Non-billable time entries are tracked for internal
+  /// reporting purposes only (e.g., internal meetings, administrative tasks,
+  /// training).
+  billable Boolean
+  
+  /// Timestamp when the timelog record was created.
+  created_at DateTime
+  
+  /// Timestamp when the timelog record was last updated.
+  updated_at DateTime
+  
+  /// Timestamp indicating soft deletion of this timelog.
+  ///
+  /// When set, the timelog is considered deleted but preserved for historical
+  /// integrity. Timelogs that are part of submitted or approved timesheets
+  /// cannot be deleted.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_time_tracking_employees @relation(fields: [hrm_time_tracking_employee_id], references: [id], onDelete: Cascade)
+  project hrm_time_tracking_projects @relation(fields: [hrm_time_tracking_project_id], references: [id], onDelete: Cascade)
+  task hrm_time_tracking_tasks? @relation(fields: [hrm_time_tracking_task_id], references: [id], onDelete: Cascade)
+  timesheet hrm_time_tracking_timesheets? @relation(fields: [hrm_time_tracking_timesheet_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_employee_id, date], map: "hrm_time_tracking_timelogs_hrm_time_tracking_employee__72347eb1")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_project_id, date], map: "hrm_time_tracking_timelogs_hrm_time_tracking_project_i_666dfd02")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_timesheet_id, hrm_time_tracking_employee_id], map: "hrm_time_tracking_timelogs_hrm_time_tracking_timesheet_01fc9c0b")
+  @@index([hrm_time_tracking_task_id, date])
+}
+
+/// Weekly timesheet aggregating an employee's timelogs for a
+/// Monday-to-Sunday work period, with status workflow for approval.
+///
+/// Each {@link hrm_time_tracking_timesheets} belongs to exactly one {@link
+/// hrm_time_tracking_employees} and enforces a unique constraint ensuring at
+/// most one timesheet per employee per work week. The status field tracks
+/// the lifecycle through draft, submitted, approved, and rejected states.
+/// When a timesheet is approved, all associated timelogs become locked
+/// (non-editable, non-deletable). When rejected, the timesheet returns to
+/// draft status with a required rejection reason, allowing the employee to
+/// modify and resubmit.
+///
+/// The total_hours field is automatically computed from the duration of all
+/// included timelogs and updated when timelogs are added or removed from the
+/// timesheet. Review metadata (reviewed_at, reviewer reference,
+/// rejection_reason) is populated during approval or rejection events.
+///
+/// @namespace hrm_time_tracking.time_tracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_timesheets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key — unique identifier for each timesheet record.
+  id String @id
+  
+  /// Foreign key to the {@link hrm_time_tracking_employees} who owns this
+  /// timesheet.
+  ///
+  /// Each timesheet belongs to exactly one employee who creates, owns, and
+  /// submits it for approval.
+  hrm_time_tracking_employee_id String
+  
+  /// Foreign key to the {@link hrm_time_tracking_members} who reviewed
+  /// (approved or rejected) this timesheet.
+  ///
+  /// Set when an authorized member with time:approve permission performs an
+  /// approval or rejection action. Null until the timesheet is reviewed.
+  hrm_time_tracking_reviewer_id String?
+  
+  /// The Monday date marking the start of the work week this timesheet covers.
+  ///
+  /// Together with employee_id, forms a unique constraint ensuring at most one
+  /// timesheet per employee per work week.
+  week_start_date DateTime
+  
+  /// The Sunday date marking the end of the work week this timesheet covers.
+  ///
+  /// Always six days after week_start_date. Used for display and query
+  /// filtering purposes.
+  week_end_date DateTime
+  
+  /// Current workflow status of the timesheet. One of: draft, submitted,
+  /// approved, rejected.
+  ///
+  /// - draft: The timesheet is being composed; timelogs can be added or
+  /// removed.
+  /// - submitted: The timesheet is awaiting review; timelogs within it are
+  /// locked from edits.
+  /// - approved: The timesheet has been approved; all included timelogs are
+  /// permanently locked.
+  /// - rejected: The timesheet was rejected and returned to draft state for
+  /// modifications.
+  ///
+  /// Transition rules: draft→submitted, submitted→approved,
+  /// submitted→rejected→draft.
+  status String
+  
+  /// Total hours calculated by summing the duration of all timelogs included
+  /// in this timesheet.
+  ///
+  /// Automatically recomputed when timelogs are added to or removed from the
+  /// timesheet. Stored as a denormalized value for query performance, as
+  /// explicitly required by the business specification.
+  total_hours Float
+  
+  /// Timestamp when the timesheet was submitted for approval (status changed
+  /// to submitted).
+  ///
+  /// Null until the first submission.
+  submitted_at DateTime?
+  
+  /// Timestamp when the timesheet was reviewed (approved or rejected).
+  ///
+  /// Set when a reviewer performs an approval or rejection action. Null until
+  /// reviewed.
+  reviewed_at DateTime?
+  
+  /// Reason provided by the reviewer when rejecting the timesheet.
+  ///
+  /// Required when rejecting a submitted timesheet. Null if the timesheet has
+  /// not been rejected or is still in draft/submitted/approved state.
+  rejection_reason String?
+  
+  /// Timestamp when the timesheet record was first created as a draft.
+  created_at DateTime
+  
+  /// Timestamp when the timesheet was last modified.
+  ///
+  /// Updated on status transitions, timelog additions or removals, and
+  /// metadata changes.
+  updated_at DateTime
+  
+  /// Soft delete timestamp. Null indicates the record is active.
+  ///
+  /// When set, the timesheet is considered deleted but retained for historical
+  /// auditing purposes.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_time_tracking_employees @relation(fields: [hrm_time_tracking_employee_id], references: [id], onDelete: Cascade)
+  reviewer hrm_time_tracking_members? @relation(fields: [hrm_time_tracking_reviewer_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  timelogs hrm_time_tracking_timelogs[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_time_tracking_reviewer_id])
+  // spellchecker: ignore-next-line
+  @@unique([hrm_time_tracking_employee_id, week_start_date], map: "hrm_time_tracking_timesheets_hrm_time_tracking_employe_b954e430")
+  @@index([status])
+  @@index([week_start_date])
+}
+
+/// Live time tracking session owned by an employee for recording work
+/// duration in real-time.
+///
+/// Each timer session belongs to exactly one {@link
+/// hrm_time_tracking_employees} and references a {@link
+/// hrm_time_tracking_projects} (required) with an optional {@link
+/// hrm_time_tracking_tasks} within that project. An employee can have at
+/// most one running timer at any time — this constraint is enforced at the
+/// application layer rather than the database level.
+///
+/// The timer lifecycle consists of three states tracked by the `status`
+/// field: **running** (actively counting from `started_at`), **stopped**
+/// (timelog created with calculated duration), and **discarded** (session
+/// abandoned, no timelog created). While running, the employee can edit the
+/// description, project, and task assignment. There is no automatic stop —
+/// the timer continues indefinitely until the employee explicitly stops or
+/// discards it.
+///
+/// @namespace hrm_time_tracking.time_tracking
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model hrm_time_tracking_timers {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key referencing the {@link hrm_time_tracking_employees} who owns
+  /// this timer session.
+  ///
+  /// The owning employee controls the timer lifecycle — start, stop, discard,
+  /// and edit operations are performed by the timer's owner. An employee can
+  /// have at most one timer in the "running" status at any time.
+  hrm_time_tracking_employee_id String
+  
+  /// Foreign key referencing the {@link hrm_time_tracking_projects} associated
+  /// with this timer session.
+  ///
+  /// The project is required when starting a timer and can be edited while the
+  /// timer is running. When the timer is stopped, the created timelog inherits
+  /// this project reference. The project must be active at the time of timer
+  /// creation.
+  hrm_time_tracking_project_id String
+  
+  /// Foreign key optionally referencing a {@link hrm_time_tracking_tasks}
+  /// within the selected project.
+  ///
+  /// When specified, the task must belong to the selected project. The task
+  /// assignment can be edited while the timer is running. When the timer is
+  /// stopped, the created timelog inherits this task reference.
+  hrm_time_tracking_task_id String?
+  
+  /// Optional free-text description of what the employee is working on during
+  /// this timer session.
+  ///
+  /// The description can be edited while the timer is running. When the timer
+  /// is stopped, this description is carried over to the created timelog.
+  description String?
+  
+  /// Timestamp indicating when the timer was started and began counting
+  /// elapsed time.
+  ///
+  /// This is set once on timer creation and never modified. The elapsed
+  /// duration for timelog creation is calculated as `(stopped_at -
+  /// started_at)` when the timer is stopped, rounded to the nearest minute.
+  started_at DateTime
+  
+  /// Timestamp indicating when the timer session ended.
+  ///
+  /// A null value indicates the timer is currently running (status =
+  /// "running"). A non-null value indicates the timer has been resolved —
+  /// either stopped (timelog created) or discarded. Together with
+  /// `started_at`, used to calculate the total elapsed duration when needed.
+  stopped_at DateTime?
+  
+  /// Current lifecycle state of the timer session.
+  ///
+  /// Valid values are **"running"** (actively counting, `stopped_at` is null),
+  /// **"stopped"** (stopped by employee — a timelog was created), and
+  /// **"discarded"** (abandoned by employee — no timelog was created). Once
+  /// set to "stopped" or "discarded", the status is final and cannot
+  /// transition back to "running".
+  status String
+  
+  /// Timestamp when this timer record was created (when the timer was started
+  /// by the employee).
+  created_at DateTime
+  
+  /// Timestamp when this timer record was last modified.
+  ///
+  /// Updated when the timer's description, project, or task changes while
+  /// running, or when the timer is stopped or discarded.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  employee hrm_time_tracking_employees @relation(fields: [hrm_time_tracking_employee_id], references: [id], onDelete: Cascade)
+  project hrm_time_tracking_projects @relation(fields: [hrm_time_tracking_project_id], references: [id], onDelete: Cascade)
+  task hrm_time_tracking_tasks? @relation(fields: [hrm_time_tracking_task_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@index([hrm_time_tracking_task_id])
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_employee_id, status], map: "hrm_time_tracking_timers_hrm_time_tracking_employee_id_e84b5034")
+  // spellchecker: ignore-next-line
+  @@index([hrm_time_tracking_project_id, started_at], map: "hrm_time_tracking_timers_hrm_time_tracking_project_id__1095a7e6")
+}

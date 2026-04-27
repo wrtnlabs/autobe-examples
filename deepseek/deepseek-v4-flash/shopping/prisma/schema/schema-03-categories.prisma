@@ -1,0 +1,87 @@
+/// Product classification categories forming a two-level parent-child
+/// hierarchy for organizing products into meaningful collections for
+/// browsing and searching.
+///
+/// Each category has a name and description. A parent category represents a
+/// broad grouping (e.g., "Electronics"), while subcategories represent more
+/// specific classifications within the parent (e.g., "Smartphones"). Only
+/// one level of nesting is supported — a subcategory cannot have further
+/// subcategories. A category can exist without a parent as a top-level
+/// category.
+///
+/// Categories are managed exclusively by administrators ({@link
+/// e_commerce_mall_administrators}). When an administrator deletes a
+/// category, products assigned to it become uncategorized — their category
+/// association is lost but the products remain visible in search results.
+/// Historical product snapshots preserve the category assignment at the time
+/// of each snapshot, ensuring audit trails remain intact.
+///
+/// Customers can browse the full list of all categories with parent-child
+/// relationships visible for hierarchical navigation on the product catalog.
+///
+/// @namespace categories
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_categories {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Self-referencing foreign key to the parent category in a two-level
+  /// hierarchy. Null for top-level categories that serve as broad groupings.
+  ///
+  /// A parent category (e.g., "Electronics") can have multiple subcategories
+  /// (e.g., "Smartphones", "Laptops"). Only one level of nesting is supported
+  /// — a subcategory cannot itself be a parent to further subcategories. The
+  /// parent_id must always reference a top-level category (a row where
+  /// parent_id is null) to enforce the two-level depth constraint.
+  ///
+  /// When a parent category is deleted (soft delete), its subcategories become
+  /// orphaned: their parent_id is set to null, effectively promoting them to
+  /// top-level categories.
+  parent_id String?
+  
+  /// Short descriptive label identifying the category (e.g., "Electronics",
+  /// "Clothing"). The name is the primary identifier visible to customers when
+  /// browsing categories and must clearly convey what type of products belong
+  /// here.
+  name String
+  
+  /// Textual explanation of what types of products belong in this category.
+  /// Helps customers understand the scope of the category and decide whether
+  /// to browse its contents when navigating the product catalog.
+  description String
+  
+  /// Timestamp when the category was first created by an administrator.
+  created_at DateTime
+  
+  /// Timestamp when the category was last modified by an administrator —
+  /// including changes to name, description, or parent relationship.
+  updated_at DateTime
+  
+  /// Timestamp when the category was soft-deleted by an administrator. When
+  /// deleted, products assigned to this category become uncategorized. Soft
+  /// deletion preserves referential integrity with existing product references
+  /// and snapshot records that may still reference this category ID.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  parent e_commerce_mall_categories? @relation("recursive", fields: [parent_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  subcategories e_commerce_mall_categories[] @relation("recursive")
+  products e_commerce_mall_products[]
+  productSnapshots e_commerce_mall_product_snapshots[]
+  
+  //----
+  // INDEXES
+  //----
+  @@index([parent_id, created_at])
+}

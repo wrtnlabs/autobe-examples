@@ -17,30 +17,30 @@ import { PasswordUtil } from "../utils/PasswordUtil";
 import { toISOStringSafe } from "../utils/toISOStringSafe";
 
 export async function patchShoppingMallProducts(props: {
-  body: IShoppingMallProduct.IRequest;
+  query: IShoppingMallProduct.IRequest;
 }): Promise<IPageIShoppingMallProduct.ISummary> {
-  const { body } = props;
-  const page = body.page ?? 1;
-  const limit = body.limit ?? 20;
+  const { query } = props;
+  const page = query.page ?? 1;
+  const limit = query.limit ?? 20;
   const skip = (page - 1) * limit;
   // Resolve category IDs to include subcategories if categoryId is provided
   let categoryIds: string[] | undefined;
-  if (body.categoryId != null) {
+  if (query.categoryId != null) {
     const subcategories =
       await MyGlobal.prisma.shopping_mall_categories.findMany({
-        where: { parent_id: body.categoryId },
+        where: { parent_id: query.categoryId },
         select: { id: true },
       });
-    categoryIds = [body.categoryId, ...subcategories.map((c) => c.id)];
+    categoryIds = [query.categoryId, ...subcategories.map((c) => c.id)];
   }
   // Build sort direction
   const direction =
-    body.sortDirection === "ASC" ? ("asc" as const) : ("desc" as const);
+    query.sortDirection === "ASC" ? ("asc" as const) : ("desc" as const);
   // Build orderBy
   const orderByInput = (
-    body.sort === "name"
+    query.sort === "name"
       ? { name: direction }
-      : body.sort === "basePrice"
+      : query.sort === "basePrice"
         ? { base_price: direction }
         : { created_at: direction }
   ) satisfies Prisma.shopping_mall_productsOrderByWithRelationInput;
@@ -52,27 +52,27 @@ export async function patchShoppingMallProducts(props: {
       is_banned: false,
       deleted_at: null,
     },
-    ...(body.keyword != null &&
-      body.keyword.length > 0 && {
-        name: { contains: body.keyword, mode: "insensitive" as const },
+    ...(query.keyword != null &&
+      query.keyword.length > 0 && {
+        name: { contains: query.keyword, mode: "insensitive" as const },
       }),
     ...(categoryIds != null && {
       shopping_mall_category_id: { in: categoryIds },
     }),
-    ...(body.sellerId != null && {
-      shopping_mall_seller_id: body.sellerId,
+    ...(query.sellerId != null && {
+      shopping_mall_seller_id: query.sellerId,
     }),
-    ...((body.minPrice != null || body.maxPrice != null) && {
+    ...((query.minPrice != null || query.maxPrice != null) && {
       base_price: {
-        ...(body.minPrice != null && { gte: body.minPrice }),
-        ...(body.maxPrice != null && { lte: body.maxPrice }),
+        ...(query.minPrice != null && { gte: query.minPrice }),
+        ...(query.maxPrice != null && { lte: query.maxPrice }),
       },
     }),
-    ...((body.createdAfter != null || body.createdBefore != null) && {
+    ...((query.createdAfter != null || query.createdBefore != null) && {
       created_at: {
-        ...(body.createdAfter != null && { gte: new Date(body.createdAfter) }),
-        ...(body.createdBefore != null && {
-          lte: new Date(body.createdBefore),
+        ...(query.createdAfter != null && { gte: new Date(query.createdAfter) }),
+        ...(query.createdBefore != null && {
+          lte: new Date(query.createdBefore),
         }),
       },
     }),

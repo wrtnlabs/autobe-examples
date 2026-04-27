@@ -1,0 +1,11 @@
+export * as profile from "./profile/index";
+export * as approval_requests from "./approval_requests/index";
+export * as admin_registration_requests from "./admin_registration_requests/index";
+export * as categories from "./categories/index";
+export * as products from "./products/index";
+export * as order_items from "./order_items/index";
+export * as orderItems from "./orderItems/index";
+export * as shipments from "./shipments/index";
+export * as cancellation_requests from "./cancellation_requests/index";
+export * as refund_requests from "./refund_requests/index";
+export * as dashboard from "./dashboard/index";

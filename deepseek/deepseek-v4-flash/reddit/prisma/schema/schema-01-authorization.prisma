@@ -1,0 +1,459 @@
+/// Temporary guest accounts for unauthenticated visitors browsing the platform.
+///
+/// Each guest is identified by a device fingerprint or anonymous identifier,
+/// allowing the system to recognize returning guests without requiring
+/// registration or authentication credentials. Guests have no email,
+/// password, or other authentication fields since they represent
+/// unauthenticated access. One guest may have multiple {@link
+/// community_platform_guest_sessions} over time.
+///
+/// Guests can browse public content including the Popular Feed, Community
+/// Feed, user profiles, and individual posts and comments. They cannot
+/// create posts, comments, votes, subscriptions, reports, or access the
+/// personalized Home Feed.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_guests {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// Unique device fingerprint or anonymous identifier used to recognize a
+  /// returning guest without authentication.
+  ///
+  /// Assigned by the client (e.g., browser fingerprinting, local storage UUID)
+  /// and sent with each request. Enables the system to maintain continuity for
+  /// guest browsing across visits.
+  device_fingerprint String
+  
+  /// Timestamp when this guest record was first created, corresponding to the
+  /// guest's first visit to the platform.
+  created_at DateTime
+  
+  /// Timestamp of the most recent update to this guest record.
+  updated_at DateTime
+  
+  /// Soft-delete timestamp. When set, the guest record is considered expired
+  /// and inactive. Null indicates the guest account is still active and
+  /// recognized for returning visits.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions community_platform_guest_sessions[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([device_fingerprint])
+}
+
+/// Temporary session tokens for guest access to public content.
+///
+/// Each {@link community_platform_guest_sessions} record represents a single
+/// browsing session established when a guest accesses the platform. Sessions
+/// are identified by IP address and the page the guest was visiting (href),
+/// along with the referrer for analytics. Sessions have a fixed expiration
+/// time (expired_at) after which the guest must establish a new session.
+/// This table is append-only — once created, session records are never
+/// modified or deleted, providing an audit trail of guest browsing activity.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_guest_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the {@link community_platform_guests} record this session
+  /// belongs to.
+  ///
+  /// Each session is associated with exactly one guest identity. A guest may
+  /// have multiple concurrent sessions, each tracked independently.
+  community_platform_guest_id String
+  
+  /// IP address of the guest at the time the session was established.
+  ///
+  /// Used for basic analytics and geographic routing. Stored as a string to
+  /// accommodate both IPv4 and IPv6 addresses.
+  ip String
+  
+  /// The URL of the page the guest was visiting when the session was created.
+  ///
+  /// Records the entry point of the guest's browsing session for analytics and
+  /// navigation context.
+  href String
+  
+  /// The HTTP Referer header value indicating the previous page the guest
+  /// navigated from.
+  ///
+  /// Used for traffic source analysis and understanding how guests discover
+  /// the platform. Stored as empty string when no referrer is available.
+  referrer String
+  
+  /// Timestamp when the guest session was created.
+  ///
+  /// Indicates when the guest began their browsing session and is used for
+  /// session lifetime calculations and audit purposes.
+  created_at DateTime
+  
+  /// Timestamp when the guest session expires.
+  ///
+  /// After this time, the session is no longer valid and the guest must
+  /// establish a new session. Expiration enforces session security and
+  /// prevents indefinite guest sessions.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  guest community_platform_guests @relation(fields: [community_platform_guest_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([community_platform_guest_id, created_at], map: "community_platform_guest_sessions_community_platform_g_009bc68c")
+}
+
+/// Registered member accounts with email and password authentication
+/// credentials.
+///
+/// Each {@link community_platform_members} represents an authenticated user
+/// of the platform. Members register using a unique email address and choose
+/// a unique username that identifies them publicly. Authentication is
+/// performed via email and password (stored as a secure hash).
+///
+/// Members can create communities, publish posts and comments, vote on
+/// content, subscribe to communities, moderate content, and report
+/// violations. A member has a one-to-one {@link community_platform_profiles
+/// profile} for public display information. Account deletion is supported
+/// via soft-delete with the {@link community_platform_members#deleted_at
+/// deleted_at} field, allowing recovery within a retention window.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_members {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key. Uniquely identifies a registered member account.
+  id String @id
+  
+  /// Email address used for login and account communication.
+  ///
+  /// Must be unique across all members. The system validates email format
+  /// during registration and requires email verification via {@link
+  /// community_platform_member_email_verifications} before the account is
+  /// fully active. Cannot be changed after registration.
+  email String
+  
+  /// Unique public username that identifies the member across the platform.
+  ///
+  /// Chosen during registration. Must be unique across all members. Displayed
+  /// alongside posts, comments, and profiles. Cannot be changed after
+  /// registration.
+  username String
+  
+  /// Securely hashed password for email-based authentication.
+  ///
+  /// Stored using a strong one-way hashing algorithm (e.g., bcrypt). Never
+  /// stored in plaintext. Updated when the member changes their password via
+  /// the password change flow.
+  password_hash String
+  
+  /// Timestamp when this member account was created.
+  ///
+  /// Set automatically upon successful registration. Used for account
+  /// lifecycle management and data retention calculations.
+  created_at DateTime
+  
+  /// Timestamp when this member account was last updated.
+  ///
+  /// Updated on any change to the member record (e.g., password change). Used
+  /// for conflict detection and audit purposes.
+  updated_at DateTime
+  
+  /// Timestamp when this member account was soft-deleted.
+  ///
+  /// Null indicates an active account. When set, the account is considered
+  /// deleted: the member cannot log in, their content is hidden, but data is
+  /// retained for a recovery window per platform retention policy. Cascading
+  /// deletion applies to related content (posts, comments, etc.) per business
+  /// rules.
+  deleted_at DateTime?
+  
+  //----
+  // HAS RELATIONS
+  //   - format: (propertyKey targetModel)
+  //----
+  sessions community_platform_member_sessions[]
+  passwordResets community_platform_member_password_resets[]
+  emailVerifications community_platform_member_email_verifications[]
+  profile community_platform_profiles?
+  ownedCommunities community_platform_communities[]
+  communityModerators community_platform_community_moderators[] @relation("community_platform_community_moderators_of_community_p_361452aa")
+  appointedModerators community_platform_community_moderators[] @relation("community_platform_community_moderators_of_appointed_b_c4603f34")
+  communitySubscriptions community_platform_community_subscriptions[]
+  communityBans community_platform_community_bans[] @relation("community_platform_community_bans_of_community_platfor_4fcb4215")
+  bansIssueds community_platform_community_bans[] @relation("community_platform_community_bans_of_community_platfor_0cc4b325")
+  communityReports community_platform_community_reports[]
+  memberSubscriptions community_platform_subscriptions[]
+  posts community_platform_posts[]
+  postVotes community_platform_post_votes[]
+  comments community_platform_comments[]
+  commentVotes community_platform_comment_votes[]
+  votes community_platform_votes[]
+  moderatorAssignments community_platform_moderators[] @relation("community_platform_moderators_of_member_id")
+  moderatorAppointments community_platform_moderators[] @relation("community_platform_moderators_of_appointed_by_member_id")
+  bans community_platform_bans[] @relation("community_platform_bans_of_community_platform_member_id")
+  authoredBans community_platform_bans[] @relation("community_platform_bans_of_community_platform_member_b_c165b252")
+  memberReports community_platform_reports[]
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([email])
+  @@unique([username])
+  @@index([deleted_at, created_at])
+}
+
+/// JWT session tokens with access and refresh token support for member
+/// authentication.
+///
+/// Each session represents an active login for a {@link
+/// community_platform_members} actor, storing a hashed refresh token for
+/// secure token rotation and an expiration timestamp for automatic session
+/// timeout. The refresh token hash enables lookup and invalidation during
+/// refresh and logout operations. The client IP, current page URL (href),
+/// and referrer are captured for audit and session metadata purposes.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_member_sessions {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the {@link community_platform_members} actor who owns this
+  /// session.
+  ///
+  /// Establishes the 1:N relationship where one authenticated member can have
+  /// multiple concurrent active sessions across different devices or browsers.
+  member_id String
+  
+  /// SHA-256 hash of the JWT refresh token for secure token storage and lookup.
+  ///
+  /// Storing a hash rather than the raw token prevents token theft in the
+  /// event of a database breach. The hash is used to verify refresh token
+  /// validity during token rotation operations and session validation.
+  refresh_token_hash String
+  
+  /// IP address of the client device at the time of session creation.
+  ip String
+  
+  /// URL of the page where the session was initiated, captured from the
+  /// client's current location.
+  href String
+  
+  /// HTTP Referer header value indicating the previous page the user visited
+  /// before initiating the session.
+  ///
+  /// Nullable because not all HTTP requests include a referrer header (e.g.,
+  /// direct URL entry, bookmarks, or privacy-preserving browser settings).
+  referrer String?
+  
+  /// Timestamp when the session was created upon successful member login.
+  created_at DateTime
+  
+  /// Timestamp when the session was last modified.
+  ///
+  /// Updated on refresh token rotation to track the most recent activity
+  /// associated with this session. Enables monitoring of session refresh
+  /// patterns.
+  updated_at DateTime
+  
+  /// Timestamp when the session automatically expires.
+  ///
+  /// After this time, the refresh token is no longer valid and the member must
+  /// re-authenticate. The expiration deadline is set at session creation time.
+  expired_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member community_platform_members @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([refresh_token_hash])
+  @@index([member_id, created_at])
+}
+
+/// Password reset tokens for member account recovery.
+///
+/// Each token is associated with exactly one {@link
+/// community_platform_members} member and carries a hashed token value, a
+/// mandatory expiration timestamp, and an optional usage timestamp. Tokens
+/// are created during the password reset flow and are either consumed
+/// (used_at set) or expire naturally. Expired or consumed tokens remain in
+/// the database for audit purposes but are no longer valid for password
+/// reset. This table is append-only: once created, no fields are updated
+/// except used_at when the token is consumed.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_member_password_resets {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key.
+  id String @id
+  
+  /// The member account this password reset token belongs to.
+  ///
+  /// Each token is tied to exactly one {@link community_platform_members}
+  /// member and can only be used to reset that member's password.
+  community_platform_member_id String
+  
+  /// Cryptographically hashed password reset token value.
+  ///
+  /// Stored as a secure hash (not plaintext). Used to verify the reset link
+  /// presented by the user against stored tokens. The unique constraint
+  /// prevents accidental token collisions and provides fast lookup.
+  token String
+  
+  /// Timestamp when this token was successfully used to reset the member's
+  /// password.
+  ///
+  /// Null indicates the token has not been used yet. Once set, the token is
+  /// considered consumed and cannot be reused even if not yet expired.
+  used_at DateTime?
+  
+  /// Timestamp after which this token is no longer valid for password reset.
+  ///
+  /// Tokens have a finite lifespan (typically 15-60 minutes) as a security
+  /// measure. Expired tokens cannot be used for password reset even if used_at
+  /// is null.
+  expired_at DateTime
+  
+  /// Timestamp when this password reset token was created.
+  ///
+  /// Set automatically on token generation. Used for audit, token lifecycle
+  /// management, and determining which token is the most recent for a given
+  /// member.
+  created_at DateTime
+  
+  /// Timestamp when this record was last updated.
+  ///
+  /// Updated automatically when used_at transitions from null to a non-null
+  /// value (token consumption). Otherwise remains equal to created_at.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_member_password_resets_community_pl_85f4e038")
+}
+
+/// Email verification tokens for confirming member email addresses during
+/// registration.
+///
+/// This table stores verification tokens generated when a {@link
+/// community_platform_members} registers or their email address is updated.
+/// Each token is a time-limited credential that proves ownership of the
+/// email address. The token is hashed for secure storage. Once the member
+/// clicks the verification link, the `verified_at` timestamp is recorded,
+/// and the token is marked as consumed. Expired tokens are periodically
+/// cleaned up.
+///
+/// Tokens have a one-to-many relationship with members — a member may have
+/// multiple verification tokens over their lifetime if they request
+/// re-verification or change their email address. Only the most recent
+/// unexpired and unverified token is considered active at any given time.
+///
+/// @namespace authorization
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model community_platform_member_email_verifications {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key. Auto-generated UUID identifying this email verification
+  /// record.
+  id String @id
+  
+  /// Foreign Key to the {@link community_platform_members} whose email address
+  /// is being verified.
+  ///
+  /// Each token belongs to exactly one member. A member may have multiple
+  /// verification tokens over time if they request email re-verification or
+  /// change their email address.
+  community_platform_member_id String
+  
+  /// Hashed verification token value sent to the member's email address.
+  ///
+  /// The token is securely hashed before storage. When the member clicks the
+  /// verification link in their email, the raw token is hashed and compared
+  /// against this value for authentication.
+  token String
+  
+  /// Timestamp when this verification token was issued and sent to the member.
+  ///
+  /// Used to determine which token is the most recent active verification
+  /// request.
+  issued_at DateTime
+  
+  /// Timestamp after which this verification token expires and can no longer
+  /// be used.
+  ///
+  /// Tokens have a limited validity window (e.g., 24 hours) for security
+  /// purposes. Expired tokens are ignored during verification and may be
+  /// cleaned up.
+  expired_at DateTime
+  
+  /// Timestamp when the member successfully verified their email address using
+  /// this token.
+  ///
+  /// Null until the token is used for successful verification. Once set, the
+  /// token is considered consumed and cannot be reused.
+  verified_at DateTime?
+  
+  /// Timestamp when this email verification record was created.
+  created_at DateTime
+  
+  /// Timestamp when this email verification record was last updated.
+  updated_at DateTime
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  member community_platform_members @relation(fields: [community_platform_member_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  @@unique([token])
+  // spellchecker: ignore-next-line
+  @@index([community_platform_member_id, created_at], map: "community_platform_member_email_verifications_communit_569cfe0b")
+}

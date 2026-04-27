@@ -1,0 +1,161 @@
+/// Customer-saved products for future purchase consideration.
+///
+/// A {@link e_commerce_mall_wishlist_items} represents a customer's intent
+/// to save a product for future purchase without committing to a purchase.
+/// Unlike a cart item which expresses purchase intent, a wishlist item
+/// expresses saving intent. Each item is associated with exactly one
+/// customer via {@link e_commerce_mall_customers} and references a product
+/// as a whole (not a specific variant) via {@link e_commerce_mall_products}.
+///
+/// Customers cannot save the same product more than once, enforced by a
+/// unique constraint on the customer and product pair. The wishlist displays
+/// live product data (name, price range, images) that updates dynamically as
+/// the seller edits the product. Items are ordered by creation date with
+/// newest additions appearing first.
+///
+/// Items can be removed manually by the customer at any time, or
+/// automatically when the underlying product is deleted by the seller. Both
+/// removal scenarios are tracked via soft delete for data integrity.
+///
+/// @namespace wishlists_and_carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_wishlist_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary key for the wishlist item.
+  id String @id
+  
+  /// Foreign key to the customer who owns this wishlist item.
+  ///
+  /// Each wishlist item belongs to exactly one customer. A customer can have
+  /// many wishlist items, forming a personal wishlist collection. A customer
+  /// cannot save the same product more than once, enforced by the unique
+  /// constraint on (customer_id, product_id).
+  ///
+  /// References {@link e_commerce_mall_customers}.
+  e_commerce_mall_customer_id String
+  
+  /// Foreign key to the product saved in this wishlist item.
+  ///
+  /// The wishlist references a product as a whole, not a specific variant. The
+  /// displayed product information (name, price range, images) updates
+  /// dynamically from the live product record. If the underlying product is
+  /// deleted by the seller, all associated wishlist items are automatically
+  /// removed (soft-deleted).
+  ///
+  /// References {@link e_commerce_mall_products}.
+  e_commerce_mall_product_id String
+  
+  /// Timestamp when the wishlist item was created.
+  ///
+  /// Used for ordering the wishlist display with newest additions appearing
+  /// first.
+  created_at DateTime
+  
+  /// Timestamp when the wishlist item was last updated.
+  ///
+  /// Updated on soft delete or any future state changes.
+  updated_at DateTime
+  
+  /// Soft delete timestamp for wishlist item removal.
+  ///
+  /// When a customer manually removes a product from their wishlist, or when
+  /// the underlying product is deleted by the seller triggering automatic
+  /// removal, this field is set to the current timestamp. The record is
+  /// preserved for data integrity, but excluded from normal customer-facing
+  /// queries.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer e_commerce_mall_customers @relation(fields: [e_commerce_mall_customer_id], references: [id], onDelete: Cascade)
+  product e_commerce_mall_products @relation(fields: [e_commerce_mall_product_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@unique([e_commerce_mall_customer_id, e_commerce_mall_product_id], map: "e_commerce_mall_wishlist_items_e_commerce_mall_custome_71de1cfc")
+  // spellchecker: ignore-next-line
+  @@index([e_commerce_mall_customer_id, created_at], map: "e_commerce_mall_wishlist_items_e_commerce_mall_custome_2688b39b")
+  // spellchecker: ignore-next-line
+  @@index([e_commerce_mall_product_id, created_at], map: "e_commerce_mall_wishlist_items_e_commerce_mall_product_09d8bb04")
+}
+
+/// Product variants with quantities that customers intend to purchase during
+/// checkout.
+///
+/// Each cart item represents a customer's intent to purchase a specific
+/// quantity of a single {@link e_commerce_mall_product_variants product
+/// variant}. Cart items are always managed through the customer's cart
+/// context and serve as temporary holding records before order placement.
+/// When a customer adds the same variant multiple times, quantities are
+/// combined into a single cart item rather than creating duplicate entries.
+/// Unavailable variants (deleted or out of stock) are marked as unavailable
+/// in the cart and excluded from checkout. Cart items are removed upon
+/// successful order placement or explicit customer removal.
+///
+/// @namespace wishlists_and_carts
+/// @author AutoBE - https://github.com/wrtnlabs/autobe
+model e_commerce_mall_cart_items {
+  //----
+  // COLUMNS
+  //----
+  /// Primary Key.
+  id String @id
+  
+  /// Foreign key to the {@link e_commerce_mall_customers customer} who owns
+  /// this cart item.
+  ///
+  /// Each cart item belongs to exactly one customer. A customer can have many
+  /// cart items. When the customer places an order, cart items for the
+  /// purchased variants are removed from the cart.
+  e_commerce_mall_customer_id String
+  
+  /// Foreign key to the {@link e_commerce_mall_product_variants product
+  /// variant} selected for this cart item.
+  ///
+  /// Each cart item represents intent to purchase a specific product variant
+  /// (SKU). The variant's current price is used for cart display calculations.
+  /// If the variant becomes deleted or out of stock, the cart item is marked
+  /// as unavailable and excluded from checkout.
+  e_commerce_mall_product_variant_id String
+  
+  /// Quantity of the product variant the customer intends to purchase.
+  ///
+  /// Must be a positive integer. When a customer adds the same variant to an
+  /// existing cart item, the quantities are combined by increasing the
+  /// existing item's quantity by the newly requested quantity. If the quantity
+  /// is set to zero during modification, the cart item is removed.
+  quantity Int
+  
+  /// Timestamp when the cart item was first created.
+  created_at DateTime
+  
+  /// Timestamp when the cart item was last modified (e.g., quantity change).
+  updated_at DateTime
+  
+  /// Timestamp of soft deletion, if the cart item has been removed.
+  ///
+  /// When a customer removes a cart item, it is soft-deleted rather than
+  /// physically deleted to preserve records of removed items.
+  deleted_at DateTime?
+  
+  //----
+  // BELONGED RELATIONS,
+  //   - format: (propertyKey targetModel constraint)
+  //----
+  customer e_commerce_mall_customers @relation(fields: [e_commerce_mall_customer_id], references: [id], onDelete: Cascade)
+  productVariant e_commerce_mall_product_variants @relation(fields: [e_commerce_mall_product_variant_id], references: [id], onDelete: Cascade)
+  
+  //----
+  // INDEXES
+  //----
+  // spellchecker: ignore-next-line
+  @@index([e_commerce_mall_product_variant_id], map: "e_commerce_mall_cart_items_e_commerce_mall_product_var_2cdd6f0b")
+  // spellchecker: ignore-next-line
+  @@unique([e_commerce_mall_customer_id, e_commerce_mall_product_variant_id], map: "e_commerce_mall_cart_items_e_commerce_mall_customer_id_8ea9ee6e")
+}
